@@ -209,6 +209,9 @@ dependencies {
     implementation "dcm4che:dcm4che-iod"
     implementation "dcm4che:dcm4che-net"
     implementation "net.imagej:ij"
+    implementation "org.dcm4che:dcm4che-core"
+    implementation "org.dcm4che:dcm4che-image"
+    implementation "org.dcm4che:dcm4che-imageio"
 
     implementation "org.springframework:spring-aop"
     implementation "org.springframework:spring-context-support"

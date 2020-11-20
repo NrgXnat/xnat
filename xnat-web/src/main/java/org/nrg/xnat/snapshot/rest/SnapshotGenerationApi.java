@@ -31,9 +31,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import java.io.File;
 
 /**
- * @author pradeep.d
+ * Snapshot generation API.
+ *
  */
-@Api("XNAT 1.7.7 Snapshot Generation Plugin API")
+@Api("Snapshot Generation API")
 @XapiRestController
 @Slf4j
 public class SnapshotGenerationApi extends AbstractXapiRestController {
@@ -57,11 +58,11 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
                                                 final @PathVariable(required = false) @Subject String subject,
                                                 final @PathVariable @Experiment String session,
                                                 final @PathVariable String scanId,
-                                                final @PathVariable(required = false) String view) throws NotFoundException, DataFormatException, InitializationException {
+                                                final @PathVariable(required = false) String view) throws Exception {
         return ResponseEntity.ok().contentType(MediaType.IMAGE_GIF).body(new FileSystemResource(getSnapshotFile(project, subject, session, scanId, view)));
     }
 
-    private File getSnapshotFile(final String project, final String subject, final String session, final String scanId, final String view) throws DataFormatException, NotFoundException, InitializationException {
+    private File getSnapshotFile(final String project, final String subject, final String session, final String scanId, final String view) throws Exception {
         final boolean isThumbnail     = StringUtils.equalsIgnoreCase(view, THUMBNAIL);
         final boolean isThumbnailView = isThumbnail || StringUtils.endsWith(view, "_t");
         final boolean isGridView      = StringUtils.isNotBlank(view) && !isThumbnail;
@@ -73,13 +74,14 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
             gridView = null;
             log.debug("Getting snapshot for project {} subject {} session {} scan {}", StringUtils.defaultIfBlank(project, "none"), StringUtils.defaultIfBlank(subject, "none"), session, scanId);
         }
+        GridviewDimensions gridviewDimensions = new GridviewDimensions( gridView);
 
         final String sessionId = getExperimentId(project, subject, session);
         if (StringUtils.isBlank(sessionId)) {
             throw new NotFoundException(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, session);
         }
 
-        final Pair<File, File> images = isGridView ? _snapshotService.getSnapshot( sessionId, scanId, gridView) : _snapshotService.getSnapshot( sessionId, scanId);
+        final Pair<File, File> images = _snapshotService.getSnapshot( sessionId, scanId, gridviewDimensions.rows, gridviewDimensions.cols);
         if (images.equals(ImmutablePair.nullPair())) {
             throw new InitializationException("Something went wrong trying to retrieve snapshots for session ID {}: no exception was thrown but no valid files were returned by the snapshot service");
         }
@@ -98,6 +100,18 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
         }
         builder.experiment(experiment);
         return _resolver.resolve(builder.build());
+    }
+
+    private class GridviewDimensions {
+        int rows = 1;
+        int cols = 1;
+        public GridviewDimensions( String s) {
+            if( ! StringUtils.isEmpty(s)) {
+                String[] tokens = s.toUpperCase().split("X");
+                this.rows = Integer.parseInt( tokens[0]);
+                this.cols = Integer.parseInt( tokens[1]);
+            }
+        }
     }
 
     private static final String THUMBNAIL = "thumbnail";

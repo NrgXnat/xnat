@@ -36,7 +36,8 @@ import java.util.Locale;
 @Configuration
 @EnableSwagger2
 @ComponentScan(value = {"org.nrg.xapi.rest", "org.nrg.xnat.eventservice.rest", "org.nrg.xnat.snapshot.rest"}, includeFilters = @Filter(ControllerAdvice.class))
-@Import(SpawnerConfig.class)
+@Import({SpawnerConfig.class})
+//@Import({SpawnerConfig.class, SnapshotGenerationApiConfig.class})
 @Slf4j
 public class RestApiConfig {
     @Bean

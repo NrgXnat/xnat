@@ -271,8 +271,9 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             final @RequestParam(value = "project", required = false) String projectId,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch,
+            final @RequestParam(value = "load-children", required = false) Boolean loadChildren,
             final @RequestBody(required = false) SubscriptionDeliveryEntityPaginatedRequest request) {
-        return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch, request);
+        return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch, request, true);
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered/count", method = GET)
@@ -306,8 +307,9 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             final @PathVariable @Project String project,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch,
+            final @RequestParam(value = "load-children", required = false) Boolean loadChildren,
             final @RequestBody(required = false) SubscriptionDeliveryEntityPaginatedRequest request) {
-        return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch, request);
+        return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch, request, loadChildren);
     }
 
 

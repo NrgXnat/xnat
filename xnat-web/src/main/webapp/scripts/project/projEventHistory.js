@@ -170,8 +170,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                     label: labelMap.DATE['label'],
                     th: {className: 'DATE'},
                     apply: function () {
-                        if (!this['status'].length) return 'N/A';
-                        let timestamp = this['status'][0]['timestamp'];
+                        let timestamp = this['timestamp'];
                         let dateString = '';
                         if (timestamp) {
                             timestamp = timestamp.replace(/-/g, '/'); // include date format hack for Safari
@@ -226,7 +225,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                     th: {className: 'status'},
                     label: labelMap.status['label'],
                     apply: function(){
-                        return this['status'][this['status'].length-1]['message'];
+                        return this['status-message'];
                     }
                 },
                 project: {

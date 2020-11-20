@@ -108,20 +108,22 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
         if (!Strings.isNullOrEmpty(projectId) && !projectId.contentEquals(deliveryEntity.getProjectId())) {
             throw new NotFoundException("No history item with matching id and projectID");
         }
-        return toPojo(deliveryEntity);
+        return toPojo(deliveryEntity, true);
     }
 
     @Override
-    public List<SubscriptionDelivery> get(final String projectId, final Long subscriptionId, final @Nonnull Boolean includeFilterMismatches, final SubscriptionDeliveryEntityPaginatedRequest request) {
-        return toDeliveries(getDao().get(projectId, subscriptionId, !includeFilterMismatches ? TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT : null, request));
+    public List<SubscriptionDelivery> get(final String projectId, final Long subscriptionId, final @Nonnull Boolean includeFilterMismatches, final SubscriptionDeliveryEntityPaginatedRequest request, Boolean loadChildren) {
+        return toDeliveries(getDao().get(projectId, subscriptionId, !includeFilterMismatches ? TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT : null, request), loadChildren);
     }
 
     private List<SubscriptionDeliverySummary> toSummaries(final List<SubscriptionDeliverySummaryEntity> entities) {
         return entities != null ? entities.stream().map(this::toPojo).filter(Objects::nonNull).collect(Collectors.toList()) : Collections.emptyList();
     }
 
-    private List<SubscriptionDelivery> toDeliveries(final List<SubscriptionDeliveryEntity> entities) {
-        return entities != null ? entities.stream().map(this::toPojo).filter(Objects::nonNull).collect(Collectors.toList()) : Collections.emptyList();
+    private List<SubscriptionDelivery> toDeliveries(final List<SubscriptionDeliveryEntity> entities, Boolean loadChildren) {
+        return entities != null ? entities.stream()
+                                          .map(ent -> this.toPojo(ent, loadChildren == null ? false : loadChildren))
+                                          .filter(Objects::nonNull).collect(Collectors.toList()) : Collections.emptyList();
     }
 
     private SubscriptionDeliverySummary toPojo(final SubscriptionDeliverySummaryEntity entity) {
@@ -141,17 +143,22 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
                                           .build();
     }
 
-    private SubscriptionDelivery toPojo(SubscriptionDeliveryEntity entity) {
+
+    private SubscriptionDelivery toPojo(SubscriptionDeliveryEntity entity, Boolean loadChildren) {
         SubscriptionDelivery subscriptionDelivery = null;
         if (entity != null) {
             subscriptionDelivery = SubscriptionDelivery.builder()
                                                        .id(entity.getId())
                                                        .eventType(entity.getEventType())
+                                                       .timestamp(entity.getStatusTimestamp())
                                                        .actionUser(entity.getActionUserLogin())
                                                        .projectId(entity.getProjectId())
                                                        .actionInputs(entity.getActionInputs())
-                                                       .triggeringEvent(entity.getTriggeringEventEntity() != null ? entity.getTriggeringEventEntity().toPojo() : null)
-                                                       .timedEventStatuses(TimedEventStatusEntity.toPojo(entity.getTimedEventStatuses()))
+                                                       .triggeringEvent(entity.getTriggeringEventEntity() != null ?
+                                                               entity.getTriggeringEventEntity().toPojo() : null)
+                                                       .timedEventStatuses(loadChildren ?
+                                                               TimedEventStatusEntity.toPojo(entity.getTimedEventStatuses()) :
+                                                               null)
                                                        .statusMessage(entity.getStatusMessage())
                                                        .subscription(eventSubscriptionEntityService.toPojo(entity.getSubscription()))
                                                        .errorState(entity.getErrorState())

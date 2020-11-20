@@ -635,7 +635,7 @@ public class EventServiceIntegrationTest {
     @DirtiesContext
     public void checkSubscriptionDeliveryEntry() throws Exception {
         catchSubscribedEvent();
-        List<SubscriptionDelivery> subscriptionDeliveries = eventService.getSubscriptionDeliveries(null, null, null);
+        List<SubscriptionDelivery> subscriptionDeliveries = eventService.getSubscriptionDeliveries(null, null, null, null);
         assertThat("subscriptionDeliveries table is null. Expected one entry.", subscriptionDeliveries, notNullValue());
         assertThat("subscriptionDeliveries table is empty. Expected one entry.", subscriptionDeliveries.size(), is(1));
 
@@ -1281,16 +1281,16 @@ public class EventServiceIntegrationTest {
         }
         sw3.stop();
 
-        List<SubscriptionDelivery> deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false);
+        List<SubscriptionDelivery> deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false, true);
         assertThat("Expected 10 deliveries.", deliveriesWithProjectId.size(), is(10));
 
-        List<SubscriptionDelivery> deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true);
+        List<SubscriptionDelivery> deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true, true);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionId.size(), is(10));
 
-        List<SubscriptionDelivery> deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false);
+        List<SubscriptionDelivery> deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false, true);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionIdAndProjectId.size(), is(10));
 
-        List<SubscriptionDelivery> deliveries = eventService.getSubscriptionDeliveries(null, null, true);
+        List<SubscriptionDelivery> deliveries = eventService.getSubscriptionDeliveries(null, null, true, true);
         assertThat("Expected 10 deliveries.", deliveries.size(), is(10));
 
         // Add some other things to the history table
@@ -1302,23 +1302,23 @@ public class EventServiceIntegrationTest {
             testAction.wait(100);
         }
 
-        deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false);
+        deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false, true);
         assertThat("Expected 10 deliveries.", deliveriesWithProjectId.size(), is(10));
         Integer deliveriesWithProjectIdCount = eventService.getSubscriptionDeliveriesCount(projectIdToCatch, null, false);
         assertThat("Expected 10 deliveries counted.", deliveriesWithProjectIdCount, is(10));
 
 
-        deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true);
+        deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true, true);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionId.size(), is(10));
         Integer deliveriesWithSubscriptionIdCount = eventService.getSubscriptionDeliveriesCount(null, 1L, true);
         assertThat("Expected 10 deliveries counted.", deliveriesWithSubscriptionIdCount, is(10));
 
-        deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false);
+        deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false, true);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionIdAndProjectId.size(), is(10));
         Integer deliveriesWithSubscriptionIdAndProjectIdCount = eventService.getSubscriptionDeliveriesCount(projectIdToCatch, 1L, false);
         assertThat("Expected 10 deliveries counted.", deliveriesWithSubscriptionIdAndProjectIdCount, is(10));
 
-        deliveries = eventService.getSubscriptionDeliveries(null, null, true);
+        deliveries = eventService.getSubscriptionDeliveries(null, null, true, false);
         assertThat("Expected 20 deliveries.", deliveries.size(), is(20));
         Integer deliveriesCount = eventService.getSubscriptionDeliveriesCount(null, null, true);
         assertThat("Expected 20 deliveries counted.", deliveriesCount, is(20));

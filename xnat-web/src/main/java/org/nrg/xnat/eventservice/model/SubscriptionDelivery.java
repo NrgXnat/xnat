@@ -1,10 +1,12 @@
 package org.nrg.xnat.eventservice.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
 
 
@@ -15,13 +17,19 @@ public abstract class SubscriptionDelivery {
     @JsonProperty("id") public abstract Long id();
     @Nullable @JsonProperty("event") public abstract SimpleEvent event();
     @Nullable @JsonProperty("event-type") public abstract String eventType();
-    @JsonProperty("subscription") public abstract Subscription subscription();
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss z",
+            timezone = "UTC")
+    @Nullable @JsonProperty("timestamp")  public abstract Date timestamp();
+    @Nullable @JsonProperty("subscription") public abstract Subscription subscription();
     @JsonProperty("user") public abstract String actionUser();
     @JsonProperty("project") public abstract String projectId();
     @JsonProperty("inputs") public abstract String actionInputs();
     @Nullable @JsonProperty("trigger") public abstract  TriggeringEvent triggeringEvent();
-    @JsonProperty("status") public abstract List<TimedEventStatus> timedEventStatuses();
+    @Nullable @JsonProperty("status") public abstract List<TimedEventStatus> timedEventStatuses();
     @Nullable @JsonProperty("status-message") public abstract String statusMessage();
+
     @JsonProperty(value = "error", defaultValue = "false") public abstract Boolean errorState();
 
     
@@ -35,7 +43,7 @@ public abstract class SubscriptionDelivery {
     public static SubscriptionDelivery create(Long id, SimpleEvent event, String eventType ,Subscription subscription,
                                               String actionUser, String projectId, String actionInputs,
                                               TriggeringEvent triggeringEvent, List<TimedEventStatus> timedEventStatuses,
-                                              String statusMessage, Boolean errorState) {
+                                              String statusMessage, Date timestamp, Boolean errorState) {
         return builder()
                 .id(id)
                 .event(event)
@@ -47,6 +55,7 @@ public abstract class SubscriptionDelivery {
                 .triggeringEvent(triggeringEvent)
                 .timedEventStatuses(timedEventStatuses)
                 .statusMessage(statusMessage)
+                .timestamp(timestamp)
                 .errorState(errorState)
                 .build();
     }
@@ -72,6 +81,8 @@ public abstract class SubscriptionDelivery {
         public abstract Builder timedEventStatuses(List<TimedEventStatus> timedEventStatuses);
 
         public abstract Builder statusMessage(String statusMessage);
+
+        public abstract Builder timestamp(Date timestamp);
 
         public abstract Builder errorState(Boolean errorState);
 

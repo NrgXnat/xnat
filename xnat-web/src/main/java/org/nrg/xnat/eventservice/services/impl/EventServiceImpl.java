@@ -373,7 +373,7 @@ public class EventServiceImpl implements EventService {
                             if (!Strings.isNullOrEmpty(jsonObject)) {
                                 String objectSubString = StringUtils.substring(jsonObject, 0, 200);
                                 log.debug("Serialized Object: " + objectSubString + "...");
-                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Object Serialized: " + objectSubString + "...");
+                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Payload Object Serialized.");
                             }
                         } catch (NullPointerException e) {
                             log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass().getName());
@@ -483,13 +483,13 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
-        return getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatches, null);
+    public List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches, Boolean loadChildren) {
+        return getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatches, null, loadChildren);
     }
 
     @Override
-    public List<SubscriptionDelivery> getSubscriptionDeliveries(final String projectId, final Long subscriptionId, final Boolean includeFilterMismatches, final SubscriptionDeliveryEntityPaginatedRequest request) {
-        return subscriptionDeliveryEntityService.get(projectId, subscriptionId, (includeFilterMismatches != null ? includeFilterMismatches : false), request);
+    public List<SubscriptionDelivery> getSubscriptionDeliveries(final String projectId, final Long subscriptionId, final Boolean includeFilterMismatches, final SubscriptionDeliveryEntityPaginatedRequest request, Boolean loadChildren) {
+        return subscriptionDeliveryEntityService.get(projectId, subscriptionId, (includeFilterMismatches != null ? includeFilterMismatches : false), request, loadChildren == null ? false : loadChildren);
     }
 
     @Override

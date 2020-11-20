@@ -28,7 +28,7 @@ public interface SubscriptionDeliveryEntityService extends BaseHibernateService<
 
     SubscriptionDelivery get(Long id, String projectId) throws NotFoundException;
 
-    List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches, SubscriptionDeliveryEntityPaginatedRequest request);
+    List<SubscriptionDelivery> get(String projectId, Long subscriptionId, Boolean includeFilterMismatches, SubscriptionDeliveryEntityPaginatedRequest request, Boolean loadChildren);
 
     List<SubscriptionDeliverySummary> getSummaries(String projectId);
 

@@ -1,5 +1,6 @@
 package org.nrg.xnat.eventservice.entities;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -36,6 +37,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private Date statusTimestamp;
     private String statusMessage;
     private Boolean errorState = null;
+    private final Integer MAX_TEXT_LENGTH = 255;
 
     public SubscriptionDeliveryEntity(SubscriptionEntity subscription, String eventType, String actionUserLogin,
                                       String projectId, String actionInputs) {
@@ -113,7 +115,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
         this.triggeringEventEntity = new TriggeringEventEntity(eventName, status, isXsiType, xnatType, xsiUri, objectLabel);
     }
 
-    @OneToMany(mappedBy = "subscriptionDeliveryEntity", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "subscriptionDeliveryEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id ASC")
     public Set<TimedEventStatusEntity> getTimedEventStatuses() {
         return timedEventStatuses;
@@ -154,7 +156,8 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     }
 
     public void setStatusMessage(String statusMessage) {
-        this.statusMessage = statusMessage;
+
+        this.statusMessage = statusMessage != null ? StringUtils.left(statusMessage, MAX_TEXT_LENGTH) : null;
     }
 
     public Boolean getErrorState() { return errorState; }

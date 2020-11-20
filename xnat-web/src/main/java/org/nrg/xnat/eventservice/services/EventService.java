@@ -71,9 +71,9 @@ public interface EventService {
 
     SubscriptionDelivery getSubscriptionDelivery(Long id, String projectId) throws NotFoundException;
 
-    List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
+    List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches, Boolean loadChildren);
 
-    List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches, SubscriptionDeliveryEntityPaginatedRequest request);
+    List<SubscriptionDelivery> getSubscriptionDeliveries(String projectId, Long subscriptionId, Boolean includeFilterMismatches, SubscriptionDeliveryEntityPaginatedRequest request, Boolean loadChildren);
 
     String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters);
     void validateFilterJsonPathPredicate(String jsonPathPredicate);

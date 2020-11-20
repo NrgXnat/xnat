@@ -823,19 +823,21 @@ var XNAT = getObject(XNAT || {});
                     var thisEvent = projEventServicePanel.events[event];
 
                     var optGroup = [];
-                    thisEvent.statuses.forEach(function(status){
-                        optGroup.push(spawn(
-                            'option',
-                            { value: event+':'+status, data: {
+                    if (thisEvent['event-scope'].indexOf('PROJECT') >= 0) {
+                        thisEvent.statuses.forEach(function(status){
+                            optGroup.push(spawn(
+                                'option',
+                                { value: event+':'+status, data: {
                                     xsitype: thisEvent['xnat-type'],
                                     status: status,
                                     'event-type': event
                                 }},
-                            thisEvent['display-name'] + ' -- ' + titleCase(status)
-                        ));
-                    });
-                    $form.find('#subscription-event-selector')
-                        .append(spawn('optgroup', optGroup));
+                                thisEvent['display-name'] + ' -- ' + titleCase(status)
+                            ));
+                        });
+                        $form.find('#subscription-event-selector')
+                            .append(spawn('optgroup', optGroup));
+                    }
                 });
 
                 if (subscription){

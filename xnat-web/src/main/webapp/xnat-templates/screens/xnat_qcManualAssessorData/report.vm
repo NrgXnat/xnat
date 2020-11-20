@@ -15,14 +15,18 @@
 </script>
 
 <style>
-
-.qcScanTable th, .qcSessionTable th {
-	text-align:left;
-}
-
-.qcScanTable td {
-	vertical-align:top;
-}
+	.qcScanTable th, .qcSessionTable th {
+		text-align:left;
+	}
+	.qcScanTable td {
+		vertical-align:top;
+	}
+	.snapshot-container {
+		max-width: 300px;
+	}
+	.snapshot-container img {
+		max-width: 100%;
+	}
 </style>
 
 <h2>Overall QC for $!mr.getIdentifier($project,false)</h2>
@@ -81,18 +85,23 @@
 	<h2>Scans</h2>
 	<table class="qcScanTable">
 		#foreach($scan in $scans)
-			#set($mrScan=$mr.getScanById($!scan.getStringProperty("xnat:qcScanData/imageScan_ID")))
+			#set($scanId=$!scan.getStringProperty("xnat:qcScanData/imageScan_ID"))
+			#set($mrScan=$mr.getScanById($!scanId))
 			<tr>
 				<td>
-					#set($snapshot=$mrScan.getSnapshot())
-					#if($snapshot)
-						<img src="$content.getURI("$!snapshot.getThumbnail()")"> 
-					#else
-						N/A
-					#end
+					<div id="snapshot-$!scan.getStringProperty("xnat:qcScanData/imageScan_ID")" class="snapshot-container"></div>
+					<script>
+						var url = XNAT.url.restUrl('/xapi/projects/${project}/experiments/${mr_id}/scan/$!{scanId}/snapshot')
+						XNAT.xhr.get({
+                            url: url,
+							success: function(data){
+                                jq(document).find('#snapshot-${scanId}').append('<img src="'+url+'" />');
+							}
+                        })
+					</script>
 				</td>
 				<td>
-					<h3>Scan $!scan.getStringProperty("xnat:qcScanData/imageScan_ID")</h3>
+					<h3>Scan $!scanId</h3>
 					<table>
 						#parse($turbineUtils.getTemplateName("details",$scan.getXSIType(),$project))
 					</table>

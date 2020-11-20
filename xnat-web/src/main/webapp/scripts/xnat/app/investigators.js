@@ -284,7 +284,7 @@ var XNAT = getObject(XNAT);
                     footer: false,
                     element: {style: {border: 'none', marginBottom: 0}},
                     contents: {
-                        title: createInput('Title', 'title'),
+                        title: createInput('Title', 'title', 'allow-empty'),
                         first: createInput('First Name', 'firstname', 'name-safe required'),
                         last: createInput('Last Name', 'lastname', 'name-safe required'),
                         institution: createInput('Institution', 'institution', 'allow-empty'),

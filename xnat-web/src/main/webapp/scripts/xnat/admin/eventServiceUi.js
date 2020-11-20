@@ -312,7 +312,8 @@ var XNAT = getObject(XNAT || {});
             },
             trs: function(tr, data){
                 tr.id = "tr-" + data.id;
-                addDataAttrs(tr, { filter: '0', data: data.id })
+                addDataAttrs(tr, { filter: '0', data: data.id });
+                tr.classList += (data.valid) ? ' valid' : ' invalid';
             },
             sortable: 'name, event, action, owner',
             items: {

@@ -286,9 +286,9 @@ $page.setVlinkColor($ui.vlink)
 ## render project assessors
     <tr class='header'>
         <th>Project-level Assessors</th>
-        <th><label><INPUT type="checkbox" class='read other' data-related="other" /> <b>Read</b> </label></th>
-        <th><label><INPUT type="checkbox" class='edit' data-related="other" /> <b>Create/Edit</b> </label></th>
-        <th><label><INPUT type="checkbox" class='delete' data-related="other" /> <b>Delete</b> </label></th>
+        <th><label><INPUT type="checkbox" class='read projassessor' data-related="projassessor" /> <b>Read</b> </label></th>
+        <th><label><INPUT type="checkbox" class='edit' data-related="projassessor" /> <b>Create/Edit</b> </label></th>
+        <th><label><INPUT type="checkbox" class='delete' data-related="projassessor" /> <b>Delete</b> </label></th>
     </tr>
     #set($inserted = 0)
     #foreach ($elementManager in $allElements)
@@ -309,9 +309,9 @@ $page.setVlinkColor($ui.vlink)
             <tr class='body highlight'>
                 #set($fieldId="${elementSQLName}_R")
                 <td>$elementSecurity.getPlural()</td>
-                <td title="Read" class="checkbox"><label><INPUT class='read other' id="$fieldId" type="checkbox" value="1" name="${elementName}_${elementName}/project_$!{pValue}_R" #if($pi.getRead())CHECKED #end /></label></td>
-                <td title="Edit" class="checkbox"><label><INPUT class='edit other' type="checkbox" value="1" name="${elementName}_${elementName}/project_$!{pValue}_E" #if($pi.getEdit())CHECKED #end data-check="#${fieldId}" /></label></td>
-                <td title="Delete" class="checkbox"><label><INPUT class='delete other' type="checkbox" value="1" name="${elementName}_${elementName}/project_$!{pValue}_D" #if($pi.getDelete())CHECKED #end data-check="#${fieldId}" /></label></td>
+                <td title="Read" class="checkbox"><label><INPUT class='read projassessor' id="$fieldId" type="checkbox" value="1" name="${elementName}_${elementName}/project_$!{pValue}_R" #if($pi.getRead())CHECKED #end /></label></td>
+                <td title="Edit" class="checkbox"><label><INPUT class='edit projassessor' type="checkbox" value="1" name="${elementName}_${elementName}/project_$!{pValue}_E" #if($pi.getEdit())CHECKED #end data-check="#${fieldId}" /></label></td>
+                <td title="Delete" class="checkbox"><label><INPUT class='delete projassessor' type="checkbox" value="1" name="${elementName}_${elementName}/project_$!{pValue}_D" #if($pi.getDelete())CHECKED #end data-check="#${fieldId}" /></label></td>
             </tr>
         #end
     #end

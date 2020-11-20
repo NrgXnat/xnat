@@ -110,7 +110,8 @@ var XNAT = getObject(XNAT);
             id: SELECT_ALL_ID,
             className: 'ignore checkbox select-all ' + typeDashed,
             title: type + ': select all',
-            checked: true
+            checked: true,
+            style: { 'width':'auto' }
         });
 
         var selectAllLabel = spawn('label', {

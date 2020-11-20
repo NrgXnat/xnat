@@ -10,6 +10,7 @@
 package org.nrg.xdat.servlet;
 
 import com.google.common.io.CharStreams;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
@@ -26,6 +27,7 @@ import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
@@ -33,8 +35,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.DateUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.springframework.core.io.Resource;
 
@@ -42,6 +42,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
@@ -50,18 +51,17 @@ import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * @author Tim
  */
 @SuppressWarnings("serial")
+@Slf4j
 public class XDATServlet extends HttpServlet {
-    private static final Logger  logger      = LoggerFactory.getLogger(XDATServlet.class);
-    private static final Pattern SQL_PATTERN = Pattern.compile("^.*(\\d\\d\\d).sql$");
-    private static final Pattern CANNOT_DROP_MESSAGE = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
-
-    private static Boolean _shouldUpdateViews;
-    private static Boolean _isDatabasePopulateOrUpdateCompleted = false;
+    public static final String  INIT_SQL_PATTERN         = "classpath*:META-INF/xnat/**/init_*.sql";
+    public static final Pattern ORDERED_INIT_SQL_PATTERN = Pattern.compile("^.*(\\d\\d\\d).sql$");
+    public static final Pattern INIT_SCRIPT_SQL_PATTERN  = Pattern.compile("^.*/scripts/([a-z_]+).sql$");
 
     // TODO: Added in to support CustomClasspathResourceLoader on 1.6.5 migration, needs to be removed and refactored.
     public static String WEBAPP_ROOT;
@@ -98,7 +98,7 @@ public class XDATServlet extends HttpServlet {
                 ElementSecurity.refresh();
             }
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -132,11 +132,62 @@ public class XDATServlet extends HttpServlet {
             prop.setProperty("auto-update", "true");
         }
 
-        if ((prop.containsKey("auto-update")) && (BooleanUtils.toBoolean(prop.getProperty("auto-update")))) {
+        if (prop.containsKey("auto-update") && BooleanUtils.toBoolean(prop.getProperty("auto-update"))) {
             final Path generatedSqlLogPath = getGeneratedSqlLogPath();
             if (userCount != null) {
-                //only interested in the required ones here.
-                @SuppressWarnings("unchecked") final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
+                final List<String> statements = getInitScripts(INIT_SCRIPT_SQL_PATTERN, null);
+                final int          oidCount   = db.getJdbcTemplate().queryForObject(QUERY_FIND_OID_FUNCTIONS, Integer.class);
+                if (oidCount > 0 || !statements.isEmpty()) {
+                    log.debug("Found {} functions that contained OID references or {} lines in SQL init scripts, preparing to execute", oidCount, statements.size());
+                    try (final PoolDBUtils.Transaction transaction = PoolDBUtils.open()) {
+                        if (oidCount > 0) {
+                            final String dropOidsFunction;
+                            try (final Stream<String> stream = db.getJdbcTemplate().queryForList(QUERY_DROP_OID_FUNCTIONS, String.class).stream();
+                                 final StringWriter stringWriter = new StringWriter();
+                                 final PrintWriter writer = new PrintWriter(stringWriter)) {
+                                stream.forEach(writer::println);
+                                dropOidsFunction = stringWriter.toString();
+                            }
+                            transaction.execute(dropOidsFunction);
+                            final List<String> restoreOidsFunctions = new ArrayList<>();
+                            GenericUtils.convertToTypedList(XFTManager.GetInstance().getOrderedElements(), GenericWrapperElement.class).stream().filter(element -> !StringUtils.endsWithAny(element.getSQLName(), "_history", "_meta_data")).forEach(element -> {
+                                try {
+                                    final List<String>[] functions = GenericWrapperUtils.GetUpdateFunctions(element);
+                                    try (final Stream<String> stream = Stream.concat(functions[0].stream(), functions[1].stream());
+                                         final StringWriter stringWriter = new StringWriter();
+                                         final PrintWriter writer = new PrintWriter(stringWriter)) {
+                                        stream.forEach(writer::println);
+                                        restoreOidsFunctions.add(stringWriter.toString());
+                                    } catch (IOException e) {
+                                        log.error("An error occurred trying to create a string writer", e);
+                                    }
+                                } catch (XFTInitException e) {
+                                    log.error("Error initializing XFT", e);
+                                } catch (ElementNotFoundException e) {
+                                    log.error("Element not found: {}", e.ELEMENT, e);
+                                }
+                            });
+                            transaction.execute(restoreOidsFunctions);
+                        }
+                        if (db.tableExists("xs_item_cache") && StringUtils.isBlank(db.columnExists("xs_item_cache", "id"))) {
+                            transaction.execute(PoolDBUtils.QUERY_ITEM_CACHE_ADD_ID);
+                        }
+                        if (!statements.isEmpty()) {
+                            transaction.execute(statements);
+                        }
+                        transaction.commit();
+                    } catch (SQLException | DBPoolException e) {
+                        log.error("An error occurred trying to run the SQL init scripts", e);
+                    }
+                }
+
+                //noinspection rawtypes
+                final List[]       createSql = SQLUpdateGenerator.GetSQLCreate();
+                final List<String> sql       = GenericUtils.convertToTypedList(createSql[0], String.class);
+                final List<String> optional  = GenericUtils.convertToTypedList(createSql[1], String.class);
+                if (!optional.isEmpty()) {
+                    log.error("Preparing create SQL and got {} optional SQL statements. Please review this optional SQL and consider executing it if required:\n\nOptional SQL:\n\n{}", optional.size(), String.join("\n", optional));
+                }
                 if (!sql.isEmpty()) {
                     final DatabaseUpdater databaseUpdater = new DatabaseUpdater(userCount == 0 ? conf : null, generatedSqlLogPath, "-- Generated SQL for updating XNAT database schema");//user_count==0 means users need to be created.
                     System.out.println("===========================");
@@ -209,8 +260,6 @@ public class XDATServlet extends HttpServlet {
      */
     @SuppressWarnings("UnstableApiUsage")
     public class DatabaseUpdater extends Thread {
-        public static final String INIT_SQL_PATTERN = "classpath*:META-INF/xnat/**/init_*.sql";
-
         /**
          * Creates a new instance of the updater class.
          *
@@ -235,20 +284,20 @@ public class XDATServlet extends HttpServlet {
                 if (file.canWrite()) {
                     return generatedSqlLogPath;
                 }
-                logger.warn("I was asked to log generated SQL queries to the file {}, but I can't write to that.", generatedSqlLogPath);
+                log.warn("I was asked to log generated SQL queries to the file {}, but I can't write to that.", generatedSqlLogPath);
                 return null;
             }
             final File parent = file.getParentFile();
             if (parent.exists()) {
                 if (parent.isFile()) {
-                    logger.warn("I was asked to log generated SQL queries to the file {}, but the parent is a file (must be a directory).", generatedSqlLogPath);
+                    log.warn("I was asked to log generated SQL queries to the file {}, but the parent is a file (must be a directory).", generatedSqlLogPath);
                     return null;
                 }
                 return generatedSqlLogPath;
             }
             final boolean success = parent.mkdirs();
             if (!success) {
-                logger.warn("I was asked to log generated SQL queries to the file {}, but the parent directory doesn't exist and I can't seem to create it.", generatedSqlLogPath);
+                log.warn("I was asked to log generated SQL queries to the file {}, but the parent directory doesn't exist and I can't seem to create it.", generatedSqlLogPath);
                 return null;
             }
             return generatedSqlLogPath;
@@ -263,7 +312,7 @@ public class XDATServlet extends HttpServlet {
             try (final PrintWriter writer = new PrintWriter(_generatedSqlLogPath != null ? new BufferedWriter(new FileWriter(_generatedSqlLogPath.toFile())) : CharStreams.nullWriter())) {
                 transaction.start();
                 //prep accessory tables, may involve procedure calls
-                logger.info("Initializing administrative functions...");
+                log.info("Initializing administrative functions...");
                 if (_generatedSqlLogPath != null && _generatedSqlLogHeaders.length > 0) {
                     for (final String header : _generatedSqlLogHeaders) {
                         writer.println(StringUtils.prependIfMissing("-- ", header));
@@ -273,7 +322,7 @@ public class XDATServlet extends HttpServlet {
 
                 //manually execute create statements
                 if (!_sql.isEmpty()) {
-                    logger.info("Initializing database schema...");
+                    log.info("Initializing database schema...");
                     try {
                         execute(transaction, writer, _sql);
                     } catch (Throwable t) {
@@ -293,7 +342,7 @@ public class XDATServlet extends HttpServlet {
                 //update the stored functions used for retrieving XFTItems and manipulating them
                 //this used to build one big file of sql... but it was way to big.  So now it will do one element at at time.
                 final List<String> runAfter = new ArrayList<>();
-                logger.info("Initializing database functions...");
+                log.info("Initializing database functions...");
                 for (final GenericWrapperElement element : GenericUtils.convertToTypedList(XFTManager.GetInstance().getOrderedElements(), GenericWrapperElement.class)) {
                     final List<String>[] func = GenericWrapperUtils.GetFunctionStatements(element);
                     execute(transaction, writer, func[0]);
@@ -302,14 +351,14 @@ public class XDATServlet extends HttpServlet {
 
                 if (_conf != null) {
                     //create the views defined in the display documents
-                    logger.info("Initializing database views...");
+                    log.info("Initializing database views...");
                     execute(transaction, writer, DisplayManager.GetCreateViewsSQL());
                 }
 
                 execute(transaction, writer, runAfter);
 
                 if (_conf != null) {
-                    final List<String> initScripts = getInitScripts();
+                    final List<String> initScripts = getInitScripts(ORDERED_INIT_SQL_PATTERN, Comparator.comparing(resource -> ORDERED_INIT_SQL_PATTERN.matcher(resource.getFilename()).group(1)));
                     if (initScripts.size() > 0) {
                         execute(transaction, writer, initScripts);
                     }
@@ -317,16 +366,16 @@ public class XDATServlet extends HttpServlet {
 
                 transaction.commit();
             } catch (XFTInitException e) {
-                logger.error("An error occurred initializing XFT, now attempting rolling back the current transactions", e);
+                log.error("An error occurred initializing XFT, now attempting rolling back the current transactions", e);
                 rollback(transaction);
             } catch (SQLException e) {
-                logger.error("An error occurred creating or updating the database elements schemas and views, now attempting rolling back the current transactions", e);
+                log.error("An error occurred creating or updating the database elements schemas and views, now attempting rolling back the current transactions", e);
                 rollback(transaction);
             } catch (DBPoolException e) {
-                logger.error("An error occurred when trying to start the transaction for creating or updating the database elements schemas and views, now attempting rolling back the current transactions", e);
+                log.error("An error occurred when trying to start the transaction for creating or updating the database elements schemas and views, now attempting rolling back the current transactions", e);
                 rollback(transaction);
             } catch (Exception e) {
-                logger.error("An unknown error occurred when trying to create or update the database elements schemas and views, now attempting rolling back the current transactions", e);
+                log.error("An unknown error occurred when trying to create or update the database elements schemas and views, now attempting rolling back the current transactions", e);
                 rollback(transaction);
             } finally {
                 transaction.close();
@@ -337,7 +386,7 @@ public class XDATServlet extends HttpServlet {
                 //so we fix them
                 DBAction.AdjustSequences();
             } catch (Exception e) {
-                logger.error("", e);
+                log.error("", e);
             }
 
             // code will dynamically register data types
@@ -349,11 +398,11 @@ public class XDATServlet extends HttpServlet {
                 if (!newTypes.isEmpty()) {
                     // When the database is updated directly (rather then through XFT), the sequences can get out of
                     // sync.  This would cause issues down the road so we fix them here.
-                    logger.info("Created {} new data types in the system: \"{}\"", newTypes.size(), StringUtils.join(newTypes, "\", \""));
+                    log.info("Created {} new data types in the system: \"{}\"", newTypes.size(), StringUtils.join(newTypes, "\", \""));
                     DBAction.AdjustSequences();
                 }
             } catch (Throwable e) {
-                logger.error("", e);
+                log.error("", e);
             }
             _isDatabasePopulateOrUpdateCompleted = true;
         }
@@ -362,39 +411,8 @@ public class XDATServlet extends HttpServlet {
             try {
                 transaction.rollback();
             } catch (SQLException e1) {
-                logger.error("", e1);
+                log.error("", e1);
             }
-        }
-
-        /**
-         * Returns a list of sql statements pulled from SQL files stored under META-INF/xnat. The files are filtered and
-         * sorted by the {@link #filterAndSortInitSqlResources(List)} method. These files should initialize the
-         * server, its settings and the users.
-         *
-         * @return A list of SQL statements initialized from the SQL scripts.
-         */
-        private List<String> getInitScripts() {
-            // Get the init prefs ordered properties from context and create a substitutor.
-            final OrderedProperties properties  = XDAT.getContextService().getBeanSafely("initPrefs", OrderedProperties.class);
-            final StringSubstitutor substitutor = new StringSubstitutor(new OrderedPropertiesLookup(properties), "${", "}", '\\');
-
-            final List<String> statements = new ArrayList<>();
-            try {
-                final List<Resource> resources = filterAndSortInitSqlResources(BasicXnatResourceLocator.getResources(INIT_SQL_PATTERN));
-                logger.debug("Found {} resources that match the pattern {}", resources.size(), INIT_SQL_PATTERN);
-                for (final Resource resource : resources) {
-                    logger.debug("Now processing the resource {}", resource.getFilename());
-                    try (final BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()), 1024)) {
-                        String statement;
-                        while ((statement = reader.readLine()) != null) {
-                            statements.add(substitutor.replace(statement + (statement.endsWith(";") ? '\n' : ";\n")));
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("An error occurred trying to locate XNAT module definitions.");
-            }
-            return statements;
         }
 
         private void execute(final PoolDBUtils.Transaction transaction, final PrintWriter writer, final Collection<String> statements) throws SQLException {
@@ -412,6 +430,30 @@ public class XDATServlet extends HttpServlet {
         private final String[]     _generatedSqlLogHeaders;
     }
 
+    private List<String> getInitScripts(final Pattern filter, final Comparator<Resource> comparator) {
+        // Get the init prefs ordered properties from context and create a substitutor.
+        final OrderedProperties properties  = XDAT.getContextService().getBeanSafely("initPrefs", OrderedProperties.class);
+        final StringSubstitutor substitutor = new StringSubstitutor(new OrderedPropertiesLookup(properties), "${", "}", '\\');
+
+        final List<String> statements = new ArrayList<>();
+        try {
+            final List<Resource> resources = filterAndSortInitSqlResources(BasicXnatResourceLocator.getResources(INIT_SQL_PATTERN), filter, comparator);
+            log.debug("Found {} resources that match the pattern {}", resources.size(), INIT_SQL_PATTERN);
+            for (final Resource resource : resources) {
+                log.debug("Now processing the resource {}", resource.getFilename());
+                try (final Stream<String> stream = Files.lines(resource.getFile().toPath());
+                     final StringWriter stringWriter = new StringWriter();
+                     final PrintWriter writer = new PrintWriter(stringWriter)) {
+                    stream.map(substitutor::replace).forEach(writer::println);
+                    statements.add(stringWriter.toString());
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("An error occurred trying to locate XNAT module definitions.");
+        }
+        return statements;
+    }
+
     /**
      * Tests each resource to see if the name matches the pattern for SQL initialization resources, init_XXX_NNN.sql,
      * where XXX is some string to indicate the purpose of the initialization and NNN is a three-digit ordinal value
@@ -420,23 +462,27 @@ public class XDATServlet extends HttpServlet {
      * Once the resources have been filtered and any non-compliant resources have been removed and logged, the list is
      * sorted based on the resources' ordinal values.
      *
-     * @param resources The array of resources to be sorted and filtered.
+     * @param resources  The array of resources to be sorted and filtered.
+     * @param filter     A regex pattern to further refine the resources.
+     * @param comparator The comparator to use when sorting the resources (or <b>null</b> if sorting isn't required)
      *
      * @return The list of resources after sorting and filtering.
      */
-    private List<Resource> filterAndSortInitSqlResources(final List<Resource> resources) {
+    private List<Resource> filterAndSortInitSqlResources(final List<Resource> resources, final Pattern filter, final Comparator<Resource> comparator) {
         final List<Resource> filtered = new ArrayList<>();
         for (final Resource resource : resources) {
-            final Matcher matcher = SQL_PATTERN.matcher(resource.getFilename());
-            if (matcher.find()) {
-                filtered.add(resource);
+            try {
+                final Matcher matcher = filter.matcher(resource.getURI().toString());
+                if (matcher.find()) {
+                    filtered.add(resource);
+                }
+            } catch (IOException e) {
+                log.error("An error occurred trying to get the URI for the resource {}", resource, e);
             }
         }
-        filtered.sort((resource1, resource2) -> {
-            final String ordered1 = SQL_PATTERN.matcher(resource1.getFilename()).group(1);
-            final String ordered2 = SQL_PATTERN.matcher(resource2.getFilename()).group(1);
-            return ordered1.compareTo(ordered2);
-        });
+        if (comparator != null) {
+            filtered.sort(comparator);
+        }
         return filtered;
     }
 
@@ -459,7 +505,7 @@ public class XDATServlet extends HttpServlet {
                 try (final BufferedReader reader = new BufferedReader(new FileReader(file))) {
                     properties.load(reader);
                 } catch (IOException e) {
-                    logger.error("An error occurred trying to read the properties file {}", file.toURI(), e);
+                    log.error("An error occurred trying to read the properties file {}", file.toURI(), e);
                 }
             }
         }
@@ -469,11 +515,11 @@ public class XDATServlet extends HttpServlet {
         final String  sqlLogFolder = properties.getProperty("xnat.database.sql.log.folder");
 
         if (BooleanUtils.isFalse(shouldLogSql) || shouldLogSql == null && StringUtils.isAllBlank(sqlLogFile, sqlLogFolder)) {
-            logger.debug("Either xnat.database.sql.log is set to false or xnat.database.sql.log isn't set at all and no value is set for xnat.database.sql.log.file or xnat.database.sql.log.folder, so no generated SQL log path considered.");
+            log.debug("Either xnat.database.sql.log is set to false or xnat.database.sql.log isn't set at all and no value is set for xnat.database.sql.log.file or xnat.database.sql.log.folder, so no generated SQL log path considered.");
             return null;
         }
         if (StringUtils.isNoneBlank(sqlLogFile, sqlLogFolder)) {
-            logger.warn("Found values for both \"xnat.database.sql.log.file\" and \"xnat.database.sql.log.folder\". You should only specify one of these properties. Using the value for \"xnat.database.sql.log.file\": {}", sqlLogFile);
+            log.warn("Found values for both \"xnat.database.sql.log.file\" and \"xnat.database.sql.log.folder\". You should only specify one of these properties. Using the value for \"xnat.database.sql.log.file\": {}", sqlLogFile);
         }
 
         final Path sqlLogFilePath;
@@ -488,7 +534,7 @@ public class XDATServlet extends HttpServlet {
             sqlLogFilePath = getSqlLogFolder(sqlLogFolder).resolve(getGeneratedSqlLogFilename());
         }
 
-        logger.info("Found path specified for generated SQL log path: {}", sqlLogFilePath);
+        log.info("Found path specified for generated SQL log path: {}", sqlLogFilePath);
         return sqlLogFilePath;
     }
 
@@ -522,38 +568,67 @@ public class XDATServlet extends HttpServlet {
         return Arrays.asList(QUERY_FIND_USER_VIEWS, QUERY_DROP_USER_VIEWS, String.format(QUERY_EXEC_DROP_USER_VIEWS, user));
     }
 
-    private static final String QUERY_FIND_USER_VIEWS      = "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
-                                                             "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
-                                                             "BEGIN " +
-                                                             "RETURN QUERY " +
-                                                             "SELECT " +
-                                                             "n.nspname AS table_schema, " +
-                                                             "c.relname AS view_name " +
-                                                             "FROM pg_catalog.pg_class c " +
-                                                             "LEFT JOIN pg_catalog.pg_namespace n " +
-                                                             "ON (n.oid = c.relnamespace) " +
-                                                             "WHERE c.relkind = 'v' " +
-                                                             "AND c.relowner = (SELECT usesysid " +
-                                                             "FROM pg_catalog.pg_user " +
-                                                             "WHERE usename = $1); " +
-                                                             "END$$ LANGUAGE plpgsql;";
-    private static final String QUERY_DROP_USER_VIEWS      = "CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
-                                                             "RETURNS INTEGER AS $$ " +
-                                                             "DECLARE " +
-                                                             "r RECORD; " +
-                                                             "s TEXT; " +
-                                                             "c INTEGER := 0; " +
-                                                             "BEGIN " +
-                                                             "RAISE NOTICE 'Dropping views for user %', $1; " +
-                                                             "FOR r IN " +
-                                                             "SELECT * FROM find_user_views($1) " +
-                                                             "LOOP " +
-                                                             "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
-                                                             "EXECUTE s; " +
-                                                             "c := c + 1; " +
-                                                             "RAISE NOTICE 's = % ', S; " +
-                                                             "END LOOP; " +
-                                                             "RETURN c; " +
-                                                             "END$$ LANGUAGE plpgsql;";
-    private static final String QUERY_EXEC_DROP_USER_VIEWS = "SELECT drop_user_views('%s');";
+    private static final String  QUERY_FIND_OID_FUNCTIONS   = "SELECT count(*) FROM information_schema.routines WHERE routine_name LIKE 'update_ls_%' AND routine_definition LIKE '%SELECT oid FROM xs_item_cache%'";
+    private static final String  QUERY_DROP_OID_FUNCTIONS   = "WITH " +
+                                                              "    fns_and_params AS ( " +
+                                                              "        SELECT " +
+                                                              "            r.routine_name, " +
+                                                              "            p.ordinal_position, " +
+                                                              "            p.parameter_name, " +
+                                                              "            p.data_type " +
+                                                              "        FROM " +
+                                                              "            information_schema.parameters p " +
+                                                              "                LEFT JOIN information_schema.routines r ON p.specific_name = r.specific_name " +
+                                                              "        WHERE " +
+                                                              "            p.parameter_mode = 'IN' AND " +
+                                                              "            r.routine_catalog = 'xnat' AND " +
+                                                              "            r.routine_schema = 'public' AND " +
+                                                              "            r.routine_name LIKE 'update_ls_%' " +
+                                                              "        ORDER BY " +
+                                                              "            r.routine_name, " +
+                                                              "            p.ordinal_position) " +
+                                                              "SELECT " +
+                                                              "    'DROP FUNCTION IF EXISTS ' || routine_name || '(' || array_to_string(array_agg(data_type), ', ') || ');' " +
+                                                              "FROM " +
+                                                              "    fns_and_params " +
+                                                              "GROUP BY " +
+                                                              "    routine_name";
+    private static final String  QUERY_FIND_USER_VIEWS      = "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
+                                                              "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
+                                                              "BEGIN " +
+                                                              "RETURN QUERY " +
+                                                              "SELECT " +
+                                                              "n.nspname AS table_schema, " +
+                                                              "c.relname AS view_name " +
+                                                              "FROM pg_catalog.pg_class c " +
+                                                              "LEFT JOIN pg_catalog.pg_namespace n " +
+                                                              "ON (n.oid = c.relnamespace) " +
+                                                              "WHERE c.relkind = 'v' " +
+                                                              "AND c.relowner = (SELECT usesysid " +
+                                                              "FROM pg_catalog.pg_user " +
+                                                              "WHERE usename = $1); " +
+                                                              "END$$ LANGUAGE plpgsql;";
+    private static final String  QUERY_DROP_USER_VIEWS      = "CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
+                                                              "RETURNS INTEGER AS $$ " +
+                                                              "DECLARE " +
+                                                              "r RECORD; " +
+                                                              "s TEXT; " +
+                                                              "c INTEGER := 0; " +
+                                                              "BEGIN " +
+                                                              "RAISE NOTICE 'Dropping views for user %', $1; " +
+                                                              "FOR r IN " +
+                                                              "SELECT * FROM find_user_views($1) " +
+                                                              "LOOP " +
+                                                              "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
+                                                              "EXECUTE s; " +
+                                                              "c := c + 1; " +
+                                                              "RAISE NOTICE 's = % ', S; " +
+                                                              "END LOOP; " +
+                                                              "RETURN c; " +
+                                                              "END$$ LANGUAGE plpgsql;";
+    private static final String  QUERY_EXEC_DROP_USER_VIEWS = "SELECT drop_user_views('%s');";
+    private static final Pattern CANNOT_DROP_MESSAGE        = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
+
+    private static Boolean _shouldUpdateViews;
+    private static Boolean _isDatabasePopulateOrUpdateCompleted = false;
 }

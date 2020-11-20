@@ -1,7 +1,16 @@
-DROP FUNCTION IF EXISTS get_experiment_list(username VARCHAR(255), limitResults BOOLEAN, numDays INTEGER);
-DROP FUNCTION IF EXISTS get_accessible_image_sessions(username VARCHAR(255));
-DROP FUNCTION IF EXISTS has_all_data_admin(username VARCHAR(255));
-DROP FUNCTION IF EXISTS has_all_data_access(username VARCHAR(255));
+--
+-- web: src/main/resources/META-INF/xnat/scripts/init_experiment_lists.sql
+-- XNAT http://www.xnat.org
+-- Copyright (c) 2020, Washington University School of Medicine and Howard Hughes Medical Institute
+-- All Rights Reserved
+--  
+-- Released under the Simplified BSD.
+--
+
+DROP FUNCTION IF EXISTS public.get_experiment_list(username VARCHAR(255), limitResults BOOLEAN, numDays INTEGER);
+DROP FUNCTION IF EXISTS public.get_accessible_image_sessions(username VARCHAR(255));
+DROP FUNCTION IF EXISTS public.has_all_data_admin(username VARCHAR(255));
+DROP FUNCTION IF EXISTS public.has_all_data_access(username VARCHAR(255));
 DROP FUNCTION IF EXISTS public.get_open_workflows(numDays INTEGER);
 DROP VIEW IF EXISTS public.get_all_image_sessions;
 
@@ -66,7 +75,7 @@ END
 $$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION has_all_data_access(username VARCHAR(255))
+CREATE OR REPLACE FUNCTION public.has_all_data_access(username VARCHAR(255))
     RETURNS BOOLEAN AS
 $$
 DECLARE
@@ -88,7 +97,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION has_all_data_admin(username VARCHAR(255))
+CREATE OR REPLACE FUNCTION public.has_all_data_admin(username VARCHAR(255))
     RETURNS BOOLEAN AS
 $$
 DECLARE
@@ -110,7 +119,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_accessible_image_sessions(username VARCHAR(255))
+CREATE OR REPLACE FUNCTION public.get_accessible_image_sessions(username VARCHAR(255))
     RETURNS TABLE
             (
                 id      VARCHAR(255),
@@ -172,7 +181,7 @@ $$
 --  - Specifying no value uses the default limit of 60 rows
 --  - Any number greater than 0 is used as the limit, so specifying 30 would return 30 rows (if available)
 --  - Specifying NULL indicates no limit
-CREATE OR REPLACE FUNCTION get_experiment_list(username VARCHAR(255), numResults INTEGER DEFAULT 60, numDays INTEGER DEFAULT 60)
+CREATE OR REPLACE FUNCTION public.get_experiment_list(username VARCHAR(255), numResults INTEGER DEFAULT 60, numDays INTEGER DEFAULT 60)
     RETURNS TABLE
             (
                 id              VARCHAR(255),

@@ -9,9 +9,6 @@
 
 package org.nrg.xnat.initialization;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Properties;
-import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import net.ttddyy.dsproxy.listener.logging.DefaultQueryLogEntryCreator;
 import net.ttddyy.dsproxy.listener.logging.SLF4JQueryLoggingListener;
@@ -32,6 +29,10 @@ import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import javax.sql.DataSource;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Properties;
+
 /**
  * Sets up the database configuration for XNAT.
  */
@@ -42,10 +43,7 @@ public class DatabaseConfig {
     public DataSource dataSource(final Environment environment) throws NrgServiceException {
         final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
         final DataSource dataSource = getConfiguredDataSource(properties);
-        if (!BooleanUtils.toBoolean(properties.getProperty("useLoggingProxy", "false"))) {
-            return dataSource;
-        }
-        return getProxiedDataSource(dataSource, properties);
+        return BooleanUtils.toBoolean(properties.getProperty("useLoggingProxy", "false")) ? getProxiedDataSource(dataSource, properties) : dataSource;
     }
 
     @Bean
@@ -73,10 +71,10 @@ public class DatabaseConfig {
         listener.setLogger(LoggerFactory.getLogger("JdbcLogger"));
 
         final ProxyDataSourceBuilder builder = ProxyDataSourceBuilder
-            .create(dataSource)
-            .name("dataSource")
-            .listener(listener)
-            .proxyResultSet();
+                .create(dataSource)
+                .name("dataSource")
+                .listener(listener)
+                .proxyResultSet();
         if (BooleanUtils.toBoolean(properties.getProperty("logAsJson", "false"))) {
             builder.asJson();
         }

@@ -1,5 +1,23 @@
+--
+-- web: src/main/resources/META-INF/xnat/scripts/init_sequence_adjustment_functions.sql
+-- XNAT http://www.xnat.org
+-- Copyright (c) 2020, Washington University School of Medicine and Howard Hughes Medical Institute
+-- All Rights Reserved
+--  
+-- Released under the Simplified BSD.
+--
+
+DROP FUNCTION IF EXISTS public.adjust_sequences();
+DROP FUNCTION IF EXISTS public.get_maladjusted_sequences();
+DROP FUNCTION IF EXISTS public.get_table_pk_max_and_next_value();
+DROP FUNCTION IF EXISTS public.get_table_max_pk_value(table_name TEXT, primary_key TEXT);
+DROP VIEW IF EXISTS public.table_primary_keys_and_sequences;;
+DROP FUNCTION IF EXISTS public.get_sequences_and_last_values();
+DROP FUNCTION IF EXISTS public.get_sequence_last_value(sequence_name TEXT, schema_name TEXT);
+DROP FUNCTION IF EXISTS public.get_server_version();
+
 -- Gets the server version as a simple float: 9.6, 10.7, etc.
-CREATE OR REPLACE FUNCTION get_server_version()
+CREATE OR REPLACE FUNCTION public.get_server_version()
   RETURNS FLOAT AS
 $$
 DECLARE
@@ -12,7 +30,7 @@ END
 $$
   LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_sequence_last_value(sequence_name TEXT, schema_name TEXT DEFAULT 'public')
+CREATE OR REPLACE FUNCTION public.get_sequence_last_value(sequence_name TEXT, schema_name TEXT DEFAULT 'public')
   RETURNS BIGINT AS
 $$
 DECLARE
@@ -29,7 +47,7 @@ END
 $$
   LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_sequences_and_last_values()
+CREATE OR REPLACE FUNCTION public.get_sequences_and_last_values()
   RETURNS TABLE (
                   sequence_name  TEXT,
                   next_seq_value BIGINT
@@ -50,7 +68,7 @@ END
 $$
   LANGUAGE plpgsql;
 
-CREATE OR REPLACE VIEW table_primary_keys_and_sequences AS
+CREATE OR REPLACE VIEW public.table_primary_keys_and_sequences AS
   WITH
     tables_and_key_columns AS (
       SELECT DISTINCT
@@ -117,7 +135,7 @@ CREATE OR REPLACE VIEW table_primary_keys_and_sequences AS
       key_count = 1 AND
     sequence_name IS NOT NULL;
 
-CREATE OR REPLACE FUNCTION get_table_max_pk_value(table_name TEXT, primary_key TEXT)
+CREATE OR REPLACE FUNCTION public.get_table_max_pk_value(table_name TEXT, primary_key TEXT)
   RETURNS BIGINT AS
 $$
 DECLARE
@@ -129,7 +147,7 @@ END
 $$
   LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_table_pk_max_and_next_value()
+CREATE OR REPLACE FUNCTION public.get_table_pk_max_and_next_value()
   RETURNS TABLE (
                   table_name     TEXT,
                   column_name    TEXT,
@@ -162,7 +180,7 @@ END
 $$
   LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_maladjusted_sequences()
+CREATE OR REPLACE FUNCTION public.get_maladjusted_sequences()
   RETURNS TABLE (
                   table_name     TEXT,
                   column_name    TEXT,
@@ -188,7 +206,7 @@ END
 $$
   LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION adjust_sequences()
+CREATE OR REPLACE FUNCTION public.adjust_sequences()
   RETURNS INTEGER AS
 $$
 DECLARE

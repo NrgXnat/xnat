@@ -58,7 +58,7 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
 
             try {
                 if (_helper.tableExists("xs_item_cache") && StringUtils.isBlank(_helper.columnExists("xs_item_cache", "id"))) {
-                    _helper.getJdbcTemplate().update("ALTER TABLE xs_item_cache ADD COLUMN id BIGSERIAL PRIMARY KEY");
+                    _helper.getJdbcTemplate().update(PoolDBUtils.QUERY_ITEM_CACHE_ADD_ID);
                 }
             } catch (SQLException e) {
                 throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database to check for the table and column 'xs_item_cache.id'.", e);
@@ -69,8 +69,7 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
                 return;
             }
 
-            final PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction();
-            try {
+            try(final PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction()) {
                 try {
                     transaction.start();
                 } catch (SQLException | DBPoolException e) {
@@ -98,8 +97,6 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
                 }
             } catch (SQLException e) {
                 throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to roll back the transaction.", e);
-            } finally {
-                transaction.close();
             }
         }
     }

@@ -1,3 +1,12 @@
+--
+-- web: src/main/resources/META-INF/xnat/scripts/init_data_type_access_functions.sql
+-- XNAT http://www.xnat.org
+-- Copyright (c) 2020, Washington University School of Medicine and Howard Hughes Medical Institute
+-- All Rights Reserved
+--  
+-- Released under the Simplified BSD.
+--
+
 DROP FUNCTION IF EXISTS public.create_public_element_access_for_data_type(elementName VARCHAR(255));
 DROP FUNCTION IF EXISTS public.create_new_data_type_security(elementName VARCHAR(255), singularDesc VARCHAR(255), pluralDesc VARCHAR(255), codeDesc VARCHAR(255));
 DROP FUNCTION IF EXISTS public.create_new_data_type_permissions(elementName VARCHAR(255));

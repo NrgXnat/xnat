@@ -82,7 +82,7 @@ public abstract class AbstractXnatTask extends AbstractXnatRunnable implements X
         log.debug("Checking whether task {} should run on this node, starting with wait for initialization check", getClass().getName());
         if (_waitForInitialization) {
             try {
-                if (!_appInfo.isInitialized() || !_helper.tableExists("xdat_search", "prearchive") || !XFTManager.isInitialized()) {
+                if (!_appInfo.isInitialized() || !(_helper != null && _helper.tableExists("xdat_search", "prearchive")) || !XFTManager.isInitialized()) {
                     if (!_markedUninitialized) {
                         log.info("XNAT is not yet initialized, {} task delayed until initialization completed.", getClass().getName());
                         _markedUninitialized = true;

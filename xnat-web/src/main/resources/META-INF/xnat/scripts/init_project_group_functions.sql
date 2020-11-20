@@ -1,3 +1,12 @@
+--
+-- web: src/main/resources/META-INF/xnat/scripts/init_project_group_functions.sql
+-- XNAT http://www.xnat.org
+-- Copyright (c) 2020, Washington University School of Medicine and Howard Hughes Medical Institute
+-- All Rights Reserved
+--  
+-- Released under the Simplified BSD.
+--
+
 DROP FUNCTION IF EXISTS public.project_groups_get_groups(projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.project_groups_create_groups(projectId VARCHAR(255));
 DROP FUNCTION IF EXISTS public.project_groups_get_element_accesses(projectId VARCHAR(255));

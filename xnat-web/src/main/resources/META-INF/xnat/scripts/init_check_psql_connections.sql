@@ -1,3 +1,12 @@
+--
+-- web: src/main/resources/META-INF/xnat/scripts/init_check_psql_connections.sql
+-- XNAT http://www.xnat.org
+-- Copyright (c) 2020, Washington University School of Medicine and Howard Hughes Medical Institute
+-- All Rights Reserved
+--  
+-- Released under the Simplified BSD.
+--
+
 DROP FUNCTION IF EXISTS public.activity_summary(dbName VARCHAR);
 DROP FUNCTION IF EXISTS public.activity_entries(dbName VARCHAR);
 DROP FUNCTION IF EXISTS public.terminate_connection(pid INTEGER);

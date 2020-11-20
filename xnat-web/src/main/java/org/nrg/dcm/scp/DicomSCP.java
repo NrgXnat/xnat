@@ -1,8 +1,9 @@
 package org.nrg.dcm.scp;
 
-import com.google.common.base.Function;
+import static lombok.AccessLevel.PROTECTED;
+import static org.dcm4che2.data.UID.*;
+
 import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import lombok.Getter;
@@ -27,9 +28,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static lombok.AccessLevel.PROTECTED;
-import static org.dcm4che2.data.UID.*;
+import java.util.stream.Collectors;
 
 @Getter(PROTECTED)
 @Accessors(prefix = "_")
@@ -133,7 +132,7 @@ public class DicomSCP {
             log.trace("Setting up AE {}", applicationEntity.getAETitle());
             applicationEntity.register(cEcho);
 
-            final List<TransferCapability> transferCapabilities = Lists.newArrayList();
+            final List<TransferCapability> transferCapabilities = new ArrayList<>();
             transferCapabilities.add(new TransferCapability(VerificationSOPClass, VERIFICATION_SOP_TS, TransferCapability.SCP));
 
             for (final DicomService service : getDicomServicesByApplicationEntity().get(applicationEntity)) {
@@ -208,7 +207,7 @@ public class DicomSCP {
     }
 
     private List<String> extractAeTitles() {
-        return Lists.transform(getManager().getEnabledDicomSCPInstancesByPort(getPort()), DICOM_SCP_INSTANCE_TO_STRING);
+        return getManager().getEnabledDicomSCPInstancesByPort(getPort()).stream().map(DicomSCPInstance::getAeTitle).collect(Collectors.toList());
     }
 
     private void setStarted(final boolean started) {
@@ -270,19 +269,12 @@ public class DicomSCP {
     private static final String[] VERIFICATION_SOP_TS = {ImplicitVRLittleEndian, ExplicitVRLittleEndian}; // Verification service can only use LE encoding
     private static final String   DEVICE_NAME         = "XNAT_DICOM";
 
-    private static final Function<DicomSCPInstance, String> DICOM_SCP_INSTANCE_TO_STRING = new Function<DicomSCPInstance, String>() {
-        @Override
-        public String apply(final DicomSCPInstance instance) {
-            return instance.getAeTitle();
-        }
-    };
-
     private final Executor        _executor;
     private final Device          _device;
     private final int             _port;
     private final DicomSCPManager _manager;
 
     private final Map<String, NetworkApplicationEntity>            _applicationEntities              = new HashMap<>();
-    private final Multimap<NetworkApplicationEntity, DicomService> _dicomServicesByApplicationEntity = Multimaps.synchronizedSetMultimap(LinkedHashMultimap.<NetworkApplicationEntity, DicomService>create());
+    private final Multimap<NetworkApplicationEntity, DicomService> _dicomServicesByApplicationEntity = Multimaps.synchronizedSetMultimap(LinkedHashMultimap.create());
     private final AtomicBoolean                                    _started                          = new AtomicBoolean();
 }

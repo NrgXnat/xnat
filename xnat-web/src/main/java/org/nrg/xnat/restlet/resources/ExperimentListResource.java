@@ -9,16 +9,8 @@
 
 package org.nrg.xnat.restlet.resources;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
@@ -41,16 +33,17 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.List;
+
 public class ExperimentListResource  extends QueryOrganizerResource {
-    public ExperimentListResource(final Context context, final Request request, final Response response) throws IOException, SQLException {
+    public ExperimentListResource(final Context context, final Request request, final Response response) {
         super(context, request, response);
         getVariants().addAll(Arrays.asList(new Variant(MediaType.APPLICATION_JSON), new Variant(MediaType.TEXT_HTML), new Variant(MediaType.TEXT_XML)));
         fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.EXPERIMENT_DATA,true));
-        if (!LIST_FNS_LOADED.get()) {
-            final DatabaseHelper helper = XDAT.getContextService().getBean(DatabaseHelper.class);
-            helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/experiment-lists.sql", EXPERIMENT_LIST_FUNCTIONS);
-            LIST_FNS_LOADED.set(true);
-        }
     }
 
     @Override
@@ -281,7 +274,4 @@ public class ExperimentListResource  extends QueryOrganizerResource {
         	return table;
         }
     }
-
-    private static final AtomicBoolean LIST_FNS_LOADED           = new AtomicBoolean();
-    private static final String[]      EXPERIMENT_LIST_FUNCTIONS = new String[]{"get_accessible_image_sessions", "get_all_image_sessions", "get_experiment_list", "get_open_workflows", "has_all_data_access", "has_all_data_admin"};
 }

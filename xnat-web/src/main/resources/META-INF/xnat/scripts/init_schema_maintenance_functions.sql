@@ -1,5 +1,5 @@
 --
--- web: src/main/resources/META-INF/xnat/schema-maintenance-functions.sql
+-- web: src/main/resources/META-INF/xnat/scripts/init_schema_maintenance_functions.sql
 -- XNAT http://www.xnat.org
 -- Copyright (c) 2020, Washington University School of Medicine and Howard Hughes Medical Institute
 -- All Rights Reserved
@@ -30,9 +30,9 @@
 --   (1 row)
 --   
 
-DROP FUNCTION IF EXISTS xdat_search.dependencies_restore(pViewSchema NAME, pViewName NAME);
-DROP FUNCTION IF EXISTS xdat_search.dependencies_save_and_drop(pViewSchema NAME, pViewName NAME);
-DROP FUNCTION IF EXISTS xdat_search.dependencies_identify(pViewSchema NAME, pViewName NAME);
+DROP FUNCTION IF EXISTS public.dependencies_restore(NAME, NAME);
+DROP FUNCTION IF EXISTS public.dependencies_save_and_drop(NAME, NAME);
+DROP FUNCTION IF EXISTS public.dependencies_identify(NAME, NAME);
 DROP TABLE IF EXISTS xdat_search.dependencies_saved_ddl;
 
 CREATE TABLE xdat_search.dependencies_saved_ddl (
@@ -42,7 +42,7 @@ CREATE TABLE xdat_search.dependencies_saved_ddl (
     ddl_to_run  TEXT
 );
 
-CREATE OR REPLACE FUNCTION xdat_search.dependencies_identify(pViewSchema NAME, pViewName NAME)
+CREATE OR REPLACE FUNCTION public.dependencies_identify(pViewName NAME, pViewSchema NAME DEFAULT 'public')
     RETURNS TABLE (
         view_schema CHARACTER VARYING(255),
         view_name   CHARACTER VARYING(255),
@@ -112,18 +112,20 @@ BEGIN
 END;
 $_$;
 
-CREATE OR REPLACE FUNCTION xdat_search.dependencies_save_and_drop(pViewSchema NAME, pViewName NAME)
-    RETURNS VOID
+CREATE OR REPLACE FUNCTION public.dependencies_save_and_drop(pViewName NAME, pViewSchema NAME DEFAULT 'public')
+    RETURNS INTEGER
     LANGUAGE plpgsql
     COST 100
 AS
 $_$
 DECLARE
     current_record RECORD;
+    total_records  INTEGER := 0;
 BEGIN
     FOR current_record IN
-        SELECT view_schema, view_name, view_type FROM xdat_search.dependencies_identify(pViewSchema, pViewName)
+        SELECT view_schema, view_name, view_type FROM dependencies_identify(pViewName, pViewSchema)
         LOOP
+            total_records := total_records + 1;
             INSERT INTO xdat_search.dependencies_saved_ddl(view_schema, view_name, ddl_to_run)
             SELECT
                 pViewSchema,
@@ -204,15 +206,17 @@ BEGIN
                         || ' ' || current_record.view_schema || '.' || current_record.view_name;
 
         END LOOP;
+    RETURN total_records;
 END;
 $_$;
 
-CREATE OR REPLACE FUNCTION xdat_search.dependencies_restore(pViewSchema NAME, pViewName NAME)
-    RETURNS VOID
+CREATE OR REPLACE FUNCTION public.dependencies_restore(pViewName NAME, pViewSchema NAME DEFAULT 'public')
+    RETURNS INTEGER
 AS
 $_$
 DECLARE
     current_record RECORD;
+    total_records  INTEGER := 0;
 BEGIN
     FOR current_record IN
         (SELECT
@@ -225,6 +229,10 @@ BEGIN
          ORDER BY
              id DESC)
         LOOP
+            IF current_record.ddl_to_run LIKE 'CREATE %'
+            THEN
+                total_records := total_records + 1;
+            END IF;
             EXECUTE current_record.ddl_to_run;
         END LOOP;
     DELETE
@@ -233,6 +241,7 @@ BEGIN
     WHERE
         view_schema = pViewSchema AND
         view_name = pViewName;
+    RETURN total_records;
 END;
 $_$
     LANGUAGE plpgsql

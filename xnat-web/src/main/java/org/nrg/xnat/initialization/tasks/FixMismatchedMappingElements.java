@@ -51,6 +51,10 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
                 if (!_helper.tablesExist("xdat_field_mapping", "xdat_field_mapping_set", "xdat_element_access", "xdat_element_security", "xdat_user", "xdat_usergroup", "xdat_primary_security_field")) {
                     throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The tables \"xdat_field_mapping\", \"xdat_field_mapping_set\", \"xdat_element_access\", \"xdat_element_security\", \"xdat_user\", \"xdat_usergroup\", or \"xdat_primary_security_field\" do not yet exist. Deferring execution.");
                 }
+                if (!_helper.functionsExist("data_type_fns_correct_group_permissions", "data_type_fns_fix_mismatched_permissions", "data_type_fns_fix_missing_public_element_access_mappings")) {
+                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The functions \"data_type_fns_correct_group_permissions\", \"data_type_fns_fix_mismatched_permissions\", and/or \"data_type_fns_fix_missing_public_element_access_mappings\" do not yet exist. Deferring execution.");
+                }
+
                 Users.getGuest();
 
                 log.info("Preparing to check for and fix any mismatched data-type permissions.");

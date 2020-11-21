@@ -10,20 +10,19 @@
 package org.nrg.framework.orm.hibernate;
 
 import com.google.common.collect.ImmutableMap;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
 import org.hibernate.*;
-import org.hibernate.criterion.Criterion;
-import org.hibernate.criterion.Example;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.*;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.metadata.ClassMetadata;
+import org.nrg.framework.ajax.PaginatedRequest;
 import org.nrg.framework.ajax.hibernate.HibernatePaginatedRequest;
 import org.nrg.framework.generics.AbstractParameterizedWorker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.nrg.framework.generics.GenericUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.Serializable;
@@ -32,9 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings({"unchecked", "WeakerAccess"})
-abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extends AbstractParameterizedWorker<E> implements BaseHibernateDAO<E> {
-
+@Slf4j
+public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extends AbstractParameterizedWorker<E> implements BaseHibernateDAO<E> {
     public static final String DEFAULT_CACHE_REGION = "nrg";
 
     protected AbstractHibernateDAO() {
@@ -53,7 +51,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         super(clazz);
 
         if (factory != null) {
-            _log.debug("Adding session factory in constructor: {}", factory.hashCode());
+            log.debug("Adding session factory in constructor: {}", factory.hashCode());
             _factory = factory;
         }
 
@@ -64,13 +62,17 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         _hqlExistsBody = getHqlExistsComponent(HQL_EXISTS_BODY, "type", parameterizedType.getName());
     }
 
+    public static Order getOrder(final String sortColumn, final PaginatedRequest.SortDir sortDir) {
+        return sortDir == PaginatedRequest.SortDir.ASC ? Order.asc(sortColumn) : Order.desc(sortColumn);
+    }
+
     /**
      * {@inheritDoc}
      */
     @Autowired(required = false)
     @Override
     public void setSessionFactory(final SessionFactory factory) {
-        _log.debug("Setting session factory in setter: {}", factory.hashCode());
+        log.debug("Setting session factory in setter: {}", factory.hashCode());
         _factory = factory;
     }
 
@@ -90,7 +92,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         if (_isAuditable) {
             return findEnabledById(id);
         }
-        return (E) getSession().get(getParameterizedType(), id);
+        return getParameterizedType().cast(getSession().get(getParameterizedType(), id));
     }
 
     /**
@@ -150,14 +152,14 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
     public List<E> findAllEnabled() {
         final Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("enabled", true));
-        return criteria.list();
+        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
     }
 
     /**
      * @see BaseHibernateDAO#findPaginated(HibernatePaginatedRequest paginatedRequest)
      */
     @Override
-    public List<E> findPaginated(HibernatePaginatedRequest paginatedRequest) {
+    public List<E> findPaginated(final HibernatePaginatedRequest paginatedRequest) {
         final Criteria criteria = getCriteriaForType();
         if (paginatedRequest.hasFilters()) {
             ClassMetadata classMetadata = getSession().getSessionFactory().getClassMetadata(getParameterizedType());
@@ -168,10 +170,18 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         if (_isAuditable) {
             criteria.add(Restrictions.eq("enabled", true));
         }
-        criteria.addOrder(paginatedRequest.getOrder());
+
+        if (paginatedRequest.getSortBys().isEmpty()) {
+            criteria.addOrder(paginatedRequest.getOrder());
+        } else {
+            for (final Pair<String, PaginatedRequest.SortDir> sortBy : paginatedRequest.getSortBys()) {
+                criteria.addOrder(getOrder(sortBy.getKey(), sortBy.getValue()));
+            }
+        }
+
         criteria.setMaxResults(paginatedRequest.getPageSize());
         criteria.setFirstResult(paginatedRequest.getOffset());
-        return criteria.list();
+        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
     }
 
     @Override
@@ -205,7 +215,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
             }
         }
         criteria.add(example);
-        return criteria.list();
+        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
     }
 
     /**
@@ -219,7 +229,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
             example.excludeProperty(exclude);
         }
         criteria.add(example);
-        return criteria.list();
+        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
     }
 
     @Override
@@ -229,12 +239,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         if (_isAuditable) {
             criteria.add(Restrictions.eq("enabled", true));
         }
-        final List list = criteria.list();
-        if (list == null || list.size() == 0) {
-            return null;
-        } else {
-            return (List<E>) list;
-        }
+        return emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
     }
 
     @Override
@@ -247,11 +252,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         if (_isAuditable) {
             criteria.add(Restrictions.eq("enabled", true));
         }
-        final List list = criteria.list();
-        if (list == null || list.size() == 0) {
-            return null;
-        }
-        return (List<E>) list;
+        return emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
     }
 
     @Override
@@ -276,7 +277,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
      */
     @Override
     public E findById(final long id, final boolean lock) {
-        return lock ? (E) getSession().load(getParameterizedType(), id, LockOptions.UPGRADE) : (E) getSession().load(getParameterizedType(), id);
+        return lock ? getParameterizedType().cast(getSession().load(getParameterizedType(), id, LockOptions.UPGRADE)) : getParameterizedType().cast(getSession().load(getParameterizedType(), id));
     }
 
     /**
@@ -323,7 +324,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
             query.append(query.length() == 0 ? HQL_EXISTS_BODY : " and ").append(getHqlExistsComponent(HQL_EXISTS_WHERE, "property", name));
             parameters.put(name, criteria.get(name));
         }
-        _log.debug("Composed HQL query '{}' with parameters: {}", query, parameters);
+        log.debug("Composed HQL query '{}' with parameters: {}", query, parameters);
         return getSession().createQuery(query.toString()).setProperties(parameters).uniqueResult() != null;
     }
 
@@ -392,11 +393,11 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
             return null;
         }
         if (getParameterizedType().isAssignableFrom(result.getClass())) {
-            return (E) result;
+            return getParameterizedType().cast(result);
         } else if (result instanceof Object[]) {
             for (final Object object : (Object[]) result) {
                 if (getParameterizedType().isAssignableFrom(object.getClass())) {
-                    return (E) object;
+                    return getParameterizedType().cast(object);
                 }
             }
         }
@@ -412,7 +413,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         try {
             return _factory.getCurrentSession();
         } catch (HibernateException exception) {
-            _log.error("Trying to get session for parameterized type: {}", getParameterizedType(), exception);
+            log.error("Trying to get session for parameterized type: {}", getParameterizedType(), exception);
             throw exception;
         }
     }
@@ -429,7 +430,7 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         for (final Criterion c : criterion) {
             criteria.add(c);
         }
-        return criteria.list();
+        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
     }
 
     /**
@@ -472,8 +473,11 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
      * @param list The list to be converted to a checked parameterized list.
      *
      * @return The parameterized list.
+     *
+     * @deprecated Use {@link GenericUtils#convertToTypedList(Iterable, Class)} instead.
      */
     @SuppressWarnings({"unchecked", "rawtypes", "unused"})
+    @Deprecated
     protected List<E> checked(final List list) {
         return (List<E>) list;
     }
@@ -535,8 +539,6 @@ abstract public class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
     private static String getHqlExistsComponent(final String hqlExistsBody, final String type, final String name) {
         return StringSubstitutor.replace(hqlExistsBody, parameters(type, name));
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(AbstractHibernateDAO.class);
 
     private static final String HQL_EXISTS_BODY  = "select 1 from ${type} where ";
     private static final String HQL_EXISTS_WHERE = "${property} = :${property}";

@@ -2,6 +2,8 @@
 
 package org.nrg.framework.ajax.sql;
 
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.ajax.Filter;
 import org.nrg.framework.ajax.PaginatedRequest;
@@ -10,6 +12,8 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import java.util.Map;
 import java.util.Set;
 
+@NoArgsConstructor
+@SuperBuilder(toBuilder = true)
 @Slf4j
 public abstract class SqlPaginatedRequest extends PaginatedRequest {
     /**
@@ -28,9 +32,7 @@ public abstract class SqlPaginatedRequest extends PaginatedRequest {
         StringBuilder suffix = new StringBuilder();
 
         //add filter
-        if (filtersMap != null) {
-            addFilterSuffix(repoMapping, allowableFilterCols, suffix, namedParams);
-        }
+        addFilterSuffix(repoMapping, allowableFilterCols, suffix, namedParams);
 
         //add sort
         String sortColumnDb = getDbColumnFromMapping(repoMapping, getSortColumn());
@@ -78,9 +80,6 @@ public abstract class SqlPaginatedRequest extends PaginatedRequest {
      * @throws SortOrFilterException if filter parameters are invalid
      */
     private void addFilterSuffix(Map<String, PageableRepository.ColumnDataType> repoMapping, Set<String> allowableFilterCols, StringBuilder suffix, MapSqlParameterSource namedParams) throws SortOrFilterException {
-        if (filtersMap == null) {
-            return;
-        }
         boolean needsWhere = true;
         for (String key : filtersMap.keySet()) {
             // From UI to DB column name

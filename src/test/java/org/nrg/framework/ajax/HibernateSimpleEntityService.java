@@ -31,9 +31,4 @@ public class HibernateSimpleEntityService extends AbstractHibernateEntityService
         }
         return pacs.get(0);
     }
-
-    @Override
-    public List<SimpleEntity> get(final SimpleEntityPaginatedRequest request) {
-        return getDao().findPaginated(request);
-    }
 }

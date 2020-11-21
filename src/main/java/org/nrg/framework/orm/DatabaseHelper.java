@@ -10,9 +10,7 @@
 package org.nrg.framework.orm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -24,18 +22,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.postgresql.util.PGInterval;
 import org.springframework.core.io.Resource;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.jdbc.support.JdbcAccessor;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Nonnull;
@@ -47,11 +41,12 @@ import java.sql.*;
 import java.util.Date;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 @Getter
 @Accessors(prefix = "_")
 @Slf4j
-@SuppressWarnings({"WeakerAccess", "unused", "BooleanMethodIsAlwaysInverted", "UnusedReturnValue"})
+@SuppressWarnings({"WeakerAccess", "unused", "UnusedReturnValue"})
 public class DatabaseHelper {
 
     public DatabaseHelper(final DataSource dataSource) {
@@ -155,6 +150,60 @@ public class DatabaseHelper {
      */
     public boolean tablesExistInSchema(final @Nullable String schema, final @Nonnull String... tables) throws SQLException {
         return locateDatabaseSchemas(schema, tables).containsAll(Arrays.asList(tables));
+    }
+
+    /**
+     * Checks whether the indicated functions exist in the database.
+     *
+     * @param functions The functions for which to test.
+     *
+     * @return Returns true if all of the specified functions exist, false otherwise.
+     *
+     * @throws SQLException If an error occurs while accessing the database.
+     */
+    public boolean functionsExist(final String... functions) throws SQLException {
+        return functionsExistInSchema(null, functions);
+    }
+
+    /**
+     * Checks whether the indicated function exists in the database.
+     *
+     * @param function The function for which to test.
+     *
+     * @return Returns true if the function exists, false otherwise.
+     *
+     * @throws SQLException If an error occurs while accessing the database.
+     */
+    public boolean functionExists(final String function) throws SQLException {
+        return functionsExistInSchema(null, function);
+    }
+
+    /**
+     * Checks whether the indicated function exists in the specified schema.
+     *
+     * @param schema   The schema to look in.
+     * @param function The function for which to test.
+     *
+     * @return Returns true if the function exists, false otherwise.
+     *
+     * @throws SQLException If an error occurs while accessing the database.
+     */
+    public boolean functionExists(final String schema, final String function) throws SQLException {
+        return functionsExistInSchema(schema, function);
+    }
+
+    /**
+     * Checks whether the indicated function exists in the specified schema.
+     *
+     * @param schema    The schema to look in.
+     * @param functions The function for which to test.
+     *
+     * @return Returns true if all of the specified functions exist in the schema, false otherwise.
+     *
+     * @throws SQLException If an error occurs while accessing the database.
+     */
+    public boolean functionsExistInSchema(final @Nullable String schema, final @Nonnull String... functions) throws SQLException {
+        return locateDatabaseSchemas(schema, functions).containsAll(Arrays.asList(functions));
     }
 
     @Nonnull
@@ -274,14 +323,11 @@ public class DatabaseHelper {
      */
     public String executeTransaction(final Callable<String> callable, final boolean executeWithoutTransactionManager) {
         if (_transactionTemplate != null) {
-            return _transactionTemplate.execute(new TransactionCallback<String>() {
-                @Override
-                public String doInTransaction(final TransactionStatus transactionStatus) {
-                    try {
-                        return callable.call();
-                    } catch (Exception e) {
-                        return logMessage("An error occurred executing the transaction from the callable class " + callable.getClass().getName(), e);
-                    }
+            return _transactionTemplate.execute(transactionStatus -> {
+                try {
+                    return callable.call();
+                } catch (Exception e) {
+                    return logMessage("An error occurred executing the transaction from the callable class " + callable.getClass().getName(), e);
                 }
             });
         } else if (executeWithoutTransactionManager) {
@@ -306,7 +352,7 @@ public class DatabaseHelper {
      * @return A serialized list of all executed statements along with the number of database rows affected by the statement.
      */
     public String executeScript(final String script) {
-        return executeScript(script, Collections.<String, Object>emptyMap());
+        return executeScript(script, Collections.emptyMap());
     }
 
     /**
@@ -421,15 +467,8 @@ public class DatabaseHelper {
 
         @Override
         public String call() throws Exception {
-            return MAPPER.writeValueAsString(_template.execute(_script, _parameters, CALLBACK));
+            return MAPPER.writeValueAsString(_template.execute(_script, _parameters, PreparedStatement::execute));
         }
-
-        private static final PreparedStatementCallback<Boolean> CALLBACK = new PreparedStatementCallback<Boolean>() {
-            @Override
-            public Boolean doInPreparedStatement(final PreparedStatement statement) throws SQLException, DataAccessException {
-                return statement.execute();
-            }
-        };
 
         private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -446,7 +485,7 @@ public class DatabaseHelper {
         }
 
         @Override
-        public String call() throws Exception {
+        public String call() {
             // Add the new column with the suffix "_new" and a timestamp.
             final String tempColumnName = _column + "_new_" + new Date().getTime();
             _jdbcTemplate.execute("ALTER TABLE " + _table + " ADD COLUMN " + tempColumnName + " " + _dataType);
@@ -470,7 +509,7 @@ public class DatabaseHelper {
 
     @Nonnull
     private static String generateFunctionSql(final @Nonnull String function, final @Nonnull LinkedHashMap<String, Object> arguments) {
-        return "SELECT * FROM " + function + " (" + StringUtils.join(Iterables.transform(arguments.keySet(), PREFIX_COLON), ", ") + ")";
+        return "SELECT * FROM " + function + " (" + arguments.keySet().stream().map(key -> StringUtils.prependIfMissing(key, ":")).collect(Collectors.joining(", ")) + ")";
     }
 
     @Nullable
@@ -509,13 +548,6 @@ public class DatabaseHelper {
     }
 
     private static final String[]                      SEARCHABLE_TABLE_TYPES = {"TABLE", "VIEW"};
-    private static final Function<String, String>      PREFIX_COLON           = new Function<String, String>() {
-        @Override
-        public String apply(final String name) {
-            return ":" + name;
-        }
-    };
-
     private static final LinkedHashMap<String, Object> EMPTY_PARAM_SOURCE     = new LinkedHashMap<>();
 
     private final JdbcTemplate               _jdbcTemplate;

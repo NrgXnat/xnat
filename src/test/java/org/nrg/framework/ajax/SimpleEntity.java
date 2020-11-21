@@ -10,6 +10,7 @@
 package org.nrg.framework.ajax;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -21,6 +22,7 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.Date;
 
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"name"}))
@@ -28,6 +30,28 @@ import javax.validation.constraints.Size;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SimpleEntity extends AbstractHibernateEntity {
+    @Builder
+    public SimpleEntity(final Integer total, final String description, final String name, final Date disabled, final Date timestamp, final Date created, final Boolean enabled, final Long id) {
+        setName(name);
+        setDescription(description);
+        setTotal(total);
+        if (id != null) {
+            setId(id);
+        }
+        if (created != null) {
+            setCreated(created);
+        }
+        if (enabled != null) {
+            setEnabled(enabled);
+        }
+        if (timestamp != null) {
+            setTimestamp(timestamp);
+        }
+        if (disabled != null) {
+            setDisabled(disabled);
+        }
+    }
+
     @NotEmpty
     @Size(max = 100)
     public String getName() {

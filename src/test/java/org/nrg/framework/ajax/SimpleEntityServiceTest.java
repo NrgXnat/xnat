@@ -13,6 +13,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+import org.assertj.core.api.ObjectAssert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.validation.ConstraintViolationException;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -39,6 +44,47 @@ public class SimpleEntityServiceTest {
         final SimpleEntity entity = _service.newEntity();
         entity.setName(NULL_NAME);
         _service.create(entity);
+    }
+
+    @Test
+    public void testPaginatedRequestPropertiesPopulated() {
+        final SimpleEntityPaginatedRequest fromConstructor = new SimpleEntityPaginatedRequest();
+        fromConstructor.setSortColumn("description");
+        fromConstructor.setSortDir(PaginatedRequest.SortDir.ASC);
+
+        final ObjectAssert<SimpleEntityPaginatedRequest> fromConstructorAssert = assertThat(fromConstructor).hasFieldOrPropertyWithValue("sortColumn", "description").hasFieldOrPropertyWithValue("sortDir", PaginatedRequest.SortDir.ASC).hasFieldOrProperty("filtersMap").hasFieldOrProperty("sortBys");
+        fromConstructorAssert.extracting("filtersMap").isNotNull();
+        fromConstructorAssert.extracting("sortBys").isNotNull();
+        final ObjectAssert<?> fromConstructorCloneAssert = assertThat(fromConstructor.toBuilder().build()).hasFieldOrPropertyWithValue("sortColumn", "description").hasFieldOrPropertyWithValue("sortDir", PaginatedRequest.SortDir.ASC).hasFieldOrProperty("filtersMap").hasFieldOrProperty("sortBys");
+        fromConstructorCloneAssert.extracting("filtersMap").isNotNull();
+        fromConstructorCloneAssert.extracting("filtersMap").isNotNull();
+
+        final SimpleEntityPaginatedRequest fromBasicBuilder = SimpleEntityPaginatedRequest.builder().sortColumn("description").sortDir(PaginatedRequest.SortDir.ASC).build();
+
+        final ObjectAssert<SimpleEntityPaginatedRequest> fromBasicBuilderAssert = assertThat(fromBasicBuilder).hasFieldOrPropertyWithValue("sortColumn", "description").hasFieldOrPropertyWithValue("sortDir", PaginatedRequest.SortDir.ASC).hasFieldOrProperty("filtersMap").hasFieldOrProperty("sortBys");
+        fromBasicBuilderAssert.extracting("filtersMap").isNotNull();
+        fromBasicBuilderAssert.extracting("sortBys").isNotNull();
+        final ObjectAssert<?> fromBasicBuilderCloneAssert = assertThat(fromBasicBuilder.toBuilder().build()).hasFieldOrPropertyWithValue("sortColumn", "description").hasFieldOrPropertyWithValue("sortDir", PaginatedRequest.SortDir.ASC).hasFieldOrProperty("filtersMap").hasFieldOrProperty("sortBys");
+        fromBasicBuilderCloneAssert.extracting("filtersMap").isNotNull();
+        fromBasicBuilderCloneAssert.extracting("filtersMap").isNotNull();
+    }
+
+    @Test
+    public void testMultiColumnSort() {
+        Collections.shuffle(SORTABLES);
+        final List<SimpleEntity> entities = SORTABLES.stream().map(properties -> _service.create(SimpleEntity.builder().name(properties.getLeft()).description(properties.getMiddle()).total(properties.getRight()).build())).collect(Collectors.toList());
+        assertThat(entities).isNotNull().isNotEmpty().hasSize(SORTABLES.size());
+
+        final SimpleEntityPaginatedRequest request = SimpleEntityPaginatedRequest.builder().pageSize(3).sortBy(Pair.of("description", PaginatedRequest.SortDir.ASC)).sortBy(Pair.of("total", PaginatedRequest.SortDir.DESC)).build();
+
+        final List<SimpleEntity> page1 = _service.getPaginated(request);
+        request.setPageNumber(2);
+        final List<SimpleEntity> page2 = _service.getPaginated(request);
+        request.setPageNumber(3);
+        final List<SimpleEntity> page3 = _service.getPaginated(request);
+        assertThat(page1.stream().map(SimpleEntity::getName)).isNotNull().isNotEmpty().hasSize(3).containsExactly("one-3", "one-2", "one-1");
+        assertThat(page2.stream().map(SimpleEntity::getName)).isNotNull().isNotEmpty().hasSize(3).containsExactly("two-3", "two-2", "two-1");
+        assertThat(page3.stream().map(SimpleEntity::getName)).isNotNull().isNotEmpty().hasSize(3).containsExactly("three-3", "three-2", "three-1");
     }
 
     @Test
@@ -110,13 +156,13 @@ public class SimpleEntityServiceTest {
         final List<SimpleEntityPaginatedRequest> requests = json.stream().map(this::toRequest).collect(Collectors.toList());
         assertThat(requests).isNotNull().isNotEmpty().hasSize(3).containsExactlyInAnyOrder(request1, request2, request3);
 
-        final List<SimpleEntity> results1 = _service.get(request1);
+        final List<SimpleEntity> results1 = _service.getPaginated(request1);
         assertThat(results1).isNotNull().isNotEmpty().hasSize(10).containsExactlyInAnyOrderElementsOf(allEntities.subList(90, 100));
 
-        final List<SimpleEntity> results2 = _service.get(request2);
+        final List<SimpleEntity> results2 = _service.getPaginated(request2);
         assertThat(results2).isNotNull().isNotEmpty().hasSize(10).containsExactlyInAnyOrderElementsOf(evenEntities.subList(40, 50));
 
-        final List<SimpleEntity> results3 = _service.get(request3);
+        final List<SimpleEntity> results3 = _service.getPaginated(request3);
         assertThat(results3).isNotNull().isNotEmpty().hasSize(10).containsExactlyInAnyOrderElementsOf(first50Entities.subList(0, 10));
     }
 
@@ -167,6 +213,16 @@ public class SimpleEntityServiceTest {
     private static final String NULL_NAME    = "testNullSimpleEntity";
     private static final String FOO_NAME     = "FOO";
     // private static final String JSON         = "{\"1\": \"one\", \"2\": \"two\", \"3\": \"three\"}";
+
+    private static final List<Triple<String, String, Integer>> SORTABLES = Arrays.asList(Triple.of("one-1", "1", 1),
+                                                                                         Triple.of("one-2", "1", 2),
+                                                                                         Triple.of("one-3", "1", 3),
+                                                                                         Triple.of("two-1", "2", 1),
+                                                                                         Triple.of("two-2", "2", 2),
+                                                                                         Triple.of("two-3", "2", 3),
+                                                                                         Triple.of("three-1", "3", 1),
+                                                                                         Triple.of("three-2", "3", 2),
+                                                                                         Triple.of("three-3", "3", 3));
 
     @Autowired
     private SimpleEntityService _service;

@@ -2,6 +2,8 @@ package org.nrg.framework.ajax;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.nrg.framework.ajax.hibernate.HibernateFilter;
 import org.nrg.framework.ajax.sql.NumericFilter;
 import org.nrg.framework.ajax.sql.StringFilter;
@@ -26,5 +28,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
         @JsonSubTypes.Type(value = TimestampFilter.class, name = "sql_datetime"),
         @JsonSubTypes.Type(value = NumericFilter.class, name = "sql_number")
 })
+@NoArgsConstructor
+@SuperBuilder(toBuilder = true)
 public abstract class Filter {
 }

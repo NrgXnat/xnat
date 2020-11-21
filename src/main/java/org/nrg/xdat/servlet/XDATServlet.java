@@ -140,7 +140,13 @@ public class XDATServlet extends HttpServlet {
                 if (oidCount > 0 || !statements.isEmpty()) {
                     log.debug("Found {} functions that contained OID references or {} lines in SQL init scripts, preparing to execute", oidCount, statements.size());
                     try (final PoolDBUtils.Transaction transaction = PoolDBUtils.open()) {
+                        if (!statements.isEmpty()) {
+                            transaction.execute(statements);
+                        }
                         if (oidCount > 0) {
+                            if (db.tableExists("xs_item_cache") && StringUtils.isBlank(db.columnExists("xs_item_cache", "id"))) {
+                                transaction.execute(PoolDBUtils.QUERY_ITEM_CACHE_ADD_ID);
+                            }
                             final String dropOidsFunction;
                             try (final Stream<String> stream = db.getJdbcTemplate().queryForList(QUERY_DROP_OID_FUNCTIONS, String.class).stream();
                                  final StringWriter stringWriter = new StringWriter();
@@ -168,12 +174,6 @@ public class XDATServlet extends HttpServlet {
                                 }
                             });
                             transaction.execute(restoreOidsFunctions);
-                        }
-                        if (db.tableExists("xs_item_cache") && StringUtils.isBlank(db.columnExists("xs_item_cache", "id"))) {
-                            transaction.execute(PoolDBUtils.QUERY_ITEM_CACHE_ADD_ID);
-                        }
-                        if (!statements.isEmpty()) {
-                            transaction.execute(statements);
                         }
                         transaction.commit();
                     } catch (SQLException | DBPoolException e) {
@@ -581,14 +581,13 @@ public class XDATServlet extends HttpServlet {
                                                               "                LEFT JOIN information_schema.routines r ON p.specific_name = r.specific_name " +
                                                               "        WHERE " +
                                                               "            p.parameter_mode = 'IN' AND " +
-                                                              "            r.routine_catalog = 'xnat' AND " +
                                                               "            r.routine_schema = 'public' AND " +
                                                               "            r.routine_name LIKE 'update_ls_%' " +
                                                               "        ORDER BY " +
                                                               "            r.routine_name, " +
                                                               "            p.ordinal_position) " +
                                                               "SELECT " +
-                                                              "    'DROP FUNCTION IF EXISTS ' || routine_name || '(' || array_to_string(array_agg(data_type), ', ') || ');' " +
+                                                              "    'DROP FUNCTION IF EXISTS ' || routine_name || '(' || array_to_string(array_agg(data_type::TEXT), ', ') || ');' " +
                                                               "FROM " +
                                                               "    fns_and_params " +
                                                               "GROUP BY " +

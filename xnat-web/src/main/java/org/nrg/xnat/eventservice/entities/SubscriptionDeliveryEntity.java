@@ -7,18 +7,20 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.Transient;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
 @Entity
-//@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"eventUUID", "subscription"})})
 public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
 
     public SubscriptionDeliveryEntity() {}
@@ -37,6 +39,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     private Date statusTimestamp;
     private String statusMessage;
     private Boolean errorState = null;
+    private EventServicePayloadEntity payload;
     private final Integer MAX_TEXT_LENGTH = 255;
 
     public SubscriptionDeliveryEntity(SubscriptionEntity subscription, String eventType, String actionUserLogin,
@@ -125,13 +128,14 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
         this.timedEventStatuses = timedEventStatuses;
     }
 
-    public void addTimedEventStatus(TimedEventStatusEntity.Status status, Date statusTimestamp, String message, Object payload){
-        TimedEventStatusEntity timedEventStatus = new TimedEventStatusEntity(status,statusTimestamp, message, payload, this);
+    public void addTimedEventStatus(TimedEventStatusEntity.Status status, Date statusTimestamp, String message){
+        TimedEventStatusEntity timedEventStatus = new TimedEventStatusEntity(status,statusTimestamp, message, this);
         this.setStatus(status);
         this.setStatusMessage(message);
         this.setStatusTimestamp(statusTimestamp);
         this.timedEventStatuses.add(timedEventStatus);
     }
+
 
     public TimedEventStatusEntity.Status getStatus() { return status; }
 
@@ -163,4 +167,21 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     public Boolean getErrorState() { return errorState; }
 
     public void setErrorState(Boolean errorState) { this.errorState = errorState; }
+
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinTable(name = "subscription_delivery_payload",
+            joinColumns =
+                    { @JoinColumn(name = "delivery_id", referencedColumnName = "id") },
+            inverseJoinColumns =
+                    { @JoinColumn(name = "payload_id", referencedColumnName = "id")})
+    public EventServicePayloadEntity getPayload() { return payload; }
+
+    @Transient
+    public Object getPayloadObject() {
+        return payload != null ? payload.getPayload() : null;
+    }
+
+    public void setPayload(EventServicePayloadEntity payload) { this.payload = payload; }
+
 }

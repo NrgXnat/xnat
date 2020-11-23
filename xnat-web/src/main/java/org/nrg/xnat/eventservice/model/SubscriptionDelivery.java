@@ -29,7 +29,7 @@ public abstract class SubscriptionDelivery {
     @Nullable @JsonProperty("trigger") public abstract  TriggeringEvent triggeringEvent();
     @Nullable @JsonProperty("status") public abstract List<TimedEventStatus> timedEventStatuses();
     @Nullable @JsonProperty("status-message") public abstract String statusMessage();
-
+    @Nullable @JsonProperty("payload")    public abstract Object serializablePayload();
     @JsonProperty(value = "error", defaultValue = "false") public abstract Boolean errorState();
 
     
@@ -60,6 +60,27 @@ public abstract class SubscriptionDelivery {
                 .build();
     }
 
+    public static SubscriptionDelivery create(Long id, SimpleEvent event, String eventType ,Subscription subscription,
+                                              String actionUser, String projectId, String actionInputs,
+                                              TriggeringEvent triggeringEvent, List<TimedEventStatus> timedEventStatuses,
+                                              String statusMessage, Date timestamp, Boolean errorState, Object serializablePayload) {
+        return builder()
+                .id(id)
+                .event(event)
+                .eventType(eventType)
+                .subscription(subscription)
+                .actionUser(actionUser)
+                .projectId(projectId)
+                .actionInputs(actionInputs)
+                .triggeringEvent(triggeringEvent)
+                .timedEventStatuses(timedEventStatuses)
+                .statusMessage(statusMessage)
+                .timestamp(timestamp)
+                .errorState(errorState)
+                .serializablePayload(serializablePayload)
+                .build();
+    }
+
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder id(Long id);
@@ -85,6 +106,8 @@ public abstract class SubscriptionDelivery {
         public abstract Builder timestamp(Date timestamp);
 
         public abstract Builder errorState(Boolean errorState);
+
+        public abstract Builder serializablePayload(Object serializablePayload);
 
         public abstract SubscriptionDelivery build();
     }

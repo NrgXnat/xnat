@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 import java.util.Date;
 
 @AutoValue
@@ -19,7 +18,6 @@ public abstract class TimedEventStatus {
             timezone = "UTC")
     @Nullable @JsonProperty("timestamp")  public abstract Date   timestamp();
     @Nullable @JsonProperty("message")    public abstract String message();
-    @Nullable @JsonProperty("payload")    public abstract Object serializablePayload();
 
     public static Builder builder() {return new AutoValue_TimedEventStatus.Builder();}
 
@@ -31,15 +29,6 @@ public abstract class TimedEventStatus {
                 .build();
     }
 
-    public static TimedEventStatus create(String status, Date timestamp, String message, Object serializablePayload) {
-        return builder()
-                .status(status)
-                .timestamp(timestamp)
-                .message(message)
-                .serializablePayload(serializablePayload)
-                .build();
-    }
-
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder status(String status);
@@ -47,8 +36,6 @@ public abstract class TimedEventStatus {
         public abstract Builder timestamp(Date timestamp);
 
         public abstract Builder message(String message);
-
-        public abstract Builder serializablePayload(Object serializablePayload);
 
         public abstract TimedEventStatus build();
     }

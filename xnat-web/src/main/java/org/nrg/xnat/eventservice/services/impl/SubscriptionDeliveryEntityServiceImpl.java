@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
+import org.nrg.xnat.eventservice.entities.EventServicePayloadEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
@@ -65,18 +66,25 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
 
     @Override
     public void addStatus(Long deliveryId, TimedEventStatusEntity.Status status, Date statusTimestamp, String message) {
-        addStatus(deliveryId, status, statusTimestamp, message, null);
-    }
-
-    @Override
-    public void addStatus(Long deliveryId, TimedEventStatusEntity.Status status, Date statusTimestamp, String message, Object payload) {
         SubscriptionDeliveryEntity subscriptionDeliveryEntity = retrieve(deliveryId);
         if (subscriptionDeliveryEntity != null) {
-            subscriptionDeliveryEntity.addTimedEventStatus(status, statusTimestamp, message, payload);
-            update(subscriptionDeliveryEntity);
+            subscriptionDeliveryEntity.addTimedEventStatus(status, statusTimestamp, message);
+            //update(subscriptionDeliveryEntity);
             log.debug("Updated SubscriptionDeliveryEntity: {} with status: {}", deliveryId, status.toString());
         } else {
             log.error("Could not find SubscriptionDeliveryEntity: {} with status: {}", deliveryId, status.toString());
+        }
+    }
+
+    @Override
+    public void addPayload(Long deliveryId, Object payload){
+        SubscriptionDeliveryEntity subscriptionDeliveryEntity = retrieve(deliveryId);
+        if (subscriptionDeliveryEntity != null) {
+            subscriptionDeliveryEntity.setPayload(new EventServicePayloadEntity(payload, subscriptionDeliveryEntity));
+            //update(subscriptionDeliveryEntity);
+            log.debug("Updated SubscriptionDeliveryEntity: {} with payload.", deliveryId);
+        } else {
+            log.error("Could not find SubscriptionDeliveryEntity: {}", deliveryId);
         }
     }
 
@@ -162,6 +170,7 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
                                                        .statusMessage(entity.getStatusMessage())
                                                        .subscription(eventSubscriptionEntityService.toPojo(entity.getSubscription()))
                                                        .errorState(entity.getErrorState())
+                                                       .serializablePayload(loadChildren ? entity.getPayloadObject() : null)
                                                        .build();
         }
         return subscriptionDelivery;

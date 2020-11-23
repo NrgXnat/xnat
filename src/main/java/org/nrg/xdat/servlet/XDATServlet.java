@@ -238,6 +238,8 @@ public class XDATServlet extends HttpServlet {
                 final DatabaseUpdater databaseUpdater = new DatabaseUpdater(conf, generatedSqlLogPath, "-- Generated SQL for initializing new XNAT database schema");
                 final List<String>    sql             = SQLCreateGenerator.GetSQLCreate(false);
                 databaseUpdater.addStatements(sql);
+                databaseUpdater.addStatements(getInitScripts(INIT_SCRIPT_SQL_PATTERN, null));
+
                 //noinspection CallToThreadRun
                 databaseUpdater.run();// start and wait for it
 

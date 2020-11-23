@@ -13,6 +13,7 @@ import com.google.common.io.CharStreams;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
 import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.orm.DatabaseHelper;
@@ -37,6 +38,9 @@ import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.DateUtils;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -51,6 +55,7 @@ import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -147,16 +152,18 @@ public class XDATServlet extends HttpServlet {
                             if (db.tableExists("xs_item_cache") && StringUtils.isBlank(db.columnExists("xs_item_cache", "id"))) {
                                 transaction.execute(PoolDBUtils.QUERY_ITEM_CACHE_ADD_ID);
                             }
-                            final String dropOidsFunction;
-                            try (final Stream<String> stream = db.getJdbcTemplate().queryForList(QUERY_DROP_OID_FUNCTIONS, String.class).stream();
-                                 final StringWriter stringWriter = new StringWriter();
-                                 final PrintWriter writer = new PrintWriter(stringWriter)) {
-                                stream.forEach(writer::println);
-                                dropOidsFunction = stringWriter.toString();
+                            final NamedParameterJdbcTemplate        template          = db.getParameterizedTemplate();
+                            final Map<String, Pair<String, String>> oidsFunctions     = template.queryForList(QUERY_DROP_OID_FUNCTIONS, EmptySqlParameterSource.INSTANCE, String.class).stream().map(OID_FUNCTIONS_PATTERN::matcher).filter(Matcher::matches).collect(Collectors.toMap(matcher -> matcher.group("function"), matcher -> Pair.of(matcher.group("param1"), matcher.group("param2"))));
+                            final List<String>                      dropOidsFunctions = oidsFunctions.entrySet().stream().map(entry -> String.format("DROP FUNCTION IF EXISTS %s(%s, %s));", entry.getKey(), entry.getValue().getLeft(), entry.getValue().getRight())).collect(Collectors.toList());
+                            if (log.isDebugEnabled()) {
+                                log.debug("Running the following {} commands to drop deprecated OID functions:\n\n{}", dropOidsFunctions.size(), String.join("\n", dropOidsFunctions));
                             }
-                            transaction.execute(dropOidsFunction);
+                            transaction.execute(dropOidsFunctions);
+
                             final List<String> restoreOidsFunctions = new ArrayList<>();
-                            GenericUtils.convertToTypedList(XFTManager.GetInstance().getOrderedElements(), GenericWrapperElement.class).stream().filter(element -> !StringUtils.endsWithAny(element.getSQLName(), "_history", "_meta_data")).forEach(element -> {
+                            final List<String> dataTypes            = oidsFunctions.keySet().stream().map(DATA_TYPE_PATTERN::matcher).filter(Matcher::matches).map(matcher -> matcher.group("table")).map(tableName -> template.queryForObject(QUERY_FIND_DATA_TYPE, new MapSqlParameterSource("tableName", tableName), String.class)).collect(Collectors.toList());
+                            log.debug("Found {} data types for the dropped OID functions", dataTypes.size());
+                            dataTypes.stream().map(XDATServlet::getElementSafely).filter(Objects::nonNull).forEach(element -> {
                                 try {
                                     final List<String>[] functions = GenericWrapperUtils.GetUpdateFunctions(element);
                                     try (final Stream<String> stream = Stream.concat(functions[0].stream(), functions[1].stream());
@@ -486,6 +493,17 @@ public class XDATServlet extends HttpServlet {
         return filtered;
     }
 
+    private static GenericWrapperElement getElementSafely(final String dataType) {
+        try {
+            return GenericWrapperElement.GetElement(dataType);
+        } catch (XFTInitException e) {
+            log.error("Got an exception trying to retrieve the element for data type {}", dataType, e);
+        } catch (ElementNotFoundException e) {
+            log.error("Couldn't find element {} trying to retrieve the element for data type {}", e.ELEMENT, dataType, e);
+        }
+        return null;
+    }
+
     /**
      * Checks whether the XNAT configuration property <b>xnat.database.sql.log</b> is set to <b>true</b>. If not, this
      * method returns null and generated SQL shouldn't be logged. The folder for this output can be specified with the
@@ -568,6 +586,8 @@ public class XDATServlet extends HttpServlet {
         return Arrays.asList(QUERY_FIND_USER_VIEWS, QUERY_DROP_USER_VIEWS, String.format(QUERY_EXEC_DROP_USER_VIEWS, user));
     }
 
+    private static final Pattern OID_FUNCTIONS_PATTERN      = Pattern.compile("^(?<function>[^,]+),?(<param1>[^,]+),?(<param2>[^,]+)$");
+    private static final Pattern DATA_TYPE_PATTERN          = Pattern.compile("^update_ls_(ext_)?(?<table>.*)$");
     private static final String  QUERY_FIND_OID_FUNCTIONS   = "SELECT count(*) FROM information_schema.routines WHERE routine_name LIKE 'update_ls_%' AND routine_definition LIKE '%SELECT oid FROM xs_item_cache%'";
     private static final String  QUERY_DROP_OID_FUNCTIONS   = "WITH " +
                                                               "    fns_and_params AS ( " +
@@ -587,11 +607,12 @@ public class XDATServlet extends HttpServlet {
                                                               "            r.routine_name, " +
                                                               "            p.ordinal_position) " +
                                                               "SELECT " +
-                                                              "    'DROP FUNCTION IF EXISTS ' || routine_name || '(' || array_to_string(array_agg(data_type::TEXT), ', ') || ');' " +
+                                                              "    routine_name || ',' || array_to_string(array_agg(data_type::TEXT), ',')" +
                                                               "FROM " +
                                                               "    fns_and_params " +
                                                               "GROUP BY " +
                                                               "    routine_name";
+    private static final String  QUERY_FIND_DATA_TYPE       = "SELECT element_name FROM xdat_meta_element WHERE element_name ~* ('^' || replace(:tableName, '_', '.') || '$');";
     private static final String  QUERY_FIND_USER_VIEWS      = "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
                                                               "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
                                                               "BEGIN " +

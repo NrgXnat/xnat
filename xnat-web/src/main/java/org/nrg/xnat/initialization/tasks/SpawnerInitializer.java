@@ -1,28 +1,35 @@
 package org.nrg.xnat.initialization.tasks;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.task.XnatTask;
-import org.nrg.framework.task.services.XnatTaskService;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.spawner.services.SpawnerService;
-import org.nrg.xnat.task.AbstractXnatTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-@XnatTask(taskId = "SpawnerInitializer", description = "Spawner Initialization Task", defaultExecutionResolver = "SingleNodeExecutionResolver", executionResolverConfigurable = true)
 @Slf4j
-public class SpawnerInitializer extends AbstractXnatTask {
+public class SpawnerInitializer extends AbstractInitializingTask {
     @Autowired
-    public SpawnerInitializer(final XnatTaskService taskService, final SpawnerService service) {
-        super(taskService);
+    public SpawnerInitializer(final XnatAppInfo appInfo, final SpawnerService service) {
+        _appInfo = appInfo;
         _service = service;
     }
 
     @Override
-    protected void runTask() {
-        log.debug("Spawner preferences indicates spawner namespaces should be purged and reloaded.");
-        _service.initialize();
+    public String getTaskName() {
+        return "Spawner initializer";
     }
 
+    @Override
+    protected void callImpl() {
+        if (_appInfo.isPrimaryNode()) {
+            log.debug("This is the primary node, so I'm going to initialize the Spawner service");
+            _service.initialize();
+        } else {
+            log.debug("This is not the primary node, so I'm not going to initialize the Spawner service");
+        }
+    }
+
+    private final XnatAppInfo    _appInfo;
     private final SpawnerService _service;
 }

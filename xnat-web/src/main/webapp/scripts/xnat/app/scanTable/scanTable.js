@@ -401,11 +401,6 @@ var XNAT = getObject(XNAT);
             displayScanDetails.call(this, getScanId(this));
         });
 
-        scanTableContainer$.on('click.ximg-viewer', 'a[href^="#!ximg-viewer"]', function ximgViewerFn(e){
-            e.preventDefault();
-            renderViewer.call(this, getScanId(this));
-        });
-
         // Download a *single* scan (?)
         scanTableContainer$.on('click.download-scan', 'a[href^="#!download"]', function downloadScanFn(e){
             e.preventDefault();

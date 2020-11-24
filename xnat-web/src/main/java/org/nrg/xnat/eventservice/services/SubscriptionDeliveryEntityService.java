@@ -22,6 +22,8 @@ public interface SubscriptionDeliveryEntityService extends BaseHibernateService<
 
     void addPayload(Long deliveryId, Object payload);
 
+    void deletePayloads(Integer keepRecentCount);
+
     void setTriggeringEvent(Long deliveryId, String eventName, String status, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel);
 
     Integer count(String projectId, Long subscriptionId, Boolean includeFilterMismatches);

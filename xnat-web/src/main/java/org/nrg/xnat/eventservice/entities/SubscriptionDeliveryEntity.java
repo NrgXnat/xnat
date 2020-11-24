@@ -169,7 +169,7 @@ public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
     public void setErrorState(Boolean errorState) { this.errorState = errorState; }
 
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinTable(name = "subscription_delivery_payload",
             joinColumns =
                     { @JoinColumn(name = "delivery_id", referencedColumnName = "id") },

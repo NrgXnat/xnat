@@ -493,6 +493,11 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public void deleteSubscriptionDeliveryPayloads(Integer keepRecentCount){
+        subscriptionDeliveryEntityService.deletePayloads(keepRecentCount);
+    }
+
+    @Override
     public String generateFilterRegEx(Map<String, JsonPathFilterNode> nodeFilters) {
         return eventPropertyService.generateJsonPathFilter(nodeFilters);
     }

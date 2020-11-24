@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -84,9 +85,25 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
             //update(subscriptionDeliveryEntity);
             log.debug("Updated SubscriptionDeliveryEntity: {} with payload.", deliveryId);
         } else {
-            log.error("Could not find SubscriptionDeliveryEntity: {}", deliveryId);
+            log.error("Could not find SubscriptionDeliveryEntity: {} to add payload", deliveryId);
         }
     }
+
+    @Override
+    public void deletePayloads(Integer keepRecentCount){
+        List<SubscriptionDeliveryEntity> all = getAll();
+        ListIterator<SubscriptionDeliveryEntity> deliveryIt = all.listIterator(all.size());
+        while(deliveryIt.hasPrevious()){
+            SubscriptionDeliveryEntity sde = deliveryIt.previous();
+            if(keepRecentCount<=0 && sde.getPayload() != null){
+                sde.getPayload().clear();
+            }
+            else if(keepRecentCount > 0 && sde.getPayload() != null){
+                keepRecentCount--;
+            }
+        }
+    }
+
 
     @Override
     public void setTriggeringEvent(Long deliveryId, String eventName, String status, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel) {

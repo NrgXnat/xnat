@@ -194,6 +194,7 @@ public class EventServiceTestConfig {
                 EventServiceFilterEntity.class,
                 SubscriptionDeliveryEntity.class,
                 TimedEventStatusEntity.class,
+                EventServicePayloadEntity.class,
                 TriggeringEventEntity.class);
         return bean;
     }

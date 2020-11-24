@@ -271,9 +271,9 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             final @RequestParam(value = "project", required = false) String projectId,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch,
-            final @RequestParam(value = "load-children", required = false) Boolean loadChildren,
+            final @RequestParam(value = "load-children", required = false, defaultValue = "true") Boolean loadChildren,
             final @RequestBody(required = false) SubscriptionDeliveryEntityPaginatedRequest request) {
-        return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch, request, true);
+        return eventService.getSubscriptionDeliveries(projectId, subscriptionId, includeFilterMismatch, request, loadChildren);
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered/count", method = GET)
@@ -312,6 +312,13 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch, request, loadChildren);
     }
 
+
+    @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered/cleanup/", method = POST)
+    @ApiOperation(value = "Cleanup Event Service history by deleting old serialized payload objects. Keep N most recent.")
+    public ResponseEntity<Void> deactivateSubscription(final @RequestParam(value = "keep-recent", required = false) Integer keepRecent){
+        eventService.deleteSubscriptionDeliveryPayloads(keepRecent != null ? keepRecent : 0);
+        return ResponseEntity.ok().build();
+    }
 
     @XapiRequestMapping(restrictTo = Authenticated, value = "/events/events", method = GET)
     @ResponseBody

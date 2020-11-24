@@ -329,7 +329,7 @@ public class ActionManagerImpl implements ActionManager {
             Subscription resolvedSubscription = eventPropertyService.resolveEventPropertyVariables(subscription, esEvent, user, deliveryId);
             try{
                 log.debug("Passing event/action processing off to action provider : " + provider.getName());
-                subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_CALLED, new Date(), "Event passed to Action Provider: " + provider.getName());
+                subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_CALLED, new Date(), "Event passed to Action Provider: " + provider.getDisplayName());
                 provider.processEvent(esEvent, resolvedSubscription, user, deliveryId);
                 SubscriptionDeliveryEntity delivery = subscriptionDeliveryEntityService.get(deliveryId);
                 if (workflow != null && delivery != null){

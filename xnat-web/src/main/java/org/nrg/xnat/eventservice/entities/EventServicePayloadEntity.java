@@ -86,7 +86,7 @@ public class EventServicePayloadEntity implements Serializable {
     }
 
     @Transient
-    public byte[] compress(byte[] bytes){
+    private byte[] compress(byte[] bytes){
         Deflater deflater = new Deflater();
         deflater.setLevel(Deflater.BEST_COMPRESSION);
         deflater.setInput(bytes);
@@ -116,7 +116,7 @@ public class EventServicePayloadEntity implements Serializable {
 
 
     @Transient
-    byte[] decompress(byte[] bytes){
+    private byte[] decompress(byte[] bytes){
         Inflater inflater = new Inflater();
         inflater.setInput(bytes);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -136,6 +136,13 @@ public class EventServicePayloadEntity implements Serializable {
             }
         }
         return output.toByteArray();
+    }
+
+    @Transient
+    public void clear()
+    {
+        setCompressed(false);
+        setPayloadAsByteArray(null);
     }
 
     public Boolean getCompressed() { return compressed == null ? false : compressed; }

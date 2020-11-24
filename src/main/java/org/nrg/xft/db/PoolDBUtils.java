@@ -52,7 +52,7 @@ public class PoolDBUtils {
 		try {
 			if (sequence != null && !sequence.equalsIgnoreCase(""))
 			{
-				logger.debug("QUERY:" + query);
+				logger.debug("QUERY: {}", query);
 				executeQuery(db, query, "");
 				_statement.execute(query);
 				String newQuery = "SELECT currval('"+ sequence + "') AS " + pk;
@@ -243,7 +243,7 @@ public class PoolDBUtils {
 
 				_statement.executeBatch();
 
-				logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace("BATCH", "\n", " "));
+				logger.debug("The batch query with {} statements took {} ms to complete ({}): {}", statements.size(), getTimeDiff(start, Calendar.getInstance().getTime()), userName, "BATCH");
 
 				_statement.clearBatch();
 
@@ -714,10 +714,9 @@ public class PoolDBUtils {
 
             st.execute();
 
-            logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + login + "): " + StringUtils.replace(query, "\n", " "));
-
+			logger.debug("The following query completed in {} ms ({}): {}", getTimeDiff(start, Calendar.getInstance().getTime()), login, query);
         } catch (ElementNotFoundException e) {
-            logger.error(query);
+            logger.error("An element {} wasn't found while running a query", e.ELEMENT, e);
         } catch (SQLException e) {
             logger.error(query);
             throw e;
@@ -922,18 +921,19 @@ public class PoolDBUtils {
 				return _statement.executeQuery(query);
 			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
-				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+				logger.error("Got an exception indicating that the column \"{}\" does not exist. The attempted query is:\n\n{}", matcher.group(1), query);
 				return null;
-			} else if (StringUtils.containsAny(message, "relation \"xdat_user\" does not exist", "relation \"xdat_element_security\" does not exist")){
-				// Just rethrow and let someone else handle it. This is probably because the system is initializing
-				// and, if it's not, plenty else will go wrong to indicate the problem.
-				throw e;
 			} else {
-				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
+				if (StringUtils.containsAny(message, "relation \"xdat_user\" does not exist", "relation \"xdat_element_security\" does not exist")){
+					// Just rethrow and let someone else handle it. This is probably because the system is initializing
+					// and, if it's not, plenty else will go wrong to indicate the problem.
+				} else {
+					logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
+				}
 				throw e;
 			}
 		} finally {
-			logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
+			logger.debug("The following query completed in {} ms ({}): {}", getTimeDiff(start, Calendar.getInstance().getTime()), userName, query);
 		}
 	}
 
@@ -948,7 +948,7 @@ public class PoolDBUtils {
 			if (message.contains("relation \"xdat_meta_element_meta_data\" does not exist")) {
 				// Honestly, we don't care much about this. It goes away once the metadata table is initialized,
 				// has no real effect beforehand, and is a pretty scary message with an enormous stacktrace.
-				logger.info("Metadata error occurred: " + message);
+				logger.info("Metadata error occurred: {}", message);
 			} else if (message.contains("Connection reset")) {
 				closeConnection();
 				resetConnections();
@@ -956,7 +956,7 @@ public class PoolDBUtils {
 				_statement.execute(query);
 			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
-				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+				logger.error("Got an exception indicating that the column \"{}\" does not exist. The attempted query is:\n\n{}", matcher.group(1), query);
 			} else if (message.matches(EXPR_TABLE_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_DROP_TABLE_QUERY.matcher(query);
 				if (matcher.find()) {
@@ -965,15 +965,16 @@ public class PoolDBUtils {
 					logger.error("Got an exception indicating that the table \"{}\" does not exist. The attempted query is:\n\n{}", matcher.group("table"), query);
 				}
 			} else {
-				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
+				logger.error("An error occurred trying to execute the user {} query: {}", userName, query, e);
 				throw e;
 			}
 		} finally {
-			if (getTimeDiff(start, Calendar.getInstance().getTime()) > 1000) {
-				logger.error(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
+			final long timeDiff = getTimeDiff(start, Calendar.getInstance().getTime());
+			if (timeDiff > 1000) {
+				logger.error("The following query took longer than 1000 ms to complete: {} ms ({}). This may not indicate an error but could indicate an inefficient query or a performance issue with the database: {}", timeDiff, userName, query);
+			} else {
+				logger.debug("The following query completed in {} ms ({}): {}", timeDiff, userName, query);
 			}
-
-			logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
 		}
 	}
 

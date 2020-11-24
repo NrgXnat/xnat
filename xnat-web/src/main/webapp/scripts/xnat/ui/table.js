@@ -519,6 +519,7 @@ var XNAT = getObject(XNAT);
                 height: opts.height || 'auto',
                 minHeight: opts.minHeight || 'auto',
                 maxHeight: opts.maxHeight || 'auto',
+                width:  opts.width || '100%',
                 'overflow-y': 'auto'
             }
         });
@@ -583,8 +584,10 @@ var XNAT = getObject(XNAT);
                 var bodyRow$ = table$.find('tbody').first();
                 // var footerRow$ = table$.find('tfoot').first();
 
-                var headerCells$ = headerRow$.find('> th');
-                var bodyCells$ = bodyRow$.find('> td');
+                // var headerCells$ = headerRow$.find('> th');
+                // var bodyCells$ = bodyRow$.find('> td');
+                var headerCells$ = headerRow$.find('tr').first().find('th');
+                var bodyCells$ = bodyRow$.find('tr').first().find('td');
                 // var footerCells$ = footerRow$.find('> div');
 
                 //var colCount = headerCells$.length;
@@ -594,8 +597,8 @@ var XNAT = getObject(XNAT);
                 // should be able to just apply this to the header
                 //headerCells$.css('width', minWidth + 'px');
 
-                adjustCellWidths(headerCells$, bodyCells$);
-                adjustCellWidths(bodyCells$, headerCells$);
+                // adjustCellWidths(headerCells$, bodyCells$);
+                // adjustCellWidths(bodyCells$, headerCells$);
 
                 // match the body cells with the header cells
                 // adjustCellWidths(headerCells$, bodyCells$, footerCells$);
@@ -1640,12 +1643,14 @@ var XNAT = getObject(XNAT);
         });
         $container.on('click', dropdown + ' input', function () {
             ajaxTable.toggleColumn($container, this.id.replace("show-", ""), $(this).prop("checked"));
+            ajaxTable.resizeTableCols($container.find('table'),'reload');
             $button.click().click(); // keep it in view, but be sure to transform if table size changes
         });
     };
 
     ajaxTable.resizeTableCols = function($table,reloadFF = false){
-        if (reloadFF && navigator.userAgent.toLowerCase().indexOf('firefox') > -1) this.reload()
+        if (reloadFF) this.reload();
+        // if (reloadFF && navigator.userAgent.toLowerCase().indexOf('firefox') > -1) this.reload();
         if ($table.is(':hidden')) {
             $table.on('nowVisible', function() {
                 ajaxTable.resizeTableCols($(this),'reload');
@@ -1656,23 +1661,40 @@ var XNAT = getObject(XNAT);
             $bodyCells = $table.find("tbody tr:first").children();
 
         // Set common width for thead & tbody cells (needed for scrollable tbody)
-        let colWidths = [];
+        let colWidths = [], pctWidths = [];
         $bodyCells.each(function (i, v) {
-            let wid = Math.max(
-                ajaxTable.cssToNumber($(v), "width"),
-                ajaxTable.cssToNumber($($headerCells[i]), "width")
-            );
-            if (wid){
-                $(v).css("width", wid.toString()+'px');
-                $($headerCells[i]).css("width", wid.toString()+'px');
-                $($filterCells[i]).css("width", wid.toString()+'px');
-                colWidths.push(wid);
+            // ignore any columns that have been hidden
+            if ($(v).css('display') !== 'none') {
+                let wid = Math.max(
+                    ajaxTable.cssToNumber($(v), "width"),
+                    ajaxTable.cssToNumber($($headerCells[i]), "width")
+                );
+                if (wid){
+                    $(v).css("width", wid.toString()+'px');
+                    $($headerCells[i]).css("width", wid.toString()+'px');
+                    $($filterCells[i]).css("width", wid.toString()+'px');
+                    colWidths.push(wid);
+                }
+            } else {
+                colWidths.push(0);
             }
         });
 
-        $table.find("tbody tr").each(function(rind, row) {
+        // convert pixel widths to percentages of available space
+        var availableWidth = $table.parents('.data-table-wrapper').width(),
+            interiorWidth;
+
+        if (colWidths.length){
+            interiorWidth = colWidths.reduce(function(interiorWidth,wid){ return interiorWidth += parseInt(wid) });
+            colWidths.forEach(function(wid,i){
+                var pct = (wid/interiorWidth);
+                pctWidths[i] = Math.max(100, Math.floor(availableWidth * pct));
+            });
+        }
+
+        $table.find("tr").each(function(rind, row) {
             $(row).children().each(function (i, v) {
-                let wid = colWidths[i];
+                let wid = pctWidths[i];
                 if (wid) $(v).css("width", wid.toString()+'px');
             });
         });

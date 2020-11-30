@@ -3046,6 +3046,16 @@ img.scan-snapshot {
     width: 50%;
 }
 
+.snapshot-container {
+    background-color: #f7f7f7;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center center;
+    border: 1px solid #ccc;
+    height: 300px;
+    width: 300px;
+}
+
 /* not sure what these spacers do but pretty sure they should go away - let's see what breaks */
 span.spacer {
     display: none !important;

@@ -21,12 +21,16 @@
 	.qcScanTable td {
 		vertical-align:top;
 	}
-	.snapshot-container {
-		max-width: 300px;
-	}
-	.snapshot-container img {
-		max-width: 100%;
-	}
+	/*.snapshot-container {*/
+		/*background-color: #f7f7f7;*/
+		/*background-size: 100% 100%;*/
+		/*background-repeat: no-repeat;*/
+		/*background-position: center center;*/
+		/*border: 1px solid #ccc;*/
+        /*height: 300px;*/
+		/*width: 300px;*/
+	/*}*/
+
 </style>
 
 <h2>Overall QC for $!mr.getIdentifier($project,false)</h2>
@@ -91,13 +95,8 @@
 				<td>
 					<div id="snapshot-$!scan.getStringProperty("xnat:qcScanData/imageScan_ID")" class="snapshot-container"></div>
 					<script>
-						var url = XNAT.url.restUrl('/xapi/projects/${project}/experiments/${mr_id}/scan/$!{scanId}/snapshot')
-						XNAT.xhr.get({
-                            url: url,
-							success: function(data){
-                                jq(document).find('#snapshot-${scanId}').append('<img src="'+url+'" />');
-							}
-                        })
+						var url = XNAT.url.restUrl('/xapi/experiments/${mr_id}/scan/$!{scanId}/snapshot')
+						jq(document).find('#snapshot-${scanId}').css('background-image','url('+url+')');
 					</script>
 				</td>
 				<td>

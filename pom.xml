@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>parent</artifactId>
-        <version>1.8.0-SNAPSHOT</version>
+        <version>1.8.0-TIP-RC1</version>
     </parent>
 
     <groupId>org.nrg.xdat</groupId>
@@ -32,7 +32,6 @@
     </organization>
 
     <build>
-        <finalName>xdat-${project.version}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>

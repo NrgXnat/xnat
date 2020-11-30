@@ -597,6 +597,7 @@
 			<xs:element name="logout_date" type="xs:dateTime" minOccurs="0"/>
 			<xs:element name="session_id" type="xs:string" minOccurs="0"/>
 			<xs:element name="ip_address" type="xs:string" minOccurs="0"/>
+			<xs:element name="node_id" type="xs:string" minOccurs="0"/>
 			<xs:element name="user" type="xdat:user">
 				<xs:annotation>
 					<xs:appinfo>

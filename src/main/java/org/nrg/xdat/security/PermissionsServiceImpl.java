@@ -9,15 +9,20 @@
 
 package org.nrg.xdat.security;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Supplier;
-import com.google.common.collect.*;
+import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
+import static org.nrg.xdat.security.SecurityManager.*;
+import static org.nrg.xft.event.XftItemEvent.builder;
+import static org.nrg.xft.event.XftItemEventI.UPDATE;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.util.Reflection;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
@@ -53,16 +58,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
-import static org.nrg.xdat.security.SecurityManager.*;
-import static org.nrg.xft.event.XftItemEvent.builder;
-import static org.nrg.xft.event.XftItemEventI.UPDATE;
-
 @SuppressWarnings({"unused", "DuplicateThrows"})
 @Service
 @Slf4j
 public class PermissionsServiceImpl implements PermissionsServiceI {
-
     @Autowired
     public PermissionsServiceImpl(final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template) {
         _eventService = eventService;
@@ -85,45 +84,42 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     }
 
     @Override
-    public CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement root) throws IllegalAccessException, Exception {
+    public CriteriaCollection getCriteriaForXDATRead(final UserI user, final SchemaElement root) throws IllegalAccessException, Exception {
         final String fullXMLName = root.getFullXMLName();
         if (!ElementSecurity.IsSecureElement(fullXMLName, READ)) {
             return null;
         }
 
-        final boolean            isProjectData = StringUtils.equalsIgnoreCase("xnat:projectData", fullXMLName);
-        final CriteriaCollection collection    = new CriteriaCollection("OR");
+        final CriteriaCollection collection = new CriteriaCollection("OR");
         for (final PermissionCriteriaI criteria : getPermissionsForUser(user, fullXMLName)) {
-            if (isProjectData && log.isTraceEnabled()) {
-                log.trace("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", criteria.getElementName(), criteria.getField(), criteria.getFieldValue(), criteria.getRead(), criteria.getActivate(), criteria.getEdit(), criteria.getCreate(), criteria.getDelete());
-            }
             if (criteria.getRead()) {
                 collection.add(DisplayCriteria.buildCriteria(root, criteria));
             }
         }
 
         if (collection.numClauses() == 0) {
-            throw new IllegalAccessException("Invalid read privileges for " + root.getFullXMLName());
+            log.info("User {} has no read privileges for any objects of data type {}", user.getUsername(), fullXMLName);
         }
 
         return collection;
     }
 
     @Override
-    public CriteriaCollection getCriteriaForXFTRead(UserI user, SchemaElementI root) throws Exception {
-        if (!ElementSecurity.IsSecureElement(root.getFullXMLName(), READ)) {
+    public CriteriaCollection getCriteriaForXFTRead(final UserI user, final SchemaElementI root) throws Exception {
+        final String fullXMLName = root.getFullXMLName();
+        if (!ElementSecurity.IsSecureElement(fullXMLName, READ)) {
             return null;
         }
 
         final CriteriaCollection collection = new CriteriaCollection("OR");
-        for (PermissionCriteriaI criteria : getPermissionsForUser(user, root.getFullXMLName())) {
+        for (PermissionCriteriaI criteria : getPermissionsForUser(user, fullXMLName)) {
             if (criteria.getRead()) {
                 collection.add(SearchCriteria.buildCriteria(criteria));
             }
         }
 
         if (collection.numClauses() == 0) {
-            throw new IllegalAccessException("Invalid read privileges for " + root.getFullXMLName());
+            log.info("User {} has no read privileges for any objects of data type {}", user.getUsername(), fullXMLName);
         }
 
         return collection;
@@ -446,6 +442,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 allowedValues.addAll(GenericWrapperElement.GetUniqueValuesForField(xmlPath));
             }
 
+            //noinspection unchecked
             Collections.sort(allowedValues);
         } catch (Exception e) {
             log.error("An error occurred trying to get the allowed values for user '{}' action '{}' on data type '{}', XML path '{}'", username, action, elementName, xmlPath, e);
@@ -615,44 +612,15 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 return false;
             }
 
-            if (log.isInfoEnabled()) {
-                log.info("Checking user {} access to action {} with security values {}", username, action, values.toString());
-            }
-
-            if (Iterables.any(criteria, new Predicate<PermissionCriteriaI>() {
-                @Override
-                public boolean apply(final PermissionCriteriaI criterion) {
-                    if (log.isInfoEnabled()) {
-                        log.info(" * Testing against criterion {}", criterion.toString());
-                    }
-                    try {
-                        if (criterion.canAccess(action, values)) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("User {} has {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
-                            }
-                            return true;
-                        }
-                        if (log.isDebugEnabled()) {
-                            log.debug("User {} does not have {} access on element {} with criterion {} and security values: {}", username, action, rootXmlName, criterion.toString(), values.toString());
-                        }
-                    } catch (Exception e) {
-                        log.error("An error occurred trying to check {} access for user {} with criterion {} and values: {}", action, username, criterion.toString(), values);
-                    }
-                    return false;
-                }
-            })) {
+            log.info("Checking user {} access to action {} with security values {}", username, action, values);
+            if (criteria.stream().anyMatch(criterion -> test(action, values, criterion))) {
                 return true;
             }
 
             // If we've reached here, the security check has failed so let's provide some information on the context but
             // only if this isn't the guest user and the log level is INFO or below...
             if (!user.isGuest() && log.isInfoEnabled()) {
-                log.info("User {} not able to {} the schema element {} with the security values: {}. {}",
-                         username,
-                         action,
-                         root.getFormattedName(),
-                         values.toString(),
-                         dumpCriteriaList(criteria));
+                log.info("User {} not able to {} the schema element {} with the security values: {}. {}", username, action, root.getFormattedName(), values, dumpCriteriaList(criteria));
             }
         }
 
@@ -863,20 +831,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     }
 
     private XdatFieldMapping getFieldMapping(final UserI user, final XdatFieldMappingSet fieldMappingSet, final String fieldName, final String fieldValue) {
-        final Optional<XdatFieldMapping> optional = FluentIterable.from(fieldMappingSet.getAllow()).firstMatch(new Predicate<XdatFieldMapping>() {
-            @Override
-            public boolean apply(@Nullable final XdatFieldMapping fieldMapping) {
-                return fieldMapping != null && StringUtils.equals(fieldValue, fieldMapping.getFieldValue()) && StringUtils.equals(fieldName, fieldMapping.getField());
-            }
-        });
-
-        //noinspection UnstableApiUsage
-        return optional.or(new Supplier<XdatFieldMapping>() {
-            @Override
-            public XdatFieldMapping get() {
-                return new XdatFieldMapping(user);
-            }
-        });
+        return fieldMappingSet.getAllow().stream().filter(XdatFieldMapping.filter(fieldName, fieldValue)).findFirst().orElseGet(() -> new XdatFieldMapping(user));
     }
 
     private boolean securityCheckByXMLPath(UserI user, String action, SchemaElementI root, SecurityValues values) throws Exception {
@@ -887,8 +842,8 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         final String itemId;
         if (item instanceof XFTItem) {
             itemId = ((XFTItem) item).getIDValue();
-        } else if (item instanceof org.nrg.xdat.base.BaseElement) {
-            itemId = ((org.nrg.xdat.base.BaseElement) item).getStringProperty("ID");
+        } else if (item instanceof BaseElement) {
+            itemId = ((BaseElement) item).getStringProperty("ID");
         } else {
             final Method getId = Reflection.getMatchingMethod(item.getClass(), "getId", new Object[0]);
             if (getId != null) {
@@ -936,6 +891,15 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     private boolean isGuest(final String username) {
         return _guest != null ? StringUtils.equalsIgnoreCase(_guest.getUsername(), username) : StringUtils.equalsIgnoreCase(GUEST_USERNAME, username);
+    }
+
+    private static boolean test(final String action, final SecurityValues values, final PermissionCriteriaI criterion) {
+        try {
+            return criterion.canAccess(action, values);
+        } catch (Exception e) {
+            log.error("An error occurred trying to check {} access with criterion {} and values: {}", action, criterion, values);
+            return false;
+        }
     }
 
     private static final String GUEST_USERNAME                      = "guest";
@@ -1016,7 +980,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
     private static final String QUERY_CAN_USER_ACTIVE_ID            = "SELECT data_type_fns_can(:username, 'active', :entityId) AS can_active";
     private static final String QUERY_CAN_USER_READ_ID_IN_PROJECT   = "SELECT data_type_fns_can(:username, 'read', :entityId, :projectId) AS can_read";
     private static final String QUERY_CAN_USER_EDIT_ID_IN_PROJECT   = "SELECT data_type_fns_can(:username, 'edit', :entityId, :projectId) AS can_edit";
-    private static final String QUERY_CAN_USER_CREATE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'create', :entityId, :projectId) AS can_create";
+    private static final String QUERY_CAN_USER_CREATE_ID_IN_PROJECT = "SELECT can_create FROM data_type_fns_get_secured_property_permissions(:username, :projectId, :entityId)";
     private static final String QUERY_CAN_USER_DELETE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'delete', :entityId, :projectId) AS can_delete";
     private static final String QUERY_CAN_USER_ACTIVE_ID_IN_PROJECT = "SELECT data_type_fns_can(:username, 'active', :entityId, :projectId) AS can_active";
 

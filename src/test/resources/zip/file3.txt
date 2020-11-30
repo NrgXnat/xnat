@@ -1,0 +1,4 @@
+This is file3.
+It is bigger than file1.
+It is bigger than file2.
+

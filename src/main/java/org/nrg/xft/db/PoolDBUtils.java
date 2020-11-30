@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.io.Closeable;
 import java.sql.*;
 import java.util.Date;
 import java.util.*;
@@ -30,6 +31,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PoolDBUtils {
+	public static final String QUERY_ITEM_CACHE_ADD_ID = "ALTER TABLE xs_item_cache ADD COLUMN id BIGSERIAL PRIMARY KEY";
+
 	/**
 	 * Processes the specified query on the specified db with a pooled connection.
 	 * The new Primary Key is returned using a SELECT currval() query with
@@ -49,7 +52,7 @@ public class PoolDBUtils {
 		try {
 			if (sequence != null && !sequence.equalsIgnoreCase(""))
 			{
-				logger.debug("QUERY:" + query);
+				logger.debug("QUERY: {}", query);
 				executeQuery(db, query, "");
 				_statement.execute(query);
 				String newQuery = "SELECT currval('"+ sequence + "') AS " + pk;
@@ -240,7 +243,7 @@ public class PoolDBUtils {
 
 				_statement.executeBatch();
 
-				logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace("BATCH", "\n", " "));
+				logger.debug("The batch query with {} statements took {} ms to complete ({}): {}", statements.size(), getTimeDiff(start, Calendar.getInstance().getTime()), userName, "BATCH");
 
 				_statement.clearBatch();
 
@@ -576,16 +579,15 @@ public class PoolDBUtils {
 	public static void CreateCache(String dbName, String login) {
 		try {
 			synchronized (ITEM_CACHE_MUTEX) {
-				if (!ITEM_CACHE_EXISTS) {
-					final String exists = (String) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_EXISTS, "relname", dbName, login);
-
-					if (exists != null) {
-						ITEM_CACHE_EXISTS = true;
-					} else {
-						PoolDBUtils.ExecuteNonSelectQuery(QUERY_CREATE_ITEM_CACHE, dbName, login);
-						ITEM_CACHE_EXISTS = true;
+				final boolean exists = (boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_EXISTS, "cache_exists", dbName, login);
+				if (exists) {
+					if (!(boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_HAS_ID, "cache_has_id", dbName, login)) {
+						PoolDBUtils.ExecuteNonSelectQuery(QUERY_ITEM_CACHE_ADD_ID, dbName, login);
 					}
+				} else {
+					PoolDBUtils.ExecuteNonSelectQuery(QUERY_CREATE_ITEM_CACHE, dbName, login);
 				}
+				ITEM_CACHE_EXISTS = true;
 			}
 		} catch (SQLException e) {
 			logger.error("An database or SQL error occurred trying to validate or create the XNAT item cache.", e);
@@ -712,10 +714,9 @@ public class PoolDBUtils {
 
             st.execute();
 
-            logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + login + "): " + StringUtils.replace(query, "\n", " "));
-
+			logger.debug("The following query completed in {} ms ({}): {}", getTimeDiff(start, Calendar.getInstance().getTime()), login, query);
         } catch (ElementNotFoundException e) {
-            logger.error(query);
+            logger.error("An element {} wasn't found while running a query", e.ELEMENT, e);
         } catch (SQLException e) {
             logger.error(query);
             throw e;
@@ -876,26 +877,26 @@ public class PoolDBUtils {
 				StringContains(value, "CREATE");
     }
 
-    public static boolean StringContains(String value, String s){
-    	if(value.contains(s+' ')){
-    		if(value.startsWith(s +' ')) return true;
-    		if(value.contains(' ' + s +' ')) return true;
-    		if(value.contains('(' + s +' ')) return true;
-    		if(value.contains('[' + s +' ')) return true;
-    		if(value.contains('\'' + s +' ')) return true;
-    		if(value.contains('\n' + s +' ')) return true;
-    		if(value.contains('\t' + s +' ')) return true;
-    	}
-    		return false;
-    }
+	public static boolean StringContains(String value, String s) {
+		if (!value.contains(s + ' ')) {
+			return false;
+		}
+		if (value.startsWith(s + ' ')) {
+			return true;
+		}
+		for (final char delimiter : DELIMITERS) {
+			if (value.contains(delimiter + s + ' ')) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-    public static void CheckSpecialSQLChars(final String s){
-    	if(s==null)return;
-
-		if(s.contains("'")){
+	public static void CheckSpecialSQLChars(final String s) {
+		if (StringUtils.contains(s, "'")) {
 			throw new IllegalArgumentException(s);
 		}
-    }
+	}
 
     private Statement getStatement() throws DBPoolException, SQLException{
     	return getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
@@ -920,18 +921,19 @@ public class PoolDBUtils {
 				return _statement.executeQuery(query);
 			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
-				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+				logger.error("Got an exception indicating that the column \"{}\" does not exist. The attempted query is:\n\n{}", matcher.group(1), query);
 				return null;
-			} else if (StringUtils.containsAny(message, "relation \"xdat_user\" does not exist", "relation \"xdat_element_security\" does not exist")){
-				// Just rethrow and let someone else handle it. This is probably because the system is initializing
-				// and, if it's not, plenty else will go wrong to indicate the problem.
-				throw e;
 			} else {
-				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
+				if (StringUtils.containsAny(message, "relation \"xdat_user\" does not exist", "relation \"xdat_element_security\" does not exist")){
+					// Just rethrow and let someone else handle it. This is probably because the system is initializing
+					// and, if it's not, plenty else will go wrong to indicate the problem.
+				} else {
+					logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
+				}
 				throw e;
 			}
 		} finally {
-			logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
+			logger.debug("The following query completed in {} ms ({}): {}", getTimeDiff(start, Calendar.getInstance().getTime()), userName, query);
 		}
 	}
 
@@ -946,7 +948,7 @@ public class PoolDBUtils {
 			if (message.contains("relation \"xdat_meta_element_meta_data\" does not exist")) {
 				// Honestly, we don't care much about this. It goes away once the metadata table is initialized,
 				// has no real effect beforehand, and is a pretty scary message with an enormous stacktrace.
-				logger.info("Metadata error occurred: " + message);
+				logger.info("Metadata error occurred: {}", message);
 			} else if (message.contains("Connection reset")) {
 				closeConnection();
 				resetConnections();
@@ -954,7 +956,7 @@ public class PoolDBUtils {
 				_statement.execute(query);
 			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
-				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+				logger.error("Got an exception indicating that the column \"{}\" does not exist. The attempted query is:\n\n{}", matcher.group(1), query);
 			} else if (message.matches(EXPR_TABLE_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_DROP_TABLE_QUERY.matcher(query);
 				if (matcher.find()) {
@@ -963,15 +965,16 @@ public class PoolDBUtils {
 					logger.error("Got an exception indicating that the table \"{}\" does not exist. The attempted query is:\n\n{}", matcher.group("table"), query);
 				}
 			} else {
-				logger.error("An error occurred trying to execute the user " + userName + " query: " + query, e);
+				logger.error("An error occurred trying to execute the user {} query: {}", userName, query, e);
 				throw e;
 			}
 		} finally {
-			if (getTimeDiff(start, Calendar.getInstance().getTime()) > 1000) {
-				logger.error(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
+			final long timeDiff = getTimeDiff(start, Calendar.getInstance().getTime());
+			if (timeDiff > 1000) {
+				logger.error("The following query took longer than 1000 ms to complete: {} ms ({}). This may not indicate an error but could indicate an inefficient query or a performance issue with the database: {}", timeDiff, userName, query);
+			} else {
+				logger.debug("The following query completed in {} ms ({}): {}", timeDiff, userName, query);
 			}
-
-			logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
 		}
 	}
 
@@ -992,6 +995,11 @@ public class PoolDBUtils {
 		return new Transaction();
 	}
 
+	public static Transaction open() throws SQLException, DBPoolException {
+		final Transaction transaction = new Transaction();
+		transaction.start();
+		return transaction;
+	}
 
 	/**
 	 * @author tim@deck5consulting.com
@@ -999,7 +1007,7 @@ public class PoolDBUtils {
 	 * The transaction class is used to process db transactions which cannot be passed as a batch (include SELECTs).
 	 * It maintains a single open connection (locked) until the close method is called.
 	 */
-	public static class Transaction {
+	public static class Transaction implements Closeable {
 		PoolDBUtils pooledConnection=new PoolDBUtils();//pooled connection manager
 		Connection con;
 		Statement st;
@@ -1009,6 +1017,10 @@ public class PoolDBUtils {
 	    	con.setAutoCommit(false);
 
 	    	st=pooledConnection.getStatement();
+		}
+
+		public void execute(final String statement) throws SQLException {
+			execute(Collections.singletonList(statement));
 		}
 
 		public void execute(Collection<String> statements) throws SQLException {
@@ -1030,6 +1042,7 @@ public class PoolDBUtils {
 			con.rollback();
 		}
 
+		@Override
 		public void close() {
 			try {
 				con.setAutoCommit(true);//reset pooled connection to auto-commit for next consumer
@@ -1041,20 +1054,21 @@ public class PoolDBUtils {
 
 	private static final Logger logger = LoggerFactory.getLogger(PoolDBUtils.class);
 
-	private static final String  EXPR_COLUMN_NOT_FOUND    = "column \"(?<column>[A-z0-9_-]+)\" does not exist";
-	private static final Pattern PATTERN_COLUMN_NOT_FOUND = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
-	private static final String  EXPR_TABLE_NAME          = "(?<table>_[A-z0-9_]+_[\\d]+)";
-	private static final String  EXPR_DROP_TABLE_QUERY    = "DROP TABLE xdat_search\\." + EXPR_TABLE_NAME;
-	private static final Pattern PATTERN_DROP_TABLE_QUERY = Pattern.compile(EXPR_DROP_TABLE_QUERY);
-	private static final String  EXPR_TABLE_NOT_FOUND     = "^.*table \"" + EXPR_TABLE_NAME + "\" does not exist.*$";
-	private static final Pattern PATTERN_TABLE_NOT_FOUND  = Pattern.compile(EXPR_TABLE_NOT_FOUND);
-
+	private static final char[]  DELIMITERS                 = new char[]{' ', '(', '[', '\'', '\n', '\t'};
+	private static final String  EXPR_COLUMN_NOT_FOUND      = "column \"(?<column>[A-z0-9_-]+)\" does not exist";
+	private static final Pattern PATTERN_COLUMN_NOT_FOUND   = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
+	private static final String  EXPR_TABLE_NAME            = "(?<table>_[A-z0-9_]+_[\\d]+)";
+	private static final String  EXPR_DROP_TABLE_QUERY      = "DROP TABLE xdat_search\\." + EXPR_TABLE_NAME;
+	private static final Pattern PATTERN_DROP_TABLE_QUERY   = Pattern.compile(EXPR_DROP_TABLE_QUERY);
+	private static final String  EXPR_TABLE_NOT_FOUND       = "^.*table \"" + EXPR_TABLE_NAME + "\" does not exist.*$";
+	private static final Pattern PATTERN_TABLE_NOT_FOUND    = Pattern.compile(EXPR_TABLE_NOT_FOUND);
 	private static final String  EXPR_RELATION_NOT_FOUND    = "relation \"(?<relation>[a-z_]+)\" does not exist";
 	private static final Pattern PATTERN_RELATION_NOT_FOUND = Pattern.compile(EXPR_RELATION_NOT_FOUND);
-	private static final String  QUERY_ITEM_CACHE_EXISTS    = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_item_cache');";
+	private static final String  QUERY_ITEM_CACHE_EXISTS    = "SELECT EXISTS(SELECT relname FROM pg_catalog.pg_class WHERE relname = LOWER('xs_item_cache')) AS cache_exists";
+	private static final String  QUERY_ITEM_CACHE_HAS_ID    = "SELECT EXISTS(SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'xs_item_cache' AND column_name = 'id') AS cache_has_id";
 	private static final String  QUERY_CREATE_ITEM_CACHE    = "CREATE TABLE xs_item_cache" +
 															  "\n(" +
-															  "\n  id SERIAL PRIMARY KEY," +
+															  "\n  id BIGSERIAL PRIMARY KEY," +
 															  "\n  elementName VARCHAR(255) NOT NULL," +
 															  "\n  ids VARCHAR(255) NOT NULL," +
 															  "\n  create_date timestamp DEFAULT now()," +

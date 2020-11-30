@@ -12,7 +12,6 @@ package org.nrg.xdat.security.helpers;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.ecs.xhtml.meta;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
@@ -32,7 +31,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -147,10 +145,7 @@ public class Groups {
      */
     public static Pair<String, String> getProjectIdAndAccessFromGroupId(final String groupId) {
         final Matcher matcher = REGEX_PROJECT_GROUP.matcher(groupId);
-        if (matcher.find()) {
-            return ImmutablePair.nullPair();
-        }
-        return ImmutablePair.of(matcher.group("project"), matcher.group("access"));
+        return matcher.find() ? ImmutablePair.of(matcher.group("project"), matcher.group("access")) : ImmutablePair.nullPair();
     }
 
     /**

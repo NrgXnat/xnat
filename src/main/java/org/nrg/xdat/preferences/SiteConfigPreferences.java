@@ -991,6 +991,17 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiDisplayScanModality() { return getBooleanValue("uiDisplayScanModality"); }
+
+    public void setUiDisplayScanModality(final boolean uiDisplayScanModality) {
+        try {
+            setBooleanValue(uiDisplayScanModality, "uiDisplayScanModality");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiDisplayScanModality': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true", aliases = "UI.display-series-description")
     public boolean getUiDisplaySeriesDescription() {
         return getBooleanValue("uiDisplaySeriesDescription");
@@ -1562,6 +1573,32 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             setBooleanValue(requireEventName, "requireEventName");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'requireEventName': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiHideCompressedUploaderUploadOption() {
+        return getBooleanValue("uiHideCompressedUploaderUploadOption");
+    }
+
+    public void setUiHideCompressedUploaderUploadOption(final boolean uiHideCompressedUploaderUploadOption) {
+        try {
+            setBooleanValue(uiHideCompressedUploaderUploadOption, "uiHideCompressedUploaderUploadOption");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiHideCompressedUploaderUploadOption': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true")
+    public boolean getUiHideXnatUploadAssistantDownload() {
+        return getBooleanValue("uiHideXnatUploadAssistantDownload");
+    }
+
+    public void setUiHideXnatUploadAssistantDownload(final boolean uiHideXnatUploadAssistantDownload) {
+        try {
+            setBooleanValue(uiHideXnatUploadAssistantDownload, "uiHideXnatUploadAssistantDownload");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiHideXnatUploadAssistantDownload': something is very wrong here.", e);
         }
     }
     

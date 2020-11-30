@@ -10,6 +10,8 @@
 
 package org.nrg.xdat.security;
 
+import static org.nrg.xft.event.XftItemEventI.CREATE;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -71,9 +73,6 @@ import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.*;
 
-import static org.nrg.xdat.XDAT.DATA_TYPE_ACCESS_FUNCTIONS;
-import static org.nrg.xft.event.XftItemEventI.CREATE;
-
 /**
  * @author Tim
  */
@@ -122,8 +121,6 @@ public class ElementSecurity extends ItemWrapper {
         final JdbcTemplate                 template            = XDAT.getContextService().getBean(JdbcTemplate.class);
         final XnatPluginBeanManager        beanManager         = XDAT.getContextService().getBean(XnatPluginBeanManager.class);
         final DatabaseHelper               helper              = XDAT.getContextService().getBean(DatabaseHelper.class);
-
-        helper.checkForTablesAndViewsInit("classpath:META-INF/xnat/data-type-access-functions.sql", DATA_TYPE_ACCESS_FUNCTIONS);
 
         for (final DataModelDefinition dataModelDefinition : XFTManager.discoverDataModelDefs()) {
             for (final String securedElements : dataModelDefinition.getSecuredElements()) {

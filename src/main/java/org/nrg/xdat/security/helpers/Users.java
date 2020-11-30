@@ -9,6 +9,9 @@
 
 package org.nrg.xdat.security.helpers;
 
+import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
+import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -66,9 +69,6 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
-import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
-
 @SuppressWarnings({"WeakerAccess", "SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Slf4j
 public class Users {
@@ -86,9 +86,9 @@ public class Users {
     public static final List<GrantedAuthority>  AUTHORITIES_ANONYMOUS       = Collections.<GrantedAuthority>singletonList(AUTHORITY_ANONYMOUS);
     public static final List<GrantedAuthority>  AUTHORITIES_ADMIN           = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_ADMIN, AUTHORITY_USER));
     public static final List<GrantedAuthority>  AUTHORITIES_DATA_ADMIN      = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ADMIN, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ACCESS = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_USER        = Collections.<GrantedAuthority>singletonList(AUTHORITY_USER);
-    public static final Function<UserI, String> USERI_TO_USERNAME       = new Function<UserI, String>() {
+    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ACCESS     = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
+    public static final List<GrantedAuthority>  AUTHORITIES_USER            = Collections.<GrantedAuthority>singletonList(AUTHORITY_USER);
+    public static final Function<UserI, String> USERI_TO_USERNAME           = new Function<UserI, String>() {
         @Nullable
         @Override
         public String apply(final UserI user) {
@@ -581,12 +581,13 @@ public class Users {
             log.warn("Tried to record user login from a request, but no user was associated with the request or context.");
         }
     }
-    
+
     /**
      * Creates a record of the specified user failing to log into the system.
      *
      * @param user    The user logging in
      * @param request The request object
+     *
      * @throws Exception When an error occurs.
      */
     public static void recordFailedUserLogin(final UserI user, final HttpServletRequest request) throws Exception {
@@ -596,12 +597,13 @@ public class Users {
         item.setProperty(IP_ADDRESS, AccessLogger.GetRequestIp(request));
         SaveItemHelper.authorizedSave(item, null, true, false, EventUtils.DEFAULT_EVENT(user, null)); // XnatBasicAuthenticationFilter
     }
-    
+
     /**
      * Creates a record of the specified user logging into the system.
      *
      * @param user    The user logging in
      * @param request The request object
+     *
      * @throws Exception When an error occurs.
      */
     public static void recordUserLogin(final UserI user, final HttpServletRequest request) throws Exception {
@@ -609,6 +611,9 @@ public class Users {
         item.setProperty(USER_XDAT_USER_ID, user.getID());
         item.setProperty(LOGIN_DATE, Calendar.getInstance(TimeZone.getDefault()).getTime());
         item.setProperty(IP_ADDRESS, AccessLogger.GetRequestIp(request));
+        if (AccessLogger.hasNodeId()) {
+            item.setProperty(NODE_ID, AccessLogger.getNodeId());
+        }
         item.setProperty(SESSION_ID, request.getSession().getId());
         SaveItemHelper.authorizedSave(item, null, true, false, EventUtils.DEFAULT_EVENT(user, null)); // XnatBasicAuthenticationFilter
         UserHelper.setUserHelper(request, user);
@@ -749,13 +754,14 @@ public class Users {
     private static final String USER_XDAT_USER_ID = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".user_xdat_user_id";
     private static final String LOGIN_DATE        = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".login_date";
     private static final String IP_ADDRESS        = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".ip_address";
+    private static final String NODE_ID           = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".node_id";
     private static final String SESSION_ID        = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".session_id";
 
     @SuppressWarnings("deprecation")
     private static final ShaPasswordEncoder            _encoder             = new ShaPasswordEncoder(256);
     private static final Map<Integer, String>          _users               = new ConcurrentHashMap<>();
     private static final Map<String, GrantedAuthority> _authorities         = new HashMap<>();
-    private static final String                 DEFAULT_USER_SERVICE = "org.nrg.xdat.security.XDATUserMgmtServiceImpl";
-    private static       UserManagementServiceI singleton            = null;
-    private static       UserDataCache          _cache               = null;
+    private static final String                        DEFAULT_USER_SERVICE = "org.nrg.xdat.security.XDATUserMgmtServiceImpl";
+    private static       UserManagementServiceI        singleton            = null;
+    private static       UserDataCache                 _cache               = null;
 }

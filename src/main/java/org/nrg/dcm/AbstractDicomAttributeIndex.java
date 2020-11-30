@@ -89,11 +89,12 @@ public abstract class AbstractDicomAttributeIndex implements DicomAttributeIndex
         } else {
             try {
                 return Joiner.on('\\').join(de.getStrings(o.getSpecificCharacterSet(), false));
-            } catch (UnsupportedOperationException e) {
-                throw new ConversionFailureException(this, de.getBytes(),
-                        "conversion failed for " + TagUtils.toString(de.tag()) + " VR " + de.vr(), e);
-            } catch (IllegalArgumentException e) {
-                throw new ConversionFailureException(this, de.getBytes(),
+            } catch (UnsupportedOperationException | IllegalArgumentException e) {
+            	Object val = "[cannot read bytes]";
+            	try {
+            		val = de.getBytes();
+				} catch (UnsupportedOperationException ignored) {}
+                throw new ConversionFailureException(this, val,
                         "conversion failed for " + TagUtils.toString(de.tag()) + " VR " + de.vr(), e);
             }
         }

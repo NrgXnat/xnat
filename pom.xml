@@ -8,14 +8,12 @@
   ~ Released under the Simplified BSD.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.7.7.1-INTERNAL</version>
+    <version>1.8.0-TIP-RC1</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -51,10 +49,10 @@
         <application.name>${project.name}</application.name>
         <build.number>manual</build.number>
 
-        <java.source.version>1.7</java.source.version>
-        <java.target.version>1.7</java.target.version>
-        <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
+        <java.source.version>1.8</java.source.version>
+        <java.target.version>1.8</java.target.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- These are default property values to be overridden for specific applications and signing requirements. -->
         <signing.skip>true</signing.skip>
@@ -64,48 +62,61 @@
         <signing.keypass>keypass</signing.keypass>
         <signing.tsa>https://timestamp.digicert.com</signing.tsa>
 
-        <xnat.version>1.7.7-INTERNAL</xnat.version>
-        <patch.version>1.7.7.1-INTERNAL</patch.version>
-        <xnat-web.version>${patch.version}</xnat-web.version>
-        <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
-        <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${patch.version}</xnat-data-models.version>
-        <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
-        <xdat.version>${xnat.version}</xdat.version>
+        <xnat-ref.version>1.7.7-INTERNAL</xnat-ref.version>
+        <xnat.version>1.8.0</xnat.version>
+        <xnatdev.version>1.8.0-SNAPSHOT</xnatdev.version>
+        <xnat-rc.version>1.8.0-TIP-RC1</xnat-rc.version>
 
-        <nrg.automation.version>${xnat.version}</nrg.automation.version>
-        <nrg.config.version>${xnat.version}</nrg.config.version>
+        <!-- XNAT core library versions -->
+        <xnat-web.version>${xnat-rc.version}</xnat-web.version>
+        <xnat-tasks.version>${xnat-ref.version}</xnat-tasks.version>
+        <xnat-data-builder.version>${xnatdev.version}</xnat-data-builder.version>
+        <spawner.version>${xnat.version}</spawner.version>
+        <xnat-data-models.version>${xnat.version}</xnat-data-models.version>
+        <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
+        <xdat.version>${xnat-rc.version}</xdat.version>
+
+        <nrg.automation.version>${xnat-ref.version}</nrg.automation.version>
+        <nrg.config.version>${xnat-ref.version}</nrg.config.version>
         <nrg.framework.version>${xnat.version}</nrg.framework.version>
-        <nrg.mail.version>${xnat.version}</nrg.mail.version>
-        <nrg.notify.version>${xnat.version}</nrg.notify.version>
+        <nrg.mail.version>${xnat-ref.version}</nrg.mail.version>
+        <nrg.notify.version>${xnat-ref.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
-        <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.0.6.1</nrg.mizer.version>
+        <nrg.transaction.version>${xnat-ref.version}</nrg.transaction.version>
+        <nrg.mizer.version>1.2.0</nrg.mizer.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
-        <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>1.0.4.1</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.0.6.1</nrg.dicom-edit6.version>
-        <nrg.dicomdb.version>5.1.2.1</nrg.dicomdb.version>
+        <nrg.dicomimageutils.version>${xnat-ref.version}</nrg.dicomimageutils.version>
+        <nrg.dicom-edit4.version>1.0.5</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>1.2.0</nrg.dicom-edit6.version>
+        <nrg.dicom.pixeleditor>1.2.0</nrg.dicom.pixeleditor>
+        <nrg.dicomdb.version>5.1.2</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
-        <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.0.5.1</nrg.ecat.version>
-        <nrg.extattr.version>4.2.5.1</nrg.extattr.version>
+        <nrg.ecat4xnat.version>${xnat-ref.version}</nrg.ecat4xnat.version>
+        <nrg.ecat.version>1.0.5</nrg.ecat.version>
+        <nrg.extattr.version>4.2.5</nrg.extattr.version>
         <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
-        <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
+        <nrg.sessionbuilders.version>${xnat-ref.version}</nrg.sessionbuilders.version>
         <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>
-        <pipeline.version>${xnat.version}</pipeline.version>
-        <pipelinedev.version>${xnat.version}</pipelinedev.version>
-        <data-client.version>${xnat.version}</data-client.version>
+        <pipeline.version>${xnat-ref.version}</pipeline.version>
+        <pipelinedev.version>${xnat-ref.version}</pipelinedev.version>
+        <data-client.version>${xnat-ref.version}</data-client.version>
+    
+        <!-- XNAT plugin versions -->
+        <ohif-viewer.version>3.0.0-SNAPSHOT</ohif-viewer.version>
+        <container-service.version>2.1.1-ML-SNAPSHOT</container-service.version>
+        <dqr.version>1.0.0-SNAPSHOT</dqr.version>
+        <batch-launch.version>0.2.8-ML-SNAPSHOT</batch-launch.version>
+        <clara.version>ML-BETA</clara.version>
+        <datasets.version>1.0.0-SNAPSHOT</datasets.version>
 
-        <spring-framework.version>4.3.26.RELEASE</spring-framework.version>
-        <spring-security.version>4.2.14.RELEASE</spring-security.version>
-        <spring-ldap.version>2.3.2.RELEASE</spring-ldap.version>
-        <spring-oauth2.version>2.3.6.RELEASE</spring-oauth2.version>
-        <spring-jwt.version>1.0.10.RELEASE</spring-jwt.version>
+        <spring-framework.version>4.3.28.RELEASE</spring-framework.version>
+        <spring-security.version>4.2.18.RELEASE</spring-security.version>
+        <spring-ldap.version>2.3.3.RELEASE</spring-ldap.version>
+        <spring-oauth2.version>2.3.8.RELEASE</spring-oauth2.version>
+        <spring-jwt.version>1.1.1.RELEASE</spring-jwt.version>
 
-        <swagger.version>2.7.0</swagger.version>
+        <swagger.version>2.9.2</swagger.version>
         <vladmihalcea-hibernate-types.version>2.9.3</vladmihalcea-hibernate-types.version>
 
         <activemq.version>5.7.0</activemq.version>
@@ -120,7 +131,9 @@
         <msv.version>2013.6.1</msv.version>
         <cglib.version>2.2.2</cglib.version>
         <commons-beanutils.version>1.9.3</commons-beanutils.version>
+        <commons-cli.version>1.4</commons-cli.version>
         <commons-codec.version>1.10</commons-codec.version>
+        <commons-compress.version>1.20</commons-compress.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-collections4.version>4.4</commons-collections4.version>
         <commons-configuration.version>1.10</commons-configuration.version>
@@ -133,12 +146,16 @@
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.8.1</commons-lang3.version>
+        <commons-lang3.version>3.11</commons-lang3.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <commons-math.version>2.2</commons-math.version>
         <commons-net.version>3.3</commons-net.version>
-        <commons-text.version>1.3</commons-text.version>
+        <commons-text.version>1.9</commons-text.version>
         <dcm4che.version>2.0.29</dcm4che.version>
+        <dcm4che5.version>5.22.6</dcm4che5.version>
+        <pixelmed.version>nrg-20200327</pixelmed.version>
+        <pixelmed-codec.version>20200328</pixelmed-codec.version>
+        <pixelmed-imageio.version>20200328</pixelmed-imageio.version>
         <dom4j.version>1.6.1</dom4j.version>
         <ecs.version>1.4.2</ecs.version>
         <ehcache.version>2.6.11</ehcache.version>
@@ -146,10 +163,11 @@
         <fest-swing.version>1.2.1</fest-swing.version>
         <lorem.version>2.1</lorem.version>
         <fop.version>0.20.5</fop.version>
-        <groovy.version>2.4.6</groovy.version>
+        <groovy.version>2.4.20</groovy.version>
         <http-builder.version>0.7.1</http-builder.version>
         <guava.version>20.0</guava.version>
         <gson.version>2.8.1</gson.version>
+        <auto-value.version>1.7.4</auto-value.version>
         <h2.version>1.4.200</h2.version>
         <eclipse-jgit.version>4.5.4.201711221230-r</eclipse-jgit.version>
 
@@ -163,26 +181,25 @@
         <hibernate.version>4.3.11.Final</hibernate.version>
         <httpcomponents-client.version>4.5.1</httpcomponents-client.version>
         <httpcomponents-core.version>4.4.6</httpcomponents-core.version>
-        <imagej.version>1.50e</imagej.version>
+        <imagej.version>1.53c</imagej.version>
         <jai_imageio.version>1.1</jai_imageio.version>
         <itext.version>2.1.7</itext.version>
         <jackson.version>2.6.5</jackson.version>
         <java-uuid-generator.version>3.1.4</java-uuid-generator.version>
-        <lombok.version>1.18.12</lombok.version>
-        <lombok.checksum>49381508ecb02b3c173368436ef71b24c0d4418ad260e6cc98becbcf4b345406</lombok.checksum>
+        <lombok.version>1.18.16</lombok.version>
+        <lombok.checksum>7206cbbfd6efd5e85bceff29545633645650be58d58910a23b0d4835fbd15ed7</lombok.checksum>
 
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
         <javassist.version>3.23.1-GA</javassist.version>
         <javax-activation.version>1.1.1</javax-activation.version>
+        <javax-annotation.version>1.3.2</javax-annotation.version>
         <javax-inject.version>1</javax-inject.version>
         <javax-interceptor.version>1.2.2</javax-interceptor.version>
         <javax-j2ee-api.version>1.1.1</javax-j2ee-api.version>
         <javax-jms-api.version>2.0.1</javax-jms-api.version>
         <javax-mail.version>1.5.6</javax-mail.version>
-        <!-- Java Validation API 2.x is Java 8 or later. -->
-        <!-- javax-validation.version>2.0.1.Final</javax-validation.version -->
-        <javax-validation.version>1.0.0.GA</javax-validation.version>
+        <javax-validation.version>2.0.1.Final</javax-validation.version>
         <jcalendar.version>1.4</jcalendar.version>
         <jcs.version>1.3</jcs.version>
         <jena-tdb.version>1.0.1</jena-tdb.version>
@@ -194,10 +211,11 @@
         <json.version>20160810</json.version>
         <jstl.version>1.2</jstl.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <assertj.version>2.9.0</assertj.version>
+        <hamcrest2.version>2.2</hamcrest2.version>
+        <assertj.version>3.16.1</assertj.version>
         <junit.version>4.12</junit.version>
-        <junit-jupiter.version>5.2.0</junit-jupiter.version>
-        <spring-test-junit5.version>1.2.0</spring-test-junit5.version>
+        <junit-jupiter.version>5.6.3</junit-jupiter.version>
+        <spring-test-junit5.version>1.5.0</spring-test-junit5.version>
         <jacoco.version>0.8.5</jacoco.version>
         <jython.version>2.7.1</jython.version>
         <jzlib.version>1.1.3</jzlib.version>
@@ -211,6 +229,7 @@
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
         <org.postgresql.version>9.4.1212.jre7</org.postgresql.version>
+        <datasource-proxy.version>1.6</datasource-proxy.version>
         <log4jdbc.version>0.2.0</log4jdbc.version>
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.11</reflections.version>
@@ -220,7 +239,7 @@
         <slf4j.version>1.7.26</slf4j.version>
         <logback.version>1.2.3</logback.version>
         <logstash.version>5.3</logstash.version>
-        <javamelody.version>1.81.0</javamelody.version>
+        <javamelody.version>1.85.0</javamelody.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <metainf-services.version>1.8</metainf-services.version>
         <jetbrains-annotations.version>17.0.0</jetbrains-annotations.version>
@@ -239,30 +258,31 @@
         <xstream.version>1.4.9</xstream.version>
 
         <!-- Gradle plugin versions -->
-        <gradle-git.version>0.12.2</gradle-git.version>
+        <gradle-git.version>0.12.3</gradle-git.version>
         <gradle-tomcat.version>2.5</gradle-tomcat.version>
-        <gradle-cargo.version>2.7</gradle-cargo.version>
+        <gradle-cargo.version>2.7.1</gradle-cargo.version>
         <gradle-dependency-management.version>1.0.9.RELEASE</gradle-dependency-management.version>
-        <gradle-lombok.version>3.3.0</gradle-lombok.version>
-        <tomcat-embed.version>7.0.99</tomcat-embed.version>
+        <gradle-lombok.version>4.0.0</gradle-lombok.version>
+        <tomcat-embed.version>7.0.105</tomcat-embed.version>
 
         <!-- Maven plugin versions -->
-        <install4j-maven-plugin.version>1.1.1</install4j-maven-plugin.version>
+        <install4j-maven-plugin.version>1.1.2</install4j-maven-plugin.version>
         <jacoco-maven-plugin.version>${jacoco.version}</jacoco-maven-plugin.version>
-        <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
-        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
-        <maven-dependency-plugin.version>3.1.1</maven-dependency-plugin.version>
+        <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <maven-dependency-plugin.version>3.1.2</maven-dependency-plugin.version>
         <copy-rename-maven-plugin.version>1.0.1</copy-rename-maven-plugin.version>
-        <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
+        <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
         <maven-jarsigner-plugin.version>3.0.0</maven-jarsigner-plugin.version>
-        <maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
-        <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
-        <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+        <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
-        <maven-war-plugin.version>3.2.2</maven-war-plugin.version>
+        <maven-war-plugin.version>3.3.1</maven-war-plugin.version>
         <javadoc-coverage.version>1.1.1</javadoc-coverage.version>
-    </properties>
+
+</properties>
 
     <dependencyManagement>
         <!-- NRG dependency definitions -->
@@ -312,7 +332,7 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>nrg-all</artifactId>
-                <version>${xnat.previous.version}</version>
+                <version>${xnatdev.version}</version>
             </dependency>
             <!-- Mizer, DicomEdit 4 and 6 engines -->
             <dependency>
@@ -329,6 +349,11 @@
                 <groupId>org.nrg.dicom</groupId>
                 <artifactId>dicom-edit6</artifactId>
                 <version>${nrg.dicom-edit6.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.dicom</groupId>
+                <artifactId>pixelEditor</artifactId>
+                <version>${nrg.dicom.pixeleditor}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
@@ -495,42 +520,42 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat_pipeline</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnat-ref.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat_tools</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnat-ref.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>catalog</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnat-ref.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>client</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnat-ref.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat-pipeline</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnat-ref.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat-tools</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnat-ref.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>imagingtools</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnat-ref.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>pipeline-client</artifactId>
-                <version>${xnat.version}</version>
+                <version>${xnat-ref.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
@@ -563,6 +588,41 @@
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>xnatfs</artifactId>
                 <version>1.5.1</version>
+            </dependency>
+
+            <!-- Plugin definitions -->
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>batch_launch_plugin</artifactId>
+                <version>${batch-launch.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>container-service</artifactId>
+                <version>${container-service.version}</version>
+                <classifier>fat</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>dicom-query-retrieve</artifactId>
+                <version>${dqr.version}</version>
+                <classifier>xpl</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>xnatx-clara</artifactId>
+                <version>${clara.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx.plugins</groupId>
+                <artifactId>xnatx-collection</artifactId>
+                <version>${datasets.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnatx</groupId>
+                <artifactId>ohif-viewer</artifactId>
+                <version>${ohif-viewer.version}</version>
+                <classifier>fat</classifier>
             </dependency>
 
             <!-- External definitions -->
@@ -844,9 +904,19 @@
                 <version>${commons-beanutils.version}</version>
             </dependency>
             <dependency>
+                <groupId>commons-cli</groupId>
+                <artifactId>commons-cli</artifactId>
+                <version>${commons-cli.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -980,14 +1050,94 @@
                 <version>${dcm4che.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.jms</groupId>
-                <artifactId>javax.jms-api</artifactId>
-                <version>${javax-jms-api.version}</version>
+                <groupId>org.dcm4che.tool</groupId>
+                <artifactId>dcm4che-tool-common</artifactId>
+                <version>${dcm4che5.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.management.j2ee</groupId>
-                <artifactId>javax.management.j2ee-api</artifactId>
-                <version>${javax-j2ee-api.version}</version>
+                <groupId>org.dcm4che.tool</groupId>
+                <artifactId>dcm4che-tool-storescp</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che.tool</groupId>
+                <artifactId>dcm4che-tool-storescu</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-core</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-dict</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-dict-arc</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-dict-priv</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-dict-private</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-image</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-imageio</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-imageio-rle</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-javascript</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-js-dict</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-json</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-net</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dclunie</groupId>
+                <artifactId>pixelmed</artifactId>
+                <version>${pixelmed.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dclunie</groupId>
+                <artifactId>pixelmed-codec</artifactId>
+                <version>${pixelmed-codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dclunie</groupId>
+                <artifactId>pixelmed-imageio</artifactId>
+                <version>${pixelmed-imageio.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.activemq</groupId>
@@ -1053,6 +1203,16 @@
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.auto.value</groupId>
+                <artifactId>auto-value</artifactId>
+                <version>${auto-value.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.auto.value</groupId>
+                <artifactId>auto-value-annotations</artifactId>
+                <version>${auto-value.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.collections</groupId>
@@ -1186,11 +1346,6 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>javax.xml</groupId>
-                <artifactId>jaxrpc-api</artifactId>
-                <version>1.1</version>
-            </dependency>
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
@@ -1249,46 +1404,6 @@
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
                 <version>${javassist.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>javax.servlet-api</artifactId>
-                <version>${servlet-api.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>jstl</artifactId>
-                <version>${jstl.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>${javax-activation.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.inject</groupId>
-                <artifactId>javax.inject</artifactId>
-                <version>${javax-inject.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.interceptor</groupId>
-                <artifactId>javax.interceptor-api</artifactId>
-                <version>${javax-interceptor.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${javax-validation.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.mail</groupId>
-                <artifactId>javax.mail-api</artifactId>
-                <version>${javax-mail.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.mail</groupId>
-                <artifactId>javax.mail</artifactId>
-                <version>${javax-mail.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ant</groupId>
@@ -1614,17 +1729,6 @@
                 <version>${imagej.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.sun.media</groupId>
-                <artifactId>jai_imageio</artifactId>
-                <version>${jai_imageio.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.media</groupId>
-                        <artifactId>jai_core</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>com.jcraft</groupId>
                 <artifactId>jzlib</artifactId>
                 <version>${jzlib.version}</version>
@@ -1648,6 +1752,79 @@
                 <groupId>org.codehaus.cargo</groupId>
                 <artifactId>cargo-core-api-module</artifactId>
                 <version>${cargo.version}</version>
+            </dependency>
+
+            <!-- Java extension and Sun internal libraries -->
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>${javax-activation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${javax-annotation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.inject</groupId>
+                <artifactId>javax.inject</artifactId>
+                <version>${javax-inject.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.interceptor</groupId>
+                <artifactId>javax.interceptor-api</artifactId>
+                <version>${javax-interceptor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.jms</groupId>
+                <artifactId>javax.jms-api</artifactId>
+                <version>${javax-jms-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.mail</groupId>
+                <artifactId>javax.mail-api</artifactId>
+                <version>${javax-mail.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.management.j2ee</groupId>
+                <artifactId>javax.management.j2ee-api</artifactId>
+                <version>${javax-j2ee-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${servlet-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>jstl</artifactId>
+                <version>${jstl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${javax-validation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml</groupId>
+                <artifactId>jaxrpc-api</artifactId>
+                <version>1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.media</groupId>
+                <artifactId>jai_imageio</artifactId>
+                <version>${jai_imageio.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.media</groupId>
+                        <artifactId>jai_core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.mail</groupId>
+                <artifactId>javax.mail</artifactId>
+                <version>${javax-mail.version}</version>
             </dependency>
 
             <!-- Optional dependencies. These are usually for IDE tools or annotation processors -->
@@ -1756,6 +1933,11 @@
                 <version>${org.postgresql.version}</version>
             </dependency>
             <dependency>
+                <groupId>net.ttddyy</groupId>
+                <artifactId>datasource-proxy</artifactId>
+                <version>${datasource-proxy.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.marcosemiao.log4jdbc</groupId>
                 <artifactId>log4jdbc-file</artifactId>
                 <version>${log4jdbc.version}</version>
@@ -1763,8 +1945,20 @@
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-core</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-library</artifactId>
                 <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest</artifactId>
+                <version>${hamcrest2.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1874,6 +2068,11 @@
                 <artifactId>spring-security-test</artifactId>
                 <version>${spring-security.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.jayway.jsonpath</groupId>
+                <artifactId>json-path</artifactId>
+                <version>2.4.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1927,7 +2126,7 @@
                     <artifactId>maven-war-plugin</artifactId>
                     <version>${maven-war-plugin.version}</version>
                     <configuration>
-                        <webXml>src\main\webapp\WEB-INF\web.xml</webXml>
+                        <webXml>src/main/webapp/WEB-INF/web.xml</webXml>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -2158,17 +2357,6 @@
 
     <repositories>
         <repository>
-            <id>imagej</id>
-            <name>imagej</name>
-            <url>https://maven.imagej.net/content/groups/public</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <!-- repository>
             <id>dcm4che</id>
             <name>dcm4che</name>
             <url>https://www.dcm4che.org/maven2</url>
@@ -2178,7 +2366,7 @@
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
-        </repository -->
+        </repository>
         <repository>
             <id>jcenter</id>
             <name>JCenter</name>

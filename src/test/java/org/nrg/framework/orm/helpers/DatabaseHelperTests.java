@@ -1,5 +1,8 @@
 package org.nrg.framework.orm.helpers;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.nrg.framework.orm.DatabaseHelper.getFunctionParameterSource;
+
 import lombok.Getter;
 import lombok.Setter;
 import org.junit.Ignore;
@@ -15,14 +18,13 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.nrg.framework.orm.DatabaseHelper.getFunctionParameterSource;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = OrmTestConfiguration.class)
+// @ContextConfiguration(classes = DatabaseHelperTestsConfiguration.class)
 @Transactional(transactionManager = "transactionManager")
 @Rollback
 public class DatabaseHelperTests {
@@ -50,6 +52,16 @@ public class DatabaseHelperTests {
         final List<TestData> doubleObjects = _helper.callFunction("GET_DATA", getFunctionParameterSource("groupId", "double"), TestData.class);
         assertThat(singleObjects).isNotNull().isNotEmpty().hasSize(10);
         assertThat(doubleObjects).isNotNull().isNotEmpty().hasSize(10);
+    }
+
+    @Test
+    @Ignore("Requires PostgreSQL and a function named foo_bar")
+    public void testFunctionExistsMethod() throws SQLException {
+        assertThat(_helper).isNotNull();
+        final boolean fooBarExists = _helper.functionExists("foo_bar");
+        assertThat(fooBarExists).isTrue();
+        final boolean barFooExists = _helper.functionExists("bar_foo");
+        assertThat(barFooExists).isFalse();
     }
 
     @Getter

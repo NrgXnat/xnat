@@ -26,17 +26,16 @@ public final class TestDBUtils {
     }
 
     public void cleanDb(final String table) throws SQLException {
-        Connection connection = _dataSource.getConnection();
-        Statement statement = connection.createStatement();
-        try {
-            statement.execute("DELETE FROM " + table + ";");
+        final Connection connection = _dataSource.getConnection();
+        try (final Statement statement = connection.createStatement()) {
+            //noinspection SqlWithoutWhere
+            statement.execute("DELETE FROM " + table);
         } catch (SQLException exception) {
             // If we didn't find the table, that's OK, because it just may not have been created yet.
             if (exception.getErrorCode() != ErrorCode.TABLE_OR_VIEW_NOT_FOUND_1) {
                 throw exception;
             }
         }
-        statement.close();
     }
 
     private final DataSource _dataSource;

@@ -9,16 +9,16 @@
 
 package org.nrg.framework.orm.hibernate;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
+import org.nrg.framework.ajax.hibernate.HibernatePaginatedRequest;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.generics.AbstractParameterizedWorker;
 import org.nrg.framework.utilities.Reflection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,13 +30,14 @@ import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
-abstract public class AbstractHibernateEntityService<E extends BaseHibernateEntity, DAO extends BaseHibernateDAO<E>> extends AbstractParameterizedWorker<E> implements BaseHibernateService<E>, ApplicationContextAware, InitializingBean {
-    public AbstractHibernateEntityService() {
+@Slf4j
+public abstract class AbstractHibernateEntityService<E extends BaseHibernateEntity, DAO extends BaseHibernateDAO<E>> extends AbstractParameterizedWorker<E> implements BaseHibernateService<E>, ApplicationContextAware, InitializingBean {
+    @Autowired
+    protected AbstractHibernateEntityService() {
         super();
         _isAuditable = HibernateUtils.isAuditable(getParameterizedType());
     }
@@ -51,8 +52,8 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
      * without parameters calls the default constructor for the entity. Since the entity is then uninitialized, this
      * method does not attempt to persist it.
      *
-     * @param parameters    The parameters to be passed to the entity constructor. Note that the corresponding
-     *                      constructor must already exist on the entity class!
+     * @param parameters The parameters to be passed to the entity constructor. Note that the corresponding
+     *                   constructor must already exist on the entity class!
      *
      * @return A new entity object.
      */
@@ -61,7 +62,7 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     public E newEntity(Object... parameters) {
         try {
             Constructor<E> constructor = getConstructor(parameters);
-            E instance = constructor.newInstance(parameters);
+            E              instance    = constructor.newInstance(parameters);
             try {
                 Method method = getParameterizedType().getMethod("setService", AbstractHibernateEntityService.class);
                 method.invoke(instance, this);
@@ -79,13 +80,15 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
 
     /**
      * Adds the submitted entity to the system.
+     *
      * @param entity The entity to be added to the system.
+     *
      * @see BaseHibernateService#create(BaseHibernateEntity)
      */
     @Override
     @Transactional
     public E create(E entity) {
-        _log.debug("Creating a new entity: {}", entity);
+        log.debug("Creating a new entity: {}", entity);
         getDao().create(entity);
         return postProcessNewEntity(entity);
     }
@@ -98,7 +101,8 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
      * This method is a convenience method that combines the functions of the {@link #newEntity(Object...)} and
      * {@link #create(BaseHibernateEntity)} methods.
      *
-     * @param parameters    The parameters passed to the entity constructor
+     * @param parameters The parameters passed to the entity constructor
+     *
      * @return A new entity object.
      */
     @Override
@@ -109,20 +113,19 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     }
 
     /**
-     *
      * @see BaseHibernateService#retrieve(long)
      */
     @Override
     @Transactional
     public E retrieve(long id) {
-        _log.debug("Retrieving entity for ID: {}", id);
+        log.debug("Retrieving entity for ID: {}", id);
         final E entity;
         if (_isAuditable) {
             entity = getDao().findEnabledById(id);
         } else {
             entity = getDao().retrieve(id);
         }
-        if (_initialize) {
+        if (_initialize.get()) {
             initialize(entity);
         }
         return entity;
@@ -136,7 +139,7 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     public E get(long id) throws NotFoundException {
         final E entity = retrieve(id);
         if (entity == null) {
-            throw new NotFoundException("Could not find entity with ID " + String.valueOf(id));
+            throw new NotFoundException("Could not find entity with ID " + id);
         }
         return entity;
     }
@@ -147,7 +150,7 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     @Override
     @Transactional
     public void update(E entity) {
-        _log.debug("Updating entity for ID: {}", entity.getId());
+        log.debug("Updating entity for ID: {}", entity.getId());
         getDao().update(entity);
     }
 
@@ -157,7 +160,7 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     @Override
     @Transactional
     public void delete(E entity) {
-        _log.debug("Deleting entity for ID: {}", entity.getId());
+        log.debug("Deleting entity for ID: {}", entity.getId());
         if (_isAuditable) {
             entity.setEnabled(false);
             entity.setDisabled(new Date());
@@ -173,16 +176,16 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     @Override
     @Transactional
     public void delete(long id) {
-        _log.debug("Deleting entity for ID: {}", id);
+        log.debug("Deleting entity for ID: {}", id);
         delete(getDao().retrieve(id));
     }
 
     @Override
     @Transactional
     public List<E> getAll() {
-        _log.debug("Getting all enabled entities");
+        log.debug("Getting all enabled entities");
         final List<E> list = getDao().findAllEnabled();
-        if (_initialize) {
+        if (_initialize.get()) {
             for (final E entity : list) {
                 initialize(entity);
             }
@@ -193,9 +196,22 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     @Override
     @Transactional
     public List<E> getAllWithDisabled() {
-        _log.debug("Getting all enabled and disabled entities");
+        log.debug("Getting all enabled and disabled entities");
         final List<E> list = getDao().findAll();
-        if (_initialize) {
+        if (_initialize.get()) {
+            for (final E entity : list) {
+                initialize(entity);
+            }
+        }
+        return list;
+    }
+
+    @Override
+    @Transactional
+    public List<E> getPaginated(HibernatePaginatedRequest paginatedRequest) {
+        log.debug("Getting all entities matching request");
+        final List<E> list = getDao().findPaginated(paginatedRequest);
+        if (_initialize.get()) {
             for (final E entity : list) {
                 initialize(entity);
             }
@@ -313,7 +329,6 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("ImplicitSubclassInspection")
     @Override
     @Transactional
     public List<Number> getRevisions(final long id) {
@@ -354,12 +369,14 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
      * deals with the problem of lazily initialized data members being unavailable in the web tier once the Hibernate
      * session is no longer accessible. For performance benefits, you should set this to <b>false</b> when working with
      * a service with the "open session in view" pattern available.
-     * @see org.nrg.framework.orm.hibernate.BaseHibernateService#setInitialize(boolean)
+     *
      * @return Whether the service is set to initialize entities prior to returning them.
+     *
+     * @see org.nrg.framework.orm.hibernate.BaseHibernateService#setInitialize(boolean)
      */
     @Override
     public boolean getInitialize() {
-        return _initialize;
+        return _initialize.get();
     }
 
     /**
@@ -368,11 +385,13 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
      * deals with the problem of lazily initialized data members being unavailable in the web tier once the Hibernate
      * session is no longer accessible. For performance benefits, you should set this to <b>false</b> when working with
      * a service with the "open session in view" pattern available.
-     * @param initialize    Indicates whether the service should initialize entities prior to returning them.
+     *
+     * @param initialize Indicates whether the service should initialize entities prior to returning them.
+     *
      * @see BaseHibernateService#getInitialize()
      */
     public void setInitialize(final boolean initialize) {
-        _initialize = initialize;
+        _initialize.set(initialize);
     }
 
     /**
@@ -387,6 +406,12 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
         getDao().initialize(entity);
     }
 
+    @Autowired
+    public void setDao(@Nonnull final DAO dao) throws BeansException {
+        _dao = dao;
+    }
+
+    @Autowired
     @Override
     public void setApplicationContext(@Nonnull final ApplicationContext context) throws BeansException {
         _context = context;
@@ -427,6 +452,7 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
 
     /**
      * Gets the DAO configured for the service instance.
+     *
      * @return The DAO object.
      */
     protected DAO getDao() {
@@ -437,12 +463,51 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
         return _context;
     }
 
+    /**
+     * Provides convenience method to return untyped list as list parameterized with same type as the DAO.
+     *
+     * @param list The list to be converted to a checked parameterized list.
+     *
+     * @return The parameterized list.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    protected List<E> checked(final List list) {
+        return (List<E>) list;
+    }
+
+    /**
+     * Provides convenience method to return list if it contains any items or null if not.
+     *
+     * @param list The list to be checked and returned if not empty.
+     *
+     * @return Returns the list if it's not null and contains at least one item, <b>null</b> otherwise.
+     */
+    @SuppressWarnings("unused")
+    protected List<E> emptyToNull(final List<E> list) {
+        return isEmpty(list) ? null : list;
+    }
+
+    /**
+     * Provides convenience method to return list if it contains any items or null if not.
+     *
+     * @param list The list to be checked and returned if not empty.
+     *
+     * @return Returns the list if it's not null and contains at least one item, <b>null</b> otherwise.
+     */
+    protected E instance(final List<E> list) {
+        return isEmpty(list) ? null : list.get(0);
+    }
+
+    protected static boolean isEmpty(final List<?> list) {
+        return list == null || list.isEmpty();
+    }
+
     private Constructor<E> getConstructor(final Object[] parameters) throws NrgServiceException {
-        if (parameters == null || parameters.length == 0) {
+        if (ArrayUtils.isEmpty(parameters)) {
             return Reflection.getConstructorForParameters(getParameterizedType());
         }
-        final Class<?>[] types = Reflection.getClassTypes(parameters);
-        Constructor<E> constructor = Reflection.getConstructorForParameters(getParameterizedType(), types);
+        final Class<?>[]     types       = Reflection.getClassTypes(parameters);
+        final Constructor<E> constructor = Reflection.getConstructorForParameters(getParameterizedType(), types);
         if (constructor == null) {
             throw new NrgServiceException(NrgServiceError.Instantiation, "No constructor available for the class " + getParameterizedType().getName() + " that matches the submitted signature: (" + displayTypes(types) + ")");
         }
@@ -450,19 +515,15 @@ abstract public class AbstractHibernateEntityService<E extends BaseHibernateEnti
     }
 
     private String displayTypes(final Class<?>[] types) {
-        if (types == null) {
-            return "Default constructor";
-        }
-        return Joiner.on(", ").join(types);
+        return types == null ? DEFAULT_CONSTRUCTOR : Arrays.stream(types).map(Class::getName).collect(Collectors.joining(", "));
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(AbstractHibernateEntityService.class);
+    private static final String DEFAULT_CONSTRUCTOR = "Default constructor";
 
-    @SuppressWarnings({"SpringJavaAutowiringInspection", "SpringAutowiredFieldsWarningInspection"})
-    @Autowired
-    private DAO _dao;
+    private final AtomicBoolean _initialize = new AtomicBoolean(true);
 
+    private final boolean _isAuditable;
+
+    private DAO                _dao;
     private ApplicationContext _context;
-    private boolean _isAuditable;
-    private boolean _initialize = true;
 }

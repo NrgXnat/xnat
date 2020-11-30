@@ -9,11 +9,43 @@
 
 package org.nrg.framework.utilities;
 
+import static org.reflections.ReflectionUtils.withParametersCount;
+import static org.reflections.ReflectionUtils.withPattern;
+import static org.reflections.ReflectionUtils.withReturnType;
+
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.net.JarURLConnection;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -29,22 +61,7 @@ import org.reflections.ReflectionUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
-import java.net.JarURLConnection;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.regex.Pattern;
-
-import static org.reflections.ReflectionUtils.*;
-
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess"})
 @Slf4j
 public class Reflection {
     public static final String                          CAPITALIZED_NAME          = "[A-Z][A-z0-9_]*";
@@ -65,6 +82,36 @@ public class Reflection {
     @SuppressWarnings("unused")
     public static final Pattern                         PATTERN_PROPERTY          = Pattern.compile(REGEX_PROPERTY);
     public static       Map<String, List<Class<?>>>     CACHED_CLASSES_BY_PACKAGE = new HashMap<>();
+
+    /**
+     * Returns the hierarchy for the submitted class parameter. This includes only primary superclasses and terminates
+     * at <b>Object</b>, which is not included in the returned hierarchy list.
+     *
+     * @param topLevelClass The top-level class of the hierarchy.
+     *
+     * @return A list of classes in the hierarchy, starting with the top-level class and descending to <b>Object</b>.
+     */
+    public static List<Class<?>> getClassHierarchy(final Class<?> topLevelClass) {
+        return getClassHierarchy(topLevelClass, Object.class, new ArrayList<Class<?>>());
+    }
+
+    /**
+     * Returns the hierarchy for the submitted class parameter. This includes only primary superclasses and terminates
+     * at the specified <b>base</b>. Unlike {@link #getClassHierarchy(Class)}, the terminating class <b>base</b> <i>is</i>
+     * included in the returned hierarchy list.
+     *
+     * @param topLevelClass The top-level class of the hierarchy.
+     * @param base          The bottom or limiting class of the hierarchy.
+     *
+     * @return A list of classes in the hierarchy, starting with the top-level class and descending to the <b>base</b> class.
+     */
+    public static List<Class<?>> getClassHierarchy(final Class<?> topLevelClass, final Class<?> base) {
+        if (!base.isAssignableFrom(topLevelClass)) {
+            log.warn("The class " + topLevelClass.getName() + " is not related to the specified base class " + base.getName() + " so the class hierarchy can't be calculated. Returning no results.");
+            return Collections.emptyList();
+        }
+        return getClassHierarchy(topLevelClass, base, new ArrayList<Class<?>>());
+    }
 
     public static <T> Class<T> getParameterizedTypeForClass(final Class<?> clazz) {
         Class<?>          working           = clazz;
@@ -208,6 +255,7 @@ public class Reflection {
         return classes;
     }
 
+    @SuppressWarnings("unused")
     public static boolean isGetter(final Method method) {
         return Modifier.isPublic(method.getModifiers()) &&
                method.getParameterTypes().length == 0 &&
@@ -381,6 +429,31 @@ public class Reflection {
      * <b>Note:</b> This version of the method returns only publicly accessible constructors. If you need to find
      * protected or private constructors, call {@link #getConstructorForParameters(Class, int, Class[])}.
      *
+     * @param target     The class that you want to inspect for compatible constructors.
+     * @param parameters The parameter types you want to submit to the constructor.
+     * @param <T>        The parameterized type for this method.
+     *
+     * @return A matching constructor, if any, <b>null</b> otherwise.
+     */
+    public static <T> Constructor<T> getConstructorForParameters(final Class<T> target, final Object... parameters) {
+        return getConstructorForParameters(target, Modifier.PUBLIC, Lists.transform(Arrays.asList(parameters), new Function<Object, Class<?>>() {
+            @Override
+            public Class<?> apply(final Object parameter) {
+                return parameter.getClass();
+            }
+        }).toArray(new Class[0]));
+    }
+
+    /**
+     * This method is to compensate for the fact that the default Java getConstructor() method doesn't match
+     * constructors that have parameters that are superclasses of one of the submitted parameter classes. For example,
+     * if an object submitted for the constructor is an <b>ArrayList</b>, <b>getConstructor()</b> will not match that to
+     * a constructor that takes a <b>List</b>. This method checks for that downcast compatibility via the
+     * <b>isAssignableFrom()</b> method.
+     *
+     * <b>Note:</b> This version of the method returns only publicly accessible constructors. If you need to find
+     * protected or private constructors, call {@link #getConstructorForParameters(Class, int, Class[])}.
+     *
      * @param target         The class that you want to inspect for compatible constructors.
      * @param parameterTypes The parameter types you want to submit to the constructor.
      * @param <T>            The parameterized type for this method.
@@ -531,6 +604,7 @@ public class Reflection {
         return classLoader.getResource(resource);
     }
 
+    @SuppressWarnings("rawtypes")
     private static AccessibleObject getAccessibleForParameters(final AccessibleObject[] candidates, final int requestedAccess, final Class<?>... parameterTypes) {
         // If we got through all the bits where there are no constructors or parameters, we can try to match the
         // submitted parameter types.
@@ -604,6 +678,7 @@ public class Reflection {
         return _reflectionsCache.get(resourcePackage);
     }
 
+    @SuppressWarnings("rawtypes")
     @SafeVarargs
     private static List<Method> getMethodsUpToSuperclass(final Class<?> subclass, final Class<?> terminator, final List<Predicate<? super Method>> predicates, final Predicate<? super Method>... added) {
         final Predicate[] asArray   = predicates.toArray(new Predicate[0]);
@@ -645,6 +720,11 @@ public class Reflection {
             predicates.addAll(added);
         }
         return predicates;
+    }
+
+    private static <T> List<Class<?>> getClassHierarchy(final Class<T> current, final Class<?> base, final List<Class<?>> hierarchy) {
+        hierarchy.add(current);
+        return current.equals(base) ? hierarchy : getClassHierarchy(current.getSuperclass(), base, hierarchy);
     }
 
     private static final List<Class<?>>           WRAPPERS          = ImmutableList.of(Boolean.class, Byte.class, Character.class, Double.class, Float.class, Integer.class, Long.class, Short.class, Void.class);

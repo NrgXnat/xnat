@@ -10,7 +10,7 @@
 package org.nrg.framework.pinto;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.WordUtils;
+import org.apache.commons.text.WordUtils;
 import org.nrg.framework.utilities.Reflection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -446,9 +446,7 @@ public abstract class AbstractPintoBean {
                 }
 
                 // Remove explicit parameters from default values to be set.
-                if (_parametersWithDefaultValues.containsKey(parameter.getShortOption())) {
-                    _parametersWithDefaultValues.remove(parameter.getShortOption());
-                }
+                _parametersWithDefaultValues.remove(parameter.getShortOption());
 
                 // If the parameter takes no args, there's no reason to keep it around.  The next tokens have to be
                 // either another parameter or trailing arguments.
@@ -532,8 +530,8 @@ public abstract class AbstractPintoBean {
     }
 
     private Object[] coerceArguments(final Method method, final List<String> arguments) throws PintoException {
-        Class<?>[] types = method.getParameterTypes();
-        if (types == null || types.length == 0) {
+        final Class<?>[] types = method.getParameterTypes();
+        if (types.length == 0) {
             throw new PintoException(PintoExceptionType.UnknownParameterTypes);
         }
         final boolean isArrayParameter = types.length == 1 && types[0].isArray();

@@ -10,6 +10,7 @@
 package org.nrg.framework.orm.hibernate;
 
 import org.hibernate.SessionFactory;
+import org.nrg.framework.ajax.hibernate.HibernatePaginatedRequest;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
 import java.io.Serializable;
@@ -34,6 +35,8 @@ public interface BaseHibernateDAO<E extends BaseHibernateEntity> {
     List<E> findAll();
 
     List<E> findAllEnabled();
+
+    List<E> findPaginated(HibernatePaginatedRequest listingRequest);
 
     long countAll();
 

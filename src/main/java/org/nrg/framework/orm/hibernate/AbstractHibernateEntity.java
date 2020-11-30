@@ -11,9 +11,13 @@ package org.nrg.framework.orm.hibernate;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import com.vladmihalcea.hibernate.type.json.JsonStringType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.TypeDef;
+import org.hibernate.annotations.TypeDefs;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.nrg.framework.orm.NrgEntity;
 
@@ -22,6 +26,41 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 
+/**
+ * Provides basic properties for Hibernate entities, including:
+ *
+ * <ul>
+ *     <li>{@link #getId() id}</li>
+ *     <li>{@link #isEnabled() enabled}</li>
+ *     <li>{@link #getCreated() created}</li>
+ *     <li>{@link #getTimestamp() timestamp}</li>
+ *     <li>{@link #getDisabled() disabled}</li>
+ * </ul>
+ *
+ * This also supplies type definitions for <b>json</b> and <b>jsonb</b> properties. These types allow you to store
+ * entity properties as JSON columns in the database. The properties may be typed as pure JsonNode or similar types or
+ * as classes that can be serialized to and deserialized from JSON.
+ *
+ * Configure your JSON property in an entity class with the following annotations:
+ *
+ * <pre>
+ *     {@literal @}Type(type = "json")
+ *     {@literal @}Column(columnDefinition = "json")
+ *     private SomeClass item1;
+
+ *     {@literal @}Type(type = "jsonb")
+ *     {@literal @}Column(columnDefinition = "jsonb")
+ *     private AnotherClass item2;
+ * </pre>
+ *
+ * The <a href="https://www.postgresql.org/docs/9.4/datatype-json.html">PostgreSQL documentation</a> describes the
+ * differences between the <b>JSON</b> and <b>JSONB</b> data types.
+ *
+ * Note that JSON attributes are not currently compatible with the H2 database used for basic unit tests. Possible
+ * workarounds are described <a href="https://vladmihalcea.com/how-to-map-json-objects-using-generic-hibernate-types">in
+ * this issue</a>.
+ */
+@TypeDefs({@TypeDef(name = "json", typeClass = JsonStringType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
 @MappedSuperclass
 @SuppressWarnings("serial")
 abstract public class AbstractHibernateEntity implements BaseHibernateEntity, Serializable {

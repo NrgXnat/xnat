@@ -9,11 +9,9 @@
 
 package org.nrg.dcm.scp;
 
+import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
+
 import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicates;
-import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
@@ -63,12 +61,9 @@ import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
 import javax.inject.Provider;
 import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
-
-import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -109,8 +104,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
             _primaryDicomObjectIdentifierBeanId = sortedDicomObjectIdentifierBeanIds.get(0);
         }
 
-        _dicomObjectIdentifierBeanIds = ImmutableSet.copyOf(sortedDicomObjectIdentifierBeanIds);
-        _identifiersToMapFunction = new IdentifiersToMapFunction(_dicomObjectIdentifiers);
+        _dicomObjectIdentifierBeanIds = sortedDicomObjectIdentifierBeanIds.stream().filter(StringUtils::isNotBlank).collect(Collectors.toSet());
 
         _database = new EmbeddedDatabaseBuilder()
                 .setType(EmbeddedDatabaseType.H2)
@@ -251,7 +245,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
         final Optional<DicomSCPInstance> optional      = getOptionalDicomSCPInstance(instanceId);
         final boolean                    isNewInstance = !optional.isPresent();
-        final DicomSCPInstance           existing      = optional.orNull();
+        final DicomSCPInstance           existing      = optional.orElse(null);
 
         // If existing and submitted are the same, then no change.
         if (!isNewInstance && existing.equals(instance)) {
@@ -292,10 +286,11 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
     public void deleteDicomSCPInstances(final Set<Integer> ids) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException {
         log.debug("Got request to delete {} DicomSCPInstances: {}", ids.size(), StringUtils.join(ids, ", "));
-        final Map<String, DicomSCPInstance> instances = getDicomSCPInstances();
-        final Set<String>                   stringIds = Sets.newHashSet(Iterables.transform(ids, Functions.toStringFunction()));
-        if (!instances.keySet().containsAll(stringIds)) {
-            throw new NotFoundException("Got request to delete DICOM SCP instances with ID(s): " + StringUtils.join(stringIds, ", ") + ". The following IDs are invalid identifiers: " + StringUtils.join(Sets.difference(stringIds, instances.keySet()), ", "));
+        final Map<String, DicomSCPInstance> instances  = getDicomSCPInstances();
+        final Set<String>                   stringIds  = ids.stream().map(id -> Integer.toString(id)).collect(Collectors.toSet());
+        final Set<String>                   invalidIds = stringIds.stream().filter(stringId -> !instances.containsKey(stringId)).collect(Collectors.toSet());
+        if (!invalidIds.isEmpty()) {
+            throw new NotFoundException("Got request to delete DICOM SCP instances with ID(s): " + String.join(", ", stringIds) + ". The following IDs are invalid identifiers: " + String.join(", ", invalidIds));
         }
         final Set<Integer> ports = new HashSet<>();
         for (final int id : ids) {
@@ -381,7 +376,10 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     }
 
     public Map<String, String> getDicomObjectIdentifierBeans() {
-        return Maps.asMap(_dicomObjectIdentifierBeanIds, _identifiersToMapFunction);
+        return _dicomObjectIdentifierBeanIds.stream()
+                                            .filter(_dicomObjectIdentifiers::containsKey)
+                                            .collect(Collectors.toMap(java.util.function.Function.identity(),
+                                                                      beanId -> _dicomObjectIdentifiers.get(beanId) instanceof CompositeDicomObjectIdentifier ? ((CompositeDicomObjectIdentifier) _dicomObjectIdentifiers.get(beanId)).getName() : beanId));
     }
 
     public Map<String, DicomObjectIdentifier<XnatProjectdata>> getDicomObjectIdentifiers() {
@@ -474,17 +472,14 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
 
         clearCaches();
 
-        final List<DicomSCPInstance> cached = Lists.newArrayList(Iterables.filter(Iterables.transform(instances.values(), new Function<DicomSCPInstance, DicomSCPInstance>() {
-            @Override
-            public DicomSCPInstance apply(final DicomSCPInstance instance) {
-                try {
-                    return cacheInstance(instance);
-                } catch (DICOMReceiverWithDuplicatePropertiesException e) {
-                    badInstances.add(e);
-                    return null;
-                }
+        final List<DicomSCPInstance> cached = instances.values().stream().map(instance -> {
+            try {
+                return cacheInstance(instance);
+            } catch (DICOMReceiverWithDuplicatePropertiesException e) {
+                badInstances.add(e);
+                return null;
             }
-        }), Predicates.<DicomSCPInstance>notNull()));
+        }).filter(Objects::nonNull).collect(Collectors.toList());
 
         if (!badInstances.isEmpty()) {
             log.warn("While caching {} DicomSCPInstances, found {} valid instances but {} bad instances", instances.size(), cached.size(), badInstances.size());
@@ -524,7 +519,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
             return Optional.of(getDicomSCPInstance(instanceId));
         } catch (NotFoundException e) {
             // This is okay: it's a new instance.
-            return Optional.absent();
+            return Optional.empty();
         }
     }
 
@@ -606,25 +601,19 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
     };
 
-    private static final RowMapper<DicomSCPInstance> DICOM_SCP_INSTANCE_ROW_MAPPER = new RowMapper<DicomSCPInstance>() {
-        @Override
-        public DicomSCPInstance mapRow(final ResultSet resultSet, final int rowNum) throws SQLException {
-            return DicomSCPInstance.builder()
-                                   .id(resultSet.getInt("id"))
-                                   .aeTitle(resultSet.getString("ae_title"))
-                                   .port(resultSet.getInt("port"))
-                                   .identifier(resultSet.getString("identifier"))
-                                   .fileNamer(resultSet.getString("file_namer"))
-                                   .enabled(resultSet.getBoolean("enabled"))
-                                   .customProcessing(resultSet.getBoolean("custom_processing")).build();
-        }
-    };
+    private static final RowMapper<DicomSCPInstance> DICOM_SCP_INSTANCE_ROW_MAPPER = (resultSet, rowNum) -> DicomSCPInstance.builder()
+                                                                                                                            .id(resultSet.getInt("id"))
+                                                                                                                            .aeTitle(resultSet.getString("ae_title"))
+                                                                                                                            .port(resultSet.getInt("port"))
+                                                                                                                            .identifier(resultSet.getString("identifier"))
+                                                                                                                            .fileNamer(resultSet.getString("file_namer"))
+                                                                                                                            .enabled(resultSet.getBoolean("enabled"))
+                                                                                                                            .customProcessing(resultSet.getBoolean("custom_processing")).build();
 
     private final XnatUserProvider              _provider;
     private final ApplicationContext            _context;
     private final String                        _primaryDicomObjectIdentifierBeanId;
     private final Set<String>                   _dicomObjectIdentifierBeanIds;
-    private final IdentifiersToMapFunction      _identifiersToMapFunction;
     private final EmbeddedDatabase              _database;
     private final NamedParameterJdbcTemplate    _template;
     private final ProcessorGradualDicomImporter _importer;

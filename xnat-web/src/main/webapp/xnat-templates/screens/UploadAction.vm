@@ -42,9 +42,22 @@
     #end
 #end
 
+#if($project)
+    #if($project.class.name == "java.lang.String")
+        #set($projectId = $project)
+    #else
+        #set($projectId = $project.getId())
+    #end
+#else
+    #if($om)
+        #if($om.getProject())
+            #set($projectId = $om.getProject())
+        #end
+    #end
+#end
 #set($userHelper = $data.getSession().getAttribute("userHelper"))
-
-#if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
+#if($projectId && $userHelper.canEdit("xnat:subjectData/project", $projectId))
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/AutomationBasedUploader.js")"></script>
     <script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
     <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
     <script type="text/javascript" src="$content.getURI("scripts/lib/jquery-plugins/jquery.form.js")"></script>

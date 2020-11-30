@@ -1,6 +1,6 @@
 #if($user.checkFeature($om,"configurable_resource_uploader"))
 #if($om.canEdit($user))
- <li id="abu_adl_files_li" class="yuimenuitem">
+ <li id="abu_adl_files_li" class="yuimenuitem lockable">
     <a id="abu_adl_files_a" class="abuLink uploadLink" style="display:block" href="" onclick="return false;" data-type="$om.getXSIType()" data-uri="$content.getURI("/data/experiments/$om.getImagesessionId()/assessors/$om.getId()")">Upload Additional Files</a>
  </li>
  <script type="text/javascript" src="$content.getURI("scripts/uploaders/AutomationBasedUploader.js")"></script>

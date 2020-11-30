@@ -11,7 +11,7 @@
 #end
 
 <div id="report_title" class="edit_title">
-    PET Session: #escapeHTML($reportTitle)
+    PET Session: #escapeCleanHTML($reportTitle)
 </div>
 
 <!-- END /xnat-templates/screens/xnat_petSessionData/xnat_petSessionData_title.vm -->

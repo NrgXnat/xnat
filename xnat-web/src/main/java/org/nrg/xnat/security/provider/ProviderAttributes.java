@@ -7,7 +7,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Provides a convenient container for the attributes of an authentication provider.
@@ -153,10 +153,8 @@ public class ProviderAttributes {
     }
 
     private static Properties getScrubbedProperties(final Properties properties) {
-        final Properties  scrubbed      = new Properties();
-        final Set<String> propertyNames = properties.stringPropertyNames();
-        propertyNames.removeAll(EXCLUDED_PROPERTIES);
-        for (final String property : propertyNames) {
+        final Properties scrubbed = new Properties();
+        for (final String property : properties.stringPropertyNames().stream().filter(name -> !EXCLUDED_PROPERTIES.contains(name)).collect(Collectors.toSet())) {
             scrubbed.setProperty(property, properties.getProperty(property));
         }
         return scrubbed;

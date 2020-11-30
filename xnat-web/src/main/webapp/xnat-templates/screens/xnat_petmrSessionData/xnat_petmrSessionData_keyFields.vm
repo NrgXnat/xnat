@@ -27,67 +27,67 @@
                 #if($!item.getProperty("xnat:petmrSessionData/marker"))
                     <tr>
                         <th align="left">Marker:</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/marker"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/marker"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/stabilization"))
                     <tr>
                         <th align="left">Stabilization:</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/stabilization"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/stabilization"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/coil"))
                     <tr>
                         <th align="left">Receiver coil:</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/coil"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/coil"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/tracer/startTime"))
                     <tr>
                         <th align="left">Start Time</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/tracer/startTime"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/tracer/startTime"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/tracer/transmissions"))
                     <tr>
                         <th align="left">Transmissions</th>
-                        <td>#escapeHTML($!item.getIntegerProperty("xnat:petmrSessionData/tracer/transmissions"))</td>
+                        <td>#escapeCleanHTML($!item.getIntegerProperty("xnat:petmrSessionData/tracer/transmissions"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/tracer/dose"))
                     <tr>
                         <th align="left">Dosage</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/tracer/dose")) #escapeHTML($!item.getStringProperty("xnat:petmrSessionData/tracer/dose/units"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/tracer/dose")) #escapeCleanHTML($!item.getStringProperty("xnat:petmrSessionData/tracer/dose/units"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/tracer/specificActivity"))
                     <tr>
                         <th align="left">Specific Activity</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/tracer/specificActivity"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/tracer/specificActivity"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/tracer/totalMass"))
                     <tr>
                         <th align="left">Total Mass</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/tracer/totalMass")) #escapeHTML($!item.getStringProperty("xnat:petmrSessionData/tracer/totalMass/units"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/tracer/totalMass")) #escapeCleanHTML($!item.getStringProperty("xnat:petmrSessionData/tracer/totalMass/units"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/tracer/intermediate"))
                     <tr>
                         <th align="left">Intermediate</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/tracer/intermediate"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/tracer/intermediate"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/start_time_injection"))
                     <tr>
                         <th align="left">Injection Time</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/start_time_injection"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/start_time_injection"))</td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/start_time_scan"))
                     <tr>
                         <th align="left">Emission Scan Time</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/start_time_scan"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/start_time_scan"))</td>
                     </tr>
                 #end
 
@@ -95,15 +95,15 @@
                     <tr>
                         <th align="left">Blood Glucose Level</th>
                         <td>
-                            #escapeHTML($!item.getProperty("xnat:petmrSessionData/blood_glucose"))&nbsp;
-                            #escapeHTML($!item.getProperty("xnat:petmrSessionData/blood_glucose_units"))
+                            #escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/blood_glucose"))&nbsp;
+                            #escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/blood_glucose_units"))
                         </td>
                     </tr>
                 #end
                 #if($!item.getProperty("xnat:petmrSessionData/blood_glucose_time"))
                     <tr>
                         <th align="left">Blood Glucose Collection Time</th>
-                        <td>#escapeHTML($!item.getProperty("xnat:petmrSessionData/blood_glucose_time"))</td>
+                        <td>#escapeCleanHTML($!item.getProperty("xnat:petmrSessionData/blood_glucose_time"))</td>
                     </tr>
                 #end
             </table>

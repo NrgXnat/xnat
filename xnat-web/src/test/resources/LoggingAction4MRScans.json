@@ -1,0 +1,14 @@
+{
+    "name": "MR Scan Archive on ABC123",
+    "active": true,
+    "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction",
+    "event-filter": {
+        "event-type": "org.nrg.xnat.eventservice.events.ScanEvent",
+    "project-ids": [
+      "ABC123"
+    ],
+    "status": "CREATED",
+    "json-path-filter": "$[?(@.xsiType =~ /.*MRScanData/i && @.frames  > 100 && @.scanner-manufacturer =~ /siemens/i && @.scanner-model =~ /TRIOTIM/i )]"
+    },
+    "act-as-event-user": false
+}

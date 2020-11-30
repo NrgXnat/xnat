@@ -14,6 +14,8 @@ import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatAbstractresourceI;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.search.CriteriaCollection;
@@ -78,6 +80,7 @@ public class URIManager {
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesProjSubjURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.EXPT_ID + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesProjSubjExptURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesProjSubjAssExptURI.class);
+        add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesProjSubjAssExptURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.ASSESSED_ID + "}/scans/{" + URIManager.SCAN_ID + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesProjSubjAssScanURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.ASSESSED_ID + "}/reconstructions/{" + URIManager.RECON_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesProjSubjAssReconURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesProjURI.class);
@@ -85,6 +88,7 @@ public class URIManager {
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/scans/{" + URIManager.SCAN_ID + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesExptScanURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/reconstructions/{" + URIManager.RECON_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesExptReconURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesExptAssessorURI.class);
+        add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesExptAssessorURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/subjects/{SUBJECT_ID}/resources/{" + XNAME + "}/files", Template.MODE_STARTS_WITH, ResourcesSubjURI.class);
         
         add(TEMPLATE_TYPE.ARC, "/archive/experiments/{" + URIManager.ASSESSED_ID + "}/scans/{" + URIManager.SCAN_ID + "}/files",Template.MODE_STARTS_WITH, ResourcesExptScanURI.class);
@@ -94,6 +98,7 @@ public class URIManager {
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesProjSubjURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.EXPT_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesProjSubjExptURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesProjSubjAssExptURI.class);
+        add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.ASSESSED_ID + "}/assessors/{" + URIManager.EXPT_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesProjSubjAssExptURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.ASSESSED_ID + "}/scans/{" + URIManager.SCAN_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesProjSubjAssScanURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/subjects/{" + URIManager.SUBJECT_ID + "}/experiments/{" + URIManager.ASSESSED_ID + "}/reconstructions/{" + URIManager.RECON_ID + "}/{" + URIManager.TYPE + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesProjSubjAssReconURI.class);
         add(TEMPLATE_TYPE.ARC, "/archive/projects/{" + URIManager.PROJECT_ID + "}/resources/{" + XNAME + "}", Template.MODE_STARTS_WITH, ResourcesProjURI.class);
@@ -196,6 +201,21 @@ public class URIManager {
                 }
             }
             return null;
+        }
+
+        protected XnatImageassessordata getImageAssessorByIdOrLabel(final XnatImagesessiondata session,
+                                                                    final String assessorIdOrLabel) {
+            if (session == null) {
+                return (XnatImageassessordata) XnatExperimentdata.getXnatExperimentdatasById(assessorIdOrLabel,
+                        null, false);
+            }
+
+            XnatImageassessordata assessor = session.getAssessorById(assessorIdOrLabel);
+            if (assessor == null) {
+                return session.getAssessorByLabel(assessorIdOrLabel);
+            } else {
+                return assessor;
+            }
         }
     }
 

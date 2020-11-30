@@ -370,6 +370,24 @@ siteInfo:
         ${siteHome}
 #        ${siteHomeLayout}
 
+eventServiceConfig:
+    kind: panel.form
+    name: eventServiceConfig
+    label: Event Service Configuration
+    method: PUT
+    contentType: json
+    url: /xapi/events/prefs
+    contents:
+        enabled:
+            kind: panel.input.switchbox
+            name: enabled
+            label: Enable Event Service
+            onText: Enabled
+            offText: Disabled
+            description: >
+                <p>If enabled, Event Service will detect events and trigger actions linked by subscription.
+                If disabled, event detection, action triggers, and subscription creation will be disabled.</p>
+
 adminInfo:
     kind: panel.form
     name: adminInfo
@@ -1177,6 +1195,34 @@ manageDataTypes:
             name: imageSessionDisplayNamePlural
             label: "Plural Display Name For Generic Image Session Singular"
 
+uploadChannels:
+    kind: panel.form
+    name: uploadChannels
+    label: "Image Session Upload Methods"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiHideCompressedUploaderUploadOption:
+            kind: panel.input.switchbox
+            label: "Hide Compressed Uploader?"
+            onText: Hidden
+            offText: Available
+            description: >
+                This controls whether the Compressed Uploader is made available in the "Upload > Images" menu.
+                By default, this is set to "false", which makes the Compressed Uploader available in the UI. (Note that
+                the DICOM-zip importer is enabled regardless of this setting.)
+        uiHideXnatUploadAssistantDownload:
+            kind: panel.input.switchbox
+            label: "Hide XNAT Upload Assistant?"
+            onText: Hidden
+            offText: Available
+            description: >
+                The XNAT Upload Assistant has been deprecated in favor of the XNAT Desktop Client. However,
+                some legacy sites may prefer to make it available as an option. This setting controls whether
+                the Upload Assistant is hidden from the options in the "Upload > Images" menu. By default, this is
+                set to "true", which hides the Upload Assistant from view.
+
 sessionBuilder:
     kind: panel.form
     name: sessionBuilder
@@ -1222,6 +1268,84 @@ sessionBuilder:
                 This tells the system how long a DICOM session should sit idle&mdash;that is, with no new data added to the
                 session&mdash;before attempting to build a session document from the DICOM data. This value is specified in
                 minutes and defaults to 5 minutes.
+
+projectRouting:
+    kind: panel.form
+    name: projectRouting
+    label: "Project Routing (Site Wide)"
+    method: PUT
+    contentType: json
+    url: /data/config/dicom/projectRules
+    contents:
+        enableSitewideProjectRouting:
+            kind: panel.input.switchbox
+            label: "Enable Custom Site-wide <br>Project Routing?"
+            name: status
+            id: enableSitewideProjectRouting
+            onValue: enabled
+            values: enabled|disabled
+            onText: Enabled
+            offText: Disabled
+        sitewideProjectRouting:
+            kind: panel.textarea
+            label: "Edit Project Routing Rules"
+            name: contents
+            id: sitewideProjectRouting
+            code: text
+            description: >
+                Use the <a href="https://wiki.xnat.org/workshop-2016/step-3-of-8-configure-dicom-project-routing-29032850.html" target="_blank">guide</a> for formatting this string.<br><br>Note that this setting will take precedence over the <a href="https://wiki.xnat.org/documentation/how-to-use-xnat/image-session-upload-methods-in-xnat/how-xnat-scans-dicom-to-map-to-project-subject-session">default XNAT routing rules</a>.
+
+subjectRouting:
+    kind: panel.form
+    name: subjectRouting
+    label: "Subject Routing (Site Wide)"
+    method: PUT
+    contentType: json
+    url: /data/config/dicom/subjectRules
+    contents:
+        enableSitewideSubjectRouting:
+            kind: panel.input.switchbox
+            label: "Enable Custom Site-wide <br>Subject Routing?"
+            name: status
+            id: enableSitewideSubjectRouting
+            onValue: enabled
+            values: enabled|disabled
+            onText: Enabled
+            offText: Disabled
+        sitewideSubjectRouting:
+            kind: panel.textarea
+            label: "Edit Subject Routing Rules"
+            name: contents
+            id: sitewideSubjectRouting
+            code: text
+            description: >
+                Use the <a href="https://wiki.xnat.org/workshop-2016/step-3-of-8-configure-dicom-project-routing-29032850.html" target="_blank">guide</a> for formatting this string.<br><br>Note that this setting will take precedence over the <a href="https://wiki.xnat.org/documentation/how-to-use-xnat/image-session-upload-methods-in-xnat/how-xnat-scans-dicom-to-map-to-project-subject-session">default XNAT routing rules</a>.
+
+sessionRouting:
+    kind: panel.form
+    name: sessionRouting
+    label: "Session Routing (Site Wide)"
+    method: PUT
+    contentType: json
+    url: /data/config/dicom/sessionRules
+    contents:
+        enableSitewideSessionRouting:
+            kind: panel.input.switchbox
+            label: "Enable Custom Site-wide <br>Session Routing?"
+            name: status
+            id: enableSitewideSessionRouting
+            values: enabled|disabled
+            onValue: enabled
+            onText: Enabled
+            offText: Disabled
+        sitewideSessionRouting:
+            kind: panel.textarea
+            label: "Edit Session Routing Rules"
+            name: contents
+            id: sitewideSessionRouting
+            code: text
+            description: >
+                Use the <a href="https://wiki.xnat.org/workshop-2016/step-3-of-8-configure-dicom-project-routing-29032850.html" target="_blank">guide</a> for formatting this string.<br><br>Note that this setting will take precedence over the <a href="https://wiki.xnat.org/documentation/how-to-use-xnat/image-session-upload-methods-in-xnat/how-xnat-scans-dicom-to-map-to-project-subject-session">default XNAT routing rules</a>.
 
 anonymization:
     kind: panel.form
@@ -1313,6 +1437,28 @@ petMr:
                 petmr: Create as PET/MR session
                 pet: Create as PET session
                 separate: Separate into PET and MR sessions
+
+autoRunSettings:
+    kind: panel.form
+    label: AutoRun
+    method: POST
+    contentType: json
+    url: /xapi/pipelines
+    contents:
+        autoRun:
+            kind: panel.input.switchbox
+            name: autoRun
+            label: Launch AutoRun
+            description: >
+                Indicates whether XNAT should launch the AutoRun pipeline as new sessions are archived. When enabled, you must
+                have the pipeline engine installed at the location stored in the <b>pipelinePath</b> site configuration option.
+
+        allowAutoRunProjectOverride:
+            kind: panel.input.switchbox
+            name: allowAutoRunProjectOverride
+            label: Allow Project Override
+            description: >
+                Indicates whether the AutoRun pipeline can be enabled or disabled for specific projects.
 
 pipelineSettings:
     kind: panel.form
@@ -1633,7 +1779,13 @@ root:
             group: xnatSetup
             contents:
                 ${pluginOpenUrlsConfig}
-
+        eventService:
+            kind: tab
+            name: eventService
+            label: Event Service
+            group: xnatSetup
+            contents:
+                ${eventServiceConfig}
         #        authenticationMethods:
         #            kind: tab
         #            name: authenticationMethods
@@ -1677,17 +1829,28 @@ root:
             label: "Session Upload, Import & Anonymization"
             group: manageData
             contents:
+                ${uploadChannels}
                 ${sessionBuilder}
                 ${anonymization}
                 ${seriesImportFilter}
                 ${petTracers}
                 ${petMr}
+        customRoutingRules:
+            kind: tab
+            name: customRoutingRules
+            label: "Custom DICOM Routing"
+            group: manageData
+            contents:
+                ${projectRouting}
+                ${subjectRouting}
+                ${sessionRouting}
         pipelinesTab:
             kind: tab
             label: Pipeline Settings
             group: advanced
             contents:
                 ${pipelineSettings}
+                ${autoRunSettings}
         dicomScpReceiversTab:
             kind: tab
             label: DICOM SCP Receivers

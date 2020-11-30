@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
+import org.nrg.dcm.Extractor;
 import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
@@ -20,6 +21,7 @@ import org.nrg.xnat.services.cache.UserProjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
@@ -46,8 +48,16 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
             initialize();
         }
         final String userId = user.getUsername();
-        for (final DicomDerivedString extractor : _extractors) {
-            final String alias = extractor.apply(dicomObject);
+        List<Extractor> extractors;
+        List<Extractor> dynamicExtractors = getDynamicExtractors();
+        if (dynamicExtractors != null) {
+            extractors = new ArrayList<>(dynamicExtractors);
+            extractors.addAll(_extractors);
+        } else {
+            extractors = _extractors;
+        }
+        for (final Extractor extractor : extractors) {
+            final String alias = extractor.extract(dicomObject);
             if (_log.isDebugEnabled()) {
                 dumpExtractor(extractor, dicomObject, alias);
             }
@@ -68,6 +78,11 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
         return null;
     }
 
+    @Nullable
+    protected List<Extractor> getDynamicExtractors() {
+        return null;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -76,7 +91,18 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
         if (!_initialized) {
             initialize();
         }
-        return ImmutableSortedSet.copyOf(_tags);
+        // The below can change at any time, so must be added "live"
+        List<Extractor> dynamicExtractors = getDynamicExtractors();
+        if (dynamicExtractors != null) {
+            ImmutableSortedSet.Builder<Integer> builder = ImmutableSortedSet.naturalOrder();
+            builder.addAll(_tags);
+            for (Extractor e : dynamicExtractors) {
+                builder.addAll(e.getTags());
+            }
+            return builder.build();
+        } else {
+            return ImmutableSortedSet.copyOf(_tags);
+        }
     }
 
     /**
@@ -87,20 +113,22 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
         _initialized = false;
     }
 
-    abstract protected List<DicomDerivedString> getIdentifiers();
+    abstract protected List<Extractor> getIdentifiers();
 
     private synchronized void initialize() {
-        _extractors.clear();
-        _tags.clear();
-        for (final DicomDerivedString function : getIdentifiers()) {
-            _extractors.add(function);
-            _tags.addAll(function.getTags());
+        if (!_initialized) {
+            _extractors.clear();
+            _tags.clear();
+            for (final Extractor e : getIdentifiers()) {
+                _extractors.add(e);
+                _tags.addAll(e.getTags());
+            }
+            _initialized = true;
         }
-        _initialized = true;
     }
 
-    private void dumpExtractor(final DicomDerivedString extractor, final DicomObject dicomObject, final String alias) {
-        final Class<? extends DicomDerivedString> extractorClass = extractor.getClass();
+    private void dumpExtractor(final Extractor extractor, final DicomObject dicomObject, final String alias) {
+        final Class<? extends Extractor> extractorClass = extractor.getClass();
         _log.debug("Extractor:   {}", extractorClass.getSimpleName());
         _log.debug(" toString(): {}", extractor.toString());
         _log.debug(" found():    {}", StringUtils.defaultIfBlank(alias, "(blank)"));
@@ -116,7 +144,7 @@ public abstract class DbBackedProjectIdentifier implements DicomProjectIdentifie
 
     private final UserProjectCache _cache;
 
-    private final List<DicomDerivedString> _extractors  = new ArrayList<>();
-    private final SortedSet<Integer>       _tags        = new TreeSet<>();
-    private       boolean                  _initialized = false;
+    private final List<Extractor>    _extractors  = new ArrayList<>();
+    private final SortedSet<Integer> _tags        = new TreeSet<>();
+    private       boolean            _initialized = false;
 }

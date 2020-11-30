@@ -144,7 +144,9 @@ var XNAT = getObject(XNAT);
                 input0.value = val;
             }
             else {
-                input0.checked = (inputValue && val && inputValueString === valString) || !!val;
+                let ckedval = input$.data('checkedval');
+                let comparator = ckedval ? ckedval+'' : inputValueString;
+                input0.checked = val && comparator === valString;
                 if (input0.value === '') input0.value = val+'';
             }
         }
@@ -213,10 +215,19 @@ var XNAT = getObject(XNAT);
     }
 
     function getValueFromJson(name, data) {
+        // If data is in legacy XNAT result set format and there's only one result, parse it
+        if (data.hasOwnProperty("ResultSet")) {
+            let tmp = data["ResultSet"]["Result"];
+            if (tmp && tmp.length === 1) {
+                data = tmp[0];
+            }
+        }
+
         // If data had field "name", just return that
         if (data.hasOwnProperty(name)) {
             return data[name];
         }
+
         // Otherwise, check if name is a form2js-type name
         // e.g., arrayParam[index]:field
         var delimiter = ':'; // See line 645 xhr.js

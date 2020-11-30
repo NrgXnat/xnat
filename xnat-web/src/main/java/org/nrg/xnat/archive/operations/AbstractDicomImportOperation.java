@@ -316,7 +316,7 @@ public abstract class AbstractDicomImportOperation extends ArchiveStatusProducer
         }
     }
 
-    protected static final String  DEFAULT_TRANSFER_SYNTAX = TransferSyntax.ImplicitVRLittleEndian.uid();
+    protected static final String  DEFAULT_TRANSFER_SYNTAX = TransferSyntax.ExplicitVRLittleEndian.uid();
     protected static final String  RENAME_PARAM            = "rename";
     protected static final boolean canDecompress           = initializeCanDecompress();
 

@@ -40,6 +40,7 @@ import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.services.PETTracerUtils;
 import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
+import org.nrg.xnat.tracking.services.EventTrackingDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -51,6 +52,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean;
 import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
+import org.springframework.scheduling.config.TriggerTask;
+import org.springframework.scheduling.support.PeriodicTrigger;
 
 import javax.servlet.ServletContext;
 import java.io.BufferedReader;
@@ -60,17 +63,19 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
-@ComponentScan({"org.nrg.automation.daos", "org.nrg.automation.repositories", "org.nrg.config.daos", "org.nrg.dcm.xnat",
-                "org.nrg.dicomtools.filters", "org.nrg.resources", "org.nrg.framework.datacache.impl.hibernate",
-                "org.nrg.framework.services.impl", "org.nrg.notify.daos", "org.nrg.prefs.repositories",
-                "org.nrg.xdat.daos", "org.nrg.xdat.security.validators", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xdat.services.cache.impl",
-                "org.nrg.xft.daos", "org.nrg.xft.event.listeners", "org.nrg.xft.services",
-                "org.nrg.xnat.configuration", "org.nrg.xnat.daos", "org.nrg.xnat.tracking", "org.nrg.xnat.event.listeners", "org.nrg.xnat.event.services",
-                "org.nrg.xnat.helpers.merge", "org.nrg.xnat.initialization.tasks",
-                "org.nrg.xnat.node", "org.nrg.xnat.task", "org.nrg.xnat.preferences", "org.nrg.xnat.processors",
-                "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processor.dao", "org.nrg.xnat.processor.importer"})
+@ComponentScan({"org.nrg.dcm.xnat", "org.nrg.dicomtools.filters", "org.nrg.framework.datacache.impl.hibernate",
+                "org.nrg.framework.services.impl", "org.nrg.resources", "org.nrg.xdat.daos", "org.nrg.xdat.security.validators",
+                "org.nrg.xdat.services.cache.impl", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xft.daos",
+                "org.nrg.xft.event.listeners", "org.nrg.xft.services", "org.nrg.xft.utils", "org.nrg.xnat.configuration",
+                "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners", "org.nrg.xnat.event.services", "org.nrg.xnat.eventservice.actions",
+                "org.nrg.xnat.eventservice.daos", "org.nrg.xnat.eventservice.events", "org.nrg.xnat.eventservice.listeners",
+                "org.nrg.xnat.helpers.merge", "org.nrg.xnat.helpers.processing", "org.nrg.xnat.helpers.resolvers",
+                "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.node", "org.nrg.xnat.preferences", "org.nrg.xnat.processor.dao",
+                "org.nrg.xnat.processor.importer", "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processors",
+                "org.nrg.xnat.task", "org.nrg.xnat.tracking"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @EnableCaching
 @Getter
@@ -180,6 +185,7 @@ public class ApplicationConfig {
     }
 
     @Bean
+    @Primary
     public XnatUserProvider primaryAdminUserProvider(final SiteConfigPreferences preferences) {
         return new XnatUserProvider(preferences, "primaryAdminUsername");
     }
@@ -217,6 +223,13 @@ public class ApplicationConfig {
     @Bean
     public ProcessorImporterMap processorImporterMap(final List<ProcessorImporterHandlerA> handlers) throws ConfigurationException, IOException, ClassNotFoundException {
         return new ProcessorImporterMap(new HashSet<>(Collections.singletonList("org.nrg.xnat.processor.importer")), handlers);
+    }
+
+    @Bean
+    public TriggerTask cleanupEventTracking(final EventTrackingDataService eventTrackingDataService) {
+        return new TriggerTask(eventTrackingDataService::cleanupOldEntries,
+                new PeriodicTrigger(1, TimeUnit.DAYS)
+        );
     }
 
     private AsyncOperationsPreferences _asyncOperationsPreferences;

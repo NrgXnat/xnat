@@ -110,7 +110,8 @@ var XNAT = getObject(XNAT);
             id: SELECT_ALL_ID,
             className: 'ignore checkbox select-all ' + typeDashed,
             title: type + ': select all',
-            checked: true
+            checked: true,
+            style: { 'width':'auto' }
         });
 
         var selectAllLabel = spawn('label', {
@@ -285,6 +286,7 @@ var XNAT = getObject(XNAT);
             $form.find('[name="XNAT_CSRF"]').remove();
             $form.submitJSON({
                 // dataType: 'text/plain',
+                stringValues: ['projectIds[]'],
                 validate: function(){
                     var errorMsg = '';
                     var sessionSelected, countChecked;
@@ -368,7 +370,7 @@ var XNAT = getObject(XNAT);
                                             });
                                         },
                                         success: function(data){
-                                            var token = JSON.parse(data);
+                                            var token = (!isObject(data)) ? JSON.parse(data) : data;
                                             var url = XNAT.url.xnatUrl('/download/'+ID+'.xml?a='+token.alias+'&s='+token.secret);
                                             window.location.assign(url);
                                             XNAT.ui.dialog.closeAll();

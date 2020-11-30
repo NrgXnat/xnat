@@ -10,12 +10,19 @@
 package org.nrg.xnat.initialization;
 
 import lombok.extern.slf4j.Slf4j;
+import net.ttddyy.dsproxy.listener.logging.DefaultQueryLogEntryCreator;
+import net.ttddyy.dsproxy.listener.logging.SLF4JQueryLoggingListener;
+import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.engine.jdbc.internal.FormatStyle;
+import org.hibernate.engine.jdbc.internal.Formatter;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.postgresql.Driver;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -35,6 +42,46 @@ public class DatabaseConfig {
     @Bean
     public DataSource dataSource(final Environment environment) throws NrgServiceException {
         final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
+        final DataSource dataSource = getConfiguredDataSource(properties);
+        return BooleanUtils.toBoolean(properties.getProperty("useLoggingProxy", "false")) ? getProxiedDataSource(dataSource, properties) : dataSource;
+    }
+
+    @Bean
+    public JdbcTemplate jdbcTemplate(final DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+
+    @Bean
+    public NamedParameterJdbcTemplate namedParameterJdbcTemplate(final JdbcTemplate template) {
+        return new NamedParameterJdbcTemplate(template);
+    }
+
+    @Bean(name = "dbUsername")
+    public String dbUsername(final Environment environment) {
+        final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
+        return properties.getProperty("username");
+    }
+
+    private DataSource getProxiedDataSource(final DataSource dataSource, final Properties properties) {
+        final PrettyQueryEntryCreator creator = new PrettyQueryEntryCreator();
+        creator.setMultiline(false);
+
+        final SLF4JQueryLoggingListener listener = new SLF4JQueryLoggingListener();
+        listener.setQueryLogEntryCreator(creator);
+        listener.setLogger(LoggerFactory.getLogger("JdbcLogger"));
+
+        final ProxyDataSourceBuilder builder = ProxyDataSourceBuilder
+                .create(dataSource)
+                .name("dataSource")
+                .listener(listener)
+                .proxyResultSet();
+        if (BooleanUtils.toBoolean(properties.getProperty("logAsJson", "false"))) {
+            builder.asJson();
+        }
+        return builder.build();
+    }
+
+    private DataSource getConfiguredDataSource(final Properties properties) throws NrgServiceException {
         setDefaultDatasourceProperties(properties);
         final String dataSourceClassName = properties.getProperty("class");
         try {
@@ -53,22 +100,6 @@ public class DatabaseConfig {
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
             throw new NrgServiceException(NrgServiceError.ConfigurationError, "An error occurred trying to access a property in the specified data-source class: " + dataSourceClassName, e);
         }
-    }
-
-    @Bean
-    public JdbcTemplate jdbcTemplate(final DataSource dataSource) {
-        return new JdbcTemplate(dataSource);
-    }
-
-    @Bean
-    public NamedParameterJdbcTemplate namedParameterJdbcTemplate(final JdbcTemplate template) {
-        return new NamedParameterJdbcTemplate(template);
-    }
-
-    @Bean(name = "dbUsername")
-    public String dbUsername(final Environment environment) {
-        final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
-        return properties.getProperty("username");
     }
 
     private static void setDefaultDatasourceProperties(final Properties properties) {
@@ -108,6 +139,15 @@ public class DatabaseConfig {
             log.info("No value set for the XNAT datasource password, using default setting. Note that you can set the password to an empty value if you really need an empty string.");
             properties.setProperty("password", DEFAULT_DATASOURCE_PASSWORD);
         }
+    }
+
+    private static class PrettyQueryEntryCreator extends DefaultQueryLogEntryCreator {
+        @Override
+        protected String formatQuery(String query) {
+            return FORMATTER.format(query);
+        }
+
+        private static final Formatter FORMATTER = FormatStyle.BASIC.getFormatter();
     }
 
     private static final String DEFAULT_DATASOURCE_URL          = "jdbc:postgresql://localhost/xnat";

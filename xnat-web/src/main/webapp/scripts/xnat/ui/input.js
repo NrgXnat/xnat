@@ -717,6 +717,12 @@ var XNAT = getObject(XNAT);
 
         addClassName(chkbox, 'switchbox');
 
+        if (config.onValue) {
+            addDataAttrs(chkbox, {
+                checkedval: config.onValue
+            });
+        }
+
         var proxy = CKBX.proxy;
 
         var swboxParts = [

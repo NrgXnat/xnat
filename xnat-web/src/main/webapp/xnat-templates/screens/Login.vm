@@ -10,6 +10,26 @@
 #* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
 <!-- BEGIN xnat-templates/screens/Login.vm -->
 
+#macro (showProviders $providers)
+    #* @vtlvariable name="providers" type="java.util.Collection" *#
+    #* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+    #if($providers)
+        #if($providers.isEmpty())
+        <input type="hidden" id="login_method" name="login_method" value="localdb">
+        #elseif($providers.size() == 1)
+            #set($provider = $providers.iterator().next())
+        <input type="hidden" id="login_method" name="login_method" value="$provider.providerId"/>
+        #else
+        <label for="login_method">Login</label>
+        <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
+            #foreach ($provider in $providers)
+                <option value="$provider.providerId">$provider.name</option>
+            #end
+        </select>
+        #end
+    #end
+#end
+
 #set ($siteId = $siteConfig.siteId)
 $page.setTitle("$siteId - Please Login")
     $page.setBgColor($ui.bgcolor)
@@ -85,18 +105,7 @@ $page.setTitle("$siteId - Please Login")
         <div class="clear" style="margin:2em 0;"></div>
         <div id="login_box">
             <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
-                #if($login_methods)
-                    #if ($login_methods.size() == 0)
-                        <input type="hidden" id="login_method" name="login_method" value="Database">
-                    #elseif($login_methods.size() > 1)
-                        <label for="login_method">Login</label>
-                        <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
-                            #foreach ($provider in $login_methods)
-                                <option value="$provider.providerId">$provider.name</option>
-                            #end
-                        </select>
-                    #end
-                #end
+                #showProviders($login_methods)
                 <p>
                     <label for="username">User</label>
                     <input type="text"
@@ -175,18 +184,7 @@ $page.setTitle("$siteId - Please Login")
         #end
 
         <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
-            #if($login_methods)
-                #if($login_methods.size() == 0))
-                    <input type="hidden" id="login_method" name="login_method" value="Database">
-                #elseif($login_methods.size() > 1)
-                    <label for="login_method">Login</label>
-                    <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
-                        #foreach ($provider in $login_methods)
-                            <option value="$provider.providerId">$provider.name</option>
-                        #end
-                    </select>
-                #end
-            #end
+            #showProviders($login_methods)
             <p>
                 <label for="username">User</label>
                 <input type="text"

@@ -26,9 +26,8 @@ import org.powermock.reflect.Whitebox;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.ConcurrentModificationException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.Matchers.is;
@@ -207,6 +206,36 @@ public class TestThreadAndProcessFileLock {
         // but then also, let's check that we added the item
         CatalogUtils.CatalogData catalogData2 = new CatalogUtils.CatalogData(outfile, fakeProject);
         assertThat(catalogData2.catBean.getEntries_entry(), Matchers.<CatEntryI>hasSize(1));
+    }
+
+    @Test
+    public void testConcurrentRead() throws Exception {
+        final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(TEST_CATALOG_FILE, true);
+        try {
+            try {
+                fl.tryLock(1L, TimeUnit.SECONDS);
+            } catch (IOException e) {
+                fail("Unable to obtain single read lock");
+            }
+
+            List<ThreadAndProcessFileLock> tounlock = new ArrayList<>();
+            for (int i = 0; i < 10; i++) {
+                final ThreadAndProcessFileLock fl2 = ThreadAndProcessFileLock.getThreadAndProcessFileLock(TEST_CATALOG_FILE, true);
+                try {
+                    fl2.tryLock(1L, TimeUnit.SECONDS);
+                    tounlock.add(fl2);
+                } catch (IOException e) {
+                    fail("Unable to obtain concurrent read lock " + i + ": " + e.getMessage());
+                }
+            }
+
+            for (ThreadAndProcessFileLock lock : tounlock) {
+                lock.unlock();
+            }
+        } finally {
+            fl.unlock();
+            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(TEST_CATALOG_FILE);
+        }
     }
 
     private void doReadWrite(File file) throws Exception {

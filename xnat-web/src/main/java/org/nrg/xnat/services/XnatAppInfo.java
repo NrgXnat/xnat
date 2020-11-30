@@ -9,11 +9,12 @@
 
 package org.nrg.xnat.services;
 
+import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
+import static org.nrg.xnat.utils.FileUtils.nodeToList;
+
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -27,6 +28,7 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.DisplayHostName;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xnat.node.entities.XnatNodeInfo;
 import org.nrg.xnat.node.services.XnatNodeInfoService;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
@@ -62,9 +64,7 @@ import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
-
-import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
-import static org.nrg.xnat.utils.FileUtils.nodeToList;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -80,8 +80,14 @@ public class XnatAppInfo {
         _node = node;
         _siteAddress = getSiteAddress();
         _hostName = getXnatNodeHostName(nodeInfoService);
-        _hasMultipleActiveNodes = !StringUtils.equals(XnatNode.NODE_ID_NOT_CONFIGURED, _node.getNodeId()) && _template.queryForObject(QUERY_COUNT_ACTIVE_NODES, Boolean.class);
         _displayHostName = shouldDisplayHostName(_preferences.getDisplayHostName());
+
+        final String  nodeId           = _node.getNodeId();
+        final boolean nodeIdConfigured = !StringUtils.equals(XnatNode.NODE_ID_NOT_CONFIGURED, nodeId);
+        _hasMultipleActiveNodes = nodeIdConfigured && _template.queryForObject(QUERY_COUNT_ACTIVE_NODES, Boolean.class);
+        if (nodeIdConfigured) {
+            AccessLogger.setNodeId(nodeId);
+        }
 
         final Resource configuredUrls = RESOURCE_LOADER.getResource("classpath:META-INF/xnat/security/configured-urls.yaml");
         try (final InputStream inputStream = configuredUrls.getInputStream()) {
@@ -112,14 +118,8 @@ public class XnatAppInfo {
                 _properties.put(PROPERTY_BUILD_DATE, attributes.getValue(MANIFEST_BUILD_DATE));
                 _properties.put(PROPERTY_SHA, attributes.getValue(MANIFEST_SHA));
                 _properties.put(PROPERTY_DIRTY, attributes.getValue(MANIFEST_DIRTY));
+                _properties.putAll(attributes.keySet().stream().map(Object::toString).filter(XnatAppInfo::needsManifestKey).collect(Collectors.toMap(key -> MANIFEST_PROPERTY_MAPPING.getOrDefault(key, key), attributes::getValue)));
 
-                for (final Object key : attributes.keySet()) {
-                    final String name = key.toString();
-                    if (!PRIMARY_MANIFEST_ATTRIBUTES.contains(name) && !MANIFEST_ATTRIBUTE_EXCLUSIONS.contains(name)) {
-                        final String propertyKey = MANIFEST_PROPERTY_MAPPING.containsKey(name) ? MANIFEST_PROPERTY_MAPPING.get(name) : name;
-                        _properties.put(propertyKey, attributes.getValue(name));
-                    }
-                }
                 final Map<String, Attributes> entries = manifest.getEntries();
                 for (final String key : entries.keySet()) {
                     final Map<String, String> keyedAttributes = new HashMap<>();
@@ -134,7 +134,7 @@ public class XnatAppInfo {
                 _properties.put(PROPERTY_TIMESTAMP, Long.toString((_buildDate = parseDate(attributes.getValue(MANIFEST_BUILD_DATE))).getTime()));
                 _properties.put(PROPERTY_HOSTNAME, _hostName);
                 _properties.put(PROPERTY_DISPLAY_HOST_NAME, Boolean.toString(_displayHostName));
-                _properties.put(PROPERTY_NODE_ID, _node.getNodeId());
+                _properties.put(PROPERTY_NODE_ID, nodeId);
 
                 _versionDisplay = NON_RELEASE_VERSION_REGEX.matcher(rawVersion).matches()
                                   ? rawVersion + "-" + getCommit() + "-" + getCommitHash() + (isDirty() ? ".dirty" : "") + " (build " + getBuildNumber() + " on " + getBuildDate() + ")"
@@ -265,8 +265,8 @@ public class XnatAppInfo {
                     for (final String preference : _foundPreferences.keySet()) {
                         if (_foundPreferences.get(preference) != null) {
                             _template.update(
-                                "UPDATE xhbm_preference SET value = ? WHERE name = ?",
-                                new Object[] {_foundPreferences.get(preference), preference}, new int[] {Types.VARCHAR, Types.VARCHAR}
+                                    "UPDATE xhbm_preference SET value = ? WHERE name = ?",
+                                    new Object[]{_foundPreferences.get(preference), preference}, new int[]{Types.VARCHAR, Types.VARCHAR}
                                             );
                             try {
                                 _preferences.set(_foundPreferences.get(preference), preference);
@@ -616,6 +616,10 @@ public class XnatAppInfo {
         return checkUrls(request, _nonAdminErrorPathPatterns);
     }
 
+    private static boolean needsManifestKey(final String key) {
+        return !PRIMARY_MANIFEST_ATTRIBUTES.contains(key) && !MANIFEST_ATTRIBUTE_EXCLUSIONS.contains(key);
+    }
+
     private static Date parseDate(final String dateProperty) {
         try {
             return FORMATTER.parse(dateProperty);
@@ -697,16 +701,7 @@ public class XnatAppInfo {
     }
 
     private List<String> asAntPatterns(final List<String> urls) {
-        return Lists.transform(urls, new Function<String, String>() {
-            @Nullable
-            @Override
-            public String apply(@Nullable final String url) {
-                if (StringUtils.isBlank(url)) {
-                    return null;
-                }
-                return asAntPattern(url);
-            }
-        });
+        return urls.stream().filter(StringUtils::isNotBlank).map(this::asAntPattern).collect(Collectors.toList());
     }
 
     private String asAntPattern(final String url) {
@@ -827,7 +822,7 @@ public class XnatAppInfo {
     private static final String           SECONDS                   = "seconds";
     private static final Pattern          CHECK_VALID_PATTERN       = Pattern.compile("^(?i)(0|1|false|true|f|t)$");
     private static final Pattern          CHECK_TRUE_PATTERN        = Pattern.compile("^(?i)(1|true|t)$");
-    private static final String QUERY_COUNT_ACTIVE_NODES = "SELECT count(*) > 1 AS has_multiple FROM xhbm_xnat_node_info WHERE enabled = TRUE";
+    private static final String           QUERY_COUNT_ACTIVE_NODES  = "SELECT count(*) > 1 AS has_multiple FROM xhbm_xnat_node_info WHERE enabled = TRUE";
 
     private final JdbcTemplate             _template;
     private final Environment              _environment;

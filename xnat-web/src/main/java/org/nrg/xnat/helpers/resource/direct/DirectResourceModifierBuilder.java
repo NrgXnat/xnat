@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.helpers.resource.direct;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagescandata;
@@ -47,7 +48,7 @@ public class DirectResourceModifierBuilder implements ResourceModifierBuilderI {
 
 	@Override
 	public void setRecon(XnatImagesessiondata assessed, XnatReconstructedimagedata recon, String type) {
-		this.type = type;
+		this.type = StringUtils.defaultIfBlank(type, "out");
 		this.assessed=assessed;
 		this.recon = recon;
 	}
@@ -70,7 +71,7 @@ public class DirectResourceModifierBuilder implements ResourceModifierBuilderI {
 
 	@Override
 	public void setAssess(XnatImagesessiondata assessed, XnatImageassessordata assess, String type) {
-		this.type = type;
+		this.type = StringUtils.defaultIfBlank(type, "out");
 		this.assessed=assessed;
 		this.assess = assess;
 	}
@@ -139,7 +140,7 @@ public class DirectResourceModifierBuilder implements ResourceModifierBuilderI {
 		}else if(project!=null){
 			return new DirectProjResourceImpl(project,overwrite,user,ci);
 		}else{
-			throw new Exception("Unknown resource");
+			throw new Exception("Invalid resource (perhaps a parent element has been deleted)");
 		}
 	}
 }

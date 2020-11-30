@@ -79,7 +79,7 @@
         // Upload file, then archive it asynchronously
         var form = document.getElementById("uploadFORM");
         var file = $('#image_archive').prop('files')[0];
-        var usrResPath = usrResPathBase + file.name;
+        var usrResPath = usrResPathBase + encodeURIComponent(file.name);
         var formDataUpload = new FormData();
         formDataUpload.append("image_archive", file);
         var formDataArchive = new FormData(form);

@@ -1225,15 +1225,8 @@ private void deleteTriageResource(XnatProjectdata proj ,String projectPath,Strin
 	
 	private boolean canEditDestination() throws Exception {
 		String target = this.retrieveParam("target");
-		String targetResource=target+"/files";
-		ResourceURII arcURI=convertValue(targetResource);
-		boolean authorized=false;
-			if(arcURI.getSecurityItem().canEdit(this.getUser())){
-				authorized=true;
-			}else{
-				authorized=false;
-			}
-		return authorized;
-		
+		String targetResource = target.replaceAll("(/files)?$", "/files");
+		ResourceURII arcURI = convertValue(targetResource);
+		return arcURI.getSecurityItem().canEdit(this.getUser());
 	}
 }

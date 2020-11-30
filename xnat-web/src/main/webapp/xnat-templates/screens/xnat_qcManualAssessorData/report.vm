@@ -15,14 +15,22 @@
 </script>
 
 <style>
+	.qcScanTable th, .qcSessionTable th {
+		text-align:left;
+	}
+	.qcScanTable td {
+		vertical-align:top;
+	}
+	/*.snapshot-container {*/
+		/*background-color: #f7f7f7;*/
+		/*background-size: 100% 100%;*/
+		/*background-repeat: no-repeat;*/
+		/*background-position: center center;*/
+		/*border: 1px solid #ccc;*/
+        /*height: 300px;*/
+		/*width: 300px;*/
+	/*}*/
 
-.qcScanTable th, .qcSessionTable th {
-	text-align:left;
-}
-
-.qcScanTable td {
-	vertical-align:top;
-}
 </style>
 
 <h2>Overall QC for $!mr.getIdentifier($project,false)</h2>
@@ -81,18 +89,18 @@
 	<h2>Scans</h2>
 	<table class="qcScanTable">
 		#foreach($scan in $scans)
-			#set($mrScan=$mr.getScanById($!scan.getStringProperty("xnat:qcScanData/imageScan_ID")))
+			#set($scanId=$!scan.getStringProperty("xnat:qcScanData/imageScan_ID"))
+			#set($mrScan=$mr.getScanById($!scanId))
 			<tr>
 				<td>
-					#set($snapshot=$mrScan.getSnapshot())
-					#if($snapshot)
-						<img src="$content.getURI("$!snapshot.getThumbnail()")"> 
-					#else
-						N/A
-					#end
+					<div id="snapshot-$!scan.getStringProperty("xnat:qcScanData/imageScan_ID")" class="snapshot-container"></div>
+					<script>
+						var url = XNAT.url.restUrl('/xapi/experiments/${mr_id}/scan/$!{scanId}/snapshot')
+						jq(document).find('#snapshot-${scanId}').css('background-image','url('+url+')');
+					</script>
 				</td>
 				<td>
-					<h3>Scan $!scan.getStringProperty("xnat:qcScanData/imageScan_ID")</h3>
+					<h3>Scan $!scanId</h3>
 					<table>
 						#parse($turbineUtils.getTemplateName("details",$scan.getXSIType(),$project))
 					</table>

@@ -18,20 +18,15 @@ var XNAT = getObject(XNAT);
     }
 }(function() {
 
-    var undef, scanTable;
+    XNAT.app = getObject(XNAT.app || {});
+    const scanTable = XNAT.app.scanTable = getObject(XNAT.app.scanTable || {});
 
-    XNAT.app =
-        getObject(XNAT.app || {});
+    let projectId = XNAT.data.context.project;
+    let subjectId = XNAT.data.context.subjectID;
+    let exptId    = XNAT.data.context.ID;
 
-    XNAT.app.scanTable = scanTable =
-        getObject(XNAT.app.scanTable || {});
-
-    var projectId = XNAT.data.context.project;
-    var subjectId = XNAT.data.context.subjectID;
-    var exptId    = XNAT.data.context.ID;
-
-    var htmlUrlExample = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=html';
-    var zipUrlExample  = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=zip';
+    // const htmlUrlExample = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=html';
+    // const zipUrlExample  = '/data/experiments/XNAT_E01124/scans/0,1,2/files?format=zip';
 
     scanTable.container$ = $('#selectable-table-scans');
     scanTable.dataTable$ = $('#scan-data-table');
@@ -68,26 +63,53 @@ var XNAT = getObject(XNAT);
         }, 5000);
     }
 
-    function loadSnapshotImageNoBlocking(scanID) {
-        var element = $(".span-" + "scan" + scanID + "snapshot"),
-            exprId = element ? element.data('expt-id') : null,
-            elementLoaded = element ? element.data('loaded') : false;
+    const grids = {
+        "Original": "",
+        "1x1 Montage":"1X1",
+        "1x2 Montage":"1X2",
+        "1x3 Montage":"1X3",
+        "2x2 Montage":"2X2",
+        "2x3 Montage":"2X3",
+        "3x3 Montage":"3X3"
+    };
+
+    function getElementHtmlForSrc(src) {
+        return '<a target="_blank" class="scan-original-link" href="' + src + '">' +
+               '   <img class="scan-snapshot" src="' + src + '"/>' +
+               '</a>';
+    }
+
+    function loadSnapshotImageNoBlocking(scanID, view) {
+        const element = $(".span-scan" + scanID + "snapshot");
+        const exprId = element ? element.data('expt-id') : null;
+        const elementLoaded = element ? element.data('loaded') : false;
         if (exprId) {
-            if (elementLoaded) {
+            const src = serverRoot +
+                '/xapi/projects/' + projectId + '/experiments/' + exprId + '/scan/' + scanID + '/snapshot' +
+                (view ? '/' + view : '');
+
+            if (elementLoaded && !view) {
+                element.html(getElementHtmlForSrc(src));
                 return true;
             }
-            var src = '/data/experiments/' + exprId + '/scans/' + scanID + '/resources/SNAPSHOTS/files';
-            var origSrc = src + '?file_content=ORIGINAL&index=0';
-            var thumbSrc = src + '?file_content=THUMBNAIL&index=0';
+
+            element.html('Generating and loading ' + (view ? view : 'snapshot'));
             $.ajax({
-                url: XNAT.url.restUrl(origSrc),
+                url: XNAT.url.restUrl(src),
                 type: 'HEAD',
                 success: function() {
                     element.data('loaded', true);
-                    element.html(
-                        '<a target="_blank" class="scan-original-link" href="' + origSrc + '">' +
-                        '<img class="scan-snapshot" src="' + thumbSrc + '"/>' +
-                        '</a>');
+                    element.html(getElementHtmlForSrc(src));
+                    if (!elementLoaded) {
+                        let montageSel = $('<select class="select-montage" name='+scanID+'></select>');
+                        $.each(grids, function(key, value) {
+                            montageSel.append($('<option>', {
+                                value: value,
+                                text: key
+                            }));
+                        });
+                        element.after($('<div></div>').append(montageSel));
+                    }
                 },
                 error: function() {
                     element.html('No snapshot available');
@@ -99,7 +121,7 @@ var XNAT = getObject(XNAT);
 
         return true;
     }
-
+    
     // inline scan table functions
     scanTable.displayScanDetails = function(scanId){
 
@@ -132,6 +154,13 @@ var XNAT = getObject(XNAT);
 
     };
 
+    scanTable.displayScanDetailsGrid = function(scanId, view){
+        if (!scanId) {
+            return false;
+        }
+        loadSnapshotImageNoBlocking(scanId, view);
+     }
+     
     // download all selected scans
     function downloadSelectedScans(){
         var selectedScans = [];
@@ -272,7 +301,7 @@ var XNAT = getObject(XNAT);
         var noteEditor = spawn('textarea.note-editor', {
             name: xsiType + '/scans/scan[ID=' + scanId + ']/note',
             value: noteText,
-            attr: {rows: 10, maxlength: 250},
+            attr: {rows: 10, maxlength: 2500},
             style: {width: '100%'}
         });
 
@@ -357,7 +386,6 @@ var XNAT = getObject(XNAT);
 
 // init function for XNAT.app.scanTable
     scanTable.init = function(){
-
         projectId = XNAT.data.context.project;
         subjectId = XNAT.data.context.subjectID;
         exptId    = XNAT.data.context.ID;
@@ -371,11 +399,6 @@ var XNAT = getObject(XNAT);
         scanTableContainer$.on('click.view-details', 'a[href^="#!details"]', function viewDetailsFn(e){
             e.preventDefault();
             displayScanDetails.call(this, getScanId(this));
-        });
-
-        scanTableContainer$.on('click.ximg-viewer', 'a[href^="#!ximg-viewer"]', function ximgViewerFn(e){
-            e.preventDefault();
-            renderViewer.call(this, getScanId(this));
         });
 
         // Download a *single* scan (?)
@@ -411,13 +434,20 @@ var XNAT = getObject(XNAT);
         if (scanId) { scanTable.displayScanDetails(scanId) }
         else { console.log('No Scan ID found') }
     });
-    
-    // Array that keeps track of which scan details modals are open.
+
+    $(document).on('change', '.select-montage', function(){
+        var gridVal = $(this).children("option:selected").val();
+        var scanId = $(this).attr('name').toString();
+        if (scanId ) {
+            scanTable.displayScanDetailsGrid(scanId,gridVal);
+        }
+        else { console.log('No Scan ID found') }
+    });
+      
+   // Array that keeps track of which scan details modals are open.
     scanTable.scanDetailsOpen = [];
 
     // this script has loaded
     scanTable.loaded = true;
-
     return XNAT.app.scanTable = scanTable;
-
 }));

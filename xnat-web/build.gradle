@@ -6,10 +6,9 @@
  *  
  * Released under the Simplified BSD.
  */
-
 buildscript {
     ext {
-        vXnat = "1.7.7.1-INTERNAL"
+        vXnat = "1.8.0-TIP-RC1"
     }
     repositories {
         mavenLocal()
@@ -21,9 +20,10 @@ buildscript {
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.7.1"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.5"
-        classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.2"
-        classpath "io.franzbecker:gradle-lombok:3.3.0"
-        classpath "io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE"
+        classpath "com.palantir.gradle.gitversion:gradle-git-version:0.12.3"
+        classpath "gradle.plugin.com.dorongold.plugins:task-tree:1.5"
+        classpath "io.franzbecker:gradle-lombok:4.0.0"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.10.RELEASE"
     }
 }
 
@@ -39,6 +39,7 @@ apply plugin: "maven-publish"
 apply plugin: "war"
 apply plugin: "com.bmuschko.cargo"
 apply plugin: "com.bmuschko.tomcat"
+apply plugin: "com.dorongold.task-tree"
 apply plugin: "com.palantir.git-version"
 apply plugin: "io.franzbecker.gradle-lombok"
 apply plugin: "io.spring.dependency-management"
@@ -52,43 +53,8 @@ repositories {
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
 }
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
-
-def javaVersion = JavaVersion.current()
-if (javaVersion.java8Compatible || javaVersion.java9Compatible || javaVersion.java10Compatible) {
-    allprojects {
-        tasks.withType(Javadoc) {
-            options.addStringOption("Xdoclint:none", "-quiet")
-        }
-    }
-
-    if (hasProperty("rt.17.jar")) {
-        // Solution for bootstrap classpath warning and possible issues with compatibility with 1.7 libraries
-        // was taken from this post on discuss.gradle.org: http://bit.ly/24xD9j0
-        def rt17jar = property "rt.17.jar"
-        logger.info "Using ${rt17jar} as the bootstrap class path jar."
-        gradle.projectsEvaluated {
-            tasks.withType(JavaCompile) {
-                options.fork = true
-                options.compilerArgs << "-XDignore.symbol.file"
-                options.bootstrapClasspath = files(rt17jar as String)
-            }
-        }
-    } else {
-        logger.warn "No value was set for the rt.17.jar build property, but you are using a Java 8- or 9-compatible JDK. You should consider setting rt.17.jar to indicate a jar file containing the Java 1.7 run-time library:\n"
-        logger.warn "\n"
-        logger.warn "  ./gradlew -Prt.17.jar=rt-1.7.0_45.jar war\n"
-        logger.warn "\n"
-        logger.warn "You can also set this property in a gradle.properties file, either in the top level of your build folder or in the folder ~/.gradle/:\n"
-        logger.warn "\n"
-        logger.warn "  rt.17.jar=/home/developer/.gradle/rt.17.jar\n"
-        logger.warn "\n"
-        logger.warn "In some isolated instances, using a bootstrap library from a JDK version later than 1.7 can result in run-time errors.\n"
-    }
-} else if (!javaVersion.java7Compatible) {
-    throw new BuildCancelledException("You are using a JDK version (${javaVersion}) that is not compatible with Java 7. The XNAT build will fail. Please install a JDK version of Java 7 or later.")
-}
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 war.archiveBaseName.set hasProperty("archiveName") ? (archiveName.endsWith(".war") ? archiveName : "${archiveName}.war") : "xnat-web"
 
@@ -172,15 +138,13 @@ dependencyManagement {
     }
 }
 
-def vMockito = '1.10.19'
-def vPowerMock = '1.7.0'
-
 configurations.all {
-    resolutionStrategy.force "org.mockito:mockito-core:${vMockito}"
+    resolutionStrategy.force "org.mockito:mockito-core:${dependencyManagement.importedProperties["mockito.version"] as String}"
 }
 
 dependencies {
     annotationProcessor "org.nrg:framework"
+    annotationProcessor "com.google.auto.value:auto-value"
 
     api platform("org.nrg:parent:${vXnat}")
     implementation platform("org.nrg:parent:${vXnat}")
@@ -200,6 +164,12 @@ dependencies {
     api "org.springframework:spring-core"
 
     implementation "org.nrg.xnat:spawner"
+
+    implementation("org.nrg.xnat:xnat-data-models") {
+        transitive = false
+    }
+    implementation "org.nrg.xdat:core"
+    implementation "org.nrg:framework"
     implementation "org.nrg:transaction"
     implementation "org.nrg:prefs"
     implementation "org.nrg:config"
@@ -207,6 +177,7 @@ dependencies {
     implementation "org.nrg:dicomtools"
     implementation "org.nrg.dicom:dicom-edit4"
     implementation "org.nrg.dicom:dicom-edit6"
+    implementation "org.nrg.dicom:pixelEditor"
     implementation "org.nrg:mail"
     implementation "org.nrg:notify"
 
@@ -237,6 +208,10 @@ dependencies {
     implementation "dcm4che:dcm4che-imageio-rle"
     implementation "dcm4che:dcm4che-iod"
     implementation "dcm4che:dcm4che-net"
+    implementation "net.imagej:ij"
+    implementation "org.dcm4che:dcm4che-core"
+    implementation "org.dcm4che:dcm4che-image"
+    implementation "org.dcm4che:dcm4che-imageio"
 
     implementation "org.springframework:spring-aop"
     implementation "org.springframework:spring-context-support"
@@ -276,6 +251,7 @@ dependencies {
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
+    implementation "com.jayway.jsonpath:json-path"
     implementation "org.json:json"
     implementation "com.thoughtworks.xstream:xstream"
 
@@ -296,6 +272,7 @@ dependencies {
     implementation "org.apache.httpcomponents:httpcore-nio"
 
     implementation "org.codehaus.groovy:groovy-all"
+    implementation "org.codehaus.groovy.modules.http-builder:http-builder"
 
     implementation "eu.bitwalker:UserAgentUtils"
     implementation "com.twmacinta:fast-md5"
@@ -312,8 +289,8 @@ dependencies {
     implementation "javax.servlet:jstl"
     implementation "com.google.code.gson:gson"
     implementation "com.google.guava:guava"
-
     implementation "org.postgresql:postgresql"
+    implementation "net.ttddyy:datasource-proxy"
 
     implementation "org.slf4j:slf4j-api"
     implementation "org.slf4j:jul-to-slf4j"
@@ -322,30 +299,27 @@ dependencies {
     implementation "ch.qos.logback:logback-classic"
     implementation "ch.qos.logback:logback-core"
     implementation "net.logstash.logback:logstash-logback-encoder"
+    implementation "com.google.auto.value:auto-value-annotations"
 
     providedCompile "com.google.code.findbugs:jsr305"
-    providedCompile "junit:junit"
     providedCompile "javax.servlet:javax.servlet-api"
     providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
 
-    runtimeOnly "org.nrg.xnatx.plugins:ximgview-plugin"
     runtimeOnly "org.apache.activemq:activemq-core"
     runtimeOnly "org.apache.ant:ant"
     runtimeOnly "axis:axis-ant"
     runtimeOnly "axis:axis-schema"
     runtimeOnly "cglib:cglib"
     runtimeOnly "org.hsqldb:hsqldb"
-    runtimeOnly "org.codehaus.groovy.modules.http-builder:http-builder"
-    runtimeOnly "net.imagej:ij"
     runtimeOnly "com.sun.media:jai_imageio"
     runtimeOnly "net.bull.javamelody:javamelody-core"
     runtimeOnly "org.javassist:javassist"
     runtimeOnly "org.python:jython-standalone"
 
     tomcat "org.apache.tomcat.embed:tomcat-embed-core",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli",
-            "org.apache.tomcat.embed:tomcat-embed-jasper"
+           "org.apache.tomcat.embed:tomcat-embed-logging-juli",
+           "org.apache.tomcat.embed:tomcat-embed-jasper"
 
     cargo "org.codehaus.cargo:cargo-core-uberjar",
           "org.codehaus.cargo:cargo-ant",
@@ -358,10 +332,12 @@ dependencies {
     testImplementation "junit:junit"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.assertj:assertj-core"
-    testImplementation "org.hamcrest:hamcrest-core:2.2"
+    testImplementation "org.springframework.security:spring-security-test"
+    testImplementation "org.springframework.security:spring-security-config"
+    testImplementation "org.hamcrest:hamcrest"
     testImplementation "org.mockito:mockito-core"
-    testImplementation "org.powermock:powermock-module-junit4"
     testImplementation "org.powermock:powermock-api-mockito2"
+    testImplementation "org.powermock:powermock-module-junit4"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }

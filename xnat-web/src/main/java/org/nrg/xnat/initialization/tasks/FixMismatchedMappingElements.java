@@ -12,7 +12,6 @@ package org.nrg.xnat.initialization.tasks;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.DatabaseHelper;
-import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.security.UserGroupServiceI;
@@ -23,7 +22,6 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -53,13 +51,11 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
                 if (!_helper.tablesExist("xdat_field_mapping", "xdat_field_mapping_set", "xdat_element_access", "xdat_element_security", "xdat_user", "xdat_usergroup", "xdat_primary_security_field")) {
                     throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The tables \"xdat_field_mapping\", \"xdat_field_mapping_set\", \"xdat_element_access\", \"xdat_element_security\", \"xdat_user\", \"xdat_usergroup\", or \"xdat_primary_security_field\" do not yet exist. Deferring execution.");
                 }
-                Users.getGuest();
-                _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/data-type-access-functions.sql"));
+                if (!_helper.functionsExist("data_type_fns_correct_group_permissions", "data_type_fns_fix_mismatched_permissions", "data_type_fns_fix_missing_public_element_access_mappings")) {
+                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The functions \"data_type_fns_correct_group_permissions\", \"data_type_fns_fix_mismatched_permissions\", and/or \"data_type_fns_fix_missing_public_element_access_mappings\" do not yet exist. Deferring execution.");
+                }
 
-                // Loads the project group database functions. Not directly related to fixing
-                // mismatched mapping elements, but this requires most of the same tables exist
-                // before being run so letting it do double duty.
-                _helper.executeScript(BasicXnatResourceLocator.getResource("classpath:META-INF/xnat/project-group-functions.sql"));
+                Users.getGuest();
 
                 log.info("Preparing to check for and fix any mismatched data-type permissions.");
                 final int mismatched = _helper.callFunction("data_type_fns_fix_mismatched_permissions", Integer.class);
@@ -84,8 +80,6 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
                 throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "Didn't find the guest user. Will defer execution until that exists.", e);
             } catch (UserInitException e) {
                 throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to retrieve the guest user. This isn't just that the user doesn't exist, so may indicate a more serious issue.", e);
-            } catch (IOException e) {
-                throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to retrieve the data type access views and functions SQL. This isn't just that it wasn't found, so may indicate a more serious issue.", e);
             }
         }
     }

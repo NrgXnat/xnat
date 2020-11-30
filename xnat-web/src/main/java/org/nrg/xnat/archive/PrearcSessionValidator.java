@@ -96,7 +96,7 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 					if(StringUtils.equals(match.getUid(),newScan.getUid())){
 						conflict(16,"Session already contains a scan (" + match.getId() +") with the same UID and number.");
 					}else{
-						conflict(17,"Session already contains a scan (" + match.getId() +") with the same number, but a different UID. - New scan will be renamed to " + match.getId() + "_1.");
+						conflict(17,"Session already contains a scan (" + match.getId() +") with the same number, but a different UID. - New scan will be renamed during archive.");
 					}
 				}
 

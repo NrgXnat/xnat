@@ -9,21 +9,21 @@
 #if($!item.getProperty("marker"))
 <tr>
     <th align="left">Marker:</th>
-    <td>#escapeHTML("$!item.getProperty('marker')")</td>
+    <td>#escapeCleanHTML("$!item.getProperty('marker')")</td>
 </tr>
 #end
 
 #if($!item.getProperty("stabilization"))
 <tr>
     <th align="left">Stabilization:</th>
-    <td>#escapeHTML("$!item.getProperty('stabilization')")</td>
+    <td>#escapeCleanHTML("$!item.getProperty('stabilization')")</td>
 </tr>
 #end
 
 #if($!item.getProperty("coil"))
 <tr>
     <th align="left">Receiver Coil:</th>
-    <td>#escapeHTML("$!item.getProperty('coil')")</td>
+    <td>#escapeCleanHTML("$!item.getProperty('coil')")</td>
 </tr>
 #end
 

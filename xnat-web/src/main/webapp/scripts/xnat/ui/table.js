@@ -519,8 +519,8 @@ var XNAT = getObject(XNAT);
                 height: opts.height || 'auto',
                 minHeight: opts.minHeight || 'auto',
                 maxHeight: opts.maxHeight || 'auto',
-                overflowX: opts.overflowX || 'hidden',
-                overflowY: opts.overflowY || 'auto'
+                width:  opts.width || '100%',
+                'overflow-y': 'auto'
             }
         });
         var tableWrapper = $tableWrapper[0];
@@ -584,8 +584,10 @@ var XNAT = getObject(XNAT);
                 var bodyRow$ = table$.find('tbody').first();
                 // var footerRow$ = table$.find('tfoot').first();
 
-                var headerCells$ = headerRow$.find('> th');
-                var bodyCells$ = bodyRow$.find('> td');
+                // var headerCells$ = headerRow$.find('> th');
+                // var bodyCells$ = bodyRow$.find('> td');
+                var headerCells$ = headerRow$.find('tr').first().find('th');
+                var bodyCells$ = bodyRow$.find('tr').first().find('td');
                 // var footerCells$ = footerRow$.find('> div');
 
                 //var colCount = headerCells$.length;
@@ -595,8 +597,8 @@ var XNAT = getObject(XNAT);
                 // should be able to just apply this to the header
                 //headerCells$.css('width', minWidth + 'px');
 
-                adjustCellWidths(headerCells$, bodyCells$);
-                adjustCellWidths(bodyCells$, headerCells$);
+                // adjustCellWidths(headerCells$, bodyCells$);
+                // adjustCellWidths(bodyCells$, headerCells$);
 
                 // match the body cells with the header cells
                 // adjustCellWidths(headerCells$, bodyCells$, footerCells$);
@@ -817,6 +819,7 @@ var XNAT = getObject(XNAT);
 
                     var tdElement = opts.items && opts.items[name] ? cloneObject(opts.items[name].th) || {} : {},
                         $filterInput = '',
+                        $filterSubmit = '',
                         tdContent = [];
 
                     // don't create a <td> for hidden items
@@ -837,10 +840,14 @@ var XNAT = getObject(XNAT);
 
                             $filterInput = $.spawn('input.filter-data', {
                                 type: 'text',
-                                title: name + ':filter',
+                                title: 'Use the enter key to filter on ' + name,
                                 placeholder: 'Filter ' + (opts.items[name].label ? ('by ' + opts.items[name].label) : ''),
-                                style: 'width: 90%;'
+                                style: 'width: 100%;'
                             });
+                            $filterSubmit = $.spawn(
+                                'div.filter-submit',
+                                '<i class="fa fa-arrow-right"></i>'
+                            );
                             filterInputs.push($filterInput);
 
                             if (typeof opts.filterAjax === 'function' || typeof opts.sortAndFilterAjax === 'function') {
@@ -850,19 +857,34 @@ var XNAT = getObject(XNAT);
 
                                 var filterFn = opts.filterAjax;
                                 if (typeof opts.sortAndFilterAjax === 'function') {
-                                    filterFn = function(fname, fval) {
+                                    filterFn = function(newTable, fname, fval) {
                                         opts.sortAndFilterAjax.call(newTable, "filter", fname, fval)
                                     };
                                 }
 
-                                $filterInput.on('keyup', function(){
-                                    var val = this.value;
-                                    setTimeout(function() {
-                                        filterFn.call(newTable, name, val);
-                                    }, 500);
+                                $filterSubmit.on('click',function(e){
+                                    // e.preventDefault();
+                                    var val = $(this).parents('td').find('.filter-data').val();
+                                    filterFn.call(newTable, name, val);
                                 });
-                            } else {
+
+                                $filterInput.on('keyup',function(e){
+                                    var val = this.value;
+                                    if (e.key === 'Enter' || e.keyCode === '13') {
+                                        filterFn.call(newTable, name, val);
+                                    }
+                                })
+
+                                // $filterInput.on('keyup', function(){
+                                //     var val = this.value;
+                                //     setTimeout(function() {
+                                //         filterFn.call(newTable, name, val);
+                                //     }, 500);
+                                // });
+                            }
+                            else {
                                 $filterInput.on('focus', function(){
+
                                     $(this).select();
                                     // clear all filters on focus
                                     //$table.find('input.filter-data').val('');
@@ -891,7 +913,7 @@ var XNAT = getObject(XNAT);
                                 });
                             }
 
-                            tdContent.push($filterInput[0]);
+                            tdContent.push($filterInput[0],$filterSubmit);
                         }
                     }
 
@@ -1288,4 +1310,395 @@ var XNAT = getObject(XNAT);
     XNAT.ui.dataTable = XNAT.dataTable = table.dataTable;
     XNAT.ui.inputTable = XNAT.inputTable = table.inputTable;
 
+    let ajaxTable = {};
+
+    ajaxTable.AjaxTable = function(url, tableId, tableContainerId, tableTitle, tableActionText, tableObject,
+                                   tableSetupFn, firstLoadDataCallback, allLoadsDataCallback,
+                                   tableReloadCallback, labelMap, hibernate = true) {
+        // NOTE: your tableObject should contain th column classes that match your td column classes or else column hiding/showing won't work
+        this.container = undefined;
+        this.url = url;
+        this.tableId = tableId;
+        this.tableContainerId = tableContainerId; //must exist within a div.tab-container and have class data-table-container
+        this.tableTitle = tableTitle;
+        this.tableActionText = tableActionText;
+        this.tableObject = tableObject;
+        this.tableSetupFn = tableSetupFn || diddly;
+        this.firstLoadDataCallback = firstLoadDataCallback || diddly;
+        this.allLoadsDataCallback = allLoadsDataCallback || diddly;
+        this.tableReloadCallback = tableReloadCallback || diddly;
+        this.labelMap = labelMap;
+        this.hibernate = hibernate;
+
+        this.parseSortAndFilterParams = function(sortOrFilter, column, value) {
+            // Always pull filterMap from DOM; ignore column & value
+            let filters = {}, label;
+            let $table = $("#" + this.tableId);
+            let myTable = this;
+            $table.find("tr.filter").children().each(function(){
+                let value = $(this).find("input.filter-data").val();
+                if (value) {
+                    label = this.id.replace("filter-by-", "");
+                    let column = myTable.labelMap[label].column || label;
+                    if (myTable.hibernate) {
+                        let op = myTable.labelMap[label].op || 'like';
+                        let val = myTable.labelMap[label].type && myTable.labelMap[label].type === 'number' ?
+                            parseFloat(value) : value;
+                        filters[column] = {operator: op, value: val, backend: 'hibernate'};
+                    } else {
+                        filters[column] = {like: value, backend: 'sql_' + myTable.labelMap[label].type};
+                    }
+                }
+            });
+            if (filters.length === 0) {
+                this.filters = undefined;
+            } else {
+                this.filters = filters;
+            }
+
+            if (sortOrFilter === 'filter') {
+                // Need to determine how to sort
+                let sortth = $table.find('th.sort.asc, th.sort.desc');
+                if (sortth.length !== 1) {
+                    $table.find('th.sort').removeClass("asc desc");
+                    column = undefined;
+                    value = undefined;
+                } else {
+                    column = sortth[0].id.replace("sort-by-", "");
+                    value = (/asc/i.test(sortth[0].className)) ? "asc" : "desc";
+                }
+            }
+            if (column) {
+                column = myTable.labelMap[column].column || column;
+            }
+            this.sortCol = column;
+            this.sortDir = value;
+
+            //Clear old table and load new one
+            this.reload();
+        }.bind(this);
+
+        this.spawnAjaxTable = function(data, style_str){
+            if (style_str) {
+                let before = this.tableObject.before || {};
+                let filterCss = before.filterCss || {tag: 'style|type=text/css'};
+                filterCss.content = style_str + (filterCss.content || '');
+                before.filterCss = filterCss;
+                this.tableObject.before = before;
+            }
+            return extend({
+                kind: 'table.dataTable',
+                id: this.tableId,
+                data: data,
+                table: {
+                    classes: "clean fixed-header selectable scrollable-table",
+                    style: "width: auto;"
+                },
+                sortAndFilterAjax: this.parseSortAndFilterParams
+            }, this.tableObject);
+        }.bind(this);
+
+        function unendingScroll(myTable, $tbody) {
+            if ($tbody.scrollTop() + $tbody.innerHeight() >= $tbody[0].scrollHeight) {
+                myTable.load();
+            }
+        }
+
+        function addScroll(myTable) {
+            // Since $table is destroyed on reload, we want to rerun this with each reload
+            // Unending table
+            myTable.tableBody.scroll(function() {
+                unendingScroll(myTable, $(this));
+            });
+            ajaxTable.resizeTableCols($("table#" + myTable.tableId));
+            myTable.reAddScroll = false;
+        }
+
+        this.reload = function() {
+            this.tableReloadCallback();
+            if (this.tableBody) {
+                this.tableBody.find("tr").remove();
+                this.reAddScroll = true;
+            }
+            this.page = 0;
+            this.load();
+        }.bind(this);
+
+        this.makeTable = function(title) {
+            // Do we have a table yet?
+            let divId = this.tableContainerId + "-content",
+                reloadId = this.tableContainerId + "-reload";
+            this.container = $('#' + this.tableContainerId);
+            if (!this.tableBody && !this.emptyTable) {
+                this.container.append([
+                    $('<div class="data-table-titlerow"><h3 class="data-table-title">'+title+'</h3></div>'),
+                    $('<div class="data-table-actionsrow clearfix">' +
+                        '<span class="textlink-sm data-table-action">' + this.tableActionText+ '</span>' +
+                        '<button class="btn btn-sm" id="' + reloadId + '">Reload</button>' +
+                        '</div>'),
+                    $('<div id="'+divId+'"></div>')
+                ]);
+                this.container.on('click', '#' + reloadId, this.reload);
+            }
+            return $("#" + divId);
+        }.bind(this);
+
+        this.load = function(){
+            let modalId = 'ajax_table';
+            // Don't rerun on concurrent scrolling
+            if (this.loading) {
+                return;
+            } else {
+                this.loading = true;
+            }
+
+            // Add loading indicator
+            openModalPanel(modalId, 'Loading');
+
+            let tableSetup = this.tableSetupFn();
+            let title = this.tableTitle;
+            if (tableSetup && tableSetup.title) {
+                title = tableSetup.title;
+            }
+
+            let $content = this.makeTable(title);
+
+            // Track "page" for API call
+            this.page = this.page || 0;
+            this.page++;
+
+            let dataObj = {};
+            if (this.sortCol) {
+                dataObj['sort_col'] = this.sortCol;
+            }
+            if (this.sortDir) {
+                dataObj['sort_dir'] = this.sortDir;
+            }
+            if (this.filters) {
+                dataObj['filters'] = this.filters;
+            }
+            dataObj.page = this.page;
+            if (tableSetup && tableSetup.dataObj) {
+                $.extend(dataObj, tableSetup.dataObj);
+            }
+
+            // API call
+            XNAT.xhr.postJSON({
+                url: XNAT.url.restUrl(this.url),
+                data: JSON.stringify(dataObj),
+                success: function (data) {
+                    let myTable = this;
+                    if (!this.tableBody) {
+                        // First load
+                        if (data.length) {
+                            if (this.emptyTable) {
+                                $content.empty();
+                                this.emptyTable = false;
+                            }
+
+                            let style_str = "";
+                            let showHideList = $.map(this.labelMap, function(value, key) {
+                                style_str += (value['show']) ? '' :  '#' + this.tableId +
+                                    ' .' + key +  '{ display:none; } \n';
+                                return $.spawn("span.bl-dropdown-item", {},
+                                    ajaxTable.addColumnToggleContents(key, value['label'], value['show'])
+                                );
+                            }.bind(this));
+
+                            ajaxTable.addColumnToggle(showHideList, this.container);
+
+                            XNAT.spawner.spawn({
+                                ajaxTable: this.spawnAjaxTable(data, style_str)
+                            }).done(function () {
+                                myTable.tableBody = this.get$().find("tbody.table-body");
+                                this.render($content, function() {
+                                    addScroll(myTable);
+                                });
+                            });
+
+
+                            this.firstLoadDataCallback(data);
+                        } else {
+                            $content.html('No history to display.');
+                            this.emptyTable = true;
+                        }
+                    } else {
+                        // Next "page" of results
+                        if (data.length) {
+                            XNAT.spawner.spawn({
+                                ajaxTable: this.spawnAjaxTable(data)
+                            }).done(function () {
+                                // Append only the table rows to the existing tbody
+                                myTable.tableBody.append(this.get$().find("tbody.table-body").children());
+                                ajaxTable.applyColumnToggle(myTable.container);
+                                if (myTable.reAddScroll) {
+                                    addScroll(myTable);
+                                } else {
+                                    ajaxTable.resizeTableCols($(myTable.tableBody).parent("table"));
+                                }
+                            });
+                        } else {
+                            // Stop trying, no more results
+                            this.tableBody.off("scroll");
+                        }
+                    }
+                    this.allLoadsDataCallback(data)
+                }.bind(this),
+                error: function(e) {
+                    let errHtml = '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>';
+                    if (this.filters) {
+                        this.filters = undefined;
+                        XNAT.ui.dialog.open({
+                            title: 'Invalid filter',
+                            content: errHtml,
+                            destroyOnClose: true,
+                            buttons: [{
+                                label: 'OK',
+                                isDefault: true,
+                                close: true
+                            }]
+                        });
+                    } else {
+                        this.emptyTable = true;
+                        $content.html(errHtml || 'Issue loading content');
+                    }
+                }.bind(this),
+                complete: function() {
+                    closeModalPanel(modalId);
+                    this.loading = false;
+                }.bind(this)
+            });
+        }.bind(this);
+
+        return this;
+    };
+
+    ajaxTable.cssToNumber = function($item, attrName) {
+        let ws = $item.css(attrName) || "0";
+        return Number(ws.replace(/[^\d\.]/g, ""));
+    };
+
+    ajaxTable.toggleColumn = function($container, target, show) {
+        let $columns = $container.find("th." + target + ", td." + target);
+        if (show) {
+            $columns.show();
+        } else {
+            $columns.hide();
+        }
+    };
+
+    ajaxTable.addColumnToggleContents = function(colClass, displayName, show) {
+        let checked = (show) ? "|checked='checked'" : "";
+        return [
+            $.spawn("input" + checked, {
+                id: "show-" + colClass,
+                type: "checkbox"
+            }),
+            $.spawn("label|for='show-" + colClass + "'", {}, displayName)
+        ];
+    };
+
+    ajaxTable.applyColumnToggle = function($container){
+        let dropdown = "div.show-hide-columns-list.bl-dropdown-menu";
+        $container.find(dropdown + ' input').each(function(){
+            ajaxTable.toggleColumn($container, this.id.replace("show-", ""), $(this).prop("checked"));
+        });
+    };
+
+    ajaxTable.addColumnToggle = function(showHideList, $container){
+        // Toggle columns
+        let $actionsRow = $container.find('.data-table-actionsrow');
+        let button = "button.show-hide-columns";
+        let dropdown = "div.show-hide-columns-list.bl-dropdown-menu";
+        let $button = $actionsRow.find(button);
+        if ($button.length) {
+            // Just remove so we don't get duplicate actions
+            $button.remove();
+            $actionsRow.find(dropdown).remove();
+        }
+        $button = $.spawn(button, {classes: "btn btn-sm"}, ["Columns", "&nbsp;", $.spawn("i.fa.fa-caret-down")]);
+        $actionsRow.append($button);
+        let $dropdown = $.spawn(dropdown, {}, showHideList);
+        $actionsRow.append($dropdown);
+
+        $container.on('click', button, function () {
+            if ($dropdown.css("visibility") === "visible") {
+                $button.find("i").removeClass("fa-caret-up").addClass("fa-caret-down");
+                $dropdown.css({
+                    visibility: "hidden",
+                    transform: "translate3d(0,0,0)"
+                });
+            } else {
+                let coords = $button.offset();
+                let listcoords = $dropdown.offset();
+                let leftt = coords['left'] - listcoords['left'],
+                    topt = coords['top'] - listcoords['top'] + ajaxTable.cssToNumber($button, "height");
+                $(this).find("i").removeClass("fa-caret-down").addClass("fa-caret-up");
+                $dropdown.css({
+                    visibility: "visible",
+                    transform: "translate3d(" + leftt + "px, " + topt + "px, 0)"
+                });
+            }
+            return false;
+        });
+        $container.on('click', dropdown + ' input', function () {
+            ajaxTable.toggleColumn($container, this.id.replace("show-", ""), $(this).prop("checked"));
+            ajaxTable.resizeTableCols($container.find('table'),'reload');
+            $button.click().click(); // keep it in view, but be sure to transform if table size changes
+        });
+    };
+
+    ajaxTable.resizeTableCols = function($table,reloadFF = false){
+        if (reloadFF) this.reload();
+        // if (reloadFF && navigator.userAgent.toLowerCase().indexOf('firefox') > -1) this.reload();
+        if ($table.is(':hidden')) {
+            $table.on('nowVisible', function() {
+                ajaxTable.resizeTableCols($(this),'reload');
+            });
+        }
+        let $headerCells = $table.find("thead tr:first").children(),
+            $filterCells = $table.find("thead tr:last").children(),
+            $bodyCells = $table.find("tbody tr:first").children();
+
+        // Set common width for thead & tbody cells (needed for scrollable tbody)
+        let colWidths = [], pctWidths = [];
+        $bodyCells.each(function (i, v) {
+            // ignore any columns that have been hidden
+            if ($(v).css('display') !== 'none') {
+                let wid = Math.max(
+                    ajaxTable.cssToNumber($(v), "width"),
+                    ajaxTable.cssToNumber($($headerCells[i]), "width")
+                );
+                if (wid){
+                    $(v).css("width", wid.toString()+'px');
+                    $($headerCells[i]).css("width", wid.toString()+'px');
+                    $($filterCells[i]).css("width", wid.toString()+'px');
+                    colWidths.push(wid);
+                }
+            } else {
+                colWidths.push(0);
+            }
+        });
+
+        // convert pixel widths to percentages of available space
+        var availableWidth = $table.parents('.data-table-wrapper').width(),
+            interiorWidth;
+
+        if (colWidths.length){
+            interiorWidth = colWidths.reduce(function(interiorWidth,wid){ return interiorWidth += parseInt(wid) });
+            colWidths.forEach(function(wid,i){
+                var pct = (wid/interiorWidth);
+                pctWidths[i] = Math.max(100, Math.floor(availableWidth * pct));
+            });
+        }
+
+        $table.find("tr").each(function(rind, row) {
+            $(row).children().each(function (i, v) {
+                let wid = pctWidths[i];
+                if (wid) $(v).css("width", wid.toString()+'px');
+            });
+        });
+    };
+
+    XNAT.ui.ajaxTable = XNAT.ajaxTable = ajaxTable;
 }));

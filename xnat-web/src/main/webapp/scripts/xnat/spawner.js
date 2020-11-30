@@ -49,7 +49,11 @@ var XNAT = getObject(XNAT);
     function setRoot(url){
         url = (url+'').trim().replace(/^([*~.]*\/+)/, '/');
         // only modify 'url' values that start with '/'
-        return /^\//.test(url) ? XNAT.url.rootUrl(url) : url
+        if (/^\//.test(url)) {
+            return /^\/data\//.test(url) ? XNAT.url.csrfUrl(url) : XNAT.url.rootUrl(url);
+        } else {
+            return url;
+        }
     }
 
     // process URL for spawner elements
@@ -477,7 +481,11 @@ var XNAT = getObject(XNAT);
 
             window.setTimeout(function(){
 
-                $container.fadeIn(100);
+                $container.fadeIn(100, function() {
+                    if (isFunction(callback)) {
+                        callback.call(spawneri, obj);
+                    }
+                });
 
                 // fire collected callbacks
                 callbacks.forEach(function(fn){
@@ -488,10 +496,6 @@ var XNAT = getObject(XNAT);
                         console.log(e)
                     }
                 });
-
-                if (isFunction(callback)) {
-                    callback.call(spawneri, obj);
-                }
 
             }, 1);
 

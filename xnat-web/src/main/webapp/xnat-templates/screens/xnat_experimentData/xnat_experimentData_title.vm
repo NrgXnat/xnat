@@ -11,7 +11,7 @@
 #end
 
 <div id="report_title" class="edit_title">
-    #escapeHTML($reportTitle)
+    #escapeCleanHTML($reportTitle)
 </div>
 
 <!-- END /xnat-templates/screens/xnat_experimentData/xnat_experimentData_title.vm -->

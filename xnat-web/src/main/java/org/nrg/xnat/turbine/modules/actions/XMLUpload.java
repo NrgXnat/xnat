@@ -94,22 +94,18 @@ public class XMLUpload extends SecureAction {
                 context.put("links", links);
                 log.error("", e);
             } catch (InvalidPermissionException e) {
-                log.error("", e);
+                log.error("The user {} tried to perform an illegal operation when uploading XML", getUser().getUsername(), e);
                 data.setScreenTemplate("Error.vm");
-                String message = "Permissions Exception.<BR><BR>"
-                        + e.getMessage();
+                final StringBuilder message = new StringBuilder("Permissions Exception.<BR><BR>").append(e.getMessage());
                 if (item != null) {
                     final SchemaElement se = SchemaElement.GetElement(item.getXSIType());
                     final ElementSecurity es = se.getElementSecurity();
                     if (es != null && es.getSecurityFields() != null) {
-                        message += "<BR><BR>Please review the security field ("
-                                + se.getElementSecurity().getSecurityFields()
-                                + ") for this data type.";
-                        message += " Verify that the data reflects a currently stored value and the user has relevant permissions for this data.";
+                        message.append("<BR><BR>Please review the security field (").append(se.getElementSecurity().getSecurityFields()).append(") for this data type.");
+                        message.append(" Verify that the data reflects a currently stored value and the user has relevant permissions for this data.");
                     }
                 }
-                data.setMessage(message);
-
+                data.setMessage(message.toString());
             } catch (Exception e) {
                 log.error("", e);
                 data.setScreenTemplate("Error.vm");

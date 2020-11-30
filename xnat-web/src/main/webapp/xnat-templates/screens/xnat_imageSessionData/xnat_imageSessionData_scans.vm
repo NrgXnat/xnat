@@ -5,7 +5,7 @@
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
 #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
 #* @vtlvariable name="resource" type="org.nrg.xdat.om.XnatAbstractresource" *#
-<!--BEGIN /screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->
+<!-- BEGIN xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->
 #macro(renderEmptyResourceCount)
     #if ($data.getSession().getAttribute("userHelper").canEdit($item))
     <a onclick="window.viewer.init(true);">Show Counts</a>
@@ -48,6 +48,9 @@
                 <th class="left">Type</th>
                 #if($siteConfig.uiDisplaySeriesClass)
                     <th class="left">Series Class</th>
+                #end
+                #if($siteConfig.uiDisplayScanModality)
+                     <th class="left">Modality</th>
                 #end
                 #if($siteConfig.uiDisplaySeriesDescription)
                     <th class="left">Series Desc</th>
@@ -102,7 +105,6 @@
                         <td class="scan-${scanID}-id" style="width: 120px;">
                             <span class="inline-actions">
                                 <i class="fa fa-list-alt view-scan-details" data-id="${scanID}" title="View Details"></i>
-##                                <i class="fa fa-eye" onclick="launchXImgView('/REST/projects/$om.getProject()/subjects/$om.getSubjectId()/experiments/$om.getId()/scans/${scanID}')" title="Open Scan in Image Viewer"></i>
                                 <a href="#!download" data-id="${scanID}" data-xsitype="${om.getXSIType()}" data-expt="$!{om.getId()}" class="download-scan" title="Download: ${scanID}">
                                     <i class="fa fa-download"></i>
                                 </a>
@@ -120,32 +122,38 @@
                                 #end
                             </span>
                             <a href="#!" class="view-scan-details" data-id="${scanID}">
-                                #escapeHTML(${scanID})
+                                #escapeCleanHTML(${scanID})
                             </a>
                         </td>
                         <td class="scan-${scanID}-type" style="width: 200px;">
                             #if($!scan.getProperty("type"))
-                                #escapeHTML($!scan.getProperty("type"))
+                                #escapeCleanHTML($!scan.getProperty("type"))
                             #end
                         </td>
                         #if($siteConfig.uiDisplaySeriesClass)
                             <td class="scan-${scanID}-series_class" style="width: 200px;">
                                 #if($!scan.getProperty("series_class"))
-                                    #escapeHTML($!scan.getProperty("series_class"))
+                                    #escapeCleanHTML($!scan.getProperty("series_class"))
                                 #end
                             </td>
                         #end
-
+                        #if($siteConfig.uiDisplayScanModality)
+                            <td class="scan-${scanID}-modality" style="width: 200px;">
+                                #if($!scan.getProperty("modality"))
+                                    #escapeCleanHTML($!scan.getProperty("modality"))
+                                #end
+                            </td>
+                        #end
                         #if($siteConfig.uiDisplaySeriesDescription)
                             <td class="scan-${scanID}-description" style="width: 200px;">
                                 #if($!scan.getProperty("series_description"))
-                                    #escapeHTML($!scan.getProperty("series_description"))
+                                    #escapeCleanHTML($!scan.getProperty("series_description"))
                                 #end
                             </td>
                         #end
                         <td class="scan-${scanID}-quality left quality-$!scan.getProperty("quality")" style="font-weight:bold; width: 125px" >
                             #if($!scan.getProperty("quality"))
-                                #escapeHTML($!scan.getProperty("quality"))
+                                #escapeCleanHTML($!scan.getProperty("quality"))
                             #end
                         </td>
 
@@ -170,7 +178,7 @@
                             <div class="scan-note-content pull-left text-left" style="width:85%;" title="$!scan.getProperty("note")">
                                 <span class="truncate">
                                 #if($!scan.getProperty("note"))
-                                    #escapeHTML($!scan.getProperty("note"))
+                                    #escapeCleanHTML($!scan.getProperty("note"))
                                 #end
                                 </span>
                             </div>
@@ -201,6 +209,7 @@
         </table>
     </div>
 
+    <script type="application/javascript">console.log("Loading /scripts/xnat/app/scanTable/scanTable.js from xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm")</script>
     <script src="$content.getURI("/scripts/xnat/app/scanTable/scanTable.js")"></script>
     <script src="$content.getURI("/scripts/xnat/app/scanTable/selectableTableBehavior.js")"></script>
 
@@ -235,4 +244,4 @@
 
 #set ($qcXsiType = "xnat:qcAssessmentData")
 #parse($turbineUtils.getTemplateName("report_summary",$qcXsiType,$project))
-<!--END /screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->
+<!-- END xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->

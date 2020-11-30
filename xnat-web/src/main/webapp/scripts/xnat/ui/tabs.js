@@ -108,6 +108,9 @@ var XNAT = getObject(XNAT || {});
         $container.hidden(false, 200);
         var newUrl = XNAT.url.updateHashQuery('', 'tab', tab.active);
         window.location.replace(newUrl);
+
+        // trigger event for scrollable tables now visible
+        $container.find(tabSelector).find('table.scrollable-table').trigger('nowVisible');
     };
     // ==================================================
 

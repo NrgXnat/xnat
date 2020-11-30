@@ -1,0 +1,16 @@
+#if($canEditOrDeleteProject)
+<!-- position 99 -->
+    <li class="yuimenuitem hidden" id="project-eventservice-action">
+        #set ( $projectEventServiceUri = "/app/template/Page.vm?view=project/event-service&id=$project.getId()" )
+        <a href="$content.getURI($projectEventServiceUri)">Event Service</a>
+    </li>
+    <script>
+        XNAT.xhr.getJSON({
+            url: XNAT.url.restUrl('/xapi/events/prefs'),
+            success: function(data){
+                // only show the Event Service action if it is enabled on the site
+                if (data.enabled) $('#project-eventservice-action').removeClass('hidden')
+            }
+        })
+    </script>
+#end

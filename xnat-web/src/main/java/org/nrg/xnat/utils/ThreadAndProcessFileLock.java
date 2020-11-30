@@ -230,8 +230,8 @@ public class ThreadAndProcessFileLock {
         try {
             fileLock = channel.tryLock(0L, Long.MAX_VALUE, readOnly);
         } catch (OverlappingFileLockException ole) {
-            fileLock = null;
-            return false;
+            // we already have the lock in this JVM
+            return true;
         }
         return fileLock != null;
     }

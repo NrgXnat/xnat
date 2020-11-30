@@ -5,6 +5,7 @@
 *.md5
 *.sha256
 src/generated
+src/main/generated
 gradle.properties
 /out
 /build

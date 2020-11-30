@@ -214,12 +214,12 @@
 
                     ##<ul id="sessions-list-items hidden">
 
-                        #foreach($projectId in $projectIds)
-                            <input type="hidden" name="projectIds[]" value="$!projectId">
-                            <script>
-                                XNAT.app.projectDownload.items.projectIds.push('$!projectId');
-                            </script>
-                        #end
+                    <script>
+                        #foreach($projectId in $projectIds)XNAT.app.projectDownload.items.projectIds.push('$!projectId');#end
+                    </script>
+                    #foreach($projectId in $projectIds)
+                        <input type="hidden" name="projectIds[]" value="$!projectId">
+                    #end
 
                         ## gather sessions
                         #foreach($sessionRow in $sessionSummary)

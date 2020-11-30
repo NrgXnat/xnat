@@ -28,9 +28,9 @@
         <td>
         ## special handling of employment field
         #if ($fieldLabel == "Employment")
-            #renderEmployment($!turbineUtils.escapeHTML("$subject.getProperty($fieldName)"))
+            #renderEmployment($!escUtils.escapeHtml4($!escUtils.unescapeHtml4($!escUtils.unescapeXml("$subject.getProperty($fieldName)"))).replaceAll("'", "&apos;").replaceAll('"', '&quot;'))
         #else
-            $!turbineUtils.escapeHTML("$subject.getProperty($fieldName)")
+            #escapeCleanHTML("$subject.getProperty($fieldName)")
         #end
         </td>
     </tr>

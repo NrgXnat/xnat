@@ -14,7 +14,7 @@
     #end
 #end
 <div id="report_title" class="edit_title">
-    $om.getSchemaElement().getSingularDescription(): #escapeHTML($reportTitle)
+    $om.getSchemaElement().getSingularDescription(): #escapeCleanHTML($reportTitle)
 </div>
 
 <!-- END /xnat-templates/screens/xnat_mrSessionData/xnat_mrSessionData_title.vm -->

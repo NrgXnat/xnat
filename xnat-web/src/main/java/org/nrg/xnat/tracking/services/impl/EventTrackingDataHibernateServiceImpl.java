@@ -12,15 +12,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @Service
-public class EventTrackingDataHibernateServiceImpl
-        extends AbstractHibernateEntityService<EventTrackingData, EventTrackingDataDao>
-        implements EventTrackingDataHibernateService {
+public class EventTrackingDataHibernateServiceImpl extends AbstractHibernateEntityService<EventTrackingData, EventTrackingDataDao> implements EventTrackingDataHibernateService {
 
     /**
      * {@inheritDoc}
@@ -78,6 +77,15 @@ public class EventTrackingDataHibernateServiceImpl
             throw new RuntimeException("The specified key is not a unique constraint!");
         }
         return eventTrackingDataList.get(0);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void deleteEntriesOlderThan(Date expiration) {
+        getDao().deleteEntriesLastUpdatedBefore(expiration);
     }
 
     /**

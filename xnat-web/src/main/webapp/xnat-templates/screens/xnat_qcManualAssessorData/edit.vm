@@ -28,6 +28,12 @@ $page.setVlinkColor($ui.vlink)
 	<div class="alert">$data.message</div>
 #end
 
+<style>
+    .snapshot-container {
+        height: 200px;
+        width: 200px;
+    }
+</style>
 
 <form ID="form1" name="form1" method="post" action="$link.setAction("ModifyManualQC")">
 <input type="hidden" name="project" value="$!{project}" >
@@ -147,12 +153,17 @@ $page.setVlinkColor($ui.vlink)
 			    #if ($scans && $scans.size() > 0)
 			    	#set($scan_counter = 0)
 			        #foreach($scan in $scans)
-						<tr>
+						#set($scanId = $scan.getProperty("imageScan_ID"))
+						<tr valign="top">
 							<td>
 								<hr />
 								<table>
 									#parse($turbineUtils.getTemplateName("edit",$scan.getXSIType(),$project))
 								</table>
+							</td>
+							<td>
+								<hr />
+								<div class="snapshot-container" id="snapshot-${scanId}" style="background-image: url($content.getURI("/xapi/experiments/${imageSession_ID}/scan/$!{scanId}/snapshot")"></div>
 							</td>
 						</tr>
 						#set($scan_counter = $scan_counter + 1)

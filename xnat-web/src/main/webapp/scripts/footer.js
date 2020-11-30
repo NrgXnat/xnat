@@ -535,6 +535,42 @@ $(function(){
         return false;
     });
 
+    // display overflowing contents of truncated table cells in a dialog: XNAT-6398
+    $body.on('mouseenter','td.xxl-content',function(){
+        $(this).prepend(spawn('b.xxl-highlight'))
+    });
+    $body.on('mouseleave','td.xxl-content',function(){
+        $(this).find('.xxl-highlight').remove();
+    });
+
+    $body.on('click','td.xxl-content',function(e){
+        var i = $(this).index(),
+            content = $(this).html(),
+            width = 800;
+
+        content = content.replace('<b class="xxl-highlight"></b>','');
+
+        if (content.indexOf(',') >= 0) {
+            width = 600;
+            var arr = content.split(','),
+                items = [];
+            arr.forEach(function(item){
+                items.push(spawn('li',item));
+            });
+            content = spawn('!',[
+                spawn('h4',arr.length+" Items"),
+                spawn('ul',items)
+            ])
+        }
+        var th = $(this).parents('table').find('thead').find('th')[i];
+        var title = $(th).find('div').html() + ' ('+$(th).attr('name')+')';
+        XNAT.ui.dialog.message({
+            title: 'Contents of '+ title,
+            content: content,
+            width: width
+        });
+    })
+
 });
 
 jq(window).load(function(){

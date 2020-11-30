@@ -130,6 +130,9 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
             this.options = _options;
         }
 
+        // Use a cookie that is unique to this user and this particular search
+        this.cookie_name = 'u' + XNAT.sub64.dlxEnc(window.username).encoded + this.obj.URL;
+
         this.onInit = new YAHOO.util.CustomEvent("init", this);
         this.onTableInit = new YAHOO.util.CustomEvent("table-init", this);
         this.columnSortEvent = new YAHOO.util.CustomEvent("column-change", this);
@@ -219,16 +222,25 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
     };
 
     this.set_row_cookie = function(newRowsPerPage){
-        var cookie_name = this.div_table_id + ".initialRequest";
-        CookieFunctions.set_cookie(cookie_name, "limit", newRowsPerPage);
+        CookieFunctions.set_cookie(this.cookie_name, "limit", newRowsPerPage);
     };
 
+	//this method allows plugins to change the url
+	this.buildSearchUri=function(){
+		return serverRoot + ((typeof(this.customSearchUri) === 'undefined')
+            ? "/REST/search/"
+            : this.customSearchUri) + this.initResults.ResultSet.ID;
+	}
+
+    //this method allows plugins to change the url
+	this.applyPluginUrlMods = function(url) {
+        return typeof(this.allowPluginUrlMods) === 'undefined' ? url : this.allowPluginUrlMods(url);
+    }
 
     this.render = function(){
-        this.searchURI = serverRoot + "/REST/search/" + this.initResults.ResultSet.ID;
+        this.searchURI = this.buildSearchUri();
 
-        var cookie_name = this.div_table_id + ".initialRequest";
-        var historyRequest = YAHOO.util.Cookie.get(cookie_name);
+        var historyRequest = YAHOO.util.Cookie.get(this.cookie_name);
         if (historyRequest != undefined) {
             this.config.initialRequest = historyRequest;
 
@@ -341,15 +353,17 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                  * If the returnes status is 500, one of the sortBy settings in the cookie was incorrect. In this case
                  * just ignore the cookie and re-run the request.
                  */
-                else if (o.status == 500) {
+                else if (o.status == 500 && !this.isRetry) {
+                    this.isRetry=true;
                     var url = that.searchURI + "?format=xList&offset=" + ((page - 1) * that.config.rowsPerPage) + "&limit=" + that.config.rowsPerPage;
 
                     url += '&XNAT_CSRF=' + csrfToken;
 
-                    YAHOO.util.Connect.asyncRequest('GET', url, initCallback, null, that);
+                    YAHOO.util.Connect.asyncRequest('GET', this.applyPluginUrlMods(url), initCallback, null, that);
                 }
                 else {
                     document.getElementById(this.div_table_id).innerHTML = "Failed to create search results.";
+                    closeModalPanel("load_data")
                 }
             }
         };
@@ -380,7 +394,9 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
             request += "&sortBy=" + this.config.sortedBy.key;
             if (this.config.sortedBy.dir != undefined)request += "&sortOrder=" + this.config.sortedBy.dir;
         }
-        return request;
+
+        //this allows plugins to make changes to the generated request url
+        return this.applyPluginUrlMods(request);
     }
 
     var onXChange = function(p_sType, p_aArgs, p_oButton){
@@ -694,16 +710,18 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
 
     //insert reload button
     this.renderReload = function(obj1, obj2){
-        var buttonConfig = new Object();
-        buttonConfig.type = "push";
-        if (this.initResults.ResultSet.last_access != undefined) {
-            buttonConfig.type = "link";
-            buttonConfig.title = "Last Update: " + this.initResults.ResultSet.last_access;
+        if (this.options.showReload) {
+            var buttonConfig = new Object();
+            buttonConfig.type = "push";
+            if (this.initResults.ResultSet.last_access != undefined) {
+                buttonConfig.type = "link";
+                buttonConfig.title = "Last Update: " + this.initResults.ResultSet.last_access;
+            }
+            this.reloadButton = new YAHOO.widget.Button(this.div_table_id + "_reload", buttonConfig);
+            this.reloadButton.subscribe("click", function(e, obj1, obj2){
+                this.init({ reload: true });
+            }, null, this);
         }
-        this.reloadButton = new YAHOO.widget.Button(this.div_table_id + "_reload", buttonConfig);
-        this.reloadButton.subscribe("click", function(e, obj1, obj2){
-            this.init({ reload: true });
-        }, null, this);
     };
 
     //insert option menu
@@ -840,7 +858,9 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
     };
 
     this.getXML = function(){
-        return this.xml;
+
+        //this allows plugins to make changes to the generated request url
+        return (this.allowPluginXMLMod==undefined)?this.xml:this.allowPluginXMLMod(this.xml);
     }
     this.sendSearch = function(_url, _searchXML, divContent){
         var tempForm = document.createElement("FORM");
@@ -971,7 +991,8 @@ var CookieFunctions = {
             alist = CookieFunctions.jsonToAlist(o);
         }
         YAHOO.util.Cookie.remove(cookie_name);
-        YAHOO.util.Cookie.set(cookie_name, alist, { expires: new Date("Januarey 25 2025") });
+        const expire = new Date();
+        YAHOO.util.Cookie.set(cookie_name, alist, { expires: expire.setDate(expire.getDate() + 365) });
     }
 };
 
@@ -979,7 +1000,6 @@ var CookieFunctions = {
 
 var onContextMenuClick = function(p_sType, p_aArgs, o){
     var task = p_aArgs[1];
-    var cookie_name = this.div_table_id + ".initialRequest";
     if (task) {
         if (o.dt.config.sortedBy == undefined)o.dt.config.sortedBy = new Object();
         // Extract which TR element triggered the context menu
@@ -997,7 +1017,7 @@ var onContextMenuClick = function(p_sType, p_aArgs, o){
                         o.dt.sm.searchDOM.removeField(oColumn.element_name, oColumn.id);
                         o.dt.xml = o.dt.sm.searchDOM.toXML("");
                         o.dt.init({ reload: true });
-                        YAHOO.util.Cookie.set(cookie_name);
+                        YAHOO.util.Cookie.set(this.cookie_name);
                     }
                     break;
                 case 4:
@@ -1013,8 +1033,8 @@ var onContextMenuClick = function(p_sType, p_aArgs, o){
 
                     o.dt.paginator.set('recordOffset', 0);
                     o.dt.getPage(1);
-                    CookieFunctions.set_cookie(cookie_name, "sortBy", colRow.getAttribute("name"));
-                    CookieFunctions.set_cookie(cookie_name, "sortOrder", "ASC");
+                    CookieFunctions.set_cookie(this.cookie_name,"sortBy", colRow.getAttribute("name"));
+                    CookieFunctions.set_cookie(this.cookie_name,"sortOrder", "ASC");
                     break;
                 case 1:
                     //sort DESC Column
@@ -1023,8 +1043,8 @@ var onContextMenuClick = function(p_sType, p_aArgs, o){
 
                     o.dt.paginator.set('recordOffset', 0);
                     o.dt.getPage(1);
-                    CookieFunctions.set_cookie(cookie_name, "sortBy", colRow.getAttribute("name"));
-                    CookieFunctions.set_cookie(cookie_name, "sortOrder", "DESC");
+                    CookieFunctions.set_cookie(this.cookie_name,"sortBy", colRow.getAttribute("name"));
+                    CookieFunctions.set_cookie(this.cookie_name,"sortOrder", "DESC");
                     break;
                 case 3:
                     //Edit Columns
@@ -1041,20 +1061,20 @@ var onContextMenuClick = function(p_sType, p_aArgs, o){
 function addTypeBasedListingOptions(xsiType, menuMap) {
 	if(!XNAT.app.typeBasedListingOptions){
 		XNAT.app.typeBasedListingOptions = {};
-	}	
-	
+	}
+
 	if(!XNAT.app.typeBasedListingOptions[xsiType]){
 		XNAT.app.typeBasedListingOptions[xsiType]=[];
 	}
-	
+
 	XNAT.app.typeBasedListingOptions[xsiType].push(menuMap);
 }
 
 function getTypeBasedListingOptions(xsiType) {
 	if(!XNAT.app.typeBasedListingOptions){
 		XNAT.app.typeBasedListingOptions = {};
-	}	
-	
+	}
+
 	if(!XNAT.app.typeBasedListingOptions[xsiType]){
 		XNAT.app.typeBasedListingOptions[xsiType]=[];
 	}

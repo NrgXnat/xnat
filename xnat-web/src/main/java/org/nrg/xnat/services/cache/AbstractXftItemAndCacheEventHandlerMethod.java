@@ -1,7 +1,7 @@
 package org.nrg.xnat.services.cache;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
+import static lombok.AccessLevel.PRIVATE;
+
 import com.google.common.collect.*;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -13,6 +13,7 @@ import net.sf.ehcache.event.CacheEventListener;
 import net.sf.ehcache.event.CacheEventListenerAdapter;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.generics.GenericUtils;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.AbstractXftItemEventHandlerMethod;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
@@ -22,8 +23,6 @@ import org.springframework.cache.CacheManager;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 import java.util.*;
-
-import static lombok.AccessLevel.PRIVATE;
 
 /**
  * Provides both {@link AbstractXftItemEventHandlerMethod} implementation and the default implementations for <b>CacheEventListener</b> methods
@@ -165,14 +164,17 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         throw new RuntimeException("The native cache is not an ehcache instance, but instead is " + nativeCache.getClass().getName());
     }
 
+    protected List<String> getEhCacheKeys() {
+        return GenericUtils.convertToTypedList(getEhCache().getKeys(), String.class);
+    }
+
     protected void cacheObject(final String cacheId, final Object object) {
         if (object == null) {
             log.warn("I was asked to cache an object with ID '{}' but the object was null.", cacheId);
             return;
         }
         log.trace("Request to cache entry '{}', evaluating", cacheId);
-        final boolean hasCacheId = has(cacheId);
-        if (hasCacheId) {
+        if (has(cacheId)) {
             log.trace("Cache entry '{}' exists and force update not specified, evaluating for change", cacheId);
             final Object existing = getCachedObject(cacheId, Object.class);
             if (object.equals(existing)) {
@@ -188,10 +190,10 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         final Object candidate = object instanceof Provider ? ((Provider<?>) object).get() : object;
         final Object target;
         if (candidate instanceof Map) {
-            //noinspection rawtypes
+            //noinspection rawtypes,unchecked
             target = checkMapForNullKey(cacheId, (Map) candidate);
         } else if (candidate instanceof Multimap) {
-            //noinspection rawtypes
+            //noinspection rawtypes,unchecked
             target = checkMultimapForNullKey(cacheId, (Multimap) candidate);
         } else {
             target = candidate;
@@ -271,12 +273,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
 
         final ImmutableMap.Builder<K, V> builder = ImmutableMap.builder();
         for (final Map<K, V> map : maps) {
-            builder.putAll(Maps.filterKeys(map, new Predicate<K>() {
-                @Override
-                public boolean apply(@Nullable final K entry) {
-                    return !keys.contains(entry);
-                }
-            }));
+            builder.putAll(Maps.filterKeys(map, entry -> !keys.contains(entry)));
             keys.addAll(map.keySet());
         }
         final ImmutableMap<K, V> map = builder.build();
@@ -333,7 +330,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
             return map;
         } catch (UnsupportedOperationException e) {
             log.warn("I was asked to cache a multimap with the ID {}, but this multimap has a null key. This could indicate a corrupt index hash in the database. The multimap is immutable, so I'm creating a copy without the null key to allow execution to proceed. The value(s) stored under the null key are: {}", cacheId, map.get(null));
-            return ImmutableMultimap.copyOf(Multimaps.filterKeys(map, Predicates.notNull()));
+            return ImmutableMultimap.copyOf(Multimaps.filterKeys(map, Objects::nonNull));
         }
     }
 
@@ -345,7 +342,7 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
             return map;
         } catch (UnsupportedOperationException e) {
             log.warn("I was asked to cache a map with the ID {}, but this map has a null key. This could indicate a corrupt index hash in the database. The map is immutable, so I'm creating a copy without the null key to allow execution to proceed. The value stored under the null key is: {}", cacheId, map.get(null));
-            return ImmutableMap.copyOf(Maps.filterKeys(map, Predicates.notNull()));
+            return ImmutableMap.copyOf(Maps.filterKeys(map, Objects::nonNull));
         }
     }
 

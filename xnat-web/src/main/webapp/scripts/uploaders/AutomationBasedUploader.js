@@ -625,17 +625,15 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 			element:document.getElementById('modalUploadDiv'),
 			action:'TBD',
 			debug:true,
-			doneFunction:function(){
+			doneFunction:function(anySuccessfulUploads = true){
 					// Since we're using the update-stats=false parameter for resource uploads, we need to call catalog refresh when we're finished uploading.
 					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0) {
-						XNAT.app.abu.updateResourceStats();
-						// Create workflow if we just uploaded files without any script processing (otherwise, workflow will have been generated there)
-						if (!XNAT.app.abu.filesProcessed) {
-							XNAT.app.abu.sendWorkflowWhenDone();
+						if (anySuccessfulUploads) {
+							XNAT.app.abu.completeFileUpload();
 						}
 					}
 					xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id);
-					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0) {
+					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.currentUploads==0 && anySuccessfulUploads) {
 						setTimeout(function(){
 							window.location.reload(true);
 						},20);
@@ -657,7 +655,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					}
 					$("#usageSelect").prop('disabled','disabled');
 				},
-			uploadCompletedFunction:function(anyFailedUploads){
+			uploadCompletedFunction:function(anyFailedUploads, anySuccessfulUploads = true){
 					var eventHandler = $('#eventHandlerSelect').val();
 					if (typeof eventHandler !== 'undefined' && eventHandler != null && eventHandler.length>0) {
 						if ($(".abu-upload-complete-text").length==0) {
@@ -683,6 +681,9 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 						$("#xmodal-abu-cancel-button").hide();
 						$('#xmodal-abu-done-button').show();
 						$('#xmodal-abu-process-button').hide();
+						if (anySuccessfulUploads) {
+							XNAT.app.abu.completeFileUpload();
+						}
 					}
 				},
 			processFunction:function(){
@@ -809,17 +810,26 @@ XNAT.app.abu.updateModalAction = function(){
 					// NOTE:  Setting update-stats=false (no workflow entry for individual files).  The process step will create a workflow entry for the entire upload.
 					var subdir = resourceConfigs[i].subdir;
 					subdir = (typeof subdir !== 'undefined' && subdir.length > 0) ? "/" + subdir : subdir;
-					
+					let resourceType = (!resourceConfigs[i].level || resourceConfigs[i].level === 'default') ? '' :
+						'/' + resourceConfigs[i].level;
+
 					if(resourceConfigs[i].triage){ // If resource has been configured to upload to the project's quarantine. 
 						$("#triageMessage").css('display', 'block');
-						target=$(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files";
-						target=target.replace("/data/projects",    "/data/archive/projects");
-						target=target.replace("/data/experiments", "/data/archive/experiments");
-						
-						abu._fileUploader._currentAction = serverRoot + "/data/services/triage/projects/" + XNAT.data.context.projectID + "/resources/" + (new Date()).getTime() + "/files/##FILENAME_REPLACE##?OVERWRITE=" + resourceConfigs[i].overwrite + "&target=" + target + "&XNAT_CSRF=" + window.csrfToken;
+						let target = $(XNAT.app.abu.currentLink).attr("data-uri") + resourceType + "/resources/" +
+							resourceConfigs[i].label + "/files";
+						// Make this a proper item URI (remove site context, prepend /archive)
+						target = target.replace(new RegExp("^" + XNAT.url.context), "")
+							.replace(/^\/?data\/(archive\/)?/, "/data/archive/");
+
+						abu._fileUploader._currentAction = XNAT.url.rootUrl("/data/services/triage/projects/" +
+							XNAT.data.context.projectID + "/resources/" + (new Date()).getTime() + "/files/##FILENAME_REPLACE##") +
+							"?OVERWRITE=" + resourceConfigs[i].overwrite + "&target=" + target + "&XNAT_CSRF=" + window.csrfToken;
 					}else{
 						$("#triageMessage").css('display', 'none');
-						abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files" + subdir + "/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite + "&update-stats=false&XNAT_CSRF=" + window.csrfToken;
+						abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + resourceType +
+							"/resources/" + resourceConfigs[i].label + "/files" + subdir +
+							"/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite +
+							"&update-stats=false&XNAT_CSRF=" + window.csrfToken;
 					}
 					
 					if(resourceConfigs[i].format){
@@ -999,9 +1009,13 @@ XNAT.app.abu.validatePassedParameters=function() {
 XNAT.app.abu.updateResourceStats=function() {
 	if (XNAT.app.abu.usageSelect !== 'Launch') {
 		if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)<0) {
+			if (abu._fileUploader._currentAction.includes("/data/services/triage")) {
+				return;
+			}
 			var updateStatsUrl = "/data/services/refresh/catalog?resource=" + 
-				abu._fileUploader._currentAction.replace(/\/files[\/?].*$/i,'').replace(/^\/data\//i,"/archive/").replace(/^\/REST\//i,"/archive/" +
-				"&options=populateStats") + "&options=populateStats,append,delete,checksum&XNAT_CSRF=" + window.csrfToken;
+				abu._fileUploader._currentAction.replace(/\/files[\/?].*$/i,'')
+					.replace(/^\/(data|REST)\/(archive\/)?/i,"/archive/")
+					+ "&options=populateStats,append,delete,checksum&XNAT_CSRF=" + window.csrfToken;
 			var updateStatsAjax = $.ajax({
 				type : "POST",
 				url:serverRoot+updateStatsUrl,
@@ -1711,6 +1725,38 @@ XNAT.app.abu.updateEmailOptionStatus=function() {
 		$('#ULC_RB_emailOptionChecked').prop("disabled",false);
 		$('#ULC_RB_showCloseWindowOption').prop("disabled",false);
 	}
+}
+
+XNAT.app.abu.idleTimer = undefined;
+XNAT.app.abu.markNotIdle = function() {
+	if (XNAT.app.abu.idleTimer) {
+		for (let i = 0; i < actionsList.length; i++) {
+			window.removeEventListener(actionsList[i], XNAT.app.abu.markNotIdle, false);
+		}
+		window.removeEventListener('scroll', XNAT.app.abu.markNotIdle, true);
+		clearTimeout(XNAT.app.abu.idleTimer);
+	}
+}
+const actionsList = ['load', 'mousemove', 'mousedown', 'touchstart', 'click', 'keypress'];
+XNAT.app.abu.runFunctionIfIdle = function(timeoutms, toRun) {
+	for (let i = 0; i < actionsList.length; i++) {
+		window.addEventListener(actionsList[i], XNAT.app.abu.markNotIdle, false);
+	}
+	window.addEventListener('scroll', XNAT.app.abu.markNotIdle, true);
+
+	// if session is going to end inside the timeout window (1 sec cushion), run now.
+	let diff = XNAT.app.timeout.endTime - new Date().getTime();
+	if (diff < 1000) {
+		toRun();
+	} else if (diff < timeoutms) {
+		XNAT.app.abu.idleTimer = setTimeout(toRun, 1000);
+	} else {
+		XNAT.app.abu.idleTimer = setTimeout(toRun, timeoutms);
+	}
+}
+
+XNAT.app.abu.completeFileUpload = function() {
+	XNAT.app.abu.updateResourceStats();
 }
 
 $(document).ready(XNAT.app.abu.abuConfigs.load);

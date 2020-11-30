@@ -350,6 +350,9 @@ public class RESTHTMLPresenter extends PresentationA {
 					if(v.toString().length()>50){
 						classNames+=" ext-content";
 					}
+					if(v.toString().length()>500){
+						classNames+=" xxl-content";
+					}
 					sb.append("  class=\"" + classNames +"\"");
 					sb.append(">");
 

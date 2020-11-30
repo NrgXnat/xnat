@@ -177,11 +177,11 @@
     </tr>
     <tr>
         <td align=left>First Name: </td>
-        <td>#escapeHTML($!item.getProperty("firstname"))</td>
+        <td>#escapeCleanHTML($!item.getProperty("firstname"))</td>
     </tr>
     <tr>
         <td align=left>Last Name: </td>
-        <td>#escapeHTML($!item.getProperty("lastname"))</td>
+        <td>#escapeCleanHTML($!item.getProperty("lastname"))</td>
     </tr>
     <tr>
         <td align=left>Email: </td>

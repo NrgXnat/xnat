@@ -19,6 +19,8 @@ import org.nrg.xnat.tracking.services.EventTrackingDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
+
 @Slf4j
 @Service
 public class EventTrackingDataServiceImpl implements EventTrackingDataService {
@@ -59,5 +61,16 @@ public class EventTrackingDataServiceImpl implements EventTrackingDataService {
     @Override
     public synchronized void createOrUpdate(TrackableEvent eventData) throws IllegalAccessException {
         eventTrackingDataHibernateService.createOrUpdate(eventData);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void cleanupOldEntries() {
+        // Remove entries >1 month old
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -1);
+        eventTrackingDataHibernateService.deleteEntriesOlderThan(cal.getTime());
     }
 }

@@ -12,9 +12,15 @@ package org.nrg.xnat.restlet.resources;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
-import org.nrg.xdat.om.*;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatExperimentdataShare;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatSubjectassessordata;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -31,8 +37,8 @@ import org.nrg.xnat.archive.ValidationException;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.restlet.actions.FixScanTypes;
 import org.nrg.xnat.restlet.actions.PullSessionDataFromHeaders;
-import org.nrg.xnat.restlet.actions.TriggerPipelines;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.services.archive.PipelineService;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -69,10 +75,10 @@ public class ExperimentResource extends ItemResource {
     }
 
     @Override
-    public Representation represent(Variant variant) throws ResourceException {
-        final MediaType mt = overrideVariant(variant);
+    public Representation represent(final Variant variant) throws ResourceException {
+        final MediaType mediaType = overrideVariant(variant);
 
-        if (_experiment == null && _experimentId != null) {
+        if (_experiment == null && StringUtils.isNotBlank(_experimentId)) {
             final UserI user = getUser();
             _experiment = XnatExperimentdata.getXnatExperimentdatasById(_experimentId, user, false);
 
@@ -83,29 +89,26 @@ public class ExperimentResource extends ItemResource {
             }
         }
 
-        if (_experiment != null) {
-            if (filepath != null && !filepath.equals("") && filepath.equals("status")) {
-
-                return returnStatus(_experiment, mt);
-            } else if (filepath != null && !filepath.equals("") && filepath.equals("history")) {
-                try {
-                    return buildChangesets(_experiment.getItem(), _experiment.getStringProperty("ID"), mt);
-                } catch (Exception e) {
-                    logger.error("", e);
-                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
-                    return null;
-                }
-            } else if (StringUtils.startsWith(filepath, "projects")) {
-                return representProjectsForArchivableItem(_experiment.getLabel(), _experiment.getPrimaryProject(false), _experiment.getProjectDatas(), mt);
-            } else {
-                return representItem(_experiment.getItem(), mt);
-            }
-        } else {
-            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,
-                    "Unable to find the specified experiment.");
+        if (_experiment == null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find the specified experiment.");
             return null;
         }
 
+        if (StringUtils.equals(filepath, "status")) {
+            return returnStatus(_experiment, mediaType);
+        } else if (StringUtils.equals(filepath, "history")) {
+            try {
+                return buildChangesets(_experiment.getItem(), _experiment.getStringProperty("ID"), mediaType);
+            } catch (Exception e) {
+                logger.error("", e);
+                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+                return null;
+            }
+        } else if (StringUtils.startsWith(filepath, "projects")) {
+            return representProjectsForArchivableItem(_experiment.getLabel(), _experiment.getPrimaryProject(false), _experiment.getProjectDatas(), mediaType);
+        } else {
+            return representItem(_experiment.getItem(), mediaType);
+        }
     }
 
     @Override
@@ -255,7 +258,7 @@ public class ExperimentResource extends ItemResource {
                         _experiment.setId(XnatExperimentdata.CreateNewID());
                     }
 
-                    setSubject(_existing.getItem());
+                    setSubject(_experiment.getItem());
                 } else {
                     if (StringUtils.isBlank(_experiment.getId())) {
                         _experiment.setId(_existing.getId());
@@ -302,8 +305,7 @@ public class ExperimentResource extends ItemResource {
 
                 if (isQueryVariableTrue(XNATRestConstants.FIX_SCAN_TYPES) || containsAction(XNATRestConstants.FIX_SCAN_TYPES)) {
                     if (_experiment instanceof XnatImagesessiondata) {
-                        FixScanTypes fst = new FixScanTypes(_experiment, user, _project, false, c);
-                        fst.call();
+                        FixScanTypes.builder().experiment(_experiment).user(user).project(_project).allowSave(false).eventMeta(c).build().call();
                     }
                 }
 
@@ -385,8 +387,7 @@ public class ExperimentResource extends ItemResource {
                     }
 
                     if (isQueryVariableTrue(XNATRestConstants.TRIGGER_PIPELINES) || containsAction(XNATRestConstants.TRIGGER_PIPELINES)) {
-                        TriggerPipelines tp = new TriggerPipelines(_experiment, isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
-                        tp.call();
+                        XDAT.getContextService().getBean(PipelineService.class).launchAutoRun(_experiment, isQueryVariableTrue(XNATRestConstants.SUPRESS_EMAIL), user);
                     }
                 }
             }

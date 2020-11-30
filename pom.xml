@@ -13,7 +13,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.8.0-TIP-RC1</version>
+    <version>1.8.0</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -64,17 +64,16 @@
 
         <xnat-ref.version>1.7.7-INTERNAL</xnat-ref.version>
         <xnat.version>1.8.0</xnat.version>
-        <xnatdev.version>1.8.0-SNAPSHOT</xnatdev.version>
-        <xnat-rc.version>1.8.0-TIP-RC1</xnat-rc.version>
-
+        <xnatdev.version>1.8.1-SNAPSHOT</xnatdev.version>
+    
         <!-- XNAT core library versions -->
-        <xnat-web.version>${xnat-rc.version}</xnat-web.version>
+        <xnat-web.version>${xnat.version}</xnat-web.version>
         <xnat-tasks.version>${xnat-ref.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnatdev.version}</xnat-data-builder.version>
+        <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
         <spawner.version>${xnat.version}</spawner.version>
         <xnat-data-models.version>${xnat.version}</xnat-data-models.version>
-        <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
-        <xdat.version>${xnat-rc.version}</xdat.version>
+        <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
+        <xdat.version>${xnat.version}</xdat.version>
 
         <nrg.automation.version>${xnat-ref.version}</nrg.automation.version>
         <nrg.config.version>${xnat-ref.version}</nrg.config.version>
@@ -332,7 +331,7 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>nrg-all</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <!-- Mizer, DicomEdit 4 and 6 engines -->
             <dependency>

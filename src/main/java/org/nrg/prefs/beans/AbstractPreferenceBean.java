@@ -1302,10 +1302,12 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     private Properties cleanOverrides(final Properties properties) {
+        final String prefixPeriod   = StringUtils.appendIfMissing(getToolId(), ".");
         final Properties clean      = new Properties();
-        final int        prefixSize = getToolId().length() + 1;
         for (final Map.Entry<?, ?> property : properties.entrySet()) {
-            clean.setProperty(StringUtils.substring((String) property.getKey(), prefixSize), (String) property.getValue());
+            if (((String)property.getKey()).startsWith(prefixPeriod)) {
+                clean.setProperty(StringUtils.removeStart((String)property.getKey(), prefixPeriod), (String) property.getValue());
+            }
         }
         return clean;
     }

@@ -307,7 +307,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
             final @PathVariable @Project String project,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch,
-            final @RequestParam(value = "load-children", required = false) Boolean loadChildren,
+            final @RequestParam(value = "load-children", required = false, defaultValue = "true") Boolean loadChildren,
             final @RequestBody(required = false) SubscriptionDeliveryEntityPaginatedRequest request) {
         return eventService.getSubscriptionDeliveries(project, subscriptionId, includeFilterMismatch, request, loadChildren);
     }

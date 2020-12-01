@@ -27,6 +27,10 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -118,6 +122,21 @@ public class RootConfig {
     @Bean
     public Module guavaModule() {
         return new GuavaModule();
+    }
+
+    @Bean
+    public Module parameterNamesModule() {
+        return new ParameterNamesModule();
+    }
+
+    @Bean
+    public Module jdk8Module() {
+        return new Jdk8Module();
+    }
+
+    @Bean
+    public Module javaTimeModule() {
+        return new JavaTimeModule();
     }
 
     @Bean

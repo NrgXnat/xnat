@@ -9,8 +9,6 @@
 
 package org.nrg.xnat.security.provider;
 
-import org.nrg.xdat.preferences.SiteConfigPreferences;
-
 import java.util.List;
 
 /**
@@ -19,7 +17,7 @@ import java.util.List;
  * implementation. For example, an LDAP provider may actually support multiple LDAP repositories. For this purpose, the XNAT
  * multi-configuration interface supports multiple IDs, names, and other properties.
  */
-public interface XnatMulticonfigAuthenticationProvider extends XnatAuthenticationProvider {
+public interface XnatMulticonfigAuthenticationProvider {
     /**
      * Gets the provider IDs for the XNAT authentication provider. This is used to map the properties associated with the
      * provider instance. If only one provider is configured, then a list is returned with just that single ID.
@@ -73,16 +71,4 @@ public interface XnatMulticonfigAuthenticationProvider extends XnatAuthenticatio
      * @param visible    Whether the provider should be visible to and usable by users.
      */
     void setVisible(final String providerId, final boolean visible);
-
-    /**
-     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#setEnabledProviders(List)} property.
-     */
-    @Deprecated
-    int getOrder(final String providerId);
-
-    /**
-     * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#setEnabledProviders(List)} property.
-     */
-    @Deprecated
-    void setOrder(final String providerId, final int order);
 }

@@ -1,7 +1,5 @@
 package org.nrg.xnat.security;
 
-import com.google.common.base.Predicates;
-import com.google.common.collect.Iterables;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -30,29 +28,33 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.nrg.framework.orm.DatabaseHelper.convertPGIntervalToSeconds;
 
 @Component
 @Slf4j
 public final class XnatAuthenticationEventPublisher implements AuthenticationEventPublisher {
+    @Autowired(required = false)
+    public void setMultipleAuthProviders(final List<XnatMulticonfigAuthenticationProvider> providers) {
+        if (providers != null) {
+            for (XnatMulticonfigAuthenticationProvider multiProvider : providers) {
+                for (XnatAuthenticationProvider provider : multiProvider.getProviders()) {
+                    _providers.put(provider.getProviderId(), provider.getAuthMethod());
+                }
+            }
+        }
+    }
+
     @Autowired
     public XnatAuthenticationEventPublisher(final XdatUserAuthService userAuthService, final SiteConfigPreferences siteConfigPreferences, final List<AuthenticationProvider> providers) {
         _failedAttemptsManager = new FailedAttemptsManager(this, userAuthService, siteConfigPreferences);
         _lastSuccessfulLoginManager = new LastSuccessfulLoginManager(this, userAuthService);
         _userAuthService = userAuthService;
-        _providers = new HashMap<>();
-        providers.stream().filter(p -> p instanceof XnatAuthenticationProvider).forEach(p -> {
-            XnatAuthenticationProvider xp = (XnatAuthenticationProvider) p;
-            String authMethod = xp.getAuthMethod();
-            if (p instanceof XnatMulticonfigAuthenticationProvider) {
-                for (String pid : ((XnatMulticonfigAuthenticationProvider) p).getProviderIds()) {
-                    _providers.put(pid, authMethod);
-                }
-            } else {
-                _providers.put(xp.getProviderId(), authMethod);
-            }
-        });
+        _providers.putAll(providers.stream().filter(XnatAuthenticationProvider.class::isInstance)
+                .map(XnatAuthenticationProvider.class::cast)
+                .collect(Collectors.toMap(XnatAuthenticationProvider::getProviderId,
+                        XnatAuthenticationProvider::getAuthMethod)));
     }
 
     @Override
@@ -205,5 +207,5 @@ public final class XnatAuthenticationEventPublisher implements AuthenticationEve
     private final FailedAttemptsManager      _failedAttemptsManager;
     private final LastSuccessfulLoginManager _lastSuccessfulLoginManager;
     private final XdatUserAuthService        _userAuthService;
-    private final Map<String, String>        _providers;
+    private final Map<String, String>        _providers = new HashMap<>();
 }

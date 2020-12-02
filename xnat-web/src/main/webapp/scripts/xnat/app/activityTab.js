@@ -200,7 +200,7 @@ var XNAT = getObject(XNAT);
         const succeeded = jsonobj['succeeded'];
         const payload = JSON.parse(jsonobj['payload']);
         let messages = "";
-        let entryList = payload['entryList'] || [];
+        let entryList = payload ? (payload['entryList'] || []) : [];
         if (entryList.length === 0 && succeeded == null) {
             return [null, lastProgressIdx];
         }

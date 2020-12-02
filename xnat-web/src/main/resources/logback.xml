@@ -190,6 +190,15 @@
             <fileNamePattern>${xnat.home}/logs/anon.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
+    <appender name="snapshot" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/snapshot.log</File>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/snapshot.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
     <appender name="dicom" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${xnat.home}/logs/dicom.log</file>
         <append>true</append>
@@ -430,6 +439,9 @@
     </logger>
     <logger name="org.nrg.dcm.id" additivity="false" level="WARN">
         <appender-ref ref="identifiers"/>
+    </logger>
+    <logger name="org.nrg.xnat.snapshot" additivity="false" level="DEBUG">
+        <appender-ref ref="snapshot"/>
     </logger>
     <logger name="org.nrg.dicom.dicomedit" additivity="false" level="WARN">
         <appender-ref ref="anon"/>

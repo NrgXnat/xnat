@@ -5,6 +5,7 @@ import org.nrg.action.ClientException;
 import org.nrg.xapi.exceptions.NotFoundException;
 
 import java.io.File;
+import java.util.Optional;
 
 /**
  * @author pradeep.d
@@ -21,5 +22,5 @@ public interface SnapshotGenerationService {
      *
      * @return The URI to the specified snapshot.
      */
-    Pair<File, File> getSnapshot(final String sessionId, final String scanId, final int rows, int cols) throws NotFoundException, ClientException, Exception;
+    Optional<Pair<File, File>> getSnapshotAndThumbnail(final String sessionId, final String scanId, final int rows, int cols, float scaleRows, float scalCols) throws Exception;
 }

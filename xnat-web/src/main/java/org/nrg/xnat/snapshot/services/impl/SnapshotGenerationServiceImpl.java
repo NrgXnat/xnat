@@ -44,40 +44,34 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
      * {@inheritDoc}
      */
     @Override
-    public Pair<File, File> getSnapshot(final String sessionId, final String scanId, final int rows, final int cols) throws Exception {
+    public Optional<Pair<File, File>> getSnapshotAndThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws Exception {
         log.debug("Look for snapshot catalog for scan {} of session {} with {} rows by {} cols", sessionId, scanId, rows, cols);
         Optional<XnatResourcecatalog> snapshotCatalog = getSnapshotResourceCatalog( sessionId, scanId);
         if( snapshotCatalog.isPresent()) {
             Optional< Pair<File,File>> snapshots = getSnapshotFiles( snapshotCatalog.get(), sessionId, scanId, rows, cols);
             if( snapshots.isPresent()) {
-                return snapshots.get();
+                return snapshots;
             }
             else {
-                snapshots = createSnapshots( sessionId, scanId, rows, cols);
+                snapshots = createSnapshots( sessionId, scanId, rows, cols, scaleRows, scaleCols);
                 if( snapshots.isPresent()) {
                     addSnapshotFilesToResource( snapshotCatalog.get(), snapshots.get().getLeft(), snapshots.get().getRight());
-                    snapshots = getSnapshotFiles( snapshotCatalog.get(), sessionId, scanId, rows, cols);
-                    if( snapshots.isPresent()) {
-                        return snapshots.get();
-                    }
+                    return getSnapshotFiles( snapshotCatalog.get(), sessionId, scanId, rows, cols);
                 }
             }
         }
         else {
-            Optional< Pair<File,File>> snapshots = createSnapshots( sessionId, scanId, rows, cols);
+            Optional< Pair<File,File>> snapshots = createSnapshots( sessionId, scanId, rows, cols, scaleRows, scaleCols);
             if( snapshots.isPresent()) {
                 snapshotCatalog = createSnapshotCatalog( sessionId, scanId);
                 if( snapshotCatalog.isPresent()) {
                     addSnapshotFilesToResource( snapshotCatalog.get(), snapshots.get().getLeft(), snapshots.get().getRight());
                     snapshotCatalog = getSnapshotResourceCatalog( sessionId, scanId);
-                    snapshots = getSnapshotFiles( snapshotCatalog.get(), sessionId, scanId, rows, cols);
-                    if( snapshots.isPresent()) {
-                        return snapshots.get();
-                    }
+                    return getSnapshotFiles( snapshotCatalog.get(), sessionId, scanId, rows, cols);
                 }
             }
         }
-        return null;
+        return Optional.ofNullable( null);
     }
 
     public Optional<XnatResourcecatalog> getSnapshotResourceCatalog(String sessionId, String scanId) throws Exception {
@@ -114,8 +108,8 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
         }
     }
 
-    public Optional<Pair<File, File>> createSnapshots( String sessionId, String scanId, int rows, int cols) throws Exception {
-        return Optional.ofNullable( _snapshotGenerator.setScan( sessionId, scanId).createMontageAndThumbnail( rows, cols, 0.5f, 0.5f));
+    public Optional<Pair<File, File>> createSnapshots( String sessionId, String scanId, int rows, int cols, float scaleRows, float scaleCols) throws Exception {
+        return _snapshotGenerator.createMontageAndThumbnail( sessionId, scanId, rows, cols, scaleRows, scaleCols);
     }
 
     public void addSnapshotFilesToResource( XnatResourcecatalog resourcecatalog, File snapshotFile, File thumbnailFile) throws Exception {

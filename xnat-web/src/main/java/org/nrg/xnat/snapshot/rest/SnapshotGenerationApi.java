@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.io.File;
+import java.util.Optional;
 
 /**
  * Snapshot generation API.
@@ -81,13 +82,18 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
             throw new NotFoundException(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, session);
         }
 
-        final Pair<File, File> images = _snapshotService.getSnapshot( sessionId, scanId, gridviewDimensions.rows, gridviewDimensions.cols);
-        if (images.equals(ImmutablePair.nullPair())) {
-            throw new InitializationException("Something went wrong trying to retrieve snapshots for session ID {}: no exception was thrown but no valid files were returned by the snapshot service");
-        }
+        final Optional<Pair<File, File>> images = _snapshotService.getSnapshotAndThumbnail( sessionId, scanId, gridviewDimensions.rows, gridviewDimensions.cols, 0.5f, 0.5f);
+        String resourceType =  isThumbnailView? "thumbnail" : "snapshot";
+        File resource;
 
-        log.debug("Snapshot image path for scan {} of session {} with grid view {} found at path {}", scanId, sessionId, StringUtils.defaultIfBlank(view, "none"), images.getKey().getParent());
-        return isThumbnailView ? images.getValue() : images.getKey();
+        if( images.isPresent()) {
+            resource = isThumbnailView ? images.get().getRight() : images.get().getLeft();
+            if (resource != null) {
+                log.debug("Snapshot path for scan {} of session {} with grid view {} found at path {}", scanId, sessionId, StringUtils.defaultIfBlank(view, "none"), resource.getParent());
+                return resource;
+            }
+        }
+        throw new NotFoundException( resourceType, String.format("SessionId: %s, ScanId: %s", sessionId, scanId));
     }
 
     private String getExperimentId(final String project, final String subject, final String experiment) throws DataFormatException, NotFoundException {

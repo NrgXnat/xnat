@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
 import org.nrg.xnat.eventservice.entities.EventServicePayloadEntity;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
@@ -91,14 +93,15 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
 
     @Override
     public void deletePayloads(Integer keepRecentCount){
-        List<SubscriptionDeliveryEntity> all = getAll();
-        ListIterator<SubscriptionDeliveryEntity> deliveryIt = all.listIterator(all.size());
+        List<SubscriptionDeliveryEntity> withPayload = getDao().excludeByProperty("payload", null);
+        withPayload.sort(Comparator.comparing(AbstractHibernateEntity::getTimestamp));
+        ListIterator<SubscriptionDeliveryEntity> deliveryIt = withPayload.listIterator(withPayload.size());
         while(deliveryIt.hasPrevious()){
             SubscriptionDeliveryEntity sde = deliveryIt.previous();
-            if(keepRecentCount<=0 && sde.getPayload() != null){
+            if(keepRecentCount<=0 && sde.getPayload().getPayload() != null){
                 sde.getPayload().clear();
             }
-            else if(keepRecentCount > 0 && sde.getPayload() != null){
+            else if(keepRecentCount > 0 && sde.getPayload().getPayload() != null){
                 keepRecentCount--;
             }
         }

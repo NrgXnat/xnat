@@ -10,6 +10,7 @@ import org.hibernate.criterion.Restrictions;
 import org.hibernate.metadata.ClassMetadata;
 import org.nrg.framework.ajax.Filter;
 import org.nrg.framework.ajax.hibernate.HibernateFilter;
+import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliveryEntity;
 import org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity;
@@ -110,7 +111,15 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
         return criteria.list();
     }
 
-
+    public List<SubscriptionDeliveryEntity> excludeByProperty(final String property, final Object value) {
+        final Criteria criteria = getCriteriaForType();
+        if (value == null) {
+            criteria.add(Restrictions.isNotNull(property));
+        } else {
+            criteria.add(Restrictions.neOrIsNotNull(property, value));
+        }
+        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
+    }
 
     public Integer count(final String projectId, final Long subscriptionId, final TimedEventStatusEntity.Status statusToExclude) {
         final Criteria cr = getSession().createCriteria(SubscriptionDeliveryEntity.class);

@@ -38,12 +38,14 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.stereotype.Component;
 
+@Component
 @Slf4j
 public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     @Autowired
-    public void setAuthenticationManager(final AuthenticationManager authenticationManager) {
-        super.setAuthenticationManager(authenticationManager);
+    public void setAuthenticationManager(final XnatProviderManager providerManager) {
+        super.setAuthenticationManager(providerManager);
     }
 
     @Autowired

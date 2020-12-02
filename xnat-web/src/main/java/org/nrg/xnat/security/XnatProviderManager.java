@@ -9,9 +9,6 @@
 
 package org.nrg.xnat.security;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -26,6 +23,7 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xnat.security.exceptions.NewAutoAccountNotAutoEnabledException;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
+import org.nrg.xnat.security.provider.XnatMulticonfigAuthenticationProvider;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -35,7 +33,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.SpringSecurityMessageSource;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,19 +50,23 @@ public class XnatProviderManager extends ProviderManager {
         _userAuthService = userAuthService;
         _eventPublisher = eventPublisher;
 
-        _xnatAuthenticationProviders.putAll(Maps.uniqueIndex(Iterables.filter(getProviders(), XnatAuthenticationProvider.class), new Function<XnatAuthenticationProvider, String>() {
-            @Nullable
-            @Override
-            public String apply(@Nullable final XnatAuthenticationProvider provider) {
-                return provider != null ? provider.getProviderId() : null;
+        providers.stream().filter(p -> p instanceof XnatAuthenticationProvider).forEach(p -> {
+            if (p instanceof XnatMulticonfigAuthenticationProvider) {
+                XnatMulticonfigAuthenticationProvider multiProvider = (XnatMulticonfigAuthenticationProvider) p;
+                for (String pid : multiProvider.getProviderIds()) {
+                    _xnatAuthenticationProviders.put(pid, multiProvider.getProvider(pid));
+                }
+            } else {
+                XnatAuthenticationProvider xp = (XnatAuthenticationProvider) p;
+                _xnatAuthenticationProviders.put(xp.getProviderId(), xp);
             }
-        }));
+        });
     }
 
     @Override
     public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
-        final Class<? extends Authentication> toTest    = authentication.getClass();
-        final List<AuthenticationProvider>    providers = new ArrayList<>();
+        final Class<? extends Authentication>  toTest    = authentication.getClass();
+        final List<XnatAuthenticationProvider> providers = new ArrayList<>();
 
         // HACK: This is a hack to work around open XNAT auth issue. If this is a bare un/pw auth token, use anon auth.
         final Authentication converted;
@@ -73,19 +74,15 @@ public class XnatProviderManager extends ProviderManager {
             converted = new AnonymousAuthenticationToken(ANONYMOUS_AUTH_PROVIDER_KEY, authentication.getPrincipal(), AUTHORITIES_ANONYMOUS);
         } else {
             converted = authentication;
-            for (final AuthenticationProvider candidate : getProviders()) {
+            for (final XnatAuthenticationProvider xnatAuthenticationProvider : _xnatAuthenticationProviders.values()) {
                 // If the candidate doesn't support the token type, we're done here.
-                if (!candidate.supports(toTest)) {
+                if (!xnatAuthenticationProvider.supports(toTest)) {
                     continue;
                 }
 
-                // Test whether it's an XNAT auth provider...
-                if (candidate instanceof XnatAuthenticationProvider) {
-                    // Now check whether the provider is enabled and supports the token instance.
-                    final XnatAuthenticationProvider xnatAuthenticationProvider = (XnatAuthenticationProvider) candidate;
-                    if (_preferences.getEnabledProviders().contains(xnatAuthenticationProvider.getProviderId()) && xnatAuthenticationProvider.supports(authentication)) {
-                        providers.add(candidate);
-                    }
+                // Now check whether the provider is enabled and supports the token instance.
+                if (_preferences.getEnabledProviders().contains(xnatAuthenticationProvider.getProviderId()) && xnatAuthenticationProvider.supports(authentication)) {
+                    providers.add(xnatAuthenticationProvider);
                 }
             }
         }
@@ -97,7 +94,7 @@ public class XnatProviderManager extends ProviderManager {
         }
 
         final Map<AuthenticationProvider, AuthenticationException> exceptionMap = new HashMap<>();
-        for (final AuthenticationProvider provider : providers) {
+        for (final XnatAuthenticationProvider provider : providers) {
             log.debug("Authentication attempt using {}", provider.getClass().getName());
 
             try {
@@ -254,19 +251,15 @@ public class XnatProviderManager extends ProviderManager {
         return findAuthenticationProvider(new XnatAuthenticationProviderMatcher() {
             @Override
             public boolean matches(XnatAuthenticationProvider provider) {
-                return provider.getProviderId().equalsIgnoreCase(providerName);
+                return providerName.equalsIgnoreCase(provider.getProviderId());
             }
         });
     }
 
     private XnatAuthenticationProvider findAuthenticationProvider(final XnatAuthenticationProviderMatcher matcher) {
-        final List<AuthenticationProvider> providers = getProviders();
-        for (final AuthenticationProvider provider : providers) {
-            if (XnatAuthenticationProvider.class.isAssignableFrom(provider.getClass())) {
-                final XnatAuthenticationProvider xnatAuthenticationProvider = (XnatAuthenticationProvider) provider;
-                if (matcher.matches(xnatAuthenticationProvider)) {
-                    return xnatAuthenticationProvider;
-                }
+        for (final XnatAuthenticationProvider xnatAuthenticationProvider : _xnatAuthenticationProviders.values()) {
+            if (matcher.matches(xnatAuthenticationProvider)) {
+                return xnatAuthenticationProvider;
             }
         }
         return null;

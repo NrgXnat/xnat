@@ -217,25 +217,76 @@ $page.setVlinkColor($ui.vlink)
                                         ## <td align="center" valign="top" style="width:20px"><img src="$content.getURI("images/rc.gif")" border="0"></td>
                                             <td align="left">
                                                 <div class="warning">
-                                                    WARNING: Allowing 'All Data Access' will allow this user to see ALL data stored in this system.
-                                                    It supersedes project membership. Most accounts on your server should NOT have All Data Access allowed.
+                                                    WARNING: Allowing 'All Data Access' will allow this user to see ALL data stored in this system, superseding project membership.
+                                                    This permission is automatically granted to all site administrators, but should not be granted to most other users.
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr>
                                             <td align="left">
                                                 <label style="margin-right:10px;white-space:nowrap;">
-                                                    <input class="access group" type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="NULL" checked/><label for="data_none">No</label>
+                                                    <input class="access group alldata limited" type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="NULL" checked/><label for="data_none">No</label>
                                                 </label>
                                                 <label style="margin-right:10px;white-space:nowrap;">
-                                                    <input class="access group" type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
+                                                    <input class="access group alldata limited" type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
                                                 </label>
                                                 <label style="margin-right:10px;white-space:nowrap;">
-                                                    <input class="access group" type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
+                                                    <input class="access group alldata full" type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
                                                 </label>
                                             </td>
                                         </tr>
                                     </table>
+                                    <script>
+                                        var XNAT = getObject(XNAT);
+
+                                        (function(factory){
+                                            if (typeof define === 'function' && define.amd) {
+                                                define(factory);
+                                            }
+                                            else if (typeof exports === 'object') {
+                                                module.exports = factory();
+                                            }
+                                            else {
+                                                return factory();
+                                            }
+                                        }(function() {
+                                            var undefined, usersGroups;
+                                            XNAT.admin = getObject(XNAT.admin || {});
+
+                                            XNAT.admin.usersGroups = usersGroups =
+                                                    getObject(XNAT.admin.usersGroups || {});
+                                            XNAT.usersGroups = extend(true, usersGroups, XNAT.usersGroups);
+
+                                            usersGroups.toggleAlldata = function(adminPermission){
+                                                if (adminPermission === undefined) {
+                                                    adminPermission = jq('#role_Administrator').is(':checked');
+                                                }
+
+                                                if (adminPermission) {
+                                                    jq('input.alldata').not('.full').prop('disabled','disabled');
+                                                    jq('input.alldata').not('.limited').prop('checked','checked');
+                                                    XNAT.ui.banner.top(4000,'Site Admin permissions must be tied to "All Data Access" permissions.','warning','480px');
+                                                }
+                                                else {
+                                                    jq('input.alldata').prop('disabled',false);
+                                                    jq('input.alldata').each(function(){
+                                                        if (jq(this).data('preset')) jq(this).prop('checked','checked')
+                                                    });
+                                                }
+                                            }
+
+                                        }));
+
+                                        jq(document).ready(function(){
+                                            jq('input.alldata:checked').data('preset','true');
+                                            XNAT.admin.usersGroups.toggleAlldata();
+                                        })
+                                        jq(document).on('click','#role_Administrator',function(){
+                                            // determine if user has been given site Admin privileges. If so, grant all data access and prevent user modification
+                                            var adminPermission = jq(this).prop('checked');
+                                            XNAT.admin.usersGroups.toggleAlldata(adminPermission);
+                                        })
+                                    </script>
                                 #end
                             </td>
                         </tr>

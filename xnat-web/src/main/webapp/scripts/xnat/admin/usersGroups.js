@@ -303,7 +303,7 @@ var XNAT = getObject(XNAT);
                         description: '<p>This allows users to access the Administrative pages of the web interface.</p>' +
                         '<div class="warning">' +
                         '<b>WARNING:</b> Granting administrative privileges allows this user great power ' +
-                        'over the entire site.' +
+                        'over the entire site, <b>including access to all data</b>.' +
                         '</div>'
                     },
                     nonExpiring: {

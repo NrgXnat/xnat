@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.configuration;
 
+import org.nrg.config.daos.ConfigurationDAO;
+import org.nrg.config.daos.ConfigurationDataDAO;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.UserConfigurationService;
 import org.nrg.config.services.impl.DefaultConfigService;
@@ -20,25 +22,25 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-
-import java.io.IOException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @ComponentScan({"org.nrg.config.daos", "org.nrg.prefs.repositories"})
 @Import(NrgPrefsConfiguration.class)
 public class PreferencesConfig {
     @Bean
-    public ConfigService configService() {
-        return new DefaultConfigService();
+    public ConfigService configService(final ConfigurationDAO configurationDAO, final ConfigurationDataDAO dataDAO, final PlatformTransactionManager transactionManager, final JdbcTemplate template) {
+        return new DefaultConfigService(configurationDAO, dataDAO, transactionManager, template);
     }
 
     @Bean
-    public UserConfigurationService userConfigurationService() {
-        return new DefaultUserConfigurationService(configService());
+    public UserConfigurationService userConfigurationService(final ConfigService configService) {
+        return new DefaultUserConfigurationService(configService);
     }
 
     @Bean
-    public XnatPreferenceEntityResolver defaultResolver(final PreferenceService preferenceService) throws IOException {
+    public XnatPreferenceEntityResolver defaultResolver(final PreferenceService preferenceService) {
         return new XnatPreferenceEntityResolver(preferenceService);
     }
 }

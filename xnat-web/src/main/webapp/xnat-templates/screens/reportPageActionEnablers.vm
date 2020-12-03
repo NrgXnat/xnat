@@ -1,0 +1,46 @@
+<!-- BEGIN META-INF/resources/templates/screens/reportPageActionEnablers.vm -->
+<script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
+<script>
+    // enable "Manage Files" action
+    var obj = {};
+    obj.uri = serverRoot + "/data/experiments/$!om.getId()";
+    obj.refresh = serverRoot + "/data/services/refresh/catalog?options=" + encodeURIComponent("populateStats,append,delete,checksum") + "&XNAT_CSRF=" + csrfToken + "&resource=/archive/experiments/$!om.getId()";
+    obj.objectId = "$!om.getId()";
+    obj.objectType = "experiment";
+
+        #if ($turbineUtils.canEdit($user, $item))
+        obj.canEdit = true;
+        #else
+        obj.canEdit = false;
+        #end
+        #if ($turbineUtils.canDelete($user, $item))
+        obj.canDelete = true;
+        #else
+        obj.canDelete = false;
+        #end
+
+    obj.catalogs = {};
+    obj.catalogs.ids = [];
+    window.viewer = new FileViewer(obj);
+
+    function showFiles() {
+        window.viewer.render();
+    }
+</script>
+
+##<script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+##<script type="text/javascript" src="$content.getURI("scripts/restDeleter.js")"></script>
+##<script>
+##    // enable "Delete" action
+##    function restDelete(){
+##        var expt=null;
+##        #if($project)
+##
+##        #else
+##            #set($project=$om.getProject())
+##        #end
+##        window.deleter=new RestDeleter(['${om.getId()}'],{defaultHeight:450,defaultWidth:600});
+##        window.deleter.init();
+##    }
+##</script>
+<!-- END META-INF/resources/templates/screens/reportPageActionEnablers.vm -->

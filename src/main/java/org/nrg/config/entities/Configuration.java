@@ -9,6 +9,7 @@
 
 package org.nrg.config.entities;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -19,121 +20,107 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import javax.persistence.*;
 import java.util.Properties;
 
+@SuppressWarnings("deprecation")
 @Auditable
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Configuration extends AbstractHibernateEntity {
+    public static final String ENABLED_STRING  = "enabled";
+    public static final String DISABLED_STRING = "disabled";
 
-	public static final String ENABLED_STRING = "enabled";
-	public static final String DISABLED_STRING = "disabled";
-    private static final long serialVersionUID = -8112028990905366714L;
+    @Transient
+    public String getContents() {
+        if (configData != null) {
+            return configData.getContents();
+        } else {
+            return null;
+        }
+    }
 
-    private Long project;
-	private Scope scope;
-	private String entityId;
-	private String tool;
-	private String path;
+    public String getXnatUser() {
+        return xnatUser;
+    }
 
-	private ConfigurationData configData;
-	private String xnatUser;
-	private String reason;
-	private String status;
-	private int version;
-	private boolean unversioned;
+    public void setXnatUser(String xnatUser) {
+        this.xnatUser = xnatUser;
+    }
 
-	@Transient
-	public String getContents(){
-		if(configData != null) {
-			return configData.getContents();
-		} else {
-			return null;
-		}
-	}
+    public String getReason() {
+        return reason;
+    }
 
-	public String getXnatUser() {
-		return xnatUser;
-	}
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
 
-	public void setXnatUser(String xnatUser) {
-		this.xnatUser = xnatUser;
-	}
+    public String getStatus() {
+        return status;
+    }
 
-	public String getReason() {
-		return reason;
-	}
-
-	public void setReason(String reason) {
-		this.reason = reason;
-	}
-
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
     @Deprecated
-	public Long getProject() {
-		return project;
-	}
+    public Long getProject() {
+        return project;
+    }
 
     @Deprecated
-	public void setProject(Long project) {
-		this.project = project;
-	}
+    public void setProject(Long project) {
+        this.project = project;
+    }
 
-	public Scope getScope() {
-		return scope;
-	}
+    public Scope getScope() {
+        return scope;
+    }
 
-	public void setScope(final Scope scope) {
-		this.scope = scope;
-	}
+    public void setScope(final Scope scope) {
+        this.scope = scope;
+    }
 
-	public String getEntityId() {
-		return entityId;
-	}
+    public String getEntityId() {
+        return entityId;
+    }
 
-	public void setEntityId(String entityId) {
-		this.entityId = entityId;
-	}
+    public void setEntityId(String entityId) {
+        this.entityId = entityId;
+    }
 
-	public String getTool() {
-		return tool;
-	}
+    public String getTool() {
+        return tool;
+    }
 
-	public void setTool(String tool) {
-		this.tool = tool;
-	}
+    public void setTool(String tool) {
+        this.tool = tool;
+    }
 
-	@ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
-	public ConfigurationData getConfigData() {
-		return configData;
-	}
+    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    public ConfigurationData getConfigData() {
+        return configData;
+    }
 
-	public void setConfigData(ConfigurationData data) {
-		this.configData = data;
-	}
+    public void setConfigData(ConfigurationData data) {
+        this.configData = data;
+    }
 
-	public String getPath() {
-		return path;
-	}
+    public String getPath() {
+        return path;
+    }
 
-	public void setPath(String path) {
-		this.path = path;
-	}
+    public void setPath(String path) {
+        this.path = path;
+    }
 
-	public int getVersion() {
-		return version;
-	}
+    public int getVersion() {
+        return version;
+    }
 
-	public void setVersion(int version) {
-		this.version = version;
-	}
+    public void setVersion(int version) {
+        this.version = version;
+    }
 
-    @Column(columnDefinition="boolean default false")
+    @Column(columnDefinition = "boolean default false")
     public boolean isUnversioned() {
         return unversioned;
     }
@@ -142,12 +129,12 @@ public class Configuration extends AbstractHibernateEntity {
         this.unversioned = unversioned;
     }
 
-	public String toString(){
-		return ToStringBuilder.reflectionToString(this);
-	}
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
+    }
 
-	@Override
-	public boolean equals(final Object o) {
+    @Override
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         }
@@ -158,33 +145,33 @@ public class Configuration extends AbstractHibernateEntity {
         final Configuration that = (Configuration) o;
 
         return getVersion() == that.getVersion() &&
-                isUnversioned() == that.isUnversioned() &&
-                getScope() == that.getScope() &&
-                !(getEntityId() != null ? !getEntityId().equals(that.getEntityId()) : that.getEntityId() != null) &&
-                getTool().equals(that.getTool()) &&
-                getPath().equals(that.getPath()) &&
-                !(getConfigData() != null ? !getConfigData().equals(that.getConfigData()) : that.getConfigData() != null) &&
-                !(getXnatUser() != null ? !getXnatUser().equals(that.getXnatUser()) : that.getXnatUser() != null) &&
-                !(getReason() != null ? !getReason().equals(that.getReason()) : that.getReason() != null) &&
-                !(getStatus() != null ? !getStatus().equals(that.getStatus()) : that.getStatus() != null);
+               isUnversioned() == that.isUnversioned() &&
+               getScope() == that.getScope() &&
+               !(getEntityId() != null ? !getEntityId().equals(that.getEntityId()) : that.getEntityId() != null) &&
+               getTool().equals(that.getTool()) &&
+               getPath().equals(that.getPath()) &&
+               !(getConfigData() != null ? !getConfigData().equals(that.getConfigData()) : that.getConfigData() != null) &&
+               !(getXnatUser() != null ? !getXnatUser().equals(that.getXnatUser()) : that.getXnatUser() != null) &&
+               !(getReason() != null ? !getReason().equals(that.getReason()) : that.getReason() != null) &&
+               !(getStatus() != null ? !getStatus().equals(that.getStatus()) : that.getStatus() != null);
     }
 
-	@Override
-	public int hashCode() {
-		int result = getScope().hashCode();
-		result = 31 * result + (getEntityId() != null ? getEntityId().hashCode() : 0);
-		result = 31 * result + getTool().hashCode();
-		result = 31 * result + getPath().hashCode();
-		result = 31 * result + (getConfigData() != null ? getConfigData().hashCode() : 0);
-		result = 31 * result + (getXnatUser() != null ? getXnatUser().hashCode() : 0);
-		result = 31 * result + (getReason() != null ? getReason().hashCode() : 0);
-		result = 31 * result + (getStatus() != null ? getStatus().hashCode() : 0);
-		result = 31 * result + getVersion();
-		result = 31 * result + (isUnversioned() ? 1 : 0);
-		return result;
-	}
+    @Override
+    public int hashCode() {
+        int result = getScope().hashCode();
+        result = 31 * result + (getEntityId() != null ? getEntityId().hashCode() : 0);
+        result = 31 * result + getTool().hashCode();
+        result = 31 * result + getPath().hashCode();
+        result = 31 * result + (getConfigData() != null ? getConfigData().hashCode() : 0);
+        result = 31 * result + (getXnatUser() != null ? getXnatUser().hashCode() : 0);
+        result = 31 * result + (getReason() != null ? getReason().hashCode() : 0);
+        result = 31 * result + (getStatus() != null ? getStatus().hashCode() : 0);
+        result = 31 * result + getVersion();
+        result = 31 * result + (isUnversioned() ? 1 : 0);
+        return result;
+    }
 
-	@SuppressWarnings("unused")
+    @SuppressWarnings("unused")
     public Properties asProperties() {
         final Properties properties = new Properties();
         setNonblankProperty(properties, "xnatUser", xnatUser);
@@ -203,10 +190,22 @@ public class Configuration extends AbstractHibernateEntity {
 
     private void setNonblankProperty(final Properties properties, final String key, final Object value) {
         if (value != null) {
-            final String valueString = value.toString().trim();
-            if (!valueString.equals("")) {
-                properties.setProperty(key, valueString);
+            final String valueString = value.toString();
+            if (StringUtils.isNotBlank(valueString)) {
+                properties.setProperty(key, valueString.trim());
             }
         }
     }
+
+    private Long              project;
+    private Scope             scope;
+    private String            entityId;
+    private String            tool;
+    private String            path;
+    private ConfigurationData configData;
+    private String            xnatUser;
+    private String            reason;
+    private String            status;
+    private int               version;
+    private boolean           unversioned;
 }

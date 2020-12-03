@@ -9,7 +9,7 @@
 
 package org.nrg.config.services.impl;
 
-import com.google.common.base.Joiner;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanComparator;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
@@ -23,8 +23,6 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.utilities.Reflection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -35,25 +33,30 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Service
+@Slf4j
 public class DefaultConfigService extends AbstractHibernateEntityService<Configuration, ConfigurationDAO> implements ConfigService {
-
-    public static BeanComparator ConfigComparatorByCreateDate = new BeanComparator("created");
-    public static BeanComparator ConfigComparatorByVersion = new BeanComparator("version");
+    public static BeanComparator<Configuration> ConfigComparatorByCreateDate = new BeanComparator<>("created");
+    public static BeanComparator<Configuration> ConfigComparatorByVersion    = new BeanComparator<>("version");
 
     public static final boolean UNVERSIONED_DEFAULT = false;  // The default is to version, therefore "unversioned" should be false
+
+    public DefaultConfigService(final ConfigurationDAO dao, final ConfigurationDataDAO dataDAO, final PlatformTransactionManager transactionManager, final JdbcTemplate jdbcTemplate) {
+        _dao = dao;
+        _dataDAO = dataDAO;
+        _transactionManager = transactionManager;
+        _jdbcTemplate = jdbcTemplate;
+    }
 
     @Override
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
-
-        _jdbcTemplate = new JdbcTemplate(_dataSource);
 
         final TransactionTemplate transactionTemplate = new TransactionTemplate(_transactionManager);
 
@@ -70,21 +73,21 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
                         final long testForSiteRefs = _jdbcTemplate.queryForObject("SELECT COUNT(*) FROM xhbm_configuration WHERE scope IS NULL AND project IS NULL", Long.class);
                         if (testForSiteRefs > 0) {
                             final int updatedSiteRefs = _jdbcTemplate.update("UPDATE xhbm_configuration SET scope = ? WHERE scope IS NULL AND project IS NULL", Scope.Site.ordinal());
-                            _log.info("Updated " + updatedSiteRefs + " rows with no project or scope/entity set, set to use site scope.");
+                            log.info("Updated " + updatedSiteRefs + " rows with no project or scope/entity set, set to use site scope.");
                         }
                         final long testForEntityRefs = _jdbcTemplate.queryForObject("SELECT COUNT(*) FROM xhbm_configuration WHERE scope IS NULL AND (entity_id IS NULL OR entity_id = '')", Long.class);
                         if (testForEntityRefs > 0) {
                             final int updatedEntityRefs = _jdbcTemplate.update("UPDATE xhbm_configuration SET scope = ?, entity_id = (SELECT id FROM xnat_projectdata WHERE projectdata_info = xhbm_configuration.project) WHERE scope IS NULL AND (entity_id IS NULL OR entity_id = '')", Scope.Project.ordinal());
-                            _log.info("Updated " + updatedEntityRefs + " rows with no scope or entity ID set, set to use project scope, updated entity_id from join with project ID.");
+                            log.info("Updated " + updatedEntityRefs + " rows with no scope or entity ID set, set to use project scope, updated entity_id from join with project ID.");
                         }
                         final long testForProjectRefs = _jdbcTemplate.queryForObject("SELECT COUNT(*) FROM xhbm_configuration WHERE project IS NULL AND (entity_id IS NOT NULL AND entity_id != '')", Long.class);
                         if (testForProjectRefs > 0) {
                             final int updatedProjectRefs = _jdbcTemplate.update("UPDATE xhbm_configuration SET project = (SELECT projectdata_info FROM xnat_projectdata WHERE id = xhbm_configuration.entity_id) WHERE project IS NULL AND (entity_id IS NOT NULL AND entity_id != '')");
-                            _log.info("Updated " + updatedProjectRefs + " rows with no scope or entity ID set, set to use project scope, updated entity_id from join with project ID.");
+                            log.info("Updated " + updatedProjectRefs + " rows with no scope or entity ID set, set to use project scope, updated entity_id from join with project ID.");
                         }
                     }
                 } catch (DataAccessException exception) {
-                    _log.error("There was an issue trying to recondition the configuration service data tables, rolling back all transactions", exception);
+                    log.error("There was an issue trying to recondition the configuration service data tables, rolling back all transactions", exception);
                     status.setRollbackOnly();
                 }
             }
@@ -345,26 +348,22 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return _dao.getConfigurationsByTool(toolName, scope, entityId);
     }
 
-    @SuppressWarnings("unchecked")
     private Configuration getConfigImpl(String toolName, String path, Scope scope, String entityId) {
         List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() == 0) {
             return null;
-        } else {
-            Collections.sort(list, ConfigComparatorByCreateDate);
-            return list.get(list.size() - 1);
         }
+        list.sort(ConfigComparatorByCreateDate);
+        return list.get(list.size() - 1);
     }
 
-    @SuppressWarnings("unchecked")
     private String getConfigContentsImpl(String toolName, String path, Scope scope, String entityId) {
         List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() == 0) {
             return null;
-        } else {
-            Collections.sort(list, ConfigComparatorByCreateDate);
-            return list.get(list.size() - 1).getContents();
         }
+        list.sort(ConfigComparatorByCreateDate);
+        return list.get(list.size() - 1).getContents();
     }
 
     private Configuration getConfigByIdImpl(String toolName, String path, String id, Scope scope, String entityId) {
@@ -375,7 +374,8 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         //will throw an exception the first time you try to access a property. So, we'll use that to test for a valid return, here.
         //this also takes care of a null return.
         try {
-            c.getTool();
+            final String tool = c.getTool();
+            log.debug("Successfully retrieved tool {} for configuration ID {}", tool, id);
         } catch (Exception e) {
             return null;
         }
@@ -386,27 +386,19 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Configuration getConfigByVersionImpl(final String toolName, final String path, final int version, final Scope scope, final String entityId) {
         final List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() < version) {
             return null;
-        } else {
-            Collections.sort(list, ConfigComparatorByVersion);
-            final Configuration ret = list.get(version - 1);
-            //this will only fail if something truly stupid happened. Still should check, though.
-            if (ret.getVersion() == version) {
-                return ret;
-            } else {
-                //something odd happened, let's search the list for the version
-                for (final Configuration c : list) {
-                    if (c.getVersion() == version) {
-                        return c;
-                    }
-                }
-                return null;
-            }
         }
+        list.sort(ConfigComparatorByVersion);
+        final Configuration ret = list.get(version - 1);
+        //this will only fail if something truly stupid happened. Still should check, though.
+        if (ret.getVersion() == version) {
+            return ret;
+        }
+        //something odd happened, let's search the list for the version
+        return list.stream().filter(configuration -> configuration.getVersion() == version).findFirst().orElse(null);
     }
 
     private Configuration replaceConfigImpl(String xnatUser, String reason, String toolName, String path, String status, Boolean unversioned, String contents, final Scope scope, final String entityId) throws ConfigServiceException {
@@ -421,14 +413,14 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         //  Case1) There is no config and unversioned is specified and false, or not specified (defaults to false)
         //  Case2) There is a config, but unversioned is specified and false (parameter overrides current configuration, so we don't need to check)
         //  Case3) NOT(There is a config, unversioned is either not specified or is true, and the config is set to unversioned)
-        final boolean unversionedValueOrDefault = unversioned != null ? unversioned : UNVERSIONED_DEFAULT;
+        final boolean unversionedValueOrDefault    = unversioned != null ? unversioned : UNVERSIONED_DEFAULT;
         final boolean unversionedSpecifiedAndFalse = unversioned != null && !unversioned;
         boolean doVersion = ((oldConfig == null && !unversionedValueOrDefault) ||
-                (oldConfig != null && unversionedSpecifiedAndFalse) ||
-                (oldConfig != null && !oldConfig.isUnversioned()));
+                             (oldConfig != null && unversionedSpecifiedAndFalse) ||
+                             (oldConfig != null && !oldConfig.isUnversioned()));
 
         Configuration configuration;
-        boolean update;
+        boolean       update;
         // If these things...
         if (oldConfig != null && !doVersion) {
             // We're going to update a non-versioned configuration.
@@ -466,7 +458,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         configuration.setEntityId(entityId);
         configuration.setXnatUser(xnatUser);
         configuration.setReason(reason);
-        configuration.setStatus(StringUtils.isBlank(status) ? ((oldConfig!=null && !StringUtils.isBlank(oldConfig.getStatus()) )?oldConfig.getStatus():Configuration.ENABLED_STRING) : status);
+        configuration.setStatus(StringUtils.isBlank(status) ? ((oldConfig != null && !StringUtils.isBlank(oldConfig.getStatus())) ? oldConfig.getStatus() : Configuration.ENABLED_STRING) : status);
         configuration.setVersion(1 + ((oldConfig != null && doVersion) ? oldConfig.getVersion() : 0));
         configuration.setUnversioned(!doVersion);
 
@@ -483,7 +475,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return configuration;
     }
 
-    private void notifyListeners(String action, String toolName, String path, Configuration configuration, boolean ignoreExceptions) throws ConfigServiceException {
+    private void notifyListeners(String action, String toolName, String path, Configuration configuration, boolean ignoreExceptions) {
         toolName = formatForJava(toolName);
         path = formatForJava(path);
 
@@ -493,7 +485,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     /**
      * Removes special characters and capitalizes the next character.
      *
-     * @param name    The name to format.
+     * @param name The name to format.
      *
      * @return A Java-formatted string.
      */
@@ -505,7 +497,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         StringBuilder sb = new StringBuilder();
 
         name = name.replace('/', '.');
-        name = name.replaceAll("[^A-Za-z0-9\\.]", "_");
+        name = name.replaceAll("[^A-Za-z0-9.]", "_");
 
         String first = name.substring(0, 1);
         sb.append(first.toUpperCase());
@@ -516,7 +508,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
             if (i + 2 > name.length()) {
                 break;
             } else if (i != 0) {
-                sb.append(name.substring(0, i));
+                sb.append(name, 0, i);
                 sb.append(name.substring(i + 1, i + 2).toUpperCase());
                 name = name.substring(i + 2);
             } else {
@@ -527,34 +519,33 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return sb.toString();
     }
 
-    private void doDynamicActions(Configuration config, boolean ignoreExceptions, String... _package) throws ConfigServiceException {
+    private void doDynamicActions(Configuration config, boolean ignoreExceptions, String... _package) {
         try {
-            String packageTemplate = Joiner.on('.').skipNulls().join(_package);
-
-            List<Class<?>> classes = Reflection.getClassesForPackage(packageTemplate);
+            final String         template = Arrays.stream(_package).filter(Objects::nonNull).collect(Collectors.joining("."));
+            final List<Class<?>> classes  = Reflection.getClassesForPackage(template);
 
             if (classes != null && classes.size() > 0) {
                 for (Class<?> clazz : classes) {
                     try {
                         if (ConfigurationModificationListenerI.class.isAssignableFrom(clazz)) {
-                            ConfigurationModificationListenerI action = (ConfigurationModificationListenerI) clazz.newInstance();
+                            final ConfigurationModificationListenerI action = (ConfigurationModificationListenerI) clazz.getConstructor().newInstance();
                             try {
                                 action.execute(config);
                             } catch (ConfigServiceException e) {
                                 if (ignoreExceptions) {
-                                    _log.error("", e);
+                                    log.error("", e);
                                 } else {
                                     throw e;
                                 }
                             }
                         }
                     } catch (Exception e) {
-                        _log.error("", e);
+                        log.error("", e);
                     }
                 }
             }
         } catch (Exception e) {
-            _log.error("", e);
+            log.error("", e);
         }
     }
 
@@ -562,24 +553,23 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         void execute(Configuration config) throws ConfigServiceException;
     }
 
-    @SuppressWarnings("unchecked")
     private String getStatusImpl(String toolName, String path, Scope scope, String entityId) {
         List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
-        if (list == null || list.size() == 0) return null;
-        Collections.sort(list, ConfigComparatorByCreateDate);
+        if (list == null || list.size() == 0) {
+            return null;
+        }
+        list.sort(ConfigComparatorByCreateDate);
         return list.get(list.size() - 1).getStatus();
     }
 
     //fail silently if the configuration does not exist, throws an unsupported operation exception if status is null.
-    @SuppressWarnings("unchecked")
     private void setStatusImpl(String xnatUser, String reason, String toolName, String path, String status, Scope scope, String entityId) throws ConfigServiceException {
-
         List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() == 0) {
             //fail silently if the configuration does not exist...
             return;
         }
-        Collections.sort(list, ConfigComparatorByCreateDate);
+        list.sort(ConfigComparatorByCreateDate);
         Configuration entity = list.get(list.size() - 1);
 
         if (!entity.isEnabled()) {
@@ -594,14 +584,15 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         }
     }
 
-    @SuppressWarnings("unchecked")
     private List<Configuration> getHistoryImpl(String toolName, String path, Scope scope, String entityId) {
         if (StringUtils.isBlank(entityId) && scope != Scope.Site) {
             throw new NrgServiceRuntimeException("You've specified scope " + scope + " without an entity ID. Scope MUST be set to Site if entity ID is blank.");
         }
-        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
-        if (list == null || list.size() == 0) return null;
-        Collections.sort(list, ConfigComparatorByCreateDate);
+        final List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
+        if (list == null || list.size() == 0) {
+            return null;
+        }
+        list.sort(ConfigComparatorByCreateDate);
         return list;
     }
 
@@ -618,19 +609,8 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(DefaultConfigService.class);
-
-    @Inject
-    private ConfigurationDAO _dao;
-
-    @Inject
-    private ConfigurationDataDAO _dataDAO;
-
-    @Inject
-    private PlatformTransactionManager _transactionManager;
-
-    @Inject
-    private DataSource _dataSource;
-
-    private JdbcTemplate _jdbcTemplate;
+    private final ConfigurationDAO           _dao;
+    private final ConfigurationDataDAO       _dataDAO;
+    private final PlatformTransactionManager _transactionManager;
+    private final JdbcTemplate               _jdbcTemplate;
 }

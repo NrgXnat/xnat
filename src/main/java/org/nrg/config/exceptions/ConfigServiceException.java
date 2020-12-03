@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConfigServiceException extends NrgServiceException {
-	
-	static final long serialVersionUID = 6690308402621986012L;
-	
 	public final List<Configuration> _scripts = new ArrayList<>();
 
 	public ConfigServiceException() {

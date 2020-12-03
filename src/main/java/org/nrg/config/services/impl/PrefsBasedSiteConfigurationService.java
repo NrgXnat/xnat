@@ -9,6 +9,7 @@
 
 package org.nrg.config.services.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.entities.Tool;
@@ -25,6 +26,7 @@ import java.util.Set;
 
 @Primary
 @Service
+@Slf4j
 public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfigurationService  {
     @Autowired
     public PrefsBasedSiteConfigurationService(final NrgPreferenceService service, final Environment environment) {
@@ -35,9 +37,7 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
     @Override
     protected void setPreferenceValue(final String username, final String property, final String value) {
         // TODO: Do we need to add auditing or change logging here?
-        if (_log.isDebugEnabled()) {
-            _log.debug("User {} is setting the property {} to the value {}", username, property, value);
-        }
+        log.debug("User {} is setting the property {} to the value {}", username, property, value);
         try {
             _service.setPreferenceValue(SITE_CONFIG_TOOL_ID, property, value);
         } catch (NrgServiceException e) {
@@ -50,16 +50,16 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
         try {
             final Set<String> toolIds = _service.getToolIds();
             if (!toolIds.contains(SITE_CONFIG_TOOL_ID)) {
-                _log.info("Didn't find a tool for the {} ID, checking for import values from configuration service.", SITE_CONFIG_TOOL_ID);
+                log.info("Didn't find a tool for the {} ID, checking for import values from configuration service.", SITE_CONFIG_TOOL_ID);
                 final Properties existing = checkForConfigServiceSiteConfiguration();
                 if (existing != null) {
-                    _log.info("Found {} properties in the configuration service, importing those.", existing.size());
+                    log.info("Found {} properties in the configuration service, importing those.", existing.size());
                     properties.putAll(existing);
                 }
                 final Tool siteConfig = new Tool(SITE_CONFIG_TOOL_ID, "Site Configuration", "This is the main tool for mapping the site configuration", false, null);
                 _service.createTool(siteConfig);
             } else {
-                _log.info("Working with the existing {} tool, checking for new import values.", SITE_CONFIG_TOOL_ID);
+                log.info("Working with the existing {} tool, checking for new import values.", SITE_CONFIG_TOOL_ID);
 
                 final Set<String> found = properties.stringPropertyNames();
                 final Properties existing = _service.getToolProperties(SITE_CONFIG_TOOL_ID);
@@ -72,9 +72,9 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
                 // properties that have the same name from the found list.
                 if (!existing.stringPropertyNames().containsAll(found)) {
                     found.removeAll(existing.stringPropertyNames());
-                    _log.info("Found {} new properties, importing into site configuration", found.size());
+                    log.info("Found {} new properties, importing into site configuration", found.size());
                     for (final String property : found) {
-                        _log.info("Importing new property {}, value: {}", property, properties.getProperty(property));
+                        log.info("Importing new property {}, value: {}", property, properties.getProperty(property));
                         _service.setPreferenceValue(SITE_CONFIG_TOOL_ID, property, properties.getProperty(property));
                     }
                 }
@@ -85,7 +85,6 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(PrefsBasedSiteConfigurationService.class);
     private static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 
     private final NrgPreferenceService _service;

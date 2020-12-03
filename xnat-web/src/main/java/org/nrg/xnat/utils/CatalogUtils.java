@@ -2431,12 +2431,6 @@ public class CatalogUtils {
             mod = true;
         }
 
-        // CatDcmentryBeans fail to set format correctly because it's not in their xml
-        if (entry.getClass().equals(CatDcmentryBean.class)) {
-            entry.setFormat("DICOM");
-            mod = true;
-        }
-
         //Set size
         if (setMetaFieldByName(entry, SIZE, Long.toString(fileSize))) {
             mod = true;
@@ -2449,7 +2443,11 @@ public class CatalogUtils {
             mod = true;
         }
 
-        if (!StringUtils.equals(format, entry.getFormat())) {
+        // CatDcmentryBeans fail to set format correctly because it's not in their xml
+        if (entry.getClass().equals(CatDcmentryBean.class)) {
+            entry.setFormat("DICOM");
+            mod = true;
+        } else if (!StringUtils.equals(format, entry.getFormat())) {
             entry.setFormat(format);
             mod = true;
         }

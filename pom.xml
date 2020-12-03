@@ -75,7 +75,7 @@
         <xdat.version>${xnatdev.version}</xdat.version>
 
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
-        <nrg.config.version>${xnat.version}</nrg.config.version>
+        <nrg.config.version>${xnatdev.version}</nrg.config.version>
         <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
         <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
@@ -102,7 +102,7 @@
     
         <!-- XNAT plugin versions -->
         <ohif-viewer.version>3.0.0-SNAPSHOT</ohif-viewer.version>
-        <container-service.version>2.1.1-ML-SNAPSHOT</container-service.version>
+        <container-service.version>3.0.0-SNAPSHOT</container-service.version>
         <dqr.version>1.0.0-SNAPSHOT</dqr.version>
         <batch-launch.version>0.2.8-ML-SNAPSHOT</batch-launch.version>
         <clara.version>ML-BETA</clara.version>
@@ -131,6 +131,7 @@
         <commons-beanutils.version>1.9.3</commons-beanutils.version>
         <commons-cli.version>1.4</commons-cli.version>
         <commons-codec.version>1.10</commons-codec.version>
+        <commons-compress.version>1.20</commons-compress.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-collections4.version>4.4</commons-collections4.version>
         <commons-configuration.version>1.10</commons-configuration.version>
@@ -150,6 +151,9 @@
         <commons-text.version>1.9</commons-text.version>
         <dcm4che.version>2.0.29</dcm4che.version>
         <dcm4che5.version>5.22.6</dcm4che5.version>
+        <pixelmed.version>nrg-20200327</pixelmed.version>
+        <pixelmed-codec.version>20200328</pixelmed-codec.version>
+        <pixelmed-imageio.version>20200328</pixelmed-imageio.version>
         <dom4j.version>1.6.1</dom4j.version>
         <ecs.version>1.4.2</ecs.version>
         <ehcache.version>2.6.11</ehcache.version>
@@ -180,8 +184,8 @@
         <itext.version>2.1.7</itext.version>
         <jackson.version>2.6.5</jackson.version>
         <java-uuid-generator.version>3.1.4</java-uuid-generator.version>
-        <lombok.version>1.18.12</lombok.version>
-        <lombok.checksum>49381508ecb02b3c173368436ef71b24c0d4418ad260e6cc98becbcf4b345406</lombok.checksum>
+        <lombok.version>1.18.16</lombok.version>
+        <lombok.checksum>7206cbbfd6efd5e85bceff29545633645650be58d58910a23b0d4835fbd15ed7</lombok.checksum>
 
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
@@ -208,7 +212,7 @@
         <hamcrest2.version>2.2</hamcrest2.version>
         <assertj.version>3.16.1</assertj.version>
         <junit.version>4.12</junit.version>
-        <junit-jupiter.version>5.6.2</junit-jupiter.version>
+        <junit-jupiter.version>5.6.3</junit-jupiter.version>
         <spring-test-junit5.version>1.5.0</spring-test-junit5.version>
         <jacoco.version>0.8.5</jacoco.version>
         <jython.version>2.7.1</jython.version>
@@ -908,6 +912,11 @@
                 <version>${commons-codec.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>${commons-collections.version}</version>
@@ -1114,6 +1123,21 @@
                 <version>${dcm4che5.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.dclunie</groupId>
+                <artifactId>pixelmed</artifactId>
+                <version>${pixelmed.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dclunie</groupId>
+                <artifactId>pixelmed-codec</artifactId>
+                <version>${pixelmed-codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dclunie</groupId>
+                <artifactId>pixelmed-imageio</artifactId>
+                <version>${pixelmed-imageio.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.activemq</groupId>
                 <artifactId>activemq-core</artifactId>
                 <version>${activemq.version}</version>
@@ -1306,6 +1330,21 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-guava</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-parameter-names</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
@@ -2407,3 +2446,4 @@
     </distributionManagement>
 
 </project>
+

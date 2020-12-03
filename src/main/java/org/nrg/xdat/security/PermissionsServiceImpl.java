@@ -42,6 +42,7 @@ import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
+import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
@@ -253,6 +254,10 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         } else {
             final ElementSecurity elementSecurity = ElementSecurity.GetElementSecurity(xsiType);
             if (elementSecurity.isSecure(action)) {
+                if (item.getItem().instanceOf("xnat:imageScanData")) {
+                    String sessionId = item.getStringProperty("image_session_id");
+                    return can(user, ItemSearch.GetItem("xnat:imageSessionData/ID", sessionId, user, false), action);
+                }
                 final SchemaElement       schemaElement  = SchemaElement.GetElement(xsiType);
                 final SecurityValues      securityValues = item.getItem().getSecurityValues();
                 final Map<String, String> hash           = securityValues.getHash();

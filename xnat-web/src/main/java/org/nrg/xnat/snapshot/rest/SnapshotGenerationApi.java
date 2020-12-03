@@ -1,24 +1,21 @@
 package org.nrg.xnat.snapshot.rest;
 
-import static org.nrg.xdat.security.helpers.AccessLevel.Read;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.exceptions.DataFormatException;
-import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.*;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.helpers.resolvers.XftDataObjectIdResolver;
+import org.nrg.xnat.snapshot.FileResource;
 import org.nrg.xnat.snapshot.services.SnapshotGenerationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -30,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.io.File;
 import java.util.Optional;
+
+import static org.nrg.xdat.security.helpers.AccessLevel.Read;
 
 /**
  * Snapshot generation API.
@@ -82,15 +81,15 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
             throw new NotFoundException(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, session);
         }
 
-        final Optional<Pair<File, File>> images = _snapshotService.getSnapshotAndThumbnail( sessionId, scanId, gridviewDimensions.rows, gridviewDimensions.cols, 0.5f, 0.5f);
+        final Optional<Pair<FileResource, FileResource>> images = _snapshotService.getSnapshotAndThumbnail( sessionId, scanId, gridviewDimensions.rows, gridviewDimensions.cols, 0.5f, 0.5f);
         String resourceType =  isThumbnailView? "thumbnail" : "snapshot";
-        File resource;
+        FileResource resource;
 
         if( images.isPresent()) {
             resource = isThumbnailView ? images.get().getRight() : images.get().getLeft();
             if (resource != null) {
-                log.debug("Snapshot path for scan {} of session {} with grid view {} found at path {}", scanId, sessionId, StringUtils.defaultIfBlank(view, "none"), resource.getParent());
-                return resource;
+                log.debug("Snapshot path for scan {} of session {} with grid view {} found at path {}", scanId, sessionId, StringUtils.defaultIfBlank(view, "none"), resource.getRoot());
+                return resource.getFile();
             }
         }
         throw new NotFoundException( resourceType, String.format("SessionId: %s, ScanId: %s", sessionId, scanId));
@@ -114,8 +113,8 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
         public GridviewDimensions( String s) {
             if( ! StringUtils.isEmpty(s)) {
                 String[] tokens = s.toUpperCase().split("X");
-                this.rows = Integer.parseInt( tokens[0]);
-                this.cols = Integer.parseInt( tokens[1]);
+                this.cols = Integer.parseInt( tokens[0]);
+                this.rows = Integer.parseInt( tokens[1]);
             }
         }
     }

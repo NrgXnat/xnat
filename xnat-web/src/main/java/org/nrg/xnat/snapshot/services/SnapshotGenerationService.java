@@ -1,10 +1,8 @@
 package org.nrg.xnat.snapshot.services;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.nrg.action.ClientException;
-import org.nrg.xapi.exceptions.NotFoundException;
+import org.nrg.xnat.snapshot.FileResource;
 
-import java.io.File;
 import java.util.Optional;
 
 /**
@@ -22,5 +20,5 @@ public interface SnapshotGenerationService {
      *
      * @return The URI to the specified snapshot.
      */
-    Optional<Pair<File, File>> getSnapshotAndThumbnail(final String sessionId, final String scanId, final int rows, int cols, float scaleRows, float scalCols) throws Exception;
+    Optional<Pair<FileResource, FileResource>> getSnapshotAndThumbnail(final String sessionId, final String scanId, final int rows, int cols, float scaleRows, float scalCols) throws Exception;
 }

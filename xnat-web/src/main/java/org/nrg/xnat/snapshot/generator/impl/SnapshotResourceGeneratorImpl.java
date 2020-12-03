@@ -7,6 +7,7 @@ import org.nrg.xdat.bean.CatDcmentryBean;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xnat.services.archive.CatalogService;
+import org.nrg.xnat.snapshot.FileResource;
 import org.nrg.xnat.snapshot.generator.SnapshotResourceGenerator;
 import org.nrg.xnat.utils.CatalogUtils;
 
@@ -94,13 +95,19 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
 
         log.debug("Initialize snapshot generator for sessionId {}, scanId {}.", sessionId, scanId);
         XnatResourcecatalog resourcecatalog = catalogService.getDicomResourceCatalog(sessionId, scanId);
-        log.debug("Dicom resource catalog found at {}", resourcecatalog.getUri());
-        Path dicomRootPath = Paths.get(resourcecatalog.getUri()).getParent();
-        // project can be null.  CatalogUtils will sort it out.
-        String project = null;
-        CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(dicomRootPath.toString(), resourcecatalog, project);
-        if (catalogData.catBean instanceof CatDcmcatalogBean) {
-            isHandler = init(sessionId, scanId, dicomRootPath, (CatDcmcatalogBean) catalogData.catBean);
+        if( resourcecatalog != null) {
+            log.debug("Dicom resource catalog found at {}", resourcecatalog.getUri());
+            Path dicomRootPath = Paths.get(resourcecatalog.getUri()).getParent();
+            // project can be null.  CatalogUtils will sort it out.
+            String project = null;
+            CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(dicomRootPath.toString(), resourcecatalog, project);
+            if (catalogData.catBean instanceof CatDcmcatalogBean) {
+                isHandler = init(sessionId, scanId, dicomRootPath, (CatDcmcatalogBean) catalogData.catBean);
+            }
+        }
+        else {
+            isHandler = false;
+            log.warn("The scan {} in session {} does not contain a DICOM resource catalog. Creating snapshots here is above my pay grade. Get a smarter SnapshotResourceGenerator", scanId, sessionId);
         }
         return isHandler;
     }
@@ -143,80 +150,68 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
     }
 
     @Override
-    public Optional<File> createSnaphot( String sessionId, String scanId) throws Exception {
+    public Optional<FileResource> createSnaphot( String sessionId, String scanId) throws Exception {
         return createMontage( sessionId, scanId, 1, 1);
     }
 
     @Override
-    public Optional<File> createMontage( String sessionId, String scanId, int nRows, int nCols) throws Exception {
-        Optional<File> maybeMontageFile= Optional.ofNullable( null);
+    public Optional<FileResource> createMontage( String sessionId, String scanId, int nRows, int nCols) throws Exception {
+        Optional<FileResource> montageFileResource = Optional.ofNullable( null);
         if( hasSnapshot( sessionId, scanId)) {
-            final String name = getResourceName(sessionId, scanId, nCols, nRows);
+            final String name = getSnapshotResourceName( sessionId, scanId, nRows, nCols, getFormat());
 
-            File montageFile = tmpRoot.resolve(name).toFile();
+            Path montageFile = tmpRoot.resolve(name);
             BufferedImage montageImage = montageGenerator.generate(files, nSlices, nRows, nCols);
 
-            writeImage(montageFile, montageImage);
-            maybeMontageFile = Optional.of( montageFile);
+            writeImage(montageFile.toFile(), montageImage);
+            montageFileResource = Optional.of( new FileResource( montageFile, getSnapshotContentName( sessionId, scanId, nRows, nCols), getFormat()));
         }
-        return maybeMontageFile;
+        return montageFileResource;
     }
 
     @Override
-    public Optional<Pair<File, File>> createSnapshotAndThumbnail( String sessionId, String scanId, float scaleRows, float scaleCols) throws Exception {
+    public Optional<Pair<FileResource, FileResource>> createSnapshotAndThumbnail( String sessionId, String scanId, float scaleRows, float scaleCols) throws Exception {
         return createMontageAndThumbnail( sessionId, scanId, 1, 1, scaleRows, scaleCols);
     }
 
     @Override
-    public Optional<Pair<File, File>> createMontageAndThumbnail( String sessionId, String scanId, int nCols, int nRows, float scaleRows, float scaleCols) throws Exception {
-        Optional<Pair<File, File>> optionalPair = Optional.ofNullable( null);
-        log.debug("Create montage and thumbnail: sessionId: {}, scanId: ncols: {}, nrows: {}, scaleRows: {}, scaleCols: {}", sessionId, scanId, nCols, nRows, scaleRows, scaleCols);
+    public Optional<Pair<FileResource, FileResource>> createMontageAndThumbnail( String sessionId, String scanId, int nRows, int nCols, float scaleRows, float scaleCols) throws Exception {
+        Optional<Pair<FileResource, FileResource>> optionalPair = Optional.ofNullable( null);
+        log.debug("Create montage and thumbnail: sessionId: {}, scanId: {} nrows: {}, ncols: {}, scaleRows: {}, scaleCols: {}", sessionId, scanId, nRows, nCols, scaleRows, scaleCols);
         if( hasSnapshot( sessionId, scanId)) {
-            final Pair<String, String> names = getResourceNames(sessionId, scanId, nCols, nRows);
 
-            File montageFile = tmpRoot.resolve(names.getLeft()).toFile();
-            File thumbnailFile = tmpRoot.resolve(names.getRight()).toFile();
+            Path montageFile = tmpRoot.resolve( getSnapshotResourceName( sessionId, scanId, nRows, nCols, getFormat()));
+            Path thumbnailFile = tmpRoot.resolve( getThumbnailResourceName( sessionId, scanId, nRows, nCols, getFormat()));
             BufferedImage montageImage = montageGenerator.generate(files, nSlices, nRows, nCols);
             BufferedImage thumbnailImage = thumbnailGenerator.rescale(montageImage, scaleRows, scaleCols);
 
-            writeImage(montageFile, montageImage);
-            writeImage(thumbnailFile, thumbnailImage);
-            optionalPair = Optional.of( Pair.of( montageFile, thumbnailFile));
+            writeImage(montageFile.toFile(), montageImage);
+            writeImage(thumbnailFile.toFile(), thumbnailImage);
+            FileResource montageFileResource = new FileResource( montageFile, getSnapshotContentName( sessionId, scanId, nRows, nCols), getFormat());
+            FileResource thumbnailFileResource = new FileResource( thumbnailFile, getThumbnailContentName( sessionId, scanId, nRows, nCols), getFormat());
+            optionalPair = Optional.of( Pair.of( montageFileResource, thumbnailFileResource));
         }
         return optionalPair;
     }
 
-    /**
-     * Calculates the snapshot file names, with the original snapshot name as the pair key and the thumbnail name as the
-     * pair value.
-     *
-     * @param sessionId The ID of the session.
-     * @param scanId    The ID of the scan.
-     * @param cols      The number of columns in montage grid.
-     * @param rows      The number of rows in montage grid.
-     *
-     * @return A pair of strings, with the key as the original snapshot filename and the value as the thumbnail filename
-     */
-    @Override
-    public Pair<String, String> getResourceNames(final String sessionId, final String scanId, final int cols, int rows) {
-        String root;
-        if( cols == 1 && rows == 1) {
-            root = String.format("%s_%s_qc", sessionId, scanId);
-        } else {
-            root = String.format( "%s_%s_%dX%d_qc", sessionId, scanId, cols, rows);
-        }
-        return Pair.of(root + ".gif", root + "_t.gif");
+    public String getFormat() { return "gif";}
+
+    public String getSnapshotContentName(String sessionId, String scanId, int rows, int cols) {
+        return (rows == 1 && cols ==1) ? "ORIGINAL" : String.format( "%dX%d", cols, rows);
     }
 
-    @Override
-    public String getResourceName(final String sessionId, final String scanId, final int cols, int rows) {
-        String root;
-        if( cols == 1 && rows == 1) {
-            root = String.format("%s_%s_qc", sessionId, scanId);
-        } else {
-            root = String.format( "%s_%s_%dX%d_qc", sessionId, scanId, cols, rows);
-        }
-        return root + ".gif";
+    public String getThumbnailContentName(String sessionId, String scanId, int rows, int cols) {
+        return (rows == 1 && cols ==1) ? "THUMBNAIL" : String.format( "%dX%d_THUMBNAIL", cols, rows);
+    }
+
+    public String getSnapshotResourceName(final String sessionId, final String scanId, final int rows, int cols, String format) {
+        String grid = (rows == 1 && cols == 1) ? "" : String.format( "_%sx%s", cols, rows);
+        return String.format("%s_%s%s_qc.%s", sessionId, scanId, grid, format.toLowerCase());
+    }
+
+    public String getThumbnailResourceName(final String sessionId, final String scanId, final int rows, int cols, String format) {
+        String grid = (rows == 1 && cols == 1) ? "" : String.format( "_%sx%s", cols, rows);
+        return String.format("%s_%s%s_qc_t.%s", sessionId, scanId, grid, format.toLowerCase());
     }
 
 }

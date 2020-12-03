@@ -1,5 +1,7 @@
 package org.nrg.xnat.snapshot.generator.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -16,6 +18,7 @@ import java.util.List;
  *
  * Assumes all images are of the same type. Does not center smaller images in montage panel.
  */
+@Slf4j
 public class MontageGenerator extends DicomImageRenderer {
 
     private SliceCoordinateCalculator sliceCoordinateCalculator;
@@ -53,48 +56,53 @@ public class MontageGenerator extends DicomImageRenderer {
      * @throws Exception
      */
     public BufferedImage generate( List<String> files, int nSlices, int rows, int cols) throws Exception {
-        int nPanels = rows * cols;
-        // The slices in the files may be spread out in mutliple possibly multi-frame images.
-        // Select the images and frames to fill the montage panel.
-        List<SliceCoordinate> sliceCoordinates = sliceCoordinateCalculator.getSliceCoordinates( nPanels, nSlices, files);
+        try {
+            int nPanels = rows * cols;
+            // The slices in the files may be spread out in mutliple possibly multi-frame images.
+            // Select the images and frames to fill the montage panel.
+            List<SliceCoordinate> sliceCoordinates = sliceCoordinateCalculator.getSliceCoordinates(nPanels, nSlices, files);
 
-        // Read the selected files into BufferedImages.
-        List<BufferedImage> bis = new ArrayList<>();
-        for( SliceCoordinate sc: sliceCoordinates) {
-            bis.add( readImage( new File( files.get(sc.getFileNumber())), sc.getFrameNumber()));
-        }
+            // Read the selected files into BufferedImages.
+            List<BufferedImage> bis = new ArrayList<>();
+            for (SliceCoordinate sc : sliceCoordinates) {
+                bis.add( readImage(new File(files.get(sc.getFileNumber())), sc.getFrameNumber()));
+            }
 
-        // Create the BufferedImage for the montage.
-        BufferedImage montageBufferedImage;
-        // The montage is just the selected image if only one panel is requested.
-        if( nPanels == 1) {
-            montageBufferedImage = bis.get(0);
-        }
-        else {
-            // The panels will be equal in size to the largest image in the set.
-            Dimensions srcDimensions = getMaxDimenions(bis);
+            // Create the BufferedImage for the montage.
+            BufferedImage montageBufferedImage;
+            // The montage is just the selected image if only one panel is requested.
+            if (nPanels == 1) {
+                montageBufferedImage = bis.get(0);
+            } else {
+                // The panels will be equal in size to the largest image in the set.
+                Dimensions srcDimensions = getMaxDimenions(bis);
 
-            Dimensions montageDimensions = new Dimensions(rows * srcDimensions.rows, cols * srcDimensions.cols);
-            // All of the images are assumed to be of the same type.
-            // TODO: Pick a lowest-common image type and convert image types if needed.
-            montageBufferedImage = new BufferedImage(montageDimensions.cols, montageDimensions.rows, bis.get(0).getType());
+                Dimensions montageDimensions = new Dimensions(rows * srcDimensions.rows, cols * srcDimensions.cols);
+                // All of the images are assumed to be of the same type.
+                // TODO: Pick a lowest-common image type and convert image types if needed.
+                montageBufferedImage = new BufferedImage(montageDimensions.cols, montageDimensions.rows, bis.get(0).getType());
 
-            // Write the individual images into the panels.
-            // TODO: This puts images smaller than the panael in the upper left corner of the panel instead of the more aesthetically pleasing center.
-            int ib = 0;
-            for (int ir = 0; ir < rows; ir++) {
-                for (int ic = 0; ic < cols; ic++) {
-                    if (ib < bis.size()) {
-                        BufferedImage bi = bis.get(ib);
-                        addPanel(bi, srcDimensions, montageBufferedImage, ir, ic);
-                        ib++;
-                    } else {
-                        break;
+                // Write the individual images into the panels.
+                // TODO: This puts images smaller than the panael in the upper left corner of the panel instead of the more aesthetically pleasing center.
+                int ib = 0;
+                for (int ir = 0; ir < rows; ir++) {
+                    for (int ic = 0; ic < cols; ic++) {
+                        if (ib < bis.size()) {
+                            BufferedImage bi = bis.get(ib);
+                            addPanel(bi, srcDimensions, montageBufferedImage, ir, ic);
+                            ib++;
+                        } else {
+                            break;
+                        }
                     }
                 }
             }
+            return montageBufferedImage;
         }
-        return montageBufferedImage;
+        catch( Exception e) {
+            log.error( "Error generating montage image.", e);
+            throw e;
+        }
     }
 
     /**

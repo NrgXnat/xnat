@@ -11,20 +11,17 @@ import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xnat.helpers.resource.XnatResourceInfoMap;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.services.archive.CatalogService;
+import org.nrg.xnat.snapshot.FileResource;
 import org.nrg.xnat.snapshot.generator.SnapshotResourceGenerator;
-import org.nrg.xnat.snapshot.generator.impl.SnapshotResourceGeneratorImpl;
 import org.nrg.xnat.snapshot.services.SnapshotGenerationService;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of SnapshotGenerationService.
@@ -34,21 +31,20 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SnapshotGenerationServiceImpl implements SnapshotGenerationService {
     @Autowired
-//    public SnapshotGenerationServiceImpl(final CatalogService catalogService, final SnapshotResourceGenerator snapshotGenerator) {
-    public SnapshotGenerationServiceImpl(final CatalogService catalogService) throws IOException {
+    public SnapshotGenerationServiceImpl(final CatalogService catalogService, final SnapshotResourceGenerator snapshotGenerator) {
         _catalogService = catalogService;
-        _snapshotGenerator = new SnapshotResourceGeneratorImpl( _catalogService);
+        _snapshotGenerator = snapshotGenerator;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Optional<Pair<File, File>> getSnapshotAndThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws Exception {
+    public Optional<Pair<FileResource, FileResource>> getSnapshotAndThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws Exception {
         log.debug("Look for snapshot catalog for scan {} of session {} with {} rows by {} cols", sessionId, scanId, rows, cols);
         Optional<XnatResourcecatalog> snapshotCatalog = getSnapshotResourceCatalog( sessionId, scanId);
         if( snapshotCatalog.isPresent()) {
-            Optional< Pair<File,File>> snapshots = getSnapshotFiles( snapshotCatalog.get(), sessionId, scanId, rows, cols);
+            Optional< Pair<FileResource,FileResource>> snapshots = getSnapshotFiles( snapshotCatalog.get(), sessionId, scanId, rows, cols);
             if( snapshots.isPresent()) {
                 return snapshots;
             }
@@ -61,7 +57,7 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
             }
         }
         else {
-            Optional< Pair<File,File>> snapshots = createSnapshots( sessionId, scanId, rows, cols, scaleRows, scaleCols);
+            Optional< Pair<FileResource,FileResource>> snapshots = createSnapshots( sessionId, scanId, rows, cols, scaleRows, scaleCols);
             if( snapshots.isPresent()) {
                 snapshotCatalog = createSnapshotCatalog( sessionId, scanId);
                 if( snapshotCatalog.isPresent()) {
@@ -78,28 +74,25 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
         return Optional.ofNullable( _catalogService.getResourceCatalog( sessionId, scanId, SNAPSHOTS));
     }
 
-    public Optional< Pair<File, File>> getSnapshotFiles( XnatResourcecatalog snapshotCatalog, String sessionId, String scanId, int rows, int cols) throws Exception {
+    public Optional< Pair<FileResource, FileResource>> getSnapshotFiles( XnatResourcecatalog snapshotCatalog, String sessionId, String scanId, int rows, int cols) throws Exception {
         String project = null;
         Path rootPath = Paths.get( snapshotCatalog.getUri()).getParent();
         CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate( rootPath.toString(), snapshotCatalog, project);
         CatCatalogBean catalogBean = catalogData.catBean;
         List<CatEntryI> entries = catalogBean.getEntries_entry();
 
-        List<String> resourceNames = entries.stream().map( CatEntryI::getUri).collect(Collectors.toList());
-        
-        Pair<String, String> snaphotFileNames = _snapshotGenerator.getResourceNames( sessionId, scanId, rows, cols);
+        Optional<FileResource> snapshotFile = entries.stream()
+                .filter( e -> e.getContent().equals( _snapshotGenerator.getSnapshotContentName(sessionId, scanId, rows, cols)))
+                .map( e -> new FileResource( rootPath.resolve( e.getUri()), e.getContent(), e.getFormat()))
+                .findAny();
+        Optional<FileResource> thumbnailFile = entries.stream()
+                .filter( e -> e.getContent().equals( _snapshotGenerator.getThumbnailContentName(sessionId, scanId, rows, cols)))
+                .map( e -> new FileResource( rootPath.resolve( e.getUri()), e.getContent(), e.getFormat()))
+                .findAny();
 
-        Optional<File> snapshotFile = resourceNames.stream()
-                .filter( f -> snaphotFileNames.getLeft().equals(f))
-                .map( f -> rootPath.resolve( f).toFile())
-                .findAny();
-        Optional<File> thumbnailFile = resourceNames.stream()
-                .filter( f -> snaphotFileNames.getRight().equals(f))
-                .map( f -> rootPath.resolve( f).toFile())
-                .findAny();
         if( snapshotFile.isPresent() && thumbnailFile.isPresent()) {
             log.debug("Matching resources found. Snapshot {} and thumbnail {}", snapshotFile.get(), thumbnailFile.get());
-            Pair<File, File> pair = ImmutablePair.of( snapshotFile.get(), thumbnailFile.get());
+            Pair<FileResource, FileResource> pair = ImmutablePair.of( snapshotFile.get(), thumbnailFile.get());
             return Optional.of( pair);
         }
         else {
@@ -108,18 +101,18 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
         }
     }
 
-    public Optional<Pair<File, File>> createSnapshots( String sessionId, String scanId, int rows, int cols, float scaleRows, float scaleCols) throws Exception {
+    public Optional<Pair<FileResource, FileResource>> createSnapshots(String sessionId, String scanId, int rows, int cols, float scaleRows, float scaleCols) throws Exception {
         return _snapshotGenerator.createMontageAndThumbnail( sessionId, scanId, rows, cols, scaleRows, scaleCols);
     }
 
-    public void addSnapshotFilesToResource( XnatResourcecatalog resourcecatalog, File snapshotFile, File thumbnailFile) throws Exception {
+    public void addSnapshotFilesToResource( XnatResourcecatalog resourcecatalog, FileResource snapshotResource, FileResource thumbnailResource) throws Exception {
         final XnatResourcecatalog updated = _catalogService.insertResources(XDAT.getUserDetails(), resourcecatalog,
                 XnatResourceInfoMap.builder()
-                        .resource(snapshotFile.getName(), snapshotFile, GIF, ORIGINAL)
-                        .resource(thumbnailFile.getName(), thumbnailFile, GIF, THUMBNAIL)
+                        .resource(snapshotResource.getName(), snapshotResource.getFile(), snapshotResource.getFormat(), snapshotResource.getContent())
+                        .resource(thumbnailResource.getName(), thumbnailResource.getFile(), thumbnailResource.getFormat(), thumbnailResource.getContent())
                         .build());
-        FileUtils.deleteQuietly(snapshotFile);
-        FileUtils.deleteQuietly(thumbnailFile);
+        FileUtils.deleteQuietly( snapshotResource.getFile());
+        FileUtils.deleteQuietly( thumbnailResource.getFile());
     }
 
     private Optional<XnatResourcecatalog> createSnapshotCatalog(final String sessionId, final String scanId) {

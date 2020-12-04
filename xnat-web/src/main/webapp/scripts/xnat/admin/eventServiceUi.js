@@ -445,7 +445,7 @@ var XNAT = getObject(XNAT || {});
             },
             subProjGlobalSelect: {
                 kind: 'panel.element',
-                html: '<label class="disabled"><input type="checkbox" id="subscription-anyproject-selector" disabled /> Apply to All Projects</label>',
+                html: '<label><input type="checkbox" id="subscription-anyproject-selector" /> Apply to All Projects</label>',
                 order: 31
             },
             subActionSelector: {
@@ -828,6 +828,15 @@ var XNAT = getObject(XNAT || {});
                     $form.find('#subscription-anyproject-selector').prop('checked','checked');
                 }
 
+                $form.on('click','#subscription-anyproject-selector',function(){
+                    var allProjectsSelected = $(this).prop('checked');
+                    if (allProjectsSelected) {
+                        $(this).prop('disabled','disabled')
+                            .parents('label').addClass('disabled');
+                        $form.find('select[name=project-id]').find('option:selected').prop('selected',false);
+                    }
+                });
+
                 // Create form-specific event handlers, enable them after setValues() has run
                 $form.off('change','select[name=project-id]').on('change','select[name=project-id]', function(e){
                     findActions($(this));
@@ -951,9 +960,13 @@ var XNAT = getObject(XNAT || {});
         var element = $(e.target),
             selected = element.find('option:selected');
         if (selected.length) {
-            $('#subscription-anyproject-selector').prop('checked',false)
+            $('#subscription-anyproject-selector').prop('checked',false).prop('disabled',false)
+                .parents('label').removeClass('disabled');
         }
-        else $('#subscription-anyproject-selector').prop('checked','checked');
+        else {
+            $('#subscription-anyproject-selector').prop('checked','checked').prop('disabled','disabled')
+                .parents('label').addClass('disabled');
+        }
     };
 
     eventServicePanel.toggleSubscription = function(id,selector){

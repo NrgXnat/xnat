@@ -72,6 +72,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -145,7 +146,7 @@ public class FileList extends XNATCatalogTemplate {
                 resource = getResources().get(0);
             }
 
-            filePath = StringUtils.substringBefore(StringUtils.removeStart(getRequest().getResourceRef().getRemainingPart(), "/"), "?");
+            filePath = URLDecoder.decode(StringUtils.substringBefore(StringUtils.removeStart(getRequest().getResourceRef().getRemainingPart(), "/"), "?"), Charset.defaultCharset().name());
 
             getVariants().addAll(VARIANTS);
         } catch (Exception e) {
@@ -528,7 +529,7 @@ public class FileList extends XNATCatalogTemplate {
                 final CatCatalogBean      cat         = catalogData.catBean;
                 final String              parentPath  = catalogData.catPath;
 
-                if (filePath == null || filePath.equals("")) {
+                if (StringUtils.isBlank(filePath)) {
                     table.insertRows(CatalogUtils.getEntryDetails(cat, parentPath, (catResource.getBaseURI() != null) ? catResource.getBaseURI() + "/files" : baseURI + "/resources/" + catResource.getXnatAbstractresourceId() + "/files", catResource, isZip || (index != null), entryFilter, proj, locator));
                 } else {
                     final List<CatEntryI> entries   = new ArrayList<>();

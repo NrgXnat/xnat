@@ -46,6 +46,7 @@ import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -165,7 +166,7 @@ public class CatalogUtils {
             this.catPath  = this.catFile.getParent();
             this.catRes = catRes;
             if (this.catFile.exists()) {
-                this.catBean = readCatalogBeanFromCatalogFile();
+                this.catBean = readCatalogBeanFromCatalogFile(catId);
             } else if (create) {
                 CatCatalogBean cat = new CatCatalogBean();
                 if (StringUtils.isNotBlank(catId)) cat.setId(catId);
@@ -186,7 +187,7 @@ public class CatalogUtils {
             setCatalogProject(catBean, this.project);
         }
 
-        private CatCatalogBean readCatalogBeanFromCatalogFile() throws ServerException {
+        private CatCatalogBean readCatalogBeanFromCatalogFile(final String catId) throws ServerException {
             CatCatalogBean cat = null;
             InputStream inputStream = null;
             try {
@@ -200,14 +201,25 @@ public class CatalogUtils {
                         inputStream = fis;
                     }
 
-                    XDATXMLReader reader = new XDATXMLReader();
-                    BaseElement base = reader.parse(inputStream);
+                    final XDATXMLReader reader = new XDATXMLReader();
+                    BaseElement base;
+                    try {
+                        base = reader.parse(inputStream);
+                    } catch (SAXParseException exception) {
+                        if (exception.getColumnNumber() == 1 && exception.getLineNumber() == 1 && StringUtils.startsWith(exception.getMessage(), PREMATURE_EOF)) {
+                            log.warn("Tried to read the catalog file at {}, but it was empty. I'm going to regenerate the catalog but you should know something happened to the original file.", catFile.getAbsolutePath());
+                            final CatCatalogBean catalog = new CatCatalogBean();
+                            catalog.setId(catId);
+                            base = catalog;
+                        } else {
+                            throw exception;
+                        }
+                    }
                     if (base instanceof CatCatalogBean) {
                         cat = (CatCatalogBean) base;
                         catFileChecksum = getHash(catFile, false);
                         if (StringUtils.isBlank(catFileChecksum)) {
-                            throw new ServerException("Unable to compute checksum for " + catFile +
-                                    ". This will be needed to safely write the catalog");
+                            throw new ServerException("Unable to compute checksum for " + catFile + ". This will be needed to safely write the catalog");
                         }
                     }
                 } catch (FileNotFoundException exception) {
@@ -2742,9 +2754,12 @@ public class CatalogUtils {
     public static final String SIZE          = "SIZE";
     public static final String PROJECT       = "PROJECT";
     public static final String ORIG_URI      = "ORIG_URI";
-    private static AtomicBoolean _maintainFileHistory = null;
-    private static       AtomicBoolean                               _checksumConfig = null;
-    private static final AtomicReference<NamedParameterJdbcTemplate> _jdbcTemplate   = new AtomicReference<>(null);
+
+    private static final String PREMATURE_EOF = "Premature end of file";
+
+    private static       AtomicBoolean                               _maintainFileHistory = null;
+    private static       AtomicBoolean                               _checksumConfig      = null;
+    private static final AtomicReference<NamedParameterJdbcTemplate> _jdbcTemplate        = new AtomicReference<>(null);
 
     // Previous query was less efficient for targeted query, i.e. with the WHERE clause, which is what this query uses.
     // For an aggregate query on resources, use the query from earlier revisions of this code.

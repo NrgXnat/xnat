@@ -11,6 +11,7 @@
 // upload form that it needs to reload the page on completion of operations. Eventually table population should come
 // completely via REST to the back-end, but we don't currently live in that world.
 
+var XNAT = getObject(XNAT);
 
 function FileViewer(_obj){
 	this.loading=0;
@@ -22,12 +23,12 @@ function FileViewer(_obj){
         this.obj.categories = {};
         this.obj.categories.ids = [];
 	}
-	
+
 	if(this.obj.categories["misc"]==undefined || this.obj.categories["misc"]==null){
         this.obj.categories["misc"] = {};
         this.obj.categories["misc"].cats = [];
 	}
-	
+
 	this.init=function(refreshCatalog){
 		if(this.loading==0){
 			this.loading=1;
@@ -46,7 +47,7 @@ function FileViewer(_obj){
 			}
 		}
 	};
-	
+
     this.getCatalog = function() {
         var catCallback={
             success:this.processCatalogs,
@@ -64,11 +65,11 @@ function FileViewer(_obj){
             xmodal.message('File Viewer', "Error loading files");
         }
 	};
-	   
-	this.removeFile=function(item){		
+
+	this.removeFile=function(item){
 		if(showReason){
 			var justification=new XNAT.app.requestJustification("file","File Deletion Dialog",this._removeFile,this);
-			justification.item=item;	
+			justification.item=item;
 		}else{
 			passThroughfunc = this._removeFile;
 			passThroughObj = this;
@@ -93,21 +94,21 @@ function FileViewer(_obj){
 			    this.hide();
                 this.destroy();
 			};
-			confirm_dialog =  new YAHOO.widget.SimpleDialog("file_remove_confirm",  
-		             { width: "300px", 
-		               fixedcenter: true, 
-		               visible: false, 
-		               draggable: false, 
+			confirm_dialog =  new YAHOO.widget.SimpleDialog("file_remove_confirm",
+		             { width: "300px",
+		               fixedcenter: true,
+		               visible: false,
+		               draggable: false,
 		               modal: true,
-		               close: true, 
-		               text: "Confirm File Remove?", 
-		               icon: YAHOO.widget.SimpleDialog.ICON_WARN, 
-		               constraintoviewport: true, 
+		               close: true,
+		               text: "Confirm File Remove?",
+		               icon: YAHOO.widget.SimpleDialog.ICON_WARN,
+		               constraintoviewport: true,
                     buttons: [
                         { text: "Yes", handler: handleYes},
                         { text: "No", handler: handleNo, isDefault: true  }
                     ]
-		             } ); 
+		             } );
 			confirm_dialog.setHeader("Confirm Remove!");
 			confirm_dialog.render("page_body");
 			confirm_dialog.show();
@@ -142,7 +143,7 @@ function FileViewer(_obj){
     this.removeReconstruction=function(item){
 	   if(showReason){
 			var justification=new XNAT.app.requestJustification("file","Folder Deletion Dialog",this._removeReconstruction,this);
-			justification.item=item;	
+			justification.item=item;
 		}else{
 			passThroughfunc = this._removeReconstruction;
 			passThroughObj = this;
@@ -167,21 +168,21 @@ function FileViewer(_obj){
 			    this.hide();
                 this.destroy();
 			};
-			confirm_dialog =  new YAHOO.widget.SimpleDialog("file_remove_confirm",  
-		             { width: "300px", 
-		               fixedcenter: true, 
-		               visible: false, 
-		               draggable: false, 
+			confirm_dialog =  new YAHOO.widget.SimpleDialog("file_remove_confirm",
+		             { width: "300px",
+		               fixedcenter: true,
+		               visible: false,
+		               draggable: false,
 		               modal: true,
-		               close: true, 
+		               close: true,
 		               text: "Confirm Resource Removal?",
-		               icon: YAHOO.widget.SimpleDialog.ICON_WARN, 
-		               constraintoviewport: true, 
+		               icon: YAHOO.widget.SimpleDialog.ICON_WARN,
+		               constraintoviewport: true,
                     buttons: [
                         { text: "Yes", handler: handleYes},
                         { text: "No", handler: handleNo, isDefault: true  }
                     ]
-		             } ); 
+		             } );
 			confirm_dialog.setHeader("Confirm Remove!");
 			confirm_dialog.render("page_body");
 			confirm_dialog.show();
@@ -205,19 +206,19 @@ function FileViewer(_obj){
         };
 
         XNAT.ui.dialog.static.wait("Deleting resource '" + container.item.reconId +"'",{id:"file"});
-	    
-	   var params="";		
+
+	   var params="";
 	   params+="event_reason="+event_reason;
 	   params+="&event_type=WEB_FORM";
 	   params+="&event_action=File Deleted";
-	    
+
 	   YAHOO.util.Connect.asyncRequest('DELETE',this.obj.uri +'/reconstructions/' + container.item.reconId + '?XNAT_CSRF=' + csrfToken + '&'+params,this.initCallback,null,this)
    };
-   
-   this.removeCatalog=function(item){	
+
+   this.removeCatalog=function(item){
 		if(showReason){
 			var justification=new XNAT.app.requestJustification("file","Folder Deletion Dialog",this._removeCatalog,this);
-			justification.item=item;	
+			justification.item=item;
 		}else{
 			passThroughfunc = this._removeCatalog;
 			passThroughObj = this;
@@ -242,28 +243,28 @@ function FileViewer(_obj){
 			    this.hide();
                 this.destroy();
 			};
-			confirm_dialog =  new YAHOO.widget.SimpleDialog("file_remove_confirm",  
-		             { width: "300px", 
-		               fixedcenter: true, 
-		               visible: false, 
-		               draggable: false, 
+			confirm_dialog =  new YAHOO.widget.SimpleDialog("file_remove_confirm",
+		             { width: "300px",
+		               fixedcenter: true,
+		               visible: false,
+		               draggable: false,
 		               modal: true,
-		               close: true, 
-		               text: "Confirm Catalog Remove?", 
-		               icon: YAHOO.widget.SimpleDialog.ICON_WARN, 
-		               constraintoviewport: true, 
+		               close: true,
+		               text: "Confirm Catalog Remove?",
+		               icon: YAHOO.widget.SimpleDialog.ICON_WARN,
+		               constraintoviewport: true,
                     buttons: [
                         { text: "Yes", handler: handleYes},
                         { text: "No", handler: handleNo, isDefault: true  }
                     ]
-		             } ); 
+		             } );
 			confirm_dialog.setHeader("Confirm Remove!");
 			confirm_dialog.render("page_body");
 			confirm_dialog.show();
 			confirm_dialog.bringToTop();
 		}
    };
-   
+
    this._removeCatalog=function(arg1,arg2,container){
 		var _this = this,
             event_reason=(container==undefined || container.dialog==undefined)?"":container.dialog.event_reason;
@@ -282,15 +283,15 @@ function FileViewer(_obj){
 		};
 
        window.viewer.requiresRefresh = true;
-		
+
 		XNAT.ui.dialog.static.wait("Deleting folder '" + container.item.file_name +"'",{id:"file"});
-		var params="";		
+		var params="";
 		params+="event_reason="+event_reason;
 		params+="&event_type=WEB_FORM";
 		params+="&event_action=Folder Deleted";
 		YAHOO.util.Connect.asyncRequest('DELETE',container.item.uri+ '?XNAT_CSRF=' + csrfToken + '&'+params,this.initCallback,null,this);
    };
-   
+
    this.getScan=function(sc, sid){
    		var gsScans=this.obj.categories[sc];
    		if(gsScans!=undefined && gsScans!=null){
@@ -300,11 +301,11 @@ function FileViewer(_obj){
 				}
 			}
    		}
-		
+
 		gsScans=null;
    		return null;
    };
-   
+
    this.clearCatalogs=function(o){
    		var scans;
    		//clear catalogs
@@ -313,18 +314,18 @@ function FileViewer(_obj){
    			for(var sC=0;sC<scans.length;sC++){
    				scans[sC].cats =[];
    			}
-   			
+
    			scans=null;
    		}
    		this.obj.categories["misc"].cats=[];
    };
-   
+
    this.processCatalogs=function(o){
    		XNAT.ui.dialog.close("catalogs");
    		this.clearCatalogs();
-   		
+
     	var catalogs= eval("(" + o.responseText +")").ResultSet.Result;
-    	
+
     	for(var catC=0;catC<catalogs.length;catC++){
     		var scan=this.getScan(catalogs[catC].category,catalogs[catC].cat_id);
     		if(scan!=null){
@@ -339,21 +340,21 @@ function FileViewer(_obj){
     			this.obj.categories["misc"].cats.push(catalogs[catC]);
     		}
     	}
-    	
+
     	this.loading=3;
-    	
+
     	if(this.requestRender){
     		this.render();
     	}
    };
-   
+
    this.resetCounts=function(){
        for (var catC = 0; catC < this.obj.categories.ids.length; catC++) {
            var scans=this.obj.categories[this.obj.categories.ids[catC]];
                scans=null;
        }
    };
-   
+
    this.refreshCatalogs=function(msg_id){
 	   	XNAT.ui.dialog.close(msg_id);
 		XNAT.ui.dialog.static.wait("Refreshing Catalog Information",{id:"catalogs"});
@@ -363,11 +364,11 @@ function FileViewer(_obj){
             cache:false, // Turn off caching for IE
 			scope:this
         };
-	
+
 		this.requestRender=true;
 		YAHOO.util.Connect.asyncRequest('GET',this.obj.uri + '/resources?all=true&format=json&file_stats=true&timestamp=' + (new Date()).getTime(),catCallback,null,this);
     };
-	
+
 	this.render=function(){
 		if(this.loading==0){
 			this.requestRender=true;
@@ -380,15 +381,15 @@ function FileViewer(_obj){
 	   		if(this.panel!=undefined){
 	   			this.panel.destroy();
 	   		}
-	   	
+
 	   	    this.panel=new YAHOO.widget.Dialog("fileListing",{close:true,
 			   width:"780px",height:"550px",underlay:"shadow",modal:true,fixedcenter:true,visible:false,draggable:true});
 			this.panel.setHeader("File Manager");
-		
+
 			this.catalogClickers=[];
-					
+
 			var bd = document.createElement("div");
-			
+
 			var treediv=document.createElement("div");
 			treediv.id="fileTree";
 			treediv.style.overflow="auto";
@@ -398,18 +399,18 @@ function FileViewer(_obj){
 			try{
 				var tree = new YAHOO.widget.TreeView(treediv);
 				var root = tree.getRoot();
-									
+
 				var total_size=0;
-				
+
 				if(this.obj.categories["misc"].cats.length>0){
-				
+
 					var parent = new YAHOO.widget.TaskNode({label: "Resources", expanded: true,checked:true}, root);
-					parent.labelStyle = "icon-cf"; 
-				
+					parent.labelStyle = "icon-cf";
+
 					for(var rCatC=0;rCatC<this.obj.categories["misc"].cats.length;rCatC++){
 						var cat=this.obj.categories["misc"].cats[rCatC];
 						var catNode=null;
-					
+
 						var lbl;
 						if(cat.label!=""){
 							lbl=cat.label;
@@ -423,27 +424,27 @@ function FileViewer(_obj){
 						this.catalogClickers.push(catNode);
 					}
 				}
-				
+
 				for(var cC=0;cC<this.obj.categories.ids.length;cC++){
 					var catName=this.obj.categories.ids[cC];
 					if(this.obj.categories[catName].length>0){
-				
+
 						var parent = new YAHOO.widget.TaskNode({label: catName, expanded: true,checked:true}, root);
-						parent.labelStyle = "icon-cf"; 
-						
+						parent.labelStyle = "icon-cf";
+
 						var scans=this.obj.categories[catName];
 						for(var rScanC=0;rScanC<scans.length;rScanC++){
 							var scan=scans[rScanC];
 							var scanNode=null;
 							if(scan.cats!=null && scan.cats!=undefined && scan.cats.length>0){
-								
+
 								var l = (scan.label!=undefined)?scan.label:scan.id;
 								if(parent.label == "reconstructions"){
 									l +="&nbsp;&nbsp;<a onclick=\"window.viewer.removeReconstruction({reconId:'" + scan.id + "'});\" style=\"color: #900\"><i class=\"fa fa-trash-o\" title=\"Delete\"></i></a>";
 								}
 								var scanNode=new YAHOO.widget.TaskNode({label:l, expanded: true,checked:true}, parent);
 								scanNode.labelStyle = "icon-cf";
-								
+
 								for(var scanCC=0;scanCC<scan.cats.length;scanCC++){
 									var cat = scan.cats[scanCC];
 									cat.uri=this.obj.uri + "/" + catName+ "/" + scan.id + "/resources/" + cat.xnat_abstractresource_id;
@@ -460,12 +461,12 @@ function FileViewer(_obj){
 						scans=null;
 					}
 				}
-				
+
 				this.panel.setBody(bd);
-					  
+
 				var foot = document.createElement("div");
 				foot.style.textAlign="right";
-				
+
 				var fTable=document.createElement("table");
 				var fTbody=document.createElement("tbody");
 				var fTr=document.createElement("tr");
@@ -474,33 +475,33 @@ function FileViewer(_obj){
 				fTable.align="center";
 				fTbody.appendChild(fTr);
 				foot.appendChild(fTable);
-				
+
 				var fTd1=document.createElement("td");
 				fTd1.align="left";
 				fTr.appendChild(fTd1);
-				
+
 				var fTd2=document.createElement("td");
 				fTd2.align="right";
 				fTr.appendChild(fTd2);
-				
-				
+
+
 				if(this.obj.canEdit){
 					var dButton3=document.createElement("input");
 					dButton3.type="button";
 					dButton3.value="Add Folder";
 					fTd1.appendChild(dButton3);
-					
+
 					var oPushButtonD3 = new YAHOO.widget.Button(dButton3);
 		  		    oPushButtonD3.subscribe("click",function(o){
 		  		    	var upload=new AddFolderForm(this.obj);
 		  		    	upload.render();
 		  		    },this,true);
-					
+
 					var dButton1=document.createElement("input");
 					dButton1.type="button";
 					dButton1.value="Upload Files";
 					fTd1.appendChild(dButton1);
-					
+
 					var oPushButtonD1 = new YAHOO.widget.Button(dButton1);
 		  		    oPushButtonD1.subscribe("click",function(o){
 		  		    	try{
@@ -519,7 +520,7 @@ function FileViewer(_obj){
                     var oPushUpdateButton = new YAHOO.widget.Button(updateButton);
                     oPushUpdateButton.subscribe("click", this.catalogRefresh, this, true);
 				}
-							
+
 				var dType=document.createElement("select");
 				dType.id="download_type_select";
 				dType.options[0]=new Option("zip","zip",true,true);
@@ -529,18 +530,18 @@ function FileViewer(_obj){
                 dType.style.position="relative";
                 dType.style.top="-7px";
 				fTd2.appendChild(dType);
-				
+
 				var dButton2=document.createElement("input");
 				dButton2.type="button";
 				dButton2.value="Download";
 				fTd2.appendChild(dButton2);
-				
-				
+
+
 				var dButton4=document.createElement("input");
 				dButton4.type="button";
 				dButton4.value="Close";
 				fTd2.appendChild(dButton4);
-				
+
 				var oPushButtonD4 = new YAHOO.widget.Button(dButton4);
 	  		    oPushButtonD4.subscribe("click",function(o){
 	  		    	this.panel.hide();
@@ -548,7 +549,7 @@ function FileViewer(_obj){
                         window.location.reload();
                     }
 	  		    },this,true);
-				
+
 				var oPushButtonD2 = new YAHOO.widget.Button(dButton2);
 	  		    oPushButtonD2.subscribe("click",function(o){
 	  		    	var dType=document.getElementById("download_type_select");
@@ -569,26 +570,26 @@ function FileViewer(_obj){
 	  		    		return;
 	  		    	}
 	  		    	var destination=this.obj.uri + "/resources/"+resources + "/files?structure=improved&all=true&format="+ dType.options[dType.selectedIndex].value;
-					
+
 	  		    	this.panel.hide();
-	  		    	mySimpleDialog = new YAHOO.widget.SimpleDialog("dlg", { 
-						width: "20em", 
+	  		    	mySimpleDialog = new YAHOO.widget.SimpleDialog("dlg", {
+						width: "20em",
 						fixedcenter:true,
 						modal:true,
 	    				visible:false,
 						draggable:true });
 					mySimpleDialog.setHeader("Preparing Download");
 					mySimpleDialog.setBody("Your download should begin within 30 seconds.  If you encounter technical difficulties, you can restart the download using this <a href='" + destination +"'>link</a>.");
-					
+
 	  		    	window.location=destination;
 	  		    },this,true);
-	  		    
+
 				this.panel.setFooter(foot);
-					  
+
 				this.panel.selector=this;
-				
-				tree.render();   
-							
+
+				tree.render();
+
 				this.loading=3;
 				this.requestRender=false;
 			}catch(o){
@@ -618,34 +619,59 @@ function FileViewer(_obj){
         }
     };
 
-    this.catalogRefreshOk = function () {
-        var _this = this,
-            catalogRefreshCallback = {
-            success: function () {
-                xmodal.loading.close();
-                xmodal.message({
-                    title: _this.obj.objectId + ' Refreshed',
-                    content: 'The aggregate file count and size values have been updated for your ' +
-                    ((_this.obj.objectType==undefined)?"item":_this.obj.objectType) + '. Click OK to reload the page.',
-                    action: function() { window.location.reload() }
-                });
-            },
-            failure: function (o) {
-                xmodal.loading.close();
-                xmodal.message({
-                    title:   'Error',
-                    content: 'An unexpected error has occurred while processing ' +
-                             _this.obj.objectType + ' ' + _this.obj.objectId + '. Please ' +
-                             'contact your administrator. Status code: ' + o.status
-                });
-            },
-            scope: this,
-            cache: false
-        };
-        YAHOO.util.Connect.asyncRequest('POST', this.obj.refresh + '&timestamp=' + (new Date()).getTime(), catalogRefreshCallback, null);
-        //xmodal.close();
-        xmodal.loading.open('#wait');
-    };
+	this.catalogRefreshOk = function () {
+		const _obj = this.obj ? this.obj : obj;
+		const _objectType = _obj.objectType === undefined ? "item" : _obj.objectType;
+		const _objectId = _obj.objectId;
+		const catalogRefreshCallback = {
+			success: function () {
+				xmodal.loading.close();
+				xmodal.message({
+					title: _objectId + ' Refreshed',
+					content: 'The aggregate file count and size values have been updated for your ' + _objectType + '. Click OK to reload the page.',
+					action: function () {
+						window.location.reload()
+					}
+				});
+			},
+			failure: function (o) {
+				xmodal.loading.close();
+				xmodal.message({
+					title: 'Error',
+					content: 'An unexpected error has occurred while processing ' + _objectType + ' ' + _objectId + '. Please contact your administrator. Status code: ' + o.status
+				});
+			},
+			scope: this,
+			cache: false
+		};
+		let refreshUrl = this.obj ? this.obj.refresh : (obj ? obj.refresh : '');
+		YAHOO.util.Connect.asyncRequest('POST', refreshUrl + '&timestamp=' + (new Date()).getTime(), catalogRefreshCallback, null);
+		/*
+		XNAT.xhr.postJSON({
+			url: refreshUrl + '&timestamp=' + (new Date()).getTime(),
+			success: function () {
+				xmodal.loading.close();
+				xmodal.message({
+					title: _this.obj.objectId + ' Refreshed',
+					content: 'The aggregate file count and size values have been updated for your ' +
+						((_this.obj.objectType === undefined) ? "item" : _this.obj.objectType) + '. Click OK to reload the page.',
+					action: function () {
+						window.location.reload()
+					}
+				});
+			}
+		}).fail(function(e) {
+			xmodal.loading.close();
+			xmodal.message({
+				title:   'Error',
+				content: 'An unexpected error has occurred while processing ' +
+					_this.obj.objectType + ' ' + _this.obj.objectId + '. Please ' +
+					'contact your administrator. Status code: ' + e.status
+			});
+		});
+		*/
+		xmodal.loading.open('#wait');
+	};
 
     this.catalogRefreshCancel = function () {
         window.viewer.loading = 0;
@@ -683,17 +709,17 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
      * @default "TextNode"
      */
     _type: "TaskNode",
-	
+
 	taskNodeParentChange: function() {
         //this.updateParent();
     },
-	
+
     setUpCheck: function(checked) {
         // if this node is checked by default, run the check code to update
         // the parent's display state
         if (checked && checked === true) {
             this.check();
-        // otherwise the parent needs to be updated only if its checkstate 
+        // otherwise the parent needs to be updated only if its checkstate
         // needs to change from fully selected to partially selected
         } else if (this.parent && 2 === this.parent.checkState) {
              this.updateParent();
@@ -703,7 +729,7 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
         /**
          * Custom event that is fired when the check box is clicked.  The
          * custom event is defined on the tree instance, so there is a single
-         * event that handles all nodes in the tree.  The node clicked is 
+         * event that handles all nodes in the tree.  The node clicked is
          * provided as an argument.  Note, your custom node implentation can
          * implement its own node specific events this way.
          *
@@ -726,23 +752,23 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
      * @for YAHOO.widget.TaskNode
      * @type string
      */
-    getCheckElId: function() { 
-        return "ygtvcheck" + this.index; 
+    getCheckElId: function() {
+        return "ygtvcheck" + this.index;
     },
 
     /**
      * Returns the check box element
      * @return the check html element (img)
      */
-    getCheckEl: function() { 
-        return document.getElementById(this.getCheckElId()); 
+    getCheckEl: function() {
+        return document.getElementById(this.getCheckElId());
     },
 
     /**
      * The style of the check element, derived from its current state
      * @return {string} the css style for the current check state
      */
-    getCheckStyle: function() { 
+    getCheckStyle: function() {
         return "ygtvcheck" + this.checkState;
     },
 
@@ -750,7 +776,7 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
    /**
      * Invoked when the user clicks the check box
      */
-    checkClick: function(oArgs) { 
+    checkClick: function(oArgs) {
 		var node = oArgs.node;
 		var target = YAHOO.util.Event.getTarget(oArgs.event);
 		if (YAHOO.util.Dom.hasClass(target,'ygtvspacer')) {
@@ -769,14 +795,14 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
     /**
      * Override to get the check click event
      */
-    onCheckClick: function() { 
-        
+    onCheckClick: function() {
+
     },
 
     /**
      * Refresh the state of this node's parent, and cascade up.
      */
-    updateParent: function() { 
+    updateParent: function() {
         var p = this.parent;
 
         if (!p || !p.updateParent) {
@@ -817,7 +843,7 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
      * If the node has been rendered, update the html to reflect the current
      * state of the node.
      */
-    updateCheckHtml: function() { 
+    updateCheckHtml: function() {
         if (this.parent && this.parent.childrenRendered) {
             this.getCheckEl().className = this.getCheckStyle();
         }
@@ -825,10 +851,10 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
 
     /**
      * Updates the state.  The checked property is true if the state is 1 or 2
-     * 
+     *
      * @param state - the new check state
      */
-    setCheckState: function(state) { 
+    setCheckState: function(state) {
         this.checkState = state;
         this.checked = (state > 0);
     },
@@ -836,7 +862,7 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
     /**
      * Check this node
      */
-    check: function() { 
+    check: function() {
         this.setCheckState(2);
         for (var i=0, l=this.children.length; i<l; i=i+1) {
             var c = this.children[i];
@@ -851,7 +877,7 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
     /**
      * Uncheck this node
      */
-    uncheck: function() { 
+    uncheck: function() {
         this.setCheckState(0);
         for (var i=0, l=this.children.length; i<l; i=i+1) {
             var c = this.children[i];
@@ -864,25 +890,25 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
     },
     // Overrides YAHOO.widget.TextNode
 
-    getContentHtml: function() {                                                                                                                                           
-        var sb = [];                                                                                                                                                       
-        sb[sb.length] = '<td';                                                                                                                                             
-        sb[sb.length] = ' id="' + this.getCheckElId() + '"';                                                                                                               
-        sb[sb.length] = ' class="' + this.getCheckStyle() + '"';                                                                                                           
-        sb[sb.length] = '>';                                                                                                                                               
-        sb[sb.length] = '<div class="ygtvspacer"></div></td>';                                                                                                             
-                                                                                                                                                                           
-        sb[sb.length] = '<td><span';                                                                                                                                       
-        sb[sb.length] = ' id="' + this.labelElId + '"';                                                                                                                    
-        if (this.title) {                                                                                                                                                  
-            sb[sb.length] = ' title="' + this.title + '"';                                                                                                                 
-        }                                                                                                                                                                  
-        sb[sb.length] = ' class="' + this.labelStyle  + '"';                                                                                                               
-        sb[sb.length] = ' >';                                                                                                                                              
-        sb[sb.length] = this.label;                                                                                                                                        
-        sb[sb.length] = '</span></td>';                                                                                                                                    
-        return sb.join("");                                                                                                                                                
-    }  
+    getContentHtml: function() {
+        var sb = [];
+        sb[sb.length] = '<td';
+        sb[sb.length] = ' id="' + this.getCheckElId() + '"';
+        sb[sb.length] = ' class="' + this.getCheckStyle() + '"';
+        sb[sb.length] = '>';
+        sb[sb.length] = '<div class="ygtvspacer"></div></td>';
+
+        sb[sb.length] = '<td><span';
+        sb[sb.length] = ' id="' + this.labelElId + '"';
+        if (this.title) {
+            sb[sb.length] = ' title="' + this.title + '"';
+        }
+        sb[sb.length] = ' class="' + this.labelStyle  + '"';
+        sb[sb.length] = ' >';
+        sb[sb.length] = this.label;
+        sb[sb.length] = '</span></td>';
+        return sb.join("");
+    }
 });
 
     function number_format( number, decimals, dec_point, thousands_sep ) {
@@ -893,7 +919,7 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
   		return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
     }
 
-	
+
 
    function size_format (filesize) {
       if (filesize >= 1073741824) {
@@ -911,7 +937,7 @@ YAHOO.extend(YAHOO.widget.TaskNode, YAHOO.widget.TextNode, {
     }
       return filesize;
    }
-   
+
    YAHOO.widget.CatalogNode = function(oData, oParent, catalog) {
 	YAHOO.widget.CatalogNode.superclass.constructor.call(this,oData,oParent,false,(catalog.file_count>0));
 	this.cat=catalog;
@@ -925,16 +951,16 @@ XNAT.app.showTags=function(scanID, file){
 YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
 	renderCatalog:function(cat){
 		this.xnat_abstractresource_id=cat.xnat_abstractresource_id;
-		this.labelStyle = "icon-cf"; 
-		
+		this.labelStyle = "icon-cf";
+
 		if(cat.files!=undefined && cat.files!=null){
-			this.renderFiles();				
+			this.renderFiles();
 		}else if(cat.file_count>0){
 			this.setDynamicLoad(function(node, fnLoadComplete){
 		 		var callback={
 			      success:function(oResponse){
-			        oResponse.argument.catNode.cat.files = (eval("(" + oResponse.responseText + ")")).ResultSet.Result; 
-			        oResponse.argument.catNode.renderFiles();   
+			        oResponse.argument.catNode.cat.files = (eval("(" + oResponse.responseText + ")")).ResultSet.Result;
+			        oResponse.argument.catNode.renderFiles();
 			        oResponse.argument.fnLoadComplete();
 			      },
 			      failure:function(oResponse){
@@ -943,7 +969,7 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
                   cache:false, // Turn off caching for IE
 			      argument:{"fnLoadComplete":fnLoadComplete,catNode:this}
 			    };
-			    
+
 				YAHOO.util.Connect.asyncRequest('GET',this.cat.uri + '/files?format=json&timestamp=' + (new Date()).getTime(),callback,null);
 			},this);
 		}
@@ -1059,21 +1085,21 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
         }
     }
 });
-   
+
 function UploadFileForm(_obj){
   	this.obj=_obj;
     this.onResponse=new YAHOO.util.CustomEvent("response",this);
-  
-	this.render=function(){	
+
+	this.render=function(){
 		this.panel=new YAHOO.widget.Dialog("fileUploadDialog",{close:true,
 		   width:"480px",height:"420px",underlay:"shadow",modal:true,fixedcenter:true,visible:false});
 		this.panel.setHeader("Upload File");
-				
+
 		var div = document.createElement("form");
-		
-		
+
+
 		var table,tbody,tr,td,input;
-   	  
+
 //   	  var title=document.createElement("div");
 //   	  title.style.marginTop="3px";
 //   	  title.style.marginLeft="1px";
@@ -1097,12 +1123,12 @@ function UploadFileForm(_obj){
 	   	  //collection
 	   	  tr=document.createElement("tr");
 			tr.style.height="20px";
-	   	  
+
 	   	  td=document.createElement("th");
 	   	  td.align="left";
 	   	  td.innerHTML="Level";
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  td=document.createElement("td");
 	   	  input=document.createElement("select");
 	   	  input.id="upload_level";
@@ -1114,11 +1140,11 @@ function UploadFileForm(_obj){
 	   	  }
 	   	  input.options[input.options.length]=new Option("resources","resources");
 	   	  input.options[(input.options.length -1)].category=this.obj.categories["misc"];
-	   	  
+
 	   	  input.onchange=function(o){
 	   	  	var item_select=document.getElementById("upload_item");
 	   	  	var coll_select=document.getElementById("upload_collection");
-	   	  	
+
 	   	  	if(this.selectedIndex==0){
 	   	  		while(item_select.options.length>0){
 	   	  			item_select.remove(0);
@@ -1136,15 +1162,15 @@ function UploadFileForm(_obj){
 	   	  			coll_select.remove(0);
 	   	  		}
 	   	  		var _sOption=this.options[this.selectedIndex];
-	   	  		
+
 	   	  		if(_sOption.value=="resources"){
 	   	  			item_select.disabled=true;
 	   	  			coll_select.disabled=false;
-	   	  			
+
 	   	  			while(coll_select.options.length>0){
 		   	  			coll_select.remove(0);
 		   	  		}
-	   	  		
+
 	   	  			for(var cC=0;cC<_sOption.category.cats.length;cC++){
 						var cat=_sOption.category.cats[cC];
 						if(cat.label==""){
@@ -1160,7 +1186,7 @@ function UploadFileForm(_obj){
 	   	  			coll_select.disabled=true;
 	   	  			item_select.disabled=false;
 		   	  		var scans=_sOption.category;
-		   	  		
+
 		   	  		item_select.options[item_select.options.length]=new Option("SELECT","");
 		   	  		for(var catC=0;catC<scans.length;catC++){
 		   	  			item_select.options[item_select.options.length]=new Option(scans[catC].id,scans[catC].id);
@@ -1171,19 +1197,19 @@ function UploadFileForm(_obj){
 	   	  };
 	   	  td.appendChild(input);
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  tbody.appendChild(tr);
-	   	  
-	   	  
+
+
 	   	  //collection
 	   	  tr=document.createElement("tr");
 			tr.style.height="20px";
-	   	  
+
 	   	  td=document.createElement("th");
 	   	  td.align="left";
 	   	  td.innerHTML="Item";
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  td=document.createElement("td");
 	   	  input=document.createElement("select");
 	   	  input.id="upload_item";
@@ -1197,7 +1223,7 @@ function UploadFileForm(_obj){
 	   	  			coll_select.remove(0);
 	   	  		}
 	   	  		var _selectedO=this.options[this.selectedIndex];
-   	  		
+
    	  			for(var cC=0;cC<_selectedO.scan.cats.length;cC++){
 					var cat=_selectedO.scan.cats[cC];
 					if(cat.label==""){
@@ -1210,7 +1236,7 @@ function UploadFileForm(_obj){
                     xmodal.message('File Viewer', "Please create a folder (using the Add Folder dialog) before attempting to add files at this level.");
 					coll_select.disabled=true;
 				}
-   	  			
+
 	   	  	}else{
 	   	  		coll_select.disabled=true;
 	   	  		while(coll_select.options.length>0){
@@ -1221,19 +1247,19 @@ function UploadFileForm(_obj){
 	   	  };
 	   	  td.appendChild(input);
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  tbody.appendChild(tr);
-	   	  
-	   	  
+
+
 	   	  //collection
 	   	  tr=document.createElement("tr");
 			tr.style.height="20px";
-	   	  
+
 	   	  td=document.createElement("th");
 	   	  td.align="left";
 	   	  td.innerHTML="Folder";
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  td=document.createElement("td");
 	   	  input=document.createElement("select");
 	   	  input.id="upload_collection";
@@ -1241,27 +1267,27 @@ function UploadFileForm(_obj){
 	   	  input.disabled=true;
 	   	  td.appendChild(input);
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  tbody.appendChild(tr);
-   	  }else{    
+   	  }else{
 	   	  //collection
 	   	  tr=document.createElement("tr");
 			tr.style.height="20px";
-	   	  
+
 	   	  td=document.createElement("th");
 	   	  td.align="left";
 	   	  td.innerHTML="Folder";
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  td=document.createElement("td");
 	   	  input=document.createElement("select");
 	   	  input.id="upload_collection";
 	   	  input.manager=this;
 	   	  td.appendChild(input);
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  tbody.appendChild(tr);
-	   	  
+
 	   	  for(var cC=0;cC<this.obj.categories["misc"].cats.length;cC++){
 				var cat=this.obj.categories["misc"].cats[catID];
 				if(cat.label==""){
@@ -1274,7 +1300,7 @@ function UploadFileForm(_obj){
 			//		input.options[input.options.length]=new Option("NO LABEL","");
 			//	}
    	  }
-   	  
+
 //   	  div.appendChild(document.createElement("br"));
    	  var file_form = document.createElement("fieldset");
    	  div.appendChild(file_form);
@@ -1287,16 +1313,16 @@ function UploadFileForm(_obj){
    	  tbody=document.createElement("tbody");
    	  table.appendChild(tbody);
    	  file_form.appendChild(table);
-   	  
+
    	  //collection
    	  tr=document.createElement("tr");
 		tr.style.height="20px";
-   	  
+
    	  td=document.createElement("th");
    	  td.align="left";
    	  td.innerHTML="Rename";
    	  tr.appendChild(td);
-   	  
+
    	  td=document.createElement("td");
    	  input=document.createElement("input");
    	  input.size=50;
@@ -1305,77 +1331,77 @@ function UploadFileForm(_obj){
    	  input.manager=this;
    	  td.appendChild(input);
    	  tr.appendChild(td);
-   	  
+
    	  tr.appendChild(td);
    	  tbody.appendChild(tr);
-   	  
-   	  
+
+
    	  //format
    	  tr=document.createElement("tr");
 		tr.style.height="20px";
-   	  
+
    	  td=document.createElement("th");
    	  td.align="left";
    	  td.innerHTML="Format";
    	  tr.appendChild(td);
-   	  
+
    	  td=document.createElement("td");
    	  input=document.createElement("input");
    	  input.id="file_format";
    	  //input.style.fontSize = "99%";
    	  td.appendChild(input);
-   	  
+
    	  tr.appendChild(td);
    	  tbody.appendChild(tr);
-   	  
-   	  
+
+
    	  //content
    	  tr=document.createElement("tr");
 		tr.style.height="20px";
-   	  
+
    	  td=document.createElement("th");
    	  td.align="left";
    	  td.innerHTML="Content";
    	  tr.appendChild(td);
-   	  
+
    	  td=document.createElement("td");
    	  input=document.createElement("input");
    	  //input.style.fontSize = "99%";
    	  input.id="file_content";
    	  td.appendChild(input);
-   	  
+
    	  tr.appendChild(td);
    	  tbody.appendChild(tr);
    	  div.appendChild(file_form);
-   	  
-   	  
+
+
    	  //tags
    	  tr=document.createElement("tr");
 		tr.style.height="20px";
-   	  
+
    	  td=document.createElement("th");
    	  td.align="left";
    	  td.innerHTML="Tags";
    	  tr.appendChild(td);
-   	  
+
    	  td=document.createElement("td");
    	  input=document.createElement("input");
    	  //input.style.fontSize = "99%";
    	  input.id="file_tags";
    	  td.appendChild(input);
-   	  
+
    	  tr.appendChild(td);
    	  tbody.appendChild(tr);
-   	  
+
    	  //Overwrite
    	  tr=document.createElement("tr");
 		tr.style.height="20px";
-   	  
+
    	  td=document.createElement("th");
    	  td.align="left";
    	  td.innerHTML="Overwrite";
    	  tr.appendChild(td);
-   	  
+
    	  td=document.createElement("td");
    	  input=document.createElement("input");
    	  input.type = 'checkbox';
@@ -1383,13 +1409,13 @@ function UploadFileForm(_obj){
    	  input.id="folder_overwrite";
    	  //input.style.fontSize = "99%";
    	  td.appendChild(input);
-   	  
+
    	  tr.appendChild(td);
    	  tbody.appendChild(tr);
-   	  
-   	  
+
+
    	  //div.appendChild(document.createTextNode("File To Upload:"));
-   	  
+
    	  //var form = document.createElement("form");
 
       div.id="file_upload";
@@ -1406,9 +1432,9 @@ function UploadFileForm(_obj){
    	  input.name="local_file";
    	  input.size=40;
    	  //input.style.fontSize = "99%";
-   	  
+
    	  div.appendChild(input);
-		
+
 		this.panel.setBody(div);
 		this.panel.selector=this;
         var buttons = [
@@ -1418,8 +1444,8 @@ function UploadFileForm(_obj){
             }}}
         ];
 		this.panel.cfg.queueProperty("buttons",buttons);
-		
-		
+
+
 		this.panel.render("page_body");
 		this.panel.show();
 	};
@@ -1430,12 +1456,12 @@ function UploadFileForm(_obj){
             xmodal.message('File Viewer', "Please select a folder for this file.");
   	    	return;
   	    }
-  	    
+
   	    if(document.getElementById("local_file").value==""){
             xmodal.message('File Viewer', "Please select a file to upload.");
   	    	return;
   	    }
-  	    
+
 		var collection_name=coll_select.options[coll_select.selectedIndex].value;
 		var upload_level = document.getElementById("upload_level").value.trim();
 		var upload_item = document.getElementById("upload_item").value.trim();
@@ -1444,13 +1470,13 @@ function UploadFileForm(_obj){
 		var file_content=document.getElementById("file_content").value.trim();
 		var file_name=document.getElementById("file_name").value.trim();
 		var file_overwrite=document.getElementById("folder_overwrite").checked;
-		
+
 		if(file_name[0]=="/"){
 			file_name=file_name.substring(1);
 		}
-		
+
 		var file_params="?file_upload=true&XNAT_CSRF=" + csrfToken;
-		
+
 		if (file_content > ''){
 			file_params+="&content="+file_content;
 		}
@@ -1463,7 +1489,7 @@ function UploadFileForm(_obj){
 		if (file_overwrite){
 			file_params+="&overwrite=true";
 		}
-			
+
 		var file_dest = this.selector.obj.uri;
 		if(collection_name == ''){
 			file_dest=this.selector.obj.uri+"/files";
@@ -1472,17 +1498,17 @@ function UploadFileForm(_obj){
 		}else{
 			file_dest=this.selector.obj.uri+"/resources/"+ collection_name + "/files";
 		}
-		
+
 		if(file_name > ''){
 			file_dest +="/"+ file_name;
 		}
-		
+
 		if((file_name != "" ? file_name : $("#local_file").val()).match(/[\[\]%#{}]/g)){
 			xmodal.message('File Viewer', "Filename contains invalid characters ('%','#','[]', and '{}' are not allowed). Please rename file and try again.");
 			return;
 		}
 
-		
+
 		if(document.getElementById("local_file").value.endsWith(".zip")
 		  || document.getElementById("local_file").value.endsWith(".gz")
 		  || document.getElementById("local_file").value.endsWith(".xar")){
@@ -1490,7 +1516,7 @@ function UploadFileForm(_obj){
 				file_params+="&extract=true";
 			}
 		}
-		
+
 		file_dest+=file_params;
 		if(showReason){
 			var justification=new XNAT.app.requestJustification("add_file","File Upload Dialog",XNAT.app._uploadFile,this);
@@ -1502,53 +1528,53 @@ function UploadFileForm(_obj){
 			passthrough.file_name=file_name;
 			passthrough.fire();
 		}
-		
+
 	}
 }
-   
+
 function AddFolderForm(_obj){
   	this.obj=_obj;
     this.onResponse=new YAHOO.util.CustomEvent("response",this);
-  
-	this.render=function(){	
+
+	this.render=function(){
 		this.panel=new YAHOO.widget.Dialog("fileUploadDialog",{close:true,
 		   width:"440px",height:"400px",underlay:"shadow",modal:true,fixedcenter:true,visible:false});
 		this.panel.setHeader("Add Folder");
         window.viewer.requiresRefresh = true;
-				
+
 		var div = document.createElement("form");
-		
-		
+
+
 		var table,tbody,tr,td,input;
-   	  
+
    	  var title=document.createElement("div");
    	  title.style.marginTop="3px";
    	  title.style.marginLeft="1px";
    	  title.innerHTML="New Folder";
    	  div.appendChild(title);
-   	  
+
    	  div.appendChild(document.createElement("br"));
-   	  
+
    	  var collection_form=document.createElement("div");
    	  div.appendChild(collection_form);
    	  collection_form.style.border="1px solid #DEDEDE";
-   	  
+
    	  table=document.createElement("table");
    	  tbody=document.createElement("tbody");
    	  table.appendChild(tbody);
    	  collection_form.appendChild(table);
-   	  
-   	  
+
+
    	  if(this.obj.categories!=undefined){
 	   	  //collection
 	   	  tr=document.createElement("tr");
 			tr.style.height="20px";
-	   	  
+
 	   	  td=document.createElement("th");
 	   	  td.align="left";
 	   	  td.innerHTML="Level";
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  td=document.createElement("td");
 	   	  input=document.createElement("select");
 	   	  input.id="folder_level";
@@ -1559,11 +1585,11 @@ function AddFolderForm(_obj){
 	   	    input.options[input.options.length]=new Option(this.obj.categories.ids[cIdC],this.obj.categories.ids[cIdC]);
 	   	  }
 	   	  input.options[input.options.length]=new Option("resources","resources");
-	   	  
+
 	   	  input.onchange=function(o){
 	   	  	var item_select=document.getElementById("folder_item");
 	   	  	var coll_select=document.getElementById("folder_collection");
-	   	  	
+
 	   	  	if(this.selectedIndex==0){
 	   	  		while(item_select.options.length>0){
 	   	  			item_select.remove(0);
@@ -1577,18 +1603,18 @@ function AddFolderForm(_obj){
 	   	  		}
 	   	  		coll_select.value="";
 	   	  		var _v=this.options[this.selectedIndex].value;
-	   	  		
+
 	   	  		if(_v=="resources"){
 	   	  			item_select.disabled=true;
-	   	  			
+
 	   	  			coll_select.value="";
-	   	  		
+
 	   	  			coll_select.disabled=false;
 	   	  		}else{
 	   	  			coll_select.disabled=true;
 	   	  			item_select.disabled=false;
 		   	  		var cat=this.manager.obj.categories[_v];
-		   	  		
+
 		   	  		item_select.options[item_select.options.length]=new Option("SELECT","");
 		   	  		for(var catC=0;catC<cat.length;catC++){
 		   	  			item_select.options[item_select.options.length]=new Option(cat[catC].id,cat[catC].id);
@@ -1598,19 +1624,19 @@ function AddFolderForm(_obj){
 	   	  };
 	   	  td.appendChild(input);
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  tbody.appendChild(tr);
-	   	  
-	   	  
+
+
 	   	  //collection
 	   	  tr=document.createElement("tr");
 			tr.style.height="20px";
-	   	  
+
 	   	  td=document.createElement("th");
 	   	  td.align="left";
 	   	  td.innerHTML="Item";
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  td=document.createElement("td");
 	   	  input=document.createElement("select");
 	   	  input.id="folder_item";
@@ -1623,7 +1649,7 @@ function AddFolderForm(_obj){
 	   	  		coll_select.disabled=false;
 	   	  		coll_select.value="";
 	   	  		var _v=this.options[this.selectedIndex].value;
-   	  		  	  			
+
 	   	  	}else{
 	   	  		coll_select.disabled=true;
 	   	  		coll_select.value="";
@@ -1632,18 +1658,18 @@ function AddFolderForm(_obj){
 	   	  };
 	   	  td.appendChild(input);
 	   	  tr.appendChild(td);
-	   	  
+
 	   	  tbody.appendChild(tr);
    	  }
    	  //collection
    	  tr=document.createElement("tr");
 		tr.style.height="20px";
-   	  
+
    	  td=document.createElement("th");
    	  td.align="left";
    	  td.innerHTML="Folder";
    	  tr.appendChild(td);
-   	  
+
    	  td=document.createElement("td");
    	  input=document.createElement("input");
    	  input.id="folder_collection";
@@ -1651,9 +1677,9 @@ function AddFolderForm(_obj){
    	  input.manager=this;
    	  td.appendChild(input);
    	  tr.appendChild(td);
-   	  
+
    	  tbody.appendChild(tr);
-   	  
+
    	  div.appendChild(document.createElement("br"));
    	  var file_form=document.createElement("div");
    	  div.appendChild(file_form);
@@ -1664,68 +1690,68 @@ function AddFolderForm(_obj){
    	  tbody=document.createElement("tbody");
    	  table.appendChild(tbody);
    	  file_form.appendChild(table);
-   	     	  
-   	  
+
+
    	  //format
    	  tr=document.createElement("tr");
 		tr.style.height="20px";
-   	  
+
    	  td=document.createElement("th");
    	  td.align="left";
    	  td.innerHTML="Format";
    	  tr.appendChild(td);
-   	  
+
    	  td=document.createElement("td");
    	  input=document.createElement("input");
    	  input.id="folder_format";
    	  //input.style.fontSize = "99%";
    	  td.appendChild(input);
-   	  
+
    	  tr.appendChild(td);
    	  tbody.appendChild(tr);
-   	  
-   	  
+
+
    	  //content
    	  tr=document.createElement("tr");
 		tr.style.height="20px";
-   	  
+
    	  td=document.createElement("th");
    	  td.align="left";
    	  td.innerHTML="Content";
    	  tr.appendChild(td);
-   	  
+
    	  td=document.createElement("td");
    	  input=document.createElement("input");
    	  input.id="folder_content";
    	  //input.style.fontSize = "99%";
    	  td.appendChild(input);
-   	  
+
    	  tr.appendChild(td);
    	  tbody.appendChild(tr);
    	  div.appendChild(file_form);
-   	  
-   	  
+
+
    	  //tags
    	  tr=document.createElement("tr");
 		tr.style.height="20px";
-   	  
+
    	  td=document.createElement("th");
    	  td.align="left";
    	  td.innerHTML="Tags";
    	  tr.appendChild(td);
-   	  
+
    	  td=document.createElement("td");
    	  input=document.createElement("input");
    	  input.id="folder_tags";
    	  //input.style.fontSize = "99%";
    	  td.appendChild(input);
-   	  
+
    	  tr.appendChild(td);
    	  tbody.appendChild(tr);
-   	  
-   	  		
+
+
 		this.panel.setBody(div);
-		
+
 		this.panel.selector=this;
         var buttons = [
             {text: "Create", handler: {fn: this.addFolder}, isDefault: true},
@@ -1734,26 +1760,26 @@ function AddFolderForm(_obj){
             }}}
         ];
 		this.panel.cfg.queueProperty("buttons",buttons);
-		
-		
+
+
 		this.panel.render("page_body");
 		this.panel.show();
 	};
-	
+
 	this.addFolder=function (){
 		var coll_select=document.getElementById("folder_collection");
 	    if(coll_select.disabled==true){
             xmodal.message('File Viewer', "Please select a folder for this file.");
 	    	return;
 	    }
-	    
+
 	    if(coll_select.value==""){
             xmodal.message('File Viewer', "Please identify a folder name.");
 	    	return;
 	    }
-	    
+
 		var collection_name=coll_select.value;
-		
+
 		var file_tags=document.getElementById("folder_tags").value.trim();
 		var file_format=document.getElementById("folder_format").value.trim();
 		var file_content=document.getElementById("folder_content").value.trim();
@@ -1762,9 +1788,9 @@ function AddFolderForm(_obj){
             xmodal.message('File Viewer', "Please select a level");
 			return;
 		}
-		
+
 		var file_params="?n=1&XNAT_CSRF=" + csrfToken;
-		
+
 		if(file_content!=""){
 			file_params+="&content="+file_content;
 		}
@@ -1774,8 +1800,8 @@ function AddFolderForm(_obj){
 		if(file_tags!=""){
 			file_params+="&tags="+file_tags;
 		}
-			
-			
+
+
 		if(folder_level==null || folder_level.options[folder_level.selectedIndex].value=="resources"){
 			var file_dest = this.selector.obj.uri+"/resources/"+ collection_name;
 		}else{
@@ -1785,12 +1811,12 @@ function AddFolderForm(_obj){
 				return;
 			}
 			file_dest =this.selector.obj.uri+"/" +
-				 folder_level.options[folder_level.selectedIndex].value+ "/"+ 
-				 folder_item.options[folder_item.selectedIndex].value+ "/"+ 
-				 "resources/"+ 
+				 folder_level.options[folder_level.selectedIndex].value+ "/"+
+				 folder_item.options[folder_item.selectedIndex].value+ "/"+
+				 "resources/"+
 				 collection_name;
-		}				
-		
+		}
+
 		file_dest+=file_params;
 		if(showReason){
 			var justification=new XNAT.app.requestJustification("add_folder","Folder Creation Dialog",XNAT.app._addFolder,this);
@@ -1800,14 +1826,14 @@ function AddFolderForm(_obj){
 			passthrough.file_dest=file_dest;
 			passthrough.fire();
 		}
-		
+
 	}
-	
-	
+
+
 }
 
 
-XNAT.app._uploadFile=function(arg1,arg2,container){	 
+XNAT.app._uploadFile=function(arg1,arg2,container){
 	var event_reason=(container==undefined || container.dialog==undefined)?"":container.dialog.event_reason;
 	var form = document.getElementById("file_upload");
 	YAHOO.util.Connect.setForm(form,true);
@@ -1856,12 +1882,12 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
         scope: this
     };
     XNAT.ui.dialog.static.wait("Uploading File.", {id: "add_file"});
-	
+
 	var method = 'POST';
 	if(container.file_name > ''){
 		method='PUT';
 	}
-	
+
 
 	var params="&event_reason="+event_reason;
 	params+="&event_type=WEB_FORM";

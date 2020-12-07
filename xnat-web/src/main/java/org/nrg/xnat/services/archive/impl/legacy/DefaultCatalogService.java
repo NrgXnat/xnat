@@ -1081,8 +1081,7 @@ public class DefaultCatalogService implements CatalogService {
                     eventItemIdValue = StringUtils.defaultIfBlank(eventItemIdValue, item.getIDValue());
                 }
 
-                XDAT.triggerXftItemEvent(eventItemIdValue, eventItemIdValue,
-                                         isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
+                XDAT.triggerXftItemEvent(xsiType, eventItemIdValue, isCreate ? XftItemEvent.CREATE : XftItemEvent.UPDATE);
             }
 
             log.debug("Item '{}' of type {} successfully stored", eventItemXsiType, eventItemIdValue);

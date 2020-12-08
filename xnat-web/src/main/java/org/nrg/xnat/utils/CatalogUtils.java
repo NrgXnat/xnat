@@ -15,7 +15,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.action.ServerException;
@@ -34,8 +34,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.zip.TarUtils;
-import org.nrg.xft.utils.zip.ZipI;
+import org.nrg.xft.utils.fileExtraction.FileExtractor;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.helpers.resource.XnatResourceInfoMap;
@@ -68,7 +67,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipOutputStream;
 
 /**
  * @author timo
@@ -475,7 +473,8 @@ public class CatalogUtils {
      * @param entry the catalog entry
      * @return the relative path
      */
-    public static String getRelativePathForCatalogEntry(CatEntryI entry) {
+    @SuppressWarnings("unused")
+    public static String getRelativePathForCatalogEntry(final CatEntryI entry) {
         return getRelativePathForCatalogEntry(entry, null);
     }
 
@@ -653,6 +652,7 @@ public class CatalogUtils {
      * @param rawSize   The size of the files that compose the object.
      * @return A formatted display of the file statistics.
      */
+    @SuppressWarnings("unused")
     public static String formatFileStats(final String label, final long fileCount, final Object rawSize) {
         long size = 0;
         if (rawSize != null) {
@@ -668,6 +668,7 @@ public class CatalogUtils {
         return String.format("%s: %s in %s files", label, formatSize(size), fileCount);
     }
 
+    @SuppressWarnings("unused")
     public static Map<File, CatEntryI> getCatalogEntriesForFiles(final String rootPath,
                                                                  final XnatResourcecatalog catalog,
                                                                  final List<File> files,
@@ -1068,6 +1069,7 @@ public class CatalogUtils {
         return catalogMap;
     }
 
+    @SuppressWarnings("unused")
     public static void saveUpdatedCatalog(final CatalogData catalogData, Map<String, Map<String, Integer>> auditSummary,
                                           long catSize, int fileCount, final EventMetaI eventMeta, final UserI user)
             throws Exception {
@@ -1183,6 +1185,7 @@ public class CatalogUtils {
         return entries;
     }
 
+    @SuppressWarnings("unused")
     public static CatCatalogI getCatalogByFilter(final CatCatalogI cat) {
         CatCatalogI e;
         for (CatCatalogI subset : cat.getSets_entryset()) {
@@ -1353,6 +1356,7 @@ public class CatalogUtils {
         return null;
     }
 
+    @SuppressWarnings("unused")
     public static CatEntryI getEntryByName(CatCatalogI cat, String name) {
         CatEntryI e;
         for (CatCatalogI subset : cat.getSets_entryset()) {
@@ -1410,6 +1414,7 @@ public class CatalogUtils {
         return null;
     }
 
+    @SuppressWarnings("unused")
     public static CatDcmentryI getDCMEntryByInstanceNumber(CatCatalogI cat, Integer num) {
         CatDcmentryI e;
         for (CatCatalogI subset : cat.getSets_entryset()) {
@@ -1465,6 +1470,7 @@ public class CatalogUtils {
     /**
      * See {@link #getFileOnLocalFileSystem(String, String, String)}, destPath set to null
      */
+    @SuppressWarnings("unused")
     public static File getFileOnLocalFileSystem(String fullPath) {
         return getFileOnLocalFileSystem(fullPath, null, null);
     }
@@ -1601,44 +1607,29 @@ public class CatalogUtils {
 
         final CatalogData catalogData = CatalogData.getOrCreate(proj.getRootArchivePath(), catResource, proj.getId());
         final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
-        final File destinationDir = catalogData.catFile.getParentFile();
+        final Path destinationDir = catalogData.catFile.getParentFile().toPath();
 
         List<String> duplicates = new ArrayList<>();
 
-        for (FileWriterWrapperI fileWriter : fileWriters) {
-            String filename = Paths.get(StringUtils.replace(fileWriter.getName(), "\\", "/")).getFileName().toString();
-            final String compression = FilenameUtils.getExtension(filename);
-
-            if (extract && StringUtils.equalsAnyIgnoreCase(compression, "tar", "gz", "zip", "zar")) {
+        for (final FileWriterWrapperI fileWriter : fileWriters) {
+            final String filename = Paths.get(StringUtils.replace(fileWriter.getName(), "\\", "/")).getFileName().toString();
+            if (extract && ZipUtils.isCompressedFile(filename)) {
                 log.debug("Found archive file {}", filename);
-                ZipI zipper;
-                if (compression.equalsIgnoreCase(".tar")) {
-                    zipper = new TarUtils();
-                } else if (compression.equalsIgnoreCase(".gz")) {
-                    zipper = new TarUtils();
-                    zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
-                } else {
-                    zipper = new ZipUtils();
-                }
-
-                try (final InputStream input = fileWriter.getInputStream()) {
-                    final List<File> files = zipper.extract(input, destinationDir.getAbsolutePath(), overwrite, ci);
-                    for (final File file : files) {
-                        if (!file.isDirectory()) {
-                            // relative path is used to compare to existing catalog entries, and add if missing.
-                            // entry paths are relative to the location of the catalog file.
-                            final String relativePath = destinationDir.toURI().relativize(file.toURI()).getPath();
-
-                            if (overwrite || !catalogMap.containsKey(relativePath)) {
-                                CatEntryI entry = catalogMap.get(relativePath) == null ? null : catalogMap.get(relativePath).entry;
-                                addOrUpdateEntry(catalogData, entry, relativePath, relativePath, file, info, ci);
-                            }
+                final FileExtractor extractor = new FileExtractor();
+                final List<File>    files     =  extractor.extract(filename, fileWriter.getInputStream(), destinationDir, overwrite, ci);
+                for (final File file : files) {
+                    if (!file.isDirectory()) {
+                        // relative path is used to compare to existing catalog entries, and add if missing.
+                        // entry paths are relative to the location of the catalog file.
+                        final String relativePath = destinationDir.toUri().relativize(file.toURI()).getPath();
+                        if (overwrite || !catalogMap.containsKey(relativePath)) {
+                            addOrUpdateEntry(catalogData, catalogMap.get(relativePath) == null ? null : catalogMap.get(relativePath).entry, relativePath, relativePath, file, info, ci);
                         }
                     }
                 }
 
                 if (!overwrite) {
-                    duplicates.addAll(zipper.getDuplicates());
+                    duplicates.addAll(extractor.getDuplicates());
                 }
             } else {
                 final String instance;
@@ -1652,7 +1643,7 @@ public class CatalogUtils {
                     instance = destination;
                 }
 
-                final File saveTo = new File(destinationDir, instance);
+                final File saveTo = destinationDir.resolve(instance).toFile();
 
                 if (saveTo.exists() && !overwrite) {
                     duplicates.add(instance);
@@ -1691,9 +1682,7 @@ public class CatalogUtils {
             }
         }
 
-        log.debug("Writing catalog file {} with {} total entries", catalogData.catFile.getAbsolutePath(),
-                catalogData.catBean.getEntries_entry().size());
-
+        log.debug("Writing catalog file {} with {} total entries", catalogData.catFile.getAbsolutePath(), catalogData.catBean.getEntries_entry().size());
         writeCatalogToFile(catalogData);
 
         return duplicates;
@@ -2134,20 +2123,11 @@ public class CatalogUtils {
     }
 
     public static String getFullPath(String rootPath, XnatResourcecatalogI resource) {
-
-        String fullPath = StringUtils.replace(FileUtils.AppendRootPath(rootPath, resource.getUri()), "\\", "/");
-        while (fullPath.contains("//")) {
-            fullPath = StringUtils.replace(fullPath, "//", "/");
-        }
-
-        if (!fullPath.endsWith("/")) {
-            fullPath += "/";
-        }
-
-        return fullPath;
+        return StringUtils.appendIfMissing(RegExUtils.replaceAll(StringUtils.replace(FileUtils.AppendRootPath(rootPath, resource.getUri()), "\\", "/"), "/{2,}", "/"), "/");
     }
 
-    public boolean modifyEntry(CatCatalogI cat, CatEntryI oldEntry, CatEntryI newEntry) {
+    @SuppressWarnings("unused")
+    public boolean modifyEntry(final CatCatalogI cat, final CatEntryI oldEntry, final CatEntryI newEntry) {
         final List<CatEntryI>     entries = cat.getEntries_entry();
         final Optional<CatEntryI> current       = entries.stream().filter(entry -> StringUtils.equals(entry.getUri(), oldEntry.getUri())).findAny();
         if (current.isPresent()) {
@@ -2344,13 +2324,12 @@ public class CatalogUtils {
         return newEntry;
     }
 
-    public static CatEntryBean populateAndAddCatEntry(CatCatalogBean cat,
-                                                      @Nullable String uri,
+    @SuppressWarnings("unused")
+    public static CatEntryBean populateAndAddCatEntry(final CatCatalogBean cat,
+                                                      @Nullable final String uri,
                                                       final CatalogEntryAttributes attr,
-                                                      XnatResourceInfo info) {
-
-        return populateAndAddCatEntry(cat, StringUtils.defaultIfBlank(uri, attr.relativePath),
-                attr.relativePath, attr.name, attr.size, info, attr.md5, attr.format, attr.content, attr.relativePath);
+                                                      final XnatResourceInfo info) {
+        return populateAndAddCatEntry(cat, StringUtils.defaultIfBlank(uri, attr.relativePath), attr.relativePath, attr.name, attr.size, info, attr.md5, attr.format, attr.content, attr.relativePath);
     }
 
     public static void addOrUpdateEntry(CatalogData catalogData, @Nullable CatEntryI entry, String uri,

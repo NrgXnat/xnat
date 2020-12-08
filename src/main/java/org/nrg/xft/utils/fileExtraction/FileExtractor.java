@@ -1,6 +1,5 @@
 package org.nrg.xft.utils.fileExtraction;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.utils.FileUtils;
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipOutputStream;
 
@@ -30,68 +28,76 @@ import java.util.zip.ZipOutputStream;
  * The encoding is assumed to be designated by filename suffixes.
  *
  * Supported formats are
- *  tar, tar.gz, tgz, zip, zar, gz.
+ * tar, tar.gz, tgz, zip, zar, xar, gz.
  */
 public class FileExtractor {
-    private List<String> _duplicates;
-
     public FileExtractor() {
-        this._duplicates = new ArrayList<>();
-    }
-
-    public List<File> extract( Path sourceFilePath, Path destinationDirPath, boolean overwrite, EventMetaI ci) throws IOException {
-        String fileNameWithSuffix = sourceFilePath.getFileName().toString();
-        return extract(fileNameWithSuffix, new FileInputStream( sourceFilePath.toFile()), destinationDirPath, overwrite, ci);
+        _duplicates = new ArrayList<>();
     }
 
     /**
-     * Extract File(s) from input file.
+     * Extract file(s) from the specified input file.
+     *
+     * @param source      The path to the input file.
+     * @param destination The destination where the contents of the input file should be extracted.
+     * @param overwrite   Whether existing files should be overwritten if there's a conflict.
+     * @param ci          The event metadata.
+     *
+     * @return A list of the files extracted from the input file.
+     *
+     * @throws IOException When an error occurs reading the input file or writing its contents to the specified destination.
+     */
+    public List<File> extract(final Path source, final Path destination, final boolean overwrite, final EventMetaI ci) throws IOException {
+        return extract(source.getFileName().toString(), new FileInputStream(source.toFile()), destination, overwrite, ci);
+    }
+
+    /**
+     * Extract file(s) from the specified input file.
      *
      * This signature best supports CatalogUtils's use of FileWriterWrapperI.
      *
-     * @param fileName
-     * @param inputStream
-     * @param destinationDirPath
-     * @param overwrite
-     * @param ci
-     * @return
-     * @throws IOException
+     * @param filename    The name of the input file.
+     * @param inputStream An input stream for accessing the file contents.
+     * @param destination The destination where the contents of the input file should be extracted.
+     * @param overwrite   Whether existing files should be overwritten if there's a conflict.
+     * @param ci          The event metadata.
+     *
+     * @return A list of the files extracted from the input file.
+     *
+     * @throws IOException When an error occurs reading the input file or writing its contents to the specified destination.
      */
-    public List<File> extract(String fileName, InputStream inputStream, Path destinationDirPath, boolean overwrite, EventMetaI ci) throws IOException {
-        List<File> files;
-        Format format = Format.getFormat( fileName);
-        String fileNameWithoutSuffix = format.getFileName( fileName);
+    public List<File> extract(final String filename, final InputStream inputStream, final Path destination, final boolean overwrite, final EventMetaI ci) throws IOException {
+        final List<File> files;
+        final Format     format = Format.getFormat(filename);
         switch (format) {
             case TAR:
                 ZipI zipper = new TarUtils();
-                files = zipper.extract( inputStream, destinationDirPath.toString(), overwrite, ci);
-                _duplicates.addAll( zipper.getDuplicates());
-                break;
-            case TAR_GZIP:
-            case TAR_TGZ:
-                zipper = new TarUtils();
-                zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
-                files = zipper.extract( inputStream, destinationDirPath.toString(), overwrite, ci);
-                _duplicates.addAll( zipper.getDuplicates());
-                break;
-            case ZIP:
-            case ZAR:
-                zipper = new ZipUtils();
-                files = zipper.extract( inputStream, destinationDirPath.toString(), overwrite, ci);
+                files = zipper.extract(inputStream, destination.toString(), overwrite, ci);
                 _duplicates.addAll(zipper.getDuplicates());
                 break;
-            case GZIP:
+            case TGZ:
+                zipper = new TarUtils();
+                zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
+                files = zipper.extract(inputStream, destination.toString(), overwrite, ci);
+                _duplicates.addAll(zipper.getDuplicates());
+                break;
+            case ZIP:
+                zipper = new ZipUtils();
+                files = zipper.extract(inputStream, destination.toString(), overwrite, ci);
+                _duplicates.addAll(zipper.getDuplicates());
+                break;
+            case GZ:
                 files = new ArrayList<>();
-                File destinationFile = destinationDirPath.resolve( fileNameWithoutSuffix).toFile();
-                if( destinationFile.exists() && !overwrite) {
-                    _duplicates.add( destinationFile.getName());
+                final File destinationFile = destination.resolve(format.getFileName(filename)).toFile();
+                final boolean exists = destinationFile.exists();
+                if (exists && !overwrite) {
+                    _duplicates.add(destinationFile.getName());
                 } else {
-                    if( destinationFile.exists()) {
-                        FileUtils.MoveToHistory( destinationFile, EventUtils.getTimestamp(ci));
+                    if (exists) {
+                        FileUtils.MoveToHistory(destinationFile, EventUtils.getTimestamp(ci));
                     }
-                    files.add( destinationFile);
-                    FileModem decompressor = new GZipDecompressor();
-                    decompressor.process( inputStream,  destinationFile);
+                    files.add(destinationFile);
+                    new GZipDecompressor().process(inputStream, destinationFile);
                 }
                 break;
             default:
@@ -105,49 +111,5 @@ public class FileExtractor {
         return _duplicates;
     }
 
-    public enum Format {
-        TAR( ".tar"),
-        TAR_GZIP( ".tar.gz"),
-        TAR_TGZ( ".tgz"),
-        ZIP( ".zip"),
-        ZAR( ".zar"),
-        GZIP( ".gz"),
-        UNKNOWN("");
-
-        String[] suffixes;
-        Format( String... suffixes) {
-            this.suffixes = suffixes;
-        }
-
-        public List<String> getSuffixes() { return new ArrayList<String>(Arrays.asList(suffixes));}
-
-        /**
-         * Return the Format based on filename suffixes.
-         *
-         * Search the list of suffixes in order enumerated to distinguish 'tar.gz' as a special case of 'gz'.
-         *
-         * @param fileName
-         * @return
-         */
-        public static Format getFormat( String fileName) {
-            Format[] formats = values();
-            for( Format f: formats) {
-                if( !(f == UNKNOWN) && StringUtils.endsWithAny( fileName.toLowerCase(), f.suffixes)) {
-                    return f;
-                }
-            }
-            return UNKNOWN;
-        }
-
-        /**
-         * Return fileName without suffix.
-         *
-         * @param fileNameWithSuffix
-         * @return
-         */
-        public String getFileName( String fileNameWithSuffix) {
-            return (this == UNKNOWN) ? fileNameWithSuffix : fileNameWithSuffix.replace(suffixes[0], "");
-        }
-    }
-
+    private final List<String> _duplicates;
 }

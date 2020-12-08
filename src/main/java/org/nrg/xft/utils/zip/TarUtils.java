@@ -12,6 +12,8 @@ package org.nrg.xft.utils.zip;
 import edu.sdsc.grid.io.GeneralFile;
 import edu.sdsc.grid.io.srb.SRBFile;
 import edu.sdsc.grid.io.srb.SRBFileInputStream;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 import org.apache.tools.tar.TarOutputStream;
@@ -35,12 +37,12 @@ import java.util.zip.ZipOutputStream;
 /**
  * @author timo
  */
+@Slf4j
 public class TarUtils implements ZipI {
-    byte[]          buf                = new byte[FileUtils.LARGE_DOWNLOAD];
     TarOutputStream out                = null;
     int             _compressionMethod = ZipOutputStream.STORED;
     boolean         decompress         = false;
-    private List<String> _duplicates = new ArrayList<>();
+    private final List<String> _duplicates = new ArrayList<>();
 
     public void setOutputStream(OutputStream outStream) throws IOException {
         out = new TarOutputStream(outStream);
@@ -62,46 +64,37 @@ public class TarUtils implements ZipI {
         return extract(is, dir, true, null);
     }
 
-    public List<File> extract(InputStream is, String dir, boolean overwrite, EventMetaI ci) throws IOException {
-        final List<File> extractedFiles = new ArrayList<>();
-        if (_compressionMethod == ZipOutputStream.DEFLATED) {
-            //f = unGzip(f,dir,deleteZip);
-            is = new GZIPInputStream(is);
-        }
-
-        File dest = new File(dir);
+    public List<File> extract(final InputStream is, final String dir, final boolean overwrite, final EventMetaI ci) throws IOException {
+        final File dest = new File(dir);
         dest.mkdirs();
 
-        TarInputStream tis = new TarInputStream(is);
-
-        TarEntry te = tis.getNextEntry();
-
-        while (te != null) {
-            File destPath = new File(dest, te.getName());
-            if (te.isDirectory()) {
-                destPath.mkdirs();
-            } else {
-                if (destPath.exists() && !overwrite) {
-                    _duplicates.add(te.getName());
+        final List<File> extractedFiles = new ArrayList<>();
+        try (final TarInputStream tis = _compressionMethod == ZipOutputStream.DEFLATED ? new TarInputStream(new GZIPInputStream(is)) : new TarInputStream(is)) {
+            TarEntry te = tis.getNextEntry();
+            while (te != null) {
+                File destPath = new File(dest, te.getName());
+                if (te.isDirectory()) {
+                    destPath.mkdirs();
                 } else {
-                    if (destPath.exists()) {
-                        FileUtils.MoveToHistory(destPath, EventUtils.getTimestamp(ci));
-                    }
-                    destPath.getParentFile().mkdirs();
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Writing: " + te.getName());
-                    }
-                    FileOutputStream output = new FileOutputStream(destPath);
+                    if (destPath.exists() && !overwrite) {
+                        _duplicates.add(te.getName());
+                    } else {
+                        if (destPath.exists()) {
+                            FileUtils.MoveToHistory(destPath, EventUtils.getTimestamp(ci));
+                        }
+                        destPath.getParentFile().mkdirs();
+                        log.debug("Writing: {}", te.getName());
+                        FileOutputStream output = new FileOutputStream(destPath);
 
-                    tis.copyEntryContents(output);
+                        tis.copyEntryContents(output);
 
-                    output.close();
-                    extractedFiles.add(destPath);
+                        output.close();
+                        extractedFiles.add(destPath);
+                    }
                 }
+                te = tis.getNextEntry();
             }
-            te = tis.getNextEntry();
         }
-        tis.close();
         return extractedFiles;
     }
 
@@ -146,23 +139,13 @@ public class TarUtils implements ZipI {
     }
 
     @SuppressWarnings("unused")
-    public File unGzip(File f, String dir, boolean deleteZip) throws IOException {
+    public File unGzip(final File f, final String dir, final boolean deleteZip) throws IOException {
         File destF = Paths.get(dir, "upload.tar").toFile();
 
         try (final GZIPInputStream gis = new GZIPInputStream(new FileInputStream(f));
              final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destF))) {
-
-            byte[] buff = new byte[FileUtils.LARGE_DOWNLOAD];
-            int bytesRead;
-
-            if (_log.isDebugEnabled()) {
-                _log.debug("Uploading file: " + destF.getAbsolutePath());
-            }
-
-            while (-1 != (bytesRead = gis.read(buff, 0, buff.length))) {
-                bos.write(buff, 0, bytesRead);
-                bos.flush();
-            }
+            log.debug("Uploading file: {}", destF.getAbsolutePath());
+            IOUtils.copy(gis, bos);
         }
 
         if (deleteZip) {
@@ -179,8 +162,7 @@ public class TarUtils implements ZipI {
      * @throws IOException When an error occurs writing the file.
      */
     public void write(String relativePath, String absolutePath) throws IOException {
-        File f = new File(absolutePath);
-        write(relativePath, f);
+        write(relativePath, new File(absolutePath));
     }
 
     /**
@@ -195,13 +177,7 @@ public class TarUtils implements ZipI {
         tarAdd.setMode(TarEntry.LF_NORMAL);
         out.putNextEntry(tarAdd);
         // Write file to archive
-        while (true) {
-            int nRead = in.read(buf, 0, buf.length);
-            if (nRead <= 0) {
-                break;
-            }
-            out.write(buf, 0, nRead);
-        }
+        IOUtils.copy(in, out);
         in.close();
         out.closeEntry();
     }
@@ -219,15 +195,9 @@ public class TarUtils implements ZipI {
         tarAdd.setName(relativePath.replace('\\', '/'));
         out.putNextEntry(tarAdd);
         // Write file to archive
-        FileInputStream in = new FileInputStream(file);
-        while (true) {
-            int nRead = in.read(buf, 0, buf.length);
-            if (nRead <= 0) {
-                break;
-            }
-            out.write(buf, 0, nRead);
+        try (final FileInputStream in = new FileInputStream(file)) {
+            IOUtils.copy(in, out);
         }
-        in.close();
         out.closeEntry();
     }
 
@@ -260,21 +230,16 @@ public class TarUtils implements ZipI {
         tarAdd.setSize(srb.length());
         out.putNextEntry(tarAdd);
         // Write file to archive
-        SRBFileInputStream in = new SRBFileInputStream(srb);
-        while (true) {
-            int nRead = in.read(buf, 0, buf.length);
-            if (nRead <= 0) {
-                break;
-            }
-            out.write(buf, 0, nRead);
-
+        try (final SRBFileInputStream in = new SRBFileInputStream(srb)) {
+            IOUtils.copy(in, out);
         }
-        in.close();
         out.closeEntry();
     }
 
     public void write(XNATDirectory dir) throws IOException {
+        //noinspection rawtypes
         ArrayList files = dir.getFiles();
+        //noinspection rawtypes
         ArrayList subDirectories = dir.getSubdirectories();
 
         String path = dir.getPath();
@@ -294,25 +259,13 @@ public class TarUtils implements ZipI {
             tarAdd.setSize(file.length());
             out.putNextEntry(tarAdd);
             // Write file to archive
-            if (_log.isDebugEnabled()) {
-                _log.debug(file.getName() + "," + file.length() + "," + (Calendar.getInstance().getTimeInMillis() - startTime));
+            log.debug("{},{},{}", file.getName(), file.length(), Calendar.getInstance().getTimeInMillis() - startTime);
+            try (final SRBFileInputStream in = new SRBFileInputStream((SRBFile) file)) {
+                log.debug("," + (Calendar.getInstance().getTimeInMillis() - startTime));
+                IOUtils.copy(in, out);
             }
-            SRBFileInputStream in = new SRBFileInputStream((SRBFile) file);
-            if (_log.isDebugEnabled()) {
-                _log.debug("," + (Calendar.getInstance().getTimeInMillis() - startTime));
-            }
-            while (true) {
-                int nRead = in.read(buf, 0, buf.length);
-                if (nRead <= 0) {
-                    break;
-                }
-                out.write(buf, 0, nRead);
-            }
-            in.close();
             out.closeEntry();
-            if (_log.isDebugEnabled()) {
-                _log.debug("," + (Calendar.getInstance().getTimeInMillis() - startTime));
-            }
+            log.debug(",{}", Calendar.getInstance().getTimeInMillis() - startTime);
         }
 
         for (Object subDirectory : subDirectories) {
@@ -360,6 +313,4 @@ public class TarUtils implements ZipI {
     public void setDecompressFilesBeforeZipping(boolean method) {
         decompress = method;
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(TarUtils.class);
 }

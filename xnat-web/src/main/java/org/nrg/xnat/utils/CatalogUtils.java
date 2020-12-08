@@ -2459,12 +2459,20 @@ public class CatalogUtils {
         if (entry.getClass().equals(CatDcmentryBean.class)) {
             entry.setFormat("DICOM");
             mod = true;
-        } else if (!StringUtils.equals(format, entry.getFormat())) {
-            entry.setFormat(format);
-            mod = true;
+        } else {
+            if (UNSET_STRING.equals(format)) {
+                mod = StringUtils.isNotEmpty(entry.getFormat());
+                entry.setFormat(null);
+            } else if (StringUtils.isNotBlank(format) && !StringUtils.equals(format, entry.getFormat())) {
+                entry.setFormat(format);
+                mod = true;
+            }
         }
 
-        if (!StringUtils.equals(content, entry.getContent())) {
+        if (UNSET_STRING.equals(content)) {
+            mod = StringUtils.isNotEmpty(entry.getContent());
+            entry.setContent(null);
+        } else if (StringUtils.isNotBlank(content) && !StringUtils.equals(content, entry.getContent())) {
             entry.setContent(content);
             mod = true;
         }
@@ -2756,6 +2764,7 @@ public class CatalogUtils {
     public static final String ORIG_URI      = "ORIG_URI";
 
     private static final String PREMATURE_EOF = "Premature end of file";
+    private static final String UNSET_STRING  = "NULL";
 
     private static       AtomicBoolean                               _maintainFileHistory = null;
     private static       AtomicBoolean                               _checksumConfig      = null;

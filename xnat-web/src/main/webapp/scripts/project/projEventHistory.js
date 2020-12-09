@@ -143,19 +143,6 @@ XNAT.admin = getObject(XNAT.admin || {});
                     ['click', 'a.view-event-history', viewHistoryDialog]
                 ]
             },
-            before: {
-                filterCss: {
-                    tag: 'style|type=text/css',
-                    content:
-                        '#' + projHistoryTableContainerId + ' .id { max-width: 80px; } \n' +
-                        '#' + projHistoryTableContainerId + ' .timestamp { max-width: 150px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + projHistoryTableContainerId + ' .subscription { max-width: 200px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + projHistoryTableContainerId + ' .eventtype { max-width: 120px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + projHistoryTableContainerId + ' .user { max-width: 120px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + projHistoryTableContainerId + ' .status { max-width: 200px; word-wrap: break-word; overflow-wrap: break-word; }  \n' +
-                        '#' + projHistoryTableContainerId + ' .project { max-width: 150px; word-wrap: break-word; overflow-wrap: break-word; }  \n'
-                }
-            },
             sortable: 'id, user, DATE, status',
             filter: 'user, status, project, subscription, eventtype',
             items: {

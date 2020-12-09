@@ -255,8 +255,17 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             final ElementSecurity elementSecurity = ElementSecurity.GetElementSecurity(xsiType);
             if (elementSecurity.isSecure(action)) {
                 if (item.getItem().instanceOf("xnat:imageScanData")) {
-                    String sessionId = item.getStringProperty("image_session_id");
-                    return can(user, ItemSearch.GetItem("xnat:imageSessionData/ID", sessionId, user, false), action);
+                    ItemI session = item.getParent();
+                    if (session == null) {
+                        String sessionId = item.getStringProperty("image_session_id");
+                        session = ItemSearch.GetItem("xnat:imageSessionData/ID", sessionId, user, false);
+                    }
+                    // Use the session's security until scan security is figured out; See XNAT-6573
+                    if (session != null) {
+                        return can(user, session, action);
+                    } else {
+                        throw new Exception("Cannot determine parent session of scan to check perms: " + item);
+                    }
                 }
                 final SchemaElement       schemaElement  = SchemaElement.GetElement(xsiType);
                 final SecurityValues      securityValues = item.getItem().getSecurityValues();

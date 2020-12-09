@@ -203,7 +203,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                     }
                 },
                 status: {
-                    th: {className: 'status-message'},
+                    th: {className: 'status'},
                     td: {className: 'status word-wrapped'},
                     label: labelMap.status['label'],
                     apply: function(){

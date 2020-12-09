@@ -179,7 +179,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         _handlerProxy.handlePreference(preference, value);
     }
 
-    @NrgPreference(defaultValue = "{'1': {'id': '1', 'aeTitle': 'XNAT', 'port': 8104, 'customProcessing': false, 'enabled': true}}", key = "id")
+    @NrgPreference(defaultValue = "{'1': {'id': '1', 'aeTitle': 'XNAT', 'port': 8104, 'customProcessing': false, 'directArchive': false, 'enabled': true}}", key = "id")
     public Map<String, DicomSCPInstance> getDicomSCPInstances() {
         return getMapValue(PREF_ID);
     }
@@ -584,7 +584,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private static final String GET_PORTS_FOR_ENABLED_INSTANCES   = "SELECT DISTINCT port FROM dicom_scp_instance WHERE enabled = TRUE";
 
     // Update queries: updating DicomSCPs required.
-    private static final String CREATE_OR_UPDATE_INSTANCE = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled, custom_processing) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled, :customProcessing)";
+    private static final String CREATE_OR_UPDATE_INSTANCE = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled, custom_processing, direct_archive) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled, :customProcessing, :directArchive)";
     private static final String DELETE_ALL_INSTANCES      = "DELETE FROM dicom_scp_instance";
 
     private final PreferenceHandlerMethod _handlerProxy = new AbstractXnatPreferenceHandlerMethod("enableDicomReceiver") {
@@ -594,14 +594,17 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
     };
 
-    private static final RowMapper<DicomSCPInstance> DICOM_SCP_INSTANCE_ROW_MAPPER = (resultSet, rowNum) -> DicomSCPInstance.builder()
-                                                                                                                            .id(resultSet.getInt("id"))
-                                                                                                                            .aeTitle(resultSet.getString("ae_title"))
-                                                                                                                            .port(resultSet.getInt("port"))
-                                                                                                                            .identifier(resultSet.getString("identifier"))
-                                                                                                                            .fileNamer(resultSet.getString("file_namer"))
-                                                                                                                            .enabled(resultSet.getBoolean("enabled"))
-                                                                                                                            .customProcessing(resultSet.getBoolean("custom_processing")).build();
+    private static final RowMapper<DicomSCPInstance> DICOM_SCP_INSTANCE_ROW_MAPPER = (resultSet, rowNum) ->
+            DicomSCPInstance.builder()
+                    .id(resultSet.getInt("id"))
+                    .aeTitle(resultSet.getString("ae_title"))
+                    .port(resultSet.getInt("port"))
+                    .identifier(resultSet.getString("identifier"))
+                    .fileNamer(resultSet.getString("file_namer"))
+                    .enabled(resultSet.getBoolean("enabled"))
+                    .customProcessing(resultSet.getBoolean("custom_processing"))
+                    .directArchive(resultSet.getBoolean("direct_archive"))
+                    .build();
 
     private final XnatUserProvider              _provider;
     private final ApplicationContext            _context;

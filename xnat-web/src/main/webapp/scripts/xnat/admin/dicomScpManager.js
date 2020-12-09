@@ -206,6 +206,7 @@ var XNAT = getObject(XNAT || {});
                     $form.find('[name="port"]').val(item.port);
                     $form.find('[name="enabled"]').val(item.enabled);
                     $form.find('[name="customProcessing"]').prop('checked', item.customProcessing).val(item.customProcessing);
+                    $form.find('[name="directArchive"]').prop('checked', item.directArchive).val(item.directArchive);
                 }
 
                 spawneri.render($container);
@@ -234,6 +235,12 @@ var XNAT = getObject(XNAT || {});
                                 var customProcessing$ = $formPanel.find('[name="customProcessing"]');
                                 if (customProcessing$.length) {
                                     customProcessing$[0].value = customProcessing$[0].checked + '';
+                                }
+
+                                // set the value for 'directArchive' on-the-fly
+                                var directArchive$ = $formPanel.find('[name="directArchive"]');
+                                if (directArchive$.length) {
+                                    directArchive$[0].value = directArchive$[0].checked + '';
                                 }
 
                                 console.log(item.id);

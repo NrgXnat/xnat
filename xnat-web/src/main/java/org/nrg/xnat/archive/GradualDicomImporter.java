@@ -53,12 +53,12 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.MalformedURLException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -79,6 +79,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         //noinspection unchecked
         _cache = XDAT.getContextService().getBean(UserProjectCache.class);
         _doCustomProcessing = (Boolean) _parameters.get(CUSTOM_PROC_PARAM);
+        _directArchive = (Boolean) _parameters.get(DIRECT_ARCHIVE_PARAM);
 
         // spring beans
         _mizer = XDAT.getContextService().getBeanSafely(MizerService.class);
@@ -107,11 +108,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             try {
                 // project identifier is expensive, so avoid if possible
                 project = getProject(PrearcUtils.identifyProject(_parameters),
-                        new Callable<XnatProjectdata>() {
-                            public XnatProjectdata call() {
-                                return dicomObjectIdentifier.getProject(dicom);
-                            }
-                        });
+                        () -> dicomObjectIdentifier.getProject(dicom));
             } catch (MalformedURLException e1) {
                 log.error("unable to parse supplied destination flag", e1);
                 throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, e1);
@@ -165,15 +162,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
             final String studyInstanceUID = dicom.getString(Tag.StudyInstanceUID);
             log.trace("Looking for study {} in project {}", studyInstanceUID, null == project ? null : project.getId());
 
-            // Fill a SessionData object in case it is the first upload
-            final File root;
-            if (null == project) {
-                root = new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath());
-            } else {
-                //root = new File(project.getPrearchivePath());
-                root = new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath() + "/" + project.getId());
-            }
-
             final String sessionLabel;
             if (_parameters.containsKey(URIManager.EXPT_LABEL)) {
                 sessionLabel = (String) _parameters.get(URIManager.EXPT_LABEL);
@@ -205,10 +193,22 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 subject = dicomObjectIdentifier.getSubjectLabel(dicom);
             }
 
-            final File timestamp = new File(root, PrearcUtils.makeTimestamp());
+            // Fill a SessionData object in case it is the first upload
+            final File root;
+            final String timestamp = PrearcUtils.makeTimestamp();
+            if (null == project) {
+                root = new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath());
+            } else {
+                if (_directArchive) {
+                    root = new File(project.getRootArchivePath(), project.getCurrentArc());
+                } else {
+                    root = Paths.get(ArcSpecManager.GetInstance().getGlobalPrearchivePath(), project.getId(),
+                            timestamp).toFile();
+                }
+            }
 
             if (null == subject) {
-                log.trace("subject is null for session {}/{}", timestamp, sessionLabel);
+                log.trace("subject is null for session {}/{}", root, sessionLabel);
             }
 
             // Query the cache for an existing session that has this Study Instance UID, project name, and optional modality.
@@ -240,16 +240,16 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
                 initialize.setScan_date(studyDate);
                 initialize.setTag(studyInstanceUID);
-                initialize.setTimestamp(timestamp.getName());
+                initialize.setTimestamp(timestamp);
                 initialize.setStatus(PrearcUtils.PrearcStatus.RECEIVING);
                 initialize.setLastBuiltDate(Calendar.getInstance().getTime());
                 initialize.setSubject(subject);
-                initialize.setUrl((new File(timestamp, sessionLabel)).getAbsolutePath());
+                initialize.setUrl((new File(root, sessionLabel)).getAbsolutePath());
                 initialize.setSource(_parameters.get(URIManager.SOURCE));
                 initialize.setPreventAnon(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_ANON)));
                 initialize.setPreventAutoCommit(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_AUTO_COMMIT)));
 
-                getOrCreate = PrearcDatabase.eitherGetOrCreateSession(initialize, timestamp, shouldAutoArchive(project, dicom));
+                getOrCreate = PrearcDatabase.eitherGetOrCreateSession(initialize, root, shouldAutoArchive(project, dicom));
 
                 if (getOrCreate.isLeft()) {
                     session = getOrCreate.getLeft();
@@ -502,7 +502,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final boolean shouldInclude = filter.shouldIncludeDicomObject(dicom);
         if (log.isDebugEnabled()) {
             final String association = StringUtils.isBlank(filter.getProjectId()) ? "site" : "project " + filter.getProjectId();
-            log.debug("The series import filter for " + association + " indicated a DICOM object from series \"" + dicom.get(Tag.SeriesDescription).getString(dicom.getSpecificCharacterSet(), true) + "\" " + (shouldInclude ? "should" : "shouldn't") + " be included.");
+            log.debug("The series import filter for " + association + " indicated a DICOM object from series \"" +
+                    dicom.get(Tag.SeriesDescription).getString(dicom.getSpecificCharacterSet(), true) + "\" " +
+                    (shouldInclude ? "should" : "shouldn't") + " be included.");
         }
         return shouldInclude;
     }
@@ -528,7 +530,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
         ArcProject arcProject = project.getArcSpecification();
         if (arcProject == null) {
-            log.warn("Tried to get the arc project from project {}, but got null in return. Returning null for the prearchive code, but it's probably not good that the arc project wasn't found.", project.getId());
+            log.warn("Tried to get the arc project from project {}, but got null in return. Returning null for the " +
+                    "prearchive code, but it's probably not good that the arc project wasn't found.", project.getId());
             return null;
         }
         return PrearchiveCode.code(arcProject.getPrearchiveCode());
@@ -568,7 +571,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    private static void write(final DicomObject fmi, final DicomObject dataset, final BufferedInputStream remainder, final File f, final String source) throws ClientException, IOException {
+    private static void write(final DicomObject fmi, final DicomObject dataset, final BufferedInputStream remainder,
+                              final File f, final String source)
+            throws ClientException, IOException {
         IOException ioexception = null;
         final FileOutputStream fos = new FileOutputStream(f);
         final BufferedOutputStream bos = new BufferedOutputStream(fos);
@@ -656,7 +661,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    private static final Logger  logger                  = LoggerFactory.getLogger(GradualDicomImporter.class);
     private static final String  DEFAULT_TRANSFER_SYNTAX = TransferSyntax.ExplicitVRLittleEndian.uid();
     private static final String  RENAME_PARAM            = "rename";
     private static final boolean canDecompress           = initializeCanDecompress();
@@ -666,6 +670,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private final UserI               _user;
     private final Map<String, Object> _parameters;
     private final boolean             _doCustomProcessing;
+    private final boolean             _directArchive;
 
     private TransferSyntax     _transferSyntax;
     private DicomFilterService _filterService;
@@ -680,6 +685,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     public static final String SENDER_ID_PARAM = "Sender-ID";
     public static final String TSUID_PARAM = "Transfer-Syntax-UID";
     public static final String CUSTOM_PROC_PARAM = "Custom-Processing";
+    public static final String DIRECT_ARCHIVE_PARAM = "Direct-Archive";
 
     public final static String NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ = "AfterDicomRead";
     public final static String NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED = "AfterProjectSet";

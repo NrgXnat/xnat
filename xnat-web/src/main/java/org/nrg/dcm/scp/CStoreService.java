@@ -283,9 +283,11 @@ public class CStoreService extends DicomService implements CStoreSCP {
         try {
             try {
                 boolean doCustomProcessing = false;
+                boolean directArchive = false;
                 try {
                     DicomSCPInstance instance = _manager.getDicomSCPInstance(as.getLocalAET(),as.getConnector().getPort());
                     doCustomProcessing = instance.isCustomProcessing();
+                    directArchive = instance.isDirectArchive();
                 }
                 catch(Throwable t){
                     log.error("Failed to get whether the SCP receiver is set up to do custom processing", t);
@@ -298,6 +300,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
                         .put(GradualDicomImporter.RECEIVER_AE_TITLE_PARAM, as.getLocalAET())
                         .put(GradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnector().getPort())
                         .put(GradualDicomImporter.CUSTOM_PROC_PARAM, doCustomProcessing)
+                        .put(GradualDicomImporter.DIRECT_ARCHIVE_PARAM, directArchive)
                         .build();
                 final GradualDicomImporter importer = new GradualDicomImporter(this,
                         userProvider.get(), fw, parameters);

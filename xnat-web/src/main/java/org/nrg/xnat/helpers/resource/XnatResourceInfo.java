@@ -48,6 +48,7 @@ public class XnatResourceInfo implements Serializable {
     private final Date                lastModified;
     private final Date                created;
     private final String              username;
+    private final Boolean             extract;
     private final InputStreamSource   source;
     @Singular
     private final List<String>        tags;

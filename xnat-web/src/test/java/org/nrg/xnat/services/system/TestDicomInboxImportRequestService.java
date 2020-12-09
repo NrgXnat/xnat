@@ -11,6 +11,7 @@ import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.io.IOException;
 import java.util.Map;
@@ -18,9 +19,9 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.Status.*;
 
-@Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestDicomInboxImportRequestServiceConfig.class)
+@Slf4j
 public class TestDicomInboxImportRequestService {
     @Autowired
     public void setDicomInboxImportRequestService(final DicomInboxImportRequestService service) {

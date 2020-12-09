@@ -6,7 +6,9 @@ import org.springframework.core.io.InputStreamSource;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -24,7 +26,20 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
      */
     public static class Builder {
         private Builder() {
-            _resources = new HashMap<>();
+        }
+
+        /**
+         * Specifies whether compressed archives should have their contents extracted by default. Note that this can be
+         * overridden on a per-resource basis by setting {@link XnatResourceInfo#getExtract()} to <b>true</b>.
+         *
+         * @param extractCompressedResourcesByDefault Whether compressed resources should be extracted by default.
+         *
+         * @return The current builder instance.
+         */
+        @SuppressWarnings("unused")
+        public Builder extractCompressedResourcesByDefault(final boolean extractCompressedResourcesByDefault) {
+            _extractCompressedResourcesByDefault.set(extractCompressedResourcesByDefault);
+            return this;
         }
 
         /**
@@ -36,9 +51,7 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
          * @return The current builder instance.
          */
         public Builder resource(final XnatResourceInfo resource) {
-            if (_resources.containsKey(resource.getName())) {
-                throw new RuntimeException("There's already a resource with name " + resource.getName());
-            }
+            validate(resource.getName());
             _resources.put(resource.getName(), resource);
             return this;
         }
@@ -54,9 +67,7 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
          * @return The current builder instance.
          */
         public Builder resource(final String name, final InputStreamSource source) {
-            if (_resources.containsKey(name)) {
-                throw new RuntimeException("There's already a resource with name " + name);
-            }
+            validate(name);
             _resources.put(name, XnatResourceInfo.builder().name(name).source(source).build());
             return this;
         }
@@ -76,9 +87,7 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
          * @return The current builder instance.
          */
         public Builder resource(final String name, final InputStreamSource source, final String format, final String content) {
-            if (_resources.containsKey(name)) {
-                throw new RuntimeException("There's already a resource with name " + name);
-            }
+            validate(name);
             _resources.put(name, XnatResourceInfo.builder().name(name).source(source).format(format).content(content).build());
             return this;
         }
@@ -94,9 +103,7 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
          * @return The current builder instance.
          */
         public Builder resource(final String name, final File file) {
-            if (_resources.containsKey(name)) {
-                throw new RuntimeException("There's already a resource with name " + name);
-            }
+            validate(name);
             _resources.put(name, XnatResourceInfo.builder().name(name).file(file).build());
             return this;
         }
@@ -116,9 +123,7 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
          * @return The current builder instance.
          */
         public Builder resource(final String name, final File file, final String format, final String content) {
-            if (_resources.containsKey(name)) {
-                throw new RuntimeException("There's already a resource with name " + name);
-            }
+            validate(name);
             _resources.put(name, XnatResourceInfo.builder().name(name).file(file).format(format).content(content).build());
             return this;
         }
@@ -133,7 +138,14 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
             return new XnatResourceInfoMap(_resources.values());
         }
 
-        private final Map<String, XnatResourceInfo> _resources;
+        private void validate(final String name) {
+            if (_resources.containsKey(name)) {
+                throw new RuntimeException("There's already a resource with name " + name);
+            }
+        }
+
+        private final Map<String, XnatResourceInfo> _resources                           = new HashMap<>();
+        private final AtomicBoolean                 _extractCompressedResourcesByDefault = new AtomicBoolean();
     }
 
     /**
@@ -144,6 +156,22 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
     public static Builder builder() {
         return new Builder();
     }
+
+    public static XnatResourceInfoMap getFilesAsXnatResourceInfoMap(final Collection<File> files) throws FileNotFoundException {
+        return getFilesAsXnatResourceInfoMap(files, null);
+    }
+
+    public static XnatResourceInfoMap getFilesAsXnatResourceInfoMap(final Collection<File> files, final @Nullable Boolean defaultExtractCompressedResource) throws FileNotFoundException {
+        if (!files.stream().allMatch(File::exists)) {
+            throw new FileNotFoundException("Unable to find the following source files/folders: " + files.stream().filter(file -> !file.exists()).map(File::toString).collect(Collectors.joining(", ")));
+        }
+        final XnatResourceInfoMap map = new XnatResourceInfoMap(files.stream().map(file -> XnatResourceInfo.builder().name(file.getName()).file(file).build()).collect(Collectors.toList()));
+        if (defaultExtractCompressedResource != null) {
+            map.setDefaultExtractCompressedResource(defaultExtractCompressedResource);
+        }
+        return map;
+    }
+
 
     /**
      * Creates a new resource resources object populated with the submitted resources, using the {@link
@@ -188,6 +216,14 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
         super(resources.entrySet().stream().collect(Collectors.toMap(Entry::getKey, entry -> XnatResourceInfo.builder().name(entry.getKey()).source(entry.getValue()).build())));
     }
 
+    public boolean isDefaultExtractCompressedResource() {
+        return _defaultExtractCompressedResource.get();
+    }
+
+    public void setDefaultExtractCompressedResource(final boolean defaultExtractCompressedResource) {
+        _defaultExtractCompressedResource.set(defaultExtractCompressedResource);
+    }
+
     /**
      * Finds the {@link XnatResourceInfo resource} with the specified name. If the name doesn't exist in this
      * container, this method returns <b>null</b>.
@@ -196,6 +232,7 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
      *
      * @return The specified {@link XnatResourceInfo resource} if present, <b>null</b> otherwise.
      */
+    @SuppressWarnings("unused")
     @Nullable
     public XnatResourceInfo findByName(final String name) {
         return get(name);
@@ -208,6 +245,7 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
      *
      * @return All {@link XnatResourceInfo resources} with the specified format value.
      */
+    @SuppressWarnings("unused")
     public Set<XnatResourceInfo> findByFormat(final String format) {
         return values().stream().filter(resource -> StringUtils.equals(resource.getFormat(), format)).collect(Collectors.toSet());
     }
@@ -219,6 +257,7 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
      *
      * @return All {@link XnatResourceInfo resources} with the specified content value.
      */
+    @SuppressWarnings("unused")
     public Set<XnatResourceInfo> findByContent(final String content) {
         return values().stream().filter(resource -> StringUtils.equals(resource.getContent(), content)).collect(Collectors.toSet());
     }
@@ -231,7 +270,10 @@ public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
      *
      * @return All {@link XnatResourceInfo resources} with the specified format and content values.
      */
+    @SuppressWarnings("unused")
     public Set<XnatResourceInfo> findByContent(final String format, final String content) {
         return values().stream().filter(resource -> StringUtils.equals(resource.getFormat(), format) && StringUtils.equals(resource.getContent(), content)).collect(Collectors.toSet());
     }
+
+    private final AtomicBoolean _defaultExtractCompressedResource = new AtomicBoolean();
 }

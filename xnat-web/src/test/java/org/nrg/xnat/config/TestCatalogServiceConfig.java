@@ -2,12 +2,23 @@ package org.nrg.xnat.config;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import org.mockito.Mockito;
 import org.nrg.framework.services.ContextService;
+import org.nrg.framework.services.NrgEventService;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.services.SerializerService;
+import org.nrg.framework.test.OrmTestConfiguration;
+import org.nrg.prefs.configuration.NrgPrefsConfiguration;
+import org.nrg.prefs.resolvers.PreferenceEntityResolver;
+import org.nrg.prefs.resolvers.SimplePrefsEntityResolver;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.prefs.services.PreferenceService;
+import org.nrg.test.utils.TestBeans;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xnat.services.archive.CatalogService;
@@ -17,6 +28,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.xml.sax.SAXNotRecognizedException;
@@ -27,33 +39,57 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXTransformerFactory;
+import java.io.IOException;
+import reactor.bus.EventBus;
 
 @Configuration
-public class TestConfig {
+@Import({OrmTestConfiguration.class, NrgPrefsConfiguration.class})
+public class TestCatalogServiceConfig {
     @Bean
-    public CatalogService catalogService(final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                         final CacheManager cacheManager,
-                                         final UserDataCache userDataCache) {
-        return new DefaultCatalogService(namedParameterJdbcTemplate, cacheManager, userDataCache);
+    public JsonNode siteMap() throws IOException {
+        return TestBeans.getDefaultTestSiteMap();
     }
 
     @Bean
-    public DefaultCatalogService catalogServiceNoRemote(final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+    public PreferenceEntityResolver defaultResolver(final PreferenceService service, final JsonNode siteMap) throws IOException {
+        return new SimplePrefsEntityResolver(service, siteMap);
+    }
+
+    @Bean
+    public EventBus eventBus() {
+        return EventBus.create();
+    }
+
+    @Bean
+    public NrgEventServiceI eventService(final EventBus eventBus) {
+        return new NrgEventService(eventBus);
+    }
+
+    @Bean
+    public SiteConfigPreferences siteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService) {
+        return new SiteConfigPreferences(preferenceService, eventService, null, null);
+    }
+
+    @Bean
+    public CatalogService catalogService(final SiteConfigPreferences preferences,
+                                         final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+                                         final CacheManager cacheManager,
+                                         final UserDataCache userDataCache) {
+        return new DefaultCatalogService(preferences, namedParameterJdbcTemplate, cacheManager, userDataCache);
+    }
+
+    @Bean
+    public DefaultCatalogService catalogServiceNoRemote(final SiteConfigPreferences preferences,
+                                                        final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
                                                         final CacheManager cacheManager,
                                                         final UserDataCache userDataCache) {
         // return type DefaultCatalogService so we can re-set RemoteFilesService to null
-        return new DefaultCatalogService(namedParameterJdbcTemplate, cacheManager, userDataCache);
+        return new DefaultCatalogService(preferences, namedParameterJdbcTemplate, cacheManager, userDataCache);
     }
-
 
     @Bean
     public RemoteFilesService remoteFilesService() {
         return Mockito.mock(RemoteFilesService.class);
-    }
-
-    @Bean
-    public NamedParameterJdbcTemplate namedParameterJdbcTemplate() {
-        return Mockito.mock(NamedParameterJdbcTemplate.class);
     }
 
     @Bean

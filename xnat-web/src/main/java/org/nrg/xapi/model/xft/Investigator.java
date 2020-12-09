@@ -37,7 +37,7 @@ public class Investigator extends BaseModel<XnatInvestigatordata> implements Xna
         setEmail(email);
         setPhone(phone);
         setPrimaryProjects(primaryProjects);
-        setProjects(projects);
+        setInvestigatorProjects(projects);
     }
 
     public Investigator(final XnatInvestigatordata investigator) {
@@ -186,5 +186,5 @@ public class Investigator extends BaseModel<XnatInvestigatordata> implements Xna
     @Singular
     private Set<String> primaryProjects;
     @Singular
-    private Set<String> projects;
+    private Set<String> investigatorProjects;
 }

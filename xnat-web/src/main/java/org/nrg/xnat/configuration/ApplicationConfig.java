@@ -33,8 +33,6 @@ import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveOperationHandlerResolv
 import org.nrg.xnat.initialization.InitializingTask;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
 import org.nrg.xnat.preferences.AsyncOperationsPreferences;
-import org.nrg.xnat.processor.importer.ProcessorImporterHandlerA;
-import org.nrg.xnat.processor.importer.ProcessorImporterMap;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.XnatRestletExtensionsBean;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
@@ -74,7 +72,7 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnat.eventservice.daos", "org.nrg.xnat.eventservice.events", "org.nrg.xnat.eventservice.listeners",
                 "org.nrg.xnat.helpers.merge", "org.nrg.xnat.helpers.processing", "org.nrg.xnat.helpers.resolvers",
                 "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.node", "org.nrg.xnat.preferences", "org.nrg.xnat.processor.dao",
-                "org.nrg.xnat.processor.importer", "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processors",
+                "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processors",
                 "org.nrg.xnat.task", "org.nrg.xnat.tracking"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @EnableCaching
@@ -218,11 +216,6 @@ public class ApplicationConfig {
     @Bean
     public PrearchiveOperationHandlerResolver prearchiveOperationHandlerResolver(final NrgEventServiceI eventService, final XnatUserProvider receivedFileUserProvider, final DicomInboxImportRequestService importRequestService) {
         return new DefaultPrearchiveOperationHandlerResolver(eventService, receivedFileUserProvider, importRequestService);
-    }
-
-    @Bean
-    public ProcessorImporterMap processorImporterMap(final List<ProcessorImporterHandlerA> handlers) throws ConfigurationException, IOException, ClassNotFoundException {
-        return new ProcessorImporterMap(new HashSet<>(Collections.singletonList("org.nrg.xnat.processor.importer")), handlers);
     }
 
     @Bean

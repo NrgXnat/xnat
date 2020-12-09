@@ -2,10 +2,10 @@ package org.nrg.xnat.processors;
 
 import org.dcm4che2.data.DicomObject;
 import org.nrg.action.ServerException;
+import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.dicom.mizer.service.MizerService;
-import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
 
 import java.util.List;
 import java.util.Map;
@@ -25,8 +25,8 @@ public abstract class AbstractArchiveProcessor implements ArchiveProcessor {
     }
 
     protected boolean processorConfiguredForDataComingInToThisScpReceiverAndProject(final SessionData sessionData, ArchiveProcessorInstance instance, Map<String, Object> aeParameters){
-        Object aeTitle = aeParameters.get(ProcessorGradualDicomImporter.RECEIVER_AE_TITLE_PARAM);
-        Object port = aeParameters.get(ProcessorGradualDicomImporter.RECEIVER_PORT_PARAM);
+        Object aeTitle = aeParameters.get(GradualDicomImporter.RECEIVER_AE_TITLE_PARAM);
+        Object port = aeParameters.get(GradualDicomImporter.RECEIVER_PORT_PARAM);
         String aeAndPort = null;
         if(aeTitle!=null && port!=null){
             aeAndPort = aeTitle.toString()+':'+port.toString();

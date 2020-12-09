@@ -24,7 +24,7 @@ import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xnat.archive.operations.ProcessorGradualDicomImportOperation;
+import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.helpers.ArchiveProcessorInstanceSummary;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
@@ -272,7 +272,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
 
     private void checkForValidProject(final ArchiveProcessorInstance processor, final String location) throws DataFormatException {
         List<String> projects = processor.getProjectIdsList();
-        if (StringUtils.equals(location, ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ) && projects != null && !projects.isEmpty()){
+        if (StringUtils.equals(location, GradualDicomImporter.NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ) && projects != null && !projects.isEmpty()){
             throw new DataFormatException("User " + getSessionUser().getUsername() + " tried to create processor based on project before project is set: " + StringUtils.join(projects, ", "));
         }
     }

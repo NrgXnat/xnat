@@ -4,17 +4,14 @@ package org.nrg.xnat.eventservice.events;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImagesessiondataI;
-import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Service
 @XnatEventServiceEvent(name="SessionEvent")
-public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatImagesessiondataI> {
+public class SessionEvent extends CombinedEventServiceEvent<XnatImagesessiondataI> {
 
     public enum Status {CREATED, DELETED};
 
@@ -41,9 +38,4 @@ public class SessionEvent extends CombinedEventServiceEvent<SessionEvent, XnatIm
 
     @Override
     public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
-
-    @Override
-    public EventServiceListener getInstance() {
-        return new SessionEvent();
-    }
 }

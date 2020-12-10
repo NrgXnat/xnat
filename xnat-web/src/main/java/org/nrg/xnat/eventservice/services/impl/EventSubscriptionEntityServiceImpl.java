@@ -158,10 +158,10 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
             } else {
                     listenerErrorMessage = "Event class is not a listener and no custom listener found.";
             }
-            if(listenerClazz == null || !EventServiceListener.class.isAssignableFrom(listenerClazz) || contextService.getBean(listenerClazz) == null){
-                listenerErrorMessage = "Could not find bean of type EventServiceListener from: " + listenerClazz != null ? listenerClazz.getName() : "unknown";
-                throw new NoSuchBeanDefinitionException(listenerErrorMessage);
-            }
+            //if(listenerClazz == null || !EventServiceListener.class.isAssignableFrom(listenerClazz) ){
+            //    listenerErrorMessage = "Could not find bean of type EventServiceListener from: " + listenerClazz != null ? listenerClazz.getName() : "unknown";
+            //    throw new NoSuchBeanDefinitionException(listenerErrorMessage);
+            //}
         } catch (NoSuchBeanDefinitionException e) {
             log.error(listenerErrorMessage + "\n" + e.getMessage());
             throw new SubscriptionValidationException(listenerErrorMessage + "\n" + e.getMessage());

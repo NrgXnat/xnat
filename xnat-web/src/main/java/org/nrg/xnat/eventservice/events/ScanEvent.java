@@ -3,16 +3,13 @@ package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImagescandataI;
-import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
 @XnatEventServiceEvent(name="ScanEvent")
-public class ScanEvent extends CombinedEventServiceEvent<ScanEvent, XnatImagescandataI>  {
+public class ScanEvent extends CombinedEventServiceEvent<XnatImagescandataI>  {
 
     public enum Status {CREATED};
 
@@ -39,9 +36,4 @@ public class ScanEvent extends CombinedEventServiceEvent<ScanEvent, XnatImagesca
 
     @Override
     public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
-
-    @Override
-    public EventServiceListener getInstance() {
-        return new ScanEvent();
-    }
 }

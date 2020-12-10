@@ -2,16 +2,13 @@ package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImageassessordataI;
-import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
 @XnatEventServiceEvent(name="ImageAssessorEvent")
-public class ImageAssessorEvent extends CombinedEventServiceEvent<SessionEvent, XnatImageassessordataI> {
+public class ImageAssessorEvent extends CombinedEventServiceEvent<XnatImageassessordataI> {
 
     public enum Status {CREATED, UPDATED};
 
@@ -39,8 +36,4 @@ public class ImageAssessorEvent extends CombinedEventServiceEvent<SessionEvent, 
     @Override
     public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
 
-    @Override
-    public EventServiceListener getInstance() {
-        return new ImageAssessorEvent();
-    }
 }

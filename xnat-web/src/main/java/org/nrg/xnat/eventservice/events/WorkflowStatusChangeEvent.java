@@ -5,17 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
-import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Service
 @XnatEventServiceEvent(name="WorkflowStatusChangeEvent")
-public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<WorkflowStatusChangeEvent, WorkflowStatusEvent> {
+public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<WorkflowStatusEvent> {
 
     public enum Status {CHANGED}
 
@@ -48,11 +45,6 @@ public class WorkflowStatusChangeEvent extends CombinedEventServiceEvent<Workflo
 
     @Override
     public List<String> getStatiStates() { return Arrays.stream(WorkflowStatusChangeEvent.Status.values()).map(WorkflowStatusChangeEvent.Status::name).collect(Collectors.toList()); }
-
-    @Override
-    public EventServiceListener getInstance() {
-        return new WorkflowStatusChangeEvent();
-    }
 
     @Override
     public Boolean filterablePayload() { return true;}

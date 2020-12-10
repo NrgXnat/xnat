@@ -4,17 +4,14 @@ package org.nrg.xnat.eventservice.events;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatAbstractprojectassetI;
-import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Service
 @XnatEventServiceEvent(name="ProjectAsset")
-public class ProjectAssetEvent extends CombinedEventServiceEvent<ProjectAssetEvent, XnatAbstractprojectassetI> {
+public class ProjectAssetEvent extends CombinedEventServiceEvent<XnatAbstractprojectassetI> {
 
     public enum Status {CREATED};
 
@@ -42,8 +39,4 @@ public class ProjectAssetEvent extends CombinedEventServiceEvent<ProjectAssetEve
     @Override
     public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
 
-    @Override
-    public EventServiceListener getInstance() {
-        return new ProjectAssetEvent();
-    }
 }

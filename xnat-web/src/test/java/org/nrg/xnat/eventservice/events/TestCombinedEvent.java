@@ -2,14 +2,13 @@ package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImagesessiondataI;
-import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @XnatEventServiceEvent(name="TestCombinedEvent")
-public class TestCombinedEvent extends CombinedEventServiceEvent<TestCombinedEvent, XnatImagesessiondataI>  {
+public class TestCombinedEvent extends CombinedEventServiceEvent<XnatImagesessiondataI>  {
     final String displayName = "Test Combined Event";
     final String description ="Combined Event tested.";
 
@@ -39,10 +38,5 @@ public class TestCombinedEvent extends CombinedEventServiceEvent<TestCombinedEve
 
     @Override
     public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
-
-    @Override
-    public EventServiceListener getInstance() {
-        return new TestCombinedEvent();
-    }
 
 }

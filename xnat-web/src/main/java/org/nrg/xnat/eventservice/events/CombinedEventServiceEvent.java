@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
-// ** Extend this class to implement a Reactor Event and Listener in one class ** //
+// ** Extend this class to implement a Reactor Event Service class ** //
 @Slf4j
 public abstract class CombinedEventServiceEvent<EventObjectT>
         implements EventServiceEvent<EventObjectT> {

@@ -153,7 +153,8 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                 } catch (ClassNotFoundException e) {
                     listenerErrorMessage = "Could not load custom listerner class: " + subscription.customListenerId();
                     throw new SubscriptionValidationException(listenerErrorMessage);
-                }            } else if(EventServiceListener.class.isAssignableFrom(clazz)) {
+                }
+            } else if(EventServiceListener.class.isAssignableFrom(clazz)) {
                 listenerClazz = clazz;
             } else {
                     listenerErrorMessage = "Event class is not a listener and no custom listener found.";
@@ -238,6 +239,10 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
             if(listener == null && EventServiceListener.class.isAssignableFrom(eventClazz)) {
             // Is event class a combined event/listener
                 listener = componentManager.getListener(eventType);
+            }
+            if(listener == null){
+                // Default to the CombinedEventServiceListener
+                listener = componentManager.getListener("CombinedEventServiceListener");
             }
             if(listener != null) {
                 EventServiceListener uniqueListener = listener.getInstance();

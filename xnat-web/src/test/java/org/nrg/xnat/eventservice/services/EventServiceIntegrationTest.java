@@ -42,7 +42,7 @@ import org.nrg.xnat.eventservice.events.SubjectEvent;
 import org.nrg.xnat.eventservice.events.TestCombinedEvent;
 import org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.listeners.TestListener;
+import org.nrg.xnat.eventservice.listeners.TestCombinedEventServiceListener;
 import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
 import org.nrg.xnat.eventservice.model.ActionProvider;
@@ -105,7 +105,7 @@ public class EventServiceIntegrationTest {
     @Autowired
     private EventBus                          eventBus;
     @Autowired
-    private TestListener                      testListener;
+    private TestCombinedEventServiceListener testListener;
     @Autowired
     private EventServiceActionProvider        testAction;
     @Autowired
@@ -162,7 +162,7 @@ public class EventServiceIntegrationTest {
         project1CreatedSubscription = SubscriptionCreator.builder()
                                                          .name("TestSubscription")
                                                          .active(true)
-                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestListener")
+                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestCombinedEventServiceListener")
                                                          .actionKey("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction")
                                                          .eventFilter(project1EventFilterCreator)
                                                          .actAsEventUser(false)
@@ -176,7 +176,7 @@ public class EventServiceIntegrationTest {
         project2CreatedSubscription = SubscriptionCreator.builder()
                                                          .name("TestSubscription2")
                                                          .active(true)
-                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestListener")
+                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestCombinedEventServiceListener")
                                                          .actionKey("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction")
                                                          .eventFilter(project2EventFilterCreator)
                                                          .actAsEventUser(false)
@@ -223,7 +223,7 @@ public class EventServiceIntegrationTest {
 
         when(mockComponentManager.getInstalledEvents()).thenReturn(new ArrayList<>(Arrays.asList(new SampleEvent())));
 
-        when(mockComponentManager.getInstalledListeners()).thenReturn(new ArrayList<>(Arrays.asList(new TestListener())));
+        when(mockComponentManager.getInstalledListeners()).thenReturn(new ArrayList<>(Arrays.asList(new TestCombinedEventServiceListener())));
 
         // Mock action
         when(mockEventServiceLoggingAction.getName()).thenReturn("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction");
@@ -859,7 +859,7 @@ public class EventServiceIntegrationTest {
 
     }
 
-    @Ignore("Fails with error message: Could not load TestCombinedEvent from componentManager Expected: not null but: was null")
+    //@Ignore("Fails with error message: Could not load TestCombinedEvent from componentManager Expected: not null but: was null")
     @Test
     @DirtiesContext
     public void mismatchMrSubscriptionToCtSession() throws Exception {

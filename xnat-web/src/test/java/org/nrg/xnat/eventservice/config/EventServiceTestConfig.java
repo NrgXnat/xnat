@@ -24,7 +24,7 @@ import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
 import org.nrg.xnat.eventservice.entities.*;
 import org.nrg.xnat.eventservice.events.*;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.listeners.TestListener;
+import org.nrg.xnat.eventservice.listeners.TestCombinedEventServiceListener;
 import org.nrg.xnat.eventservice.services.*;
 import org.nrg.xnat.eventservice.services.impl.*;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -119,8 +119,8 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public TestListener testListener() {
-        return new TestListener();
+    public TestCombinedEventServiceListener testListener() {
+        return new TestCombinedEventServiceListener();
     }
 
     @Bean

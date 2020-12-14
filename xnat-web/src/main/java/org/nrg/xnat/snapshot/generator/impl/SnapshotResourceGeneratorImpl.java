@@ -1,7 +1,6 @@
 package org.nrg.xnat.snapshot.generator.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.bean.CatDcmcatalogBean;
 import org.nrg.xdat.bean.CatDcmentryBean;
 import org.nrg.xdat.model.CatEntryI;
@@ -150,12 +149,7 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
     }
 
     @Override
-    public Optional<FileResource> createSnaphot( String sessionId, String scanId) throws Exception {
-        return createMontage( sessionId, scanId, 1, 1);
-    }
-
-    @Override
-    public Optional<FileResource> createMontage( String sessionId, String scanId, int nRows, int nCols) throws Exception {
+    public Optional<FileResource> createSnaphot( String sessionId, String scanId, int nRows, int nCols) throws Exception {
         Optional<FileResource> montageFileResource = Optional.ofNullable( null);
         if( hasSnapshot( sessionId, scanId)) {
             final String name = getSnapshotResourceName( sessionId, scanId, nRows, nCols, getFormat());
@@ -170,28 +164,20 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
     }
 
     @Override
-    public Optional<Pair<FileResource, FileResource>> createSnapshotAndThumbnail( String sessionId, String scanId, float scaleRows, float scaleCols) throws Exception {
-        return createMontageAndThumbnail( sessionId, scanId, 1, 1, scaleRows, scaleCols);
-    }
-
-    @Override
-    public Optional<Pair<FileResource, FileResource>> createMontageAndThumbnail( String sessionId, String scanId, int nRows, int nCols, float scaleRows, float scaleCols) throws Exception {
-        Optional<Pair<FileResource, FileResource>> optionalPair = Optional.ofNullable( null);
-        log.debug("Create montage and thumbnail: sessionId: {}, scanId: {} nrows: {}, ncols: {}, scaleRows: {}, scaleCols: {}", sessionId, scanId, nRows, nCols, scaleRows, scaleCols);
+    public Optional< FileResource> createThumbnail( String sessionId, String scanId, int nRows, int nCols, float scaleRows, float scaleCols) throws Exception {
+        Optional< FileResource> fileResource = Optional.ofNullable( null);
+        log.debug("Create thumbnail montage: sessionId: {}, scanId: {} nrows: {}, ncols: {}, scaleRows: {}, scaleCols: {}", sessionId, scanId, nRows, nCols, scaleRows, scaleCols);
         if( hasSnapshot( sessionId, scanId)) {
 
-            Path montageFile = tmpRoot.resolve( getSnapshotResourceName( sessionId, scanId, nRows, nCols, getFormat()));
             Path thumbnailFile = tmpRoot.resolve( getThumbnailResourceName( sessionId, scanId, nRows, nCols, getFormat()));
             BufferedImage montageImage = montageGenerator.generate(files, nSlices, nRows, nCols);
-            BufferedImage thumbnailImage = thumbnailGenerator.rescale(montageImage, scaleRows, scaleCols);
+            BufferedImage thumbnailImage = thumbnailGenerator.rescale( montageImage, scaleRows, scaleCols);
 
-            writeImage(montageFile.toFile(), montageImage);
             writeImage(thumbnailFile.toFile(), thumbnailImage);
-            FileResource montageFileResource = new FileResource( montageFile, getSnapshotContentName( sessionId, scanId, nRows, nCols), getFormat());
             FileResource thumbnailFileResource = new FileResource( thumbnailFile, getThumbnailContentName( sessionId, scanId, nRows, nCols), getFormat());
-            optionalPair = Optional.of( Pair.of( montageFileResource, thumbnailFileResource));
+            fileResource = Optional.of( thumbnailFileResource);
         }
-        return optionalPair;
+        return fileResource;
     }
 
     public String getFormat() { return "gif";}

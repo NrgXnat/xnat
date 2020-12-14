@@ -1,6 +1,5 @@
 package org.nrg.xnat.snapshot.services;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xnat.snapshot.FileResource;
 
 import java.util.Optional;
@@ -20,5 +19,6 @@ public interface SnapshotGenerationService {
      *
      * @return The URI to the specified snapshot.
      */
-    Optional<Pair<FileResource, FileResource>> getSnapshotAndThumbnail(final String sessionId, final String scanId, final int rows, int cols, float scaleRows, float scalCols) throws Exception;
+    Optional< FileResource> getSnapshot(final String sessionId, final String scanId, final int rows, int cols) throws Exception;
+    Optional< FileResource> getThumbnail(final String sessionId, final String scanId, final int rows, int cols, float scaleRows, float scalCols) throws Exception;
 }

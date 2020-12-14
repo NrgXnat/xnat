@@ -6,7 +6,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.NotFoundException;
@@ -45,15 +44,20 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
         _resolver = resolver;
     }
 
-    @ApiOperation(value = "Get or generate a single snapshot.")
+    @ApiOperation(value = "Get a single image or montage of full-size images from the scan. Generate the resource if necessary.")
     @ApiResponses({@ApiResponse(code = 200, message = "Snapshot located or generated and returned."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The session or scan requested doesn't exist."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/experiments/{session}/scan/{scanId}/snapshot", "/projects/{project}/experiments/{session}/scan/{scanId}/snapshot", "/projects/{project}/subjects/{subject}/experiments/{session}/scan/{scanId}/snapshot",
-                                 "/experiments/{session}/scan/{scanId}/snapshot/{view}", "/projects/{project}/experiments/{session}/scan/{scanId}/snapshot/{view}", "/projects/{project}/subjects/{subject}/experiments/{session}/scan/{scanId}/snapshot/{view}"},
-                        produces = {MediaType.IMAGE_GIF_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE},
-                        method = RequestMethod.GET, restrictTo = Read)
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 404, message = "The session or scan requested doesn't exist."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {
+            "/experiments/{session}/scan/{scanId}/snapshot",
+            "/projects/{project}/experiments/{session}/scan/{scanId}/snapshot",
+            "/projects/{project}/subjects/{subject}/experiments/{session}/scan/{scanId}/snapshot",
+            "/experiments/{session}/scan/{scanId}/snapshot/{view}",
+            "/projects/{project}/experiments/{session}/scan/{scanId}/snapshot/{view}",
+            "/projects/{project}/subjects/{subject}/experiments/{session}/scan/{scanId}/snapshot/{view}"},
+            produces = {MediaType.IMAGE_GIF_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE},
+            method = RequestMethod.GET, restrictTo = Read)
     public ResponseEntity<Resource> getSnapshot(final @PathVariable(required = false) @Project String project,
                                                 final @PathVariable(required = false) @Subject String subject,
                                                 final @PathVariable @Experiment String session,
@@ -62,37 +66,66 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
         return ResponseEntity.ok().contentType(MediaType.IMAGE_GIF).body(new FileSystemResource(getSnapshotFile(project, subject, session, scanId, view)));
     }
 
+    @ApiOperation(value = "Get a single thumbnail or montage of thumbnails. Generate the resource if necessary.")
+    @ApiResponses({@ApiResponse(code = 200, message = "Thumbnail located or generated and returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 404, message = "The session or scan requested doesn't exist."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {
+            "/experiments/{session}/scan/{scanId}/thumbnail",
+            "/projects/{project}/experiments/{session}/scan/{scanId}/thumbnail",
+            "/projects/{project}/subjects/{subject}/experiments/{session}/scan/{scanId}/thumbnail",
+            "/experiments/{session}/scan/{scanId}/thumbnail/{view}",
+            "/projects/{project}/experiments/{session}/scan/{scanId}/thumbnail/{view}",
+            "/projects/{project}/subjects/{subject}/experiments/{session}/scan/{scanId}/thumbnail/{view}"},
+            produces = {MediaType.IMAGE_GIF_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE},
+            method = RequestMethod.GET, restrictTo = Read)
+    public ResponseEntity<Resource> getThumbnail(final @PathVariable(required = false) @Project String project,
+                                                 final @PathVariable(required = false) @Subject String subject,
+                                                 final @PathVariable @Experiment String session,
+                                                 final @PathVariable String scanId,
+                                                 final @PathVariable(required = false) String view) throws Exception {
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_GIF).body(new FileSystemResource( getThumbnailFile(project, subject, session, scanId, view)));
+    }
+
     private File getSnapshotFile(final String project, final String subject, final String session, final String scanId, final String view) throws Exception {
-        final boolean isThumbnail     = StringUtils.equalsIgnoreCase(view, THUMBNAIL);
-        final boolean isThumbnailView = isThumbnail || StringUtils.endsWith(view, "_t");
-        final boolean isGridView      = StringUtils.isNotBlank(view) && !isThumbnail;
-        final String  gridView;
-        if (isGridView) {
-            gridView = isThumbnailView ? StringUtils.removeEnd(view, "_t") : view;
-            log.debug("Getting snapshot for project {} subject {} session {} scan {} with {} grid view", StringUtils.defaultIfBlank(project, "none"), StringUtils.defaultIfBlank(subject, "none"), session, scanId, view);
-        } else {
-            gridView = null;
-            log.debug("Getting snapshot for project {} subject {} session {} scan {}", StringUtils.defaultIfBlank(project, "none"), StringUtils.defaultIfBlank(subject, "none"), session, scanId);
-        }
-        GridviewDimensions gridviewDimensions = new GridviewDimensions( gridView);
+        GridviewDimensions gridviewDimensions = new GridviewDimensions( view);
 
         final String sessionId = getExperimentId(project, subject, session);
         if (StringUtils.isBlank(sessionId)) {
             throw new NotFoundException(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, session);
         }
 
-        final Optional<Pair<FileResource, FileResource>> images = _snapshotService.getSnapshotAndThumbnail( sessionId, scanId, gridviewDimensions.rows, gridviewDimensions.cols, 0.5f, 0.5f);
-        String resourceType =  isThumbnailView? "thumbnail" : "snapshot";
-        FileResource resource;
+        Optional< FileResource> fileResource = _snapshotService.getSnapshot( session, scanId, gridviewDimensions.rows, gridviewDimensions.cols);
 
-        if( images.isPresent()) {
-            resource = isThumbnailView ? images.get().getRight() : images.get().getLeft();
+        if( fileResource.isPresent()) {
+            File resource = fileResource.get().getFile();
             if (resource != null) {
-                log.debug("Snapshot path for scan {} of session {} with grid view {} found at path {}", scanId, sessionId, StringUtils.defaultIfBlank(view, "none"), resource.getRoot());
-                return resource.getFile();
+                log.debug("Snapshot path for scan {} of session {} with grid view {} found at path {}", scanId, sessionId, StringUtils.defaultIfBlank(view, "none"), fileResource.get().getRoot());
+                return resource;
             }
         }
-        throw new NotFoundException( resourceType, String.format("SessionId: %s, ScanId: %s", sessionId, scanId));
+        throw new NotFoundException( "snapshot", String.format("SessionId: %s, ScanId: %s", sessionId, scanId));
+    }
+
+    private File getThumbnailFile(final String project, final String subject, final String session, final String scanId, final String view) throws Exception {
+        GridviewDimensions gridviewDimensions = new GridviewDimensions( view);
+
+        final String sessionId = getExperimentId(project, subject, session);
+        if (StringUtils.isBlank(sessionId)) {
+            throw new NotFoundException(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, session);
+        }
+
+        Optional< FileResource> fileResource = _snapshotService.getThumbnail( session, scanId, gridviewDimensions.rows, gridviewDimensions.cols, 0.5f, 0.5f);
+
+        if( fileResource.isPresent()) {
+            File resource = fileResource.get().getFile();
+            if (resource != null) {
+                log.debug("Thumbnail path for scan {} of session {} with grid view {} found at path {}", scanId, sessionId, StringUtils.defaultIfBlank(view, "none"), fileResource.get().getRoot());
+                return resource;
+            }
+        }
+        throw new NotFoundException( "thumbnail", String.format("SessionId: %s, ScanId: %s", sessionId, scanId));
     }
 
     private String getExperimentId(final String project, final String subject, final String experiment) throws DataFormatException, NotFoundException {

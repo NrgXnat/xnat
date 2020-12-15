@@ -1445,9 +1445,9 @@ autoRunSettings:
     contentType: json
     url: /xapi/pipelines
     contents:
-        autoRun:
+        autoRunEnabled:
             kind: panel.input.switchbox
-            name: autoRun
+            name: autoRunEnabled
             label: Launch AutoRun
             description: >
                 Indicates whether XNAT should launch the AutoRun pipeline as new sessions are archived. When enabled, you must

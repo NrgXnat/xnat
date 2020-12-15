@@ -11,8 +11,10 @@ import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.NotFoundException;
+import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatEntryI;
+import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.security.UserI;
@@ -159,12 +161,24 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
     // TODO: For now this just returns the admin user so all resources will be created by admin until this can be better implemented.
     private UserI getResourceOwner(final String sessionId) {
         log.debug("Requested owner of image session {} but I'm just returning the admin user for now", sessionId);
-        return _provider.get();
+        return getValidUser(XnatExperimentdata.getXnatExperimentdatasById(sessionId, _provider.get(), false));
     }
 
     // TODO: For now this just returns the admin user so all resources will be created by admin until this can be better implemented.
     private UserI getResourceOwner(final XnatResourcecatalog catalog) {
         log.debug("Requested owner of resource catalog {} but I'm just returning the admin user for now", catalog.getXnatAbstractresourceId());
+        return getValidUser(catalog);
+    }
+
+    private UserI getValidUser(final BaseElement element) {
+        final UserI insertUser = element.getInsertUser();
+        if (insertUser != null) {
+            return insertUser;
+        }
+        final UserI activateUser = element.getUser();
+        if (activateUser != null) {
+            return activateUser;
+        }
         return _provider.get();
     }
 

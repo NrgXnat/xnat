@@ -1,14 +1,23 @@
 package org.nrg.xnat.snapshot.generator.impl;
 
+import static org.nrg.xnat.snapshot.generator.SnapshotResourceGenerator.*;
+
+import lombok.Builder;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
+import org.nrg.xapi.exceptions.InitializationException;
+import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatDcmcatalogBean;
 import org.nrg.xdat.bean.CatDcmentryBean;
-import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.snapshot.FileResource;
 import org.nrg.xnat.snapshot.generator.SnapshotResourceGenerator;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -16,10 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -28,87 +34,148 @@ import java.util.stream.Collectors;
  * This version creates the files in a temporary directory. Make sure to delete them when done.
  *
  * Assumes the scan catalog contains a z-dimension attribute and gives up if it is absent.
- *
  */
+@Service
 @Slf4j
 public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements SnapshotResourceGenerator {
-    private final MontageGenerator montageGenerator;
-    private final ThumbnailGenerator thumbnailGenerator;
-    private final CatalogService catalogService;
-
-    private boolean hasSnapshot;
-    private String sessionId;
-    private String scanId;
-    private Path tmpRoot;
-    private Path dicomRootPath;
-    private List<String> files;
-    private int nSlices;
-
-    public SnapshotResourceGeneratorImpl(CatalogService catalogService) throws IOException {
+    @Autowired
+    public SnapshotResourceGeneratorImpl(final CatalogService catalogService) throws IOException {
         super();
-        this.hasSnapshot = false;
-        this.catalogService = catalogService;
-        this.montageGenerator = new MontageGenerator();
-        this.thumbnailGenerator = new ThumbnailGenerator();
-        this.tmpRoot = Files.createTempDirectory( "snapshotGen");
+        _catalogService = catalogService;
+        _tmpRoot = Files.createTempDirectory("snapshotGen");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional<FileResource> createSnapshot(final String sessionId, final String scanId, final int nRows, final int nCols) throws InitializationException, IOException {
+        if (isUnsnapshottable(sessionId, scanId)) {
+            return Optional.empty();
+        }
+
+        log.debug("Creating snapshot for session {} scan {} with {} rows and {} columns", sessionId, scanId, nRows, nCols);
+
+        final SnapshotAttributes attributes   = getAttributes(sessionId, scanId);
+        final Path               montageFile  = _tmpRoot.resolve(getSnapshotResourceName(sessionId, scanId, nRows, nCols, getFormat()));
+        final BufferedImage      montageImage = new MontageGenerator().generate(attributes.getFiles(), attributes.getNSlices(), nRows, nCols);
+
+        writeImage(montageFile.toFile(), montageImage);
+        return Optional.of(new FileResource(montageFile, getSnapshotContentName(nRows, nCols), getFormat()));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional<FileResource> createThumbnail(final String sessionId, final String scanId, final int nRows, final int nCols, final float scaleRows, final float scaleCols) throws InitializationException, IOException {
+        if (isUnsnapshottable(sessionId, scanId)) {
+            return Optional.empty();
+        }
+
+        log.debug("Creating thumbnail for session {} scan {} with {} rows and {} columns, scaling rows by {} and columns by {}", sessionId, scanId, nRows, nCols, scaleRows, scaleCols);
+
+        final SnapshotAttributes attributes     = getAttributes(sessionId, scanId);
+        final Path               thumbnailFile  = _tmpRoot.resolve(getThumbnailResourceName(sessionId, scanId, nRows, nCols, getFormat()));
+        final BufferedImage      montageImage   = new MontageGenerator().generate(attributes.getFiles(), attributes.getNSlices(), nRows, nCols);
+        final BufferedImage      thumbnailImage = new ThumbnailGenerator().rescale(montageImage, scaleRows, scaleCols);
+
+        writeImage(thumbnailFile.toFile(), thumbnailImage);
+        return Optional.of(new FileResource(thumbnailFile, getThumbnailContentName(nRows, nCols), getFormat()));
     }
 
     /**
      * Returns true if this generator can create snapshots for this scan and initializes the generator if necessary.
      *
-     * @param sessionId
-     * @param scanId
-     * @return
-     * @throws Exception
+     * @param sessionId The ID of the session to check
+     * @param scanId    The ID of the scan to check
+     *
+     * @return Returns true if the generated can create snapshots for this scan
      */
-    public boolean hasSnapshot( final String sessionId, final String scanId) throws Exception {
-        if( isKnownScan( sessionId, scanId)) {
-            return hasSnapshot;
+    private boolean isUnsnapshottable(final String sessionId, final String scanId) {
+        final SnapshotAttributes attributes;
+        if (!isKnownScan(sessionId, scanId)) {
+            attributes = initGenerator(sessionId, scanId);
+            setAttributes(sessionId, scanId, attributes);
+            log.debug("Created new attributes object for session {} scan {}: {}", sessionId, scanId, attributes);
         } else {
-            hasSnapshot = initGenerator( sessionId, scanId);
-            return hasSnapshot;
+            attributes = getAttributes(sessionId, scanId);
+            log.debug("Retrieved existing attributes object for session {} scan {}: {}", sessionId, scanId, attributes);
         }
+        return !attributes.isHasSnapshot();
+    }
+
+    private String getFormat() {
+        return DEFAULT_FORMAT;
+    }
+
+    private SnapshotAttributes getAttributes(final String sessionId, final String scanId) {
+        return resources.get(getKey(sessionId, scanId));
+    }
+
+    private SnapshotAttributes setAttributes(final String sessionId, final String scanId, final SnapshotAttributes attributes) {
+        log.trace("Setting attributes for session {} scan {}", sessionId, scanId);
+        final String key = getKey(sessionId, scanId);
+        resources.put(key, attributes);
+        log.debug("Inserted attributes object for session {} scan {} with key \"{}\": {}", sessionId, scanId, key, attributes);
+        return attributes;
+    }
+
+    private SnapshotAttributes markBroken(final String sessionId, final String scanId) {
+        log.debug("Marking session {} scan {} as \"broken\" (e.g. can't generate snapshot for some reason)", sessionId, scanId);
+        return setAttributes(sessionId, scanId, SnapshotAttributes.broken(sessionId, scanId));
     }
 
     /**
      * Returns true if this generator has encountered this scan before.
      *
-     * @param sessionId
-     * @param scanId
-     * @return
+     * @param sessionId The ID of the session to check
+     * @param scanId    The ID of the scan to check
+     *
+     * @return Returns true if the generator has encountered this scan before.
      */
     private boolean isKnownScan(final String sessionId, final String scanId) {
-        return this.sessionId != null && this.sessionId.equals( sessionId) && this.scanId != null && this.scanId.equals( scanId);
+        return resources.containsKey(getKey(sessionId, scanId));
     }
 
     /**
      * Determine if this generator can handle the scan and prepare the generator as needed.
      *
-     * @param sessionId
-     * @param scanId
-     * @return
-     * @throws Exception
+     * @param sessionId The ID of the session to initialize
+     * @param scanId    The ID of the scan to initialize
+     *
+     * @return Returns true if the generator can handle the scan
      */
-    private boolean initGenerator(final String sessionId, final String scanId) throws Exception {
-        boolean isHandler = false;
-
+    private SnapshotAttributes initGenerator(final String sessionId, final String scanId) {
         log.debug("Initialize snapshot generator for sessionId {}, scanId {}.", sessionId, scanId);
-        XnatResourcecatalog resourcecatalog = catalogService.getDicomResourceCatalog(sessionId, scanId);
-        if( resourcecatalog != null) {
-            log.debug("Dicom resource catalog found at {}", resourcecatalog.getUri());
-            Path dicomRootPath = Paths.get(resourcecatalog.getUri()).getParent();
+        final XnatResourcecatalog catalog = getDicomResourceCatalog(sessionId, scanId);
+        if (catalog == null) {
+            return SnapshotAttributes.broken(sessionId, scanId);
+        }
+        log.debug("DICOM resource catalog found at {}", catalog.getUri());
+        try {
             // project can be null.  CatalogUtils will sort it out.
-            String project = null;
-            CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(dicomRootPath.toString(), resourcecatalog, project);
-            if (catalogData.catBean instanceof CatDcmcatalogBean) {
-                isHandler = init(sessionId, scanId, dicomRootPath, (CatDcmcatalogBean) catalogData.catBean);
+            final Path                     dicomRootPath = Paths.get(catalog.getUri()).getParent();
+            final CatalogUtils.CatalogData catalogData   = CatalogUtils.CatalogData.getOrCreate(dicomRootPath.toString(), catalog, null);
+            return init(sessionId, scanId, dicomRootPath, catalogData.catBean);
+        } catch (ServerException e) {
+            log.error("An error occurred trying to load the catalog for session {} scan {}, can't initialize generator for this scan", sessionId, scanId, e);
+            return SnapshotAttributes.broken(sessionId, scanId);
+        }
+    }
+
+    private XnatResourcecatalog getDicomResourceCatalog(final String sessionId, final String scanId) {
+        try {
+            final XnatResourcecatalog catalog = _catalogService.getDicomResourceCatalog(sessionId, scanId);
+            if (catalog != null) {
+                log.debug("Retrieved DICOM catalog for session {} scan {} for catalog file {}", sessionId, scanId, catalog.getUri());
+                return catalog;
             }
-        }
-        else {
-            isHandler = false;
             log.warn("The scan {} in session {} does not contain a DICOM resource catalog. Creating snapshots here is above my pay grade. Get a smarter SnapshotResourceGenerator", scanId, sessionId);
+        } catch (ClientException e) {
+            log.error("An error occurred trying to retrieve the catalog for session {} scan {}, can't initialize generator for this scan", sessionId, scanId, e);
         }
-        return isHandler;
+        return null;
     }
 
     /**
@@ -118,86 +185,57 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
      * Find the number of slices recorded in the Dicom catalog. Number of slices will not equal number of files
      * when files are multi-frame.
      *
-     * @param sessionId
-     * @param scanId
-     * @param dicomRootPath
-     * @param dcmcatalogBean
+     * @param sessionId     The ID of the session to initialize
+     * @param scanId        The ID of the scan to initialize
+     * @param dicomRootPath The path to the folder containing the DICOM to use for generating the snapshot
+     * @param catalogBean   The catalog containing the DICOM references (must be of type <b>CatDcmcatalogBean</b>
      */
-    private boolean init( String sessionId, String scanId, Path dicomRootPath, CatDcmcatalogBean dcmcatalogBean) {
-        boolean hasSnapshot;
-        Collection<CatEntryI> entries = CatalogUtils.getEntriesByFilter(dcmcatalogBean, e -> e instanceof CatDcmentryBean);
+    private SnapshotAttributes init(final String sessionId, final String scanId, final Path dicomRootPath, final CatCatalogBean catalogBean) {
+        if (!(catalogBean instanceof CatDcmcatalogBean)) {
+            log.warn("Tried to init snapshot attributes for session {} scan {} but the submitted catalog {} (ID: {}) is not a DICOM catalog: {}", sessionId, scanId, catalogBean.getCatCatalogId(), catalogBean.getId(), catalogBean.getClass().getName());
+            return markBroken(sessionId, scanId);
+        }
+        final CatDcmcatalogBean catalog = (CatDcmcatalogBean) catalogBean;
         // Sort the list of files by instance number. The catalog is not presorted.
-        files = entries.stream()
-                .map( e -> (CatDcmentryBean) e)
-                .sorted( Comparator.comparing( CatDcmentryBean::getInstancenumber))
-                .map( e -> (new File( dicomRootPath.toString(), e.getUri())).getAbsolutePath())
-                .collect(Collectors.toList());
+        final List<String> files = CatalogUtils.getEntriesByFilter(catalog, CatDcmentryBean.class::isInstance)
+                                               .stream()
+                                               .map(CatDcmentryBean.class::cast)
+                                               .sorted(Comparator.comparing(CatDcmentryBean::getInstancenumber))
+                                               .map(e -> (new File(dicomRootPath.toString(), e.getUri())).getAbsolutePath())
+                                               .collect(Collectors.toList());
 
-        if( ! files.isEmpty() && dcmcatalogBean.getDimensions_z() != null ) {
-            nSlices = dcmcatalogBean.getDimensions_z();
-            hasSnapshot = true;
-        } else {
-            hasSnapshot = false;
-            log.warn("The dicom catalog {} for scan {} in session {} does not contain any number-of-frames info. This is above my pay grade. Get a smarter SnapshotResourceGenerator", dcmcatalogBean.getName(), scanId, sessionId);
+        if (files.isEmpty() || catalog.getDimensions_z() == null) {
+            log.warn("The DICOM catalog {} for scan {} in session {} does not contain any number-of-frames info. This is above my pay grade. Get a smarter SnapshotResourceGenerator", catalog.getName(), scanId, sessionId);
+            return markBroken(sessionId, scanId);
         }
 
-        this.sessionId = sessionId;
-        this.scanId = scanId;
-        this.dicomRootPath = dicomRootPath;
-        this.hasSnapshot = hasSnapshot;
-        return hasSnapshot;
+        log.debug("Found {} files in the catalog {} (ID: {}) for session {} scan {}", files.size(), catalogBean.getCatCatalogId(), catalogBean.getId(), sessionId, scanId);
+        return setAttributes(sessionId, scanId, SnapshotAttributes.builder().sessionId(sessionId).scanId(scanId).hasSnapshot(true).files(files).nSlices(catalog.getDimensions_z()).build());
     }
 
-    @Override
-    public Optional<FileResource> createSnaphot( String sessionId, String scanId, int nRows, int nCols) throws Exception {
-        Optional<FileResource> montageFileResource = Optional.ofNullable( null);
-        if( hasSnapshot( sessionId, scanId)) {
-            final String name = getSnapshotResourceName( sessionId, scanId, nRows, nCols, getFormat());
+    private static String getKey(final String sessionId, final String scanId) {
+        return sessionId + ":" + scanId;
+    }
 
-            Path montageFile = tmpRoot.resolve(name);
-            BufferedImage montageImage = montageGenerator.generate(files, nSlices, nRows, nCols);
-
-            writeImage(montageFile.toFile(), montageImage);
-            montageFileResource = Optional.of( new FileResource( montageFile, getSnapshotContentName( sessionId, scanId, nRows, nCols), getFormat()));
+    @Getter
+    @Builder
+    private static class SnapshotAttributes {
+        static SnapshotAttributes broken(final String sessionId, final String scanId) {
+            return builder().sessionId(sessionId).scanId(scanId).hasSnapshot(false).build();
         }
-        return montageFileResource;
+
+        private final String       sessionId;
+        private final String       scanId;
+        private final boolean      hasSnapshot;
+        private final int          nSlices;
+        @Builder.Default
+        private final List<String> files = new ArrayList<>();
     }
 
-    @Override
-    public Optional< FileResource> createThumbnail( String sessionId, String scanId, int nRows, int nCols, float scaleRows, float scaleCols) throws Exception {
-        Optional< FileResource> fileResource = Optional.ofNullable( null);
-        log.debug("Create thumbnail montage: sessionId: {}, scanId: {} nrows: {}, ncols: {}, scaleRows: {}, scaleCols: {}", sessionId, scanId, nRows, nCols, scaleRows, scaleCols);
-        if( hasSnapshot( sessionId, scanId)) {
+    private static final String DEFAULT_FORMAT = "gif";
 
-            Path thumbnailFile = tmpRoot.resolve( getThumbnailResourceName( sessionId, scanId, nRows, nCols, getFormat()));
-            BufferedImage montageImage = montageGenerator.generate(files, nSlices, nRows, nCols);
-            BufferedImage thumbnailImage = thumbnailGenerator.rescale( montageImage, scaleRows, scaleCols);
+    private final CatalogService _catalogService;
+    private final Path           _tmpRoot;
 
-            writeImage(thumbnailFile.toFile(), thumbnailImage);
-            FileResource thumbnailFileResource = new FileResource( thumbnailFile, getThumbnailContentName( sessionId, scanId, nRows, nCols), getFormat());
-            fileResource = Optional.of( thumbnailFileResource);
-        }
-        return fileResource;
-    }
-
-    public String getFormat() { return "gif";}
-
-    public String getSnapshotContentName(String sessionId, String scanId, int rows, int cols) {
-        return (rows == 1 && cols ==1) ? "ORIGINAL" : String.format( "%dX%d", cols, rows);
-    }
-
-    public String getThumbnailContentName(String sessionId, String scanId, int rows, int cols) {
-        return (rows == 1 && cols ==1) ? "THUMBNAIL" : String.format( "%dX%d_THUMBNAIL", cols, rows);
-    }
-
-    public String getSnapshotResourceName(final String sessionId, final String scanId, final int rows, int cols, String format) {
-        String grid = (rows == 1 && cols == 1) ? "" : String.format( "_%sx%s", cols, rows);
-        return String.format("%s_%s%s_qc.%s", sessionId, scanId, grid, format.toLowerCase());
-    }
-
-    public String getThumbnailResourceName(final String sessionId, final String scanId, final int rows, int cols, String format) {
-        String grid = (rows == 1 && cols == 1) ? "" : String.format( "_%sx%s", cols, rows);
-        return String.format("%s_%s%s_qc_t.%s", sessionId, scanId, grid, format.toLowerCase());
-    }
-
+    private final Map<String, SnapshotAttributes> resources = new HashMap<>();
 }

@@ -60,8 +60,7 @@ import java.util.*;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
 import static org.springframework.http.HttpStatus.*;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
+import static org.springframework.http.MediaType.*;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
@@ -280,7 +279,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to update this user."),
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
+    @XapiRequestMapping(value = "{username}", consumes = {APPLICATION_JSON_VALUE, MULTIPART_FORM_DATA_VALUE}, produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
     public ResponseEntity<User> updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable("username") @Username final String username, @RequestBody final User model) throws NotFoundException, UserInitException {
         final UserI user;
         try {

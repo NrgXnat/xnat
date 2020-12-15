@@ -750,9 +750,7 @@ public class DefaultCatalogService implements CatalogService {
      */
     @Override
     public XnatResourcecatalog getResourceCatalog(final String sessionId, final String scanId, final String label) throws ClientException {
-        final String uriString = EXPERIMENT_ROOT_URI + sessionId + "/scans/" + scanId + "/resources/" + label;
-
-        ResourceData resourceData = getResourceDataFromUri(uriString, true);
+        final ResourceData resourceData = getResourceDataFromUri(EXPERIMENT_ROOT_URI + sessionId + "/scans/" + scanId + "/resources/" + label, true);
         return (resourceData != null) ? resourceData.getCatalogResource() : null;
     }
 
@@ -766,12 +764,12 @@ public class DefaultCatalogService implements CatalogService {
         try {
             uri = UriParserUtils.parseURI(uriString);
         } catch (MalformedURLException e) {
-            throw new ClientException("Malformed URI: " + uriString);
+            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Malformed URI: " + uriString);
         }
-
         if (!(uri instanceof URIManager.ArchiveItemURI)) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "Invalid URI: " + uriString);
         }
+
         final URIManager.ArchiveItemURI xnatUri = (URIManager.ArchiveItemURI) uri;
 
         //What is its security item?

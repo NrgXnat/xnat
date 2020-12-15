@@ -1,6 +1,6 @@
 package org.nrg.xnat.snapshot.generator.impl;
 
-import org.dcm4che3.image.ICCProfile;
+import lombok.extern.slf4j.Slf4j;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReader;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReaderSpi;
@@ -15,165 +15,100 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.text.MessageFormat;
 import java.util.Iterator;
-import java.util.Objects;
-import java.util.function.Predicate;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.StreamSupport;
 
 /**
  * This is a basic DICOM image reader and Renderer.
  *
  * It is dcm4che3's Dcm2jpg class stripped of command line utility and hardcoded to gif.
- * The reader is hardcoded to dcm4che3's DicomImageReader due to collistions with v2.
- *
+ * The reader is hardcoded to dcm4che3's DicomImageReader due to collisions with v2.
  */
+@Slf4j
 public class DicomImageRenderer {
-    private int windowIndex;
-    private int voiLUTIndex;
-    private boolean preferWindow = true;
-    private float windowCenter;
-    private float windowWidth;
-    private boolean autoWindowing = true;
-    private ImageReader imageReader;
-    private ImageWriter imageWriter;
-    private ImageWriteParam imageWriteParam;
-    private int overlayActivationMask = 0xffff;
-    private int overlayGrayscaleValue = 0xffff;
-    private int overlayRGBValue = 0xffffff;
-    private ICCProfile.Option iccProfile = ICCProfile.Option.none;
-
-    private static String FORMAT_DEFAULT = "GIF";
-    private static String ENCODER_DEFAULT = "com.sun.imageio.plugins.*";
-    private static String COMPRESSIONTYPE_DEFAULT = null;
-    private static Number QUALITY_DEFAULT = null;
-
-    public DicomImageRenderer() {
-        initImageReader();
-        // Discovering the imageWriter hasn't been a problem since it is the generic gif writer.
-        initImageWriter( FORMAT_DEFAULT, ENCODER_DEFAULT, COMPRESSIONTYPE_DEFAULT, QUALITY_DEFAULT);
-    }
-
-    public void initImageReader() {
+    public ImageReader getImageReader() {
         // Don't discover the ImageReader because the dcm4che v2 is still present and incompatible if picked.
         // imageReader  = ImageIO.getImageReadersByFormatName("DICOM").next();
-        imageReader = new DicomImageReader( new DicomImageReaderSpi());
-
+        return new DicomImageReader(new DicomImageReaderSpi());
     }
-    public void initImageWriter(String formatName, String clazz, String compressionType, Number quality) {
-        Iterator<ImageWriter> imageWriters =
-                ImageIO.getImageWritersByFormatName(formatName);
-        if (!imageWriters.hasNext())
-            throw new IllegalArgumentException(
-                    MessageFormat.format("output image format: {0} not supported", formatName));
-        Iterable<ImageWriter> iterable = () -> imageWriters;
-        imageWriter = StreamSupport.stream(iterable.spliterator(), false)
-                .filter(matchClassName(clazz))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        MessageFormat.format("no Image Writer: {0} for format {1} found", clazz, formatName)));
-        imageWriteParam = imageWriter.getDefaultWriteParam();
-        if (compressionType != null || quality != null) {
-            imageWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-            if (compressionType != null)
-                imageWriteParam.setCompressionType(compressionType);
-            if (quality != null)
-                imageWriteParam.setCompressionQuality(quality.floatValue());
+
+    public ImageWriter getImageWriter() {
+        final Iterator<ImageWriter> imageWriters = ImageIO.getImageWritersByFormatName(FORMAT_DEFAULT);
+        if (!imageWriters.hasNext()) {
+            throw new IllegalArgumentException(MessageFormat.format("output image format: {0} not supported", FORMAT_DEFAULT));
+        }
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(imageWriters, Spliterator.CONCURRENT), true)
+                            .filter(clazz -> clazz.getClass().getName().startsWith(ENCODER_DEFAULT))
+                            .findFirst()
+                            .orElseThrow(() -> new IllegalArgumentException(MessageFormat.format("No Image Writer: {0} for format {1} found", ENCODER_DEFAULT, FORMAT_DEFAULT)));
+    }
+
+    /**
+     * Read the specified frame from the DICOM image in the submitted file.
+     *
+     * @param file  The file from which to read.
+     * @param frame The frame to read.
+     *
+     * @return The contents of the specified frame in an image buffer.
+     *
+     * @throws IOException When an error occurs reading the DICOM frame.
+     */
+    protected BufferedImage readImage(final File file, final int frame) throws IOException {
+        try (final ImageInputStream iis = new FileImageInputStream(file)) {
+            final ImageReader imageReader = getImageReader();
+            imageReader.setInput(iis);
+            return imageReader.read(frame, readParam(imageReader));
         }
     }
 
-    private static Predicate<Object> matchClassName(String clazz) {
-        Predicate<String> predicate = clazz.endsWith("*")
-                ? startsWith(clazz.substring(0, clazz.length() - 1))
-                : clazz::equals;
-        return w -> predicate.test(w.getClass().getName());
+    /**
+     * Write the data in the image buffer to the specified file.
+     *
+     * @param destination The file in which to write the image.
+     * @param image       The image data to be written.
+     *
+     * @throws IOException When an error occurs writing the DICOM data.
+     */
+    protected void writeImage(final File destination, final BufferedImage image) throws IOException {
+        log.info("Preparing to write image to file {}", destination.getAbsolutePath());
+        try (final RandomAccessFile output = new RandomAccessFile(destination, "rw")) {
+            output.setLength(0);
+            final ImageWriter     imageWriter = getImageWriter();
+            final ImageWriteParam parameters  = imageWriter.getDefaultWriteParam();
+            parameters.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            parameters.setCompressionType(COMPRESSION_DEFAULT);
+            imageWriter.setOutput(new FileImageOutputStream(output));
+            imageWriter.write(null, new IIOImage(image, null, null), parameters);
+        } catch (IOException e) {
+            log.error("An error occurred trying to write to the file {}", destination.getAbsolutePath(), e);
+        }
     }
 
-    private static Predicate<String> startsWith(String prefix) {
-        return s -> s.startsWith(prefix);
-    }
-
-    public final void setWindowCenter(float windowCenter) {
-        this.windowCenter = windowCenter;
-    }
-
-    public final void setWindowWidth(float windowWidth) {
-        this.windowWidth = windowWidth;
-    }
-
-    public final void setWindowIndex(int windowIndex) {
-        this.windowIndex = windowIndex;
-    }
-
-    public final void setVOILUTIndex(int voiLUTIndex) {
-        this.voiLUTIndex = voiLUTIndex;
-    }
-
-    public final void setPreferWindow(boolean preferWindow) {
-        this.preferWindow = preferWindow;
-    }
-
-    public final void setAutoWindowing(boolean autoWindowing) {
-        this.autoWindowing = autoWindowing;
-    }
-
-    public void setOverlayActivationMask(int overlayActivationMask) {
-        this.overlayActivationMask = overlayActivationMask;
-    }
-
-    public void setOverlayGrayscaleValue(int overlayGrayscaleValue) {
-        this.overlayGrayscaleValue = overlayGrayscaleValue;
-    }
-
-    public void setOverlayRGBValue(int overlayRGBValue) {
-        this.overlayRGBValue = overlayRGBValue;
-    }
-
-    public final void setICCProfile(ICCProfile.Option iccProfile) {
-        this.iccProfile = Objects.requireNonNull(iccProfile);
-    }
-
-    private ImageReadParam readParam() {
-        DicomImageReadParam param = (DicomImageReadParam) imageReader.getDefaultReadParam();
-        param.setWindowCenter(windowCenter);
-        param.setWindowWidth(windowWidth);
-        param.setAutoWindowing(autoWindowing);
-        param.setWindowIndex(windowIndex);
-        param.setVOILUTIndex(voiLUTIndex);
-        param.setPreferWindow(preferWindow);
-        param.setOverlayActivationMask(overlayActivationMask);
-        param.setOverlayGrayscaleValue(overlayGrayscaleValue);
-        param.setOverlayRGBValue(overlayRGBValue);
+    private static ImageReadParam readParam(final ImageReader imageReader) {
+        final DicomImageReadParam param = (DicomImageReadParam) imageReader.getDefaultReadParam();
+        param.setPreferWindow(PREFER_WINDOW);
+        param.setAutoWindowing(AUTO_WINDOWING);
+        param.setWindowCenter(WINDOW_CENTER);
+        param.setWindowWidth(WINDOW_WIDTH);
+        param.setWindowIndex(WINDOW_INDEX);
+        param.setVOILUTIndex(VOI_LUT_INDEX);
+        param.setOverlayActivationMask(OVERLAY_ACTIVATION_MASK);
+        param.setOverlayGrayscaleValue(OVERLAY_GRAYSCALE_VALUE);
+        param.setOverlayRGBValue(OVERLAY_RGB_VALUE);
         return param;
     }
 
-    /**
-     * Read the frame from the specified DICOM image.
-     * The imageReader is currently hardcoded to dcm4che3 Dicom reader because
-     *
-     * @param file
-     * @param frame
-     * @return
-     * @throws IOException
-     */
-    protected BufferedImage readImage(File file, int frame) throws IOException {
-        try (ImageInputStream iis = new FileImageInputStream(file)) {
-            imageReader.setInput(iis);
-            return imageReader.read( frame, readParam());
-        }
-    }
-
-    /**
-     * Write the bufferedImage to a File.
-     * The imageWriter is currently set to be GIF.
-     * @param dest
-     * @param bi
-     * @throws IOException
-     */
-    protected void writeImage(File dest, BufferedImage bi) throws IOException {
-        try (RandomAccessFile raf = new RandomAccessFile(dest, "rw")) {
-            raf.setLength(0);
-            imageWriter.setOutput(new FileImageOutputStream(raf));
-            imageWriter.write(null, new IIOImage(bi, null, null), imageWriteParam);
-        }
-    }
-
+    private static final boolean PREFER_WINDOW           = true;
+    private static final boolean AUTO_WINDOWING          = true;
+    private static final int     WINDOW_CENTER           = 0;
+    private static final int     WINDOW_WIDTH            = 0;
+    private static final int     WINDOW_INDEX            = 0;
+    private static final int     VOI_LUT_INDEX           = 0;
+    private static final int     OVERLAY_ACTIVATION_MASK = 0xffff;
+    private static final int     OVERLAY_GRAYSCALE_VALUE = 0xffff;
+    private static final int     OVERLAY_RGB_VALUE       = 0xffffff;
+    private static final String  FORMAT_DEFAULT          = "GIF";
+    private static final String  ENCODER_DEFAULT         = "com.sun.imageio.plugins.";
+    private static final String  COMPRESSION_DEFAULT     = null;
 }

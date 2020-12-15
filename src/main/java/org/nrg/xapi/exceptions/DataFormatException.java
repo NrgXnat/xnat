@@ -34,6 +34,10 @@ public class DataFormatException extends XapiException {
         super(HttpStatus.BAD_REQUEST, message);
     }
 
+    public DataFormatException(final String message, final Throwable e) {
+        super(HttpStatus.BAD_REQUEST, message, e);
+    }
+
     public void addMissingField(final String missing) {
         _missingFields.add(missing);
     }

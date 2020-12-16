@@ -2,23 +2,32 @@ package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatProjectdataI;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xft.security.UserI;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @XnatEventServiceEvent(name="ProjectEvent")
-public class ProjectEvent extends CombinedEventServiceEvent<XnatProjectdataI>  {
+public class ProjectEvent extends AbstractEventServiceEvent<XnatProjectdataI> {
 
     public enum Status {CREATED, DELETED};
 
-    final String displayName = "Project Event";
-    final String description = "Project created or deleted.";
+    private final String displayName = "Project";
+    private final String description = "Project created or deleted.";
+    private String payloadId = null;
 
     public ProjectEvent(){};
 
-    public ProjectEvent(final XnatProjectdataI payload, final String eventUser, final Status status, final String projectId) {
-        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
+    public ProjectEvent(final XnatProjectdataI payload, final String eventUser, final Status status) {
+        super(payload, eventUser, status, payload.getId(), (payload != null ? payload.getXSIType() : null));
+        payloadId = payload.getId();
+    }
+
+    @Override
+    public XnatProjectdataI getObject(UserI user) {
+        return XnatProjectdata.getXnatProjectdatasById(payloadId, user, false);
     }
 
     @Override

@@ -354,10 +354,10 @@ public class EventServiceItemSaveAspect {
 
     //** Project Triggers **//
     private void triggerProjectCreate(XnatProjectdataI project, UserI user){
-        eventService.triggerEvent(new ProjectEvent(project, user.getLogin(), ProjectEvent.Status.CREATED, project.getId()));
+        eventService.triggerEvent(new ProjectEvent(project, user.getLogin(), ProjectEvent.Status.CREATED));
     }
     private void triggerProjectDelete(XnatProjectdataI project, UserI user){
-        eventService.triggerEvent(new ProjectEvent(project, user.getLogin(), ProjectEvent.Status.DELETED, project.getId()));
+        eventService.triggerEvent(new ProjectEvent(project, user.getLogin(), ProjectEvent.Status.DELETED));
     }
 
     //** Project Asset Create **//

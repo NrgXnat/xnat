@@ -151,7 +151,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                 try {
                     listenerClazz = Class.forName(subscription.customListenerId());
                 } catch (ClassNotFoundException e) {
-                    listenerErrorMessage = "Could not load custom listerner class: " + subscription.customListenerId();
+                    listenerErrorMessage = "Could not load custom listener class: " + subscription.customListenerId();
                     throw new SubscriptionValidationException(listenerErrorMessage);
                 }
             } else if(EventServiceListener.class.isAssignableFrom(clazz)) {
@@ -241,8 +241,8 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                 listener = componentManager.getListener(eventType);
             }
             if(listener == null){
-                // Default to the CombinedEventServiceListener
-                listener = componentManager.getListener("CombinedEventServiceListener");
+                // Default to the DefaultEventServiceListener
+                listener = componentManager.getListener("DefaultEventServiceListener");
             }
             if(listener != null) {
                 EventServiceListener uniqueListener = listener.getInstance();
@@ -530,13 +530,19 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                     return false;
                 }
                 // Check for exclusion based on payload filter (if available)
-                if(!Strings.isNullOrEmpty(filter.jsonPathFilter()) && event.filterablePayload() && event.getPayloadSignatureObject() != null) {
+                if(!Strings.isNullOrEmpty(filter.jsonPathFilter()) && event.filterablePayload()) {
                     try {
-                        String payloadSignature = mapper.writeValueAsString(event.getPayloadSignatureObject());
-                        String jsonFilter = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
-                        List<String> filterResult = JsonPath.using(subscriptionConf).parse(payloadSignature).read(jsonFilter);
-                        if(filterResult.isEmpty()) {
-                            return false;
+                        Object payloadSignatureObject = event.getPayloadSignatureObject();
+                        if (payloadSignatureObject != null) {
+                            String jsonFilter = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
+                            List<String> filterResult =
+                                    JsonPath.using(subscriptionConf)
+                                            .parse(
+                                                    mapper.writeValueAsString(payloadSignatureObject))
+                                            .read(jsonFilter);
+                            if (filterResult.isEmpty()) {
+                                return false;
+                            }
                         }
                     } catch (JsonProcessingException e){
                         log.error("Exception attempting to filter EventService event on serialized payload.");

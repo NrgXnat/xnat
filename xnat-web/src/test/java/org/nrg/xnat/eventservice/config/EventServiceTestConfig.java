@@ -124,11 +124,6 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public TestCombinedEvent testCombinedEvent() {
-        return new TestCombinedEvent();
-    }
-
-    @Bean
     public ContextService contextService(final ApplicationContext applicationContext) {
         final ContextService contextService = new ContextService();
         contextService.setApplicationContext(applicationContext);

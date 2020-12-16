@@ -75,10 +75,10 @@ public class EventServiceLoggingAction extends SingleActionProvider {
     public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
         log.info("EventServiceLoggingAction called for Subscription {}", subscription.name());
         try {
-
-            Object serializableObject = componentManager.getModelObject(event.getObject(), user);
-            if(serializableObject == null && event.getObject() != null && mapper.canDeserialize(mapper.getTypeFactory().constructType(event.getObject().getClass()))){
-                serializableObject = event.getObject();
+            Object payloadObject = event.getObject(user);
+            Object serializableObject = componentManager.getModelObject(payloadObject, user);
+            if(serializableObject == null && payloadObject != null && mapper.canDeserialize(mapper.getTypeFactory().constructType(event.getObjectClass()))){
+                serializableObject = payloadObject;
             }
 
             if(serializableObject != null){

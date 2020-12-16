@@ -353,7 +353,7 @@ public class EventServiceImpl implements EventService {
 
                         // ** Serialized event object ** //
                         try {
-                            Object eventPayloadObject = esEvent.getObject();
+                            Object eventPayloadObject = esEvent.getObject(actionUser);
                             try {
                                 modelObject = componentManager.getModelObject(eventPayloadObject, actionUser);
                                 if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
@@ -417,9 +417,8 @@ public class EventServiceImpl implements EventService {
                             if (modelObject != null) {
                                 xsiUri = modelObject.getUri();
                                 objectLabel = !Strings.isNullOrEmpty(modelObject.getLabel()) ? modelObject.getLabel() : modelObject.getId();
-                            } else if (esEvent.getObject() != null) {
-                                Object object = esEvent.getObject();
-                                objectLabel = object.getClass().getSimpleName();
+                            } else if (esEvent.getObjectClass() != null) {
+                                objectLabel = esEvent.getObjectClass().getSimpleName();
                                 // TODO: Handle other object types
                             }
                             subscriptionDeliveryEntityService.setTriggeringEvent(

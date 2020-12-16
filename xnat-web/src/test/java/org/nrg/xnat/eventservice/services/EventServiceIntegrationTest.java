@@ -39,7 +39,6 @@ import org.nrg.xnat.eventservice.events.SampleEvent;
 import org.nrg.xnat.eventservice.events.ScanEvent;
 import org.nrg.xnat.eventservice.events.SessionEvent;
 import org.nrg.xnat.eventservice.events.SubjectEvent;
-import org.nrg.xnat.eventservice.events.TestCombinedEvent;
 import org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.listeners.TestCombinedEventServiceListener;
@@ -363,10 +362,10 @@ public class EventServiceIntegrationTest {
     @Test
     @DirtiesContext
     public void createSubscriptionWithBlankName() throws Exception {
-        EventServiceEvent testCombinedEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.TestCombinedEvent");
-        assertThat("Could not load TestCombinedEvent from componentManager", testCombinedEvent, notNullValue());
+        EventServiceEvent testCombinedEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.SessionEvent");
+        assertThat("Could not load SessionEvent from componentManager", testCombinedEvent, notNullValue());
 
-        String eventType = "org.nrg.xnat.eventservice.events.TestCombinedEvent";
+        String eventType = "org.nrg.xnat.eventservice.events.SessionEvent";
         String projectId = "PROJECTID-1";
         EventFilterCreator eventServiceFilterWithJson = EventFilterCreator.builder()
                                                                           .eventType(eventType)
@@ -648,11 +647,11 @@ public class EventServiceIntegrationTest {
     @Test
     @DirtiesContext
     public void registerMrSessionSubscription() throws Exception {
-        EventServiceEvent testCombinedEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.TestCombinedEvent");
-        assertThat("Could not load TestCombinedEvent from componentManager", testCombinedEvent, notNullValue());
+        EventServiceEvent testCombinedEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.SessionEvent");
+        assertThat("Could not load SessionEvent from componentManager", testCombinedEvent, notNullValue());
 
         String projectId = "PROJECTID-1";
-        String eventType = "org.nrg.xnat.eventservice.events.TestCombinedEvent";
+        String eventType = "org.nrg.xnat.eventservice.events.SessionEvent";
         EventFilterCreator eventServiceFilterWithJson = EventFilterCreator.builder()
                                                                           .eventType(eventType)
                                                                           .projectIds(Arrays.asList(projectId))
@@ -740,7 +739,7 @@ public class EventServiceIntegrationTest {
         session.setProject("PROJECTID-1");
         session.setSessionType("xnat:imageSessionData");
 
-        TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser.getLogin(), TestCombinedEvent.Status.CREATED, "PROJECTID-1");
+        SessionEvent combinedEvent = new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, "PROJECTID-1");
 
         eventService.triggerEvent(combinedEvent);
 
@@ -763,11 +762,12 @@ public class EventServiceIntegrationTest {
         assertThat("Could not load TestAction from actionManager", testAction, notNullValue());
 
         String              projectId = "PROJECTID-1";
-        WorkflowStatusEvent workflow  = new WorkflowStatusEvent();
-        workflow.setStatus("In Progress");
-        workflow.setJustification("Unit Test");
-        workflow.setEventSpecificFields(Sets.newHashSet());
-        WorkflowStatusChangeEvent workflowStatusChangeEvent = new WorkflowStatusChangeEvent(workflow, mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
+        WorkflowStatusEvent wrkFlow  = new WorkflowStatusEvent();
+        wrkFlow.setStatus("In Progress");
+        wrkFlow.setJustification("Unit Test");
+        wrkFlow.setEventSpecificFields(Sets.newHashSet());
+        WorkflowStatusChangeEvent workflowStatusChangeEvent =
+                new WorkflowStatusChangeEvent(wrkFlow.getWorkflow(), mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
 
         eventService.triggerEvent(workflowStatusChangeEvent);
 
@@ -790,11 +790,12 @@ public class EventServiceIntegrationTest {
         assertThat("Could not load TestAction from actionManager", testAction, notNullValue());
 
         String              projectId = "PROJECTID-1";
-        WorkflowStatusEvent workflow  = new WorkflowStatusEvent();
-        workflow.setStatus("Complete");
-        workflow.setJustification("Unit Test");
-        workflow.setEventSpecificFields(Sets.newHashSet());
-        WorkflowStatusChangeEvent workflowStatusChangeEvent = new WorkflowStatusChangeEvent(workflow, mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
+        WorkflowStatusEvent wrkFlw  = new WorkflowStatusEvent();
+        wrkFlw.setStatus("Complete");
+        wrkFlw.setJustification("Unit Test");
+        wrkFlw.setEventSpecificFields(Sets.newHashSet());
+        WorkflowStatusChangeEvent workflowStatusChangeEvent =
+                new WorkflowStatusChangeEvent(wrkFlw.getWorkflow(), mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
 
         eventService.triggerEvent(workflowStatusChangeEvent);
 
@@ -821,7 +822,7 @@ public class EventServiceIntegrationTest {
         session.setProject("PROJECTID-2");
         session.setSessionType("xnat:imageSessionData");
 
-        TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser.getLogin(), TestCombinedEvent.Status.CREATED, "PROJECTID-2");
+        SessionEvent combinedEvent = new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, "PROJECTID-2");
 
         eventService.triggerEvent(combinedEvent);
 
@@ -875,7 +876,7 @@ public class EventServiceIntegrationTest {
         session.setProject("PROJECTID-1");
         session.setSessionType("xnat:imageSessionData");
 
-        TestCombinedEvent combinedEvent = new TestCombinedEvent(session, mockUser.getLogin(), TestCombinedEvent.Status.CREATED, session.getProject());
+        SessionEvent combinedEvent = new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, session.getProject());
         eventService.triggerEvent(combinedEvent);
 
         // wait for async action (max 1 sec.)

@@ -65,7 +65,7 @@ public class EventServiceRestApiTest {
                 "  \"active\": true,\n" +
                 "  \"action-key\": \"org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction\",\n" +
                 "  \"event-filter\": {\n" +
-                "    \"event-type\": \"org.nrg.xnat.eventservice.events.TestCombinedEvent\",\n" +
+                "    \"event-type\": \"org.nrg.xnat.eventservice.events.SessionEvent\",\n" +
                 "  },\n" +
                 "  \"act-as-event-user\": true\n" +
         "}"
@@ -77,7 +77,7 @@ public class EventServiceRestApiTest {
                 "  \"active\": true,\n" +
                 "  \"action-key\": \"org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction\",\n" +
                 "  \"event-filter\": {\n" +
-                "    \"event-type\": \"org.nrg.xnat.eventservice.events.TestCombinedEvent\",\n" +
+                "    \"event-type\": \"org.nrg.xnat.eventservice.events.SessionEvent\",\n" +
                 "    \"project-ids\": [\n" +
                 "      \"SampleProject\"\n" +
                 "    ],\n" +

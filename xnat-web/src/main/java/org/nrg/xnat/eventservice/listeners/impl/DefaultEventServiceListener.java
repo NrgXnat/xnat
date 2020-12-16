@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-public class CombinedEventServiceListener implements EventServiceListener<CombinedEventServiceListener> {
+public class DefaultEventServiceListener implements EventServiceListener<DefaultEventServiceListener> {
 
     @Autowired @Lazy EventService eventService;
 
@@ -42,7 +42,7 @@ public class CombinedEventServiceListener implements EventServiceListener<Combin
     }
 
     @Override
-    public void accept(Event<CombinedEventServiceListener> event){
+    public void accept(Event<DefaultEventServiceListener> event){
         if( event.getData() instanceof EventServiceEvent) {
             this.eventDetectedTimestamp = new Date();
             if(eventService != null) {
@@ -55,7 +55,7 @@ public class CombinedEventServiceListener implements EventServiceListener<Combin
 
     @Override
     public EventServiceListener getInstance() {
-        return new CombinedEventServiceListener();
+        return new DefaultEventServiceListener();
     }
 
 }

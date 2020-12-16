@@ -18,7 +18,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.eventservice.events.CombinedEventServiceEvent;
+import org.nrg.xnat.eventservice.events.AbstractEventServiceEvent;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.xnat.Assessor;
@@ -115,7 +115,7 @@ public class EventServiceComponentManagerImpl implements EventServiceComponentMa
         List<EventServiceEvent> events = new ArrayList<>();
         for (final Resource resource : BasicXnatResourceLocator.getResources(EVENT_RESOURCE_PATTERN)) {
             try {
-                EventServiceEvent event = CombinedEventServiceEvent.createFromResource(resource);
+                EventServiceEvent event = AbstractEventServiceEvent.createFromResource(resource);
                 if(event != null) { events.add(event); }
             } catch (IOException |ClassNotFoundException|IllegalAccessException|InvocationTargetException |InstantiationException e) {
                 log.error("Exception loading EventClass from " + resource.toString());

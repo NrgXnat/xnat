@@ -4,6 +4,8 @@ package org.nrg.xnat.eventservice.events;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatAbstractprojectassetI;
+import org.nrg.xdat.om.XnatAbstractprojectasset;
+import org.nrg.xft.security.UserI;
 
 import java.util.Arrays;
 import java.util.List;
@@ -11,9 +13,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @XnatEventServiceEvent(name="ProjectAsset")
-public class ProjectAssetEvent extends CombinedEventServiceEvent<XnatAbstractprojectassetI> {
+public class ProjectAssetEvent extends AbstractEventServiceEvent<XnatAbstractprojectassetI> {
 
     public enum Status {CREATED};
+
+    private final String displayName = "Project Asset Event";
+    private final String description = "Project Asset created.";
+    private String payloadId = null;
 
     public ProjectAssetEvent(){};
 
@@ -23,12 +29,17 @@ public class ProjectAssetEvent extends CombinedEventServiceEvent<XnatAbstractpro
 
     @Override
     public String getDisplayName() {
-        return "Project Asset Event";
+        return displayName;
     }
 
     @Override
     public String getDescription() {
-        return "Project Asset created.";
+        return description;
+    }
+
+    @Override
+    public XnatAbstractprojectassetI getObject(UserI user) {
+        return XnatAbstractprojectasset.getXnatAbstractprojectassetsById(projectId, user, false);
     }
 
     @Override

@@ -3,30 +3,40 @@ package org.nrg.xnat.eventservice.events;
 
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.om.XnatImagescandata;
+import org.nrg.xft.security.UserI;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @XnatEventServiceEvent(name="ScanEvent")
-public class ScanEvent extends CombinedEventServiceEvent<XnatImagescandataI>  {
+public class ScanEvent extends AbstractEventServiceEvent<XnatImagescandataI> {
 
     public enum Status {CREATED};
+
+    private final String displayName = "Scan";
+    private final String description = "Scan Created.";
+    private String payloadId = null;
 
     public ScanEvent(){};
 
     public ScanEvent(final XnatImagescandataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
+        payloadId = payload.getId();
     }
 
     @Override
-    public String getDisplayName() {
-        return "Scan Event";
-    }
+    public String getDisplayName() { return displayName; }
 
     @Override
     public String getDescription() {
-        return "Scan Created.";
+        return description;
+    }
+
+    @Override
+    public XnatImagescandataI getObject(UserI user) {
+        return XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(payloadId, user, false);
     }
 
     @Override

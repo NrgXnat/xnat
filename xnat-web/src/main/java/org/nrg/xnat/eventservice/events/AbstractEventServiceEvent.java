@@ -1,6 +1,5 @@
 package org.nrg.xnat.eventservice.events;
 
-import com.google.common.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -8,47 +7,42 @@ import org.springframework.core.io.support.PropertiesLoaderUtils;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.StringJoiner;
 import java.util.UUID;
 
-// ** Extend this class to implement a Reactor Event Service class ** //
+// ** Extend this class to implement an Event Service Reactor class ** //
 @Slf4j
-public abstract class CombinedEventServiceEvent<EventObjectT>
+public abstract class AbstractEventServiceEvent<EventObjectT>
         implements EventServiceEvent<EventObjectT> {
 
-    String eventUser;
-    EventObjectT object;
-    UUID eventUUID = UUID.randomUUID();
-    Date eventCreatedTimestamp = new Date();
-    Enum status = null;
-    String projectId = null;
-    String xsiType = null;
+    protected String eventUser;
+    protected Class objectClass;
+    protected UUID eventUUID = UUID.randomUUID();
+    protected Long eventCreatedTimestamp;
+    protected Enum status = null;
+    protected String projectId = null;
+    protected String xsiType = null;
 
-    private final TypeToken<EventObjectT> eventObjectTTypeToken = new TypeToken<EventObjectT>(getClass()) { };
+    public AbstractEventServiceEvent() {}
 
-
-    public CombinedEventServiceEvent() {}
-
-    public CombinedEventServiceEvent(final EventObjectT object, final String eventUser, final Enum status) {
-        this(object, eventUser, status, null);
-    }
-
-    @Deprecated
-    public CombinedEventServiceEvent(final EventObjectT object, final String eventUser, final Enum status, final String projectId) {
-        this.object = object;
+    public AbstractEventServiceEvent(final EventObjectT object, final String eventUser, final Enum status) {
+        this.objectClass = object.getClass();
         this.eventUser = eventUser;
-        this.eventCreatedTimestamp = new Date();
+        this.eventCreatedTimestamp = Date.from(Instant.now()).getTime();
         this.status = status;
-        this.projectId = projectId;
+        this.projectId = null;
     }
 
-    public CombinedEventServiceEvent(final EventObjectT object, final String eventUser, final Enum status, final String projectId, final String xsiType) {
-        this.object = object;
+    public AbstractEventServiceEvent(final EventObjectT object, final String eventUser, final Enum status, final String projectId, final String xsiType) {
+        this.objectClass = object != null ? object.getClass() : null;
         this.eventUser = eventUser;
-        this.eventCreatedTimestamp = new Date();
+        this.eventCreatedTimestamp = Date.from(Instant.now()).getTime();
         this.status = status;
         this.projectId = projectId;
         this.xsiType = xsiType;
@@ -58,13 +52,7 @@ public abstract class CombinedEventServiceEvent<EventObjectT>
     public String getType() { return this.getClass().getCanonicalName(); }
 
     @Override
-    public  EventObjectT getObject() {
-        return object;
-    }
-
-
-    @Override
-    public Class getObjectClass() { return eventObjectTTypeToken.getRawType(); }
+    public Class getObjectClass() { return objectClass;}
 
     @Override
     public String getPayloadXnatType() { return xsiType; }
@@ -78,7 +66,7 @@ public abstract class CombinedEventServiceEvent<EventObjectT>
 
     @Override
     public Date getEventTimestamp() {
-        return eventCreatedTimestamp;
+        return new Date(eventCreatedTimestamp);
     }
 
     @Override
@@ -106,15 +94,37 @@ public abstract class CombinedEventServiceEvent<EventObjectT>
     @Override
     public List<EventScope> getEventScope() { return Arrays.asList(EventScope.PROJECT, EventScope.SITE); }
 
+
     @Override
     public String toString() {
-        return "CombinedEventServiceEvent{" +
-                "eventUser='" + eventUser + '\'' +
-                ", object=" + (object != null ? object.getClass().getSimpleName() : "null") +
-                ", eventCreatedTimestamp=" + (eventCreatedTimestamp != null ? eventCreatedTimestamp.toString() : "null") +
-                ", status=" + (status != null ? status.toString() : "null") +
-                ", projectId='" + projectId + '\'' +
-                '}';
+        return new StringJoiner(", ", AbstractEventServiceEvent.class.getSimpleName() + "[", "]")
+                .add("eventUser='" + eventUser + "'")
+                .add("objectClass=" + objectClass)
+                .add("eventUUID=" + eventUUID)
+                .add("eventCreatedTimestamp=" + eventCreatedTimestamp)
+                .add("status=" + status)
+                .add("projectId='" + projectId + "'")
+                .add("xsiType='" + xsiType + "'")
+                .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractEventServiceEvent)) return false;
+        AbstractEventServiceEvent<?> that = (AbstractEventServiceEvent<?>) o;
+        return Objects.equals(eventUser, that.eventUser) &&
+                Objects.equals(objectClass, that.objectClass) &&
+                Objects.equals(eventUUID, that.eventUUID) &&
+                Objects.equals(eventCreatedTimestamp, that.eventCreatedTimestamp) &&
+                Objects.equals(status, that.status) &&
+                Objects.equals(projectId, that.projectId) &&
+                Objects.equals(xsiType, that.xsiType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(eventUser, objectClass, eventUUID, eventCreatedTimestamp, status, projectId, xsiType);
     }
 
     public static EventServiceEvent createFromResource(org.springframework.core.io.Resource resource)

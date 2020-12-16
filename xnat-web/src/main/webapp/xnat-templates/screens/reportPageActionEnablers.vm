@@ -27,20 +27,19 @@
         window.viewer.render();
     }
 </script>
+<!-- enable restDelete() function -->
+<script type="text/javascript">
+    var _a = [];
 
-##<script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
-##<script type="text/javascript" src="$content.getURI("scripts/restDeleter.js")"></script>
-##<script>
-##    // enable "Delete" action
-##    function restDelete(){
-##        var expt=null;
-##        #if($project)
-##
-##        #else
-##            #set($project=$om.getProject())
-##        #end
-##        window.deleter=new RestDeleter(['${om.getId()}'],{defaultHeight:450,defaultWidth:600});
-##        window.deleter.init();
-##    }
-##</script>
+    _a.push({
+        "label": window.available_elements_getByName("$om.getXSIType()").singular +" $!om.getLabel() ($!om.getId())",
+        "ru":"/data/projects/${project}/experiments/$om.getId()",
+        "redirect":serverRoot+"/data/projects/$!{project}?format=html",
+        canRead:true,
+        checked:true,
+        xsiType:window.available_elements_getByName("$om.getXSIType()").singular,
+        date:"$!om.getDate()",
+        primary_label:"$!om.getIdentifier($project)"
+    });
+</script>
 <!-- END META-INF/resources/templates/screens/reportPageActionEnablers.vm -->

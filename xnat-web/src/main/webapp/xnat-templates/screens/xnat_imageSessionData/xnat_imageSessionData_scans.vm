@@ -193,10 +193,7 @@
                             #end
                         </td>
                         <td class="run-menu inline-actions-menu-container" style="position: relative; width: 24px; display: none;">
-                            <div class="inline-actions-menu-toggle">
-                                <i class="fa fa-caret-right menu-toggle-icon-standard"></i>
-                                <i class="fa fa-caret-down menu-toggle-icon-active"></i>
-                            </div>
+                            <div class="inline-actions-menu-toggle"></div>
                             <ul class="inline-actions-menu single-scan-actions-menu" style="display:none;"></ul>
                         </td>
                     </tr>
@@ -209,7 +206,6 @@
         </table>
     </div>
 
-    <script type="application/javascript">console.log("Loading /scripts/xnat/app/scanTable/scanTable.js from xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm")</script>
     <script src="$content.getURI("/scripts/xnat/app/scanTable/scanTable.js")"></script>
     <script src="$content.getURI("/scripts/xnat/app/scanTable/selectableTableBehavior.js")"></script>
 

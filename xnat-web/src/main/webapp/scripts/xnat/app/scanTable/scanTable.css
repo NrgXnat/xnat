@@ -157,9 +157,19 @@
 .inline-actions-menu-toggle {
     border-radius: 2px;
     cursor: pointer;
-    height: 18px;
+    height: 24px;
     text-align: center;
-    width: 18px;
+    width: 100%;
+}
+.inline-actions-menu-container .inline-actions-menu-toggle:before {
+    content: "\f0da";
+    font-family: "FontAwesome","Font Awesome";
+}
+.inline-actions-menu-container.active .inline-actions-menu-toggle {
+    background-color: #c5e2ff;
+}
+.inline-actions-menu-container.active .inline-actions-menu-toggle:before {
+    content: "\f0d7";
 }
 .inline-actions-menu {
     background-color: #fff;

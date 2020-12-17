@@ -2,7 +2,6 @@ package org.nrg.xnat.eventservice.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
@@ -13,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@XnatEventServiceEvent(name="WorkflowStatusChangeEvent")
+//@XnatEventServiceEvent(name="WorkflowStatusChangeEvent")
 public class WorkflowStatusChangeEvent extends AbstractEventServiceEvent<PersistentWorkflowI> {
 
     public enum Status {CHANGED}

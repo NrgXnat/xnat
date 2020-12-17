@@ -677,6 +677,7 @@ public class EventServiceIntegrationTest {
 
     }
 
+    @Ignore
     @Test
     @DirtiesContext
     public void registerFilterablePayloadWorkflowStatusChangeSubscription() throws Exception {
@@ -708,6 +709,7 @@ public class EventServiceIntegrationTest {
         assertThat("Created subscription is missing DB id.", createdSubsciption.id(), not(nullValue()));
     }
 
+    @Ignore
     @Test
     @DirtiesContext
     public void tryToBreakReactorWithStringEventKey() throws Exception {
@@ -753,6 +755,7 @@ public class EventServiceIntegrationTest {
         assertThat("List of detected events should not be empty.", actionProvider.getDetectedEvents().size(), not(0));
     }
 
+    @Ignore
     @Test
     @DirtiesContext
     public void matchWorkflowStatusChangeEvent() throws Exception {
@@ -781,6 +784,7 @@ public class EventServiceIntegrationTest {
         assertThat("List of detected events should not be empty.", actionProvider.getDetectedEvents().size(), not(0));
     }
 
+    @Ignore
     @Test
     @DirtiesContext
     public void mismatchWorkflowStatusChangeEvent() throws Exception {
@@ -1351,6 +1355,7 @@ public class EventServiceIntegrationTest {
         }
 
         XnatImagesessiondata session = new XnatImagesessiondata();
+        session.setId("E_SessionID123");
         session.setModality("MR");
         session.setProject(projectId);
         session.setSessionType("xnat:mrSessionData");

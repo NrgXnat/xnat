@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-public class TestCombinedEventServiceListener implements EventServiceListener<EventServiceEvent> {
+public class TestDefaultEventServiceListener implements EventServiceListener<EventServiceEvent> {
 
     UUID listenerId = UUID.randomUUID();
     Date eventDetectedTimestamp = null;
@@ -28,7 +28,7 @@ public class TestCombinedEventServiceListener implements EventServiceListener<Ev
 
     @Override
     public EventServiceListener getInstance() {
-        return new TestCombinedEventServiceListener();
+        return new TestDefaultEventServiceListener();
     }
 
     @Override

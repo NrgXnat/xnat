@@ -7,6 +7,8 @@ import org.springframework.core.io.support.PropertiesLoaderUtils;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
@@ -52,7 +54,17 @@ public abstract class AbstractEventServiceEvent<EventObjectT>
     public String getType() { return this.getClass().getCanonicalName(); }
 
     @Override
-    public Class getObjectClass() { return objectClass;}
+    public Class getObjectClass() {
+        if (objectClass == null) {
+            try {
+                Type payloadType = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+                objectClass = Class.forName(payloadType.getTypeName());
+            } catch (Throwable e) {
+                if(log.isDebugEnabled()) log.debug("Could not discover payload object class - Event superclass is not parametrized with generic type.");
+            }
+        }
+        return objectClass;
+    }
 
     @Override
     public String getPayloadXnatType() { return xsiType; }

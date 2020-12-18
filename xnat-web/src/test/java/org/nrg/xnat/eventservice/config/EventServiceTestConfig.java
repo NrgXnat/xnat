@@ -24,7 +24,7 @@ import org.nrg.xnat.eventservice.daos.SubscriptionDeliveryEntityDao;
 import org.nrg.xnat.eventservice.entities.*;
 import org.nrg.xnat.eventservice.events.*;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.listeners.TestCombinedEventServiceListener;
+import org.nrg.xnat.eventservice.listeners.TestDefaultEventServiceListener;
 import org.nrg.xnat.eventservice.services.*;
 import org.nrg.xnat.eventservice.services.impl.*;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -119,8 +119,8 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public TestCombinedEventServiceListener testListener() {
-        return new TestCombinedEventServiceListener();
+    public TestDefaultEventServiceListener testListener() {
+        return new TestDefaultEventServiceListener();
     }
 
     @Bean
@@ -221,7 +221,7 @@ public class EventServiceTestConfig {
         return new EventPropertyServiceImpl(componentManager, mapper);
     }
 
-    //** Combined Events/Listener **//
+    //** Events **//
     @Bean
     public ProjectEvent projectCreatedEvent() {
         return new ProjectEvent();
@@ -246,4 +246,11 @@ public class EventServiceTestConfig {
     public WorkflowStatusChangeEvent workflowStatusChangeEvent() {
         return new WorkflowStatusChangeEvent();
     }
+
+    @Bean
+    public ImageAssessorEvent imageAssessorEvent() { return new ImageAssessorEvent();}
+
+    @Bean
+    public SampleEvent sampleEvent() { return new SampleEvent();}
+
 }

@@ -36,10 +36,13 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
         return convertToTypedList(query.list(), SubscriptionDeliverySummaryEntity.class);
     }
 
-    public List<SubscriptionDeliveryEntity> get(final String projectId, final Long subscriptionId, final TimedEventStatusEntity.Status statusToExclude, final SubscriptionDeliveryEntityPaginatedRequest paginatedRequest) {
+    public List<SubscriptionDeliveryEntity> get(final String projectId, final Long subscriptionId, final TimedEventStatusEntity.Status statusToExclude, SubscriptionDeliveryEntityPaginatedRequest paginatedRequest) {
+
+        paginatedRequest = paginatedRequest != null ? paginatedRequest : new SubscriptionDeliveryEntityPaginatedRequest();
 
         final Map<String, Filter> newFilters = new HashMap();
         final Map<String, Filter> requestFilters = paginatedRequest.getFiltersMap();
+
 
         // Method parameter filters
         if (StringUtils.isNotBlank(projectId)) {

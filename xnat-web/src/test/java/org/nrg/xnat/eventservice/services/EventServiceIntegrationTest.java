@@ -1,7 +1,6 @@
 package org.nrg.xnat.eventservice.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
@@ -26,7 +25,6 @@ import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.actions.EventServiceLoggingAction;
 import org.nrg.xnat.eventservice.actions.SingleActionProvider;
@@ -39,9 +37,8 @@ import org.nrg.xnat.eventservice.events.SampleEvent;
 import org.nrg.xnat.eventservice.events.ScanEvent;
 import org.nrg.xnat.eventservice.events.SessionEvent;
 import org.nrg.xnat.eventservice.events.SubjectEvent;
-import org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.listeners.TestCombinedEventServiceListener;
+import org.nrg.xnat.eventservice.listeners.TestDefaultEventServiceListener;
 import org.nrg.xnat.eventservice.model.Action;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
 import org.nrg.xnat.eventservice.model.ActionProvider;
@@ -104,7 +101,7 @@ public class EventServiceIntegrationTest {
     @Autowired
     private EventBus                          eventBus;
     @Autowired
-    private TestCombinedEventServiceListener testListener;
+    private TestDefaultEventServiceListener testListener;
     @Autowired
     private EventServiceActionProvider        testAction;
     @Autowired
@@ -161,7 +158,7 @@ public class EventServiceIntegrationTest {
         project1CreatedSubscription = SubscriptionCreator.builder()
                                                          .name("TestSubscription")
                                                          .active(true)
-                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestCombinedEventServiceListener")
+                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestDefaultEventServiceListener")
                                                          .actionKey("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction")
                                                          .eventFilter(project1EventFilterCreator)
                                                          .actAsEventUser(false)
@@ -175,7 +172,7 @@ public class EventServiceIntegrationTest {
         project2CreatedSubscription = SubscriptionCreator.builder()
                                                          .name("TestSubscription2")
                                                          .active(true)
-                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestCombinedEventServiceListener")
+                                                         .customListenerId("org.nrg.xnat.eventservice.listeners.TestDefaultEventServiceListener")
                                                          .actionKey("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction")
                                                          .eventFilter(project2EventFilterCreator)
                                                          .actAsEventUser(false)
@@ -222,7 +219,7 @@ public class EventServiceIntegrationTest {
 
         when(mockComponentManager.getInstalledEvents()).thenReturn(new ArrayList<>(Arrays.asList(new SampleEvent())));
 
-        when(mockComponentManager.getInstalledListeners()).thenReturn(new ArrayList<>(Arrays.asList(new TestCombinedEventServiceListener())));
+        when(mockComponentManager.getInstalledListeners()).thenReturn(new ArrayList<>(Arrays.asList(new TestDefaultEventServiceListener())));
 
         // Mock action
         when(mockEventServiceLoggingAction.getName()).thenReturn("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction");
@@ -358,12 +355,11 @@ public class EventServiceIntegrationTest {
         assertThat("Subscriptions should have unique IDs", savedSubscription.id(), not(secondSavedSubscription.id()));
     }
 
-    @Ignore("Fails with error message: Could not load TestCombinedEvent from componentManager Expected: not null but: was null")
     @Test
     @DirtiesContext
     public void createSubscriptionWithBlankName() throws Exception {
-        EventServiceEvent testCombinedEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.SessionEvent");
-        assertThat("Could not load SessionEvent from componentManager", testCombinedEvent, notNullValue());
+        EventServiceEvent testSessionEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.SessionEvent");
+        assertThat("Could not load SessionEvent from componentManager", testSessionEvent, notNullValue());
 
         String eventType = "org.nrg.xnat.eventservice.events.SessionEvent";
         String projectId = "PROJECTID-1";
@@ -386,7 +382,7 @@ public class EventServiceIntegrationTest {
         assertThat("Json Filtered Subscription creation failed :(", subscription, notNullValue());
 
         List<String> names = new ArrayList<>();
-        for (int i = 1; i < 100; i++) {
+        for (int i = 1; i < 10; i++) {
             Subscription createdSubsciption = eventService.createSubscription(subscription);
             assertThat("eventService.createSubscription() returned a null value", createdSubsciption, not(nullValue()));
             assertThat("Expected subscription to have auto-generated name", createdSubsciption.name(), notNullValue());
@@ -397,7 +393,6 @@ public class EventServiceIntegrationTest {
 
     }
 
-    @Ignore("Fails with error message: No qualifying bean of type 'org.nrg.xnat.eventservice.events.ImageAssessorEvent' available")
     @Test
     public void listSubscriptions() throws Exception {
         createSubscription();
@@ -597,7 +592,7 @@ public class EventServiceIntegrationTest {
         assertThat("Time-out waiting for eventType", consumer.getEvent(), is(notNullValue()));
     }
 
-    @Ignore("Fails with error message: Could not compile jsonPath filter. null")
+    @Ignore("Fails with error message: Could not compile jsonPath filter. null - for some reason 'SampleEvent' is not being loaded into the context any longer")
     @Test
     @DirtiesContext
     public void catchSubscribedEvent() throws Exception {
@@ -643,12 +638,11 @@ public class EventServiceIntegrationTest {
         assertThat("", eventStatuses.get(eventStatuses.size() - 1).status(), is("ACTION_COMPLETE"));
     }
 
-    @Ignore("Fails with error message: Could not load TestCombinedEvent from componentManager Expected: not null but: was null")
     @Test
     @DirtiesContext
     public void registerMrSessionSubscription() throws Exception {
-        EventServiceEvent testCombinedEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.SessionEvent");
-        assertThat("Could not load SessionEvent from componentManager", testCombinedEvent, notNullValue());
+        EventServiceEvent testEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.SessionEvent");
+        assertThat("Could not load SessionEvent from componentManager", testEvent, notNullValue());
 
         String projectId = "PROJECTID-1";
         String eventType = "org.nrg.xnat.eventservice.events.SessionEvent";
@@ -677,55 +671,55 @@ public class EventServiceIntegrationTest {
 
     }
 
-    @Ignore
-    @Test
-    @DirtiesContext
-    public void registerFilterablePayloadWorkflowStatusChangeSubscription() throws Exception {
-        EventServiceEvent event = componentManager.getEvent("org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent");
-        assertThat("Could not load WorkflowStatusChangeEvent from componentManager", event, notNullValue());
+//    @Ignore
+//    @Test
+//    @DirtiesContext
+//    public void registerFilterablePayloadWorkflowStatusChangeSubscription() throws Exception {
+//        EventServiceEvent event = componentManager.getEvent("org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent");
+//        assertThat("Could not load WorkflowStatusChangeEvent from componentManager", event, notNullValue());
+//
+//        String projectId = "PROJECTID-1";
+//        String eventType = event.getType();
+//        EventFilterCreator eventServiceFilterWithJson = EventFilterCreator.builder()
+//                                                                          .eventType(eventType)
+//                                                                          .projectIds(Arrays.asList(projectId))
+//                                                                          .jsonPathFilter("(@.status == \"In Progress\")")
+//                                                                          .build();
+//        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
+//                                                                     .name("PayloadFilterTestSubscription")
+//                                                                     .active(true)
+//                                                                     .actionKey("org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction")
+//                                                                     .eventFilter(eventServiceFilterWithJson)
+//                                                                     .actAsEventUser(false)
+//                                                                     .build();
+//        assertThat("Json Filtered PayloadSubscriptionCreator builder failed :(", subscriptionCreator, notNullValue());
+//
+//        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
+//        assertThat("Json Filtered Payload Subscription creation failed :(", subscription, notNullValue());
+//
+//        Subscription createdSubsciption = eventService.createSubscription(subscription);
+//        assertThat("eventService.createSubscription() returned a null value", createdSubsciption, not(nullValue()));
+//        assertThat("Created subscription is missing listener registration key.", eventSubscriptionEntityService.getActiveRegistrationSubscriptionIds().size(), is(1));
+//        assertThat("Created subscription is missing DB id.", createdSubsciption.id(), not(nullValue()));
+//    }
 
-        String projectId = "PROJECTID-1";
-        String eventType = event.getType();
-        EventFilterCreator eventServiceFilterWithJson = EventFilterCreator.builder()
-                                                                          .eventType(eventType)
-                                                                          .projectIds(Arrays.asList(projectId))
-                                                                          .jsonPathFilter("(@.status == \"In Progress\")")
-                                                                          .build();
-        SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
-                                                                     .name("PayloadFilterTestSubscription")
-                                                                     .active(true)
-                                                                     .actionKey("org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction")
-                                                                     .eventFilter(eventServiceFilterWithJson)
-                                                                     .actAsEventUser(false)
-                                                                     .build();
-        assertThat("Json Filtered PayloadSubscriptionCreator builder failed :(", subscriptionCreator, notNullValue());
+//    @Ignore
+//    @Test
+//    @DirtiesContext
+//    public void tryToBreakReactorWithStringEventKey() throws Exception {
+//        String finished = null;
+//        try {
+//            registerFilterablePayloadWorkflowStatusChangeSubscription();
+//            eventBus.notify("org.this.could.cause.problems", Event.wrap("MisterBug"));
+//            eventBus.notify(Event.wrap("MrsBug"));
+//            finished = "yay";
+//        } catch (Throwable throwable) {
+//            throwable.printStackTrace();
+//        }
+//        assertThat("Exception raised when attempting to handle string event key.", finished, notNullValue());
+//    }
 
-        Subscription subscription = Subscription.create(subscriptionCreator, mockUser.getLogin());
-        assertThat("Json Filtered Payload Subscription creation failed :(", subscription, notNullValue());
-
-        Subscription createdSubsciption = eventService.createSubscription(subscription);
-        assertThat("eventService.createSubscription() returned a null value", createdSubsciption, not(nullValue()));
-        assertThat("Created subscription is missing listener registration key.", eventSubscriptionEntityService.getActiveRegistrationSubscriptionIds().size(), is(1));
-        assertThat("Created subscription is missing DB id.", createdSubsciption.id(), not(nullValue()));
-    }
-
-    @Ignore
-    @Test
-    @DirtiesContext
-    public void tryToBreakReactorWithStringEventKey() throws Exception {
-        String finished = null;
-        try {
-            registerFilterablePayloadWorkflowStatusChangeSubscription();
-            eventBus.notify("org.this.could.cause.problems", Event.wrap("MisterBug"));
-            eventBus.notify(Event.wrap("MrsBug"));
-            finished = "yay";
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-        }
-        assertThat("Exception raised when attempting to handle string event key.", finished, notNullValue());
-    }
-
-    @Ignore("Fails with error message: Could not load TestCombinedEvent from componentManager Expected: not null but: was null")
+    @Ignore("Fails b/c test session doesn't have 'MRs in Session' as required by filter")
     @Test
     @DirtiesContext
     public void matchMrSubscriptionToMrSession() throws Exception {
@@ -741,38 +735,9 @@ public class EventServiceIntegrationTest {
         session.setProject("PROJECTID-1");
         session.setSessionType("xnat:imageSessionData");
 
-        SessionEvent combinedEvent = new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, "PROJECTID-1");
+        SessionEvent testEvent = new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, "PROJECTID-1");
 
-        eventService.triggerEvent(combinedEvent);
-
-        // wait for async action (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
-
-        TestAction actionProvider = (TestAction) testAction.provider();
-        assertThat("List of detected events should not be null.", actionProvider.getDetectedEvents(), notNullValue());
-        assertThat("List of detected events should not be empty.", actionProvider.getDetectedEvents().size(), not(0));
-    }
-
-    @Ignore
-    @Test
-    @DirtiesContext
-    public void matchWorkflowStatusChangeEvent() throws Exception {
-        registerFilterablePayloadWorkflowStatusChangeSubscription();
-
-        Action testAction = actionManager.getActionByKey("org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction", mockUser);
-        assertThat("Could not load TestAction from actionManager", testAction, notNullValue());
-
-        String              projectId = "PROJECTID-1";
-        WorkflowStatusEvent wrkFlow  = new WorkflowStatusEvent();
-        wrkFlow.setStatus("In Progress");
-        wrkFlow.setJustification("Unit Test");
-        wrkFlow.setEventSpecificFields(Sets.newHashSet());
-        WorkflowStatusChangeEvent workflowStatusChangeEvent =
-                new WorkflowStatusChangeEvent(wrkFlow.getWorkflow(), mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
-
-        eventService.triggerEvent(workflowStatusChangeEvent);
+        eventService.triggerEvent(testEvent);
 
         // wait for async action (max 1 sec.)
         synchronized (testAction) {
@@ -784,36 +749,65 @@ public class EventServiceIntegrationTest {
         assertThat("List of detected events should not be empty.", actionProvider.getDetectedEvents().size(), not(0));
     }
 
-    @Ignore
-    @Test
-    @DirtiesContext
-    public void mismatchWorkflowStatusChangeEvent() throws Exception {
-        registerFilterablePayloadWorkflowStatusChangeSubscription();
+//    @Ignore
+//    @Test
+//    @DirtiesContext
+//    public void matchWorkflowStatusChangeEvent() throws Exception {
+//        registerFilterablePayloadWorkflowStatusChangeSubscription();
+//
+//        Action testAction = actionManager.getActionByKey("org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction", mockUser);
+//        assertThat("Could not load TestAction from actionManager", testAction, notNullValue());
+//
+//        String              projectId = "PROJECTID-1";
+//        WorkflowStatusEvent wrkFlow  = new WorkflowStatusEvent();
+//        wrkFlow.setStatus("In Progress");
+//        wrkFlow.setJustification("Unit Test");
+//        wrkFlow.setEventSpecificFields(Sets.newHashSet());
+//        WorkflowStatusChangeEvent workflowStatusChangeEvent =
+//                new WorkflowStatusChangeEvent(wrkFlow.getWorkflow(), mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
+//
+//        eventService.triggerEvent(workflowStatusChangeEvent);
+//
+//        // wait for async action (max 1 sec.)
+//        synchronized (testAction) {
+//            testAction.wait(1000);
+//        }
+//
+//        TestAction actionProvider = (TestAction) testAction.provider();
+//        assertThat("List of detected events should not be null.", actionProvider.getDetectedEvents(), notNullValue());
+//        assertThat("List of detected events should not be empty.", actionProvider.getDetectedEvents().size(), not(0));
+//    }
 
-        Action testAction = actionManager.getActionByKey("org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction", mockUser);
-        assertThat("Could not load TestAction from actionManager", testAction, notNullValue());
+//    @Ignore
+//    @Test
+//    @DirtiesContext
+//    public void mismatchWorkflowStatusChangeEvent() throws Exception {
+//        registerFilterablePayloadWorkflowStatusChangeSubscription();
+//
+//        Action testAction = actionManager.getActionByKey("org.nrg.xnat.eventservice.actions.TestAction:org.nrg.xnat.eventservice.actions.TestAction", mockUser);
+//        assertThat("Could not load TestAction from actionManager", testAction, notNullValue());
+//
+//        String              projectId = "PROJECTID-1";
+//        WorkflowStatusEvent wrkFlw  = new WorkflowStatusEvent();
+//        wrkFlw.setStatus("Complete");
+//        wrkFlw.setJustification("Unit Test");
+//        wrkFlw.setEventSpecificFields(Sets.newHashSet());
+//        WorkflowStatusChangeEvent workflowStatusChangeEvent =
+//                new WorkflowStatusChangeEvent(wrkFlw.getWorkflow(), mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
+//
+//        eventService.triggerEvent(workflowStatusChangeEvent);
+//
+//        // wait for async action (max 1 sec.)
+//        synchronized (testAction) {
+//            testAction.wait(1000);
+//        }
+//
+//        TestAction actionProvider = (TestAction) testAction.provider();
+//        assertThat("List of detected events should not be null.", actionProvider.getDetectedEvents(), notNullValue());
+//        assertThat("List of detected events should be empty.", actionProvider.getDetectedEvents().size(), is(0));
+//    }
 
-        String              projectId = "PROJECTID-1";
-        WorkflowStatusEvent wrkFlw  = new WorkflowStatusEvent();
-        wrkFlw.setStatus("Complete");
-        wrkFlw.setJustification("Unit Test");
-        wrkFlw.setEventSpecificFields(Sets.newHashSet());
-        WorkflowStatusChangeEvent workflowStatusChangeEvent =
-                new WorkflowStatusChangeEvent(wrkFlw.getWorkflow(), mockUser.getLogin(), WorkflowStatusChangeEvent.Status.CHANGED, projectId, "wrk:workflowData");
-
-        eventService.triggerEvent(workflowStatusChangeEvent);
-
-        // wait for async action (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
-
-        TestAction actionProvider = (TestAction) testAction.provider();
-        assertThat("List of detected events should not be null.", actionProvider.getDetectedEvents(), notNullValue());
-        assertThat("List of detected events should be empty.", actionProvider.getDetectedEvents().size(), is(0));
-    }
-
-    @Ignore("Fails with error message: Could not load TestCombinedEvent from componentManager Expected: not null but: was null")
+    @Ignore("Fails b/c test session doesn't have 'MRs in Session' as required by filter")
     @Test
     @DirtiesContext
     public void mismatchProjectIdMrSubscriptionToMrSession() throws Exception {
@@ -864,7 +858,6 @@ public class EventServiceIntegrationTest {
 
     }
 
-    //@Ignore("Fails with error message: Could not load TestCombinedEvent from componentManager Expected: not null but: was null")
     @Test
     @DirtiesContext
     public void mismatchMrSubscriptionToCtSession() throws Exception {
@@ -1126,7 +1119,6 @@ public class EventServiceIntegrationTest {
 
     }
 
-    //@Ignore("Fails with error message: Expected two detected events. Expected: is <2> but: was <1>")
     @Test
     @DirtiesContext
     public void create1000SubscriptionsCatchTwoWithDifferentProjectId() throws Exception {
@@ -1165,7 +1157,6 @@ public class EventServiceIntegrationTest {
 
     }
 
-    //@Ignore("Fails with error message: Expected 100 detected events. Expected: is <1000> but: was <1>")
     @Test
     @DirtiesContext
     public void createManySubscriptionsTriggerManyEventsCatch1000() throws Exception {
@@ -1259,7 +1250,6 @@ public class EventServiceIntegrationTest {
 
     }
 
-    @Ignore("Fails with error message: null id in org.nrg.xnat.eventservice.entities.TimedEventStatusEntity entry (don't flush the Session after an exception occurs)")
     @Test
     @DirtiesContext
     public void testSubscriptionDeliveryCreation() throws Exception {
@@ -1269,13 +1259,14 @@ public class EventServiceIntegrationTest {
         sessionToCatch.setProject(projectIdToCatch);
         sessionToCatch.setSessionType("xnat:mrSessionData");
 
-        String               projectIdToIgnore = "ProjectIdToIgnore";
-        XnatImagesessiondata sessionToIgnore   = new XnatImagesessiondata();
+        String projectIdToIgnore = "ProjectIdToIgnore";
+        XnatImagesessiondata sessionToIgnore = new XnatImagesessiondata();
         sessionToCatch.setModality("MR");
         sessionToCatch.setProject(projectIdToIgnore);
         sessionToCatch.setSessionType("xnat:mrSessionData");
 
-        assertThat(createSessionSubscription("SubscriptionOfInterest", projectIdToCatch, null), notNullValue());
+        Subscription subscriptionOfInterest = createSessionSubscription("SubscriptionOfInterest", projectIdToCatch, null);
+        assertThat(subscriptionOfInterest, notNullValue());
         StopWatch sw3 = new StopWatch();
         sw3.start("eventTriggersToActions");
         for (Integer i = 0; i < 10; i++) {
@@ -1289,10 +1280,10 @@ public class EventServiceIntegrationTest {
         List<SubscriptionDelivery> deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false, true);
         assertThat("Expected 10 deliveries.", deliveriesWithProjectId.size(), is(10));
 
-        List<SubscriptionDelivery> deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true, true);
+        List<SubscriptionDelivery> deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, subscriptionOfInterest.id(), true, true);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionId.size(), is(10));
 
-        List<SubscriptionDelivery> deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false, true);
+        List<SubscriptionDelivery> deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, subscriptionOfInterest.id(), false, true);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionIdAndProjectId.size(), is(10));
 
         List<SubscriptionDelivery> deliveries = eventService.getSubscriptionDeliveries(null, null, true, true);
@@ -1313,14 +1304,14 @@ public class EventServiceIntegrationTest {
         assertThat("Expected 10 deliveries counted.", deliveriesWithProjectIdCount, is(10));
 
 
-        deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, 1L, true, true);
+        deliveriesWithSubscriptionId = eventService.getSubscriptionDeliveries(null, subscriptionOfInterest.id(), true, true);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionId.size(), is(10));
-        Integer deliveriesWithSubscriptionIdCount = eventService.getSubscriptionDeliveriesCount(null, 1L, true);
+        Integer deliveriesWithSubscriptionIdCount = eventService.getSubscriptionDeliveriesCount(null, subscriptionOfInterest.id(), true);
         assertThat("Expected 10 deliveries counted.", deliveriesWithSubscriptionIdCount, is(10));
 
-        deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, 1l, false, true);
+        deliveriesWithSubscriptionIdAndProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, subscriptionOfInterest.id(), false, true);
         assertThat("Expected 10 deliveries.", deliveriesWithSubscriptionIdAndProjectId.size(), is(10));
-        Integer deliveriesWithSubscriptionIdAndProjectIdCount = eventService.getSubscriptionDeliveriesCount(projectIdToCatch, 1L, false);
+        Integer deliveriesWithSubscriptionIdAndProjectIdCount = eventService.getSubscriptionDeliveriesCount(projectIdToCatch, subscriptionOfInterest.id(), false);
         assertThat("Expected 10 deliveries counted.", deliveriesWithSubscriptionIdAndProjectIdCount, is(10));
 
         deliveries = eventService.getSubscriptionDeliveries(null, null, true, false);

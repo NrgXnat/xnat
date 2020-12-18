@@ -17,7 +17,7 @@ public class ProjectAssetEvent extends AbstractEventServiceEvent<XnatAbstractpro
 
     public enum Status {CREATED};
 
-    private final String displayName = "Project Asset Event";
+    private final String displayName = "Project Asset";
     private final String description = "Project Asset created.";
     private String payloadId = null;
 

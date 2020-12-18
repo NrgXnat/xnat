@@ -266,7 +266,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
         return subscription;
     }
 
-    private String buildPayloadJsonPath(Subscription subscription, EventServiceEvent event){
+    private String buildPayloadJsonPath(Subscription subscription, @Nonnull EventServiceEvent event){
         String payloadJsonPath = null;
         if(event.filterablePayload() && !Strings.isNullOrEmpty(subscription.eventFilter().jsonPathFilter())){
             log.debug("Creating payload filter for Reactor Selector:");

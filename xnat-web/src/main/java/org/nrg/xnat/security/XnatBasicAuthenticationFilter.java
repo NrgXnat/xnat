@@ -70,11 +70,23 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
         }
 
         if (credentials != null) {
-            final String username = credentials.getLeft();
+            String username = credentials.getLeft();
+            String providerName = null;
+            int idx = username.indexOf('/');
+            if (idx != -1) {
+                providerName = username.substring(0, idx);
+                username = username.substring(idx + 1);
+            }
             final String password = credentials.getRight();
 
             if (StringUtils.isNotBlank(username) && authenticationIsRequired(username)) {
-                final UsernamePasswordAuthenticationToken authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username), username, password);
+                final UsernamePasswordAuthenticationToken authRequest;
+                if (StringUtils.isBlank(providerName)) {
+                    authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username),
+                            username, password);
+                } else {
+                    authRequest = _providerManager.buildUPTokenForProviderName(providerName, username, password);
+                }
                 authRequest.setDetails(_authenticationDetailsSource.buildDetails(request));
 
                 try {

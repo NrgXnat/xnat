@@ -61,7 +61,6 @@ import java.util.stream.Stream;
 /**
  * @author Tim
  */
-@SuppressWarnings("serial")
 @Slf4j
 public class XDATServlet extends HttpServlet {
     public static final String  INIT_SQL_PATTERN         = "classpath*:META-INF/xnat/**/init_*.sql";
@@ -339,7 +338,7 @@ public class XDATServlet extends HttpServlet {
                         if (CANNOT_DROP_MESSAGE.matcher(errMessage).find()) {
                             //In cases where it is failing to modify a table because one or more views depend on it, simply drop all XNAT views and try again.
                             transaction.rollback();
-                            transaction.execute(getViewDropSql(StringUtils.defaultIfBlank(XDAT.getContextService().getBean("dbUsername", String.class), "xnat")));
+                            transaction.execute(SQLUpdateGenerator.getViewDropSql(StringUtils.defaultIfBlank(XDAT.getContextService().getBean("dbUsername", String.class), "xnat")));
                             execute(transaction, writer, GenericWrapperUtils.GetExtensionTables());
                             execute(transaction, writer, _sql);
                         } else {
@@ -447,7 +446,7 @@ public class XDATServlet extends HttpServlet {
         final List<String> statements = new ArrayList<>();
         try {
             final List<Resource> resources = filterAndSortInitSqlResources(BasicXnatResourceLocator.getResources(INIT_SQL_PATTERN), filter, comparator);
-            log.debug("Found {} resources that match the pattern {}", resources.size(), INIT_SQL_PATTERN);
+            log.debug("Found {} resources that match the pattern {} and filter {}", resources.size(), INIT_SQL_PATTERN, filter.pattern());
             for (final Resource resource : resources) {
                 log.debug("Now processing the resource {}", resource.getFilename());
                 try (final Stream<String> stream = Files.lines(resource.getFile().toPath());
@@ -584,10 +583,6 @@ public class XDATServlet extends HttpServlet {
         }
     }
 
-    private List<String> getViewDropSql(final String user) {
-        return Arrays.asList(QUERY_FIND_USER_VIEWS, QUERY_DROP_USER_VIEWS, String.format(QUERY_EXEC_DROP_USER_VIEWS, user));
-    }
-
     private static final Pattern OID_FUNCTIONS_PATTERN      = Pattern.compile("^(?<function>[^,]+),?(<param1>[^,]+),?(<param2>[^,]+)$");
     private static final Pattern DATA_TYPE_PATTERN          = Pattern.compile("^update_ls_(ext_)?(?<table>.*)$");
     private static final String  QUERY_FIND_OID_FUNCTIONS   = "SELECT count(*) FROM information_schema.routines WHERE routine_name LIKE 'update_ls_%' AND routine_definition LIKE '%SELECT oid FROM xs_item_cache%'";
@@ -615,40 +610,6 @@ public class XDATServlet extends HttpServlet {
                                                               "GROUP BY " +
                                                               "    routine_name";
     private static final String  QUERY_FIND_DATA_TYPE       = "SELECT element_name FROM xdat_meta_element WHERE element_name ~* ('^' || replace(:tableName, '_', '.') || '$');";
-    private static final String  QUERY_FIND_USER_VIEWS      = "CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
-                                                              "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
-                                                              "BEGIN " +
-                                                              "RETURN QUERY " +
-                                                              "SELECT " +
-                                                              "n.nspname AS table_schema, " +
-                                                              "c.relname AS view_name " +
-                                                              "FROM pg_catalog.pg_class c " +
-                                                              "LEFT JOIN pg_catalog.pg_namespace n " +
-                                                              "ON (n.oid = c.relnamespace) " +
-                                                              "WHERE c.relkind = 'v' " +
-                                                              "AND c.relowner = (SELECT usesysid " +
-                                                              "FROM pg_catalog.pg_user " +
-                                                              "WHERE usename = $1); " +
-                                                              "END$$ LANGUAGE plpgsql;";
-    private static final String  QUERY_DROP_USER_VIEWS      = "CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
-                                                              "RETURNS INTEGER AS $$ " +
-                                                              "DECLARE " +
-                                                              "r RECORD; " +
-                                                              "s TEXT; " +
-                                                              "c INTEGER := 0; " +
-                                                              "BEGIN " +
-                                                              "RAISE NOTICE 'Dropping views for user %', $1; " +
-                                                              "FOR r IN " +
-                                                              "SELECT * FROM find_user_views($1) " +
-                                                              "LOOP " +
-                                                              "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
-                                                              "EXECUTE s; " +
-                                                              "c := c + 1; " +
-                                                              "RAISE NOTICE 's = % ', S; " +
-                                                              "END LOOP; " +
-                                                              "RETURN c; " +
-                                                              "END$$ LANGUAGE plpgsql;";
-    private static final String  QUERY_EXEC_DROP_USER_VIEWS = "SELECT drop_user_views('%s');";
     private static final Pattern CANNOT_DROP_MESSAGE        = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
 
     private static Boolean _shouldUpdateViews;

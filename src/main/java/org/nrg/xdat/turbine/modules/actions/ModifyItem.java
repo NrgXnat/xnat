@@ -185,7 +185,7 @@ public class ModifyItem  extends SecureAction {
         		} catch (Exception e) {
                     PersistentWorkflowUtils.confirmID(first, wrk);
                     PersistentWorkflowUtils.fail(wrk,c);
-                    handleException(data,first,error);
+                    handleException(data,first,e);
                     return;
         		}
                 try {

@@ -1028,7 +1028,9 @@ public class PoolDBUtils {
 				try {
 					st.execute(statement);
 				} catch (SQLException e) {
-					logger.error("An error occurred trying to execute the SQL statement: '{}'", statement);
+					if (!CANNOT_DROP_MESSAGE.matcher(e.getMessage()).find()) {
+						logger.error("An error occurred trying to execute the SQL statement: '{}'", statement, e);
+					}
 					throw e;
 				}
 			}
@@ -1061,9 +1063,7 @@ public class PoolDBUtils {
 	private static final String  EXPR_DROP_TABLE_QUERY      = "DROP TABLE xdat_search\\." + EXPR_TABLE_NAME;
 	private static final Pattern PATTERN_DROP_TABLE_QUERY   = Pattern.compile(EXPR_DROP_TABLE_QUERY);
 	private static final String  EXPR_TABLE_NOT_FOUND       = "^.*table \"" + EXPR_TABLE_NAME + "\" does not exist.*$";
-	private static final Pattern PATTERN_TABLE_NOT_FOUND    = Pattern.compile(EXPR_TABLE_NOT_FOUND);
-	private static final String  EXPR_RELATION_NOT_FOUND    = "relation \"(?<relation>[a-z_]+)\" does not exist";
-	private static final Pattern PATTERN_RELATION_NOT_FOUND = Pattern.compile(EXPR_RELATION_NOT_FOUND);
+	private static final Pattern CANNOT_DROP_MESSAGE        = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
 	private static final String  QUERY_ITEM_CACHE_EXISTS    = "SELECT EXISTS(SELECT relname FROM pg_catalog.pg_class WHERE relname = LOWER('xs_item_cache')) AS cache_exists";
 	private static final String  QUERY_ITEM_CACHE_HAS_ID    = "SELECT EXISTS(SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'xs_item_cache' AND column_name = 'id') AS cache_has_id";
 	private static final String  QUERY_CREATE_ITEM_CACHE    = "CREATE TABLE xs_item_cache" +

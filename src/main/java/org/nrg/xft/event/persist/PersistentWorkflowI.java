@@ -19,222 +19,233 @@ public interface PersistentWorkflowI {
 	/**
 	 * @return Returns the details.
 	 */
-	public abstract String getDetails();
+	String getDetails();
 
 	/**
 	 * Sets the value for details.
 	 * @param v Value to Set.
 	 */
-	public abstract void setDetails(String v);
+	void setDetails(String v);
 
 	/**
 	 * @return Returns the comments.
 	 */
-	public abstract String getComments();
+	String getComments();
 
 	/**
 	 * Sets the value for comments.
 	 * @param v Value to Set.
 	 */
-	public abstract void setComments(String v);
+	void setComments(String v);
 
 	/**
 	 * @return Returns the justification.
 	 */
-	public abstract String getJustification();
+	String getJustification();
 
 	/**
 	 * Sets the value for justification.
 	 * @param v Value to Set.
 	 */
-	public abstract void setJustification(String v);
+	void setJustification(String v);
 
 	/**
 	 * @return Returns the type.
 	 */
-	public abstract String getType();
+	String getType();
 
 	/**
 	 * Sets the value for type.
 	 * @param v Value to Set.
 	 */
-	public abstract void setType(EventUtils.TYPE v);
+	void setType(EventUtils.TYPE v);
 
 	/**
 	 * @return Returns the type.
 	 */
-	public abstract String getCategory();
+	String getCategory();
 
 	/**
 	 * Sets the value for type.
 	 * @param v Value to Set.
 	 */
-	public abstract void setCategory(EventUtils.CATEGORY v);
+	void setCategory(EventUtils.CATEGORY v);
 
 	/**
 	 * @return Returns the data_type.
 	 */
-	public abstract String getDataType();
+	String getDataType();
 
 	/**
 	 * Sets the value for data_type.
 	 * @param v Value to Set.
 	 */
-	public abstract void setDataType(String v);
+	void setDataType(String v);
 
 	/**
 	 * @return Returns the ID.
 	 */
-	public abstract String getId();
+	String getId();
 
 	/**
 	 * Sets the value for ID.
 	 * @param v Value to Set.
 	 */
-	public abstract void setId(String v);
+	void setId(String v);
+
+	/**
+	 * @return Returns the scan ID.
+	 */
+	String getScanId();
+
+	/**
+	 * Sets the value for scan ID.
+	 * @param v Value to Set.
+	 */
+	void setScanId(String v);
 
 	/**
 	 * @return Returns the ExternalID.
 	 */
-	public abstract String getExternalid();
+	String getExternalid();
 
 	/**
 	 * Sets the value for ExternalID.
 	 * @param v Value to Set.
 	 */
-	public abstract void setExternalid(String v);
+	void setExternalid(String v);
 
 	/**
 	 * @return Returns the current_step_launch_time.
 	 */
-	public abstract Object getCurrentStepLaunchTime();
+	Object getCurrentStepLaunchTime();
 
 	/**
 	 * Sets the value for current_step_launch_time.
 	 * @param v Value to Set.
 	 */
-	public abstract void setCurrentStepLaunchTime(Object v);
+	void setCurrentStepLaunchTime(Object v);
 
 	/**
 	 * @return Returns the current_step_id.
 	 */
-	public abstract String getCurrentStepId();
+	String getCurrentStepId();
 
 	/**
 	 * Sets the value for current_step_id.
 	 * @param v Value to Set.
 	 */
-	public abstract void setCurrentStepId(String v);
+	void setCurrentStepId(String v);
 
 	/**
 	 * @return Returns the status.
 	 */
-	public abstract String getStatus();
+	String getStatus();
 
 	/**
 	 * Sets the value for status.
 	 * @param v Value to Set.
 	 */
-	public abstract void setStatus(String v);
+	void setStatus(String v);
 
 	/**
 	 * @return Returns the create_user.
 	 */
-	public abstract String getCreateUser();
+	String getCreateUser();
 
 	/**
 	 * Sets the value for create_user.
 	 * @param v Value to Set.
 	 */
-	public abstract void setCreateUser(String v);
+	void setCreateUser(String v);
 
 	/**
 	 * @return Returns the pipeline_name.
 	 */
-	public abstract String getPipelineName();
+	String getPipelineName();
 
 	/**
 	 * Sets the value for pipeline_name.
 	 * @param v Value to Set.
 	 */
-	public abstract void setPipelineName(String v);
+	void setPipelineName(String v);
 
 	/**
 	 * @return Returns the step_description.
 	 */
-	public abstract String getStepDescription();
+	String getStepDescription();
 
 	/**
 	 * Sets the value for step_description.
 	 * @param v Value to Set.
 	 */
-	public abstract void setStepDescription(String v);
+	void setStepDescription(String v);
 
 	/**
 	 * @return Returns the launch_time.
 	 */
-	public abstract Object getLaunchTime();
+	Object getLaunchTime();
 	/**
 	 * @return Returns the launch_time.
 	 */
-	public abstract Date getLaunchTimeDate();
+	Date getLaunchTimeDate();
 	/**
 	 * @return Returns the launch_time.
 	 */
-	public abstract String getOnlyPipelineName();
+	String getOnlyPipelineName();
 
 	/**
 	 * Sets the value for launch_time.
 	 * @param v Value to Set.
 	 */
-	public abstract void setLaunchTime(Object v);
+	void setLaunchTime(Object v);
 
 	/**
 	 * @return Returns the percentageComplete.
 	 */
-	public abstract String getPercentagecomplete();
+	String getPercentagecomplete();
 
 	/**
 	 * set the src
 	 * @param src the src string
 	 */
-	public abstract void setSrc(String src);
+	void setSrc(String src);
 
 	/**
 	 *
 	 * @return the src
 	 */
-	public abstract String getSrc();
+	String getSrc();
 
 	/**
 	 * set the jobId
 	 * @param jobId the src string
 	 */
-	public abstract void setJobid(String jobId);
+	void setJobid(String jobId);
 
 	/**
 	 *
 	 * @return the jobId
 	 */
-	public abstract String getJobid();
+	String getJobid();
 
 	/**
 	 * Sets the value for percentageComplete.
 	 * @param v Value to Set.
 	 */
-	public abstract void setPercentagecomplete(String v);
+	void setPercentagecomplete(String v);
 
-	public abstract String getUsername();
+	String getUsername();
 
-	public abstract Integer getUserId();
+	Integer getUserId();
 	
-	public abstract Integer getWorkflowId();
+	Integer getWorkflowId();
 	
-	public abstract EventMetaI buildEvent();
+	EventMetaI buildEvent();
 	
-	public abstract boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception;
+	boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception;
 
-	public void postSave() throws Exception;
+	void postSave() throws Exception;
 	
-	public void postSave(boolean triggerEvent) throws Exception;
+	void postSave(boolean triggerEvent) throws Exception;
 }

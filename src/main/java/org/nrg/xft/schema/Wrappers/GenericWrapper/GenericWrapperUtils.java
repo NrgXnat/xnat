@@ -10,6 +10,7 @@
 
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
@@ -2235,48 +2236,45 @@ public class GenericWrapperUtils {
      */
     public static List GetAlterTableStatements(GenericWrapperElement input)
             throws ElementNotFoundException, XFTInitException {
-        Hashtable indexs = new Hashtable();
-        ArrayList al = new ArrayList();
+        final Map<String, String> indexes = new HashMap<>();
+        final List<String> statements = new ArrayList<>();
         try {
-        	
-            Iterator refs = input.getReferenceFieldsWAddIns().iterator();
-            while (refs.hasNext()) {
-                GenericWrapperField localCol = (GenericWrapperField) refs
-                        .next();
+            for (final Object o : input.getReferenceFieldsWAddIns()) {
+                GenericWrapperField localCol = (GenericWrapperField) o;
                 if ((localCol.isMultiple()
-                        && localCol.getRelationType()
+                     && localCol.getRelationType()
                                 .equalsIgnoreCase("single") && localCol
-                        .getXMLType().getFullForeignType().equalsIgnoreCase(
+                             .getXMLType().getFullForeignType().equalsIgnoreCase(
                                 input.getFullXMLName()))
-                        || (!localCol.isMultiple())) {
+                    || (!localCol.isMultiple())) {
                     try {
                         XFTReferenceI ref = localCol.getXFTReference();
                         if (!ref.isManyToMany()) {
                             ArrayList specArray = ((XFTSuperiorReference) ref)
                                     .getKeyRelations();
                             if (specArray.size() > 1) {
-                                String localCols = "";
-                                String localTable = "";
-                                String foreignCols = "";
-                                String foreignTable = "";
-                                String onDelete = "";
-                                int counter2 = 0;
-                                Iterator specs = specArray.iterator();
+                                String   localCols    = "";
+                                String   localTable   = "";
+                                String   foreignCols  = "";
+                                String   foreignTable = "";
+                                String   onDelete     = "";
+                                int      counter2     = 0;
+                                Iterator specs        = specArray.iterator();
                                 while (specs.hasNext()) {
                                     XFTRelationSpecification spec = (XFTRelationSpecification) specs
                                             .next();
 
                                     StringBuffer sb = new StringBuffer();
                                     if (input.getSchema().getDbType()
-                                            .equalsIgnoreCase("MYSQL")) {
+                                             .equalsIgnoreCase("MYSQL")) {
                                         sb.append("ALTER TABLE ").append(
                                                 spec.getLocalTable());
                                         sb.append("\n ADD KEY fk_");
                                         sb.append(spec.getLocalCol()).append(
                                                 " (")
-                                                .append(spec.getLocalCol())
-                                                .append(");");
-                                        al.add(sb.toString());
+                                          .append(spec.getLocalCol())
+                                          .append(");");
+                                        statements.add(sb.toString());
                                     }
 
                                     if ((counter2++) == 0) {
@@ -2285,7 +2283,7 @@ public class GenericWrapperUtils {
                                     } else {
                                         localCols += "," + spec.getLocalCol();
                                         foreignCols += ","
-                                                + spec.getForeignCol();
+                                                       + spec.getForeignCol();
                                     }
 
                                     if (spec.getLocalKey() != null) {
@@ -2297,7 +2295,7 @@ public class GenericWrapperUtils {
                                         }
                                     } else {
                                         if (localCol.getOnDelete()
-                                                .equalsIgnoreCase("cascade") || localCol.isRequired()) {
+                                                    .equalsIgnoreCase("cascade") || localCol.isRequired()) {
                                             onDelete = " CASCADE";
                                         } else {
                                             onDelete = " SET NULL";
@@ -2311,10 +2309,10 @@ public class GenericWrapperUtils {
                                             "history")) {
                                         sb = new StringBuffer();
                                         String temp = spec.getLocalTable()
-                                                .toLowerCase()
-                                                + "_"
-                                                + spec.getLocalCol()
-                                                        .toLowerCase();
+                                                          .toLowerCase()
+                                                      + "_"
+                                                      + spec.getLocalCol()
+                                                            .toLowerCase();
                                         boolean maxLengthExceeded = false;
                                         if (temp.length() > 57) {
                                             temp = temp.substring(0, 57);
@@ -2322,8 +2320,8 @@ public class GenericWrapperUtils {
                                         }
 
                                         int counter = 0;
-                                        while (indexs.containsKey(temp
-                                                + ++counter)) {
+                                        while (indexes.containsKey(temp
+                                                                   + ++counter)) {
                                         }
                                         sb.append("CREATE INDEX ").append(
                                                 temp + counter);
@@ -2332,7 +2330,7 @@ public class GenericWrapperUtils {
                                                 "(");
                                         sb.append(spec.getLocalCol()).append(
                                                 ");");
-                                        indexs.put(temp + counter, sb
+                                        indexes.put(temp + counter, sb
                                                 .toString());
 
                                         if (maxLengthExceeded) {
@@ -2348,7 +2346,7 @@ public class GenericWrapperUtils {
                                                 " USING HASH (");
                                         sb.append(spec.getLocalCol()).append(
                                                 ");");
-                                        indexs.put(temp + "_hash", sb
+                                        indexes.put(temp + "_hash", sb
                                                 .toString());
                                     }
                                 }
@@ -2361,7 +2359,7 @@ public class GenericWrapperUtils {
                                 sb.append(foreignCols).append(") ON DELETE ");
                                 sb.append(onDelete);
                                 sb.append(" ON UPDATE CASCADE;");
-                                al.add(sb.toString());
+                                statements.add(sb.toString());
                             } else {
                                 XFTRelationSpecification spec = (XFTRelationSpecification) specArray
                                         .get(0);
@@ -2370,15 +2368,15 @@ public class GenericWrapperUtils {
                                         "history")) {
                                     StringBuffer sb = new StringBuffer();
                                     if (input.getSchema().getDbType()
-                                            .equalsIgnoreCase("MYSQL")) {
+                                             .equalsIgnoreCase("MYSQL")) {
                                         sb.append("ALTER TABLE ").append(
                                                 spec.getLocalTable());
                                         sb.append("\n ADD KEY fk_");
                                         sb.append(spec.getLocalCol()).append(
                                                 " (")
-                                                .append(spec.getLocalCol())
-                                                .append(");");
-                                        al.add(sb.toString());
+                                          .append(spec.getLocalCol())
+                                          .append(");");
+                                        statements.add(sb.toString());
                                     }
 
                                     sb = new StringBuffer();
@@ -2400,20 +2398,20 @@ public class GenericWrapperUtils {
                                         }
                                     } else {
                                         if (localCol.getOnDelete()
-                                                .equalsIgnoreCase("cascade")|| localCol.isRequired()) {
+                                                    .equalsIgnoreCase("cascade") || localCol.isRequired()) {
                                             sb.append(" CASCADE");
                                         } else {
                                             sb.append(" SET NULL");
                                         }
                                     }
                                     sb.append(" ON UPDATE CASCADE;");
-                                    al.add(sb.toString());
+                                    statements.add(sb.toString());
 
                                     sb = new StringBuffer();
                                     String temp = spec.getLocalTable()
-                                            .toLowerCase()
-                                            + "_"
-                                            + spec.getLocalCol().toLowerCase();
+                                                      .toLowerCase()
+                                                  + "_"
+                                                  + spec.getLocalCol().toLowerCase();
                                     boolean maxLengthExceeded = false;
                                     if (temp.length() > 57) {
                                         temp = temp.substring(0, 57);
@@ -2421,14 +2419,14 @@ public class GenericWrapperUtils {
                                     }
 
                                     int counter = 0;
-                                    while (indexs.containsKey(temp + ++counter)) {
+                                    while (indexes.containsKey(temp + ++counter)) {
                                     }
                                     sb.append("CREATE INDEX ").append(
                                             temp + counter);
                                     sb.append(" ON ").append(
                                             spec.getLocalTable()).append("(");
                                     sb.append(spec.getLocalCol()).append(");");
-                                    indexs.put(temp + counter, sb.toString());
+                                    indexes.put(temp + counter, sb.toString());
 
                                     if (maxLengthExceeded) {
                                         temp = temp.substring(0, 57);
@@ -2442,12 +2440,12 @@ public class GenericWrapperUtils {
                                             spec.getLocalTable()).append(
                                             " USING HASH (");
                                     sb.append(spec.getLocalCol()).append(");");
-                                    indexs.put(temp + "_hash", sb.toString());
+                                    indexes.put(temp + "_hash", sb.toString());
                                 }
                             }
 
                         }
-                    } catch (org.nrg.xft.exception.XFTInitException e) {
+                    } catch (XFTInitException e) {
                         e.printStackTrace();
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -2468,7 +2466,7 @@ public class GenericWrapperUtils {
                         sb.append("\n ADD KEY fk_");
                         sb.append(relation.getSQLName()).append(" (").append(
                                 relation.getSQLName()).append(");");
-                        al.add(sb.toString());
+                        statements.add(sb.toString());
                     }
 
                     sb = new StringBuffer();
@@ -2484,7 +2482,7 @@ public class GenericWrapperUtils {
                     }
                     sb.append(" ON UPDATE CASCADE;");
 
-                    al.add(sb.toString());
+                    statements.add(sb.toString());
 
                     sb = new StringBuffer();
                     String temp = input.getSQLName().toLowerCase() + "_"
@@ -2497,13 +2495,13 @@ public class GenericWrapperUtils {
 
                     if (!input.getAddin().equalsIgnoreCase("history")) {
                         int counter = 0;
-                        while (indexs.containsKey(temp + ++counter)) {
+                        while (indexes.containsKey(temp + ++counter)) {
                         }
                         sb.append("CREATE INDEX ").append(temp + counter);
                         sb.append(" ON ").append(input.getSQLName())
                                 .append("(");
                         sb.append(relation.getSQLName()).append(");");
-                        indexs.put(temp + counter, sb.toString());
+                        indexes.put(temp + counter, sb.toString());
 
                         if (maxLengthExceeded) {
                             temp = temp.substring(0, 57);
@@ -2515,7 +2513,7 @@ public class GenericWrapperUtils {
                         sb.append(" ON ").append(input.getSQLName()).append(
                                 " USING HASH (");
                         sb.append(relation.getSQLName()).append(");");
-                        indexs.put(temp, sb.toString());
+                        indexes.put(temp, sb.toString());
                     }
                 }
             }
@@ -2537,13 +2535,13 @@ public class GenericWrapperUtils {
                         }
 
                         int counter = 0;
-                        while (indexs.containsKey(temp + ++counter)) {
+                        while (indexes.containsKey(temp + ++counter)) {
                         }
                         sb.append("CREATE INDEX ").append(temp + counter);
                         sb.append(" ON ").append(input.getSQLName())
                                 .append("(");
                         sb.append(key.getSQLName()).append(");");
-                        indexs.put(temp + counter, sb.toString());
+                        indexes.put(temp + counter, sb.toString());
 
                         if (maxLengthExceeded) {
                             temp = temp.substring(0, 57);
@@ -2555,7 +2553,7 @@ public class GenericWrapperUtils {
                         sb.append(" ON ").append(input.getSQLName()).append(
                                 " USING HASH (");
                         sb.append(key.getSQLName()).append(");");
-                        indexs.put(temp, sb.toString());
+                        indexes.put(temp, sb.toString());
                     }
                 }
             }
@@ -2626,15 +2624,15 @@ public class GenericWrapperUtils {
                 }
                 sb.append(") ON DELETE ").append(row.get(0).get(2));
                 sb.append(" ON UPDATE CASCADE;");
-                al.add(sb.toString());
+                statements.add(sb.toString());
             }
 
         } catch (org.nrg.xft.exception.XFTInitException e) {
             logger.error(e);
         }
 
-        al.addAll(indexs.values());
-        return al;
+        statements.addAll(indexes.values());
+        return statements;
     }
 
     /**

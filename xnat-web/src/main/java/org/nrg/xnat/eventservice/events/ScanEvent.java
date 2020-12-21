@@ -17,13 +17,13 @@ public class ScanEvent extends AbstractEventServiceEvent<XnatImagescandataI> {
 
     private final String displayName = "Scan";
     private final String description = "Scan Created.";
-    private String payloadId = null;
+    private Integer payloadId = null;
 
     public ScanEvent(){};
 
     public ScanEvent(final XnatImagescandataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
-        payloadId = payload.getId();
+        payloadId = payload.getXnatImagescandataId();
     }
 
     @Override

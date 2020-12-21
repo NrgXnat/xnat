@@ -180,12 +180,12 @@ public class EventPropertyServiceImpl implements EventPropertyService {
     }
 
     public List<EventPropertyNode> generateEventPropertyValues(EventServiceEvent event, UserI user) {
-        List eventProperties = new ArrayList<EventPropertyNode>();
+        List<EventPropertyNode> eventProperties = new ArrayList<EventPropertyNode>();
         eventProperties.add(EventPropertyNode.withName("event-type", "string").withValue(event.getType()));
         eventProperties.add(EventPropertyNode.withName("event-display-name", "string").withValue(event.getDisplayName()));
         eventProperties.add(EventPropertyNode.withName("event-description", "string").withValue(event.getDescription()));
 
-        List payloadProperties = generateEventPropertyValues(event.getObject(user), user);
+        List<EventPropertyNode> payloadProperties = generateEventPropertyValues(event.getObject(user), user);
         if (payloadProperties != null && !payloadProperties.isEmpty()) {
             eventProperties.addAll(payloadProperties);
         }

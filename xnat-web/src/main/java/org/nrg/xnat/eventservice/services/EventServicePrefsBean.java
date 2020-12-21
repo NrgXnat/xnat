@@ -33,7 +33,7 @@ public class EventServicePrefsBean extends AbstractPreferenceBean {
     }
 
     // ** Enable/Disable all Event Service operations - overriding all other ES prefs ** //
-    @NrgPreference(defaultValue = "true")
+    @NrgPreference(defaultValue = "false")
     public Boolean getEnabled() {
         return getBooleanValue("enabled");
     }

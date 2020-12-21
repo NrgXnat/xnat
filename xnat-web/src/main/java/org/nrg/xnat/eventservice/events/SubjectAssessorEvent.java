@@ -4,6 +4,7 @@ package org.nrg.xnat.eventservice.events;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
+import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xft.security.UserI;
 
@@ -38,7 +39,15 @@ public class SubjectAssessorEvent extends AbstractEventServiceEvent<XnatSubjecta
 
     @Override
     public XnatSubjectassessordataI getObject(UserI user) {
-        return XnatSubjectassessordata.getXnatSubjectassessordatasById(payloadId, user, false);
+        XnatSubjectassessordataI xnatSubjectassessordata = XnatSubjectassessordata.getXnatSubjectassessordatasById(payloadId, user, false);
+        if(xnatSubjectassessordata != null){
+            return xnatSubjectassessordata;
+        }
+
+        XnatExperimentdata xnatExperimentdata = XnatExperimentdata.getXnatExperimentdatasById(payloadId, user, false);
+        return xnatExperimentdata instanceof XnatSubjectassessordataI ?
+                (XnatSubjectassessordataI) xnatExperimentdata :
+                null;
     }
 
     @Override

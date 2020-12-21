@@ -100,14 +100,23 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
 
     private UserI getValidUser(final BaseElement element) {
         final UserI insertUser = element.getInsertUser();
-        if (insertUser != null) {
+        if (isValidUser(element, insertUser)) {
             return insertUser;
         }
         final UserI activateUser = element.getUser();
-        if (activateUser != null) {
+        if (isValidUser(element, activateUser)) {
             return activateUser;
         }
         return _provider.get();
+    }
+
+    private boolean isValidUser(final BaseElement element, final UserI user) {
+        try {
+            return user != null && element.canEdit(user);
+        } catch (Exception ignored) {
+            // Let's just assume the exception is permissions related...
+            return false;
+        }
     }
 
     private static String getLockCode(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) {

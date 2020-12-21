@@ -73,9 +73,10 @@ var XNAT = getObject(XNAT);
         "3x3 Montage":"3X3"
     };
 
-    function getElementHtmlForSrc(src) {
+    function getElementHtmlForSrc(src,thumb) {
+        if (thumb === undefined) thumb = src.replace('/snapshot','/thumbnail');
         return '<a target="_blank" class="scan-original-link" href="' + src + '">' +
-               '   <img class="scan-snapshot" src="' + src + '"/>' +
+               '   <img class="scan-snapshot" src="' + thumb + '"/>' +
                '</a>';
     }
 

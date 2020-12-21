@@ -60,6 +60,7 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
                         transform(table, column, value.replaceAll("transform:", ""));
                     } else {
                         try {
+                            log.info("Preparing to migrate the column {}.{} to {}", table, column, value);
                             _db.setColumnDatatype(table, column, value);
                         } catch (SQLWarning e) {
                             final String message = e.getMessage();
@@ -78,9 +79,10 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
     }
 
     private void findTransformsAndColumns() throws IOException {
-        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/migration/**/*-tables.ini")) {
+        for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/migration/**/*-migrations.ini")) {
             final INIConfiguration ini = new INIConfiguration();
             try {
+                log.debug("Reading configuration from {}", resource.getURI());
                 ini.read(new InputStreamReader(resource.getInputStream()));
             } catch (ConfigurationException e) {
                 log.error("The initialization file " + resource.getURI().toString() + " contains a configuration error", e);

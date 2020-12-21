@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.initialization.tasks;
 
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.DatabaseHelper;
@@ -17,6 +16,7 @@ import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +25,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -69,7 +70,7 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
                 return;
             }
 
-            try(final PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction()) {
+            try (final PoolDBUtils.Transaction transaction = PoolDBUtils.getTransaction()) {
                 try {
                     transaction.start();
                 } catch (SQLException | DBPoolException e) {
@@ -84,7 +85,7 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
                 } catch (Exception e) {
                     log.info("View initialization threw exception ({}).  We'll drop views and rebuild them.", e.toString());
                     transaction.rollback();
-                    transaction.execute(getViewDropSql(_dbUsername));//drop all
+                    transaction.execute(SQLUpdateGenerator.getViewDropSql(_dbUsername));//drop all
                     log.info("Drop views step complete.  Begin rebuilding views.");
                     transaction.execute(DisplayManager.GetCreateViewsSQL());//then try to create all
                     log.info("View rebuild complete.");
@@ -99,50 +100,6 @@ public class CreateOrUpdateDatabaseViews extends AbstractInitializingTask {
                 throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to roll back the transaction.", e);
             }
         }
-    }
-
-    private List<String> getViewDropSql(String user) {
-    	final List<String> dropSql = Lists.newArrayList();  
-    	dropSql.add(
-    	"CREATE OR REPLACE FUNCTION find_user_views(username TEXT) " +
-    	  "RETURNS TABLE(table_schema NAME, view_name NAME) AS $$ " +
-    	"BEGIN " +
-    	  "RETURN QUERY " +
-    	  "SELECT " +
-    	    "n.nspname AS table_schema, " +
-    	    "c.relname AS view_name " +
-    	  "FROM pg_catalog.pg_class c " +
-    	    "LEFT JOIN pg_catalog.pg_namespace n " +
-    	      "ON (n.oid = c.relnamespace) " +
-    	  "WHERE c.relkind = 'v' " +
-    	        "AND c.relowner = (SELECT usesysid " +
-    	                          "FROM pg_catalog.pg_user " +
-    	                          "WHERE usename = $1); " +
-    	"END$$ LANGUAGE plpgsql;");
-    	dropSql.add(
-    	"CREATE OR REPLACE FUNCTION drop_user_views(username TEXT) " +
-    	  "RETURNS INTEGER AS $$ " +
-    	"DECLARE " +
-    	  "r RECORD; " +
-    	  "s TEXT; " +
-    	  "c INTEGER := 0; " +
-    	"BEGIN " +
-    	  "RAISE NOTICE 'Dropping views for user %', $1; " +
-    	  "FOR r IN " +
-    	    "SELECT * FROM find_user_views($1) " +
-    	  "LOOP " +
-    	    "S := 'DROP VIEW IF EXISTS ' || quote_ident(r.table_schema) || '.' || quote_ident(r.view_name) || ' CASCADE;'; " +
-    	    "EXECUTE s; " +
-    	    "c := c + 1; " +
-    	    "RAISE NOTICE 's = % ', S; " +
-    	  "END LOOP; " +
-    	  "RETURN c; " +
-    	"END$$ LANGUAGE plpgsql;"
-    	);
-    	dropSql.add(
-    	"SELECT drop_user_views('" + user + "');"
-    	);
-    	return dropSql;
     }
 
     private final XnatAppInfo    _appInfo;

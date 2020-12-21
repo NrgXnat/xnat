@@ -109,6 +109,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -659,9 +661,9 @@ public class DefaultCatalogService implements CatalogService {
             uploadId = StringUtils.isNotBlank(catalog.getLabel()) ? catalog.getLabel() : getPrearchiveTimestamp();
         }
 
-        final EventDetails  event      = new EventDetails(CATEGORY.DATA, TYPE.PROCESS, CREATE_RESOURCE, "Catalog service invoked", "");
-        PersistentWorkflowI workflow   = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), event);
-        EventMetaI          eventMetaI = workflow.buildEvent();
+        final EventDetails        event      = new EventDetails(CATEGORY.DATA, TYPE.PROCESS, CREATE_RESOURCE, "Catalog service invoked", "");
+        final PersistentWorkflowI workflow   = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), getScanId(catalog), event);
+        final EventMetaI          eventMetaI = workflow.buildEvent();
 
         try {
             if (isExperiment) {
@@ -990,8 +992,7 @@ public class DefaultCatalogService implements CatalogService {
                 if (parentEventId != null || item.getItem().instanceOf(XnatExperimentdata.SCHEMA_ELEMENT_NAME)
                     || item.getItem().instanceOf(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
                     try {
-                        PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId,
-                                                                                                       user, item.getItem(), event);
+                        final PersistentWorkflowI workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), event);
                         if (workflow != null) {
                             eventMetaI = workflow.buildEvent();
                         }
@@ -1080,6 +1081,24 @@ public class DefaultCatalogService implements CatalogService {
             }
 
             return item;
+        }
+    }
+
+    @Override
+    public void checkPermissionsOnItem(final UserI user, final ArchivableItem item,
+                                       @Nonnull final String accessType, final String resourceName)
+            throws ServerException, ClientException {
+        try {
+            if (!Permissions.can(user, item, accessType)) {
+                throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() +
+                                                                         " does not have permission to " + accessType + " the resource " + resourceName + " for item " +
+                                                                         item.getId());
+            }
+        } catch (ClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " +
+                                                                    user.getLogin() + " permissions for resource " + resourceName + " for item " + item.getId());
         }
     }
 
@@ -1293,7 +1312,8 @@ public class DefaultCatalogService implements CatalogService {
             final boolean delete        = list.contains(Operation.Delete);
             final boolean populateStats = list.contains(Operation.PopulateStats);
 
-            workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), event);
+            workflow = PersistentWorkflowUtils.getOrCreateWorkflowData(parentEventId, user, item.getItem(), getScanId(catalog), event);
+
             // Note that resources will contain only catalog if that is specified
             final String project         = item.getProject();
             final String archiveRootPath = item.getArchiveRootPath();
@@ -1303,6 +1323,7 @@ public class DefaultCatalogService implements CatalogService {
             }
 
             if (parentEventId == null) {
+                log.info("Completed event {} workflow with item {} for user {}", parentEventId, item.getId(), user.getUsername());
                 WorkflowUtils.complete(workflow, workflow.buildEvent());
             }
         } catch (ClientException e) {
@@ -1995,29 +2016,24 @@ public class DefaultCatalogService implements CatalogService {
         return operations.stream().anyMatch(operation -> operation == Operation.All) ? Operation.ALL : operations;
     }
 
-    @Override
-    public void checkPermissionsOnItem(final UserI user, final ArchivableItem item,
-                                       @Nonnull final String accessType, final String resourceName)
-            throws ServerException, ClientException {
-        try {
-            if (!Permissions.can(user, item, accessType)) {
-                throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, "The user " + user.getLogin() +
-                                                                         " does not have permission to " + accessType + " the resource " + resourceName + " for item " +
-                                                                         item.getId());
-            }
-        } catch (ClientException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred try to check the user " +
-                                                                    user.getLogin() + " permissions for resource " + resourceName + " for item " + item.getId());
+    private static String getScanId(final XnatAbstractresourceI resource) {
+        if (!(resource instanceof XnatResourcecatalog)) {
+            return null;
         }
+        final XnatResourcecatalog catalog = (XnatResourcecatalog) resource;
+        final String uri = catalog.getUri();
+        if (StringUtils.isBlank(uri)) {
+            return null;
+        }
+        final Matcher matcher = SCAN_PATTERN.matcher(uri);
+        return matcher.matches() ? matcher.group("scanId") : null;
     }
 
-    private static final String EXPERIMENT_ROOT_URI = "/archive/experiments/";
-
-    private static final String CATALOG_FORMAT           = "%s-%s";
-    private static final String CATALOG_SERVICE_CACHE    = DefaultCatalogService.class.getSimpleName() + "Cache";
-    private static final String CATALOG_CACHE_KEY_FORMAT = DefaultCatalogService.class.getSimpleName() + ".%s.%s";
+    private static final Pattern SCAN_PATTERN             = Pattern.compile("^.*/SCANS/(?<scanId>[^/]+).*$");
+    private static final String  EXPERIMENT_ROOT_URI      = "/archive/experiments/";
+    private static final String  CATALOG_FORMAT           = "%s-%s";
+    private static final String  CATALOG_SERVICE_CACHE    = DefaultCatalogService.class.getSimpleName() + "Cache";
+    private static final String  CATALOG_CACHE_KEY_FORMAT = DefaultCatalogService.class.getSimpleName() + ".%s.%s";
 
     private static final String              CLAUSE_SCAN_TYPES              = "scan.type IN (:scanTypes)";
     private static final String              CLAUSE_NULL_SCAN_TYPES         = "scan.type IS NULL";

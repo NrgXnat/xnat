@@ -48,11 +48,11 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
             log.info("This service is the primary XNAT node, checking for mismatched field mapping elements.");
 
             try {
-                if (!_helper.tablesExist("xdat_field_mapping", "xdat_field_mapping_set", "xdat_element_access", "xdat_element_security", "xdat_user", "xdat_usergroup", "xdat_primary_security_field")) {
-                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The tables \"xdat_field_mapping\", \"xdat_field_mapping_set\", \"xdat_element_access\", \"xdat_element_security\", \"xdat_user\", \"xdat_usergroup\", or \"xdat_primary_security_field\" do not yet exist. Deferring execution.");
+                if (!_helper.tablesExist(REFERENCED_TABLES_AND_VIEWS)) {
+                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "Deferring execution because the following tables and views do not yet all exist: " + String.join(", ", REFERENCED_TABLES_AND_VIEWS));
                 }
-                if (!_helper.functionsExist("data_type_fns_correct_group_permissions", "data_type_fns_fix_mismatched_permissions", "data_type_fns_fix_missing_public_element_access_mappings")) {
-                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The functions \"data_type_fns_correct_group_permissions\", \"data_type_fns_fix_mismatched_permissions\", and/or \"data_type_fns_fix_missing_public_element_access_mappings\" do not yet exist. Deferring execution.");
+                if (!_helper.functionsExist(REFERENCED_FUNCTIONS)) {
+                    throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "Deferring execution because the following functions do not yet all exist: " + String.join(", ", REFERENCED_FUNCTIONS));
                 }
 
                 Users.getGuest();
@@ -83,6 +83,9 @@ public class FixMismatchedMappingElements extends AbstractInitializingTask {
             }
         }
     }
+
+    private static final String[] REFERENCED_TABLES_AND_VIEWS = new String[]{"data_type_views_member_edit_permissions", "data_type_views_mismatched_mapping_elements", "data_type_views_missing_mapping_elements", "data_type_views_orphaned_field_sets", "project_groups_find_irregular_settings", "xdat_element_access", "xdat_element_security", "xdat_field_mapping", "xdat_field_mapping_set", "xdat_primary_security_field", "xdat_user", "xdat_usergroup"};
+    private static final String[] REFERENCED_FUNCTIONS        = new String[]{"data_type_fns_correct_group_permissions", "data_type_fns_fix_mismatched_permissions", "data_type_fns_fix_missing_public_element_access_mappings"};
 
     private final XnatAppInfo       _appInfo;
     private final DatabaseHelper    _helper;

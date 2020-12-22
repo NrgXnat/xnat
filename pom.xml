@@ -246,7 +246,7 @@
         <torque.version>3.3</torque.version>
         <turbine.version>2.3.3</turbine.version>
         <user-agent-utils.version>1.20</user-agent-utils.version>
-        <io-projectreactor.version>2.0.7.RELEASE</io-projectreactor.version>
+        <io-projectreactor.version>2.0.8.RELEASE</io-projectreactor.version>
         <velocity-tools.version>2.0</velocity-tools.version>
         <velocity.version>1.7</velocity.version>
         <wizard.version>1.2.1</wizard.version>

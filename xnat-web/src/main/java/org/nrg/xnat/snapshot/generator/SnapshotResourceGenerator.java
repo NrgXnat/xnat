@@ -19,6 +19,15 @@ public interface SnapshotResourceGenerator {
 
     Optional<FileResource> createThumbnail(String SessionId, String scanId, int nRows, int nCols, float scaleRows, float scaleCols) throws InitializationException, IOException;
 
+    static String getContentName(final int rows, final int cols, final float scaleRows, final float scaleCols) {
+        if( scaleCols < 0.0 || scaleRows < 0.0) {
+            return getThumbnailContentName( rows, cols);
+        }
+        else {
+            return getSnapshotContentName( rows, cols);
+        }
+    }
+
     static String getSnapshotContentName(final int rows, final int cols) {
         return (rows == 1 && cols == 1) ? ORIGINAL : String.format(SNAPSHOT_CONTENT_TEMPLATE, cols, rows);
     }

@@ -21,10 +21,10 @@ public interface SnapshotResourceGenerator {
 
     static String getContentName(final int rows, final int cols, final float scaleRows, final float scaleCols) {
         if( scaleCols < 0.0 || scaleRows < 0.0) {
-            return getThumbnailContentName( rows, cols);
+            return getSnapshotContentName( rows, cols);
         }
         else {
-            return getSnapshotContentName( rows, cols);
+            return getThumbnailContentName( rows, cols);
         }
     }
 

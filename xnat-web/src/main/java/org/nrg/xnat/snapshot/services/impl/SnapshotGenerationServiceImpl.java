@@ -24,10 +24,14 @@ import java.util.Optional;
 @Slf4j
 public class SnapshotGenerationServiceImpl implements SnapshotGenerationService {
     @Autowired
-    public SnapshotGenerationServiceImpl(final CatalogService catalogService, final SnapshotResourceGenerator snapshotResourceGenerator, final XnatUserProvider primaryAdminUserProvider) {
+    public SnapshotGenerationServiceImpl(final CatalogService catalogService,
+                                         final SnapshotResourceGenerator snapshotResourceGenerator,
+                                         final XnatUserProvider primaryAdminUserProvider,
+                                         final SnapshotProviderPool snapshotProviderPool) {
         _catalogService = catalogService;
-        _snapshotGenerator = snapshotResourceGenerator;
-        _provider = primaryAdminUserProvider;
+        _snapshotResourceGenerator = snapshotResourceGenerator;
+        _userProvider = primaryAdminUserProvider;
+        _snapshotProviderPool = snapshotProviderPool;
     }
 
     /**
@@ -51,30 +55,70 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
     /*
      * Reuse existing SnapshotProvider if one already exists handling a previous request.
      */
+//    private Optional<FileResource> provideSnapshotOrThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws DataFormatException, NotFoundException, InitializationException, IOException {
+//        final String lockCode = getLockCode(sessionId, scanId, rows, cols, scaleRows, scaleCols);
+//        synchronized (_locks) {
+//            if (!_locks.containsKey(lockCode)) {
+//                _locks.put(lockCode, new SnapshotProvider(_catalogService, _snapshotGenerator, _provider));
+//            }
+//        }
+//        final SnapshotProvider provider = _locks.get(lockCode);
+//        try {
+//            return provider.provideSnapshotOrThumbnail(sessionId, scanId, rows, cols, scaleRows, scaleCols);
+//        } finally {
+//            if (!provider.isReferenced()) {
+//                _locks.remove(lockCode);
+//            }
+//        }
+//    }
+//
+
+    /**
+     * Provide the requested Resource.
+     *
+     * Pool deals one SnapshotProvider per scan, blocks if there are two requests for the same scan. No two requests will
+     * be working simultaneously on the same scan.
+     *
+     * @param sessionId
+     * @param scanId
+     * @param rows
+     * @param cols
+     * @param scaleRows
+     * @param scaleCols
+     * @return
+     * @throws DataFormatException
+     * @throws NotFoundException
+     * @throws InitializationException
+     * @throws IOException
+     */
     private Optional<FileResource> provideSnapshotOrThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws DataFormatException, NotFoundException, InitializationException, IOException {
-        final String lockCode = getLockCode(sessionId, scanId, rows, cols, scaleRows, scaleCols);
-        synchronized (_locks) {
-            if (!_locks.containsKey(lockCode)) {
-                _locks.put(lockCode, new SnapshotProvider(_catalogService, _snapshotGenerator, _provider));
-            }
-        }
-        final SnapshotProvider provider = _locks.get(lockCode);
+        SnapshotProvider provider = null;
+        final String lockCode = getLockCode(sessionId, scanId);
         try {
+            try {
+                provider = _snapshotProviderPool.borrowObject(lockCode);
+            }
+            catch (Exception e) {
+                log.warn( "Execption from snapshot-provider pool: " + e);
+                return Optional.empty();
+            }
             return provider.provideSnapshotOrThumbnail(sessionId, scanId, rows, cols, scaleRows, scaleCols);
-        } finally {
-            if (!provider.isReferenced()) {
-                _locks.remove(lockCode);
+        }
+        finally {
+            if( null != provider) {
+                _snapshotProviderPool.returnObject( lockCode, provider);
             }
         }
     }
 
-    private static String getLockCode(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) {
-        return String.join(":", sessionId, scanId, Integer.toString(rows), Integer.toString(cols), Float.toString(scaleRows), Float.toString(scaleCols));
+    private static String getLockCode(final String sessionId, final String scanId) {
+        return String.join(":", sessionId, scanId);
     }
 
     private final Map<String, SnapshotProvider> _locks = new HashMap<>();
 
     private final CatalogService            _catalogService;
-    private final SnapshotResourceGenerator _snapshotGenerator;
-    private final XnatUserProvider          _provider;
+    private final SnapshotResourceGenerator _snapshotResourceGenerator;
+    private final XnatUserProvider          _userProvider;
+    private final SnapshotProviderPool      _snapshotProviderPool;
 }

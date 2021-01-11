@@ -8,7 +8,6 @@ import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.NotFoundException;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatEntryI;
@@ -29,21 +28,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * SnapshotProvider: return existing snapshot or create it as necessary.
  *
- * This implementation can be called from multiple threads and tracks the number of requests it is serving.
- *
+ * Not thread safe but does not need to be if no two threads are working on the same scan.
  */
 @Slf4j
 public class SnapshotProvider {
-    private CatalogService _catalogService;
-    private SnapshotResourceGenerator _snapshotResourceGenerator;
-    private XnatUserProvider _provider;
-
-    private final AtomicInteger _references = new AtomicInteger();
+    private final CatalogService _catalogService;
+    private final SnapshotResourceGenerator _snapshotResourceGenerator;
+    private final XnatUserProvider _provider;
 
     private static final String SNAPSHOTS_RESOURCE = "/resources/SNAPSHOTS/files";
     private static final String ROOT_URI           = "/archive/experiments/";
@@ -56,46 +51,36 @@ public class SnapshotProvider {
         this._provider = provider;
     }
 
-    public boolean isReferenced() {
-        return _references.get() > 0;
-    }
-
     /*
      * Do not create the resource catalog until there is something to put in it.
      */
     public Optional<FileResource> provideSnapshotOrThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws DataFormatException, NotFoundException, InitializationException, IOException {
-        try {
-            log.debug("Look for snapshot catalog for scan {} of session {} with {} rows by {} cols", sessionId, scanId, rows, cols);
-            _references.incrementAndGet();
-            Optional<XnatResourcecatalog> snapshotCatalog = getSnapshotResourceCatalog(sessionId, scanId);
-            String content = SnapshotResourceGenerator.getContentName(rows, cols, scaleRows, scaleCols);
-            if (snapshotCatalog.isPresent()) {
-                Optional<FileResource> snapshot = getResourceFile(snapshotCatalog.get(), content);
-                if (snapshot.isPresent()) {
-                    return snapshot;
-                } else {
-                    snapshot = createSnapshot(sessionId, scanId, rows, cols, scaleRows, scaleCols);
-                    if (snapshot.isPresent()) {
-                        addFileToResource(snapshotCatalog.get(), snapshot.get());
-                        return getResourceFile(snapshotCatalog.get(), content);
-                    }
-                }
+        log.debug("Look for snapshot catalog for scan {} of session {} with {} rows by {} cols", sessionId, scanId, rows, cols);
+        Optional<XnatResourcecatalog> snapshotCatalog = getSnapshotResourceCatalog(sessionId, scanId);
+        String content = SnapshotResourceGenerator.getContentName(rows, cols, scaleRows, scaleCols);
+        if (snapshotCatalog.isPresent()) {
+            Optional<FileResource> snapshot = getResourceFile(snapshotCatalog.get(), content);
+            if (snapshot.isPresent()) {
+                return snapshot;
             } else {
-                Optional<FileResource> snapshot = createSnapshot(sessionId, scanId, rows, cols, scaleRows, scaleCols);
+                snapshot = createSnapshot(sessionId, scanId, rows, cols, scaleRows, scaleCols);
                 if (snapshot.isPresent()) {
-                    snapshotCatalog = createSnapshotResourceCatalog(sessionId, scanId);
-                    if (snapshotCatalog.isPresent()) {
-                        addFileToResource(snapshotCatalog.get(), snapshot.get());
-                        snapshotCatalog = getSnapshotResourceCatalog(sessionId, scanId);
-                        return getResourceFile(snapshotCatalog.get(), content);
-                    }
+                    addFileToResource(snapshotCatalog.get(), snapshot.get());
+                    return getResourceFile(snapshotCatalog.get(), content);
                 }
             }
-            return Optional.ofNullable(null);
+        } else {
+            Optional<FileResource> snapshot = createSnapshot(sessionId, scanId, rows, cols, scaleRows, scaleCols);
+            if (snapshot.isPresent()) {
+                snapshotCatalog = createSnapshotResourceCatalog(sessionId, scanId);
+                if (snapshotCatalog.isPresent()) {
+                    addFileToResource(snapshotCatalog.get(), snapshot.get());
+                    snapshotCatalog = getSnapshotResourceCatalog(sessionId, scanId);
+                    return getResourceFile(snapshotCatalog.get(), content);
+                }
+            }
         }
-        finally {
-            _references.decrementAndGet();
-        }
+        return Optional.ofNullable(null);
     }
 
     private Optional<FileResource> createSnapshot( final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws InitializationException, IOException {
@@ -104,41 +89,24 @@ public class SnapshotProvider {
                 _snapshotResourceGenerator.createThumbnail(sessionId, scanId, rows, cols, scaleRows, scaleCols);
     }
 
+    private Optional<XnatResourcecatalog> getSnapshotResourceCatalog(final String sessionId, final String scanId) throws DataFormatException {
+        try {
+            return Optional.ofNullable( _catalogService.getResourceCatalog(sessionId, scanId, SNAPSHOTS));
+        } catch (ClientException e) {
+            throw new DataFormatException("An error occurred trying to get the SNAPSHOTS resource catalog for session " + sessionId + " scan " + scanId, e);
+        }
+    }
+
     private Optional<XnatResourcecatalog> createSnapshotResourceCatalog(final String sessionId, final String scanId) {
         final String parentUri = ROOT_URI + sessionId + "/scans/" + scanId + SNAPSHOTS_RESOURCE;
         log.debug("Creating the snapshots folder for scan {} of session {} at URI {}", scanId, sessionId, parentUri);
         try {
-            String description = "Snapshots for session " + sessionId + " scan " + scanId;
-            final XnatResourcecatalog catalog =
-                    _catalogService.createAndInsertResourceCatalog(XDAT.getUserDetails(), parentUri, 1, SNAPSHOTS, description, GIF, SNAPSHOTS);
-            log.debug("Created the snapshots folder for scan {} of session {} at URI {}", scanId, sessionId, UriParserUtils.getArchiveUri(catalog));
-            return Optional.of(catalog);
+            final XnatResourcecatalog created = _catalogService.createAndInsertResourceCatalog(getResourceOwner(sessionId), parentUri, 1, SNAPSHOTS, "Snapshots for session " + sessionId + " scan " + scanId, GIF, SNAPSHOTS);
+            log.debug("Created the snapshots folder for scan {} of session {} at URI {}", scanId, sessionId, UriParserUtils.getArchiveUri(created));
+            return Optional.of(created);
         } catch (Exception e) {
             log.error("An error occurred verifying the snapshots folder for scan {} of session {}", scanId, sessionId, e);
             return Optional.empty();
-        }
-    }
-
-    private Optional<XnatResourcecatalog> getSnapshotResourceCatalog(final String sessionId, final String scanId) throws DataFormatException {
-        try {
-            synchronized (this) {
-                final XnatResourcecatalog catalog = _catalogService.getResourceCatalog(sessionId, scanId, SNAPSHOTS);
-                if (catalog != null) {
-                    return Optional.of(catalog);
-                }
-                final String parentUri = ROOT_URI + sessionId + "/scans/" + scanId + SNAPSHOTS_RESOURCE;
-                log.debug("Creating the snapshots folder for scan {} of session {} at URI {}", scanId, sessionId, parentUri);
-                try {
-                    final XnatResourcecatalog created = _catalogService.createAndInsertResourceCatalog(getResourceOwner(sessionId), parentUri, 1, SNAPSHOTS, "Snapshots for session " + sessionId + " scan " + scanId, GIF, SNAPSHOTS);
-                    log.debug("Created the snapshots folder for scan {} of session {} at URI {}", scanId, sessionId, UriParserUtils.getArchiveUri(created));
-                    return Optional.of(created);
-                } catch (Exception e) {
-                    log.error("An error occurred verifying the snapshots folder for scan {} of session {}", scanId, sessionId, e);
-                    return Optional.empty();
-                }
-            }
-        } catch (ClientException e) {
-            throw new DataFormatException("An error occurred trying to get the SNAPSHOTS resource catalog for session " + sessionId + " scan " + scanId, e);
         }
     }
 

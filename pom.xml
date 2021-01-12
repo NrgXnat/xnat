@@ -149,6 +149,7 @@
         <commons-math.version>2.2</commons-math.version>
         <commons-net.version>3.3</commons-net.version>
         <commons-text.version>1.9</commons-text.version>
+        <commons-pool2.version>2.9.0</commons-pool2.version>
         <dcm4che.version>2.0.29</dcm4che.version>
         <dcm4che5.version>5.22.6</dcm4che5.version>
         <pixelmed.version>nrg-20200327</pixelmed.version>
@@ -985,6 +986,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>${commons-text.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>${commons-pool2.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-fileupload</groupId>

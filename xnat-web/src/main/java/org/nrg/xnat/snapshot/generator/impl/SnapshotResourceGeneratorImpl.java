@@ -205,7 +205,7 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
                                                .collect(Collectors.toList());
 
         if (files.isEmpty() || catalog.getDimensions_z() == null) {
-            log.warn("The DICOM catalog {} for scan {} in session {} does not contain any number-of-frames info. This is above my pay grade. Get a smarter SnapshotResourceGenerator", catalog.getName(), scanId, sessionId);
+            log.info("The DICOM catalog for scan {} in session {} does not contain any number-of-frames info. This is above my pay grade. Get a smarter SnapshotResourceGenerator", scanId, sessionId);
             return markBroken(sessionId, scanId);
         }
 

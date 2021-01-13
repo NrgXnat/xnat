@@ -8,7 +8,9 @@
   ~ Released under the Simplified BSD.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.nrg</groupId>
@@ -99,7 +101,7 @@
         <pipeline.version>${xnat.version}</pipeline.version>
         <pipelinedev.version>${xnat.version}</pipelinedev.version>
         <data-client.version>${xnat.version}</data-client.version>
-    
+
         <!-- XNAT plugin versions -->
         <ohif-viewer.version>3.0.0-SNAPSHOT</ohif-viewer.version>
         <container-service.version>3.0.0-SNAPSHOT</container-service.version>
@@ -108,16 +110,17 @@
         <clara.version>ML-BETA</clara.version>
         <datasets.version>1.0.0-SNAPSHOT</datasets.version>
 
-        <spring-framework.version>4.3.28.RELEASE</spring-framework.version>
-        <spring-security.version>4.2.18.RELEASE</spring-security.version>
+        <spring-framework.version>4.3.30.RELEASE</spring-framework.version>
+        <spring-security.version>4.2.20.RELEASE</spring-security.version>
         <spring-ldap.version>2.3.3.RELEASE</spring-ldap.version>
-        <spring-oauth2.version>2.3.8.RELEASE</spring-oauth2.version>
+        <spring-oauth2.version>2.5.0.RELEASE</spring-oauth2.version>
         <spring-jwt.version>1.1.1.RELEASE</spring-jwt.version>
 
         <swagger.version>2.9.2</swagger.version>
         <vladmihalcea-hibernate-types.version>2.9.3</vladmihalcea-hibernate-types.version>
 
-        <activemq.version>5.7.0</activemq.version>
+        <activemq.version>5.16.0</activemq.version>
+        <activemq-protobuf.version>1.1</activemq-protobuf.version>
         <ant.version>1.9.8</ant.version>
         <antlr3.version>3.5.2</antlr3.version>
         <antlr4.version>4.7.1</antlr4.version>
@@ -235,10 +238,10 @@
         <restlet.version>1.1.10</restlet.version>
         <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
-        <slf4j.version>1.7.26</slf4j.version>
+        <slf4j.version>1.7.30</slf4j.version>
         <logback.version>1.2.3</logback.version>
         <logstash.version>5.3</logstash.version>
-        <javamelody.version>1.85.0</javamelody.version>
+        <javamelody.version>1.86.0</javamelody.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <metainf-services.version>1.8</metainf-services.version>
         <jetbrains-annotations.version>17.0.0</jetbrains-annotations.version>
@@ -281,7 +284,7 @@
         <maven-war-plugin.version>3.3.1</maven-war-plugin.version>
         <javadoc-coverage.version>1.1.1</javadoc-coverage.version>
 
-</properties>
+    </properties>
 
     <dependencyManagement>
         <!-- NRG dependency definitions -->
@@ -1145,8 +1148,58 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.activemq</groupId>
-                <artifactId>activemq-core</artifactId>
+                <artifactId>activemq-all</artifactId>
                 <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-broker</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-client</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-jaas</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-jdbc-store</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-kahadb-store</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-mqtt</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-openwire-legacy</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-spring</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-stomp</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq.protobuf</groupId>
+                <artifactId>activemq-protobuf</artifactId>
+                <version>${activemq-protobuf.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xbean</groupId>
@@ -2257,7 +2310,8 @@
                     <version>${maven-shade-plugin.version}</version>
                     <configuration>
                         <transformers>
-                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <transformer
+                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                 <mainClass>org.sonatype.haven.HavenCli</mainClass>
                             </transformer>
                         </transformers>
@@ -2452,4 +2506,3 @@
     </distributionManagement>
 
 </project>
-

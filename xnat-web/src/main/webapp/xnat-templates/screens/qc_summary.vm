@@ -28,7 +28,7 @@
 							<tr>
 								<th align="left">$!pv.getHeader()</th>
 								<td>
-									#if($user.canRead($pv))
+									#if($pv.canRead($user))
 										#set ( $pvUrl = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$!pv.getXSIType()).addPathInfo('search_field',$pvField).addPathInfo('search_value',$pvID).addPathInfo('popup',$popup).addPathInfo('project',$project)" )
 										<a href="$pvUrl">
 											#if ($!pv.getCheck_status().equals("1")||$!pv.getCheck_status().equalsIgnoreCase("pass")||$!pv.getCheck_status().equalsIgnoreCase("passed"))
@@ -45,7 +45,7 @@
 								</td>
 								<td></td>
 								<td>
-									$!pv.getStringProperty("date")
+									$turbineUtils.formatDate($!pv.getProperty("date"))
 								</td>
 							</tr>
 						#end
@@ -57,7 +57,7 @@
 								<th align="left">$!scr.getHeader()</th>
 								<td>
 									#set ( $scrUrl = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$!scr.getXSIType()).addPathInfo('search_field',$scrField).addPathInfo('search_value',$scrID).addPathInfo('popup',$popup).addPathInfo('project',$project)" )
-									#if($user.canRead($scr))
+									#if($scr.canRead($user))
 										<a href="$scrUrl">
 											#if ($!scr.getStringProperty("pass").equals("1")||$!scr.getStringProperty("pass").equalsIgnoreCase("pass")||$!scr.getStringProperty("pass").equalsIgnoreCase("passed"))
 												Passed
@@ -75,7 +75,7 @@
 									$!scr.getStringProperty("rater")
 								</td>
 								<td>
-									$!scr.getStringProperty("date")
+									$turbineUtils.formatDate($!scr.getProperty("date"))
 								</td>
 							</tr>
 						#end
@@ -86,7 +86,7 @@
 							<tr>
 								<th align="left">$!qc.getHeader()</th>
 								<td>
-									#if($user.canRead($qc))
+									#if($qc.canRead($user))
 										#set ( $qcUrl = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$!qc.getXSIType()).addPathInfo('search_field',$qcField).addPathInfo('search_value',$qcID).addPathInfo('popup',$popup).addPathInfo('project',$project)" )
 										<a href="$qcUrl">
 											#if ($!qc.getStringProperty("pass").equals("1")||$!qc.getStringProperty("pass").equalsIgnoreCase("pass")||$!qc.getStringProperty("pass").equalsIgnoreCase("passed"))
@@ -105,7 +105,7 @@
 									$!qc.getStringProperty("rater")
 								</td>
 								<td>
-									$!qc.getStringProperty("date")
+									$turbineUtils.formatDate($!qc.getProperty("date"))
 								</td>
 							</tr>
 						#end

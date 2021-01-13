@@ -9,8 +9,8 @@
 
 package org.nrg.xnat.restlet.actions;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.XDAT;
@@ -44,10 +44,10 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipOutputStream;
 
+@Slf4j
 @ImporterHandler(handler = ImporterHandlerA.XAR_IMPORTER)
 public class XarImporter extends ImporterHandlerA implements Callable<List<String>> {
 
-	private static final Logger logger = Logger.getLogger(XarImporter.class);
 	private final static SimpleDateFormat UPLOAD_ID_FORMATTER = new SimpleDateFormat ("yyyyMMdd_HHmmss_SSS");
 	private final FileWriterWrapperI fw;
 	private final UserI user;
@@ -76,14 +76,15 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 	public List<String> call() throws ClientException,ServerException{
 
 		try {
+            this.processing("Importing XAR");
 			final List<String> returnList = processXarFile();
-			this.completed("Successfully imported session from XAR", true);
+			this.completed(String.join(",", returnList), true);
 			return returnList;
 		} catch (ClientException | ServerException e) {
 			this.failed(e.getMessage(), true);
 			throw e;
 		} catch (Throwable e) {
-			logger.error("",e);
+			log.error("",e);
             this.failed(e.getMessage(), true);
 			throw new ServerException(e.getMessage(),new Exception());
 		}
@@ -184,10 +185,10 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                             items.add(om);
                         }
                     } catch (IOException e) {
-                        logger.error("",e);
+                        log.error("",e);
                         extraFiles.add(f);
                     } catch (SAXException e) {
-                        logger.error("",e);
+                        log.error("",e);
                         extraFiles.add(f);
 					}
                 }else{
@@ -487,7 +488,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                 session.setId(XnatExperimentdata.CreateNewID());
             }
         } catch (Exception e) {
-            logger.error("",e);
+            log.error("",e);
         }
 
     }
@@ -515,7 +516,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
                 temp.setId(XnatExperimentdata.CreateNewID());
             }
         } catch (Exception e) {
-            logger.error("",e);
+            log.error("",e);
         }
 
     }

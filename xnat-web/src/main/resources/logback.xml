@@ -440,7 +440,7 @@
     <logger name="org.nrg.dcm.id" additivity="false" level="WARN">
         <appender-ref ref="identifiers"/>
     </logger>
-    <logger name="org.nrg.xnat.snapshot" additivity="false" level="DEBUG">
+    <logger name="org.nrg.xnat.snapshot" additivity="false" level="WARN">
         <appender-ref ref="snapshot"/>
     </logger>
     <logger name="org.nrg.dicom.dicomedit" additivity="false" level="WARN">

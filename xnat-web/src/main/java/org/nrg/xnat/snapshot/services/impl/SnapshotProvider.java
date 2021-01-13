@@ -35,63 +35,64 @@ import java.util.Optional;
  * Not thread safe but does not need to be if no two threads are working on the same scan.
  */
 @Slf4j
-public class SnapshotProvider {
-    private final CatalogService _catalogService;
-    private final SnapshotResourceGenerator _snapshotResourceGenerator;
-    private final XnatUserProvider _provider;
+public class SnapshotProvider implements AutoCloseable {
+    public SnapshotProvider(final String key, final SnapshotProviderPool snapshotProviderPool, final CatalogService catalogService, final SnapshotResourceGenerator snapshotResourceGenerator, final XnatUserProvider provider) {
+        _key = key;
+        _snapshotProviderPool = snapshotProviderPool;
+        _catalogService = catalogService;
+        _snapshotResourceGenerator = snapshotResourceGenerator;
+        _provider = provider;
+    }
 
-    private static final String SNAPSHOTS_RESOURCE = "/resources/SNAPSHOTS/files";
-    private static final String ROOT_URI           = "/archive/experiments/";
-    private static final String SNAPSHOTS          = "SNAPSHOTS";
-    private static final String GIF                = "GIF";
-
-    public SnapshotProvider(CatalogService catalogService, SnapshotResourceGenerator snapshotResourceGenerator, XnatUserProvider provider) {
-        this._catalogService = catalogService;
-        this._snapshotResourceGenerator = snapshotResourceGenerator;
-        this._provider = provider;
+    /**
+     * "Closes" the provider by returning the provider to the snapshot provider pool.
+     */
+    @Override
+    public void close() {
+        _snapshotProviderPool.returnObject(_key, this);
     }
 
     /*
      * Do not create the resource catalog until there is something to put in it.
      */
-    public Optional<FileResource> provideSnapshotOrThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws DataFormatException, NotFoundException, InitializationException, IOException {
+    public Optional<FileResource> provideSnapshotOrThumbnail(final String sessionId, final String scanId, final int rows, final int cols, final float scaleRows, final float scaleCols) throws DataFormatException, NotFoundException, InitializationException, IOException {
         log.debug("Look for snapshot catalog for scan {} of session {} with {} rows by {} cols", sessionId, scanId, rows, cols);
-        Optional<XnatResourcecatalog> snapshotCatalog = getSnapshotResourceCatalog(sessionId, scanId);
-        String content = SnapshotResourceGenerator.getContentName(rows, cols, scaleRows, scaleCols);
-        if (snapshotCatalog.isPresent()) {
-            Optional<FileResource> snapshot = getResourceFile(snapshotCatalog.get(), content);
+        final Optional<XnatResourcecatalog> existing = getSnapshotResourceCatalog(sessionId, scanId);
+        final String                        content  = SnapshotResourceGenerator.getContentName(rows, cols, scaleRows, scaleCols);
+        if (existing.isPresent()) {
+            final XnatResourcecatalog    catalog  = existing.get();
+            final Optional<FileResource> snapshot = getResourceFile(catalog, content);
             if (snapshot.isPresent()) {
                 return snapshot;
-            } else {
-                snapshot = createSnapshot(sessionId, scanId, rows, cols, scaleRows, scaleCols);
-                if (snapshot.isPresent()) {
-                    addFileToResource(snapshotCatalog.get(), snapshot.get());
-                    return getResourceFile(snapshotCatalog.get(), content);
-                }
             }
-        } else {
-            Optional<FileResource> snapshot = createSnapshot(sessionId, scanId, rows, cols, scaleRows, scaleCols);
-            if (snapshot.isPresent()) {
-                snapshotCatalog = createSnapshotResourceCatalog(sessionId, scanId);
-                if (snapshotCatalog.isPresent()) {
-                    addFileToResource(snapshotCatalog.get(), snapshot.get());
-                    snapshotCatalog = getSnapshotResourceCatalog(sessionId, scanId);
-                    return getResourceFile(snapshotCatalog.get(), content);
-                }
+            final Optional<FileResource> created = createSnapshot(sessionId, scanId, rows, cols, scaleRows, scaleCols);
+            if (created.isPresent()) {
+                addFileToResource(catalog, created.get());
+                return getResourceFile(catalog, content);
+            }
+            return Optional.empty();
+        }
+        final Optional<FileResource> snapshot = createSnapshot(sessionId, scanId, rows, cols, scaleRows, scaleCols);
+        if (snapshot.isPresent()) {
+            final Optional<XnatResourcecatalog> catalog = createSnapshotResourceCatalog(sessionId, scanId);
+            if (catalog.isPresent()) {
+                addFileToResource(catalog.get(), snapshot.get());
+                final Optional<XnatResourcecatalog> retrieved = getSnapshotResourceCatalog(sessionId, scanId);
+                return getResourceFile(retrieved.orElseThrow(() -> new InitializationException("Tried to retrieve the newly created snapshot resource catalog for session " + sessionId + " scan " + scanId + " but nothing was returned")), content);
             }
         }
-        return Optional.ofNullable(null);
+        return Optional.empty();
     }
 
-    private Optional<FileResource> createSnapshot( final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws InitializationException, IOException {
-        return (scaleRows < 0.0 || scaleCols < 0.0)?
-                _snapshotResourceGenerator.createSnapshot(sessionId, scanId, rows, cols):
-                _snapshotResourceGenerator.createThumbnail(sessionId, scanId, rows, cols, scaleRows, scaleCols);
+    private Optional<FileResource> createSnapshot(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws InitializationException, IOException {
+        return (scaleRows < 0.0 || scaleCols < 0.0) ?
+               _snapshotResourceGenerator.createSnapshot(sessionId, scanId, rows, cols) :
+               _snapshotResourceGenerator.createThumbnail(sessionId, scanId, rows, cols, scaleRows, scaleCols);
     }
 
     private Optional<XnatResourcecatalog> getSnapshotResourceCatalog(final String sessionId, final String scanId) throws DataFormatException {
         try {
-            return Optional.ofNullable( _catalogService.getResourceCatalog(sessionId, scanId, SNAPSHOTS));
+            return Optional.ofNullable(_catalogService.getResourceCatalog(sessionId, scanId, SNAPSHOTS));
         } catch (ClientException e) {
             throw new DataFormatException("An error occurred trying to get the SNAPSHOTS resource catalog for session " + sessionId + " scan " + scanId, e);
         }
@@ -112,10 +113,10 @@ public class SnapshotProvider {
 
     private Optional<FileResource> getResourceFile(final XnatResourcecatalog snapshotCatalog, final String content) throws NotFoundException, InitializationException {
         try {
-            final Path rootPath    = Paths.get(snapshotCatalog.getUri()).getParent();
+            final Path                     rootPath    = Paths.get(snapshotCatalog.getUri()).getParent();
             final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(rootPath.toString(), snapshotCatalog, null);
-            final CatCatalogBean catalogBean = catalogData.catBean;
-            final List<CatEntryI> entries     = catalogBean.getEntries_entry();
+            final CatCatalogBean           catalogBean = catalogData.catBean;
+            final List<CatEntryI>          entries     = catalogBean.getEntries_entry();
 
             final Optional<FileResource> snapshotFile = entries.stream().filter(e -> StringUtils.equals(content, e.getContent())).map(e -> new FileResource(rootPath.resolve(e.getUri()), e.getContent(), e.getFormat())).findAny();
             snapshotFile.ifPresent(fileResource -> log.debug("Matching resources found. Snapshot {}", fileResource));
@@ -172,4 +173,15 @@ public class SnapshotProvider {
             return false;
         }
     }
+
+    private static final String SNAPSHOTS_RESOURCE = "/resources/SNAPSHOTS/files";
+    private static final String ROOT_URI           = "/archive/experiments/";
+    private static final String SNAPSHOTS          = "SNAPSHOTS";
+    private static final String GIF                = "GIF";
+
+    private final String                    _key;
+    private final SnapshotProviderPool      _snapshotProviderPool;
+    private final CatalogService            _catalogService;
+    private final SnapshotResourceGenerator _snapshotResourceGenerator;
+    private final XnatUserProvider          _provider;
 }

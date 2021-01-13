@@ -4,17 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.NotFoundException;
-import org.nrg.xdat.security.user.XnatUserProvider;
-import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.snapshot.FileResource;
-import org.nrg.xnat.snapshot.generator.SnapshotResourceGenerator;
 import org.nrg.xnat.snapshot.services.SnapshotGenerationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -24,13 +19,7 @@ import java.util.Optional;
 @Slf4j
 public class SnapshotGenerationServiceImpl implements SnapshotGenerationService {
     @Autowired
-    public SnapshotGenerationServiceImpl(final CatalogService catalogService,
-                                         final SnapshotResourceGenerator snapshotResourceGenerator,
-                                         final XnatUserProvider primaryAdminUserProvider,
-                                         final SnapshotProviderPool snapshotProviderPool) {
-        _catalogService = catalogService;
-        _snapshotResourceGenerator = snapshotResourceGenerator;
-        _userProvider = primaryAdminUserProvider;
+    public SnapshotGenerationServiceImpl(final SnapshotProviderPool snapshotProviderPool) {
         _snapshotProviderPool = snapshotProviderPool;
     }
 
@@ -47,31 +36,10 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
      * {@inheritDoc}
      */
     @Override
-    public Optional<FileResource> getThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws DataFormatException, NotFoundException, InitializationException, IOException {
+    public Optional<FileResource> getThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) {
         log.debug("Provide thumbnail for scan {} of session {} with {} rows by {} cols, scaling rows by {} and columns by {}", sessionId, scanId, rows, cols, scaleRows, scaleCols);
         return provideSnapshotOrThumbnail(sessionId, scanId, rows, cols, scaleRows, scaleCols);
     }
-
-    /*
-     * Reuse existing SnapshotProvider if one already exists handling a previous request.
-     */
-//    private Optional<FileResource> provideSnapshotOrThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws DataFormatException, NotFoundException, InitializationException, IOException {
-//        final String lockCode = getLockCode(sessionId, scanId, rows, cols, scaleRows, scaleCols);
-//        synchronized (_locks) {
-//            if (!_locks.containsKey(lockCode)) {
-//                _locks.put(lockCode, new SnapshotProvider(_catalogService, _snapshotGenerator, _provider));
-//            }
-//        }
-//        final SnapshotProvider provider = _locks.get(lockCode);
-//        try {
-//            return provider.provideSnapshotOrThumbnail(sessionId, scanId, rows, cols, scaleRows, scaleCols);
-//        } finally {
-//            if (!provider.isReferenced()) {
-//                _locks.remove(lockCode);
-//            }
-//        }
-//    }
-//
 
     /**
      * Provide the requested Resource.
@@ -79,35 +47,22 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
      * Pool deals one SnapshotProvider per scan, blocks if there are two requests for the same scan. No two requests will
      * be working simultaneously on the same scan.
      *
-     * @param sessionId
-     * @param scanId
-     * @param rows
-     * @param cols
-     * @param scaleRows
-     * @param scaleCols
-     * @return
-     * @throws DataFormatException
-     * @throws NotFoundException
-     * @throws InitializationException
-     * @throws IOException
+     * @param sessionId    The ID of the session
+     * @param scanId       The ID of the scan
+     * @param rows         The number of rows to be generated
+     * @param columns      The number of columns to be generated
+     * @param scaleRows    The scaling factor to use for generating rows
+     * @param scaleColumns The scaling factor to use for generating columns
+     *
+     * @return The generated snapshot or thumbnail file.
      */
-    private Optional<FileResource> provideSnapshotOrThumbnail(final String sessionId, final String scanId, final int rows, final int cols, float scaleRows, float scaleCols) throws DataFormatException, NotFoundException, InitializationException, IOException {
-        SnapshotProvider provider = null;
+    private Optional<FileResource> provideSnapshotOrThumbnail(final String sessionId, final String scanId, final int rows, final int columns, float scaleRows, float scaleColumns) {
         final String lockCode = getLockCode(sessionId, scanId);
-        try {
-            try {
-                provider = _snapshotProviderPool.borrowObject(lockCode);
-            }
-            catch (Exception e) {
-                log.warn( "Execption from snapshot-provider pool: " + e);
-                return Optional.empty();
-            }
-            return provider.provideSnapshotOrThumbnail(sessionId, scanId, rows, cols, scaleRows, scaleCols);
-        }
-        finally {
-            if( null != provider) {
-                _snapshotProviderPool.returnObject( lockCode, provider);
-            }
+        try (final SnapshotProvider provider = _snapshotProviderPool.borrowObject(lockCode)) {
+            return provider.provideSnapshotOrThumbnail(sessionId, scanId, rows, columns, scaleRows, scaleColumns);
+        } catch (Exception e) {
+            log.warn("Exception from snapshot-provider pool", e);
+            return Optional.empty();
         }
     }
 
@@ -115,10 +70,5 @@ public class SnapshotGenerationServiceImpl implements SnapshotGenerationService 
         return String.join(":", sessionId, scanId);
     }
 
-    private final Map<String, SnapshotProvider> _locks = new HashMap<>();
-
-    private final CatalogService            _catalogService;
-    private final SnapshotResourceGenerator _snapshotResourceGenerator;
-    private final XnatUserProvider          _userProvider;
-    private final SnapshotProviderPool      _snapshotProviderPool;
+    private final SnapshotProviderPool _snapshotProviderPool;
 }

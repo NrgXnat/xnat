@@ -6,23 +6,23 @@ import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.snapshot.generator.SnapshotResourceGenerator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SnapshotProviderObjectFactory extends BaseKeyedPooledObjectFactory<String, SnapshotProvider> {
-    private final CatalogService catalogService;
-    private final SnapshotResourceGenerator snapshotResourceGenerator;
-    private final XnatUserProvider userProvider;
-
-    public SnapshotProviderObjectFactory(CatalogService catalogService, SnapshotResourceGenerator snapshotResourceGenerator, XnatUserProvider provider) {
-        this.catalogService = catalogService;
-        this.snapshotResourceGenerator = snapshotResourceGenerator;
-        this.userProvider = provider;
+    @Autowired
+    public SnapshotProviderObjectFactory(final @Lazy SnapshotProviderPool snapshotProviderPool, final CatalogService catalogService, final SnapshotResourceGenerator snapshotResourceGenerator, final XnatUserProvider provider) {
+        _snapshotProviderPool = snapshotProviderPool;
+        _catalogService = catalogService;
+        _snapshotResourceGenerator = snapshotResourceGenerator;
+        _userProvider = provider;
     }
 
     @Override
-    public SnapshotProvider create(String key) throws Exception {
-        return new SnapshotProvider( catalogService, snapshotResourceGenerator, userProvider);
+    public SnapshotProvider create(final String key) throws Exception {
+        return new SnapshotProvider(key, _snapshotProviderPool, _catalogService, _snapshotResourceGenerator, _userProvider);
     }
 
     @Override
@@ -32,6 +32,11 @@ public class SnapshotProviderObjectFactory extends BaseKeyedPooledObjectFactory<
 
     @Override
     public PooledObject<SnapshotProvider> makeObject(String key) throws Exception {
-        return wrap( create( key));
+        return wrap(create(key));
     }
+
+    private final SnapshotProviderPool      _snapshotProviderPool;
+    private final CatalogService            _catalogService;
+    private final SnapshotResourceGenerator _snapshotResourceGenerator;
+    private final XnatUserProvider          _userProvider;
 }

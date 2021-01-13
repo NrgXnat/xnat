@@ -15,6 +15,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
+import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
@@ -120,7 +121,7 @@ public class XDATServlet extends HttpServlet {
      *
      * @throws Exception When an error occurs.
      */
-    private boolean updateDatabase(String conf) throws Exception {
+    private boolean updateDatabase(final String conf) throws Exception {
         final DatabaseHelper db        = new DatabaseHelper(XDAT.getDataSource());
         final Integer        userCount = !db.tablesExist("xdat_user") ? null : db.getJdbcTemplate().queryForObject("SELECT COUNT(*) FROM xdat_user", Integer.class);
 
@@ -136,18 +137,27 @@ public class XDATServlet extends HttpServlet {
             prop.setProperty("auto-update", "true");
         }
 
-        if (prop.containsKey("auto-update") && BooleanUtils.toBoolean(prop.getProperty("auto-update"))) {
-            final Path generatedSqlLogPath = getGeneratedSqlLogPath();
-            if (userCount != null) {
-                final List<String> statements = getInitScripts(INIT_SCRIPT_SQL_PATTERN, null);
-                final int          oidCount   = db.getJdbcTemplate().queryForObject(QUERY_FIND_OID_FUNCTIONS, Integer.class);
-                if (oidCount > 0 || !statements.isEmpty()) {
-                    log.debug("Found {} functions that contained OID references or {} lines in SQL init scripts, preparing to execute", oidCount, statements.size());
-                    try (final PoolDBUtils.Transaction transaction = PoolDBUtils.open()) {
-                        if (!statements.isEmpty()) {
-                            transaction.execute(statements);
+        try {
+            if (prop.containsKey("auto-update") && BooleanUtils.toBoolean(prop.getProperty("auto-update"))) {
+                final Path generatedSqlLogPath = getGeneratedSqlLogPath();
+                if (userCount != null) {
+                    final List<String> statements = getInitScripts(INIT_SCRIPT_SQL_PATTERN, null);
+                    if (!statements.isEmpty()) {
+                        log.debug("Found {} lines in SQL init scripts, preparing to execute", statements.size());
+                        try (final PoolDBUtils.Transaction transaction = PoolDBUtils.open()) {
+                            if (!statements.isEmpty()) {
+                                transaction.execute(statements);
+                            }
+                            transaction.commit();
+                        } catch (SQLException | DBPoolException e) {
+                            log.error("An error occurred trying to run the SQL init scripts", e);
                         }
-                        if (oidCount > 0) {
+                    }
+
+                    final int oidCount = db.getJdbcTemplate().queryForObject(QUERY_FIND_OID_FUNCTIONS, Integer.class);
+                    if (oidCount > 0) {
+                        log.debug("Found {} functions that contained OID references, preparing to execute", oidCount);
+                        try (final PoolDBUtils.Transaction transaction = PoolDBUtils.open()) {
                             if (db.tableExists("xs_item_cache") && StringUtils.isBlank(db.columnExists("xs_item_cache", "id"))) {
                                 transaction.execute(PoolDBUtils.QUERY_ITEM_CACHE_ADD_ID);
                             }
@@ -180,78 +190,80 @@ public class XDATServlet extends HttpServlet {
                                 }
                             });
                             transaction.execute(restoreOidsFunctions);
+                            transaction.commit();
+                        } catch (SQLException | DBPoolException e) {
+                            log.error("An error occurred trying to run the SQL init scripts", e);
                         }
-                        transaction.commit();
-                    } catch (SQLException | DBPoolException e) {
-                        log.error("An error occurred trying to run the SQL init scripts", e);
                     }
-                }
 
-                //noinspection rawtypes
-                final List[]       createSql = SQLUpdateGenerator.GetSQLCreate();
-                final List<String> sql       = GenericUtils.convertToTypedList(createSql[0], String.class);
-                final List<String> optional  = GenericUtils.convertToTypedList(createSql[1], String.class);
-                if (!optional.isEmpty()) {
-                    log.error("Preparing create SQL and got {} optional SQL statements. Please review this optional SQL and consider executing it if required:\n\nOptional SQL:\n\n{}", optional.size(), String.join("\n", optional));
-                }
-                if (!sql.isEmpty()) {
-                    final DatabaseUpdater databaseUpdater = new DatabaseUpdater(userCount == 0 ? conf : null, generatedSqlLogPath, "-- Generated SQL for updating XNAT database schema");//user_count==0 means users need to be created.
-                    System.out.println("===========================");
-                    System.out.println("Database out of date... updating");
-                    for (String s : sql) {
-                        System.out.println(s);
+                    //noinspection rawtypes
+                    final List[]       createSql = SQLUpdateGenerator.GetSQLCreate();
+                    final List<String> sql       = GenericUtils.convertToTypedList(createSql[0], String.class);
+                    final List<String> optional  = GenericUtils.convertToTypedList(createSql[1], String.class);
+                    if (!optional.isEmpty()) {
+                        log.error("Preparing create SQL and got {} optional SQL statements. Please review this optional SQL and consider executing it if required:\n\nOptional SQL:\n\n{}", optional.size(), String.join("\n", optional));
                     }
-                    System.out.println("===========================");
-                    // changes have been made to the actual db schema, they
-                    // should be done before we continue
-                    // the user can't use the site until these are
-                    // completed.
-                    databaseUpdater.addStatements(sql);
-                    //noinspection CallToThreadRun
-                    databaseUpdater.run();// use run to prevent a second thread.
-                    _shouldUpdateViews = true;
-                    return true;
+                    if (!sql.isEmpty()) {
+                        final DatabaseUpdater databaseUpdater = new DatabaseUpdater(userCount == 0 ? conf : null, generatedSqlLogPath, "-- Generated SQL for updating XNAT database schema");//user_count==0 means users need to be created.
+                        System.out.println("===========================");
+                        System.out.println("Database out of date... updating");
+                        for (String s : sql) {
+                            System.out.println(s);
+                        }
+                        System.out.println("===========================");
+                        // changes have been made to the actual db schema, they
+                        // should be done before we continue
+                        // the user can't use the site until these are
+                        // completed.
+                        databaseUpdater.addStatements(sql);
+                        //noinspection CallToThreadRun
+                        databaseUpdater.run();// use run to prevent a second thread.
+                        _shouldUpdateViews = true;
+                        return true;
+                    } else {
+                        System.out.println("Database up to date.");
+                        // the database tables are up to date. But, we should
+                        // still make sure the functions and views are up to
+                        // date.
+                        // However, this can be done in a separate thread so
+                        // that the user can start using the site.
+
+                        //commenting this out because it is very slow.... they certainly don't need to be run every startup.  But, we need some way of getting them updated when it is needed.
+                        //du.addStatements(sql);
+                        //du.start();// start in a separate thread
+                        _shouldUpdateViews = true;
+                        _isDatabasePopulateOrUpdateCompleted = true;
+                        (new DelayedSequenceChecker()).start();//this isn't necessary if we did the du.start();
+                        return false;
+                    }
                 } else {
-                    System.out.println("Database up to date.");
-                    // the database tables are up to date. But, we should
-                    // still make sure the functions and views are up to
-                    // date.
-                    // However, this can be done in a separate thread so
-                    // that the user can start using the site.
+                    _shouldUpdateViews = false;
+                    System.out.println("===========================");
+                    System.out.println("New Database -- BEGINNING Initialization");
+                    System.out.println("===========================");
+                    // xdat-user table doesn't exist, assume this is an empty
+                    // database
+                    final DatabaseUpdater databaseUpdater = new DatabaseUpdater(conf, generatedSqlLogPath, "-- Generated SQL for initializing new XNAT database schema");
+                    final List<String>    sql             = SQLCreateGenerator.GetSQLCreate(false);
+                    databaseUpdater.addStatements(sql);
+                    databaseUpdater.addStatements(getInitScripts(INIT_SCRIPT_SQL_PATTERN, null));
 
-                    //commenting this out because it is very slow.... they certainly don't need to be run every startup.  But, we need some way of getting them updated when it is needed.
-                    //du.addStatements(sql);
-                    //du.start();// start in a separate thread
-                    _shouldUpdateViews = true;
-                    _isDatabasePopulateOrUpdateCompleted = true;
-                    (new DelayedSequenceChecker()).start();//this isn't necessary if we did the du.start();
-                    return false;
+                    //noinspection CallToThreadRun
+                    databaseUpdater.run();// start and wait for it
+
+                    System.out.println("===========================");
+                    System.out.println("Database initialization complete.");
+                    System.out.println("===========================");
+                    return true;
                 }
             } else {
-                _shouldUpdateViews = false;
-                System.out.println("===========================");
-                System.out.println("New Database -- BEGINNING Initialization");
-                System.out.println("===========================");
-                // xdat-user table doesn't exist, assume this is an empty
-                // database
-                final DatabaseUpdater databaseUpdater = new DatabaseUpdater(conf, generatedSqlLogPath, "-- Generated SQL for initializing new XNAT database schema");
-                final List<String>    sql             = SQLCreateGenerator.GetSQLCreate(false);
-                databaseUpdater.addStatements(sql);
-                databaseUpdater.addStatements(getInitScripts(INIT_SCRIPT_SQL_PATTERN, null));
-
-                //noinspection CallToThreadRun
-                databaseUpdater.run();// start and wait for it
-
-                System.out.println("===========================");
-                System.out.println("Database initialization complete.");
-                System.out.println("===========================");
-                return true;
+                _shouldUpdateViews = true;
+                _isDatabasePopulateOrUpdateCompleted = true;
+                (new DelayedSequenceChecker()).start();
+                return false;
             }
-        } else {
-            _shouldUpdateViews = true;
-            _isDatabasePopulateOrUpdateCompleted = true;
-            (new DelayedSequenceChecker()).start();
-            return false;
+        } finally {
+            ElementSecurity.checkForReferencedDataModels(XDAT.getJdbcTemplate(), XDAT.getContextService().getBean(XnatPluginBeanManager.class));
         }
     }
 

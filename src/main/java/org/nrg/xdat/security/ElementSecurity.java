@@ -72,11 +72,13 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * @author Tim
  */
-@SuppressWarnings({"serial", "RedundantThrows", "unused"})
+@SuppressWarnings("unused")
 @Slf4j
 public class ElementSecurity extends ItemWrapper {
     public static final String SCHEMA_ELEMENT_NAME = "xdat:element_security";
@@ -116,11 +118,11 @@ public class ElementSecurity extends ItemWrapper {
      * @throws Exception When something goes wrong.
      */
     public static List<String> registerNewTypes() throws Exception {
-        final Map<String, ElementSecurity> elements            = GetElementSecurities();
-        final List<String>                 newTypes            = new ArrayList<>();
-        final JdbcTemplate                 template            = XDAT.getContextService().getBean(JdbcTemplate.class);
-        final XnatPluginBeanManager        beanManager         = XDAT.getContextService().getBean(XnatPluginBeanManager.class);
-        final DatabaseHelper               helper              = XDAT.getContextService().getBean(DatabaseHelper.class);
+        final Map<String, ElementSecurity> elements    = GetElementSecurities();
+        final List<String>                 newTypes    = new ArrayList<>();
+        final JdbcTemplate                 template    = XDAT.getContextService().getBean(JdbcTemplate.class);
+        final XnatPluginBeanManager        beanManager = XDAT.getContextService().getBean(XnatPluginBeanManager.class);
+        final DatabaseHelper               helper      = XDAT.getContextService().getBean(DatabaseHelper.class);
 
         for (final DataModelDefinition dataModelDefinition : XFTManager.discoverDataModelDefs()) {
             for (final String securedElements : dataModelDefinition.getSecuredElements()) {
@@ -132,52 +134,27 @@ public class ElementSecurity extends ItemWrapper {
             }
         }
 
-        for (final XnatPluginBean plugin : beanManager.getPluginBeans().values()) {
-            for (final XnatDataModelBean bean : plugin.getDataModelBeans()) {
-                final String beanType = bean.getType();
-                if (!elements.containsKey(beanType) && bean.isSecured() && GenericWrapperElement.GetFieldForXMLPath(beanType + "/project") != null) {
-                    final ElementSecurity elementSecurity = ElementSecurity.newElementSecurity(beanType);
-                    elementSecurity.initExistingPermissions();
-                    newTypes.add(elementSecurity.getElementName());
+        newTypes.addAll(checkForReferencedDataModels(template, beanManager));
 
-                    final String  singular    = StringUtils.defaultIfBlank(bean.getSingular(), "");
-                    final String  plural      = StringUtils.defaultIfBlank(bean.getPlural(), "");
-                    final String  code        = StringUtils.defaultIfBlank(bean.getCode(), "");
-                    final boolean hasSingular = StringUtils.isNotBlank(singular);
-                    final boolean hasPlural   = StringUtils.isNotBlank(plural);
-                    final boolean hasCode     = StringUtils.isNotBlank(code);
-                    if (hasSingular || hasPlural || hasCode) {
-                        elementSecurity.setSingular(singular);
-                        elementSecurity.setPlural(plural);
-                        elementSecurity.setCode(code);
-                        final StringBuilder query = new StringBuilder("update xdat_element_security set ");
-                        if (hasSingular) {
-                            query.append("singular = '").append(singular).append("'");
-                        }
-                        if (hasSingular && hasPlural) {
-                            query.append(", ");
-                        }
-                        if (hasPlural) {
-                            query.append("plural = '").append(plural).append("'");
-                        }
-                        if (hasCode) {
-                            if (hasSingular || hasPlural) {
-                                query.append(", ");
-                            }
-                            query.append("code = '").append(code).append("'");
-                        }
-                        query.append(" where element_name = '").append(beanType).append("'");
-
-                        final int results = template.update(query.toString());
-                        log.info("Updated {} rows with the query: {}", results, query.toString());
-                    }
-                }
-            }
+        if (!newTypes.isEmpty()) {
+            ElementSecurity.refresh();
         }
 
-        ElementSecurity.refresh();
-
         return newTypes;
+    }
+
+    public static List<String> checkForReferencedDataModels(final JdbcTemplate template, final XnatPluginBeanManager beanManager) throws Exception {
+        synchronized (checkForReferencedDataModels) {
+            if (checkForReferencedDataModels.get()) {
+                return Collections.emptyList();
+            }
+            try {
+                final Set<String> securities = GetElementSecurities().keySet();
+                return beanManager.getPluginBeans().values().stream().map(XnatPluginBean::getDataModelBeans).flatMap(Collection::stream).filter(bean -> isUnconfiguredSecureDataModel(securities, bean)).map(bean -> activateDataType(template, bean)).filter(Objects::nonNull).collect(Collectors.toList());
+            } finally {
+                checkForReferencedDataModels.set(true);
+            }
+        }
     }
 
     public String toString() {
@@ -785,8 +762,8 @@ public class ElementSecurity extends ItemWrapper {
             permissionItems = new ArrayList<>();
 
             for (final String fieldName : getPrimarySecurityFields()) {
-                final String qualifiedFieldName = fieldName.startsWith(getElementName()) ? fieldName : getElementName() + XFT.PATH_SEPARATOR + fieldName;
-                final GenericWrapperField field = GenericWrapperElement.GetFieldForXMLPath(qualifiedFieldName);
+                final String              qualifiedFieldName = fieldName.startsWith(getElementName()) ? fieldName : getElementName() + XFT.PATH_SEPARATOR + fieldName;
+                final GenericWrapperField field              = GenericWrapperElement.GetFieldForXMLPath(qualifiedFieldName);
                 if (field != null) {
                     final Hashtable hash;
                     if (field.isReference()) {
@@ -854,7 +831,7 @@ public class ElementSecurity extends ItemWrapper {
         if (hash2 == null) {
             if (fieldName.equalsIgnoreCase("default")) {
                 final Hashtable<String, String> newHash               = new Hashtable<>();
-                boolean   hasDefinedIdValuePair = false;
+                boolean                         hasDefinedIdValuePair = false;
                 if (ed != null) {
                     DisplayField idField      = ed.getDisplayField(ed.getValueField());
                     DisplayField displayField = ed.getDisplayField(ed.getDisplayField());
@@ -910,8 +887,8 @@ public class ElementSecurity extends ItemWrapper {
                 } else {
                     final String baseElement = f.getBaseElement();
                     if (StringUtils.isBlank(baseElement)) {
-                        GenericWrapperElement parent  = f.getParentElement().getGenericXFTElement();
-                        final String                xmlPath;
+                        GenericWrapperElement parent = f.getParentElement().getGenericXFTElement();
+                        final String          xmlPath;
                         if (se.getGenericXFTElement().instanceOf(parent.getFullXMLName())) {
                             xmlPath = f.getXMLPathString(se.getFullXMLName());
                         } else {
@@ -934,10 +911,10 @@ public class ElementSecurity extends ItemWrapper {
                         hash1.put(fieldName, newHash);
                         hash2 = newHash;
                     } else {
-                        GenericWrapperElement foreign      = GenericWrapperElement.GetElement(baseElement);
-                        String                foreignCol   = f.getBaseCol();
-                        String                query        = "SELECT DISTINCT " + foreignCol + " FROM " + foreign.getSQLName();
-                        XFTTable              table        = TableSearch.Execute(query, se.getDbName(), login);
+                        GenericWrapperElement foreign    = GenericWrapperElement.GetElement(baseElement);
+                        String                foreignCol = f.getBaseCol();
+                        String                query      = "SELECT DISTINCT " + foreignCol + " FROM " + foreign.getSQLName();
+                        XFTTable              table      = TableSearch.Execute(query, se.getDbName(), login);
 
                         table.resetRowCursor();
                         while (table.hasMoreRows()) {
@@ -1625,6 +1602,52 @@ public class ElementSecurity extends ItemWrapper {
         return defaultValue;
     }
 
+    private static boolean isUnconfiguredSecureDataModel(final Collection<String> securities, final XnatDataModelBean bean) {
+        final String type = bean.getType();
+        try {
+            return !securities.contains(type) && bean.isSecured() && GenericWrapperElement.GetFieldForXMLPath(type + "/project") != null;
+        } catch (XftItemException e) {
+            log.error("An error occurred trying to get the field for XML path {}/project", type);
+            return false;
+        }
+    }
+
+    private static String activateDataType(final JdbcTemplate template, final XnatDataModelBean bean) {
+        final String dataType = bean.getType();
+        final String singular = StringUtils.defaultIfBlank(bean.getSingular(), "");
+        final String plural   = StringUtils.defaultIfBlank(bean.getPlural(), "");
+        final String code     = StringUtils.defaultIfBlank(bean.getCode(), "");
+
+        try {
+            final ElementSecurity elementSecurity = ElementSecurity.newElementSecurity(dataType);
+            elementSecurity.initExistingPermissions();
+
+            final List<String> sets = new ArrayList<>();
+            if (StringUtils.isNotBlank(singular)) {
+                elementSecurity.setSingular(singular);
+                sets.add("singular = '" + singular + "'");
+            }
+            if (StringUtils.isNotBlank(plural)) {
+                elementSecurity.setSingular(plural);
+                sets.add("plural = '" + plural + "'");
+            }
+            if (StringUtils.isNotBlank(code)) {
+                elementSecurity.setSingular(code);
+                sets.add("code = '" + code + "'");
+            }
+            if (!sets.isEmpty()) {
+                final String query   = "UPDATE xdat_element_security SET " + String.join(", ", sets) + " WHERE lower(element_name) = '" + dataType.toLowerCase() + "'";
+                final int    results = template.update(query);
+                log.info("Updated {} rows with the query: {}", results, query);
+            }
+
+            return elementSecurity.getElementName();
+        } catch (Exception e) {
+            log.error("An error occurred trying to activate the data type {}", dataType, e);
+            return null;
+        }
+    }
+
     private static DatabaseHelper getDatabaseHelper() {
         if (_databaseHelper == null) {
             final ContextService context = XDAT.getContextService();
@@ -1645,8 +1668,9 @@ public class ElementSecurity extends ItemWrapper {
 
     private static final String CLEAR_GROUPS_ITEM_CACHE = "DELETE FROM xs_item_cache WHERE elementname = '" + Groups.getGroupDatatype() + "'";
 
-    private static final Map<String, ElementSecurity> elements = new HashMap<>();
-    private static final Object                       lock     = new Object();
+    private static final Map<String, ElementSecurity> elements                     = new HashMap<>();
+    private static final AtomicBoolean                checkForReferencedDataModels = new AtomicBoolean();
+    private static final Object                       lock                         = new Object();
 
     private static DatabaseHelper _databaseHelper;
 

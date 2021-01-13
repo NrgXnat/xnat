@@ -23,7 +23,11 @@
             <!-- We'll use XNAT's data source, make sure the Spring ID matches. (For unit testing it's provided by the Spring test
                 context) Also, turning off locking, as we've no need for it with a single broker, and it was causing errors in the ActiveMQ
                 cleanup threads. -->
-            <amq:jdbcPersistenceAdapter dataSource="#dataSource" useLock="false" />
+            <amq:jdbcPersistenceAdapter dataSource="#dataSource" useLock="false">
+                <amq:statements>
+                    <amq:statements messageTableName="activemq_msgs" durableSubAcksTableName="activemq_acks" lockTableName="activemq_lock"/>
+                </amq:statements>
+            </amq:jdbcPersistenceAdapter>
         </amq:persistenceAdapter>
         <amq:systemUsage>
             <amq:systemUsage>
@@ -35,7 +39,8 @@
     </amq:broker>
 
     <!-- ActiveMQ ConnectionFactory for JMS to use. Spring will find and use the broker we've declared above. -->
-    <amq:connectionFactory id="activeMQConnectionFactory" brokerURL="${spring.activemq.broker-url:vm://localhost}" redeliveryPolicyMap="#activeMQRedeliveryPolicyMap" userName="${spring.activemq.user}" password="${spring.activemq.password}"/>
+    <amq:connectionFactory id="activeMQConnectionFactory" brokerURL="${spring.activemq.broker-url:vm://localhost}" redeliveryPolicyMap="#activeMQRedeliveryPolicyMap"
+                           userName="${spring.activemq.user}" password="${spring.activemq.password}" trustAllPackages="true"/>
 
     <amq:redeliveryPolicyMap id="activeMQRedeliveryPolicyMap">
         <amq:defaultEntry>

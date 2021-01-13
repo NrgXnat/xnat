@@ -1,3 +1,9 @@
+#macro(formatDate $dt)
+	#if($dt && $dt != "")
+		$turbineUtils.formatDate($dt)
+	#end
+#end
+
 #set($scanAssessors =$!om.getScanAssessors())
 
 #if ($scanAssessors.size()>0)
@@ -45,7 +51,7 @@
 								</td>
 								<td></td>
 								<td>
-									$turbineUtils.formatDate($!pv.getProperty("date"))
+									#formatDate($!pv.getProperty("date"))
 								</td>
 							</tr>
 						#end
@@ -75,7 +81,7 @@
 									$!scr.getStringProperty("rater")
 								</td>
 								<td>
-									$turbineUtils.formatDate($!scr.getProperty("date"))
+									#formatDate($!scr.getProperty("date"))
 								</td>
 							</tr>
 						#end
@@ -105,7 +111,7 @@
 									$!qc.getStringProperty("rater")
 								</td>
 								<td>
-									$turbineUtils.formatDate($!qc.getProperty("date"))
+									#formatDate($!qc.getProperty("date"))
 								</td>
 							</tr>
 						#end

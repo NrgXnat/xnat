@@ -70,7 +70,7 @@ public class DicomImageRenderer {
      *
      * @throws IOException When an error occurs writing the DICOM data.
      */
-    protected void writeImage(final File destination, final BufferedImage image) throws IOException {
+    public void writeImage(final File destination, final BufferedImage image) throws IOException {
         log.info("Preparing to write image to file {}", destination.getAbsolutePath());
         try (final RandomAccessFile output = new RandomAccessFile(destination, "rw")) {
             output.setLength(0);

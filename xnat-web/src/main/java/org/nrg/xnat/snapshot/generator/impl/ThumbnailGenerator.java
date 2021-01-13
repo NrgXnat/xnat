@@ -3,6 +3,7 @@ package org.nrg.xnat.snapshot.generator.impl;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -11,11 +12,11 @@ import java.io.IOException;
  * The default interpolation operation is TYPE_BICUBIC
  *
  */
-public class ThumbnailGenerator {
+public class ThumbnailGenerator extends DicomImageRenderer {
     private int affineTransformOp;
 
     public ThumbnailGenerator() {
-        this.affineTransformOp = AffineTransformOp.TYPE_BICUBIC;
+        this.affineTransformOp = AffineTransformOp.TYPE_NEAREST_NEIGHBOR;
     }
 
     public int getAffineTransformOp() {
@@ -24,6 +25,11 @@ public class ThumbnailGenerator {
 
     public void setAffineTransformOp(int affineTransformOp) {
         this.affineTransformOp = affineTransformOp;
+    }
+
+    public BufferedImage rescale(File file, int frame, float scaleRows, float scaleCols) throws IOException {
+        BufferedImage bufferedImage = readImage( file, frame);
+        return rescale( bufferedImage, scaleRows, scaleCols);
     }
 
     public BufferedImage rescale(BufferedImage bi, float scaleRows, float scaleCols) throws IOException {

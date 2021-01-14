@@ -99,27 +99,44 @@ public class WorkflowUtils extends PersistentWorkflowBuilderAbst {
 		return WrkWorkflowdata.getWrkWorkflowdatasByField(cc, user, false);
 	}
 	
-	public static PersistentWorkflowI getUniqueWorkflow(final UserI user, final String pipeline_name, final String ID, final Date launch_time){
-		return getUniqueWorkflow(user, pipeline_name, ID, null, launch_time);
+	@SuppressWarnings("unused")
+	public static PersistentWorkflowI getUniqueWorkflow(final UserI user, final String pipelineName, final String id, final Date launchTime) {
+		return getUniqueWorkflow(user, pipelineName, id, null, launchTime);
 	}
 
-	public static PersistentWorkflowI getUniqueWorkflow(final UserI user, final String pipeline_name, final String ID, final String scanId, final Date launch_time){
-		final CriteriaCollection cc = new CriteriaCollection("AND");
-		cc.addClause("wrk:workFlowData.ID", ID);
-		cc.addClause("wrk:workFlowData.scan_id", StringUtils.defaultIfBlank(scanId, ""));
-		cc.addClause("wrk:workFlowData.pipeline_name", pipeline_name);
-		cc.addClause("wrk:workflowData.launch_time", launch_time);
-		
-		final Collection<? extends PersistentWorkflowI> al = WrkWorkflowdata.getWrkWorkflowdatasByField(cc, user, false); 
-		return (al == null || al.size() == 0) ? null : al.iterator().next();
+	public static PersistentWorkflowI getUniqueWorkflow(final UserI user, final String pipelineName, final String id, final String scanId, final Date launchTime){
+		final CriteriaCollection criteria = new CriteriaCollection("AND");
+		criteria.addClause("wrk:workFlowData.pipeline_name", pipelineName);
+		criteria.addClause("wrk:workflowData.launch_time", launchTime);
+		criteria.addClause("wrk:workFlowData.ID", id);
+		if (StringUtils.isNotBlank(scanId)) {
+			criteria.addClause("wrk:workFlowData.scan_id", scanId);
+		}
+
+		final List<WrkWorkflowdata> workflows = WrkWorkflowdata.getWrkWorkflowdatasByField(criteria, user, false);
+		if (workflows == null || workflows.isEmpty()) {
+			log.debug("User {} requested a workflow with pipeline name {}, launch time {}, ID {}, and scan ID {} but get no results", user.getUsername(), pipelineName, launchTime, id, StringUtils.defaultIfBlank(scanId, "not specified"));
+			return null;
+		}
+		if (workflows.size() > 1) {
+			log.warn("User {} requested a workflow with pipeline name {}, launch time {}, ID {}, and scan ID {} and got {} results. Ignoring all but the first.", user.getUsername(), pipelineName, launchTime, id, StringUtils.defaultIfBlank(scanId, "not specified"), workflows.size());
+		}
+		return workflows.get(0);
 	}
 	
-	public static PersistentWorkflowI getUniqueWorkflow(final UserI user, final String workflow_id){
-		final CriteriaCollection cc = new CriteriaCollection("AND");
-		cc.addClause("wrk:workFlowData.wrk_workflowdata_id", workflow_id);
-		
-		final Collection<? extends PersistentWorkflowI> al = WrkWorkflowdata.getWrkWorkflowdatasByField(cc, user, false); 
-		return (al == null || al.size() == 0) ? null : al.iterator().next();
+	public static PersistentWorkflowI getUniqueWorkflow(final UserI user, final String workflowId){
+		final CriteriaCollection criteria = new CriteriaCollection("AND");
+		criteria.addClause("wrk:workFlowData.wrk_workflowdata_id", workflowId);
+
+		final List<WrkWorkflowdata> workflows = WrkWorkflowdata.getWrkWorkflowdatasByField(criteria, user, false);
+		if (workflows == null || workflows.isEmpty()) {
+			log.debug("User {} requested a workflow with workflow ID {} but get no results", user.getUsername(), workflowId);
+			return null;
+		}
+		if (workflows.size() > 1) {
+			log.warn("User {} requested a workflow with workflow ID {} and got {} results. Ignoring all but the first.", user.getUsername(), workflowId, workflows.size());
+		}
+		return workflows.get(0);
 	}
 	
 	public static PersistentWorkflowI buildOpenWorkflow(final UserI user, final String xsiType,final String ID,final String project_id, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent{

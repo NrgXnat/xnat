@@ -2005,10 +2005,16 @@ public class DefaultCatalogService implements CatalogService {
         return Arrays.stream(lists).anyMatch(list -> list == null || list.isEmpty());
     }
 
-    private static Collection<Operation> getOperations(final Collection<Operation> operations) {
+    private Collection<Operation> getOperations(final Collection<Operation> operations) {
         // The default is All, so if they specified nothing, give them all.
         if (operations == null || operations.isEmpty()) {
-            return Operation.ALL;
+            if (_preferences.getChecksums()) {
+                return Operation.ALL;
+            } else {
+                List<Operation> ops = new ArrayList<>(Operation.ALL);
+                ops.remove(Operation.Checksum);
+                return ops;
+            }
         }
 
         // If ANY of the operations are All, give them all as well.

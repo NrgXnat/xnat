@@ -88,7 +88,7 @@
         <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0.5-SNAPSHOT</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.2.0-SNAPSHOT</nrg.dicom-edit6.version>
+        <nrg.dicom-edit6.version>6.3.0-SNAPSHOT</nrg.dicom-edit6.version>
         <nrg.dicom.pixeleditor>1.2.1-SNAPSHOT</nrg.dicom.pixeleditor>
         <nrg.dicomdb.version>5.1.2</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>

@@ -18,17 +18,7 @@
 			http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms.xsd">
 
     <!-- embedded ActiveMQ Broker -->
-    <amq:broker id="activeMQBroker" brokerName="activeMQBroker" useJmx="false" persistent="true" schedulerSupport="false" useShutdownHook="true">
-        <amq:persistenceAdapter>
-            <!-- We'll use XNAT's data source, make sure the Spring ID matches. (For unit testing it's provided by the Spring test
-                context) Also, turning off locking, as we've no need for it with a single broker, and it was causing errors in the ActiveMQ
-                cleanup threads. -->
-            <amq:jdbcPersistenceAdapter dataSource="#dataSource" useLock="false">
-                <amq:statements>
-                    <amq:statements messageTableName="activemq_msgs" durableSubAcksTableName="activemq_acks" lockTableName="activemq_lock"/>
-                </amq:statements>
-            </amq:jdbcPersistenceAdapter>
-        </amq:persistenceAdapter>
+    <amq:broker id="activeMQBroker" brokerName="activeMQBroker" useJmx="false" persistent="false" schedulerSupport="false" useShutdownHook="true">
         <amq:systemUsage>
             <amq:systemUsage>
                 <amq:tempUsage><amq:tempUsage limit="${amq.usage.temp:128mb}"/></amq:tempUsage>

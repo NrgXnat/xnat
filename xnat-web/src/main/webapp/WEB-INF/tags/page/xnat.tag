@@ -82,8 +82,8 @@
 
     <!-- required libraries -->
     <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.${js}"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.${minjs}"></script>
-    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-3.5.1.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate-3.3.2.${js}"></script>
     <script type="text/javascript">
         // use 'jq' to avoid _possible_ conflicts with Velocity
         var jq = jQuery;

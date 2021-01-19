@@ -2955,6 +2955,70 @@ body.popup .yui-navset.wrangled {
     margin-right: -1px;
 }
 
+/* overwrite YUI checkbox styles */
+.ygtvspacer { height: inherit; }
+.icon-f { display:block; font-size:11px; height: 17px; padding-left: 4px;}
+.icon-of,
+.icon-cf,
+.ygtvcheck0,
+.ygtvcheck1,
+.ygtvcheck2 { background: none !important; }
+.icon-of:before,
+.icon-cf:before,
+.ygtvcheck0 .ygtvspacer:before,
+.ygtvcheck1 .ygtvspacer:before,
+.ygtvcheck2 .ygtvspacer:before {
+    color: #484848;
+    font: normal normal normal 14px/1 "FontAwesome";
+    padding: 0 2px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+.icon-cf:before { content: "\f07b"; color: #848484 }   /* closed folder */
+.icon-of:before { content: "\f07c"; color: #848484 }   /* open folder */
+.ygtvcheck0 .ygtvspacer:before { content: "\f096" } /* unchecked box */
+.ygtvcheck1 .ygtvspacer:before { content: "\f146"; color: #2d69b8 } /* filled "minus" box */
+.ygtvcheck2 .ygtvspacer:before { content: "\f14a"; color: #2d69b8 } /* filled checkbox */
+.icon-cf, .icon-of { padding-right: 4px; }
+
+/* overwrite YUI tree view icons */
+.ygtvlm, .ygtvlmh,
+.ygtvlp, .ygtvlph,
+.ygtvtm, .ygtvtmh,
+.ygtvtp, .ygtvtph { background: none !important; }
+.ygtvlm .ygtvspacer:before,
+.ygtvlp .ygtvspacer:before,
+.ygtvtm .ygtvspacer:before,
+.ygtvtp .ygtvspacer:before,
+.ygtvlmh .ygtvspacer:before,
+.ygtvlph .ygtvspacer:before,
+.ygtvtmh .ygtvspacer:before,
+.ygtvtph .ygtvspacer:before {
+    color: #484848;
+    font: normal normal normal 16px/1.3 "FontAwesome";
+    padding: 0 2px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+.ygtvlm .ygtvspacer:before,
+.ygtvtm .ygtvspacer:before { content: "\f147" } /* open "minus" box */
+.ygtvlp .ygtvspacer:before,
+.ygtvtp .ygtvspacer:before { content: "\f196" } /* open "plus" box  */
+.ygtvlmh .ygtvspacer:before,
+.ygtvtmh .ygtvspacer:before { content: "\f146"; color: #a8a8a8 } /* shaded "minus" box */
+.ygtvlph .ygtvspacer:before,
+.ygtvtph .ygtvspacer:before { content: "\f0fe"; color: #a8a8a8 } /* shaded "plus" box  */
+.ygtvloading { background: none !important; height: inherit; }
+.ygtvloading .ygtvspacer:before {
+    color: #a8a8a8;
+    content: "\f110";
+    font: normal normal normal 16px/1.3 "FontAwesome";
+    padding: 0 2px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+
 .totals {
     position: relative;
     padding-top: 10px;

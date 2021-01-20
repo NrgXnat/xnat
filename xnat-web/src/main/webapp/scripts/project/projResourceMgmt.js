@@ -27,13 +27,22 @@ XNAT.app.pResources={
 	},
 	menu:function(level){
 		$("#pResource_form").html("");
-		var temp_html="<div class='colA'><div class='info simple'>What resource are you requiring?</div>" +
-				"<div class='row'><div class='rowTitle' for='pResource.name'>Title</div> <input class='pResourceField' required='true' data-required-msg='<b>Title</b> field is required.' data-prop-name='name' type='text' id='pResource.name' value='' placeholder='Natural Language Title'/></div>" +
-				"<div class='row'><div class='rowTitle' for='pResource.desc'>Description (optional)</div> <textarea class='pResourceField' data-prop-name='description' id='pResource.desc' placeholder=''></textarea></div>" +
-				"<div " + (XNAT.app.pResources.allowAutomationScripts == false ? "style='display:none' " : "") + "class='row script-select-row' id='script-select-row'><div class='rowTitle'>Script to run</div> <select id='pScriptSelect'>" + 
-				'<option value="">NONE</option>' +
-				"</select></div>" +
-				"</div>";
+		var temp_html =
+			"<div class='colA'>" +
+			"	<div class='info simple'>What resource are you requiring?</div>" +
+			"	<div class='row'>" +
+			"		<div class='rowTitle' for='pResource.name'>Title</div> " +
+			"		<input class='pResourceField' required='true' data-required-msg='<b>Title</b> field is required.' data-prop-name='name' type='text' id='pResource.name' value='' placeholder='Natural Language Title'/>" +
+			"	</div>" +
+			"	<div class='row'>" +
+			"		<div class='rowTitle' for='pResource.desc'>Description (optional)</div> " +
+			"		<textarea class='pResourceField' data-prop-name='description' id='pResource.desc' placeholder='' ></textarea>" +
+			"	</div>" +
+			"	<div " + (XNAT.app.pResources.allowAutomationScripts == false ? "style='display:none' " : "") + "class='row script-select-row' id='script-select-row'>" +
+			"		<div class='rowTitle'>Script to run</div> " +
+			"		<select id='pScriptSelect'><option value=''>NONE</option></select>" +
+			"	</div>" +
+			"</div>";
 		temp_html+="<div class='colB'><div class='info simple'>Where will it be stored?</div>";
 		if(level=="proj"){
 			temp_html+="<input class='pResourceField' data-prop-name='type' type='hidden' id='pResource.type' value='xnat:projectData'/>";
@@ -148,6 +157,7 @@ XNAT.app.pResources={
 					}
 					valid=false;
 				}
+
 			}
 			
 			if(tmpValue!="" && (tmpValue.indexOf("'")>-1 || tmpValue.indexOf("\"")>-1)){
@@ -382,4 +392,4 @@ XNAT.app.pResources.settingsDialog.cfg.queueProperty("buttons", [
 	   	XNAT.app.pResources.reset();
 	   	XNAT.app.pResources.settingsDialog.hide();
    }},isDefault:true}
-   ]);
+]);

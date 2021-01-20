@@ -114,7 +114,7 @@ abu.FileUploader = function(o){
 									e.stopPropogation();
 								} catch(e) { /* Do nothing */ }
  							}
-						}.bind(this), 200 ).bind(this);
+						}.bind(this), 200);
 					}
 				}.bind(this)
 			);
@@ -160,17 +160,17 @@ abu.FileUploader = function(o){
 									e.stopPropogation();
 								} catch(e) { /* Do nothing */ }
  							}
-						}.bind(this), 200 ).bind(this);
+						}.bind(this), 200);
 					}
 				}.bind(this)
-			).bind(this);
+			);
 			$(this._options.element).on('dragover',function(e) {
 					if (this.DRAG_AND_DROP_ON) {
 						this.showDrag = true;
 						this.activateUploadArea(e);
 					}
 				}.bind(this)
-			).bind(this);
+			);
 			$(this._options.element).on('dragenter',function(e) {
 					if (this.DRAG_AND_DROP_ON) {
 						this.showDrag = true;

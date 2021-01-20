@@ -2957,7 +2957,9 @@ body.popup .yui-navset.wrangled {
 
 /* overwrite YUI checkbox styles */
 .ygtvspacer { height: inherit; }
-.icon-f { display:block; font-size:11px; height: 17px; padding-left: 4px;}
+.icon-f {
+    /*display:block; font-size:11px; height: 17px; padding-left: 4px; */
+}
 .icon-of,
 .icon-cf,
 .ygtvcheck0,

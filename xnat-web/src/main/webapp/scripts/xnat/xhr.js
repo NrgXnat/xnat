@@ -1,3 +1,4 @@
+
 /*
  * web: xhr.js
  * XNAT http://www.xnat.org
@@ -48,6 +49,12 @@ var XNAT = getObject(XNAT||{}),
         return undefined;
     }
 
+
+    function isFunction(fun){
+        // From https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
+        return fun && {}.toString.call(fun) === '[object Function]';
+    }
+
     // list of available AJAX methods we'll be using
     xhr.methods = [
         'GET',
@@ -84,7 +91,7 @@ var XNAT = getObject(XNAT||{}),
     // adding shortcut methods: put and delete AJAX calls for clarity
     $.each(["put", "delete"], function(i, method) {
         $[method] = function(url, data, callback, type) {
-            if ($.isFunction(data)) {
+            if (isFunction(data)) {
                 type = type || callback;
                 callback = data;
                 data = undefined;
@@ -495,7 +502,7 @@ var XNAT = getObject(XNAT||{}),
     // helper function to fire $.fn.changeVal() if available
     function changeValue(el, val){
         var $el = $$(el);
-        if ($.isFunction($.fn.changeVal)) {
+        if (isFunction($.fn.changeVal)) {
             $el.changeVal(val);
         }
         else {
@@ -539,7 +546,7 @@ var XNAT = getObject(XNAT||{}),
         opts.url = XNAT.url.rootUrl(opts.url || $form.data('url') || $form.attr('action'));
         opts.method = opts.method || $form.data('method') || _form.method || 'GET';
 
-        if ($.isFunction(opts.validate)) {
+        if (isFunction(opts.validate)) {
             if (!opts.validate.call(_form, opts)) {
                 $form.removeClass('valid').addClass('invalid');
                 opts.validated = false;

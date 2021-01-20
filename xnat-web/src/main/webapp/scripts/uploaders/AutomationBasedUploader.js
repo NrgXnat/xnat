@@ -1727,20 +1727,20 @@ XNAT.app.abu.updateEmailOptionStatus=function() {
 	}
 }
 
+XNAT.app.abu.actionsList = ['load', 'mousemove', 'mousedown', 'touchstart', 'click', 'keypress'];
 XNAT.app.abu.idleTimer = undefined;
 XNAT.app.abu.markNotIdle = function() {
 	if (XNAT.app.abu.idleTimer) {
-		for (let i = 0; i < actionsList.length; i++) {
-			window.removeEventListener(actionsList[i], XNAT.app.abu.markNotIdle, false);
+		for (let i = 0; i < XNAT.app.abu.actionsList.length; i++) {
+			window.removeEventListener(XNAT.app.abu.actionsList[i], XNAT.app.abu.markNotIdle, false);
 		}
 		window.removeEventListener('scroll', XNAT.app.abu.markNotIdle, true);
 		clearTimeout(XNAT.app.abu.idleTimer);
 	}
 }
-const actionsList = ['load', 'mousemove', 'mousedown', 'touchstart', 'click', 'keypress'];
 XNAT.app.abu.runFunctionIfIdle = function(timeoutms, toRun) {
-	for (let i = 0; i < actionsList.length; i++) {
-		window.addEventListener(actionsList[i], XNAT.app.abu.markNotIdle, false);
+	for (let i = 0; i < XNAT.app.abu.actionsList.length; i++) {
+		window.addEventListener(XNAT.app.abu.actionsList[i], XNAT.app.abu.markNotIdle, false);
 	}
 	window.addEventListener('scroll', XNAT.app.abu.markNotIdle, true);
 

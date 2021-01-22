@@ -18,8 +18,10 @@ import org.apache.velocity.context.Context;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
@@ -62,6 +64,10 @@ public class XDATForgotLogin extends VelocitySecureAction {
                 data.setScreenTemplate("ForgotLogin.vm");
             }else{
             	UserI user =users.get(0);
+
+                if (userAccountIsManagedExternally(user, data)) {
+                    return;
+                }
                 
                 try{
 					additionalProcessing(data, context, user);
@@ -97,6 +103,9 @@ public class XDATForgotLogin extends VelocitySecureAction {
                 }
             }
 		} else if (!StringUtils.isBlank(username)) {
+            if (userAccountIsManagedExternally(username, data)) {
+                return;
+            }
             //check user
                 UserI user=null;
 				try {
@@ -159,6 +168,42 @@ public class XDATForgotLogin extends VelocitySecureAction {
                 data.setScreenTemplate("ForgotLogin.vm");
             }
         }
+
+    private boolean userAccountIsManagedExternally(UserI user, RunData data) {
+        return userAccountIsManagedExternally(user.getUsername(), data, false);
+    }
+
+    private boolean userAccountIsManagedExternally(String username, RunData data) {
+        return userAccountIsManagedExternally(username, data, true);
+    }
+
+    private boolean userAccountIsManagedExternally(String username, RunData data, boolean userMayNotExist) {
+        List<XdatUserAuth> userAuths = XDAT.getXdatUserAuthService().getUsersByXdatUsername(username);
+        if (userAuths == null && userMayNotExist) {
+            userAuths = XDAT.getXdatUserAuthService().getUsersByName(username);
+        }
+        if (userAuths == null) {
+            if (userMayNotExist) {
+                // let this fall through to downstream check for user existence
+                return false;
+            } else {
+                // this should never happen
+                throw new RuntimeException("No XdatUserAuth for a UserI with username=" + username);
+            }
+        }
+        
+        XdatUserAuth userAuth = userAuths.stream().filter(ua -> !ua.getAuthMethod().equals(XdatUserAuthService.LOCALDB))
+                .findFirst().orElse(null);
+        if (userAuth != null) {
+            data.setMessage("The username or email you entered corresponds to an account that is managed externally " +
+                    "and used in XNAT via " + userAuth.getAuthMethod() + ". As such, credentials such as username " +
+                    "and password are managed outside of XNAT. Contact your administrator for further assistance.");
+            data.setScreenTemplate("Login.vm");
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     @Override
     protected boolean isAuthorized(RunData data) throws Exception {

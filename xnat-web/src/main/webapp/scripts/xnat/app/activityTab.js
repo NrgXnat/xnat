@@ -87,7 +87,9 @@ var XNAT = getObject(XNAT);
         delete activityTab.pollers[key];
 
         let $info = $('#activity-tab #key' + key);
-        if (succeeded) {
+        if (succeeded === null) {
+            $info.addClass('text-warning').prepend('<i class="fa fa-exclamation-triangle" style="margin-right:3px"></i>');
+        } else if (succeeded) {
             $info.addClass('text-success').prepend('<i class="fa fa-check" style="margin-right:3px"></i>');
         } else {
             $info.addClass('text-error').prepend('<i class="fa fa-minus-circle" style="margin-right:3px"></i>');
@@ -179,20 +181,32 @@ var XNAT = getObject(XNAT);
             },
             error: function(xhr) {
                 processError(item, key, errCnt,
-                    xhr.responseText ? ': ' + xhr.responseText : '', lastProgressIdx);
+                    xhr.responseText ? ': ' + xhr.responseText : '', lastProgressIdx, xhr.status);
             }
         });
     }
 
-    function processError(item, key, errCnt, errDetails, lastProgressIdx) {
-        if (errCnt < 2) {
+    function processError(item, key, errCnt, errDetails, lastProgressIdx, status = -1) {
+        const maxErrCnt = status === 404 ? 15 : 3;
+        if (errCnt < maxErrCnt) {
             setTimeout(function() {
                 checkProgress(item, key, ++errCnt, lastProgressIdx);
             }, 2000);
         } else {
-            var msg = 'Issue polling event progress: ' + errDetails + '. Refresh the page to try again.';
-            $(item.detailsTag).append('<div class="prog error">' + msg + '</div>');
-            activityTab.stopPoll(key, false);
+            let contents;
+            let succeeded = false;
+            if (status === 404) {
+                // Event tracking can take some time to start if no consumers/threads are available to start the processing
+                contents = '<div class="warning">No event tracking data yet. This likely means tasks are queued, ' +
+                    'but could be indicative of an issue. You will need to refresh the page to resume tracking this event. ' +
+                    'If there is no progress for quite some time, you may wish to contact your administrator.</div>';
+                succeeded = null;
+            } else {
+                contents = '<div class="prog error">Issue polling event progress: ' + errDetails +
+                    '. Refresh the page to try again.</div>';
+            }
+            $(item.detailsTag).append(contents);
+            activityTab.stopPoll(key, succeeded);
         }
     }
 

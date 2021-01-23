@@ -24,7 +24,9 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 import org.nrg.xnat.event.listeners.ArchiveEventListener;
 import org.nrg.xnat.event.listeners.ArchiveOperationListener;
+import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
@@ -46,6 +48,7 @@ import static lombok.AccessLevel.PUBLIC;
 import static org.nrg.framework.status.StatusMessage.Status.*;
 import static org.nrg.xnat.archive.Operation.Archive;
 import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariables;
+import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.*;
 import static org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest.*;
 
 /**
@@ -110,19 +113,32 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
         }
 
         try {
-            final EventTrackingDataService eventTrackingDataService = XDAT.getContextService()
-                    .getBean(EventTrackingDataService.class);
-            eventTrackingDataService.createOrRestartWithKey(_archiveOperationId, _user);
-
-            log.debug("Queuing archive operation to auto-archive session {} to {}", getPrearcSession(), getDestination());
-            final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive,
-                    getSessionData(), getSessionDir(), getParameters(), _archiveOperationId);
-            XDAT.sendJmsRequest(request);
-            log.trace("{}: Dispatched JMS request: {}", getArchiveOperationId(), request);
-
-            final int       timeout   = XDAT.getIntSiteConfigurationProperty("sessionArchiveTimeoutInterval", 600);
-            final StopWatch stopWatch = StopWatch.createStarted();
+            final EventTrackingDataService eventTrackingDataService;
             EventTrackingDataPojo eventTrackingData = null;
+            try {
+                eventTrackingDataService = XDAT.getContextService()
+                    .getBean(EventTrackingDataService.class);
+                eventTrackingDataService.createOrRestartWithKey(_archiveOperationId, _user);
+
+                log.debug("Queuing archive operation to auto-archive session {} to {}", getPrearcSession(), getDestination());
+                final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive,
+                        getSessionData(), getSessionDir(), getParameters(), _archiveOperationId);
+                XDAT.sendJmsRequest(request);
+                log.trace("{}: Dispatched JMS request: {}", getArchiveOperationId(), request);
+            } catch (Exception e) {
+                // Any exceptions thrown here mean the job didn't make it into the JMS queue, so we want to update status
+                // lest it get stuck in "Archive pending" state
+                PrearcDatabase.setStatus(_prearcSession.getFolderName(), _prearcSession.getTimestamp(),
+                        _prearcSession.getProject(), ERROR);
+                PrearcUtils.log(_prearcSession.getProject(), _prearcSession.getTimestamp(), _prearcSession.getFolderName(),
+                        getLogMessage(e) + (e.getCause() != null ? ", Caused by " + getLogMessage(e.getCause()) : ""));
+                throw e;
+            }
+
+            // Now the job is on the queue, which is responsible for status updates, so we're just polling progress
+            // to update the status listeners and to prepare a response for whatever called us
+            final int timeout = XDAT.getIntSiteConfigurationProperty("sessionArchiveTimeoutInterval", 600);
+            final StopWatch stopWatch = StopWatch.createStarted();
             while (eventTrackingData == null || eventTrackingData.getSucceeded() == null) {
                 if (stopWatch.getTime(TimeUnit.SECONDS) > timeout) {
                     String msg = "The session " + getPrearcSession().toString() +
@@ -143,19 +159,24 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
             log.debug("Found event tracking data with status {}: {}", status, uriOrMessage);
             notify(new StatusMessage(this, status, uriOrMessage, true));
             if (status == COMPLETED) {
-                if (StringUtils.isBlank(uriOrMessage))  {
+                if (StringUtils.isBlank(uriOrMessage)) {
                     throw new ServerException(Status.SERVER_ERROR_INTERNAL,
                             "No URI returned when trying to archive " + _session);
                 } else {
                     return wrapPartialDataURI(uriOrMessage);
                 }
-            }  else {
+            } else {
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, status + ": " + uriOrMessage);
             }
+
         } finally {
             log.debug("Removing the QueueBasedImageCommit instance {} from the archive event listener: {}", getArchiveOperationId(), this);
             _archiveEventListener.removeStatusListener(this);
         }
+    }
+
+    private String getLogMessage(Throwable e) {
+        return e.getClass().getName() + ": " + e.getMessage();
     }
 
     @Override

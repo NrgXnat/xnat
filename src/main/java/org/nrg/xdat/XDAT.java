@@ -159,7 +159,6 @@ public class XDAT {
     	return getSiteConfigurationProperty(property, null);
 	}
 
-	@SuppressWarnings("RedundantThrows")
 	public static String getSiteConfigurationProperty(final String property, final String defaultValue) throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
 		final String value = preferences.getValue(property);
@@ -682,7 +681,6 @@ public class XDAT {
 		return _eventService;
 	}
 
-	@SuppressWarnings("RedundantThrows")
 	public static Properties getSiteConfiguration() throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
 		if (preferences == null) {

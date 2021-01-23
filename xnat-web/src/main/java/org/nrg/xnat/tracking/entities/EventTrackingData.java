@@ -22,7 +22,7 @@ public class EventTrackingData extends AbstractHibernateEntity {
         this.userId = userId;
     }
 
-    @Column(unique = true, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     public String getKey() {
         return key;
     }

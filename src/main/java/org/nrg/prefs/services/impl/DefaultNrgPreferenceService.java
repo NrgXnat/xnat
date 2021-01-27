@@ -193,7 +193,7 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService {
      */
     @Override
     public void setPreferenceValue(final String toolId, final String preferenceName, final Scope scope, final String entityId, final String value) throws UnknownToolId, InvalidPreferenceName {
-        final Preference preference = getPreference(toolId, preferenceName, scope, entityId);
+        final Preference preference = _preferenceService.getPreference(toolId, preferenceName, scope, entityId);
         if (preference != null) {
             preference.setValue(value);
             _preferenceService.update(preference);

@@ -97,7 +97,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
         final String     resolvedEntityId = resolveEntityId(entityId);
         final Preference preference       = getDao().findByToolIdNameAndEntity(toolId, preferenceName, scope, resolvedEntityId);
         if (preference == null) {
-            throw new InvalidPreferenceName("Couldn't find the preference " + preferenceName + " for the tool " + toolId + (StringUtils.isNotBlank(resolvedEntityId) ? " and entity " + scope + ":" + resolvedEntityId : ""));
+            throw new InvalidPreferenceName(toolId, preferenceName, scope, entityId);
         }
         getDao().delete(preference);
     }
@@ -133,7 +133,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
         final String resolvedEntityId = resolveEntityId(entityId);
         if (preference == null) {
             if (tool.isStrict() && !isValidPreference(tool, preferenceName)) {
-                throw new InvalidPreferenceName("The tool " + tool.getToolId() + " doesn't support the preference " + preferenceName + " and is set to use a strict preferences list.");
+                throw new InvalidPreferenceName(tool.getToolId(), preferenceName, scope, entityId);
             }
             log.debug("Adding preference {} to tool {} with default value of {}, scope {} entity ID {}", preferenceName, tool.getToolId(), value, scope.code(), resolvedEntityId);
             preference = new Preference(tool, preferenceName, scope, resolvedEntityId, value);

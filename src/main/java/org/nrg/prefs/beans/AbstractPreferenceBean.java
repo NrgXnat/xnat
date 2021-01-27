@@ -9,9 +9,6 @@
 
 package org.nrg.prefs.beans;
 
-import static com.google.common.base.Predicates.containsPattern;
-import static com.google.common.base.Predicates.equalTo;
-import static com.google.common.base.Predicates.or;
 import static org.nrg.framework.utilities.Reflection.findAnnotationInClassHierarchy;
 import static org.nrg.framework.utilities.Reflection.getGetter;
 
@@ -26,36 +23,8 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
@@ -66,7 +35,6 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
-import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
@@ -82,6 +50,19 @@ import org.nrg.prefs.transformers.PreferenceTransformer;
 import org.reflections.ReflectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
+import java.io.*;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class AbstractPreferenceBean extends HashMap<String, Object> implements PreferenceBean {
@@ -203,7 +184,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      * @return The preferences for the current implementation as a map.
      *
      * @deprecated Preference beans are now themselves maps. This method calls the {@link #getPreferences(Set)} method.
-     *     You can also call use streams or Guava methods to filter the bean itself as a map.
+     *         You can also call use streams or Guava methods to filter the bean itself as a map.
      */
     @Override
     @Deprecated
@@ -219,7 +200,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      * @return The preferences for the current implementation as a map.
      *
      * @deprecated Preference beans are now themselves maps. This method calls the {@link #getPreferences(Set)} method.
-     *     You can also call use streams or Guava methods to filter the bean itself as a map.
+     *         You can also call use streams or Guava methods to filter the bean itself as a map.
      */
     @Override
     @Deprecated
@@ -235,7 +216,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      * @return The requested preferences.
      */
     public Map<String, Object> getPreferences(final Set<String> preferenceNames) {
-        return Maps.filterKeys(this, Predicates.in(preferenceNames));
+        return this.keySet().stream().filter(preferenceNames::contains).collect(Collectors.toMap(Function.identity(), this::get));
     }
 
     @JsonIgnore
@@ -302,12 +283,12 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @JsonIgnore
     @Override
     public Object getProperty(final String preference, final Object defaultValue) throws UnknownToolId {
-        final Object value = getPreferenceMethod(preference, defaultValue);
-        if (!(value instanceof Method)) {
-            return value;
-        }
-        final Method method = (Method) value;
         try {
+            final Object value = getPreferenceMethod(preference, defaultValue);
+            if (!(value instanceof Method)) {
+                return value;
+            }
+            final Method method      = (Method) value;
             final Object returnValue = method.invoke(this);
             if (returnValue != null) {
                 storeToCache(preference, returnValue);
@@ -315,6 +296,9 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             }
             storeToCache(preference, defaultValue);
             return defaultValue;
+        } catch (InvalidPreferenceName invalidPreferenceName) {
+            log.error("The requested preference \"{}\" is invalid for tool {}", preference, getToolId());
+            return null;
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
         }
@@ -457,7 +441,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map<String, ?>>) info.getValueType(), String.class, info.getItemType());
         try {
             final Map<String, Object> map           = deserialize("{}", mapType);
-            final Set<String>         propertyNames = Sets.filter(_preferenceService.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + NAMESPACE_DELIMITER)));
+            final Set<String>         propertyNames = getToolPropertyNames(preferenceName);
             for (final String propertyName : propertyNames) {
                 final String value = _preferenceService.getPreferenceValue(getToolId(), propertyName);
                 final Object item  = deserialize(value, info.getItemType());
@@ -491,7 +475,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                 return deserialize(StringUtils.defaultIfBlank(value, "[]"), listType);
             } else {
                 final List<T>     list          = deserialize("[]", listType);
-                final Set<String> propertyNames = Sets.filter(_preferenceService.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + NAMESPACE_DELIMITER)));
+                final Set<String> propertyNames = getToolPropertyNames(preferenceName);
                 for (final String propertyName : propertyNames) {
                     final String                           value = _preferenceService.getPreferenceValue(getToolId(), propertyName, scope, entityId);
                     @SuppressWarnings("unchecked") final T item  = deserialize(value, (Class<? extends T>) info.getItemType());
@@ -510,7 +494,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         return getArrayValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName);
     }
 
-    @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
+    @SuppressWarnings({"unchecked"})
     @JsonIgnore
     @Override
     public <T> T[] getArrayValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
@@ -597,10 +581,9 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                 storeToCacheAsType(key, trimmed, _preferences.get(keyPrefix));
             } else {
                 if (_preferenceService.getTool(getToolId()).isStrict()) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + namespacedPropertyId);
-                } else {
-                    storeToCache(key, trimmed);
+                    throw new InvalidPreferenceName(getToolId(), namespacedPropertyId);
                 }
+                storeToCache(key, trimmed);
             }
         }
 
@@ -755,12 +738,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @JsonIgnore
     @Override
     public <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
-        final Set<String> existing = Sets.newHashSet(Iterables.filter(_preferenceService.getToolPropertyNames(getToolId(), scope, entityId), new Predicate<String>() {
-            @Override
-            public boolean apply(@Nullable final String key) {
-                return StringUtils.equals(preferenceName, StringUtils.substringBefore(key, ":"));
-            }
-        }));
+        final Set<String> existing = _preferenceService.getToolPropertyNames(getToolId(), scope, entityId).stream().filter(key -> StringUtils.equals(preferenceName, StringUtils.substringBefore(key, ":"))).collect(Collectors.toSet());
         for (final String key : map.keySet()) {
             final String id = getNamespacedPropertyId(preferenceName, key);
             existing.remove(id);
@@ -1052,7 +1030,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     protected String getNamespacedPropertyId(final String key, final String... names) {
-        return StringUtils.join(Lists.asList(resolveAlias(key), names), NAMESPACE_DELIMITER);
+        return String.join(NAMESPACE_DELIMITER, Lists.asList(resolveAlias(key), names));
     }
 
     protected PreferenceInfo getPreferenceInfo(final String preference) {
@@ -1061,17 +1039,20 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     @SuppressWarnings("SameParameterValue")
     protected Object getPropertyNoCache(final String preference, final Object defaultValue) throws UnknownToolId {
-        final Object value = getPreferenceMethod(preference, defaultValue);
-        if (!(value instanceof Method)) {
-            return value;
-        }
-        final Method method = (Method) value;
         try {
+            final Object value = getPreferenceMethod(preference, defaultValue);
+            if (!(value instanceof Method)) {
+                return value;
+            }
+            final Method method      = (Method) value;
             final Object returnValue = method.invoke(this);
             if (returnValue != null) {
                 return returnValue;
             }
             return defaultValue;
+        } catch (InvalidPreferenceName invalidPreferenceName) {
+            log.error("The requested preference \"{}\" is invalid for tool {}", preference, getToolId());
+            return null;
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to reference the " + preference + " setting on the " + getToolId() + " preference bean " + getClass().getName(), e);
         }
@@ -1083,6 +1064,11 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     protected <T> T deserialize(final String json, Class<? extends T> clazz) throws IOException {
         return getObjectMapper().readValue(json, clazz);
+    }
+
+    private Set<String> getToolPropertyNames(final String preferenceName) {
+        final Pattern pattern = getNamespacePattern(preferenceName);
+        return _preferenceService.getToolPropertyNames(getToolId()).stream().filter(name -> pattern.matcher(name).matches()).collect(Collectors.toSet());
     }
 
     private <T> T deserialize(final String json, JavaType type) throws IOException {
@@ -1097,7 +1083,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     private String resolveAlias(final String preferenceName) {
-        return _aliases.containsKey(preferenceName) ? _aliases.get(preferenceName) : preferenceName;
+        return _aliases.getOrDefault(preferenceName, preferenceName);
     }
 
     private Object getFromCache(final String key) {
@@ -1302,11 +1288,11 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     private Properties cleanOverrides(final Properties properties) {
-        final String prefixPeriod   = StringUtils.appendIfMissing(getToolId(), ".");
-        final Properties clean      = new Properties();
+        final String     prefixPeriod = StringUtils.appendIfMissing(getToolId(), ".");
+        final Properties clean        = new Properties();
         for (final Map.Entry<?, ?> property : properties.entrySet()) {
-            if (((String)property.getKey()).startsWith(prefixPeriod)) {
-                clean.setProperty(StringUtils.removeStart((String)property.getKey(), prefixPeriod), (String) property.getValue());
+            if (((String) property.getKey()).startsWith(prefixPeriod)) {
+                clean.setProperty(StringUtils.removeStart((String) property.getKey(), prefixPeriod), (String) property.getValue());
             }
         }
         return clean;
@@ -1463,7 +1449,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         return properties;
     }
 
-    private Object getPreferenceMethod(final String preference, final Object defaultValue) {
+    private Object getPreferenceMethod(final String preference, final Object defaultValue) throws InvalidPreferenceName {
         if (containsKey(preference)) {
             final Object value = getFromCache(preference);
             if (value != null) {
@@ -1474,16 +1460,15 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         }
         if (_methods.containsKey(preference)) {
             return _methods.get(preference);
-        } else {
-            final Object resolver = getPreferenceValueResolver(preference, defaultValue);
-            if (resolver != null) {
-                if (resolver instanceof Method) {
-                    _methods.put(preference, (Method) resolver);
-                } else {
-                    storeToCache(preference, resolver);
-                }
-                return resolver;
+        }
+        final Object resolver = getPreferenceValueResolver(preference, defaultValue);
+        if (resolver != null) {
+            if (resolver instanceof Method) {
+                _methods.put(preference, (Method) resolver);
+            } else {
+                storeToCache(preference, resolver);
             }
+            return resolver;
         }
         return null;
     }
@@ -1550,13 +1535,18 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         return atoms.length == 1 ? "" : atoms[1];
     }
 
+    private static Pattern getNamespacePattern(final String namespace) {
+        return Pattern.compile(String.format(PREFERENCE_PATTERN_FORMAT, namespace));
+    }
+
     private static final ObjectMapper _mapper = new ObjectMapper() {{
         configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
     }};
 
-    private static final TypeFactory TYPE_FACTORY          = _mapper.getTypeFactory();
-    private static final String      COMMA_SPACE_SEPARATOR = ", ";
+    private static final TypeFactory TYPE_FACTORY              = _mapper.getTypeFactory();
+    private static final String      COMMA_SPACE_SEPARATOR     = ", ";
+    private static final String      PREFERENCE_PATTERN_FORMAT = "^%s(" + NAMESPACE_DELIMITER + ".*)?$";
 
     private       NrgPreferenceService _preferenceService;
     private final ConfigPaths          _configFolderPaths;

@@ -29,7 +29,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,20 +39,43 @@ import java.util.zip.GZIPOutputStream;
 @SuppressWarnings({"RedundantThrows", "DuplicateThrows"})
 @Slf4j
 public  class FileUtils {
-    private static final Pattern    TSDIR_SECONDS_PATTERN        = Pattern.compile("[0-9]{8}_[0-9]{6}");
     private static final String     TSDIR_SECONDS_FORMAT         = "yyyyMMdd_HHmmss";
     private static final DateFormat TSDIR_SECONDS_FORMATTER      = new SimpleDateFormat(TSDIR_SECONDS_FORMAT);
-    private static final Pattern    TSDIR_MILLISECONDS_PATTERN   = Pattern.compile("[0-9]{8}_[0-9]{9}");
     private static final String     TSDIR_MILLISECONDS_FORMAT    = "yyyyMMdd_HHmmssSSS";
     private static final DateFormat TSDIR_MILLISECONDS_FORMATTER = new SimpleDateFormat(TSDIR_MILLISECONDS_FORMAT);
 
     public static final int LARGE_DOWNLOAD = 1000 * 1024;
     public static final int SMALL_DOWNLOAD = 8 * 1024;
 
-    public static String ReadFromFile(String path) throws IOException {
+    /**
+     * Reads the contents of the specified file.
+     *
+     * @param path The path to the file to read
+     *
+     * @return The contents of the file
+     *
+     * @throws IOException When an error occurs reading the file.
+     *
+     * @deprecated Use methods from Apache Commons IO like <b>IOUtils.read()</b>, <b>IOUtils.readLines()</b>, or similar.
+     */
+    @Deprecated
+    @SuppressWarnings("unused")
+    public static String ReadFromFile(final String path) throws IOException {
         return ReadFromFile(new File(path));
     }
 
+    /**
+     * Reads the contents of the specified file.
+     *
+     * @param file The file to read
+     *
+     * @return The contents of the file
+     *
+     * @throws IOException When an error occurs reading the file.
+     *
+     * @deprecated Use methods from Apache Commons IO like <b>IOUtils.read()</b>, <b>IOUtils.readLines()</b>, or similar.
+     */
+    @Deprecated
     public static String ReadFromFile(final File file) throws IOException {
         try (final FileInputStream stream = new FileInputStream(file)) {
             final FileChannel      channel = stream.getChannel();
@@ -62,6 +84,15 @@ public  class FileUtils {
         }
     }
 
+    /**
+     * Writes the content to the specified file.
+     *
+     * @param content  The content to be written
+     * @param filePath The path to the file to be written
+     *
+     * @deprecated Use methods from Apache Commons IO like <b>IOUtils.write()</b>, <b>IOUtils.writeLines()</b>, or similar.
+     */
+    @Deprecated
 	public static void OutputToFile(String content, String filePath)
 	{
         File             _outFile;
@@ -100,6 +131,17 @@ public  class FileUtils {
             log.error("FileUtils::OutputToFile", except);
         }
     }
+
+    /**
+     * Writes the content to the specified file, overwriting the existing content if <b>append</b> is <b>false</b> and
+     * appending to the existing content if <b>append</b> is <b>true</b>.
+     *
+     * @param content  The content to be written
+     * @param filePath The path to the file to be written
+     *
+     * @deprecated Use methods from Apache Commons IO like <b>IOUtils.write()</b>, <b>IOUtils.writeLines()</b>, or similar.
+     */
+    @Deprecated
 	public static void OutputToFile(String content, String filePath,boolean append)
 	{
         File             _outFile;
@@ -135,12 +177,7 @@ public  class FileUtils {
         }
     }
 
-    public static final FileFilter isTimestampDirectory = f -> f.isDirectory() && (TSDIR_SECONDS_PATTERN.matcher(f.getName()).matches() || TSDIR_MILLISECONDS_PATTERN.matcher(f.getName()).matches());
-    public static final FileFilter isDirectory          = File::isDirectory;
-
-    public static Date parseTimestampDirectory(final String stamp) throws ParseException {
-        return (stamp.length() == 18 ? TSDIR_MILLISECONDS_FORMATTER : TSDIR_SECONDS_FORMATTER).parse(stamp);
-    }
+    public static final FileFilter isDirectory = File::isDirectory;
 
     /**
      * Creates a formatted timestamp for the current time using the {@link #TSDIR_MILLISECONDS_FORMAT} specification.
@@ -888,24 +925,21 @@ public  class FileUtils {
         }
     }
 
-    public static String renameWTimestamp(final String n, Date d) {
-        return n + "_" + getTimestamp(d);
+    public static String renameWTimestamp(final String name) {
+        return renameWTimestamp(name, new Date());
     }
 
-    public static String getTimestamp(Date d) {
-        final SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss");
-        return sdf.format(d);
+    public static String renameWTimestamp(final String name, final Date date) {
+        return name + "_" + getMsTimestamp(date);
+    }
+
+    public static String getTimestamp(final Date date) {
+        return TSDIR_SECONDS_FORMATTER.format(date);
     }
 
     public static String BuildRootHistoryPath() {
-        String cache = XDAT.getSiteConfigPreferences().getCachePath();
-
-		if(StringUtils.isBlank(cache))
-		{
-            return "/.history/";
-        } else {
-            return AppendSlash(cache) + ".history/";
-        }
+        final String cache = XDAT.getSiteConfigPreferences().getCachePath();
+		return (StringUtils.isNotBlank(cache) ? StringUtils.appendIfMissing(cache, File.separator) : "/") + ".history/";
     }
 
     public static File BuildHistoryParentFile(File f) {
@@ -916,14 +950,13 @@ public  class FileUtils {
         return new File(BuildHistoryParentFile(f), (StringUtils.isBlank(timestamp) ? "" : AppendSlash(timestamp)) + f.getName());
     }
 
-    public static File MoveToHistory(final File f, String timestamp) throws FileNotFoundException, IOException {
-        final File dest = BuildHistoryFile(f, timestamp);
-
-		if(f.isDirectory())
-            FileUtils.MoveDir(f, dest, true);
-		else
-            FileUtils.MoveFile(f, dest, true);
-
+    public static File MoveToHistory(final File file, final String timestamp) throws FileNotFoundException, IOException {
+        final File dest = BuildHistoryFile(file, timestamp);
+		if(file.isDirectory()) {
+            FileUtils.MoveDir(file, dest, true);
+        } else {
+            FileUtils.MoveFile(file, dest, true);
+        }
         return dest;
     }
 
@@ -959,20 +992,18 @@ public  class FileUtils {
         if (child.getAbsolutePath().startsWith(parent.getAbsolutePath())) {
             return child.getAbsolutePath().substring(parent.getAbsolutePath().length() + 1);
         }
-        String path = child.getName();
 
+        final StringBuilder path = new StringBuilder(child.getName());
         File temp = child;
-
         while (temp.getParentFile() != null) {
             if (temp.getParentFile().getName().equals(parent.getName())) {
                 break;
             } else {
                 temp = temp.getParentFile();
-                path = temp.getName() + "/" + path;
+                path.insert(0, temp.getName() + "/");
             }
         }
-
-        return path;
+        return path.toString();
     }
 
     public static void ValidateUriAgainstRoot(String s1, String root, String message) throws InvalidValueException {

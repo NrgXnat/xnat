@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.helpers.merge;
 
+import static org.nrg.xnat.utils.FileUtils.buildCachepath;
+
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -253,11 +255,10 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         return backup;
     }
 
-    private File createPrimaryBackupDirectory(String cacheBKDirName,
-                                              String project, String folderName) {
-        File f = org.nrg.xnat.utils.FileUtils.buildCachepath(project, cacheBKDirName, folderName);
-        f.mkdirs();
-        return f;
+    private File createPrimaryBackupDirectory(final String cacheBKDirName, final String project, final String folderName) {
+        final File directory = buildCachepath(project, cacheBKDirName, folderName);
+        directory.mkdirs();
+        return directory;
     }
 
     private void rollback(File backupDIR, File destDIR2, File rootBackup) throws ServerException {

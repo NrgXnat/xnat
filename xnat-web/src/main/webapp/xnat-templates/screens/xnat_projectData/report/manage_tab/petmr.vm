@@ -7,7 +7,7 @@
             <td colspan="2" class="highlighted" id="npet_mr_setting_container">
                 <table>
                     <tr>
-                        <td><label for="separatePETMR"><b>Separate PET-MR?</b></label>&nbsp;&nbsp;&nbsp;</td>
+                        <td><label for="separatePETMR"><b>Separate PET-MR?</b></label></td>
                         <td>
                             <select id="separatePETMR" name="separatePETMR" onchange="XNAT.app.PETMR.update();" disabled>
                                 <option value="delete">Use the system default</option>

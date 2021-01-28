@@ -25,6 +25,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.preferences.PipelinePreferences;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 
 import java.sql.SQLException;
@@ -60,6 +61,8 @@ public class XDATScreen_report_xnat_projectData extends SecureReport {
             }
 
             context.put("showImportEventHandlers", XDAT.getBoolSiteConfigurationProperty("showImportEventHandlers", false));
+            context.put("autoRunEnabled", XDAT.getContextService().getBean(PipelinePreferences.class).isAutoRunEnabled());
+            context.put("autoRunOverrideAllowed", XDAT.getContextService().getBean(PipelinePreferences.class).isAllowAutoRunProjectOverride());
 
             setDefaultTabs("xnat_projectData_summary_details", "xnat_projectData_summary_management", "xnat_projectData_summary_manage", "xnat_projectData_summary_pipeline", "xnat_projectData_summary_history");
             cacheTabs(context, "xnat_projectData/tabs");

@@ -83,7 +83,7 @@ public class PipelinePreferences extends EventTriggeringAbstractPreferenceBean {
         if (!Permissions.verifyProjectExists(_template, projectId)) {
             throw new NotFoundException(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId);
         }
-        return getBooleanValue(Scope.Project, projectId, AUTO_RUN_ENABLED);
+        return isAllowAutoRunProjectOverride() ? getBooleanValue(Scope.Project, projectId, AUTO_RUN_ENABLED) : isAutoRunEnabled();
     }
 
     /**
@@ -123,7 +123,7 @@ public class PipelinePreferences extends EventTriggeringAbstractPreferenceBean {
      **/
     public void setAllowAutoRunProjectOverride(final boolean allowAutoRunProjectOverride) {
         try {
-            setBooleanValue(allowAutoRunProjectOverride, AUTO_RUN_ENABLED);
+            setBooleanValue(allowAutoRunProjectOverride, ALLOW_AUTO_RUN_PROJECT_OVERRIDE);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name allowAutoRunProjectOverride: something is very wrong here.", e);
         }

@@ -124,7 +124,7 @@ public class PipelineApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(value = {"/project/{projectId}"}, method = GET, restrictTo = Authenticated, produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation(value = "Get a list of project-enabled pipelines for a given datatype (optional)")
-    public String getProjectPipelines(@PathVariable(value = "projectId") final String projectId, @RequestParam(value = "xsiType", required = false) final String xsiType) throws NotFoundException, InitializationException {
+    public String getProjectPipelines(@PathVariable final String projectId, @RequestParam(value = "xsiType", required = false) final String xsiType) throws NotFoundException, InitializationException {
         final XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, getSessionUser(), false);
         if (project == null) {
             throw new NotFoundException(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId);
@@ -174,7 +174,7 @@ public class PipelineApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"/launch/{pipelineNameOrStep}"}, method = POST, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Resolve the parameters and launch the pipeline")
     public PipelineLaunchReport launchPipelineWQueryParams(@RequestParam(value = "project", required = false) final String projectId,
-                                                           @PathVariable("pipelineNameOrStep") final String pipelineNameOrStep,
+                                                           @PathVariable final String pipelineNameOrStep,
                                                            final @RequestBody Map<String, String> allRequestParams) throws DataFormatException, NotFoundException {
         if (StringUtils.isNotBlank(projectId) && !Permissions.verifyProjectExists(_jdbcTemplate, projectId)) {
             throw new NotFoundException(XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId);
@@ -249,8 +249,8 @@ public class PipelineApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"/terminate/{pipelineNameOrStep}/project/{projectId}"}, method = POST, restrictTo = Edit,
                         produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public PipelineLaunchReport terminate(@PathVariable("pipelineNameOrStep") final String pipelineNameOrStep,
-                                          @PathVariable("projectId") @Project final String projectId,
+    public PipelineLaunchReport terminate(@PathVariable final String pipelineNameOrStep,
+                                          @PathVariable @Project final String projectId,
                                           final @RequestBody Map<String, String> allRequestParams) throws DataFormatException {
         log.debug("Terminating pipeline name or step {} for project {} with the following parameters: {}", pipelineNameOrStep, projectId, allRequestParams);
 
@@ -319,7 +319,7 @@ public class PipelineApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to check AutoRun settings for the site or specified project."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"/autoRun", "/autoRun/projects/{projectId}"}, method = GET, restrictTo = Read, produces = MediaType.APPLICATION_JSON_VALUE)
-    public boolean isAutoRunEnabled(@PathVariable(value = "projectId", required = false) @Project final String projectId) throws NotFoundException {
+    public boolean isAutoRunEnabled(@PathVariable(required = false) @Project final String projectId) throws NotFoundException {
         final boolean isProjectSpecified = StringUtils.isNotBlank(projectId);
         if (isProjectSpecified) {
             if (!Permissions.verifyProjectExists(_jdbcTemplate, projectId)) {
@@ -337,8 +337,8 @@ public class PipelineApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to modify AutoRun settings for the site or specified project."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/autoRun", "/autoRun/projects/{projectId}"}, method = {PUT, POST}, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE)
-    public void setAutoRunEnabled(@PathVariable(value = "projectId", required = false) @Project final String projectId, @RequestBody final boolean value) throws NotFoundException {
+    @XapiRequestMapping(value = {"/autoRun", "/autoRun/projects/{projectId}"}, method = {PUT, POST}, restrictTo = Edit, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public void setAutoRunEnabled(@PathVariable(required = false) @Project final String projectId, @RequestBody final boolean value) throws NotFoundException {
         final boolean isProjectSpecified = StringUtils.isNotBlank(projectId);
         if (isProjectSpecified) {
             if (!Permissions.verifyProjectExists(_jdbcTemplate, projectId)) {
@@ -346,9 +346,32 @@ public class PipelineApi extends AbstractXapiRestController {
             }
             log.debug("User {} {} AutoRun pipeline for project {}", getSessionUser().getUsername(), value ? "enabling" : "disabling", projectId);
             _pipelinePreferences.setAutoRunEnabled(projectId, value);
+        } else {
+            log.debug("User {} {} AutoRun pipeline for site", getSessionUser().getUsername(), value ? "enabling" : "disabling");
+            _pipelinePreferences.setAutoRunEnabled(value);
         }
-        log.debug("User {} {} AutoRun pipeline for site", getSessionUser().getUsername(), value ? "enabling" : "disabling");
-        _pipelinePreferences.setAutoRunEnabled(value);
+    }
+
+    @ApiOperation(value = "Indicates whether AutoRun can be enabled or disabled on a per-project basis", notes = "This requires AutoRun to be enabled at the side-wide level to be meaningful.")
+    @ApiResponses({@ApiResponse(code = 200, message = "AutoRun override configuration successfully retrieved."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to check AutoRun settings for the site.."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = "/autoRun/overrides", method = GET, restrictTo = Admin, produces = MediaType.APPLICATION_JSON_VALUE)
+    public boolean isAllowAutoRunProjectOverride() {
+        log.debug("User {} checking whether AutoRun override is allowed for site", getSessionUser().getUsername());
+        return _pipelinePreferences.isAllowAutoRunProjectOverride();
+    }
+
+    @ApiOperation(value = "Sets whether AutoRun can be enabled or disabled on a per-project basis", notes = "This requires AutoRun to be enabled at the side-wide level to be meaningful.")
+    @ApiResponses({@ApiResponse(code = 200, message = "AutoRun override successfully configured."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized to modify AutoRun settings for the site."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = "/autoRun/overrides", method = PUT, restrictTo = Admin, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public void setAllowAutoRunProjectOverride(@RequestBody final boolean value) {
+        log.debug("User {} {} overriding AutoRun settings on a per-project basis", getSessionUser().getUsername(), value ? "allowing" : "disallowing");
+        _pipelinePreferences.setAllowAutoRunProjectOverride(value);
     }
 
     private boolean terminateFileExists(final String command) {
@@ -465,7 +488,7 @@ public class PipelineApi extends AbstractXapiRestController {
         final JSONTableRepresentation jsonTableRep = new JSONTableRepresentation(table, org.restlet.data.MediaType.APPLICATION_JSON);
         try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             jsonTableRep.write(stream);
-            return new String(stream.toByteArray());
+            return stream.toString();
         }
     }
 

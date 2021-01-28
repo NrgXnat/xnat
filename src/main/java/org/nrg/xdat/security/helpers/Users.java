@@ -12,10 +12,6 @@ package org.nrg.xdat.security.helpers;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -25,6 +21,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.om.XdatUserLogin;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.Authenticator.Credentials;
@@ -59,7 +56,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
@@ -68,6 +64,7 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"WeakerAccess", "SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Slf4j
@@ -83,18 +80,11 @@ public class Users {
     public static final SimpleGrantedAuthority  AUTHORITY_DATA_ADMIN        = new SimpleGrantedAuthority(ROLE_DATA_ADMIN);
     public static final SimpleGrantedAuthority  AUTHORITY_DATA_ACCESS       = new SimpleGrantedAuthority(ROLE_DATA_ACCESS);
     public static final SimpleGrantedAuthority  AUTHORITY_USER              = new SimpleGrantedAuthority(ROLE_USER);
-    public static final List<GrantedAuthority>  AUTHORITIES_ANONYMOUS       = Collections.<GrantedAuthority>singletonList(AUTHORITY_ANONYMOUS);
-    public static final List<GrantedAuthority>  AUTHORITIES_ADMIN           = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_ADMIN, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ADMIN      = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ADMIN, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ACCESS     = new ArrayList<GrantedAuthority>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_USER            = Collections.<GrantedAuthority>singletonList(AUTHORITY_USER);
-    public static final Function<UserI, String> USERI_TO_USERNAME           = new Function<UserI, String>() {
-        @Nullable
-        @Override
-        public String apply(final UserI user) {
-            return user.getUsername();
-        }
-    };
+    public static final List<GrantedAuthority>  AUTHORITIES_ANONYMOUS       = Collections.singletonList(AUTHORITY_ANONYMOUS);
+    public static final List<GrantedAuthority>  AUTHORITIES_ADMIN           = new ArrayList<>(Arrays.asList(AUTHORITY_ADMIN, AUTHORITY_USER));
+    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ADMIN      = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ADMIN, AUTHORITY_USER));
+    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ACCESS     = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
+    public static final List<GrantedAuthority>  AUTHORITIES_USER            = Collections.singletonList(AUTHORITY_USER);
 
     /**
      * Returns the currently configured user management service.  You can customize the implementation returned by
@@ -364,8 +354,22 @@ public class Users {
      * @throws Exception When something goes wrong.
      */
     public static void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event) throws Exception {
+        save(user, authenticatedUser, null, overrideSecurity, event);
+    }
+
+    /**
+     * Save the user object
+     *
+     * @param user              The user object to be saved.
+     * @param authenticatedUser The user saving the user object.
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null)
+     * @param event             The event details.
+     *
+     * @throws Exception When something goes wrong.
+     */
+    public static void save(final UserI user, final UserI authenticatedUser, final XdatUserAuth userAuth, final boolean overrideSecurity, final EventDetails event) throws Exception {
         final UserManagementServiceI service = getUserManagementService();
-        service.save(user, authenticatedUser, overrideSecurity, event);
+        service.save(user, authenticatedUser, overrideSecurity, event, userAuth);
     }
 
     /**
@@ -541,7 +545,6 @@ public class Users {
      *
      * @throws Exception When something goes wrong.
      */
-    @SuppressWarnings("RedundantThrows")
     public static Date getLastLogin(UserI user) throws Exception {
         try {
             return XDAT.getNamedParameterJdbcTemplate().queryForObject("SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id = :xdatUserId ORDER BY login_date DESC LIMIT 1", new MapSqlParameterSource("xdatUserId", user.getID()), Date.class);
@@ -711,18 +714,10 @@ public class Users {
 
         final List<String> groupIds = Groups.getGroupIdsForUser(user);
         if (groupIds != null && !groupIds.isEmpty()) {
-            grantedAuthorities.addAll(Lists.transform(Lists.newArrayList(Iterables.filter(groupIds, new Predicate<String>() {
-                @Override
-                public boolean apply(@Nullable final String group) {
-                    return StringUtils.isNotBlank(group) && !StringUtils.equalsAny(group, Users.ROLE_ADMIN, Users.ROLE_USER, Users.ROLE_ANONYMOUS);
-                }
-            })), new Function<String, GrantedAuthority>() {
-                @Nullable
-                @Override
-                public GrantedAuthority apply(@Nullable final String group) {
-                    return Users.getGrantedAuthority(group);
-                }
-            }));
+            grantedAuthorities.addAll(groupIds.stream()
+                                              .filter(group -> StringUtils.isNotBlank(group) && !StringUtils.equalsAny(group, Users.ROLE_ADMIN, Users.ROLE_USER, Users.ROLE_ANONYMOUS))
+                                              .map(Users::getGrantedAuthority)
+                                              .collect(Collectors.toList()));
         }
 
         log.debug("Created granted authorities list for user {}: {}", user.getUsername(), _authorities);

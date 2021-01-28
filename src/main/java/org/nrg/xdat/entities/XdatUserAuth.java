@@ -325,8 +325,6 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		return _credentialsNonExpired;
 	}
 
-	private static final long serialVersionUID = -1590002660142544162L;
-
 	private String  _xdatUsername;
 	private String  _authUser;
 	private String  _authMethod;

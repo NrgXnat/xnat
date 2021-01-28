@@ -19,6 +19,7 @@ import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.validators.PasswordValidatorChain;
@@ -126,7 +127,12 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         final UserI currUser = XDAT.getUserDetails();
                         final UserI userToSave = currUser != null && !currUser.isGuest() ? currUser : found;
 
-                        Users.save(found, userToSave, true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
+                        final XdatUserAuth userAuth = (XdatUserAuth) context.get("userAuth");
+                        if (userAuth != null) {
+                            Users.save(found, userToSave, userAuth, true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
+                        } else {
+                            Users.save(found, userToSave, true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
+                        }
 
                         final String comments = TurbineUtils.HasPassedParameter("comments", data) ? (String) TurbineUtils.GetPassedParameter("comments", data) : "";
                         final String phone = TurbineUtils.HasPassedParameter("phone", data) ? (String) TurbineUtils.GetPassedParameter("phone", data) : "";

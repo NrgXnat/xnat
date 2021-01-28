@@ -165,7 +165,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
         PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, Users.getUserDataType(), id.toString(), PersistentWorkflowUtils.getExternalId(user), event);
 
         try {
-            save(user, authenticatedUser, overrideSecurity, wrk.buildEvent(),newUserAuth);
+            save(user, authenticatedUser, overrideSecurity, wrk.buildEvent(), newUserAuth);
 
             if (id.equals(user.getLogin())) {
                 //this was a new user or didn't include the user's id.

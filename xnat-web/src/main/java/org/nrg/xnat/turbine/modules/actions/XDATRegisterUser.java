@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -46,12 +47,7 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
     public void doPerform(final RunData data, final Context context) throws Exception {
         final Map<String, String> parameters = TurbineUtils.GetDataParameterHash(data);
         if (parameters.containsKey("xdat:user.email")) {
-            final List<String> projectIds = Lists.transform(ProjectAccessRequest.RequestPARsByUserEmail(parameters.get("xdat:user.email"), null), new Function<ProjectAccessRequest, String>() {
-                @Override
-                public String apply(final ProjectAccessRequest par) {
-                    return par.getProjectId();
-                }
-            });
+            final List<String> projectIds = ProjectAccessRequest.RequestPARsByUserEmail(parameters.get("xdat:user.email"), null).stream().map(ProjectAccessRequest::getProjectId).collect(Collectors.toList());
             if (!projectIds.isEmpty()) {
                 context.put("pars", projectIds);
             }

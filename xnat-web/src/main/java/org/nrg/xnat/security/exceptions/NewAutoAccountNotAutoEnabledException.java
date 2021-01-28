@@ -8,6 +8,8 @@
  */
 package org.nrg.xnat.security.exceptions;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.springframework.security.core.AuthenticationException;
@@ -21,19 +23,13 @@ import org.springframework.security.core.AuthenticationException;
  * newly created system account until it's enabled somehow, e.g. manual activation by an administrator,
  * completion of an email verification process, etc.
  */
+@Getter
+@Accessors(prefix = "_")
 public class NewAutoAccountNotAutoEnabledException extends AuthenticationException {
     public NewAutoAccountNotAutoEnabledException(final String message, final UserI user) {
         super(message);
-        setUser(user);
-    }
-
-    public UserI getUser() {
-        return _user;
-    }
-
-    public void setUser(final UserI user) {
         _user = user;
     }
 
-    private UserI _user;
+    private final UserI _user;
 }

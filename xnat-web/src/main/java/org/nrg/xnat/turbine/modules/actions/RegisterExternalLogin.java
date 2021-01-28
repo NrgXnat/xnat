@@ -79,7 +79,7 @@ public class RegisterExternalLogin extends XDATRegisterUser {
                     data.getParameters().add("providerAutoVerified", Boolean.toString(provider.isAutoVerified()));
                 }
 
-                createUserAuthRecord(data, operation);
+                context.put("userAuth", createUserAuthRecord(data, operation));
                 super.doPerform(data, context);
             } catch (Exception e) {
                 handleInvalid(data, context, "An error occurred trying to register your user account. Please try again or contact the system administrator if you need more help.");
@@ -127,22 +127,29 @@ public class RegisterExternalLogin extends XDATRegisterUser {
         data.setScreenTemplate("RegisterExternalLogin.vm");
     }
 
-    private void createUserAuthRecord(final RunData data, final String operation) {
+    private XdatUserAuth createUserAuthRecord(final RunData data, final String operation) {
+        final boolean isMerge = StringUtils.equals("merge", operation);
+
         final String authUsername = (String) TurbineUtils.GetPassedParameter("authUsername", data);
         final String authMethod   = (String) TurbineUtils.GetPassedParameter("authMethod", data);
         final String authMethodId = (String) TurbineUtils.GetPassedParameter("authMethodId", data);
 
         final XdatUserAuth auth = new XdatUserAuth(authUsername, authMethod, authMethodId);
-        auth.setXdatUsername((String) TurbineUtils.GetPassedParameter(StringUtils.equals("merge", operation) ? "username" : "xdat:user.login", data));
+        auth.setXdatUsername((String) TurbineUtils.GetPassedParameter(isMerge ? "username" : "xdat:user.login", data));
+
+        // Only save if this is a merge. Otherwise the user auth record will be saved when the UserI record is saved.
+        if (!isMerge) {
+            return auth;
+        }
         try {
-            _service.create(auth);
+            return _service.create(auth);
         } catch (ConstraintViolationException e) {
             final Throwable cause = e.getCause();
             if (cause instanceof PSQLException) {
                 final ServerErrorMessage message = ((PSQLException) cause).getServerErrorMessage();
                 if (message != null && PATTERN_DUPLICATE_KEY.matcher(message.toString()).matches() && StringUtils.isBlank(_service.getXdatUsernameByAuthNameAndProvider(authUsername, authMethod, authMethodId))) {
                     log.info("Found duplicate user auth record for username '{}' and auth method '{}' ('{}'), but no corresponding XNAT user. Allowing account creation to proceed.", authUsername, authMethodId, authMethod);
-                    return;
+                    return _service.getUserByNameAndAuth(authUsername, authMethod, authMethodId);
                 }
             }
             throw e;

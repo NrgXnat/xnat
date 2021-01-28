@@ -9,10 +9,6 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
@@ -36,13 +32,10 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.nrg.xdat.security.helpers.Users.USERI_TO_USERNAME;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -112,24 +105,18 @@ public class ManageProjectAccess extends SecureAction {
 
             final String projectId = project.getId();
             if (!added.isEmpty()) {
-                final PersistentWorkflowI workflow  = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, newEventInstance(data, EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.ADD_USERS_TO_PROJECT + " (" + StringUtils.join(Lists.transform(added, USERI_TO_USERNAME), ", ") + ")"));
+                final PersistentWorkflowI workflow  = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, newEventInstance(data, EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.ADD_USERS_TO_PROJECT + " (" + added.stream().map(UserI::getUsername).collect(Collectors.joining(", ")) + ")"));
                 Groups.addUsersToGroup(projectId + "_" + group, user, added, eventMeta);
                 PersistentWorkflowUtils.complete(workflow, eventMeta);
             }
 
-            final Set<String> removals = FluentIterable.from(current).filter(new Predicate<String>() {
-                @Override
-                public boolean apply(@Nullable final String member) {
-                    return !updated.contains(member);
-                }
-            }).toSet();
-
+            final Set<String> removals = current.stream().filter(member -> !updated.contains(member)).collect(Collectors.toSet());
             if (!removals.isEmpty()) {
                 final List<UserI> removedUsers = new ArrayList<>();
                 for (final String removal : removals) {
                     removedUsers.addAll(Users.getUsersByEmail(removal));
                 }
-                final String              removedUsernames = StringUtils.join(Lists.transform(removedUsers, USERI_TO_USERNAME), ", ");
+                final String              removedUsernames = removedUsers.stream().map(UserI::getUsername).collect(Collectors.joining(", "));
                 final PersistentWorkflowI removedWorkflow = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, newEventInstance(data, EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.REMOVE_USERS_FROM_PROJECT + " (" + removedUsernames + ")"));
                 Groups.removeUsersFromGroup(projectId + "_" + group, user, removedUsers, eventMeta);
                 PersistentWorkflowUtils.complete(removedWorkflow, eventMeta);
@@ -138,14 +125,8 @@ public class ManageProjectAccess extends SecureAction {
         return added;
     }
     
-    private void sendEmailsToNewMembers(final Context context, final UserI user, final XnatProjectdata project, final List<UserI> newMembers) throws Exception {
-        final Set<String> emails = new HashSet<>(Lists.transform(newMembers, new Function<UserI, String>() {
-            @Override
-            public String apply(final UserI user) {
-                return user.getEmail();
-            }
-        }));
-        for (final String email : emails) {
+    private void sendEmailsToNewMembers(final Context context, final UserI user, final XnatProjectdata project, final List<UserI> newMembers) {
+        newMembers.stream().map(UserI::getEmail).collect(Collectors.toSet()).forEach(email -> {
             context.put("user", user);
             context.put("server", TurbineUtils.GetFullServerPath());
             context.put("siteLogoPath", XDAT.getSiteLogoPath());
@@ -154,7 +135,11 @@ public class ManageProjectAccess extends SecureAction {
             context.put("access_level", "collaborator");
             context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
             context.put("projectOM", project);
-            ProcessAccessRequest.SendAccessApprovalEmail(context, email, user, TurbineUtils.GetSystemName() + " Access Granted for " + project.getName());
-        }
+            try {
+                ProcessAccessRequest.SendAccessApprovalEmail(context, email, user, TurbineUtils.GetSystemName() + " Access Granted for " + project.getName());
+            } catch (Exception e) {
+                log.error("An error occurred trying to send a new member email to user {} at email {}", user.getUsername(), email, e);
+            }
+        });
     }
 }

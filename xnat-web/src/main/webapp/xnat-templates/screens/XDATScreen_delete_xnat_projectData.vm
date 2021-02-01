@@ -1,27 +1,53 @@
+#* @vtlvariable name="asset" type="org.nrg.xdat.om.XnatAbstractprojectasset" *#
+#* @vtlvariable name="projectAssets" type="java.util.List" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="expt" type="org.nrg.xdat.om.XnatExperimentdata" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
 <h2 class="edit_header1">Delete Project: #escapeCleanHTML($!om.getName())</h2>
 <form name="form1" method="post" action="$link.setAction("DeleteProjectData")" ONSUBMIT="return validateForm();">
     <p>Select content to delete from this project. </p>
     <div id="projectDeleteTree">
         <ul>
-            <li yuiConfig='{"type":"TaskNode","expanded":true,"ru":"/REST/projects/$om.getId()","redirectHome":true,"canRead":true,"xsiType":"Project","date":"","primary_label":"$om.getId()"}' class="expanded">Delete Entire Project
+            <li yuiConfig='{"type":"TaskNode","expanded":true,"ru":"/data/projects/$om.getId()","redirectHome":true,"canRead":true,"xsiType":"Project","date":"","primary_label":"$om.getId()"}' class="expanded">Delete Entire $displayManager.getSingularDisplayNameForProject()
                 <ul>
-                    #foreach($sub in $om.getParticipants_participant())
-                        <li yuiConfig='{"type":"TaskNode","ru":"/REST/projects/$om.getId()/subjects/$sub.getId()" #if($sub.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"Subject","date":"",primary_label:"$!sub.getIdentifier($om.getId())"}'>$displayManager.getSingularDisplayNameForSubject(): $!sub.getIdentifier($om.getId(),false)
-                            <ul>
-                                #foreach($expt in $sub.getExperiments_experiment())
-                                    <li yuiConfig='{"type":"TaskNode","ru":"/REST/projects/$om.getId()/subjects/$sub.getId()/experiments/$expt.getId()" #if($expt.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"$!expt.getItem().getProperName()","date":"$!expt.getDate()",primary_label:"$!expt.getIdentifier($om.getId())"}'>$!expt.getItem().getProperName(): $!expt.getDate() $expt.getIdentifier($om.getId()) $!expt.getType() $!expt.getSessionType()
-                                        <ul>
-                                            #foreach($assess in $expt.getAssessors_assessor())
-                                                <li yuiConfig='{"type":"TaskNode","ru":"/REST/projects/$om.getId()/subjects/$sub.getId()/experiments/$expt.getId()/assessors/$assess.getId()" #if($assess.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"$!assess.getItem().getProperName()","date":"$!assess.getDate()",primary_label:"$!assess.getIdentifier($om.getId())"}'>$!assess.getItem().getProperName(): $!assess.getDate() $!assess.getIdentifier($om.getId()) $!assess.getType() $!assess.getSessionType()
+                    #if($projectAssets.size() > 0)
+                    <li yuiconfig='{"type":"TaskNode","expanded":true,"canRead":true,"xsiType":null}' class="expanded group-selector">
+                        Select All $displayManager.getSingularDisplayNameForProject() Assessors:
+                        <ul>
+                            #foreach($asset in $projectAssets)
+                                <li yuiConfig='{"type":"TaskNode","ru":"/data/projects/$om.getId()/experiments/$asset.getId()" #if($asset.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"$!asset.getItem().getProperName()","date":"$!asset.getDate()",primary_label:"$!asset.getIdentifier($om.getId())"}'>
+                                    $!asset.getItem().getProperName(): $!asset.getDate() $asset.getIdentifier($om.getId()) $!asset.getType()
+                                </li>
+                            #end
+                        </ul>
+                    </li>
+                    #end
+                    #if($om.getParticipants_participant().size() > 0)
+                    <li yuiconfig='{"type":"TaskNode","expanded":true,"canRead":true, "xsiType":null}' class="expanded group-selector">
+                        Select All $displayManager.getPluralDisplayNameForSubject() and $displayManager.getSingularDisplayNameForSubject() Assessors:
+                        <ul>
+                            #foreach($sub in $om.getParticipants_participant())
+                                <li yuiConfig='{"type":"TaskNode","ru":"/data/projects/$om.getId()/subjects/$sub.getId()" #if($sub.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"Subject","date":"",primary_label:"$!sub.getIdentifier($om.getId())"}'>$displayManager.getSingularDisplayNameForSubject(): $!sub.getIdentifier($om.getId(),false)
+                                    <ul>
+                                        #foreach($expt in $sub.getExperiments_experiment())
+                                            <li yuiConfig='{"type":"TaskNode","ru":"/data/projects/$om.getId()/subjects/$sub.getId()/experiments/$expt.getId()" #if($expt.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"$!expt.getItem().getProperName()","date":"$!expt.getDate()",primary_label:"$!expt.getIdentifier($om.getId())"}'>$!expt.getItem().getProperName(): $!expt.getDate() $expt.getIdentifier($om.getId()) $!expt.getType() $!expt.getSessionType()
+                                                <ul>
+                                                    #foreach($assess in $expt.getAssessors_assessor())
+                                                        <li yuiConfig='{"type":"TaskNode","ru":"/data/projects/$om.getId()/subjects/$sub.getId()/experiments/$expt.getId()/assessors/$assess.getId()" #if($assess.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"$!assess.getItem().getProperName()","date":"$!assess.getDate()",primary_label:"$!assess.getIdentifier($om.getId())"}'>$!assess.getItem().getProperName(): $!assess.getDate() $!assess.getIdentifier($om.getId()) $!assess.getType() $!assess.getSessionType()
 
 
-                                                </li>
-                                            #end
-                                        </ul>
-                                    </li>
-                                #end
-                            </ul>
-                        </li>
+                                                        </li>
+                                                    #end
+                                                </ul>
+                                            </li>
+                                        #end
+                                    </ul>
+                                </li>
+                            #end
+                        </ul>
+                    </li>
                     #end
                 </ul>
             </li>

@@ -23,7 +23,7 @@ RestDeleter = function(_array,_config) {
 
 		for(var aC=0;aC<this.a.length;aC++){
   	    	if(this.a[aC].canRead && (this.a[aC].allowDelete==undefined||this.a[aC].allowDelete==true)) {
-				if (!(this.a[aC].label == "Select All" && this.a[aC].xsiType == null)) {
+				if (!(this.a[aC].label.indexOf("Select All") >= 0 && this.a[aC].xsiType == null)) {
 					var tr = tb.appendChild(document.createElement("tr"));
 					tr.entry = this.a[aC];
 
@@ -35,9 +35,9 @@ RestDeleter = function(_array,_config) {
 					td1.innerHTML = this.a[aC].label;
 					tr.pDivColor = td2.appendChild(document.createElement("div"));
 					tr.pDivColor.style.width = "100%";
-					tr.pDivColor.style.backgroundColor = "gray";
-					tr.pDivColor.style.color = "white";
-					tr.pDivColor.innerHTML = "&nbsp;waiting...";
+					// tr.pDivColor.style.backgroundColor = "gray";
+					// tr.pDivColor.style.color = "white";
+					// tr.pDivColor.innerHTML = "&nbsp;waiting...";
 					this.trArray.push(tr);
 				}
   	    	}

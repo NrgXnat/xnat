@@ -23,11 +23,13 @@ abu.FileUploader = function(o){
 	this.DRAG_AND_DROP_ON = true;
 	this.uploadsInProgress = 0;
 	this.currentUploads = 0;
+	this.uploadsStartedOrCanceled = 0;
 	this.uploadsStarted = 0;
 	this.overwriteConfirmIssued = false;
 	this.doOverwrite = false;
 	this.anyFailedUploads = false;
 	this.anySuccessfulUploads = false;
+	this.xhrs = {};
 	$(this._options.element).html("");
 
 	this.buildUploaderDiv = function() {
@@ -92,6 +94,7 @@ abu.FileUploader = function(o){
 
 		// replaced #abu-process-button with #xmodal-abu-process-button, which is defined in the xmodal options
 		$("#xmodal-abu-process-button").click(this._options.processFunction);
+		$("#xmodal-abu-cancel-button").click(this.cancelUploads);
 		$('#closeBox').change(function(){ 
 			this.updateOptionStatus();
 		 }.bind(this));
@@ -216,6 +219,15 @@ abu.FileUploader = function(o){
 		$(".abu-uploader").css("overflow-x","hidden");
 	}
 
+	this.cancelUploads = function() {
+		$.each(this.xhrs, function(key, xhr) {
+			// for some reason, there's a guid key added to this object
+			if (key.startsWith('idx')) {
+				xhr.abort();
+			}
+		});
+	}.bind(this);
+
 	this.doFileUpload = function(fileA) {
 		var start_i = $('form[id^=file-upload-form-]').length;				
 		$("#xmodal-abu-process-button").prop("disabled","disabled");
@@ -240,7 +252,11 @@ abu.FileUploader = function(o){
 						'<div class="abu-percent">0%</div >' +
 					'</div>' +
 					'<div id="upload-status-div-' + adj_i + '" class="abu-status"></div>' +
+					'<div id="upload-cancel-div-' + adj_i + '" class="abu-cancel-div">' +
+						'<a class="abu-cancel" data-idx="' + adj_i + '">Cancel</a>' +
+					'</div>' +
 				'</div>');
+
 			this.currentUploads++;
 			var formData = new FormData();
 			formData.append("file" + adj_i,cFile,cFile.name);
@@ -282,23 +298,23 @@ abu.FileUploader = function(o){
 		this.anyFailedUploads = false;
 	}.bind(this)
 
-	this.uploadFile = function(idx,formData) {
+	this.uploadFile = function(idx, formData) {
 		var formSelector = "#file-upload-form-" + idx;
 		var infoSelector = formSelector.replace("-upload-form-","-info-div-");
 		var bar = $(infoSelector).find(".abu-bar");
 		var percent = $(infoSelector).find(".abu-percent");
 		var status = $(infoSelector).find(".abu-status");
+		let filename = formData.get("file"+idx).name;
 		$(formSelector).on("submit",function(e, uploader) {
-			 $(this).ajaxSubmit({
+			 let formObj = $(this).ajaxSubmit({
 				beforeSend: function(arr, $form, options) {
 					
 					// Don't allow % and # characters in the filename.
-					if (formData.get("file"+idx).name.match(/[\[\]%#{}]/g)){
+					if (filename.match(/[\[\]%#{}]/g)){
 						status.html("<span class='abu-upload-fail'>Filename contains invalid characters ('%','#','[]', and '{}' are not allowed). Please rename file and try again.</a>");
 						$(infoSelector).find(".abu-progress").css("display","none");
 						status.css("display","inline-block");
-						uploader.uploadsStarted++;
-						uploader.uploadsInProgress++;
+						uploader.uploadsStartedOrCanceled++;
 						arr.abort();
 						this.complete();
 						return false;
@@ -351,6 +367,7 @@ abu.FileUploader = function(o){
 					var percentVal = '0%';
 					bar.width(percentVal);
 					percent.html(percentVal);
+					uploader.uploadsStartedOrCanceled++;
 					uploader.uploadsStarted++;
 					uploader.uploadsInProgress++;
 					if (this.isOverwrite && !this.doOverwrite) {
@@ -373,15 +390,22 @@ abu.FileUploader = function(o){
 					bar.width(percentVal);
 					percent.html(percentComplete === 100 ? 'Saving...' : percentVal);
 				},
-				error: function(result) {
+				error: function(xhr, textStatus, result) {
+					let err;
+					if (textStatus === "abort") {
+						err = 'Canceled';
+						uploader.uploadsStarted--; // indicate that no catalog refresh is needed
+					} else {
+						err = 'Failed';
+						uploader.anyFailedUploads = true;
+					}
 					$(status).data("rtn",result);
-			 		status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Failed</a>');
+			 		status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">' + err + '</a>');
 			 		status.css("display","inline-block");
 			 		$(infoSelector).find(".abu-progress").css("display","none");
 					$("#xmodal-abu-cancel-button")
 						.show()
 						.prop("disabled",false);
-					uploader.anyFailedUploads = true;
 				},
 				success: function(result) {
 					$(status).data("rtn",result);
@@ -416,6 +440,8 @@ abu.FileUploader = function(o){
 					uploader.anySuccessfulUploads = true;
 				},
 				complete: function(xhr) {
+					delete uploader.xhrs['idx' + idx];
+					$('#upload-cancel-div-' + idx).remove();
 					uploader.uploadsInProgress--;
 					uploader.currentUploads--;
 					if (uploader.currentUploads==0) {
@@ -425,7 +451,8 @@ abu.FileUploader = function(o){
 					}
 					uploader.manageUploads();
 				}
-			}); 
+			});
+			uploader.xhrs['idx' + idx] = formObj.data('jqxhr');
 			return false;
 		}); 
 	}
@@ -441,7 +468,7 @@ abu.FileUploader = function(o){
 		for (var i=1;i<=this.MAX_CONCURRENT_UPLOADS;i++) {
 			var uploadsRequested = $('form[id^=file-upload-form-]').length;				
 			var uploadsInProgress = this.uploadsInProgress;
-			var uploadsStarted = this.uploadsStarted;
+			var uploadsStarted = this.uploadsStartedOrCanceled;
 			if (uploadsInProgress < MAX_CONCURRENT_UPLOADS && uploadsStarted<uploadsRequested) {
 				$("#file-upload-form-" + uploadsStarted).trigger("submit",this);
 			} else if (uploadsStarted>=uploadsRequested) {
@@ -467,12 +494,17 @@ abu.FileUploader = function(o){
 				'<li>Multiple files may be selected</li>'
 			) +
 			'<li>Uploads will begin automatically</li>' + 
-			'<li>Upload of directories is not supported</li>' + 
-			'<li>When finished uploading, press <b>Done</b> to close the modal, or, if an automation script is to be launched by this upload process, press <b>Process Files</b> to process the uploaded files.</li>' + 
+			'<li>Upload of directories is not supported</li>' +
+			'<li>When finished uploading, press <b>Done</b> to close the modal, or, if an automation script is to be launched by this upload process, press <b>Process Files</b> to process the uploaded files.</li>' +
 			'</ul>' + 
 			'</div>';
 		xmodal.message("Uploader Instructions",templateV, undefined, {height:"400px",width:"800px"});
-	}.bind(this)
+	}.bind(this);
+
+	$(document).on('click', '.abu-cancel', function(e){
+		let idx = $(e.target).data('idx');
+		this.xhrs['idx' + idx].abort();
+	}.bind(this));
 
 }
 

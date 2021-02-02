@@ -101,10 +101,13 @@
     margin-right:10px;
 }
 
-.abu-progress { position:relative; display:inline-block; width:250px; height:15px; border: 1px solid #ddd; padding: 0px; border-radius: 0px; margin-left: 10px; }
+.abu-progress { position:relative; display:inline-block; width:250px; height:15px; border: 1px solid #ddd; padding: 0px; border-radius: 0px; margin: 0 10px; }
 .abu-bar { background-color: #0854AB; opacity:0.40; width:0%; height:15px; border-radius: 0px; display: inline-block }
 .abu-percent { position:absolute; display:inline-block; top:0px; left:48%; line-height: 15px; }
 .abu-status { position:relative; display:none; }
+.abu-cancel-div {
+    display: inline;
+}
 
 .abu-config-param-div { width:120px; text-align:right; margin-right:10px; float:left; }
 .abu-config-param-grp { margin-bottom:15px; float:left; border:1px solid #CCCCCC; width: 600px; padding:5px; }

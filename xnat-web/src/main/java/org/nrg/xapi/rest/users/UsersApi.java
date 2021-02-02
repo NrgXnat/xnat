@@ -25,6 +25,7 @@ import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xapi.model.users.User;
+import org.nrg.xapi.model.users.UserAuth;
 import org.nrg.xapi.model.users.UserFactory;
 import org.nrg.xapi.rest.*;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -129,6 +130,29 @@ public class UsersApi extends AbstractXapiRestController {
         }
         if (usersList != null && usersList.size() > 0) {
             return new ResponseEntity<>(usersList.get(0), OK);
+        } else {
+            return new ResponseEntity<>(OK);
+        }
+    }
+
+    @ApiOperation(value = "Get user auth details.", notes = "The user authDetails function returns info about authentication methods that can be used for a given XNAT account.", response = UserAuth.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "User auth info."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user profile."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "authDetails/{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
+    @AuthDelegate(UserResourceXapiAuthorization.class)
+    @ResponseBody
+    public ResponseEntity<List<UserAuth>> usersAuthDetailsGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("username") @Username final String username) {
+        List<UserAuth> list = null;
+        String     regex     = "^[a-zA-Z0-9]+[a-zA-Z0-9._-]*$";
+        if (username.matches(regex)) {
+            list = _jdbcTemplate.query(QUERY_USER_AUTH, new HashMap<String, Object>() {{
+                put("username", username);
+            }}, USER_AUTH_ROW_MAPPER);
+        }
+        if (list != null && !list.isEmpty()) {
+            return new ResponseEntity<>(list, OK);
         } else {
             return new ResponseEntity<>(OK);
         }
@@ -926,8 +950,10 @@ public class UsersApi extends AbstractXapiRestController {
     private static final String QUERY_USER_PROFILES = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username ORDER BY xdat_user.xdat_user_id";
     private static final String QUERY_CURRENT_USERS = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE (xdat_user.enabled=1 OR (max_login > (CURRENT_DATE - (INTERVAL '1 year' * :maxLoginInterval)) OR (max_login IS NULL AND (xdat_user_meta_data.last_modified > (CURRENT_DATE - (INTERVAL '1 year' * :lastModifiedInterval)) ) ) )) ORDER BY xdat_user.xdat_user_id";
     private static final String QUERY_USER_PROFILE  = "SELECT enabled, login AS username, xdat_user_id AS id, firstname AS firstName, lastname AS lastName, email, verified, last_modified, auth.max_login AS lastSuccessfulLogin FROM xdat_user JOIN xdat_user_meta_data ON xdat_user.user_info=xdat_user_meta_data.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) auth ON xdat_user.login=auth.xdat_username WHERE xdat_user.login=:username";
+    private static final String QUERY_USER_AUTH  = "SELECT auth_method, auth_method_id, auth_user, failed_login_attempts, last_login_attempt, last_successful_login FROM xhbm_xdat_user_auth WHERE xdat_username=:username";
 
     private static final RowMapper<User>         USER_ROW_MAPPER                 = org.nrg.xapi.model.users.User.Mapper;
+    private static final RowMapper<UserAuth>     USER_AUTH_ROW_MAPPER            = org.nrg.xapi.model.users.UserAuth.Mapper;
     private static final SessionInfoToIdFunction INFO_TO_ID_FUNCTION             = new SessionInfoToIdFunction(false);
     private static final SessionInfoToIdFunction INFO_TO_ID_INVALIDATOR_FUNCTION = new SessionInfoToIdFunction(true);
 

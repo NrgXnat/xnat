@@ -15,7 +15,11 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -26,10 +30,35 @@ import java.util.List;
 @Slf4j
 @JsonPropertyOrder({"xdatUsername", "authUser", "authMethod", "authMethodId", "lastLoginAttempt", "lastSuccessfulLogin", "failedLoginAttempts", "lockoutTime", "passwordUpdated", "authorities"})
 public class UserAuth {
+    public UserAuth() {}
+
+    public UserAuth(String authMethod, String authMethodId, String authUser, int failedLoginAttempts,
+                    Timestamp lastLoginAttempt, Timestamp lastSuccessfulLogin) {
+        _authMethod = authMethod;
+        _authMethodId = authMethodId;
+        _authUser = authUser;
+        _failedLoginAttempts = failedLoginAttempts;
+        _lastLoginAttempt = lastLoginAttempt;
+        _lastSuccessfulLogin = lastSuccessfulLogin;
+    }
+
     public void resetFailedLogins() {
         setFailedLoginAttempts(0);
         setLockoutTime(null);
     }
+
+    public static final RowMapper<UserAuth> Mapper = new RowMapper<UserAuth>() {
+        @Override
+        public UserAuth mapRow(final ResultSet resultSet, final int index) throws SQLException {
+            final Timestamp lastLoginAttempt = resultSet.getTimestamp("last_login_attempt");
+            final Timestamp lastSuccessfulLogin = resultSet.getTimestamp("last_successful_login");
+            return new UserAuth(resultSet.getString("auth_method"),
+                    resultSet.getString("auth_method_id"),
+                    resultSet.getString("auth_user"),
+                    resultSet.getInt("failed_login_attempts"),
+                    lastLoginAttempt, lastSuccessfulLogin);
+        }
+    };
 
     @Override
     public String toString() {
@@ -39,6 +68,7 @@ public class UserAuth {
                + "  authMethod: " + getAuthMethod() + "\n"
                + "  authMethodId: " + getAuthMethodId() + "\n"
                + "  failedLoginAttempts: " + getFailedLoginAttempts() + "\n"
+               + "  lastLoginAttempt: " + getLastLoginAttempt() + "\n"
                + "  lastSuccessfulLogin: " + getLastSuccessfulLogin() + "\n"
                + "  passwordUpdated: " + getPasswordUpdated() + "\n"
                + "  authorities: " + StringUtils.join(getAuthorities(), ", ") + "\n"
@@ -46,7 +76,7 @@ public class UserAuth {
     }
 
     private String       _xdatUsername        = null;
-    private User         _authUser            = null;
+    private String       _authUser            = null;
     private String       _authMethod          = null;
     private String       _authMethodId        = null;
     private Date         _lastLoginAttempt    = null;

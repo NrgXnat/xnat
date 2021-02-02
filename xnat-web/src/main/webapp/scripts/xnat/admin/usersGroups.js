@@ -896,7 +896,115 @@ var XNAT = getObject(XNAT);
                     //title: username + ':enabled'//,
                     //on: { click: _load ? setEnabled : diddly }
                 }
-            }
+            };
+
+            form.contents.authId = {
+                kind: 'panel.element',
+                label: 'Authorization',
+                contents: {
+                    link: {
+                        tag: 'a.view-auth-details.link',
+                        element: {
+                            href: '#!',
+                            on: {
+                                click: function(e){
+                                    e.preventDefault();
+                                    const $waitElement = $('<span class="spinner text-info"><i class="fa fa-spinner fa-spin"></i> Loading...</span>');
+                                    $(this).after($waitElement);
+                                    XNAT.xhr.getJSON({
+                                        url: restUrl('/xapi/users/authDetails/' + data.username),
+                                        error: function(e){
+                                            $waitElement.remove();
+                                            console.warn(e);
+                                            XNAT.ui.dialog.message('Unable to retrieve user auth details');
+                                        },
+                                        success: function(auth) {
+                                            function formatDate(value) {
+                                                return value ? (new Date(value)).toLocaleString() : '';
+                                            }
+
+                                            let table = {
+                                                kind: 'table.dataTable',
+                                                name: 'containerHistoryTable',
+                                                id: 'container-history-table',
+                                                data: auth,
+                                                table: {
+                                                    classes: 'highlight hidden'
+                                                },
+                                                items: {
+                                                    authMethod: {
+                                                        label: 'Auth method',
+                                                        filter: true,
+                                                        sort: true,
+                                                        apply: function () {
+                                                            return this['authMethod'];
+                                                        }
+                                                    },
+                                                    authMethodId: {
+                                                        label: 'Auth method id',
+                                                        filter: true,
+                                                        sort: true,
+                                                        apply: function () {
+                                                            return this['authMethodId'];
+                                                        }
+                                                    },
+                                                    authUser: {
+                                                        label: 'Username (remote)',
+                                                        filter: true,
+                                                        sort: true,
+                                                        apply: function () {
+                                                            return this['authUser'];
+                                                        }
+                                                    },
+                                                    lastLoginAttempt: {
+                                                        label: 'Last login attempt',
+                                                        sort: true,
+                                                        apply: function () {
+                                                            return formatDate(this['lastLoginAttempt']);
+                                                        }
+                                                    },
+                                                    lastSuccessfulLogin: {
+                                                        label: 'Last successful login',
+                                                        sort: true,
+                                                        apply: function () {
+                                                            return formatDate(this['lastSuccessfulLogin']);
+                                                        }
+                                                    },
+                                                    failedLoginAttempts: {
+                                                        label: 'Failed login attempts',
+                                                        sort: true,
+                                                        apply: function () {
+                                                            return this['failedLoginAttempts'];
+                                                        }
+                                                    }
+                                                }
+                                            };
+                                            XNAT.ui.dialog.open({
+                                                title: 'Authorization details for ' + data.username,
+                                                width: 850,
+                                                header: true,
+                                                maxBtn: true,
+                                                content: XNAT.spawner.spawn({authTable: table}).get(),
+                                                afterShow: function () {
+                                                    $waitElement.remove();
+                                                },
+                                                buttons: [
+                                                    {
+                                                        label: 'Close',
+                                                        isDefault: true,
+                                                        close: true
+                                                    }
+                                                ]
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        },
+                        content: 'View Authorization Details'
+                    }
+                }
+            };
         }
 
         // add 'Advanced Settings' when editing existing user

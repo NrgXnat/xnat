@@ -16,7 +16,7 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
 }(function(){
     // NOTE: fileuploader.js expects the id variable below to be xmodal-abu,
     // but I don't want to use that bc I want to do my own button handling
-    var uploadName,
+    let uploadName,
         fNameReplace = 'XNAME',
         usrResPath,
         uploaderUrl,
@@ -30,7 +30,7 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
         usrResPath = '/user/cache/resources/' + uploadName + '/files/' + fNameReplace;
         uploaderUrl = XNAT.url.csrfUrl('/data' + usrResPath).replace(fNameReplace, '##FILENAME_REPLACE##');
 
-        var loc;
+        let loc;
         if (config.session) {
             loc = 'session: ' + config.session;
         } else if (config.subject) {
@@ -38,9 +38,21 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
         } else {
             loc = 'project: ' + config.project;
         }
-        var importHandler = 'DICOM or ECAT';
+        let importHandler = 'DICOM or ECAT';
         if (config['import-handler']) {
             importHandler = config['import-handler'];
+        }
+
+        function cancel() {
+            abu._imageUploader.cancelUploads();
+            if (interval) {
+                window.clearInterval(interval);
+                interval = null;
+            }
+        }
+        function cancelAndClose() {
+            cancel();
+            xmodal.close(id);
         }
 
         xmodal.open({
@@ -72,47 +84,41 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
                     isDefault: false,
                     close: false,
                     action: function() {
-                        XNAT.ui.dialog.confirm('Confirm close',
-                            'Are you sure you wish to close? Nothing will be submitted for archival.',
-                            {
-                                buttons: [
-                                    {
-                                        label: 'No',
-                                        close: true,
-                                        isDefault: false,
-                                        action: function() {}
-                                    },
-                                    {
-                                        label: 'Yes',
-                                        close: true,
-                                        isDefault: true,
-                                        action: function() {
-                                            if (interval) {
-                                                window.clearInterval(interval);
-                                                interval = null;
-                                            }
-                                            xmodal.close(id);
+                        // only prompt
+                        if ($('#' + id + '-process-button').prop('disabled')) {
+                            cancelAndClose();
+                        } else {
+                            XNAT.ui.dialog.confirm('Confirm close',
+                                'Are you sure you wish to close? Nothing will be submitted for archival.',
+                                {
+                                    buttons: [
+                                        {
+                                            label: 'Yes',
+                                            close: true,
+                                            isDefault: true,
+                                            action: cancelAndClose
+                                        },
+                                        {
+                                            label: 'No',
+                                            close: true,
+                                            isDefault: false,
+                                            action: function () {}
                                         }
-                                    }
-                                ]
-                            }
-                        );
+                                    ]
+                                }
+                            );
+                        }
                     }
                 },
                 cancel: {
                     label: 'Cancel',
                     close: true,
-                    action: function() {
-                        if (interval) {
-                            window.clearInterval(interval);
-                            interval = null;
-                        }
-                    }
+                    action: cancel
                 }
             }
         });
 
-        abu.initializeUploader({
+        abu.initializeImageUploader({
             element: $('#' + abuId),
             uploadStartedFunction: function(){
                 $('#' + id + '-cancel-button').show();
@@ -124,7 +130,7 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
             uploadCompletedFunction: function(anyFailedUploads) {
                 $('#' + id + '-cancel-button').hide();
                 $('#' + id + '-done-button').show();
-                if ($('.abu-upload-complete-text').length === 0) {
+                if ($('#' + id + ' .abu-upload-complete-text').length === 0) {
                     $('#' + id + '-process-button').prop('disabled', true);
                 } else {
                     if (!interval) {
@@ -144,13 +150,13 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
             acceptFilePattern: 'application/zip, application/x-gzip, application/x-tgz'
         });
 
-        abu._fileUploader.buildUploaderDiv();
-        abu._fileUploader._currentAction = uploaderUrl;
+        abu._imageUploader.buildUploaderDiv();
+        abu._imageUploader._currentAction = uploaderUrl;
     };
 
     function errorHandler(e, base){
-        var info = e.responseText ? base + ': ' + e.responseText : base;
-        var details = spawn('p',[info]);
+        const info = e.responseText ? base + ': ' + e.responseText : base;
+        const details = spawn('p',[info]);
         console.log(e);
         xmodal.alert({
             title: 'Error',
@@ -162,9 +168,9 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
     }
 
     function submitForArchival(config) {
-        $('#file-upload-input').prop('disabled', true).addClass('disabled');
+        $('#' + abuId + ' #file-upload-input').prop('disabled', true).addClass('disabled');
         $('#' + id + '-process-button').prop('disabled', true);
-        var $statusDiv = $('#' + abuId + ' .abu-status');
+        const $statusDiv = $('#' + abuId + ' .abu-status');
 
         if ($statusDiv.length === 0 && interval) {
             // cancelled
@@ -173,8 +179,8 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
             return;
         }
 
-        var uploadInProg = $statusDiv.children().length === 0 || abu._fileUploader.uploadsInProgress > 0 ||
-            abu._fileUploader.currentUploads > 0;
+        const uploadInProg = $statusDiv.children().length === 0 || abu._imageUploader.uploadsInProgress > 0 ||
+            abu._imageUploader.currentUploads > 0;
         if (uploadInProg) {
             if (!interval) {
                 XNAT.ui.dialog.message('Archival requested!', 'Archival will begin automatically when all uploads complete.');
@@ -188,27 +194,26 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
             interval = null;
         }
 
-        var $targetFiles = $('.abu-upload-filename');
-        var nfiles = $targetFiles.length;
-        var canCloseUploadDialog = true;
-        $targetFiles.each(function (index) {
-            var timeout = index === 0 ? 0 : 1000;
-            var fname = $(this).text();
+        const $targetFiles = $('#' + abuId + ' .abu-upload-filename');
+        const nfiles = $targetFiles.length;
+        let canCloseUploadDialog = true;
+        let timeout = 0;
+        $targetFiles.each(function(index) {
+            const fname = $(this).text();
+            const $parent = $(this).parent();
 
-            var uploadFailed = $statusDiv.find('.abu-upload-fail').length > 0;
+            const uploadFailed = $parent.find('.abu-upload-fail').length > 0;
             if (uploadFailed) {
                 canCloseUploadDialog = false;
-                return;
+                return true;
             }
-
-            var $parent = $(this).parent();
             window.setTimeout(function () {
-                var uploadId = getDateBasedId();
-                var formDataArchive = new FormData();
+                const uploadId = getDateBasedId();
+                const formDataArchive = new FormData();
                 formDataArchive.append("src", usrResPath.replace(fNameReplace, fname));
                 formDataArchive.append("http-session-listener", uploadId);
 
-                for (var key of Object.keys(config)) {
+                for (let key of Object.keys(config)) {
                     if (config[key]) {
                         formDataArchive.append(key, config[key]);
                     }
@@ -240,6 +245,7 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
                     }
                 });
             }, timeout);
+            timeout = 200; // space out archival requests a tad
         });
     }
 
@@ -258,18 +264,18 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
                 });
             },
             success: function(data){
-                var token =  (!isObject(data)) ? JSON.parse(data) : data;
+                const token = (!isObject(data)) ? JSON.parse(data) : data;
                 const prms = new URLSearchParams();
                 prms.append('a', token.alias);
                 prms.append('s', token.secret);
-                for (var key of Object.keys(config)) {
+                for (let key of Object.keys(config)) {
                     if (config[key]) {
                         prms.append(key, config[key]);
                     }
                 }
-                var url = XNAT.url.xnatUrl('/upload?' + prms.toString());
+                const url = XNAT.url.xnatUrl('/upload?' + prms.toString());
                 window.location.assign(url);
-                var warning = XNAT.ui.dialog.message({
+                const warning = XNAT.ui.dialog.message({
                     title: 'XNAT Desktop Client',
                     content: 'If nothing prompts from browser, ' +
                         '<a href="https://download.xnat.org/desktop-client" target="_blank">' +

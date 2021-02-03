@@ -628,13 +628,13 @@ XNAT.app.abu.initializeAbuUploader = function (usageType) {
             debug: true,
             doneFunction: function (anySuccessfulUploads = true) {
                 // Since we're using the update-stats=false parameter for resource uploads, we need to call catalog refresh when we're finished uploading.
-                if (abu._fileUploader.uploadsStarted > 0 && abu._fileUploader.currentUploads == 0) {
+                if (abu._fileUploader.readyForProcessing) {
                     if (anySuccessfulUploads) {
                         XNAT.app.abu.completeFileUpload();
                     }
                 }
                 xmodal.close(XNAT.app.abu.abuConfigs.modalOpts.id);
-                if (abu._fileUploader.uploadsStarted > 0 && abu._fileUploader.currentUploads == 0 && anySuccessfulUploads) {
+                if (abu._fileUploader.readyForProcessing) {
                     setTimeout(function () {
                         window.location.reload(true);
                     }, 20);
@@ -939,7 +939,7 @@ XNAT.app.abu.whatToDoChange = function () {
     XNAT.app.abu.updateModalAction();
     $('#eventHandlerSelect').val(launchSelect);
     XNAT.app.abu.updateOptionsCheckboxes(launchSelect);
-    if (typeof abu !== 'undefined' && abu._fileUploader.uploadsStarted > 0 && abu._fileUploader.currentUploads == 0) {
+    if (typeof abu !== 'undefined' && abu._fileUploader.readyForProcessing) {
         $("#xmodal-abu-process-button")
             .prop("disabled", "disabled")
             .html("Process files")
@@ -949,7 +949,7 @@ XNAT.app.abu.whatToDoChange = function () {
         $(".abu-upload-button").prop("disabled", "disabled");
         $("#abu-upload-button").addClass("abu-button-disabled");
         abu._fileUploader.DRAG_AND_DROP_ON = false;
-    } else if (typeof abu == 'undefined' || abu._fileUploader.uploadsStarted == 0) {
+    } else if (typeof abu == 'undefined' || abu._fileUploader.uploadsStarted === 0) {
         $(".abu-upload-button").prop("disabled", false);
         $("#abu-upload-button").removeClass("abu-button-disabled");
         abu._fileUploader.DRAG_AND_DROP_ON = true;

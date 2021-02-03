@@ -3,7 +3,7 @@
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
- *  
+ *
  * Released under the Simplified BSD.
  */
 
@@ -13,18 +13,29 @@ abu.initializeUploader = function(initarr){
 	abu._fileUploader = new abu.FileUploader(initarr);
 };
 
+abu.initializeImageUploader = function(initarr){
+	abu._imageUploader = new abu.FileUploader(initarr);
+};
+
+abu.showReturnedText = function(ele) {
+	var eleData = $('#' + ele).data('rtn');
+	xmodal.message("Server Response",((typeof eleData.status !=='undefined') ? "<h3>RETURN CODE: " + eleData.status + " (" + eleData.statusText + ")</h3><br>" +
+		eleData.responseText : eleData), undefined, {height:"400px",width:"800px"});
+}
+
 abu.FileUploader = function(o){
 
 	this._options = o;
+	this.elementId = $(this._options.element).prop('id');
 	// NOTE:  Multiple concurrent cache uploads works fine, but multiple concurrent uploads to a resource often causes failures and can corrupt the catalog.
 	// Leave this set to 1 if the uploader supports uploading directly to resources.
 	this.MAX_CONCURRENT_UPLOADS = 1;
 	this.ALLOW_DRAG_AND_DROP = true;
 	this.DRAG_AND_DROP_ON = true;
+	this.readyForProcessing = false;
 	this.uploadsInProgress = 0;
-	this.currentUploads = 0;
-	this.uploadsStartedOrCanceled = 0;
 	this.uploadsStarted = 0;
+	this.waitingForUpload = [];
 	this.overwriteConfirmIssued = false;
 	this.doOverwrite = false;
 	this.anyFailedUploads = false;
@@ -75,11 +86,11 @@ abu.FileUploader = function(o){
 					'<div class="abu-options-cb" id="formatAndContentBoxDiv" style="display:none;margin-bottom:4px;"><table><tr><td>Content:</td><td><input id="contentBox" name="fileContent" type="text"/></td></tr>' +
 					'<tr><td>Format:</td><td><input id="formatBox" name="formatBox" type="text"/></td></tr></table></div>'+
 					'<div class="abu-options-cb" id="triageMessage" style="display: none;">' +
-					'<br>Your files will be uploaded to the project quarantine location and will await review by project administrators' + 
+					'<br>Your files will be uploaded to the project quarantine location and will await review by project administrators' +
 					'</div>' +
 					'</div>' +
 				'</div>' +
-			'<div id="abu-upload-button" class="abu-upload-button" style="position: relative; overflow: hidden; direction: ltr;">' + 
+			'<div id="abu-upload-button" class="abu-upload-button" style="position: relative; overflow: hidden; direction: ltr;">' +
 				'Upload files<input multiple="multiple" type="file" id="file-upload-input" class="abu-button-input btn" ' +
 					((this._options.acceptFilePattern) ? 'accept="' + this._options.acceptFilePattern + '"'
 						: ''
@@ -87,102 +98,96 @@ abu.FileUploader = function(o){
 			'</div>' +
 			'<div class="abu-list-area"><ul class="abu-upload-list"></ul>' +
 				'<div class="response_text" style="display:none"></div>' +
-			'</div> ' 
-		); 
+			'</div> '
+		);
 		// $("#abu-upload-button").click(function() { $("#abu-done-button").removeClass("abu-button-disabled"); });
 		$("#xmodal-abu-done-button").click(this.triggerDone);
 
 		// replaced #abu-process-button with #xmodal-abu-process-button, which is defined in the xmodal options
 		$("#xmodal-abu-process-button").click(this._options.processFunction);
 		$("#xmodal-abu-cancel-button").click(this.cancelUploads);
-		$('#closeBox').change(function(){ 
+		$("#" + this.elementId + " #closeBox").change(function(){
 			this.updateOptionStatus();
 		 }.bind(this));
 
 		this.updateOptionStatus();
 
 		if (this.ALLOW_DRAG_AND_DROP) {
-			$(".abu-upload-drop-area").on('dragleave',function(e) { 
-					if (this.DRAG_AND_DROP_ON) {
-						this.showDrag = false;
-						if (typeof this.timeout !== "undefined") {
-							clearTimeout( this.timeout );
+			const dragDrop = $("#" + this.elementId + " .abu-upload-drop-area");
+			dragDrop.on('dragleave',function(e) {
+				if (this.DRAG_AND_DROP_ON) {
+					this.showDrag = false;
+					if (typeof this.timeout !== "undefined") {
+						clearTimeout( this.timeout );
+					}
+					this.timeout = setTimeout( function(){
+						if( !this.showDrag ){
+							dragDrop.css('display','none');
+							dragDrop.removeClass('abu-upload-drop-area-active');
+							try {
+								e.preventDefault();
+								e.stopPropogation();
+							} catch(e) { /* Do nothing */ }
 						}
-						this.timeout = setTimeout( function(){
-							if( !this.showDrag ){ 
-								$(".abu-upload-drop-area").css('display','none');
-								$(".abu-upload-drop-area").removeClass('abu-upload-drop-area-active');
-								try { 
-									e.preventDefault();
-									e.stopPropogation();
-								} catch(e) { /* Do nothing */ }
- 							}
-						}.bind(this), 200);
+					}.bind(this), 200 ).bind(this);
+				}
+			}.bind(this));
+			dragDrop.on('dragover',function(e) {
+				if (this.DRAG_AND_DROP_ON) {
+					this.showDrag = true;
+					this.activateUploadArea(e);
+				}
+			}.bind(this));
+			dragDrop.on('dragenter',function(e) {
+				if (this.DRAG_AND_DROP_ON) {
+					this.showDrag = true;
+					this.activateUploadArea(e);
+				}
+			}.bind(this));
+			dragDrop.on('drop',function(e) {
+				dragDrop.css('display','none');
+				dragDrop.removeClass('abu-upload-drop-area-active');
+				if(e.originalEvent.dataTransfer){
+					this._options.uploadStartedFunction();
+					if(e.originalEvent.dataTransfer.files.length) {
+						e.preventDefault();
+						e.stopPropagation();
+						this.doFileUpload(e.originalEvent.dataTransfer.files);
 					}
-				}.bind(this)
-			);
-			$(".abu-upload-drop-area").on('dragover',function(e) {
-					if (this.DRAG_AND_DROP_ON) {
-						this.showDrag = true;
-						this.activateUploadArea(e);
-					}
-				}.bind(this)
-			);
-			$(".abu-upload-drop-area").on('dragenter',function(e) {
-					if (this.DRAG_AND_DROP_ON) {
-						this.showDrag = true;
-						this.activateUploadArea(e);
-					}
-				}.bind(this)
-			);
-			$(".abu-upload-drop-area").on('drop',function(e) {
-					$(".abu-upload-drop-area").css('display','none');
-					$(".abu-upload-drop-area").removeClass('abu-upload-drop-area-active');
-					if(e.originalEvent.dataTransfer){
-						this._options.uploadStartedFunction();
-						if(e.originalEvent.dataTransfer.files.length) {
-							e.preventDefault();
-							e.stopPropagation();
-							this.doFileUpload(e.originalEvent.dataTransfer.files);
-						}   
-					}
-				}.bind(this)
-			);
+				}
+			}.bind(this));
 			$(this._options.element).on('dragleave',function(e) {
-					if (this.DRAG_AND_DROP_ON) {
-						this.showDrag = false;
-						if (typeof this.timeout !== "undefined") {
-							clearTimeout( this.timeout );
+				if (this.DRAG_AND_DROP_ON) {
+					this.showDrag = false;
+					if (typeof this.timeout !== "undefined") {
+						clearTimeout( this.timeout );
+					}
+					this.timeout = setTimeout( function(){
+						if( !this.showDrag ){
+							dragDrop.css('display','none');
+							dragDrop.removeClass('abu-upload-drop-area-active');
+							try {
+								e.preventDefault();
+								e.stopPropogation();
+							} catch(e) { /* Do nothing */ }
 						}
-						this.timeout = setTimeout( function(){
-							if( !this.showDrag ){ 
-								$(".abu-upload-drop-area").css('display','none');
-								$(".abu-upload-drop-area").removeClass('abu-upload-drop-area-active');
-								try { 
-									e.preventDefault();
-									e.stopPropogation();
-								} catch(e) { /* Do nothing */ }
- 							}
-						}.bind(this), 200);
-					}
-				}.bind(this)
-			);
-			$(this._options.element).on('dragover',function(e) {
-					if (this.DRAG_AND_DROP_ON) {
-						this.showDrag = true;
-						this.activateUploadArea(e);
-					}
-				}.bind(this)
-			);
+					}.bind(this), 200 ).bind(this);
+				}
+			}.bind(this));
+		$(this._options.element).on('dragover',function(e) {
+				if (this.DRAG_AND_DROP_ON) {
+					this.showDrag = true;
+					this.activateUploadArea(e);
+				}
+			}.bind(this));
 			$(this._options.element).on('dragenter',function(e) {
-					if (this.DRAG_AND_DROP_ON) {
-						this.showDrag = true;
-						this.activateUploadArea(e);
-					}
-				}.bind(this)
-			);
-		}	
-		$("#file-upload-input").change(function(eventData) {
+				if (this.DRAG_AND_DROP_ON) {
+					this.showDrag = true;
+					this.activateUploadArea(e);
+				}
+			}.bind(this));
+		}
+		$(this._options.element).on("change", "#file-upload-input", function(eventData) {
 			this._options.uploadStartedFunction();
 			this.overwriteConfirmIssued = false;
 			if (typeof eventData.target.files !== 'undefined') {
@@ -191,7 +196,7 @@ abu.FileUploader = function(o){
 					$("#xmodal-abu-done-button")
 						.show()
 						.prop("disabled",false);
-				} 
+				}
 				this.doFileUpload(fileA);
 			}
 		}.bind(this));
@@ -214,9 +219,9 @@ abu.FileUploader = function(o){
 		$(".abu-upload-button")
 			.hide()
 			.prop("disabled","disabled");
-		$("#abu-files-processing").hide();
-		$(".abu-uploader").css("overflow-y","auto");
-		$(".abu-uploader").css("overflow-x","hidden");
+		$("#" + this.elementId + " #abu-files-processing").hide();
+		$("#" + this.elementId + " .abu-uploader").css("overflow-y","auto")
+			.css("overflow-x","hidden");
 	}
 
 	this.cancelUploads = function() {
@@ -229,12 +234,12 @@ abu.FileUploader = function(o){
 	}.bind(this);
 
 	this.doFileUpload = function(fileA) {
-		var start_i = $('form[id^=file-upload-form-]').length;				
+		var start_i = $("#" + this.elementId + " form[id^=file-upload-form-]").length;
 		$("#xmodal-abu-process-button").prop("disabled","disabled");
 		for (var i=0; i<fileA.length; i++) {
 			var cFile = fileA[i];
 			var adj_i = i + start_i;
-			$(".abu-upload-list").append(
+			$("#" + this.elementId + " .abu-upload-list").append(
 				'<form id="file-upload-form-' + adj_i + '" action="' + this._currentAction.replace("##FILENAME_REPLACE##",cFile.name) +
 					 (($("#extractRequestBox").length>0) ? (($("#extractRequestBox").is(':checked')) ? "&extract=true" : "&extract=false") : "") +
 					 (($("#emailBox").length>0) ? (($("#emailBox").is(':checked')) ? "&sendemail=true" : "&sendemail=false") : "") +
@@ -242,11 +247,11 @@ abu.FileUploader = function(o){
 					 (($("#updateBox").length>0) ? (($("#updateBox").is(':checked')) ? "&update=true" : "&update=false") : "") +
 					 (($("#contentBox").length>0) ? (($("#contentBox").val().length>0) ? "&content="+$("#contentBox").val() : "") : "") +
 					 (($("#formatBox").length>0) ? (($("#formatBox").val().length>0) ? "&format="+$("#formatBox").val() : "") : "") +
-					 '" method="POST" enctype="multipart/form-data">' + 
-				'</form>' + 
+					 '" method="POST" enctype="multipart/form-data">' +
+				'</form>' +
 				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file abu-upload-filename">' + cFile.name + '</span><span class="abu-upload-file">' +
 					" (" + ((typeof cFile.type !== 'undefined' && cFile.type !== '') ? cFile.type + ", " : '') +
-					 this.bytesToSize(cFile.size) + ") </span>" +  
+					 this.bytesToSize(cFile.size) + ") </span>" +
 					'<div class="abu-progress">' +
 						'<div class="abu-bar"></div >' +
 						'<div class="abu-percent">0%</div >' +
@@ -257,7 +262,7 @@ abu.FileUploader = function(o){
 					'</div>' +
 				'</div>');
 
-			this.currentUploads++;
+			this.waitingForUpload.push(adj_i);
 			var formData = new FormData();
 			formData.append("file" + adj_i,cFile,cFile.name);
 			this.uploadFile(adj_i,formData);
@@ -266,13 +271,13 @@ abu.FileUploader = function(o){
 	}.bind(this)
 
 	this.updateOptionStatus = function() {
-		if ($('#closeBox').is(':checked')) { 
-			$('#emailBox').prop('checked', true);
-			$('#emailBox').attr('disabled', true);
+		if ($("#" + this.elementId + " #closeBox").is(':checked')) {
+			$("#" + this.elementId + " #emailBox").prop('checked', true)
+				.attr('disabled', true);
 		} else {
-			$('#emailBox').attr('disabled', false);
+			$("#" + this.elementId + " #emailBox").attr('disabled', false);
 		}
-	}
+	}.bind(this);
 
 	this.bytesToSize = function(bytes) {
 	   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
@@ -282,44 +287,44 @@ abu.FileUploader = function(o){
 	}
 
 	this.activateUploadArea = function(e) {
-				$("#xmodal-abu").find(".scroll").scrollTop(0);
-				$(".abu-upload-drop-area").css('display','inline-block');
-				$(".abu-upload-drop-area").addClass('abu-upload-drop-area-active');
-				try { 
-					e.preventDefault();
-					e.stopPropogation();
-				} catch(e) { /* Do nothing */ }
-	}
+		$("#xmodal-abu").find(".scroll").scrollTop(0);
+		$("#" + this.elementId + " .abu-upload-drop-area").css('display','inline-block')
+			.addClass('abu-upload-drop-area-active');
+		try {
+			e.preventDefault();
+			e.stopPropogation();
+		} catch(e) { /* Do nothing */ }
+	}.bind(this);
 
 	this.uploaderUploadCompletedFunction = function(anyFailedUploads) {
 		if (anyFailedUploads) {
 			xmodal.message("Upload failed","WARNING:  One or more file uploads failed.  Please check before running any additional processing.", undefined, { id:"xmodal-abu-upload-failed" });
 		}
 		this.anyFailedUploads = false;
-	}.bind(this)
+	}.bind(this);
 
 	this.uploadFile = function(idx, formData) {
-		var formSelector = "#file-upload-form-" + idx;
+		var formSelector = "#" + this.elementId + " #file-upload-form-" + idx;
 		var infoSelector = formSelector.replace("-upload-form-","-info-div-");
 		var bar = $(infoSelector).find(".abu-bar");
 		var percent = $(infoSelector).find(".abu-percent");
 		var status = $(infoSelector).find(".abu-status");
 		let filename = formData.get("file"+idx).name;
 		$(formSelector).on("submit",function(e, uploader) {
-			 let formObj = $(this).ajaxSubmit({
+			uploader.removeFromWaitlist(idx);
+			let formObj = $(this).ajaxSubmit({
 				beforeSend: function(arr, $form, options) {
-					
+
 					// Don't allow % and # characters in the filename.
 					if (filename.match(/[\[\]%#{}]/g)){
 						status.html("<span class='abu-upload-fail'>Filename contains invalid characters ('%','#','[]', and '{}' are not allowed). Please rename file and try again.</a>");
 						$(infoSelector).find(".abu-progress").css("display","none");
 						status.css("display","inline-block");
-						uploader.uploadsStartedOrCanceled++;
 						arr.abort();
-						this.complete();
+						this.complete(false);
 						return false;
 					}
-					
+
 					XNAT.app.timeout.maintainLogin = true;
 					var formURL = $form.url;
 					if (typeof formURL !== 'undefined' && formURL.toLowerCase().indexOf("overwrite=true")>=0 && formURL.indexOf("/files")>0) {
@@ -347,7 +352,7 @@ abu.FileUploader = function(o){
 										if (!uploader.overwriteConfirmIssued) {
 											this.doOverwrite = confirm("\nDo you want to overwrite existing files?\n\n" +
 													"One or more files you are uploading already exist on the sever.  Press 'OK' to overwrite files or 'Cancel' " +
-													"to leave existing files in place.\n\nNOTE:  New files will still be uploaded if you choose not to " + 	
+													"to leave existing files in place.\n\nNOTE:  New files will still be uploaded if you choose not to " +
 													"overwrite existing files.\n");
 											uploader.doOverwrite = this.doOverwrite;
 											uploader.overwriteConfirmIssued = true;
@@ -367,22 +372,17 @@ abu.FileUploader = function(o){
 					var percentVal = '0%';
 					bar.width(percentVal);
 					percent.html(percentVal);
-					uploader.uploadsStartedOrCanceled++;
 					uploader.uploadsStarted++;
 					uploader.uploadsInProgress++;
 					if (this.isOverwrite && !this.doOverwrite) {
 			 			status.html('<span class="abu-upload-fail">File exists.  Upload cancelled at user request.</a>');
 			 			status.css("display","inline-block");
 			 			$(infoSelector).find(".abu-progress").css("display","none");
-						uploader.uploadsInProgress--;
-						uploader.currentUploads--;
-						if (uploader.uploadsInProgress==0) {
-							uploader._options.uploadCompletedFunction(uploader.anyFailedUploads);
-							uploader.uploaderUploadCompletedFunction(uploader.anyFailedUploads);
-						}
+						uploader.uploadsStarted--; // We didn't upload anything
+						this.complete(true);
 						arr.abort();
 						return false;
-					} 
+					}
 					return true;
 				},
 				uploadProgress: function(event, position, total, percentComplete) {
@@ -399,13 +399,7 @@ abu.FileUploader = function(o){
 						err = 'Failed';
 						uploader.anyFailedUploads = true;
 					}
-					$(status).data("rtn",result);
-			 		status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">' + err + '</a>');
-			 		status.css("display","inline-block");
-			 		$(infoSelector).find(".abu-progress").css("display","none");
-					$("#xmodal-abu-cancel-button")
-						.show()
-						.prop("disabled",false);
+					uploader.fillStatus(status, err, result);
 				},
 				success: function(result) {
 					$(status).data("rtn",result);
@@ -419,73 +413,92 @@ abu.FileUploader = function(o){
 						var resultObj = JSON.parse(result);
 						if (typeof resultObj.duplicates !== 'undefined' && resultObj.duplicates.length==1) {
 							isDuplicate = true;
-						} 
+						}
 					} catch(e) {
 						// Do nothing for now
-					} 
+					}
 					if (!isDuplicate) {
 						if (typeof result.status !== 'undefined' || result.length > 150) {
-				 			status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-complete abu-upload-complete-text">Upload complete' + 
+				 			status.html('<a href="javascript:abu.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-complete abu-upload-complete-text">Upload complete' +
 								((this.isOverwrite) ? ' (Existing file overwritten) ' : '') + '</a>');
 						} else {
-				 			status.html('<span class="abu-upload-complete abu-upload-complete-text">Upload complete' + 
+				 			status.html('<span class="abu-upload-complete abu-upload-complete-text">Upload complete' +
 								((this.isOverwrite) ? ' (Existing file overwritten) ' : '') + '</span>');
 						}
-						$("#xmodal-abu-done-button-text").addClass("abu-done-button-file-uploaded");
+						$("#" + uploader.elementId + " #xmodal-abu-done-button-text").addClass("abu-done-button-file-uploaded");
 					} else {
-			 			status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Duplicate file and overwrite=false.  Not uploaded.</a>');
+			 			status.html('<a href="javascript:abu.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Duplicate file and overwrite=false.  Not uploaded.</a>');
 					}
 			 		status.css("display","inline-block");
 			 		$(infoSelector).find(".abu-progress").css("display","none");
 					uploader.anySuccessfulUploads = true;
 				},
-				complete: function(xhr) {
-					delete uploader.xhrs['idx' + idx];
-					$('#upload-cancel-div-' + idx).remove();
-					uploader.uploadsInProgress--;
-					uploader.currentUploads--;
-					if (uploader.currentUploads==0) {
-						uploader._options.uploadCompletedFunction(uploader.anyFailedUploads, uploader.anySuccessfulUploads);
-						uploader.uploaderUploadCompletedFunction(uploader.anyFailedUploads);
-						XNAT.app.timeout.maintainLogin = false;
-					}
-					uploader.manageUploads();
+				complete: function(counted = true) {
+					uploader.completeUpload(idx, counted);
 				}
 			});
 			uploader.xhrs['idx' + idx] = formObj.data('jqxhr');
 			return false;
-		}); 
-	}
-
-	this.showReturnedText = function(ele) {
-		var eleData = $('#' + ele).data('rtn');
-		xmodal.message("Server Response",((typeof eleData.status !=='undefined') ? "<h3>RETURN CODE: " + eleData.status + " (" + eleData.statusText + ")</h3><br>" +
-				 eleData.responseText : eleData), undefined, {height:"400px",width:"800px"});
+		});
 	}
 
 	this.manageUploads = function() {
-		var MAX_CONCURRENT_UPLOADS = this.MAX_CONCURRENT_UPLOADS;
-		for (var i=1;i<=this.MAX_CONCURRENT_UPLOADS;i++) {
-			var uploadsRequested = $('form[id^=file-upload-form-]').length;				
-			var uploadsInProgress = this.uploadsInProgress;
-			var uploadsStarted = this.uploadsStartedOrCanceled;
-			if (uploadsInProgress < MAX_CONCURRENT_UPLOADS && uploadsStarted<uploadsRequested) {
-				$("#file-upload-form-" + uploadsStarted).trigger("submit",this);
-			} else if (uploadsStarted>=uploadsRequested) {
-				break;
-			} 
+		if (this.waitingForUpload.length === 0 && this.uploadsInProgress === 0) {
+			if (this.uploadsStarted > 0) {
+				this.readyForProcessing = true;
+			}
+			XNAT.app.timeout.maintainLogin = false;
+			this._options.uploadCompletedFunction(this.anyFailedUploads, this.anySuccessfulUploads);
+			this.uploaderUploadCompletedFunction(this.anyFailedUploads);
+			XNAT.app.timeout.maintainLogin = false;
+		} else if (this.waitingForUpload.length > 0) {
+			const availableSpaces = this.MAX_CONCURRENT_UPLOADS - this.uploadsInProgress;
+			for (let i = 0; i < availableSpaces; i++) {
+				const target = this.waitingForUpload[i];
+				$("#" + this.elementId + " #file-upload-form-" + target).trigger("submit",this);
+			}
 		}
 	}.bind(this)
 
 	this.triggerDone = function () {
 		this._options.doneFunction(this.anySuccessfulUploads);
-	}.bind(this)
+	}.bind(this);
+
+	this.fillStatus = function(status, err, result) {
+		status.data("rtn", result);
+		status.html('<a href="javascript:abu.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">' + err + '</a>');
+		status.css("display","inline-block");
+		status.parent().find(".abu-progress").css("display","none");
+		$("#xmodal-abu-cancel-button")
+			.show()
+			.prop("disabled", false);
+	}.bind(this);
+
+	this.removeFromWaitlist = function (idx) {
+		const index = this.waitingForUpload.indexOf(idx);
+		if (index !== -1) {
+			this.waitingForUpload.splice(index, 1);
+		}
+	}.bind(this);
+
+	this.markUploadDone = function(idx) {
+		delete this.xhrs['idx' + idx];
+		$('#' + this.elementId + ' #upload-cancel-div-' + idx).remove();
+	}.bind(this);
+
+	this.completeUpload = function(idx, counted) {
+		this.markUploadDone(idx);
+		if (counted) {
+			this.uploadsInProgress--;
+		}
+		this.manageUploads();
+	}.bind(this);
 
 	this.uploaderHelp=function() {
 		var templateV=
-			'<div id="file-uploader-instructions" class="abu-uploader-instructions">' + 
-			'<h3>Instructions</h3>' + 
-			'<ul>' +  
+			'<div id="file-uploader-instructions" class="abu-uploader-instructions">' +
+			'<h3>Instructions</h3>' +
+			'<ul>' +
 			((this.ALLOW_DRAG_AND_DROP) ?
 			'<li>To upload, click the <b>Upload Files</b> button or drag files into the space below the buttons. (Drag-and-drop is supported in FF, Chrome.)</li>' :
 			'<li>To upload, click the <b>Upload Files</b> to begin selection of files for upload.</li>') +
@@ -493,17 +506,26 @@ abu.FileUploader = function(o){
 				'<li>This uploader supports only a single file upload</li>' :
 				'<li>Multiple files may be selected</li>'
 			) +
-			'<li>Uploads will begin automatically</li>' + 
+			'<li>Uploads will begin automatically</li>' +
 			'<li>Upload of directories is not supported</li>' +
 			'<li>When finished uploading, press <b>Done</b> to close the modal, or, if an automation script is to be launched by this upload process, press <b>Process Files</b> to process the uploaded files.</li>' +
-			'</ul>' + 
+			'</ul>' +
 			'</div>';
 		xmodal.message("Uploader Instructions",templateV, undefined, {height:"400px",width:"800px"});
 	}.bind(this);
 
-	$(document).on('click', '.abu-cancel', function(e){
+	$(this._options.element).on('click', '.abu-cancel', function(e){
 		let idx = $(e.target).data('idx');
-		this.xhrs['idx' + idx].abort();
+		const xhr = this.xhrs['idx' + idx];
+		if (xhr) {
+			xhr.abort();
+		} else {
+			//upload hasn't started yet, cancel the request
+			$('#' + this.elementId + ' #file-upload-form-' + idx).remove();
+			this.fillStatus($('#' + this.elementId + ' #upload-status-div-' + idx), "Canceled", "abort");
+			this.removeFromWaitlist(idx);
+			this.markUploadDone(idx);
+		}
 	}.bind(this));
 
 }

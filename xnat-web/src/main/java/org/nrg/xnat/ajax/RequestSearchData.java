@@ -116,6 +116,7 @@ public class RequestSearchData {
                     dui.setScriptName("/");
                     cp.setCookiePath(dui);
                     cp.set("numToDisplay", numToDisplay.toString(), 60*60*24*365);
+                    cp.set("secure", "true");
                 }else
                 {
                     if (cp.containsKey("numToDisplay"))

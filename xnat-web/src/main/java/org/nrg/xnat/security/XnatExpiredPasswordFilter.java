@@ -50,7 +50,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection", "unused", "SameParameterValue", "SqlResolve"})
 @Slf4j
 public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
-
     @Autowired
     public XnatExpiredPasswordFilter(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
         super();
@@ -70,6 +69,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         // Regardless of why you're here, we're going to do this.
         final Cookie cookie = new Cookie(COOKIE_SESSION_EXPIRATION_TIME, new Date().getTime() + "," + session.getMaxInactiveInterval() * 1000);
         cookie.setPath(request.getContextPath() + "/");
+        cookie.setSecure(true);
         response.addCookie(cookie);
         log.debug("Updated session expiration time cookie '{}' to value '{}'.", cookie.getName(), cookie.getValue());
 
@@ -297,7 +297,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
                 session.setAttribute("expired", queried);
                 return queried;
             } catch (EmptyResultDataAccessException e) {
-                log.debug("No results found for user '{}' and auth method {} running query: ", username, AUTH_DEFAULT, query);
+                log.debug("No results found for user '{}' and auth method {} running query: {}", username, AUTH_DEFAULT, query);
                 return false;
             }
         } catch (Throwable e) { // ldap authentication can throw an exception during these queries
@@ -326,7 +326,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         try {
             return _jdbcTemplate.queryForObject(QUERY_USER_ROLE_ENABLE, new MapSqlParameterSource("username", username).addValue("role", UserRole.ROLE_NON_EXPIRING), Boolean.class);
         } catch (EmptyResultDataAccessException e) {
-            log.debug("No results found for user '{}' and role {} running query: ", username, UserRole.ROLE_NON_EXPIRING, QUERY_USER_ROLE_ENABLE);
+            log.debug("No results found for user '{}' and role {} running query: {}", username, UserRole.ROLE_NON_EXPIRING, QUERY_USER_ROLE_ENABLE);
             return false;
         }
     }

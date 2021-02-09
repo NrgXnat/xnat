@@ -187,7 +187,7 @@ abu.FileUploader = function(o){
 				}
 			}.bind(this));
 		}
-		$(this._options.element).on("change", "#file-upload-input", function(eventData) {
+		$("#" + this.elementId + " #file-upload-input").change(function(eventData) {
 			this._options.uploadStartedFunction();
 			this.overwriteConfirmIssued = false;
 			if (typeof eventData.target.files !== 'undefined') {
@@ -261,6 +261,20 @@ abu.FileUploader = function(o){
 						'<a class="abu-cancel" data-idx="' + adj_i + '">Cancel</a>' +
 					'</div>' +
 				'</div>');
+
+			$('#' + this.elementId + ' #upload-cancel-div-' + adj_i + ' a.abu-cancel').click(function(e){
+				let idx = $(e.target).data('idx');
+				const xhr = this.xhrs['idx' + idx];
+				if (xhr) {
+					xhr.abort();
+				} else {
+					//upload hasn't started yet, cancel the request
+					$('#' + this.elementId + ' #file-upload-form-' + idx).remove();
+					this.fillStatus($('#' + this.elementId + ' #upload-status-div-' + idx), "Canceled", "abort");
+					this.removeFromWaitlist(idx);
+					this.markUploadDone(idx);
+				}
+			}.bind(this));
 
 			this.waitingForUpload.push(adj_i);
 			var formData = new FormData();
@@ -428,6 +442,7 @@ abu.FileUploader = function(o){
 						$("#" + uploader.elementId + " #xmodal-abu-done-button-text").addClass("abu-done-button-file-uploaded");
 					} else {
 			 			status.html('<a href="javascript:abu.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Duplicate file and overwrite=false.  Not uploaded.</a>');
+						uploader.uploadsStarted--; // We didn't upload anything
 					}
 			 		status.css("display","inline-block");
 			 		$(infoSelector).find(".abu-progress").css("display","none");
@@ -513,20 +528,5 @@ abu.FileUploader = function(o){
 			'</div>';
 		xmodal.message("Uploader Instructions",templateV, undefined, {height:"400px",width:"800px"});
 	}.bind(this);
-
-	$(this._options.element).on('click', '.abu-cancel', function(e){
-		let idx = $(e.target).data('idx');
-		const xhr = this.xhrs['idx' + idx];
-		if (xhr) {
-			xhr.abort();
-		} else {
-			//upload hasn't started yet, cancel the request
-			$('#' + this.elementId + ' #file-upload-form-' + idx).remove();
-			this.fillStatus($('#' + this.elementId + ' #upload-status-div-' + idx), "Canceled", "abort");
-			this.removeFromWaitlist(idx);
-			this.markUploadDone(idx);
-		}
-	}.bind(this));
-
 }
 

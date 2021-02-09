@@ -1,9 +1,12 @@
 <!--BEGIN ReportProjectSpecificFields.vm -->
 #set($groups=$om.getFieldDefinitionGroups($item.getXSIType(), $project))
 #if($groups.size()>0)
-	<h3 style="margin: 1em 0 0.5em;">Custom Variable Sets</h3>
 	#foreach($group in $groups)
 		#if($group.getFields_field().size()>0)
+            #if(!$hdrAdded)
+	            <h3 style="margin: 1em 0 0.5em;">Custom Variable Sets</h3>
+                #set($hdrAdded=true)
+            #end
 		<table id="customvar-$group.getId()" class="xnat-table compact alt1">
             <thead>
             <th colspan="2" class="left">

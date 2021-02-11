@@ -4503,6 +4503,158 @@ textarea.xml-formatted {
 
 .prog {
     overflow-wrap: break-word;
+    margin-bottom: 3px;
+}
+
+@-webkit-keyframes progress-bar-stripes {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 30px 0;
+    }
+}
+@-moz-keyframes progress-bar-stripes {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 30px 0;
+    }
+}
+@-ms-keyframes progress-bar-stripes {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 30px 0;
+    }
+}
+@-o-keyframes progress-bar-stripes {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 30px 0;
+    }
+}
+@keyframes progress-bar-stripes {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 30px 0;
+    }
+}
+
+.pull-progress-div {
+    position: relative;
+    float: left;
+    width: 100%;
+    height: 100%;
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
+    color: #f0f0f0;
+    background-color: #f0f0f0;
+    -webkit-box-shadow: inset 0 1px 0 rgba(0,0,0,.15);
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.15);
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.pull-progress-bar {
+    text-align: center;
+    color: #f0f0f0;
+    width: 0;
+    height: 100%;
+    border-radius: 5px;
+    -webkit-box-shadow: inset 0 1px 0 rgba(0,0,0,.15);
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.15);
+    background-color: #2d69b8;
+    background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%,
+    rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);
+    background-size: 1rem 1rem;
+    -webkit-animation: progress-bar-stripes 1s linear infinite;
+    -o-animation: progress-bar-stripes 1s linear infinite;
+    animation: progress-bar-stripes 1s linear infinite;
+    -webkit-transition: width .6s ease;
+    -o-transition: width .6s ease;
+    transition: width .6s ease;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.dropzone-wrapper {
+    border: 2px dashed #91b0b3;
+    color: #92b0b3;
+    position: relative;
+    height: 50px;
+}
+
+.dropzone-desc {
+    position: absolute;
+    margin: 0 auto;
+    left: 0;
+    right: 0;
+    text-align: center;
+    width: 100%;
+    top: 10px;
+    font-size: 16px;
+}
+
+.dropzone,
+.dropzone:focus {
+    position: absolute;
+    outline: none !important;
+    width: 100%;
+    height: 50px;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.dropzone-wrapper:hover,
+.dropzone-wrapper.dragover {
+    background: #ecf0f5;
+}
+
+div.upload-complete, div.upload-prog {
+    margin-top: 5px;
+}
+
+.upload-complete-txt {
+    position: relative;
+}
+
+.upload-complete-txt .remove, .pull-progress-div .remove {
+    display: none;
+}
+
+.upload-complete-txt:hover .remove {
+    position: absolute;
+    display: inline-block;
+    color: #B0B0B0;
+    margin-top: -5px;
+    margin-left: -3px;
+    opacity: 0.8;
+}
+
+.pull-progress-div:hover .remove {
+    position: absolute;
+    display: inline-block;
+    color: #993333;
+    opacity: 0.8;
+    top: -9px;
+    right: -5px;
+}
+
+.upload-complete-txt:hover .remove:hover, .pull-progress-div:hover .remove:hover {
+    color: #484848;
+    cursor: pointer;
+}
+.pull-progress-div:hover .remove:hover {
+    color: #732626;
+    cursor: pointer;
 }
 
 /* accommodate smaller viewports */

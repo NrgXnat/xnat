@@ -488,18 +488,6 @@ var XNAT = getObject(XNAT);
         config.method = config.method || 'POST';
         config.contentType = config.contentType || config.enctype || 'multipart/form-data';
 
-        config.form = extend(true, {
-            action: config.action ? XNAT.url.rootUrl(config.action) : '#!',
-            attr: {
-                'content-type': config.contentType,
-                'enctype': config.enctype || config.contentType
-            }
-        }, config.form);
-
-        if (/put/i.test(config.form.method)) {
-            delete config.form.method;
-        }
-
         var fileTypes = config.fileTypes ? config.fileTypes.split(/[,\s]+/) : null;
 
         config.input = extend(true, {
@@ -518,26 +506,84 @@ var XNAT = getObject(XNAT);
             html: 'Upload'
         }, config.button);
 
+        config.afterUploadSuccess = config.afterUploadSuccess || diddly;
+        config.removeFiles = config.removeFiles || diddly;
+
         // adding 'ignore' class to prevent submitting with parent form
-        var fileInput = spawn('input.file-upload-input.ignore|type=file', config.input);
-        var uploadBtn = spawn('button.upload.btn.btn1.btn-sm|type=button', config.button);
-        var fileForm = spawn('form.file-upload-form.ignore', config.form, [fileInput, uploadBtn]);
+        let fileInput = spawn('input.file-upload-input.ignore|type=file', config.input);
+        let uploadBtn;
+        let dragdropdiv;
+        let uploadProg;
+
+        const formChildren = [];
+        if (config.dragdrop) {
+            const msg = config.multiple ? 'Drag file(s) here or click to browse' : 'Drag file here or click to browse';
+            $(fileInput).addClass('dropzone')
+            dragdropdiv = spawn('div.dropzone-wrapper', [
+                spawn('div.dropzone-desc', [
+                    spawn('i.fa.fa-download'),
+                    spawn('p', msg)
+                ]), fileInput]);
+            formChildren.push(dragdropdiv);
+        } else {
+            formChildren.push(fileInput);
+        }
+        if (config.automatic) {
+            uploadProg = spawn('div.upload-prog', [
+                spawn('span.canceled.text-error.hidden', 'Canceled'),
+                spawn('div.pull-progress-div.hidden', [
+                    spawn('div.pull-progress-bar'),
+                    spawn('span.remove', [spawn('i.fa.fa-times-circle')])
+                ])
+            ]);
+            formChildren.push(uploadProg);
+        } else {
+            uploadBtn = spawn('button.upload.btn.btn1.btn-sm|type=button', config.button);
+            formChildren.push(uploadBtn);
+        }
+        var fileForm = spawn('div.file-upload-form.ignore', formChildren);
 
         var paramName = config.name || config.input.name || config.param || 'fileUpload';
 
         var URL = config.url || fileForm.getAttribute('data-url') || fileForm.getAttribute('action');
 
         // function called when 'Upload' button is clicked
-        function doUpload(e){
+        function doUpload(e) {
             e.preventDefault();
             if (!fileInput.files || !fileInput.files.length) {
-                XNAT.dialog.message('Error', 'No files selected.');
+                if (!config.automatic) {
+                    XNAT.dialog.message('Error', 'No files selected.');
+                }
                 return false;
             }
-            var waitDialog = XNAT.dialog.static('<div class="message waiting">Uploading...</div>').open();
+            handleFiles(fileInput.files);
+        }
+
+        function handleFiles(files) {
+            let waitElement;
+            let waitElementProg;
+            function clearProgress() {
+                waitElement.addClass('hidden');
+                waitElementProg
+                    .css("width", "0")
+                    .text("");
+            }
+            if (config.automatic) {
+                if (!config.multiple) {
+                    $(fileForm).find('.upload-complete').remove();
+                }
+                waitElement = $(uploadProg).find('.pull-progress-div');
+                $(uploadProg).find('span.canceled').addClass('hidden');
+                waitElement.removeClass('hidden');
+                waitElementProg = waitElement.find('.pull-progress-bar');
+            } else {
+                waitElement = XNAT.dialog.static('<div class="message waiting">Uploading...</div>').open();
+            }
+
             var formData = new FormData();
             var XHR = new XMLHttpRequest();
-            forEach(fileInput.files, function(file){
+            let filenames = [];
+            forEach(files, function(file){
                 if (fileTypes) {
                     // check each extension and only add
                     // matching files to the list
@@ -550,13 +596,30 @@ var XNAT = getObject(XNAT);
                 else {
                     formData.append(paramName, file);
                 }
+                filenames.push(file.name);
             });
-            XHR.open(config.method, URL, true);
+            if (!config.multiple && config.appendFilename) {
+                URL += filenames[0];
+            }
+            if (config.automatic) {
+                waitElement.find('.remove').click(function(){
+                    XHR.abort();
+                    clearProgress();
+                    $(uploadProg).find('span.canceled').removeClass('hidden');
+                    $(fileInput).val(null);
+                });
+            }
+            XNAT.app.timeout.maintainLogin = true;
+            XHR.open(config.method, XNAT.url.csrfUrl(URL), true);
             // XHR.setRequestHeader('Content-Type', config.contentType);
             XHR.onload = function(){
+                XNAT.app.timeout.maintainLogin = false;
                 if (XHR.status !== 200) {
                     console.error(XHR.statusText);
                     console.error(XHR.responseText);
+                    if (config.automatic) {
+                        clearProgress();
+                    }
                     XNAT.ui.dialog.message({
                         title: 'Upload Error',
                         content: '' +
@@ -569,16 +632,86 @@ var XNAT = getObject(XNAT);
                     });
                 }
                 else {
-                    waitDialog.close().destroy();
-                    XNAT.ui.banner.top(3000, 'Upload complete.', 'success');
+                    config.afterUploadSuccess(filenames);
+                    if (config.automatic) {
+                        if (config.dragdrop) {
+                            let uploadList = [];
+                            filenames.forEach(function(name) {
+                                uploadList.push('<div class="text-success">' +
+                                    '<i class="fa fa-check-circle"></i>' +
+                                    '<span class="upload-complete-txt"> ' + name + ' ' +
+                                    '   <span class="remove" data-filenames="' + [name] + '">' +
+                                    '       <i class="fa fa-times-circle"></i>' +
+                                    '   </span>' +
+                                    '</span>' +
+                                    '</div>');
+                            });
+                            $(dragdropdiv).after(spawn('div.upload-complete', uploadList));
+                        } else {
+                            $(fileInput).after('<span class="text-success upload-complete">' +
+                                '<i class="fa fa-check-circle"></i>' +
+                                '<span class="upload-complete-txt"> Uploaded' +
+                                '<span class="remove" data-filenames="' + filenames + '"><i class="fa fa-times-circle"></i></span>'
+                                + '</span></span>');
+                        }
+                        clearProgress();
+                        $(fileForm).find('.upload-complete .remove').click(function() {
+                            const removed = $(this).data('filenames');
+                            config.removeFiles(removed);
+                            $(this).parent().parent().remove();
+                        });
+                    } else {
+                        waitElement.close().destroy();
+                        XNAT.ui.banner.top(3000, 'Upload complete.', 'success');
+                    }
                 }
             };
-            window.setTimeout(function(){
-                XHR.send(formData);
-            }, 0);
+            if (config.automatic) {
+                XHR.upload.addEventListener('progress', function(event) {
+                    var percent = 0;
+                    var position = event.loaded || event.position; /*event.position is deprecated*/
+                    var total = event.total;
+                    if (event.lengthComputable) {
+                        percent = Math.ceil(position / total * 100);
+                        waitElementProg
+                            .css("width", percent + "%")
+                            .text(percent + "%");
+                    } else {
+                        waitElementProg
+                            .css("width", "100%")
+                            .text("Waiting...");
+                    }
+                }, false);
+                XHR.upload.addEventListener('loadend', function(event) {
+                    waitElementProg
+                        .css("width", "100%")
+                        .text("Saving...");
+                }, false);
+            }
+            XHR.send(formData);
         }
 
-        $(uploadBtn).on('click', doUpload);
+        if (config.dragdrop) {
+            const $div = $(dragdropdiv)
+            $div.on('dragover dragenter', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('dragover');
+            });
+            $div.on('dragleave drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+            });
+            $div.on('drop', function(e) {
+                handleFiles(e.originalEvent.dataTransfer.files);
+            });
+        }
+        if (config.automatic) {
+            $(fileInput).change(doUpload);
+        } else {
+            $(uploadBtn).on('click', doUpload);
+        }
 
         return {
             element: fileForm,

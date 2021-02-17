@@ -535,7 +535,13 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         final LapStopWatch stopWatch = LapStopWatch.createStarted(log, Level.INFO);
 
         // This clears out any group initialization requests that may be left in the database from earlier starts.
-        _template.update("DELETE FROM activemq_msgs WHERE container LIKE '%initializeGroupRequest'", EmptySqlParameterSource.INSTANCE);
+        try {
+            if (_helper.tableExists("activemq_msgs")) {
+                _template.update("DELETE FROM activemq_msgs WHERE container LIKE '%initializeGroupRequest'", EmptySqlParameterSource.INSTANCE);
+            }
+        } catch (SQLException e) {
+            log.warn("An error occurred trying to check whether the activemq_msgs table exists", e);
+        }
 
         final int tags = initializeTags();
         stopWatch.lap("Processed {} tags", tags);

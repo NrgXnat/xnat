@@ -64,6 +64,7 @@
     <amq:queue id="initializeGroupRequest" physicalName="initializeGroupRequest" />
     <amq:queue id="dicomInboxImportRequest" physicalName="dicomInboxImportRequest" />
     <amq:queue id="processingOperationRequest" physicalName="processingOperationRequest" />
+    <amq:queue id="directArchiveRequest" physicalName="directArchiveRequest" />
     <!-- new request types go here -->
 
     <!-- listeners for new request types go here -->

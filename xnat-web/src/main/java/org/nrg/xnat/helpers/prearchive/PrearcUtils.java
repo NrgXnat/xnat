@@ -11,18 +11,23 @@ package org.nrg.xnat.helpers.prearchive;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.ArcProjectI;
-import org.nrg.xdat.om.ArcProject;
-import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.model.XnatAbstractresourceI;
+import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
@@ -30,15 +35,18 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
+import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder.Session;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
+import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.resource.ResourceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,9 +70,8 @@ import java.util.regex.Pattern;
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
 
+@Slf4j
 public class PrearcUtils {
-    private final static Logger logger = LoggerFactory.getLogger(PrearcUtils.class);
-
     public static final String APPEND = "append";
 
     public static final String DELETE = "delete";
@@ -145,10 +152,6 @@ public class PrearcUtils {
         private final boolean _interruptable;
     }
 
-    private static Logger logger() {
-        return LoggerFactory.getLogger(PrearcUtils.class);
-    }
-
     public static final Map<PrearcStatus, PrearcStatus> inProcessStatusMap = createInProcessMap();
 
     public static Map<PrearcStatus, PrearcStatus> createInProcessMap() {
@@ -190,7 +193,7 @@ public class PrearcUtils {
                         projects.add(id);
                     }
                 } catch (Exception e) {
-                    logger().error("Exception caught testing prearchive access", e);
+                    log.error("Exception caught testing prearchive access", e);
                 }
             }
             // if the user is an admin also add unassigned projects
@@ -306,14 +309,14 @@ public class PrearcUtils {
 
             if (null == prearcPath) {
                 final String message = "Unable to retrieve prearchive path for project " + project;
-                logger().error(message);
+                log.error(message);
                 throw new Exception(message);
             }
         }
         final File prearc = new File(prearcPath);
         if (prearc.exists() && !prearc.isDirectory()) {
             final String message = "Prearchive directory is invalid for project " + project;
-            logger().error(message);
+            log.error(message);
             throw new Exception(message);
         }
         return prearc;
@@ -408,15 +411,15 @@ public class PrearcUtils {
             return PrearcStatus.RECEIVING;
         }
         if (!sessionXML.isFile()) {
-            logger().error("{} exists, but is not a file. ", sessionXML);
+            log.error("{} exists, but is not a file. ", sessionXML);
             return PrearcStatus.ERROR;
         }
         if (!sessionXML.canRead()) {
-            logger().error("cannot read {}.", sessionXML);
+            log.error("cannot read {}.", sessionXML);
             return PrearcStatus.ERROR;
         }
         if (sessionXML.length() == 0) {
-            logger().error("{} is empty.", sessionXML);
+            log.error("{} is empty.", sessionXML);
             return PrearcStatus.ERROR;
         }
         return null;
@@ -650,7 +653,7 @@ public class PrearcUtils {
             }
             FileUtils.writeStringToFile(new File(logs, Calendar.getInstance().getTimeInMillis() + ".log"), message);
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -668,7 +671,7 @@ public class PrearcUtils {
             }
             FileUtils.writeStringToFile(new File(logs, Calendar.getInstance().getTimeInMillis() + ".log"), message.getMessage());
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
     }
 
@@ -691,13 +694,13 @@ public class PrearcUtils {
                 }
             }
         } catch (IOException e) {
-            logger.error("", e);
+            log.error("", e);
             return null;
         } catch (InvalidPermissionException e) {
-            logger.error("", e);
+            log.error("", e);
             return null;
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
             return null;
         }
         return logs;
@@ -721,7 +724,7 @@ public class PrearcUtils {
                     logs.add(f.getName().substring(0, f.getName().indexOf(".log")));//strip off the .log so it would be seamless to not use physical log files here.
                 }
             } catch (Exception e) {
-                logger.error("", e);
+                log.error("", e);
                 return null;
             }
         }
@@ -747,13 +750,13 @@ public class PrearcUtils {
                 }
             }
         } catch (IOException e) {
-            logger.error("", e);
+            log.error("", e);
             return null;
         } catch (InvalidPermissionException e) {
-            logger.error("", e);
+            log.error("", e);
             return null;
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
             return null;
         }
         return null;
@@ -788,7 +791,7 @@ public class PrearcUtils {
                 return lastFile != null ? FileUtils.readFileToString(lastFile) : null;
             }
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
             return null;
         }
         return null;
@@ -810,6 +813,115 @@ public class PrearcUtils {
 
         final File[] locks = lockFolder.listFiles();
         return locks != null && locks.length > 0;
+    }
+
+    public static void buildSession(SessionData sd) throws PrearcDatabase.SyncFailedException {
+        buildSession(sd, new File(sd.getUrl()), sd.getName(), sd.getTimestamp(), sd.getProject(), sd.getVisit(),
+                sd.getProtocol(), sd.getTimeZone(), sd.getSource());
+    }
+    
+    public static void buildSession(final SessionData sd, final File sessionDir, final String session, final String timestamp,
+                                    final String project, final String visit, final String protocol,
+                                    final String timezone, final String source) throws PrearcDatabase.SyncFailedException {
+        final Map<String, String> params = new LinkedHashMap<>();
+        if (!Strings.isNullOrEmpty(project) && !UNASSIGNED.equals(project)) {
+            params.put("project", project);
+            params.put("separatePetMr", PrearcUtils.getSeparatePetMr(project));
+        } else {
+            params.put("separatePetMr", PrearcUtils.getSeparatePetMr());
+        }
+        params.put("label", session);
+        final String subject = sd.getSubject();
+        if (!Strings.isNullOrEmpty(subject)) {
+            params.put("subject_ID", sd.getSubject());
+        }
+        if (!Strings.isNullOrEmpty(visit)) {
+            params.put("visit", visit);
+        }
+        if (!Strings.isNullOrEmpty(protocol)) {
+            params.put("protocol", protocol);
+        }
+        if (!Strings.isNullOrEmpty(timezone)) {
+            params.put("TIMEZONE", timezone);
+        }
+        if (!Strings.isNullOrEmpty(source)) {
+            params.put("SOURCE", source);
+        }
+
+        PrearcUtils.cleanLockDirs(sd.getSessionDataTriple());
+
+        try {
+            final File sessionXmlFile = new File(sessionDir.getPath() + ".xml");
+            log.info("Attempting to build prearchive session in folder '{}' into the session XML file '{}'", 
+                    sessionDir.getPath(), sessionXmlFile.getPath());
+
+            final Boolean success = new XNATSessionBuilder(sessionDir, sessionXmlFile, true, params).call();
+            if (BooleanUtils.isNotTrue(success)) {
+                throw new PrearcDatabase.SyncFailedException("Error building session");
+            }
+        } catch (PrearcDatabase.SyncFailedException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new PrearcDatabase.SyncFailedException("Error building session", t);
+        }
+    }
+
+    public static void setupScans(XnatImagesessiondata session, String root) {
+        root = StringUtils.appendIfMissing(root, "/");
+        //refactor, this is copied from MergePrearcToArchiveSession#finalize
+        for (XnatImagescandataI scan : session.getScans_scan()) {
+            for (final XnatAbstractresourceI res : scan.getFile()) {
+                updateResourceWithArchivePathAndPopulateStats((XnatAbstractresource) res, root, true);
+            }
+        }
+        for (final XnatAbstractresourceI res : session.getResources_resource()) {
+            updateResourceWithArchivePathAndPopulateStats((XnatAbstractresource) res, root, false);
+        }
+    }
+
+    public static void cleanupScans(XnatImagesessiondata session, String root, EventMetaI c) {
+        root = StringUtils.appendIfMissing(root, "/");
+        boolean checksums = false;
+        final XnatProjectdata project = session.getProjectData();
+        try {
+            checksums = CatalogUtils.getChecksumConfiguration(project);
+        } catch (ConfigServiceException e) {
+            // ignore
+        }
+
+        for (XnatImagescandataI scan : session.getScans_scan()) {
+            for (final XnatAbstractresourceI file : scan.getFile()) {
+                if (file instanceof XnatResourcecatalog) {
+                    XnatResourcecatalog res = (XnatResourcecatalog) file;
+                    try {
+                        CatalogUtils.CatalogData catalogData =
+                                CatalogUtils.CatalogData.getOrCreate(root, res, project.getId());
+                        if (CatalogUtils.formalizeCatalog(catalogData.catBean, catalogData.catPath, catalogData.project,
+                                c.getUser(), c, checksums, false)) {
+                            CatalogUtils.writeCatalogToFile(catalogData, checksums);
+                        }
+                    } catch (Exception e) {
+                        log.error("An error occurred trying to write catalog data for {}",
+                                ((XnatResourcecatalog) file).getUri(), e);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void updateResourceWithArchivePathAndPopulateStats(XnatAbstractresource resource, String root,
+                                                               boolean setContentToRawIfMissing) {
+        resource.prependPathsWith(root);
+
+        if (setContentToRawIfMissing && XNATUtils.isNullOrEmpty(resource.getContent())) {
+            ((XnatResource) resource).setContent("RAW");
+        }
+
+        if (resource instanceof XnatResourcecatalog) {
+            ((XnatResourcecatalog) resource).clearFiles();
+        }
+
+        CatalogUtils.populateStats(resource, root);
     }
 
     private final static Object syncLock = new Object();
@@ -899,7 +1011,7 @@ public class PrearcUtils {
                             }
                         }
                     } catch (IOException e) {
-                        logger.error("Couldn't clean temporary lock directories in the cache folder.", e);
+                        log.error("Couldn't clean temporary lock directories in the cache folder.", e);
                     }
                 }
             }

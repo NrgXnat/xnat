@@ -54,7 +54,7 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
             }
             if (!getSessionDir().getParentFile().exists()) {
                 try {
-                    log.info("The parent of the indicated session {} could not be found at the indicated location {}", getSessionData().getName(), getSessionDir().getParentFile().getAbsolutePath());
+                    log.warn("The parent of the indicated session {} could not be found at the indicated location {}", getSessionData().getName(), getSessionDir().getParentFile().getAbsolutePath());
                     PrearcDatabase.unsafeSetStatus(folderName, timestamp, project, _DELETING);
                     PrearcDatabase.deleteCacheRow(folderName, timestamp, project);
                 } catch (Exception e) {

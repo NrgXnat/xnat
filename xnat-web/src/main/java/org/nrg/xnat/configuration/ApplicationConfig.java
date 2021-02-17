@@ -13,7 +13,6 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.configuration.ConfigurationException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventServiceI;
@@ -73,7 +72,7 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnat.helpers.merge", "org.nrg.xnat.helpers.processing", "org.nrg.xnat.helpers.resolvers",
                 "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.node", "org.nrg.xnat.preferences", "org.nrg.xnat.processor.dao",
                 "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processors",
-                "org.nrg.xnat.task", "org.nrg.xnat.tracking"})
+                "org.nrg.xnat.task", "org.nrg.xnat.tracking", "org.nrg.xnat.archive"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @EnableCaching
 @Getter

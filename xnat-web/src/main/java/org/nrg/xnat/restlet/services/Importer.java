@@ -16,7 +16,6 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.xnat.archive.operations.DicomImportOperation;
 import org.nrg.xnat.restlet.actions.importer.*;
 import org.nrg.xnat.status.StatusList;
 import org.nrg.xdat.XDAT;

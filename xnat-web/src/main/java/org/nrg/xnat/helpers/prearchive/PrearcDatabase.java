@@ -50,6 +50,7 @@ import org.xml.sax.SAXException;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
+import java.io.SyncFailedException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
@@ -1030,52 +1031,32 @@ public final class PrearcDatabase {
         }
     }
 
-    public static void buildSession(final File sessionDir, final String session, final String timestamp, final String project, final String visit, final String protocol, final String timezone, final String source) throws Exception {
+    public static void buildSession(final File sessionDir, final String session, final String timestamp,
+                                    final String project, final String visit, final String protocol,
+                                    final String timezone, final String source) throws Exception {
         final SessionData sd = PrearcDatabase.getSession(session, timestamp, project);
+        buildSession(sd, sessionDir, session, timestamp, project, visit, protocol, timezone, source);
+    }
+
+    public static void buildSession(final SessionData sd) throws Exception {
+        buildSession(sd, new File(sd.getUrl()), sd.getName(), sd.getTimestamp(), sd.getProject(), sd.getVisit(),
+                sd.getProtocol(), sd.getTimeZone(), sd.getSource());
+    }
+
+    public static void buildSession(final SessionData sd, File sessionDir) throws Exception {
+        buildSession(sd, sessionDir, sd.getName(), sd.getTimestamp(), sd.getProject(), sd.getVisit(),
+                sd.getProtocol(), sd.getTimeZone(), sd.getSource());
+    }
+
+    public static void buildSession(final SessionData sd, final File sessionDir, final String session, final String timestamp,
+                                    final String project, final String visit, final String protocol,
+                                    final String timezone, final String source) throws Exception {
 
         try {
             new LockAndSync<Void>(session, timestamp, project, sd.getStatus()) {
                 Void extSync() throws SyncFailedException {
-                    final Map<String, String> params = new LinkedHashMap<>();
-                    if (!Strings.isNullOrEmpty(project) && !UNASSIGNED.equals(project)) {
-                        params.put("project", project);
-                        params.put("separatePetMr", PrearcUtils.getSeparatePetMr(project));
-                    } else {
-                        params.put("separatePetMr", PrearcUtils.getSeparatePetMr());
-                    }
-                    params.put("label", session);
-                    final String subject = sd.getSubject();
-                    if (!Strings.isNullOrEmpty(subject)) {
-                        params.put("subject_ID", sd.getSubject());
-                    }
-                    if (!Strings.isNullOrEmpty(visit)) {
-                        params.put("visit", visit);
-                    }
-                    if (!Strings.isNullOrEmpty(protocol)) {
-                        params.put("protocol", protocol);
-                    }
-                    if (!Strings.isNullOrEmpty(timezone)) {
-                        params.put("TIMEZONE", timezone);
-                    }
-                    if (!Strings.isNullOrEmpty(source)) {
-                        params.put("SOURCE", source);
-                    }
-
-                    PrearcUtils.cleanLockDirs(sd.getSessionDataTriple());
-
-                    try {
-                        final File sessionXmlFile = new File(sessionDir.getPath() + ".xml");
-                        log.info("Attempting to build prearchive session in folder '{}' into the session XML file '{}'", sessionDir.getPath(), sessionXmlFile.getPath());
-
-                        final Boolean success = new XNATSessionBuilder(sessionDir, sessionXmlFile, true, params).call();
-                        if (BooleanUtils.isNotTrue(success)) {
-                            throw new SyncFailedException("Error building session");
-                        }
-                    } catch (SyncFailedException e) {
-                        throw e;
-                    } catch (Throwable t) {
-                        throw new SyncFailedException("Error building session", t);
-                    }
+                    PrearcUtils.buildSession(sd, sessionDir, session, timestamp, project,
+                            visit, protocol, timezone, source);
                     return null;
                 }
 

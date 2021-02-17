@@ -36,6 +36,7 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.Files;
+import org.nrg.xnat.archive.services.DirectArchiveSessionService;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.prearchive.DatabaseSession;
@@ -54,16 +55,15 @@ import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("ThrowFromFinallyBlock")
-@Service
 @Slf4j
 @ImporterHandler(handler = ImporterHandlerA.GRADUAL_DICOM_IMPORTER)
 public class GradualDicomImporter extends ImporterHandlerA {
@@ -84,6 +84,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
         // spring beans
         _mizer = XDAT.getContextService().getBeanSafely(MizerService.class);
         _processorInstanceService = XDAT.getContextService().getBeanSafely(ArchiveProcessorInstanceService.class);
+        _directArchiveSessionService = XDAT.getContextService().getBeanSafely(DirectArchiveSessionService.class);
+        _directArchive &= _directArchiveSessionService != null;
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -195,17 +197,18 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
             // Fill a SessionData object in case it is the first upload
             final File root;
+            final File prearchiveRoot;
             final String timestamp = PrearcUtils.makeTimestamp();
             if (null == project) {
-                root = new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath());
+                prearchiveRoot = new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath(), timestamp);
+                _directArchive = false;
             } else {
-                if (_directArchive) {
-                    root = new File(project.getRootArchivePath(), project.getCurrentArc());
-                } else {
-                    root = Paths.get(ArcSpecManager.GetInstance().getGlobalPrearchivePath(), project.getId(),
-                            timestamp).toFile();
-                }
+                prearchiveRoot = Paths.get(ArcSpecManager.GetInstance().getGlobalPrearchivePath(), project.getId(),
+                        timestamp).toFile();
             }
+            root = _directArchive
+                    ? new File(project.getRootArchivePath(), project.getCurrentArc())
+                    : prearchiveRoot;
 
             if (null == subject) {
                 log.trace("subject is null for session {}/{}", root, sessionLabel);
@@ -218,8 +221,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
             //
             // This record is necessary so that, if this row was created by this call, it can be deleted if anonymization
             // goes wrong. In case of any other error the file is left on the filesystem.
-            final Either<SessionData, SessionData> getOrCreate;
             final SessionData session;
+            final AtomicBoolean isNew = new AtomicBoolean();
             try {
                 final SessionData initialize = new SessionData();
                 initialize.setFolderName(sessionLabel);
@@ -249,35 +252,13 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 initialize.setPreventAnon(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_ANON)));
                 initialize.setPreventAutoCommit(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_AUTO_COMMIT)));
 
-                getOrCreate = PrearcDatabase.eitherGetOrCreateSession(initialize, root, shouldAutoArchive(project, dicom));
-
-                if (getOrCreate.isLeft()) {
-                    session = getOrCreate.getLeft();
-                } else {
-                    session = getOrCreate.getRight();
-                }
+                session = eitherGetOrCreateSession(initialize, prearchiveRoot, project, dicom, isNew);
             } catch (Exception e) {
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
             }
 
-            try {
-                // else if the last mod time is more then 15 seconds ago, update it.
-                // this code builds and executes the sql directly, because the APIs for doing so generate multiple SELECT statements (to confirm the row is there)
-                // we've confirmed the row is there in line 338, so that shouldn't be necessary here.
-                // this code executes for every file received, so any unnecessary sql should be eliminated.
-                if (Calendar.getInstance().getTime().after(DateUtils.addSeconds(session.getLastBuiltDate(), 15))) {
-                    PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionLastModSQL(session.getName(), session.getTimestamp(), session.getProject()), null, null);
-                }
-            } catch (Exception e) {
-                log.error("An error occurred trying to update the session update timestamp.", e);
-            }
-            
-            Callable<Void> cleanupPrearcDb = () -> {
-                if (getOrCreate.isRight()) {
-                    PrearcDatabase.deleteSession(session.getFolderName(), session.getTimestamp(), session.getProject());
-                }
-                return null;
-            };
+            Callable<Void> cleanupPrearcDb = isNew.get() ? () -> {
+                deleteSessionFromDb(session); return null;} : () -> null;
 
             if (_doCustomProcessing &&
                     !customProcessing(NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE,
@@ -313,7 +294,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
             }
 
             final File sessionFolder = new File(session.getUrl());
-            final File outputFile = getSafeFile(sessionFolder, scan, name, dicom, Boolean.parseBoolean((String) _parameters.get(RENAME_PARAM)));
+            final File outputFile = getSafeFile(sessionFolder, scan, name, dicom,
+                    Boolean.parseBoolean((String) _parameters.get(RENAME_PARAM)));
             outputFile.getParentFile().mkdirs();
 
             final PrearcUtils.PrearcFileLock lock;
@@ -332,50 +314,116 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
                 // check to see of this session came in through an application that may have performed anonymization
                 // prior to transfer, e.g. the XNAT Upload Assistant.
-                if (!_doCustomProcessing && !session.getPreventAnon() && DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
+                if (!_doCustomProcessing && !session.getPreventAnon() &&
+                        DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
                     try {
                         Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
                         if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
                             //noinspection deprecation
 
                             final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
-                            service.anonymize(outputFile, session.getProject(), session.getSubject(), session.getFolderName(), true, c.getId(), c.getContents());
+                            service.anonymize(outputFile, session.getProject(), session.getSubject(),
+                                    session.getFolderName(), true, c.getId(), c.getContents());
 
                         } else {
-                            log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without anonymization.", session.getProject(), session.getSubject(), session.getName());
+                            log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without " +
+                                    "anonymization.", session.getProject(), session.getSubject(), session.getName());
                         }
                     } catch(Throwable e){
                         log.debug("Dicom anonymization failed: " + outputFile, e);
                         try {
                             // if we created a row in the database table for this session
                             // delete it.
-                            if (getOrCreate.isRight()) {
-                                PrearcDatabase.deleteSession(session.getFolderName(), session.getTimestamp(), session.getProject());
+                            if (isNew.get()) {
+                                deleteSessionFromDb(session);
                             } else {
                                 outputFile.delete();
                             }
                         } catch (Throwable t) {
-                            log.debug("Unable to delete relevant file :" + outputFile, e);
+                            log.debug("Unable to delete relevant file: " + outputFile, e);
                             throw new ServerException(Status.SERVER_ERROR_INTERNAL, t);
                         }
                         throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
                     }
                 } else if (session.getPreventAnon()) {
-                    log.debug("The session {} {} {} has already been anonymized by the uploader, proceeding without further anonymization.", session.getProject(), session.getSubject(), session.getName());
+                    log.debug("The session {} {} {} has already been anonymized by the uploader, proceeding without " +
+                            "further anonymization.", session.getProject(), session.getSubject(), session.getName());
                 }
             } finally {
                 //release the file lock
                 lock.release();
             }
 
-            log.trace("Stored object {}/{}/{} as {} for {}", project, studyInstanceUID, dicom.getString(Tag.SOPInstanceUID), session.getUrl(), source);
-            return Collections.singletonList(session.getExternalUrl());
+            log.trace("Stored object {}/{}/{} as {} for {}", project, studyInstanceUID,
+                    dicom.getString(Tag.SOPInstanceUID), session.getUrl(), source);
+
+            // There is no direct archive commit (yet) so just return the session triple
+            return _directArchive ? Collections.singletonList(session.toString()) :
+                    Collections.singletonList(session.getExternalUrl());
         } catch (ClientException e) {
             throw e;
         } catch (Throwable t) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);
         }
 
+    }
+
+    private void deleteSessionFromDb(SessionData session) throws Exception {
+        if (_directArchive) {
+            _directArchiveSessionService.delete(session);
+        } else {
+            PrearcDatabase.deleteSession(session.getFolderName(), session.getTimestamp(), session.getProject());
+        }
+    }
+
+    private void updateSessionLastMod(SessionData session) {
+        // If the last mod time is more then 15 seconds ago, update it.
+        if (Calendar.getInstance().getTime().after(DateUtils.addSeconds(session.getLastBuiltDate(), 15))) {
+            try {
+                if (_directArchive) {
+                    _directArchiveSessionService.touch(session);
+                } else {
+                    // this code builds and executes the sql directly, because the APIs for doing so generate multiple SELECT statements (to confirm the row is there)
+                    // we've confirmed the row is there in eitherGetOrCreateSession, so that shouldn't be necessary here.
+                    // this code executes for every file received, so any unnecessary sql should be eliminated.
+                    PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionLastModSQL(session.getName(), session.getTimestamp(), session.getProject()), null, null);
+                }
+            } catch (Exception e) {
+                log.error("An error occurred trying to update the session update timestamp.", e);
+            }
+        }
+    }
+
+    private SessionData eitherGetOrCreateSession(SessionData initialize, File prearchiveRoot,
+                                                 XnatProjectdata project, DicomObject dicom, AtomicBoolean isNew)
+            throws Exception {
+        SessionData session = null;
+        if (_directArchive) {
+            try {
+                session = _directArchiveSessionService.getOrCreate(initialize, isNew);
+            } catch (Exception e) {
+                log.warn("Unable to directly archive session, will proceed through prearchive", e);
+                _directArchive = false;
+                initialize.setUrl(new File(prearchiveRoot, initialize.getFolderName()).getAbsolutePath());
+            }
+        }
+
+        if (session == null) {
+            Either<SessionData, SessionData> getOrCreate = PrearcDatabase.eitherGetOrCreateSession(initialize,
+                    prearchiveRoot, shouldAutoArchive(project, dicom));
+            isNew.set(getOrCreate.isLeft());
+
+            if (isNew.get()) {
+                session = getOrCreate.getLeft();
+            } else {
+                session = getOrCreate.getRight();
+            }
+        }
+
+        if (!isNew.get()) {
+            updateSessionLastMod(session);
+        }
+        return session;
     }
 
     private boolean customProcessing(String location, DicomObject dicom, SessionData session)
@@ -419,25 +467,23 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     private Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> getProcessorsMap() {
-        if (_processorsMap != null) {
-            return _processorsMap;
-        }
-
-        synchronized (this) {
-            if (_processorsMap == null) {
-                _processorsMap = new HashMap<>();
-                Map<String, ArchiveProcessor> processorMap = XDAT.getContextService().getBeansOfType(ArchiveProcessor.class);
-                if (processorMap == null) {
-                    return _processorsMap;
-                }
-                for (ArchiveProcessor processor : processorMap.values()) {
-                    if (processor != null) {
-                        _processorsMap.put(processor.getClass(), processor);
+        if (_processorsMap == null) {
+            synchronized (this) {
+                if (_processorsMap == null) {
+                    _processorsMap = new HashMap<>();
+                    Map<String, ArchiveProcessor> processorMap =
+                            XDAT.getContextService().getBeansOfType(ArchiveProcessor.class);
+                    if (processorMap != null) {
+                        for (ArchiveProcessor processor : processorMap.values()) {
+                            if (processor != null) {
+                                _processorsMap.put(processor.getClass(), processor);
+                            }
+                        }
                     }
                 }
             }
-            return _processorsMap;
         }
+        return _processorsMap;
     }
 
     private XnatProjectdata getProject(final String alias, final Callable<XnatProjectdata> lookupProject) {
@@ -670,7 +716,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private final UserI               _user;
     private final Map<String, Object> _parameters;
     private final boolean             _doCustomProcessing;
-    private final boolean             _directArchive;
+    private boolean                   _directArchive;
 
     private TransferSyntax     _transferSyntax;
     private DicomFilterService _filterService;
@@ -678,6 +724,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private final MizerService _mizer;
     private final ArchiveProcessorInstanceService _processorInstanceService;
     private Map<Class<? extends ArchiveProcessor>, ArchiveProcessor> _processorsMap;
+    private final DirectArchiveSessionService _directArchiveSessionService;
 
     public static final String SENDER_AE_TITLE_PARAM = "Sender-AE-Title";
     public static final String RECEIVER_AE_TITLE_PARAM = "Receiver-AE-Title";

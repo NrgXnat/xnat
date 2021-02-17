@@ -22,6 +22,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
@@ -50,60 +51,12 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
 
     @Override
     public void finalize(final XnatImagesessiondata session) {
-        final String root = destRootPath.replace('\\', '/') + "/";
-        for (XnatImagescandataI scan : session.getScans_scan()) {
-            for (final XnatAbstractresourceI res : scan.getFile()) {
-                updateResourceWithArchivePathAndPopulateStats((XnatAbstractresource) res, root, true);
-            }
-        }
-        for (final XnatAbstractresourceI res : session.getResources_resource()) {
-            updateResourceWithArchivePathAndPopulateStats((XnatAbstractresource) res, root, false);
-        }
-    }
-
-    private void updateResourceWithArchivePathAndPopulateStats(XnatAbstractresource resource, String root,
-                                                               boolean setContentToRawIfMissing) {
-        resource.prependPathsWith(root);
-
-        if (setContentToRawIfMissing && XNATUtils.isNullOrEmpty(resource.getContent())) {
-            ((XnatResource) resource).setContent("RAW");
-        }
-
-        if (resource instanceof XnatResourcecatalog) {
-            ((XnatResourcecatalog) resource).clearFiles();
-        }
-
-        CatalogUtils.populateStats(resource, root);
+        PrearcUtils.setupScans(session,  destRootPath.replace('\\', '/'));
     }
 
     @Override
     public void postSave(final XnatImagesessiondata session) {
-        final String root      = destRootPath.replace('\\', '/') + "/";
-        boolean      checksums = false;
-        final XnatProjectdata project = session.getProjectData();
-        try {
-            checksums = CatalogUtils.getChecksumConfiguration(project);
-        } catch (ConfigServiceException e) {
-            //
-        }
-
-        for (XnatImagescandataI scan : session.getScans_scan()) {
-            for (final XnatAbstractresourceI file : scan.getFile()) {
-                if (file instanceof XnatResourcecatalog) {
-                    XnatResourcecatalog res = (XnatResourcecatalog) file;
-                    try {
-                        CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(root, res, project.getId()
-                        );
-                        if (CatalogUtils.formalizeCatalog(catalogData.catBean, catalogData.catPath, catalogData.project,
-                                user, c, checksums, false)) {
-                            CatalogUtils.writeCatalogToFile(catalogData, checksums);
-                        }
-                    } catch (Exception exception) {
-                        log.error("An error occurred trying to write catalog data for {}", ((XnatResourcecatalog) file).getUri(), exception);
-                    }
-                }
-            }
-        }
+        PrearcUtils.cleanupScans(session, destRootPath.replace('\\', '/'), c);
     }
 
     @Override

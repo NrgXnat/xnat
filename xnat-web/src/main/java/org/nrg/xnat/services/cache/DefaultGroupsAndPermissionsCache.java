@@ -472,7 +472,14 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     @Override
-    public Date getUserLastUpdateTime(final UserI user) {
+    public Date getUserLastUpdateTime(UserI user) {
+        if (user == null) {
+            try {
+                user = Users.getGuest();
+            } catch (UserNotFoundException | UserInitException e) {
+                return new Date();
+            }
+        }
         return getUserLastUpdateTime(user.getUsername());
     }
 

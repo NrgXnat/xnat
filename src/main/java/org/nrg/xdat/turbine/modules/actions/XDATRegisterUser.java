@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
+import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
@@ -18,7 +19,6 @@ import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
-import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.utilities.Patterns;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XdatUserAuth;
@@ -33,6 +33,7 @@ import org.nrg.xft.security.UserI;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -184,7 +185,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                             }
 
                             try {
-                                cacheRegistrationData(found, comments, phone, lab);
+                                _service.cacheUserRegistrationData(found, phone, lab, comments);
                                 if (!found.isVerified()) {
                                     sendNewUserVerificationEmail(data, context, found);
                                 } else {
@@ -234,11 +235,12 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
     }
 
-    public boolean hasPAR(final RunData data) {
-        return data.getParameters().containsKey(XDAT_USER_PAR) || data.getSession().getAttribute(XDAT_USER_PAR) != null;
+    @Override
+    protected boolean isAuthorized(final RunData data) {
+        return true;
     }
 
-    public void handleInvalid(final RunData data, final Context context, final String message) {
+    protected void handleInvalid(final RunData data, final Context context, final String message) {
         try {
             final String nextPage   = (String) TurbineUtils.GetPassedParameter("nextPage", data);
             final String nextAction = (String) TurbineUtils.GetPassedParameter("nextAction", data);
@@ -260,9 +262,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
     }
 
-    @Override
-    protected boolean isAuthorized(final RunData data) {
-        return true;
+    protected boolean hasPAR(final RunData data) {
+        return data.getParameters().containsKey(XDAT_USER_PAR) || data.getSession().getAttribute(XDAT_USER_PAR) != null;
     }
 
     protected SiteConfigPreferences getPreferences() {
@@ -291,9 +292,14 @@ public class XDATRegisterUser extends VelocitySecureAction {
         storeParameterIfAvailable(data, context, XDAT_USER_PAR, XDAT_USER_PAR);
     }
 
-    protected void storeParameterIfAvailable(final RunData data, final Context context, final String key, final String value) {
-        if (TurbineUtils.HasPassedParameter(value, data)) {
-            context.put(key, data.getParameters().getString(value));
+    protected void storeParameterIfAvailable(final RunData data, final Context context, final String key, final String name) {
+        if (TurbineUtils.HasPassedParameter(name, data)) {
+            final String value = data.getParameters().getString(name);
+            if (!isInvalidParameter(data, name)) {
+                context.put(key, value);
+            } else {
+                log.warn("Tried to store the \"{}\" variable with value \"{}\" but that failed validation with pattern \"{}\"", name, value, VALIDATORS.get(name));
+            }
         }
     }
 
@@ -305,19 +311,19 @@ public class XDATRegisterUser extends VelocitySecureAction {
         try {
             // Tests for valid values
             final List<String> failures = new ArrayList<>();
-            if (isInvalidParameter(data, XDAT_USER_EMAIL, Patterns.EMAIL)) {
+            if (isInvalidParameter(data, XDAT_USER_EMAIL)) {
                 failures.add("Email");
             }
-            if (isInvalidParameter(data, XDAT_USER_LOGIN, Patterns.USERNAME)) {
+            if (isInvalidParameter(data, XDAT_USER_LOGIN)) {
                 failures.add("Username");
             }
-            if (isInvalidParameter(data, XDAT_USER_FIRSTNAME, NAME)) {
+            if (isInvalidParameter(data, XDAT_USER_FIRSTNAME)) {
                 failures.add("First name");
             }
-            if (isInvalidParameter(data, XDAT_USER_LASTNAME, NAME)) {
+            if (isInvalidParameter(data, XDAT_USER_LASTNAME)) {
                 failures.add("Last name");
             }
-            if (isInvalidParameter(data, XDAT_USER_PAR, PAR, false)) {
+            if (isInvalidParameter(data, XDAT_USER_PAR, false)) {
                 failures.add("Project access request");
             }
             if (!failures.isEmpty()) {
@@ -330,23 +336,27 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
     }
 
-    private void cacheRegistrationData(final UserI newUser, final String comments, final String phone, final String lab) throws NrgServiceException {
-        _service.cacheUserRegistrationData(newUser, phone, lab, comments);
+    private static boolean isInvalidParameter(final RunData data, final String name) {
+        return isInvalidParameter(data, name, true);
     }
 
-    private static boolean isInvalidParameter(final RunData data, final String name, final Pattern pattern) {
-        return isInvalidParameter(data, name, pattern, true);
-    }
-
-    private static boolean isInvalidParameter(final RunData data, final String name, final Pattern pattern, final boolean required) {
+    private static boolean isInvalidParameter(final RunData data, final String name, final boolean required) {
         if (!data.getParameters().containsKey(name)) {
             return required;
         }
-        return !pattern.matcher(data.getParameters().getString(name)).matches();
+        if (!VALIDATORS.containsKey(name)) {
+            log.warn("Got request to validate variable {} but I don't have a validator pattern for that.", name);
+            return required;
+        }
+        final Pattern pattern = VALIDATORS.get(name);
+        final String  value   = data.getParameters().getString(name);
+        log.debug("Validating \"{}\" variable with value \"{}\" using pattern \"{}\"", name, value, pattern);
+        return !pattern.matcher(value).matches();
     }
 
-    private static final Pattern NAME = Pattern.compile("^([a-z0-9 '\".,_-]+)$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PAR  = Pattern.compile("^([0-9]+|[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern              NAME       = Pattern.compile("^([a-z0-9 '\".,_-]+)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern              PAR        = Pattern.compile("^([0-9]+|[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?)$", Pattern.CASE_INSENSITIVE);
+    private static final Map<String, Pattern> VALIDATORS = ImmutableMap.of(XDAT_USER_EMAIL, Patterns.EMAIL, XDAT_USER_LOGIN, Patterns.USERNAME, XDAT_USER_FIRSTNAME, NAME, XDAT_USER_LASTNAME, NAME, XDAT_USER_PAR, PAR);
 
     private final SiteConfigPreferences       _preferences;
     private final UserRegistrationDataService _service;

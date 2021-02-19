@@ -89,12 +89,12 @@
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0.5</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>6.3.0</nrg.dicom-edit6.version>
-        <nrg.dicom.pixeleditor>1.2.1</nrg.dicom.pixeleditor>
-        <nrg.dicomdb.version>5.1.2</nrg.dicomdb.version>
+        <nrg.dicom.pixeleditor.version>1.2.0</nrg.dicom.pixeleditor.version>
+        <nrg.dicomdb.version>5.2</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.0.5</nrg.ecat.version>
-        <nrg.extattr.version>4.2.5</nrg.extattr.version>
+        <nrg.ecat.version>1.0.5.1</nrg.ecat.version>
+        <nrg.extattr.version>4.2.6</nrg.extattr.version>
         <nrg.prearcimporter.version>${xnatdev.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnatdev.version}</nrg.sessionbuilders.version>
         <nrg.plexiviewer.version>${xnatdev.version}</nrg.plexiviewer.version>

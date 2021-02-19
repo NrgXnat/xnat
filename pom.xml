@@ -8,7 +8,9 @@
   ~ Released under the Simplified BSD.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.nrg</groupId>
@@ -62,63 +64,63 @@
         <signing.keypass>keypass</signing.keypass>
         <signing.tsa>https://timestamp.digicert.com</signing.tsa>
 
-        <xnat-ref.version>1.7.7-INTERNAL</xnat-ref.version>
         <xnat.version>1.8.0</xnat.version>
-        <xnatdev.version>1.8.1-SNAPSHOT</xnatdev.version>
-    
-        <!-- XNAT core library versions -->
-        <xnat-web.version>${xnat.version}</xnat-web.version>
-        <xnat-tasks.version>${xnat-ref.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
-        <spawner.version>${xnat.version}</spawner.version>
-        <xnat-data-models.version>${xnat.version}</xnat-data-models.version>
-        <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
-        <xdat.version>${xnat.version}</xdat.version>
+        <xnatdev.version>1.8.0</xnatdev.version>
 
-        <nrg.automation.version>${xnat-ref.version}</nrg.automation.version>
-        <nrg.config.version>${xnat-ref.version}</nrg.config.version>
-        <nrg.framework.version>${xnat.version}</nrg.framework.version>
-        <nrg.mail.version>${xnat-ref.version}</nrg.mail.version>
-        <nrg.notify.version>${xnat-ref.version}</nrg.notify.version>
-        <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
-        <nrg.test.version>${xnat.version}</nrg.test.version>
-        <nrg.transaction.version>${xnat-ref.version}</nrg.transaction.version>
+        <!-- XNAT core library versions -->
+        <xnat-web.version>${xnatdev.version}</xnat-web.version>
+        <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
+        <xnat-data-builder.version>${xnatdev.version}</xnat-data-builder.version>
+        <spawner.version>${xnatdev.version}</spawner.version>
+        <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
+        <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
+        <xdat.version>${xnatdev.version}</xdat.version>
+
+        <nrg.automation.version>${xnat.version}</nrg.automation.version>
+        <nrg.config.version>${xnatdev.version}</nrg.config.version>
+        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
+        <nrg.mail.version>${xnat.version}</nrg.mail.version>
+        <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
+        <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
+        <nrg.test.version>${xnatdev.version}</nrg.test.version>
+        <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.mizer.version>1.2.0</nrg.mizer.version>
-        <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
-        <nrg.dicomimageutils.version>${xnat-ref.version}</nrg.dicomimageutils.version>
+        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
+        <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.0.5</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>1.2.0</nrg.dicom-edit6.version>
-        <nrg.dicom.pixeleditor>1.2.0</nrg.dicom.pixeleditor>
+        <nrg.dicom-edit6.version>6.3.0</nrg.dicom-edit6.version>
+        <nrg.dicom.pixeleditor>1.2.1</nrg.dicom.pixeleditor>
         <nrg.dicomdb.version>5.1.2</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
-        <nrg.ecat4xnat.version>${xnat-ref.version}</nrg.ecat4xnat.version>
+        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
+        <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.5</nrg.ecat.version>
         <nrg.extattr.version>4.2.5</nrg.extattr.version>
-        <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
-        <nrg.sessionbuilders.version>${xnat-ref.version}</nrg.sessionbuilders.version>
-        <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>
-        <pipeline.version>${xnat-ref.version}</pipeline.version>
-        <pipelinedev.version>${xnat-ref.version}</pipelinedev.version>
-        <data-client.version>${xnat-ref.version}</data-client.version>
-    
+        <nrg.prearcimporter.version>${xnatdev.version}</nrg.prearcimporter.version>
+        <nrg.sessionbuilders.version>${xnatdev.version}</nrg.sessionbuilders.version>
+        <nrg.plexiviewer.version>${xnatdev.version}</nrg.plexiviewer.version>
+        <pipeline.version>${xnat.version}</pipeline.version>
+        <pipelinedev.version>${xnat.version}</pipelinedev.version>
+        <data-client.version>${xnat.version}</data-client.version>
+
         <!-- XNAT plugin versions -->
         <ohif-viewer.version>3.0.0-SNAPSHOT</ohif-viewer.version>
-        <container-service.version>2.1.1-ML-SNAPSHOT</container-service.version>
+        <container-service.version>3.0.0-SNAPSHOT</container-service.version>
         <dqr.version>1.0.0-SNAPSHOT</dqr.version>
         <batch-launch.version>0.2.8-ML-SNAPSHOT</batch-launch.version>
         <clara.version>ML-BETA</clara.version>
         <datasets.version>1.0.0-SNAPSHOT</datasets.version>
 
-        <spring-framework.version>4.3.28.RELEASE</spring-framework.version>
-        <spring-security.version>4.2.18.RELEASE</spring-security.version>
+        <spring-framework.version>4.3.30.RELEASE</spring-framework.version>
+        <spring-security.version>4.2.20.RELEASE</spring-security.version>
         <spring-ldap.version>2.3.3.RELEASE</spring-ldap.version>
-        <spring-oauth2.version>2.3.8.RELEASE</spring-oauth2.version>
+        <spring-oauth2.version>2.5.0.RELEASE</spring-oauth2.version>
         <spring-jwt.version>1.1.1.RELEASE</spring-jwt.version>
 
         <swagger.version>2.9.2</swagger.version>
         <vladmihalcea-hibernate-types.version>2.9.3</vladmihalcea-hibernate-types.version>
 
-        <activemq.version>5.7.0</activemq.version>
+        <activemq.version>5.16.0</activemq.version>
+        <activemq-protobuf.version>1.1</activemq-protobuf.version>
         <ant.version>1.9.8</ant.version>
         <antlr3.version>3.5.2</antlr3.version>
         <antlr4.version>4.7.1</antlr4.version>
@@ -150,6 +152,7 @@
         <commons-math.version>2.2</commons-math.version>
         <commons-net.version>3.3</commons-net.version>
         <commons-text.version>1.9</commons-text.version>
+        <commons-pool2.version>2.9.0</commons-pool2.version>
         <dcm4che.version>2.0.29</dcm4che.version>
         <dcm4che5.version>5.22.6</dcm4che5.version>
         <pixelmed.version>nrg-20200327</pixelmed.version>
@@ -235,10 +238,10 @@
         <restlet.version>1.1.10</restlet.version>
         <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
-        <slf4j.version>1.7.26</slf4j.version>
+        <slf4j.version>1.7.30</slf4j.version>
         <logback.version>1.2.3</logback.version>
         <logstash.version>5.3</logstash.version>
-        <javamelody.version>1.85.0</javamelody.version>
+        <javamelody.version>1.86.0</javamelody.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <metainf-services.version>1.8</metainf-services.version>
         <jetbrains-annotations.version>17.0.0</jetbrains-annotations.version>
@@ -247,7 +250,7 @@
         <torque.version>3.3</torque.version>
         <turbine.version>2.3.3</turbine.version>
         <user-agent-utils.version>1.20</user-agent-utils.version>
-        <io-projectreactor.version>2.0.7.RELEASE</io-projectreactor.version>
+        <io-projectreactor.version>2.0.8.RELEASE</io-projectreactor.version>
         <velocity-tools.version>2.0</velocity-tools.version>
         <velocity.version>1.7</velocity.version>
         <wizard.version>1.2.1</wizard.version>
@@ -281,7 +284,7 @@
         <maven-war-plugin.version>3.3.1</maven-war-plugin.version>
         <javadoc-coverage.version>1.1.1</javadoc-coverage.version>
 
-</properties>
+    </properties>
 
     <dependencyManagement>
         <!-- NRG dependency definitions -->
@@ -519,42 +522,42 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat_pipeline</artifactId>
-                <version>${xnat-ref.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat_tools</artifactId>
-                <version>${xnat-ref.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>catalog</artifactId>
-                <version>${xnat-ref.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>client</artifactId>
-                <version>${xnat-ref.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat-pipeline</artifactId>
-                <version>${xnat-ref.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat-tools</artifactId>
-                <version>${xnat-ref.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>imagingtools</artifactId>
-                <version>${xnat-ref.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>pipeline-client</artifactId>
-                <version>${xnat-ref.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
@@ -988,6 +991,11 @@
                 <version>${commons-text.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>${commons-pool2.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-fileupload</groupId>
                 <artifactId>commons-fileupload</artifactId>
                 <version>${commons-fileupload.version}</version>
@@ -1140,8 +1148,58 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.activemq</groupId>
-                <artifactId>activemq-core</artifactId>
+                <artifactId>activemq-all</artifactId>
                 <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-broker</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-client</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-jaas</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-jdbc-store</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-kahadb-store</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-mqtt</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-openwire-legacy</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-spring</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-stomp</artifactId>
+                <version>${activemq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq.protobuf</groupId>
+                <artifactId>activemq-protobuf</artifactId>
+                <version>${activemq-protobuf.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xbean</groupId>
@@ -1331,6 +1389,21 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-guava</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-parameter-names</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
@@ -2237,7 +2310,8 @@
                     <version>${maven-shade-plugin.version}</version>
                     <configuration>
                         <transformers>
-                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <transformer
+                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                 <mainClass>org.sonatype.haven.HavenCli</mainClass>
                             </transformer>
                         </transformers>

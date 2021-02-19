@@ -10,6 +10,7 @@
 package org.nrg.config.services.impl;
 
 import com.google.common.base.Joiner;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.DuplicateConfigurationDetectedException;
@@ -22,27 +23,23 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.prefs.services.NrgPreferenceService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.web.context.ServletContextAware;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 import java.io.*;
 import java.nio.file.Paths;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
 
 /**
  * Manages all of the implementation around retrieving properties files and converting them into properties that can be used in the site configuration service. The abstract methods defined by this class can be implemented to control how the persistent store is implemented.
  */
+@Slf4j
 public abstract class PropertiesBasedSiteConfigurationService implements InitializingBean, ServletContextAware, SiteConfigurationService {
     private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME = "site-config.properties";
     private static final String SITE_CONFIGURATION_PROPERTIES_PACKAGE  = "classpath*:META-INF/xnat/preferences/";
@@ -95,7 +92,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     @Override
     public void initSiteConfiguration() throws SiteConfigurationException {
         if (_siteConfiguration == null) {
-            _log.debug("Initializing the site configuration");
+            log.debug("Initializing the site configuration");
             if (_environment != null) {
                 _environment.getActiveProfiles();
             }
@@ -173,7 +170,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * {@inheritDoc}
      */
     @Override
-    public Properties getSiteConfiguration() throws SiteConfigurationException {
+    public Properties getSiteConfiguration() {
         checkSiteConfigurationInit();
         final Properties siteConfigurationCopy = new Properties();
         siteConfigurationCopy.putAll(_siteConfiguration);
@@ -184,7 +181,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * {@inheritDoc}
      */
     @Override
-    public String getSiteConfigurationProperty(String property) throws SiteConfigurationException {
+    public String getSiteConfigurationProperty(String property) {
         checkSiteConfigurationInit();
         return getSiteConfiguration().getProperty(property);
     }
@@ -194,13 +191,13 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      */
     @Override
     public void setSiteConfigurationProperty(final String username, final String property, final String value) throws SiteConfigurationException {
-        if (_log.isDebugEnabled()) {
-            _log.debug("The user {} is attempting to set the value of the {} property to the value {}", username, property, value);
+        if (log.isDebugEnabled()) {
+            log.debug("The user {} is attempting to set the value of the {} property to the value {}", username, property, value);
         }
         checkSiteConfigurationInit();
         if (propertyIsDirty(property, value)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("The property {} is dirty, actually setting it to the value {}", property, value);
+            if (log.isDebugEnabled()) {
+                log.debug("The property {} is dirty, actually setting it to the value {}", property, value);
             }
             setPreferenceValue(username, property, value);
             _siteConfiguration.setProperty(property, value);
@@ -213,13 +210,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      */
     @Override
     public boolean getBoolSiteConfigurationProperty(final String property, final boolean defaultValue) {
-        final String value;
-        try {
-            value = getSiteConfigurationProperty(property);
-        } catch (SiteConfigurationException e) {
-            _log.warn("An error occurred retrieving the site configuration property " + property + ", returning the submitted default value: " + defaultValue, e);
-            return defaultValue;
-        }
+        final String value = getSiteConfigurationProperty(property);
         return StringUtils.isBlank(value) ? defaultValue : BooleanUtils.toBoolean(value);
     }
 
@@ -227,7 +218,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * {@inheritDoc}
      */
     @Override
-    public Integer getIntegerSiteConfigurationProperty(final String property) throws SiteConfigurationException {
+    public Integer getIntegerSiteConfigurationProperty(final String property) {
         final String value = getSiteConfigurationProperty(property);
         return StringUtils.isNotBlank(value) ? Integer.parseInt(value) : null;
     }
@@ -236,7 +227,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * {@inheritDoc}
      */
     @Override
-    public Long getLongSiteConfigurationProperty(final String property) throws SiteConfigurationException {
+    public Long getLongSiteConfigurationProperty(final String property) {
         final String value = getSiteConfigurationProperty(property);
         return StringUtils.isNotBlank(value) ? Long.parseLong(value) : null;
     }
@@ -245,7 +236,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * {@inheritDoc}
      */
     @Override
-    public Float getFloatSiteConfigurationProperty(final String property) throws SiteConfigurationException {
+    public Float getFloatSiteConfigurationProperty(final String property) {
         final String value = getSiteConfigurationProperty(property);
         return StringUtils.isNotBlank(value) ? Float.parseFloat(value) : null;
     }
@@ -254,7 +245,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      * {@inheritDoc}
      */
     @Override
-    public Double getDoubleSiteConfigurationProperty(final String property) throws SiteConfigurationException {
+    public Double getDoubleSiteConfigurationProperty(final String property) {
         final String value = getSiteConfigurationProperty(property);
         return StringUtils.isNotBlank(value) ? Double.parseDouble(value) : null;
     }
@@ -325,11 +316,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     @Override
     public void setCustomPropertiesNamePattern(final String pattern) {
         _customPropertiesName = Pattern.compile(pattern);
-        _fileFilter = new FileFilter() {
-            public boolean accept(final File file) {
-                return file.exists() && file.isFile() && _customPropertiesName.matcher(file.getName()).matches();
-            }
-        };
+        _fileFilter = file -> file.exists() && file.isFile() && _customPropertiesName.matcher(file.getName()).matches();
     }
 
     /**
@@ -355,26 +342,21 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
      */
     protected Properties checkForConfigServiceSiteConfiguration() {
         if (_jdbcTemplate != null) {
-            @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-            final List<String> contents = _jdbcTemplate.query("SELECT d.contents FROM xhbm_configuration c, xhbm_configuration_data d WHERE c.path = 'siteConfiguration' AND c.config_data = d.id ORDER BY c.version DESC LIMIT 1", new RowMapper<String>() {
-                public String mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    return rs.getString(1);
-                }
-            });
+            @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"}) final List<String> contents = _jdbcTemplate.query("SELECT d.contents FROM xhbm_configuration c, xhbm_configuration_data d WHERE c.path = 'siteConfiguration' AND c.config_data = d.id ORDER BY c.version DESC LIMIT 1", (rs, rowNum) -> rs.getString(1));
             // By the nature of the query above, the size should only ever be 0 or 1.
             if (contents != null && contents.size() == 1) {
                 final Properties existing = new Properties();
                 try {
                     existing.load(new StringReader(contents.get(0)));
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Found {} properties stored in the configuration service-based site configuration.", existing.stringPropertyNames().size());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Found {} properties stored in the configuration service-based site configuration.", existing.stringPropertyNames().size());
                         for (final String property : existing.stringPropertyNames()) {
-                            _log.debug(" * Setting the {} property to value: ", property, existing.getProperty(property));
+                            log.debug(" * Setting the {} property to value: {}", property, existing.getProperty(property));
                         }
                     }
                     return existing;
                 } catch (IOException e) {
-                    _log.warn("Something went wrong trying to load properties from the existing configuration service-based site configuration.", e);
+                    log.warn("Something went wrong trying to load properties from the existing configuration service-based site configuration.", e);
                 }
             }
         }
@@ -466,7 +448,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
         prependConfigFilesLocationsRootToAllConfigFilesLocations();
 
         final Properties persistentProperties = getPropertiesFromStream(findSiteConfiguration());
-        final Properties transientProperties = new Properties();
+        final Properties transientProperties  = new Properties();
 
         try {
             processCustomProperties(persistentProperties, transientProperties);
@@ -482,7 +464,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
 
     private void processCustomProperties(final Properties persistentProperties, final Properties transientProperties) throws FileNotFoundException {
         final Map<String, File> customConfigPropertiesFileNames = new HashMap<>();
-        File overrideConfigFile = null;
+        File                    overrideConfigFile              = null;
         for (String configFilesLocationPath : _configFilesLocations) {
             final File configFilesLocation = new File(configFilesLocationPath);
             if (configFilesLocation.exists() && configFilesLocation.isDirectory()) {
@@ -511,19 +493,19 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     private void processSingleCustomPropertyFile(final Properties persistentProperties, final Properties transientProperties, File file) throws FileNotFoundException {
-        final String namespace = getNamespaceForCustomPropertyFile(file);
+        final String     namespace        = getNamespaceForCustomPropertyFile(file);
         final Properties customProperties = getPropertiesFromStream(new FileInputStream(file));
         for (final String rawPropertyName : customProperties.stringPropertyNames()) {
             final String polishedPropertyName = !rawPropertyName.startsWith(namespace) ? qualifyPropertyName(namespace, rawPropertyName) : rawPropertyName;
-            if (_log.isDebugEnabled()) {
-                _log.debug("Processing property: " + polishedPropertyName);
+            if (log.isDebugEnabled()) {
+                log.debug("Processing property: " + polishedPropertyName);
             }
             if (persistentProperties.containsKey(polishedPropertyName) || transientProperties.containsKey(polishedPropertyName)) {
                 throw new DuplicateConfigurationDetectedException(polishedPropertyName);
             } else if (polishedPropertyName.equals(CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME) || polishedPropertyName.equals(qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME))) {
                 // this is a meta-property: ignore
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Found persistence setting, ignoring meta-property");
+                if (log.isDebugEnabled()) {
+                    log.debug("Found persistence setting, ignoring meta-property");
                 }
             } else if (propertiesArePersistent(namespace, customProperties)) {
                 persistentProperties.setProperty(polishedPropertyName, customProperties.getProperty(rawPropertyName));
@@ -560,12 +542,13 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
         return namespace + "." + unqualifiedPropertyName;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean propertyExistsAndIsFalse(Properties props, String propName) {
         return props.getProperty(propName) != null && props.getProperty(propName).equalsIgnoreCase("FALSE");
     }
 
     private InputStream findSiteConfiguration() throws SiteConfigurationFileNotFoundException {
-        final List<File> siteConfigFiles = new ArrayList<>();
+        final List<File>        siteConfigFiles   = new ArrayList<>();
         final Map<String, File> notFoundLocations = new HashMap<>();
         for (final String configFilesLocationPath : _configFilesLocations) {
             final File potentialSiteConfigFile = new File(configFilesLocationPath, SITE_CONFIGURATION_PROPERTIES_FILENAME);
@@ -581,7 +564,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
         }
 
         if (notFoundLocations.size() > 0) {
-            _log.info("Found {} locations that didn't exist: {}", notFoundLocations.size(), Joiner.on(", ").join(notFoundLocations.keySet()));
+            log.info("Found {} locations that didn't exist: {}", notFoundLocations.size(), Joiner.on(", ").join(notFoundLocations.keySet()));
         }
 
         if (siteConfigFiles.size() == 0) {
@@ -590,7 +573,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
                 if (resources.size() == 0) {
                     throw new SiteConfigurationFileNotFoundException(SITE_CONFIGURATION_PROPERTIES_FILENAME, _configFilesLocations);
                 } else if (resources.size() > 1) {
-                    _log.warn("I somehow managed to find more than one site configuration file, {} to be exact: {}", resources.size(), Joiner.on(", ").join(resources));
+                    log.warn("I somehow managed to find more than one site configuration file, {} to be exact: {}", resources.size(), Joiner.on(", ").join(resources));
                 }
                 return resources.get(0).getInputStream();
             } catch (IOException e) {
@@ -616,8 +599,6 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(PropertiesBasedSiteConfigurationService.class);
-
     private static final String CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME = "persist";
     private static final String PROPERTY_CHANGED_LISTENER_PROPERTY         = "property.changed.listener";
 
@@ -626,8 +607,8 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     private ServletContext _context;
     private String         _configFilesLocationsRoot;
 
-    private Properties   _siteConfiguration    = null;
-    private List<String> _configFilesLocations = new ArrayList<>();
-    private FileFilter   _fileFilter           = CUSTOM_PROPERTIES_FILTER;
-    private Pattern      _customPropertiesName = CUSTOM_PROPERTIES_NAME;
+    private final List<String> _configFilesLocations = new ArrayList<>();
+    private       Properties   _siteConfiguration    = null;
+    private       FileFilter   _fileFilter           = CUSTOM_PROPERTIES_FILTER;
+    private       Pattern      _customPropertiesName = CUSTOM_PROPERTIES_NAME;
 }

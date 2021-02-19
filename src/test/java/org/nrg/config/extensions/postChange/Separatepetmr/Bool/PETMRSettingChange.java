@@ -9,14 +9,13 @@
 
 package org.nrg.config.extensions.postChange.Separatepetmr.Bool;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.config.entities.Configuration;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.impl.DefaultConfigService;
 import org.nrg.framework.constants.Scope;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unused")
+@Slf4j
 public class PETMRSettingChange implements DefaultConfigService.ConfigurationModificationListenerI {
 
     public static int getChanges() {
@@ -24,12 +23,10 @@ public class PETMRSettingChange implements DefaultConfigService.ConfigurationMod
     }
 
     @Override
-    public void execute(Configuration config) throws ConfigServiceException {
+    public void execute(Configuration config) {
         //config is site wide when config.getProject()==null
-        _log.info("PET-MR setting modified to " + config.getContents() + " for " + (config.getScope() == Scope.Site ? "site-wide configuration" : config.getEntityId()) + ". This is change #" + ++_changes);
+        log.info("PET-MR setting modified to {} for {}. This is change #{}", config.getContents(), config.getScope() == Scope.Site ? "site-wide configuration" : config.getEntityId(), ++_changes);
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(PETMRSettingChange.class);
 
     private static int _changes = 0;
 }

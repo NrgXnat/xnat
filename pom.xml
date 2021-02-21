@@ -17,7 +17,7 @@
     </parent>
 
     <artifactId>ExtAttr</artifactId>
-    <version>${nrg.extattr.version}</version>
+    <version>4.2.6</version>
 
     <name>External Attribute library</name>
     <description>

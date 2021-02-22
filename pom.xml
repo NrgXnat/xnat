@@ -355,7 +355,7 @@
             <dependency>
                 <groupId>org.nrg.dicom</groupId>
                 <artifactId>pixelEditor</artifactId>
-                <version>${nrg.dicom.pixeleditor}</version>
+                <version>${nrg.dicom.pixeleditor.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>

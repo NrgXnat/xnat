@@ -162,6 +162,7 @@ public class EventUtils {
 	public static final String ARCPUT="ArcPut";
 	public static final String RENAME="Renamed";
 	public static final String TRANSFER="Transferred";
+	public static final String MERGE="Merged";
 	public static final String TRIGGER_PIPELINES="Triggered Pipelines";
 	public static final String DICOM_PULL="Pulled Data from DICOM";
 	

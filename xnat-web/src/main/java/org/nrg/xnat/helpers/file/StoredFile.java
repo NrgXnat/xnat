@@ -15,7 +15,7 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import java.io.*;
 
 public class StoredFile implements FileWriterWrapperI, Serializable {
-    private static final long serialVersionUID = 42L;
+    private static final long serialVersionUID = 43L;
     private final File stored;
     private final boolean overwrite;
     private final String nestedPath;
@@ -39,7 +39,7 @@ public class StoredFile implements FileWriterWrapperI, Serializable {
 	public void write(File f) throws IOException {
 		if(f.isDirectory()||stored.isDirectory()){
 			if (isReference) {
-			org.nrg.xft.utils.FileUtils.MoveDir(stored, f, overwrite);
+				org.nrg.xft.utils.FileUtils.MoveDir(stored, f, overwrite);
 		    }else{
                 org.nrg.xft.utils.FileUtils.CopyDir(stored, f, overwrite);
             }
@@ -64,8 +64,12 @@ public class StoredFile implements FileWriterWrapperI, Serializable {
 	public InputStream getInputStream() throws IOException {
 		return new FileInputStream(stored);
 	}
-	
-    @Override
+
+	public File getStored() {
+		return stored;
+	}
+
+	@Override
 	public void delete() {
 		if(stored.exists()) {
             FileUtils.deleteQuietly(stored);

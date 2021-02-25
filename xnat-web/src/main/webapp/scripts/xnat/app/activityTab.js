@@ -274,7 +274,7 @@ var XNAT = getObject(XNAT);
         } else {
             return '<div class="prog error">Extraction/Review failed: ' + message + '</div>' +
                 '<div class="warning">Check the ' + prearchiveLink +
-                ', your data may be available there for manual review.</div>';
+                ', DICOM/ECAT data may be available there for manual review.</div>';
         }
     }
 

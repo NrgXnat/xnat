@@ -46,8 +46,8 @@ abu.FileUploader = function(o){
 	this.buildUploaderDiv = function() {
 		$(this._options.element).append(
 			'<div class="abu-uploader">' +
-				'<div id="abu-files-processing" class="abu-files-processing">        Processing...... </div>' +
-				'<a id="file-uploader-instructions-sel" class="abu-uploader-instructions-sel" onclick="abu._fileUploader.uploaderHelp()"><span class="icon icon-sm icon-qm"></span>Help</a>' +
+				'<div id="abu-files-processing" class="abu-files-processing">Processing...... </div>' +
+				'<a id="file-uploader-instructions-sel" class="abu-uploader-instructions-sel"><span class="icon icon-sm icon-qm"></span>Help</a>' +
 				'<div class="abu-upload-drop-area" style="display: none;"><span>Drop files here to upload</span></div>' +
 				'<div class="abu-xnat-interactivity-area">' +
 					'<div class="abu-xnat-interactivity-area-contents"></div>' +
@@ -109,6 +109,26 @@ abu.FileUploader = function(o){
 		$("#" + this.elementId + " #closeBox").change(function(){
 			this.updateOptionStatus();
 		 }.bind(this));
+
+		$('.abu-uploader-instructions-sel').click(function() {
+			var templateV=
+				'<div id="file-uploader-instructions" class="abu-uploader-instructions">' +
+				'<h3>Instructions</h3>' +
+				'<ul>' +
+				((this.ALLOW_DRAG_AND_DROP) ?
+					'<li>To upload, click the <b>Upload Files</b> button or drag files into the space below the buttons. (Drag-and-drop is supported in FF, Chrome.)</li>' :
+					'<li>To upload, click the <b>Upload Files</b> to begin selection of files for upload.</li>') +
+				((this._options.maxFiles == 1) ?
+						'<li>This uploader supports only a single file upload</li>' :
+						'<li>Multiple files may be selected</li>'
+				) +
+				'<li>Uploads will begin automatically</li>' +
+				'<li>Upload of directories is not supported</li>' +
+				'<li>When finished uploading, press <b>Done</b> to close the modal, or, if an automation script is to be launched by this upload process, press <b>Process Files</b> to process the uploaded files.</li>' +
+				'</ul>' +
+				'</div>';
+			xmodal.message("Uploader Instructions",templateV, undefined, {height:"400px",width:"800px"});
+		}.bind(this));
 
 		this.updateOptionStatus();
 
@@ -200,7 +220,7 @@ abu.FileUploader = function(o){
 				this.doFileUpload(fileA);
 			}
 		}.bind(this));
-	}
+	}.bind(this);
 
 	this.processingComplete = function() {
 		// $("#xmodal-abu-done-button").html("Done");
@@ -507,26 +527,6 @@ abu.FileUploader = function(o){
 			this.uploadsInProgress--;
 		}
 		this.manageUploads();
-	}.bind(this);
-
-	this.uploaderHelp=function() {
-		var templateV=
-			'<div id="file-uploader-instructions" class="abu-uploader-instructions">' +
-			'<h3>Instructions</h3>' +
-			'<ul>' +
-			((this.ALLOW_DRAG_AND_DROP) ?
-			'<li>To upload, click the <b>Upload Files</b> button or drag files into the space below the buttons. (Drag-and-drop is supported in FF, Chrome.)</li>' :
-			'<li>To upload, click the <b>Upload Files</b> to begin selection of files for upload.</li>') +
-			((this._options.maxFiles == 1) ?
-				'<li>This uploader supports only a single file upload</li>' :
-				'<li>Multiple files may be selected</li>'
-			) +
-			'<li>Uploads will begin automatically</li>' +
-			'<li>Upload of directories is not supported</li>' +
-			'<li>When finished uploading, press <b>Done</b> to close the modal, or, if an automation script is to be launched by this upload process, press <b>Process Files</b> to process the uploaded files.</li>' +
-			'</ul>' +
-			'</div>';
-		xmodal.message("Uploader Instructions",templateV, undefined, {height:"400px",width:"800px"});
 	}.bind(this);
 }
 

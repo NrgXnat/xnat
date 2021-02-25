@@ -47,8 +47,8 @@ import org.restlet.data.Status;
 import javax.annotation.Nullable;
 
 public class PrearcImporterHelper extends PrearcImporterA{
-    private static final String SESSION = "session";
-	private static final String SUBJECT = "subject";
+    public static final String SESSION = "session";
+	public static final String SUBJECT = "subject";
 	static org.apache.log4j.Logger logger = Logger.getLogger(PrearcImporterHelper.class);
 	
 	

@@ -38,10 +38,23 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
         } else {
             loc = 'project: ' + config.project;
         }
+
+        let isDicomOrEcat = true;
         let importHandler = 'DICOM or ECAT';
         if (config['import-handler']) {
             importHandler = config['import-handler'];
+            isDicomOrEcat = false;
         }
+        const messages = [
+            spawn('p', ['Upload compressed ' + importHandler + ' image files to your ' +
+                loc.replace(/:.*/,'')])
+        ];
+        if (isDicomOrEcat) {
+            messages.push(spawn('p', ['Review ', spawn('a|href="' +
+                XNAT.url.fullUrl('/app/template/UploadOptions.vm') +
+                '"', {}, 'alternative upload options'), '.']));
+        }
+        messages.push(spawn('div#' + abuId));
 
         function cancel() {
             abu._imageUploader.cancelUploads();
@@ -59,13 +72,7 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
             id: id,
             kind: 'dialog',
             title: 'Upload images to ' + loc,
-            content: spawn('div', [
-                spawn('p', ['Upload zipped (.zip or .tar.gz) ' + importHandler + ' image files to your ' +
-                    loc.replace(/:.*/,'')]),
-                spawn('p', ['Review ', spawn('a|href="' + XNAT.url.fullUrl('/app/template/UploadOptions.vm')
-                    + '"', {}, 'alternative upload options'), '.']),
-                spawn('div#' + abuId)
-            ]).outerHTML,
+            content: spawn('div', messages).outerHTML,
             beforeShow: function(obj) {
                 obj.$modal.find('#' + id + '-done-button').hide();
                 obj.$modal.find('#' + id + '-process-button').prop('disabled', true);

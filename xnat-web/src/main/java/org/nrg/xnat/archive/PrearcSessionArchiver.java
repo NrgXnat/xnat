@@ -76,8 +76,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PrearcSessionArchiver extends ArchiveStatusProducer implements Callable<String> {
 
-    public static final String MERGED = "Merged";
-
     public static final String MERGED_UID = "Merged UIDs";
 
     private static final String TRIGGER_PIPELINES = "triggerPipelines";
@@ -483,7 +481,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 if (justification == null) {
                     justification = "standard upload";
                 }
-                workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, ((existing == null) ? src.getItem() : existing.getItem()), EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String) params.get(EventUtils.EVENT_TYPE), EventUtils.TYPE.WEB_SERVICE), (existing == null) ? EventUtils.TRANSFER : MERGED, justification, (String) params.get(EventUtils.EVENT_COMMENT)));
+                workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, ((existing == null) ? src.getItem() : existing.getItem()), EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String) params.get(EventUtils.EVENT_TYPE), EventUtils.TYPE.WEB_SERVICE), (existing == null) ? EventUtils.TRANSFER : EventUtils.MERGE, justification, (String) params.get(EventUtils.EVENT_COMMENT)));
                 if (workflow == null) {
                     throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Unable to create workflow");
                 }

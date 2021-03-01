@@ -1,7 +1,10 @@
 var XNAT = getObject(XNAT);
 XNAT.app = getObject(XNAT.app || {});
-XNAT.app.imageUploader = getObject(XNAT.app.imageUploader || {});
-XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap || {});
+XNAT.app.upload = getObject(XNAT.app.upload || {});
+XNAT.app.upload.imageUploader = getObject(XNAT.app.upload.imageUploader || {});
+XNAT.app.upload.datatypeHandlerMap = getObject(XNAT.app.upload.datatypeHandlerMap || {});
+XNAT.app.upload.projectHandlerMap = getObject(XNAT.app.upload.projectHandlerMap || {});
+XNAT.app.upload.defaultStr = "DEFAULT";
 
 (function(factory){
     if (typeof define === 'function' && define.amd) {
@@ -25,7 +28,7 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
         abuId = 'projuploader-modal-abu',
         interval;
 
-    XNAT.app.imageUploader.openUploadModal = function(config) {
+    XNAT.app.upload.imageUploader.openUploadModal = function(config) {
         uploadName = 'upload' + getDateBasedId();
         usrResPath = '/user/cache/resources/' + uploadName + '/files/' + fNameReplace;
         uploaderUrl = XNAT.url.csrfUrl('/data' + usrResPath).replace(fNameReplace, '##FILENAME_REPLACE##');
@@ -260,7 +263,7 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
         return (new Date()).toISOString().replace(/[^\w]/gi,'');
     }
 
-    XNAT.app.imageUploader.openUploadViaDesktopClient = function(config) {
+    XNAT.app.upload.imageUploader.openUploadViaDesktopClient = function(config) {
         XNAT.xhr.get({
             url: XNAT.url.rootUrl('/data/services/tokens/issue'),
             fail: function(e){
@@ -296,17 +299,76 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
         });
     };
 
-    XNAT.app.imageUploader.uploadImages = function(config) {
-        const datatype = config.datatype;
-        // If import handler is not specified, let's see if we have a mapping for the data type
-        if (!config['import-handler'] && datatype && XNAT.app.uploadDatatypeHandlerMap.hasOwnProperty(datatype)) {
-            config['import-handler'] = XNAT.app.uploadDatatypeHandlerMap[datatype];
+    XNAT.app.upload.imageUploader.getProjectConfig = function(project, callbackSuccess, callbackError) {
+        $.ajax({
+            url: XNAT.url.rootUrl('/data/projects/' + project + '/config/upload/handlers?contents=true'),
+            success: function(data) {
+                XNAT.app.upload.projectHandlerMap[project] = JSON.parse(data);
+                callbackSuccess();
+            },
+            error: function(xhr) {
+                if (xhr.status === 404) {
+                    XNAT.app.upload.projectHandlerMap[project] = XNAT.app.upload.defaultStr;
+                    callbackSuccess();
+                } else {
+                    callbackError();
+                    XNAT.ui.dialog.message("Unable to determine project upload handlers",
+                        "Unable to retrieve project upload handlers from config service: " + xhr.responseText)
+                }
+            }
+        });
+    }
+
+    function findHandlerForDataTypeByProject(project, datatype) {
+        const projectUploaders = XNAT.app.upload.projectHandlerMap[project];
+        if (projectUploaders === XNAT.app.upload.defaultStr) {
+            return null;
         }
+        let handler = null;
+        $.each(projectUploaders, function(key, value) {
+            if (value === datatype) {
+                handler = key;
+                return false;
+            }
+        });
+        return handler;
+    }
+
+    function addHandlerToConfigAndRunCallback(config, callback) {
+        let handler = findHandlerForDataTypeByProject(config.project, config.datatype);
+        if (!handler) {
+            handler = XNAT.app.upload.datatypeHandlerMap[config.datatype];
+        }
+        if (handler) {
+            config['import-handler'] = handler;
+        }
+        callback(config);
+    }
+
+    XNAT.app.upload.imageUploader.determineHandler = function(config, callback) {
+        if (XNAT.app.upload.projectHandlerMap.hasOwnProperty(config.project)) {
+            addHandlerToConfigAndRunCallback(config, callback);
+        } else {
+            const waitDialog = XNAT.ui.dialog.static.wait('Determining handler...');
+            XNAT.app.upload.imageUploader.getProjectConfig(config.project, function() {
+                addHandlerToConfigAndRunCallback(config, callback);
+                waitDialog.close();
+            }, function() {waitDialog.close()})
+        }
+    }
+
+    XNAT.app.upload.imageUploader.uploadImages = function(config) {
+        // If import handler is not specified, let's see if we have a mapping for the datatype
+        if (!config['import-handler'] && config.datatype) {
+            XNAT.app.upload.imageUploader.determineHandler(config, XNAT.app.upload.imageUploader.openUploadModal);
+            return;
+        }
+
         // If no import handler and config.modal undefined or false, open Desktop Client
         if (!config['import-handler'] && (!config.modal || config.modal === "false")) {
-            XNAT.app.imageUploader.openUploadViaDesktopClient(config);
+            XNAT.app.upload.imageUploader.openUploadViaDesktopClient(config);
         } else {
-            XNAT.app.imageUploader.openUploadModal(config);
+            XNAT.app.upload.imageUploader.openUploadModal(config);
         }
     };
 
@@ -318,6 +380,6 @@ XNAT.app.uploadDatatypeHandlerMap = getObject(XNAT.app.uploadDatatypeHandlerMap 
             let newKey = k.replace(/([a-zA-Z])(?=[A-Z])/g, '$1-').toLowerCase();
             config[newKey] = v;
         });
-        XNAT.app.imageUploader.uploadImages(config);
+        XNAT.app.upload.imageUploader.uploadImages(config);
     });
 }));

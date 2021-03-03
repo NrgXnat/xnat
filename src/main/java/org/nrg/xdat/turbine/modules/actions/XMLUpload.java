@@ -10,6 +10,8 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
+import static org.nrg.xdat.turbine.modules.screens.XMLUpload.MESSAGE_NO_GUEST_PERMISSIONS;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +28,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
@@ -36,7 +39,6 @@ import java.io.IOException;
 
 /**
  * @author Tim
- *
  */
 @Slf4j
 @SuppressWarnings("unused")
@@ -45,21 +47,27 @@ public class XMLUpload extends SecureAction {
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void doPerform(final RunData data, final Context context) throws Exception {
-//      get the ParameterParser from RunData
+        final UserI user = getUser();
+        if (user.isGuest()) {
+            handleInvalidPermissions(data);
+            return;
+        }
+
+        // get the ParameterParser from RunData
         final ParameterParser params = data.getParameters();
 
         //grab the FileItems available in ParameterParser
-        final FileItem fileItem = params.getFileItem("xml_to_store");
-        final ValidationHandler handler = new XMLValidator().validateInputStream(fileItem.getInputStream());
-        if(!handler.assertValid()){
+        final FileItem          fileItem = params.getFileItem("xml_to_store");
+        final ValidationHandler handler  = new XMLValidator().validateInputStream(fileItem.getInputStream());
+        if (!handler.assertValid()) {
             throw handler.getErrors().get(0);
         }
 
-        final String allowDeletion = (String)TurbineUtils.GetPassedParameter("allowdeletion",data);
-        final SAXReader reader = new SAXReader(XDAT.getUserDetails());
-        XFTItem   item = null;
+        final String    allowDeletion = (String) TurbineUtils.GetPassedParameter("allowdeletion", data);
+        final SAXReader reader        = new SAXReader(XDAT.getUserDetails());
+        XFTItem         item          = null;
         if (allowDeletion != null) {
-    	    try {
+            try {
                 item = reader.parse(fileItem.getInputStream());
                 log.info("Loaded XML Item: {}", item.getProperName());
 
@@ -68,7 +76,7 @@ public class XMLUpload extends SecureAction {
                     log.info("Validation: PASSED");
 
                     SaveItemHelper.unauthorizedSave(item, XDAT.getUserDetails(), false, item.getGenericSchemaElement().isQuarantine(), false, allowDeletion.equalsIgnoreCase("true"), newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XML));
-                	
+
                     log.info("Item Successfully Stored.");
 
                     final RunData           searchData = TurbineUtils.SetSearchProperties(data, item);
@@ -76,7 +84,7 @@ public class XMLUpload extends SecureAction {
                     dia.doPerform(searchData, context);
                     postProcessing(item);
                 } else {
-                	throw new ValidationException(vr);
+                    throw new ValidationException(vr);
                 }
             } catch (IOException e) {
                 log.error("", e);
@@ -88,28 +96,27 @@ public class XMLUpload extends SecureAction {
                 log.error("", e);
                 data.setScreenTemplate("Error.vm");
                 data.setMessage("XML Validation Exception.<BR>" + e.getValidation().toHTML());
-    		} catch (Exception e) {
-    		    if (e instanceof SAXParseException)
-				{
+            } catch (Exception e) {
+                if (e instanceof SAXParseException) {
                     log.error("", e);
                     data.setScreenTemplate("Error.vm");
                     data.setMessage("SAX Parser Exception.<BR><BR>" + e.getMessage());
-				}else if (item != null && e instanceof InvalidPermissionException){
-				    log.error("", e);
+                } else if (item != null && e instanceof InvalidPermissionException) {
+                    log.error("", e);
                     data.setScreenTemplate("Error.vm");
-                    final StringBuilder message = new StringBuilder("Permissions Exception.<BR><BR>").append(e.getMessage());
-                    final SchemaElement   se = SchemaElement.GetElement(item.getXSIType());
-                    final ElementSecurity es =se.getElementSecurity();
-                    if(es!=null && es.getSecurityFields()!=null){
-                    	message.append("<BR><BR>Please review the security field (").append(se.getElementSecurity().getSecurityFields()).append(") for this data type.");
-                    	message.append(" Verify that the data reflects a currently stored value and the user has relevant permissions for this data.");
+                    final StringBuilder   message = new StringBuilder("Permissions Exception.<BR><BR>").append(e.getMessage());
+                    final SchemaElement   se      = SchemaElement.GetElement(item.getXSIType());
+                    final ElementSecurity es      = se.getElementSecurity();
+                    if (es != null && es.getSecurityFields() != null) {
+                        message.append("<BR><BR>Please review the security field (").append(se.getElementSecurity().getSecurityFields()).append(") for this data type.");
+                        message.append(" Verify that the data reflects a currently stored value and the user has relevant permissions for this data.");
                     }
                     data.setMessage(message.toString());
-				}else{
-	                log.error("", e);
-	                data.setScreenTemplate("Error.vm");
-	                data.setMessage(e.getMessage());
-				}
+                } else {
+                    log.error("", e);
+                    data.setScreenTemplate("Error.vm");
+                    data.setMessage(e.getMessage());
+                }
             }
         }
     }
@@ -120,5 +127,10 @@ public class XMLUpload extends SecureAction {
             StringUtils.equalsAny(schemaElement.getFullXMLName(), "xnat:investigatorData", "xnat:projectData")) {
             ElementSecurity.refresh();
         }
+    }
+
+    private void handleInvalidPermissions(final RunData data) {
+        data.setScreenTemplate("Error.vm");
+        data.setMessage("Permissions Exception.<BR><BR>" + MESSAGE_NO_GUEST_PERMISSIONS);
     }
 }

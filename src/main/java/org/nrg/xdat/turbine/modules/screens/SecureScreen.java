@@ -9,6 +9,9 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.commons.lang3.ObjectUtils;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.Reflection;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -29,6 +32,9 @@ import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.entities.ThemeConfig;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -47,6 +53,7 @@ import org.springframework.security.core.session.SessionRegistryImpl;
 
 import com.google.common.collect.Maps;
 
+import javax.annotation.Nonnull;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -67,6 +74,15 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     @SuppressWarnings("unused")
     public String getReason(RunData data) {
         return (String) TurbineUtils.GetPassedParameter(EventUtils.EVENT_REASON, data);
+    }
+
+    @Nonnull
+    protected UserI getUser() {
+        try {
+            return ObjectUtils.defaultIfNull(XDAT.getUserDetails(), Users.getGuest());
+        } catch (UserNotFoundException | UserInitException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "An error occurred retrieving the user principal.", e);
+        }
     }
 
     protected void error(Exception e, RunData data) {

@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
+import static org.nrg.xdat.turbine.modules.screens.XMLUpload.MESSAGE_NO_GUEST_PERMISSIONS;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang3.BooleanUtils;
@@ -24,6 +26,7 @@ import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.*;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.xml.sax.SAXParseException;
 
@@ -44,29 +47,34 @@ public class XMLUpload extends SecureAction {
      * org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache
      * .turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(final RunData data, final Context context) throws Exception {
+        final UserI user = getUser();
+        if (user.isGuest()) {
+            handleInvalidPermissions(data, null, MESSAGE_NO_GUEST_PERMISSIONS);
+            return;
+        }
+
         // get the ParameterParser from RunData
-        final ParameterParser parameters = data.getParameters();
-        final FileItem fileItem = parameters.getFileItem("xml_to_store");
-        final String allowDeletion = (String) TurbineUtils.GetPassedParameter("allowdeletion", data);
+        final ParameterParser parameters    = data.getParameters();
+        final FileItem        fileItem      = parameters.getFileItem("xml_to_store");
+        final String          allowDeletion = (String) TurbineUtils.GetPassedParameter("allowdeletion", data);
 
         if (fileItem != null && allowDeletion != null) {
             if (fileItem.getSize() == 0) {
                 data.setScreenTemplate("Error.vm");
                 data.setMessage("The file you uploaded appears to be empty. Please verify that your file contains valid XML.");
                 final Map<String, String> links = new HashMap<>();
-                links.put(getLink(context, "XMLUpload.vm"), "Return to the XML Upload page");
+                links.put(getLink(context), "Return to the XML Upload page");
                 context.put("links", links);
                 return;
             }
 
             XFTItem item = null;
             try {
-                item = getCatalogService().insertXmlObject(XDAT.getUserDetails(), fileItem.getInputStream(), BooleanUtils.toBoolean(allowDeletion), TurbineUtils.GetTurbineParameters(data, context));
+                item = getCatalogService().insertXmlObject(user, fileItem.getInputStream(), BooleanUtils.toBoolean(allowDeletion), TurbineUtils.GetTurbineParameters(data, context));
 
                 final DisplayItemAction displayItemAction = new DisplayItemAction();
-                data = TurbineUtils.SetSearchProperties(data, item);
-                displayItemAction.doPerform(data, context);
+                displayItemAction.doPerform(TurbineUtils.SetSearchProperties(data, item), context);
             } catch (IOException e) {
                 log.error("", e);
                 data.setScreenTemplate("Error.vm");
@@ -90,22 +98,12 @@ public class XMLUpload extends SecureAction {
                 }
                 data.setScreenTemplate("Error.vm");
                 final Map<String, String> links = new HashMap<>();
-                links.put(getLink(context, "XMLUpload.vm"), "Return to the XML Upload page");
+                links.put(getLink(context), "Return to the XML Upload page");
                 context.put("links", links);
                 log.error("", e);
             } catch (InvalidPermissionException e) {
-                log.error("The user {} tried to perform an illegal operation when uploading XML", getUser().getUsername(), e);
-                data.setScreenTemplate("Error.vm");
-                final StringBuilder message = new StringBuilder("Permissions Exception.<BR><BR>").append(e.getMessage());
-                if (item != null) {
-                    final SchemaElement se = SchemaElement.GetElement(item.getXSIType());
-                    final ElementSecurity es = se.getElementSecurity();
-                    if (es != null && es.getSecurityFields() != null) {
-                        message.append("<BR><BR>Please review the security field (").append(se.getElementSecurity().getSecurityFields()).append(") for this data type.");
-                        message.append(" Verify that the data reflects a currently stored value and the user has relevant permissions for this data.");
-                    }
-                }
-                data.setMessage(message.toString());
+                log.error("The user {} tried to perform an illegal operation when uploading XML", user.getUsername(), e);
+                handleInvalidPermissions(data, item, e.getMessage());
             } catch (Exception e) {
                 log.error("", e);
                 data.setScreenTemplate("Error.vm");
@@ -114,11 +112,27 @@ public class XMLUpload extends SecureAction {
         }
     }
 
+    private void handleInvalidPermissions(final RunData data, final XFTItem item, final String note) throws XFTInitException, ElementNotFoundException {
+        data.setScreenTemplate("Error.vm");
+        final StringBuilder message = new StringBuilder("Permissions Exception.<BR><BR>").append(note);
+        if (item != null) {
+            final SchemaElement   se = SchemaElement.GetElement(item.getXSIType());
+            final ElementSecurity es = se.getElementSecurity();
+            if (es != null && es.getSecurityFields() != null) {
+                message.append("<BR><BR>Please review the security field (").append(se.getElementSecurity().getSecurityFields()).append(") for this data type.");
+                message.append(" Verify that the data reflects a currently stored value and the user has relevant permissions for this data.");
+            }
+        }
+        data.setMessage(message.toString());
+    }
+
     private CatalogService getCatalogService() {
         return XDAT.getContextService().getBean(CatalogService.class);
     }
 
-    private String getLink(final Context context, final String template) {
-        return ((TemplateLink) context.get("link")).setPage(template).getLink();
+    private String getLink(final Context context) {
+        return ((TemplateLink) context.get("link")).setPage(TEMPLATE).getLink();
     }
+
+    private static final String TEMPLATE = "XMLUpload.vm";
 }

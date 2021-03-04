@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.security;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +25,7 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.initialization.XnatWebAppInitializer;
 import org.nrg.xnat.services.validation.DateValidation;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +47,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection", "unused", "SameParameterValue", "SqlResolve"})
 @Slf4j
@@ -69,7 +70,15 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         // Regardless of why you're here, we're going to do this.
         final Cookie cookie = new Cookie(COOKIE_SESSION_EXPIRATION_TIME, new Date().getTime() + "," + session.getMaxInactiveInterval() * 1000);
         cookie.setPath(request.getContextPath() + "/");
-        cookie.setSecure(true);
+
+        // Check if this is a secure request.
+        final boolean isSecureRequest = StringUtils.startsWithIgnoreCase(request.getRequestURI(), "https");
+        // See if we allow insecure cookies.
+        final boolean allowInsecureCookies = !XnatWebAppInitializer.getServletContext().getSessionCookieConfig().isSecure();
+        // If the request isn't secure AND we allow insecure cookies, then make this cookie insecure.
+        final boolean isSecureExpirationCookie = !(!isSecureRequest && allowInsecureCookies);
+        cookie.setSecure(isSecureExpirationCookie);
+
         response.addCookie(cookie);
         log.debug("Updated session expiration time cookie '{}' to value '{}'.", cookie.getName(), cookie.getValue());
 

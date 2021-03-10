@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.archive;
 
+import static org.nrg.dcm.xnat.CatalogBuilder.*;
 import static org.nrg.xft.event.XftItemEventI.CREATE;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
@@ -24,7 +25,6 @@ import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
@@ -68,6 +68,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -750,29 +751,27 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         for (final XnatImagescandataI scan : src.getScans_scan()) {
             for (final XnatAbstractresourceI resource : scan.getFile()) {
                 if (resource instanceof XnatResourcecatalogI) {
-                    final File catalogFile = CatalogUtils.getCatalogFile(project, src.getPrearchivepath(), (XnatResourcecatalogI) resource);
-                    if (catalogFile == null || !catalogFile.exists()) {
+                    final CatalogUtils.CatalogData catalogData;
+                    try {
+                        catalogData = CatalogUtils.CatalogData.getOrCreate(src.getPrearchivepath(),
+                                (XnatResourcecatalogI) resource, project);
+                    } catch (ServerException e) {
                         warn(21, "Expected a catalog file, however it was missing.");
+                        continue;
                     }
 
-                    if (catalogFile != null) {
-                        final List<String> unreferenced = CatalogUtils.getUnreferencedFiles(catalogFile.getParentFile(), project);
-                        if (unreferenced.size() > 0) {
-                            warn(20, String.format("Scan %1$s has %2$s non-%3$s (or non-parsable %3$s) files", scan.getId(), unreferenced.size(), resource.getLabel()));
-                        }
+                    final List<String> unreferenced = CatalogUtils.getUnreferencedFiles(new File(catalogData.catPath), project);
+                    if (unreferenced.size() > 0) {
+                        warn(20, String.format("Scan %1$s has %2$s non-%3$s (or non-parsable %3$s) files", scan.getId(), unreferenced.size(), resource.getLabel()));
                     }
 
-                    if (StringUtils.equals(resource.getLabel(), "DICOM") && catalogFile != null) {
+                    if (StringUtils.equals(resource.getLabel(), RESOURCE_LABEL_DICOM)) {
                         //check for entries that aren't DICOM entries or don't have a UID stored
-                        final CatCatalogI catalog = CatalogUtils.getCatalog(catalogFile, project);
-                        if (catalog != null) {
-                            final Collection<CatEntryI> nonDicom = CatalogUtils.getEntriesByFilter(catalog, entry -> ((!(entry instanceof CatDcmentryI)) || StringUtils.isEmpty(((CatDcmentryI) entry).getUid())));
+                        final CatCatalogI catalog = catalogData.catBean;
+                        final Collection<CatEntryI> nonDicom = CatalogUtils.getEntriesByFilter(catalog, entry -> ((!(entry instanceof CatDcmentryI)) || StringUtils.isEmpty(((CatDcmentryI) entry).getUid())));
 
-                            if (!nonDicom.isEmpty()) {
-                                warn(20, String.format("Scan %1$s has %2$s non-DICOM (or non-parsable DICOM) files", scan.getId(), nonDicom.size()));
-                            }
-                        } else {
-                            log.warn("No catalog found for the file {}", catalogFile);
+                        if (!nonDicom.isEmpty()) {
+                            warn(20, String.format("Scan %1$s has %2$s non-DICOM (or non-parsable DICOM) files", scan.getId(), nonDicom.size()));
                         }
                     }
                 }
@@ -839,7 +838,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             if (needsMove) {
                 //the scan id conflicted with a pre-existing one, so we have to rename this one.
                 processing("Renaming scan " + newScan.getId() + " to " + scan_id + " due to ID conflict.");
-                moveScan(newScan, scan_id, (scan_stub == null ? original_scan_id : scan_stub), null);
+                moveScan(newScan, scan_id, original_scan_id, null);
             }
         }
 
@@ -848,23 +847,13 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             final XnatImagescandataI newScan = prexistingMatch.get(0);
             final XnatImagescandataI match   = prexistingMatch.get(1);
 
-            String modalityCode = (newScan.getXSIType().startsWith("xnat:")) ? newScan.getXSIType().substring(5, 7).toUpperCase() : "";
-            if ("PE".equals(modalityCode)) {
-                modalityCode = "PT";//this works for everything but PET, which gets called PE instead of PT, so we correct it.
-            }
-
-            String scan_stub = null;
-            if (match.getId().matches(".-" + modalityCode + "[0-9]+$")) {
-                scan_stub = match.getId().substring(0, match.getId().lastIndexOf("-"));
-            }
-
             //use same catalog path as existing resource
             final XnatResourcecatalog cat          = (XnatResourcecatalog) match.getFile().get(0);
             final String              archivedPath = cat.getUri();
-            final String              partialPath  = archivedPath.substring(archivedPath.lastIndexOf("SCANS"));
+            final String              partialPath  = archivedPath.substring(archivedPath.lastIndexOf(SCANS_DIR));
 
             processing("Renaming scan " + newScan.getId() + " to " + match.getId() + " due to UID match.");
-            moveScan(newScan, match.getId(), (scan_stub == null ? match.getId() : scan_stub), partialPath);
+            moveScan(newScan, match.getId(), newScan.getId(), partialPath);
 
             usedIds.add(match.getId());
         }
@@ -875,70 +864,81 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
      * Used to move a scan to a different scan ID within the prearchive, prior to transfer
      *
      * @param srcScan     The new scan to move to.
-     * @param destScan_id The new scan ID.
-     * @param srcScanId   The new scan ID without the auto-incremented value that's on the end of some scan ids
+     * @param destScanId  The new scan ID.
+     * @param srcScanId   The original scan ID
+     * @param destScanCatalogPath Destination for new catalog
      *
      * @throws ServerException When an error occurs moving the specified scan.
      */
-    private void moveScan(final XnatImagescandataI srcScan, final String destScan_id, final String srcScanId, String destScanCatalogPath) throws ServerException {
-        final String srcScanCatalogPath = ((XnatResourcecatalog) srcScan.getFile().get(0)).getUri();
-        final File   srcCatalog         = new File(src.getPrearchivepath(), srcScanCatalogPath);
-        final String srcScanFolderPath  = "SCANS/" + srcScanId;
+    private void moveScan(final XnatImagescandataI srcScan, final String destScanId, final String srcScanId, String destScanCatalogPath)
+            throws ServerException {
+        for (XnatAbstractresourceI resource : srcScan.getFile()) {
+            final XnatResourcecatalog cat = (XnatResourcecatalog) resource;
+            final String srcScanCatalogPath = cat.getUri();
+            final File srcCatalog = new File(src.getPrearchivepath(), srcScanCatalogPath);
+            final String srcScanFolderPath = Paths.get(SCANS_DIR, srcScanId).toString();
 
-        if (destScanCatalogPath == null) {
-            destScanCatalogPath = "SCANS/" + destScan_id + "/DICOM/scan_" + destScan_id + "_catalog.xml";
-        }
-        final String prearcpath = getSrcDIR().getAbsolutePath();
-
-        //confirm expected structure
-        if (!srcCatalog.exists()) {
-            throw new ServerException("Non-standard prearchive structure (no catalog)- failed scan rename.");
-        }
-
-        if (destScan_id.equals(srcScanId)) {
-            if (!srcScanCatalogPath.startsWith(srcScanFolderPath)) {
-                throw new ServerException("Non-standard prearchive structure (invalid catalog location)- failed scan rename.");
+            //confirm expected structure
+            if (!srcCatalog.exists()) {
+                throw new ServerException("Non-standard prearchive structure (no catalog)- failed scan rename.");
             }
-        }
 
-        final File destCatalogFile = new File(src.getPrearchivepath(), destScanCatalogPath);
+            if (destScanId.equals(srcScanId)) {
+                if (!srcScanCatalogPath.startsWith(srcScanFolderPath)) {
+                    throw new ServerException("Non-standard prearchive structure (invalid catalog location)- failed scan rename.");
+                }
+            }
 
-        final String originalScanFolder    = new File(src.getPrearchivepath(), srcScanFolderPath + "/DICOM/").getAbsolutePath();
-        final File   destinationScanFolder = destCatalogFile.getParentFile();
+            if (destScanCatalogPath == null) {
+                if (RESOURCE_LABEL_DICOM.equals(cat.getLabel())) {
+                    destScanCatalogPath = Paths.get(SCANS_DIR, destScanId, RESOURCE_LABEL_DICOM,
+                            "scan_" + destScanId + "_catalog.xml").toString();
+                } else {
+                    destScanCatalogPath = Paths.get(SCANS_DIR, destScanId, cat.getLabel(),
+                            "scan_" + destScanId + "_" + cat.getLabel() + "_catalog.xml").toString();
+                }
+            }
 
-        //get list of all entries in the catalog
-        final CatCatalogBean        catB    = CatalogUtils.getCatalog(srcCatalog, project);
-        final Collection<CatEntryI> entries = catB == null ? Collections.emptyList() : CatalogUtils.getEntriesByFilter(catB, entry -> true);
-        //move each entry to its new location
-        final Map<File, File> fileMap = entries.stream().collect(Collectors.toMap(entry -> new File(destinationScanFolder, entry.getUri()), entry -> ObjectUtils.defaultIfNull(CatalogUtils.getFile(entry, originalScanFolder, project), NULL_FILE)))
-                                               .entrySet().stream()
-                                               .filter(entry -> !entry.getValue().equals(NULL_FILE)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        for (final Map.Entry<File, File> entry : fileMap.entrySet()) {
-            final File source      = entry.getValue();
-            final File destination = entry.getKey();
+            final File destCatalogFile = new File(src.getPrearchivepath(), destScanCatalogPath);
+
+            final String originalScanFolder    = new File(src.getPrearchivepath(), srcScanCatalogPath).getParent();
+            final File   destinationScanFolder = destCatalogFile.getParentFile();
+
+            //get catalog bean
+            CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(srcCatalog, project, false);
+            //move each entry to its new location
+            final Map<File, File> fileMap = catalogData.catBean.getEntries_entry().stream().collect(
+                    Collectors.toMap(entry -> new File(destinationScanFolder, entry.getUri()),
+                            entry -> ObjectUtils.defaultIfNull(CatalogUtils.getFile(entry, originalScanFolder, project), NULL_FILE)))
+                    .entrySet().stream()
+                    .filter(entry -> !entry.getValue().equals(NULL_FILE)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            for (final Map.Entry<File, File> entry : fileMap.entrySet()) {
+                final File source = entry.getValue();
+                final File destination = entry.getKey();
+                try {
+                    FileUtils.MoveFile(source, destination, false);
+                } catch (IOException e) {
+                    throw new ServerException("An error occurred trying to move the file " + source.getAbsolutePath() +
+                            " to the destination " + destination.getAbsolutePath(), e);
+                }
+            }
+
+            //move catalog file
             try {
-                FileUtils.MoveFile(source, destination, false);
+                if (!StringUtils.equals(srcCatalog.getAbsolutePath(), destCatalogFile.getAbsolutePath())) {
+                    FileUtils.MoveFile(srcCatalog, destCatalogFile, true);
+                }
             } catch (IOException e) {
-                throw new ServerException("An error occurred trying to move the file " + source.getAbsolutePath() + " to the destination " + destination.getAbsolutePath(), e);
+                throw new ServerException(e);
             }
+
+            // fix the file path
+            cat.setUri(destScanCatalogPath);
         }
 
-        //move catalog file
+        srcScan.setId(destScanId);
         try {
-            if (!StringUtils.equals(srcCatalog.getAbsolutePath(), destCatalogFile.getAbsolutePath())) {
-                FileUtils.MoveFile(srcCatalog, destCatalogFile, true);
-            }
-        } catch (IOException e) {
-            throw new ServerException(e);
-        }
-
-        // fix the file path
-        final XnatResourcecatalog cat = (XnatResourcecatalog) srcScan.getFile().get(0);
-        cat.setUri(destScanCatalogPath);
-        srcScan.setId(destScan_id);
-
-        try {
-            updatePrearchiveSessionXML(prearcpath, src);
+            updatePrearchiveSessionXML(getSrcDIR().getAbsolutePath(), src);
         } catch (Throwable e) {
             throw new ServerException(e);
         }

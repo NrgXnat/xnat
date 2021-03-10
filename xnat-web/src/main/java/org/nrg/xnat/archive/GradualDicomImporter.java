@@ -23,6 +23,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.Decompress;
+import org.nrg.dcm.Restructurer;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
@@ -34,7 +35,6 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.Files;
-import org.nrg.xnat.Labels;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.prearchive.DatabaseSession;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
@@ -255,14 +255,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             // Build the scan label
             final String seriesNum = dicom.getString(Tag.SeriesNumber);
             final String seriesUID = dicom.getString(Tag.SeriesInstanceUID);
-            final String scan;
-            if (Files.isValidFilename(seriesNum)) {
-                scan = seriesNum;
-            } else if (!Strings.isNullOrEmpty(seriesUID)) {
-                scan = Labels.toLabelChars(seriesUID);
-            } else {
-                scan = null;
-            }
+            final String scan = Restructurer.determineScanSubdir(seriesNum, seriesUID);
 
             final String source = getString(_parameters, SENDER_ID_PARAM, _user.getLogin());
 

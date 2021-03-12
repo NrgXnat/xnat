@@ -623,6 +623,32 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false", aliases = "files.allow_move_to_cache")
+    public boolean getBackupDeletedToCache() {
+        return getBooleanValue("backupDeletedToCache");
+    }
+
+    public void setBackupDeletedToCache(final boolean backupDeletedToCache) {
+        try {
+            setBooleanValue(backupDeletedToCache, "backupDeletedToCache");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'backupDeletedToCache': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false", aliases = "audit.maintain-file-history")
+    public boolean getMaintainFileHistory() {
+        return getBooleanValue("maintainFileHistory");
+    }
+
+    public void setMaintainFileHistory(final boolean backupDeletedToCache) {
+        try {
+            setBooleanValue(backupDeletedToCache, "maintainFileHistory");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'maintainFileHistory': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true")
     public boolean getScanTypeMapping() {
         return getBooleanValue("scanTypeMapping");

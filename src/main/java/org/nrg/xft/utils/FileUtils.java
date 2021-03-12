@@ -32,6 +32,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -480,30 +481,18 @@ public  class FileUtils {
 
     public static int CountFiles(File src, boolean stopAt1) {
         if (src.isDirectory()) {
-            File[] files = src.listFiles();
-            int    count = 0;
-
-            if (files == null) {
-                return count;
+            if (stopAt1) {
+                return HasFiles(src) ? 0 : 1;
             }
-
-            for (final File file : files) {
-                if (file.isDirectory()) {
-                    int sub_count = CountFiles(file, stopAt1);
-                    if (sub_count > 0 && stopAt1) {
-                        return 1;
-                    } else {
-                        count += sub_count;
-                    }
-                } else {
-                    if (stopAt1) {
-                        return 1;
-                    } else {
-                        count++;
-                    }
-                }
+            int count = 0;
+            try (Stream<Path> stream = Files.walk(src.toPath())) {
+                count += stream
+                        .filter(file -> !Files.isDirectory(file))
+                        .count();
+            } catch (IOException e) {
+                // Don't throw checked exceptions to match previous signature
+                throw new RuntimeException(e);
             }
-
             return count;
         } else {
             return 1;
@@ -512,21 +501,12 @@ public  class FileUtils {
 
     public static boolean HasFiles(File src) {
         if (src.isDirectory()) {
-            File[] files = src.listFiles();
-
-            if (files == null) {
-                return false;
+            try (Stream<Path> stream = Files.walk(src.toPath())) {
+                return stream.anyMatch(file -> !Files.isDirectory(file));
+            } catch (IOException e) {
+                // Don't throw checked exceptions to match previous signature
+                throw new RuntimeException(e);
             }
-
-            for (final File file : files) {
-                if (file.isDirectory()) {
-                    if (HasFiles(file)) {
-                        return true;
-                    }
-                } else return true;
-            }
-
-            return false;
         } else {
             return true;
         }
@@ -573,29 +553,19 @@ public  class FileUtils {
      *
      * @return Returns the first file that matches in the specified files/directories
      */
-    public static File FindFirstMatch(final File source, final File destination, final FileFilter filter) {
-        if (source == null) {
-            return null;
+    public static File FindFirstMatch(final File source, final File destination, final FileFilter filter){
+        final Path sourcePath = source.toPath();
+        final Path destPath = destination.toPath();
+        try (Stream<Path> entries = Files.walk(sourcePath)) {
+            Path path = entries.filter(file -> !Files.isDirectory(file) &&
+                    (filter == null || filter.accept(file.toFile())) &&
+                    Files.exists(destPath.resolve(sourcePath.relativize(file))))
+                    .findFirst().orElse(null);
+            return path != null ? path.toFile() : null;
+        } catch (IOException e) {
+            // Don't throw checked exceptions to match previous signature
+            throw new RuntimeException(e);
         }
-        final File[] files = source.listFiles();
-        if (files == null) {
-            return null;
-        }
-        for (final File file : files) {
-            final File target = (new File(destination, file.getName()));
-            if (file.isDirectory()) {
-                final File match = FindFirstMatch(file, target, filter);
-                if (match != null) {
-                    return match;
-                }
-            } else if (filter == null || filter.accept(file)) {
-                if (target.exists()) {
-                    return target;
-                }
-            }
-        }
-
-        return null;
     }
 
     public static void CopyDir(File src, File dest, boolean overwrite) throws FileNotFoundException, IOException {
@@ -624,8 +594,7 @@ public  class FileUtils {
             for (final File file : files) {
                 final File dChild = new File(dest, file.getName());
                 if (filter == null || filter.accept(dChild)) {
-                if (file.isDirectory())
-                {
+                    if (file.isDirectory()) {
                         CopyDirImpl(file, dChild, overwrite, filter);
                     } else {
                         CopyFile(file, dChild, overwrite);
@@ -975,7 +944,7 @@ public  class FileUtils {
     }
 
     public static void MoveToCache(final File file, final String timestamp) throws FileNotFoundException, IOException {
-        if (XDAT.getBoolSiteConfigurationProperty("files.allow_move_to_cache", true)) {
+        if (XDAT.getBoolSiteConfigurationProperty("backupDeletedToCache", false)) {
             final Path   cacheRoot   = Paths.get(StringUtils.defaultIfBlank(XDAT.getSiteConfigPreferences().getCachePath(), "/cache"), "DELETED");
             final String subpath     = StringUtils.stripStart(file.getAbsolutePath(), "/");
             final Path   destination = (StringUtils.isNotBlank(timestamp) ? cacheRoot.resolve(timestamp.replace("_", "/")) : getUniqueCacheFolder(cacheRoot, getMsTimestamp())).resolve(subpath);

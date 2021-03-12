@@ -8,7 +8,7 @@
  */
 buildscript {
     ext {
-        vXnat = "1.8.0"
+        vXnat = "1.8.0.1-SNAPSHOT"
     }
     repositories {
         mavenLocal()
@@ -164,10 +164,6 @@ dependencies {
     api "org.springframework:spring-core"
 
     implementation "org.nrg.xnat:spawner"
-
-    implementation("org.nrg.xnat:xnat-data-models") {
-        transitive = false
-    }
     implementation "org.nrg.xdat:core"
     implementation "org.nrg:framework"
     implementation "org.nrg:transaction"

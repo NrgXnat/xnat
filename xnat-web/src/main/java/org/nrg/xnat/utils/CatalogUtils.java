@@ -161,8 +161,8 @@ public class CatalogUtils {
         public CatalogData(@Nonnull File catFile, @Nullable XnatResourcecatalog catRes, @Nullable String project,
                            @Nullable String catId, boolean create) throws ServerException {
             this.catFile = catFile;
-            this.catPath  = this.catFile.getParent();
-            this.catRes = catRes;
+            this.catPath = this.catFile.getParent();
+            this.catRes  = catRes;
             if (this.catFile.exists()) {
                 this.catBean = readCatalogBeanFromCatalogFile(catId);
             } else if (create) {
@@ -1507,12 +1507,23 @@ public class CatalogUtils {
      */
     public static boolean deleteFile(File f, @Nullable String url, @Nullable String project) {
         boolean success = !f.exists() || f.delete();
+        return success & deleteRemoteFile(url, project);
+    }
+
+    /**
+     * Delete remote file
+     *
+     * @param url     the url or null
+     * @param project the project
+     * @return true if remote file deleted or no remote file, false otherwise
+     */
+    public static boolean deleteRemoteFile(@Nullable String url, @Nullable String project) {
         RemoteFilesService remoteFilesService;
         if (StringUtils.isBlank(url) || !FileUtils.IsUrl(url, true) ||
                 (remoteFilesService = XDAT.getContextService().getBeanSafely(RemoteFilesService.class)) == null) {
-            return success;
+            return true;
         }
-        return success & remoteFilesService.deleteFile(url, project);
+        return remoteFilesService.deleteFile(url, project);
     }
 
     public static boolean configureEntry(final CatEntryBean entry, @Nonnull final XnatResourceInfo info, boolean isNew) {
@@ -2184,7 +2195,7 @@ public class CatalogUtils {
 
     public static Boolean maintainFileHistory() {
         if (_maintainFileHistory == null) {
-            _maintainFileHistory = new AtomicBoolean(XDAT.getBoolSiteConfigurationProperty("audit.maintain-file-history", false));
+            _maintainFileHistory = new AtomicBoolean(XDAT.getBoolSiteConfigurationProperty("maintainFileHistory", false));
         }
         return _maintainFileHistory.get();
     }

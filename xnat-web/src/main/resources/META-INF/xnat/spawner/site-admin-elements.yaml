@@ -283,6 +283,28 @@ checksums:
         Indicates whether checksums should be calculated for each image file as it's archived.
         Activating this provides greater assurance of data integrity, but may add significant
         overhead to the archive process.
+backupDeletedToCache:
+    kind: panel.input.switchbox
+    name: backupDeletedToCache
+    label: Backup to-be-deleted data to cache "recycle bin"?
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Indicates whether XNAT should move files from deleted entities (projects, subjects, sessions, etc.)
+        into a DELETED subdirectory of the cache space (a.k.a., a "recycle bin") or just remove them completely.
+        Enabling the recycle bin offers some protection against accidental data loss, but may incur an IO penalty,
+        especially if the archive and cache directories are not on the same filesystem.
+maintainFileHistory:
+    kind: panel.input.switchbox
+    name: maintainFileHistory
+    label: Track file history?
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Indicates whether XNAT should retain copies of deleted files in a .history subdirectory of the cache space for
+        version control. Only files corresponding to existing entities (projects, subjects, sessions, etc.) can be tracked.
+        Deleting an entire entity cannot be version controlled, though you can enable the cache "recycle bin" for some
+        added deletion protection.
 uiShowPrearchiveFileActions:
     kind: panel.input.switchbox
     name: uiShowPrearchiveFileActions
@@ -1574,6 +1596,8 @@ fileSystem:
         ${inboxPath}
         ${zipExtensions}
         ${checksums}
+        ${backupDeletedToCache}
+        ${maintainFileHistory}
         ${uiShowPrearchiveFileActions}
 asyncOperations:
     kind: panel.form

@@ -26,8 +26,7 @@ import java.net.URISyntaxException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -972,14 +971,18 @@ public  class FileUtils {
     }
 
     public static void MoveToCache(final File file) throws FileNotFoundException, IOException {
+        MoveToCache(file, null);
+    }
+
+    public static void MoveToCache(final File file, final String timestamp) throws FileNotFoundException, IOException {
         if (XDAT.getBoolSiteConfigurationProperty("files.allow_move_to_cache", true)) {
             final Path   cacheRoot   = Paths.get(StringUtils.defaultIfBlank(XDAT.getSiteConfigPreferences().getCachePath(), "/cache"), "DELETED");
-            final String timestamp   = getMsTimestamp();
-            final File   destination = getUniqueCacheFolder(cacheRoot, timestamp).resolve(StringUtils.stripStart(file.getAbsolutePath(), "/")).toFile();
+            final String subpath     = StringUtils.stripStart(file.getAbsolutePath(), "/");
+            final Path   destination = (StringUtils.isNotBlank(timestamp) ? cacheRoot.resolve(timestamp.replace("_", "/")) : getUniqueCacheFolder(cacheRoot, getMsTimestamp())).resolve(subpath);
             if (file.isDirectory()) {
-                FileUtils.MoveDir(file, destination, true);
+                FileUtils.MoveDir(file, destination.toFile(), true);
             } else {
-                FileUtils.MoveFile(file, destination, true);
+                FileUtils.MoveFile(file, destination.resolve(file.getName()).toFile(), true);
             }
         } else if (file.isDirectory()) {
             org.apache.commons.io.FileUtils.deleteDirectory(file);
@@ -1082,13 +1085,14 @@ public  class FileUtils {
     }
 
     private static Path getUniqueCacheFolder(final Path root, final String timestamp) {
-        final Path defaultFolder = root.resolve(timestamp);
+        final String converted = timestamp.replace("_", "/");
+        final Path defaultFolder = root.resolve(converted);
         if (!defaultFolder.toFile().exists()) {
             return defaultFolder;
         }
         final AtomicInteger index = new AtomicInteger(1);
         while (true) {
-            final Path indexed = root.resolve(timestamp + "-" + index.getAndIncrement());
+            final Path indexed = root.resolve(converted + "-" + index.getAndIncrement());
             if (!indexed.toFile().exists()) {
                 return indexed;
             }

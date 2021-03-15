@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.8.0.1-SNAPSHOT</version>
+    <version>1.8.0.1</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -65,7 +65,7 @@
         <signing.tsa>https://timestamp.digicert.com</signing.tsa>
 
         <xnat.version>1.8.0</xnat.version>
-        <xnatdev.version>1.8.0.1-SNAPSHOT</xnatdev.version>
+        <xnatdev.version>1.8.0.1</xnatdev.version>
 
         <!-- XNAT core library versions -->
         <xnat-web.version>${xnatdev.version}</xnat-web.version>
@@ -91,7 +91,7 @@
         <nrg.dicom-edit6.version>6.3.0</nrg.dicom-edit6.version>
         <nrg.dicom.pixeleditor.version>1.2.0</nrg.dicom.pixeleditor.version>
         <nrg.dicomdb.version>5.2</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.0.5.1</nrg.ecat.version>
         <nrg.extattr.version>4.2.6</nrg.extattr.version>
@@ -103,12 +103,12 @@
         <data-client.version>${xnat.version}</data-client.version>
 
         <!-- XNAT plugin versions -->
-        <ohif-viewer.version>3.0.0-SNAPSHOT</ohif-viewer.version>
-        <container-service.version>3.0.0-SNAPSHOT</container-service.version>
-        <dqr.version>1.0.0-SNAPSHOT</dqr.version>
-        <batch-launch.version>0.2.8-ML-SNAPSHOT</batch-launch.version>
-        <clara.version>ML-BETA</clara.version>
-        <datasets.version>1.0.0-SNAPSHOT</datasets.version>
+        <ohif-viewer.version>3.0.0</ohif-viewer.version>
+        <container-service.version>3.0.0</container-service.version>
+        <dqr.version>1.0.0</dqr.version>
+        <batch-launch.version>0.4.0</batch-launch.version>
+        <ml.version>1.0.0</ml.version>
+        <datasets.version>1.0.0</datasets.version>
 
         <spring-framework.version>4.3.30.RELEASE</spring-framework.version>
         <spring-security.version>4.2.20.RELEASE</spring-security.version>
@@ -500,7 +500,7 @@
             <dependency>
                 <groupId>org.nrg.xnatx.plugins</groupId>
                 <artifactId>ximgview-plugin</artifactId>
-                <version>1.0.1-SNAPSHOT</version>
+                <version>1.0.2</version>
             </dependency>
 
             <!-- Pipeline dependency definitions -->
@@ -612,8 +612,8 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnatx.plugins</groupId>
-                <artifactId>xnatx-clara</artifactId>
-                <version>${clara.version}</version>
+                <artifactId>ml-plugin</artifactId>
+                <version>${ml.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnatx.plugins</groupId>

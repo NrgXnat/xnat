@@ -551,7 +551,10 @@
     <logger name="avalon" additivity="false" level="ERROR">
         <appender-ref ref="avalon"/>
     </logger>
-    <logger name="org.nrg.xnat.turbine" additivity="false" level="ERROR">
+    <logger name="org.nrg.xdat.turbine" additivity="false" level="WARN">
+        <appender-ref ref="turbine"/>
+    </logger>
+    <logger name="org.nrg.xnat.turbine" additivity="false" level="WARN">
         <appender-ref ref="turbine"/>
     </logger>
     <logger name="JdbcLogger" additivity="false" level="DEBUG">

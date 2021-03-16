@@ -36,6 +36,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.MetaDataException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.restlet.representations.BeanRepresentation;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
@@ -272,13 +273,14 @@ public class CatalogResource extends XNATCatalogTemplate {
             final List<String> failed = new ArrayList<>();
             final String archivePath  = proj.getRootArchivePath();
             final String project      = proj.getId();
+            final String timestamp    = FileUtils.getMsTimestamp();
             for (final XnatAbstractresource resource : getResources()) {
                 final String              resourceId = getResourceDisplay(resource);
                 final PersistentWorkflowI workflow   = PersistentWorkflowUtils.getOrCreateWorkflowData(getEventId(), user, xsiType, securityId, proj.getId(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.REMOVE_CATALOG + " " + resourceId));
                 final EventMetaI          meta       = workflow.buildEvent();
 
                 try {
-                    resource.deleteWithBackup(archivePath, project, user, meta);
+                    resource.deleteWithBackup(archivePath, project, user, meta, timestamp);
                     SaveItemHelper.authorizedRemoveChild(parentItem, xmlPath, resource.getItem(), user, meta);
                     PersistentWorkflowUtils.complete(workflow, meta);
                 } catch (Exception e) {

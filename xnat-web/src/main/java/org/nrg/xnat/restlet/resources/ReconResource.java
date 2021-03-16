@@ -25,6 +25,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
@@ -264,9 +265,10 @@ public class ReconResource extends ItemResource {
 			try {
 				String removeFiles = this.getQueryVariable("removeFiles");
 				if (removeFiles != null) {
+					final String timestamp = FileUtils.getMsTimestamp();
 					for (XnatAbstractresourceI om : recon.getOut_file()) {
 						XnatAbstractresource resourceA = (XnatAbstractresource) om;
-						resourceA.deleteWithBackup(session.getArchiveRootPath(), session.getProject(), user, ci);
+						resourceA.deleteWithBackup(session.getArchiveRootPath(), session.getProject(), user, ci, timestamp);
 					}
 				}
 				SaveItemHelper.authorizedDelete(recon.getItem().getCurrentDBVersion(), user, ci);

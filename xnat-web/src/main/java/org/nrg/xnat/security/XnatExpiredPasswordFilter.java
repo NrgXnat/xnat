@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.security;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +25,7 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.initialization.XnatWebAppInitializer;
 import org.nrg.xnat.services.validation.DateValidation;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,12 +48,9 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection", "unused", "SameParameterValue", "SqlResolve"})
 @Slf4j
 public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
-
     @Autowired
     public XnatExpiredPasswordFilter(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
         super();
@@ -70,6 +70,15 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         // Regardless of why you're here, we're going to do this.
         final Cookie cookie = new Cookie(COOKIE_SESSION_EXPIRATION_TIME, new Date().getTime() + "," + session.getMaxInactiveInterval() * 1000);
         cookie.setPath(request.getContextPath() + "/");
+
+        // Check if this is a secure request.
+        final boolean isSecureRequest = StringUtils.startsWithIgnoreCase(request.getRequestURI(), "https");
+        // See if we allow insecure cookies.
+        final boolean allowInsecureCookies = !XnatWebAppInitializer.getServletContext().getSessionCookieConfig().isSecure();
+        // If the request isn't secure AND we allow insecure cookies, then make this cookie insecure.
+        final boolean isSecureExpirationCookie = !(!isSecureRequest && allowInsecureCookies);
+        cookie.setSecure(isSecureExpirationCookie);
+
         response.addCookie(cookie);
         log.debug("Updated session expiration time cookie '{}' to value '{}'.", cookie.getName(), cookie.getValue());
 
@@ -297,7 +306,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
                 session.setAttribute("expired", queried);
                 return queried;
             } catch (EmptyResultDataAccessException e) {
-                log.debug("No results found for user '{}' and auth method {} running query: ", username, AUTH_DEFAULT, query);
+                log.debug("No results found for user '{}' and auth method {} running query: {}", username, AUTH_DEFAULT, query);
                 return false;
             }
         } catch (Throwable e) { // ldap authentication can throw an exception during these queries
@@ -326,7 +335,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         try {
             return _jdbcTemplate.queryForObject(QUERY_USER_ROLE_ENABLE, new MapSqlParameterSource("username", username).addValue("role", UserRole.ROLE_NON_EXPIRING), Boolean.class);
         } catch (EmptyResultDataAccessException e) {
-            log.debug("No results found for user '{}' and role {} running query: ", username, UserRole.ROLE_NON_EXPIRING, QUERY_USER_ROLE_ENABLE);
+            log.debug("No results found for user '{}' and role {} running query: {}", username, UserRole.ROLE_NON_EXPIRING, QUERY_USER_ROLE_ENABLE);
             return false;
         }
     }

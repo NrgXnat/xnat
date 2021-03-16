@@ -195,6 +195,11 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
             final String table  = matcher.group("prefix");
             final String column = matcher.group("payload");
 
+            if (isInvalidTable(table)) {
+                log.info("I found a column migration for table {}, but that table doesn't exist so there's nothing to migrate: {}", table, column);
+                continue;
+            }
+
             if (!_columns.containsKey(table)) {
                 _columns.put(table, new HashMap<>());
             }
@@ -223,6 +228,11 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
             final String table      = keyMatcher.group("prefix");
             final String constraint = keyMatcher.group("payload");
 
+            if (isInvalidTable(table)) {
+                log.info("I found a constraint migration for table {}, but that table doesn't exist so there's nothing to migrate: {}", table, constraint);
+                continue;
+            }
+
             if (!_constraints.containsKey(table)) {
                 _constraints.put(table, new HashMap<>());
             }
@@ -242,6 +252,15 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
                 columns = Arrays.asList(StringUtils.split(definition, ", "));
             }
             constraints.put(constraint, columns);
+        }
+    }
+
+    private boolean isInvalidTable(final String table) {
+        try {
+            return !_db.tableExists(table);
+        } catch (SQLException e) {
+            log.error("Got an error trying to check if the table {} exist in the database. I'm going to assume it doesn't.", table, e);
+            return true;
         }
     }
 

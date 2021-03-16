@@ -2492,14 +2492,15 @@
         </pluginRepository>
     </pluginRepositories>
 
+    <!-- The <id>XNAT_Artifactory</id> needs to match a value on the build server -->
     <distributionManagement>
         <repository>
-            <id>XNAT Artifactory</id>
+            <id>XNAT_Artifactory</id>
             <name>XNAT Maven Release Library</name>
             <url>https://nrgxnat.jfrog.io/nrgxnat/libs-release-local</url>
         </repository>
         <snapshotRepository>
-            <id>XNAT Artifactory</id>
+            <id>XNAT_Artifactory</id>
             <name>XNAT Maven Snapshot Library</name>
             <url>https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local</url>
         </snapshotRepository>

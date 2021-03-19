@@ -23,9 +23,10 @@ plugins {
     id "com.bmuschko.cargo" version "2.8.0"
     id "com.bmuschko.tomcat" version "2.5"
     id "com.dorongold.task-tree" version "1.5"
-    id "com.palantir.git-version" version "0.12.3"
+    id "com.palantir.git-version" version "0.12.1"
     id "io.franzbecker.gradle-lombok" version "4.0.0"
     id "io.spring.dependency-management" version "1.0.11.RELEASE"
+    id "net.linguica.maven-settings" version "0.5"
 }
 
 group "org.nrg.xnat"
@@ -557,13 +558,9 @@ publishing {
     }
     repositories {
         maven {
-            credentials {
-                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
-                // line in the form -PrepoUsername=foo -PrepoPassword=bar.
-                username propertyWithDefault("repoUsername", "username")
-                password propertyWithDefault("repoPassword", "password")
-            }
             url project.version.endsWith("-SNAPSHOT") ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
+            // The value for name must match <id> in ~/.m2/settings.xml
+            name = "XNAT_Artifactory"
         }
     }
 }

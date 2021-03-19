@@ -64,25 +64,26 @@
         <signing.keypass>keypass</signing.keypass>
         <signing.tsa>https://timestamp.digicert.com</signing.tsa>
 
-        <xnat.version>1.8.1-SNAPSHOT</xnat.version>
+        <xnat.version>1.8.0</xnat.version>
+        <xnat-rel.version>1.8.0.1</xnat-rel.version>
         <xnatdev.version>1.8.1-SNAPSHOT</xnatdev.version>
 
         <!-- XNAT core library versions -->
         <xnat-web.version>${xnatdev.version}</xnat-web.version>
         <xnat-tasks.version>${xnat.version}</xnat-tasks.version>
-        <xnat-data-builder.version>${xnatdev.version}</xnat-data-builder.version>
-        <spawner.version>${xnatdev.version}</spawner.version>
+        <xnat-data-builder.version>${xnat.version}</xnat-data-builder.version>
+        <spawner.version>${xnat.version}</spawner.version>
         <xnat-data-models.version>${xnatdev.version}</xnat-data-models.version>
-        <xdat-data-builder.version>${xnatdev.version}</xdat-data-builder.version>
+        <xdat-data-builder.version>${xnat.version}</xdat-data-builder.version>
         <xdat.version>${xnatdev.version}</xdat.version>
 
         <nrg.automation.version>${xnat.version}</nrg.automation.version>
-        <nrg.config.version>${xnatdev.version}</nrg.config.version>
-        <nrg.framework.version>${xnatdev.version}</nrg.framework.version>
+        <nrg.config.version>${xnat.version}</nrg.config.version>
+        <nrg.framework.version>${xnat.version}</nrg.framework.version>
         <nrg.mail.version>${xnat.version}</nrg.mail.version>
-        <nrg.notify.version>${xnatdev.version}</nrg.notify.version>
-        <nrg.prefs.version>${xnatdev.version}</nrg.prefs.version>
-        <nrg.test.version>${xnatdev.version}</nrg.test.version>
+        <nrg.notify.version>${xnat.version}</nrg.notify.version>
+        <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
+        <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
         <nrg.mizer.version>1.3.0-SNAPSHOT</nrg.mizer.version>
         <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
@@ -103,12 +104,12 @@
         <data-client.version>${xnat.version}</data-client.version>
 
         <!-- XNAT plugin versions -->
-        <ohif-viewer.version>3.0.0-SNAPSHOT</ohif-viewer.version>
-        <container-service.version>3.0.0-SNAPSHOT</container-service.version>
-        <dqr.version>1.0.0-SNAPSHOT</dqr.version>
-        <batch-launch.version>0.2.8-ML-SNAPSHOT</batch-launch.version>
-        <clara.version>ML-BETA</clara.version>
-        <datasets.version>1.0.0-SNAPSHOT</datasets.version>
+        <ohif-viewer.version>3.0.0</ohif-viewer.version>
+        <container-service.version>3.0.0</container-service.version>
+        <dqr.version>1.0.0</dqr.version>
+        <batch-launch.version>0.4.0</batch-launch.version>
+        <ml.version>1.0.0</ml.version>
+        <datasets.version>1.0.0</datasets.version>
 
         <spring-framework.version>4.3.30.RELEASE</spring-framework.version>
         <spring-security.version>4.2.20.RELEASE</spring-security.version>
@@ -334,7 +335,7 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>nrg-all</artifactId>
-                <version>${xnatdev.version}</version>
+                <version>${xnat.version}</version>
             </dependency>
             <!-- Mizer, DicomEdit 4 and 6 engines -->
             <dependency>
@@ -500,7 +501,7 @@
             <dependency>
                 <groupId>org.nrg.xnatx.plugins</groupId>
                 <artifactId>ximgview-plugin</artifactId>
-                <version>1.0.1-SNAPSHOT</version>
+                <version>1.0.2</version>
             </dependency>
 
             <!-- Pipeline dependency definitions -->
@@ -612,8 +613,8 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnatx.plugins</groupId>
-                <artifactId>xnatx-clara</artifactId>
-                <version>${clara.version}</version>
+                <artifactId>ml-plugin</artifactId>
+                <version>${ml.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnatx.plugins</groupId>

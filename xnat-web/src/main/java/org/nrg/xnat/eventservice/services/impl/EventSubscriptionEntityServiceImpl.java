@@ -562,7 +562,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     @Override
     public List<Subscription> getSubscriptionsByListenerId(UUID listenerId) throws NotFoundException {
         List<Long> subscriptionIds = activeRegistrations.entrySet().stream()
-                                         .filter(ar -> ar.getValue().getListenerId() == listenerId)
+                                         .filter(ar -> ar.getValue().listenerId == listenerId)
                                          .map(Map.Entry::getKey)
                                          .collect(Collectors.toList());
 
@@ -580,6 +580,12 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
         return activeRegistrations.keySet();
     }
 
+    @Override
+    public Integer getActiveRegistrationCriteriaHash(Long subscriptionId) {
+        return activeRegistrations.containsKey(subscriptionId) ?
+                activeRegistrations.get(subscriptionId).reactorCriteriaHash : null;
+    }
+
     @Transient
     @Override
     public UUID getListenerId(Long subscriptionId) {
@@ -590,7 +596,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     @Transient
     private Subscription addActiveRegistration(Selector selector, Subscription subscription, EventServiceListener listener) {
         Registration registration = eventBus.on(selector, listener);
-        activeRegistrations.put(subscription.id(), new ActiveRegistration(registration, listener.getInstanceId()));
+        activeRegistrations.put(subscription.id(), new ActiveRegistration(registration, listener.getInstanceId(), subscription));
         log.debug("Activated Reactor Registration: "
                 + registration.hashCode()
                 + "  RegistrationKey: "
@@ -617,16 +623,17 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     private class ActiveRegistration {
         final Registration registration;
         final UUID listenerId;
-        final Integer registartionHash;
+        final Integer registrationHash;
+        final Integer reactorCriteriaHash;
+
 
         public Registration getRegistration() { return registration; }
 
-        public UUID getListenerId() { return listenerId; }
-
-        public ActiveRegistration(@Nonnull Registration registration, @Nonnull UUID listenerId) {
+        public ActiveRegistration(@Nonnull Registration registration, @Nonnull UUID listenerId, @Nonnull Subscription subscription) {
             this.registration = registration;
             this.listenerId = listenerId;
-            this.registartionHash = registration.hashCode();
+            this.registrationHash = registration.hashCode();
+            this.reactorCriteriaHash = subscription.eventFilter().getReactorCriteriaHash();
         }
 
         @Override
@@ -635,12 +642,12 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
             if (!(o instanceof ActiveRegistration)) return false;
             ActiveRegistration that = (ActiveRegistration) o;
             return Objects.equal(listenerId, that.listenerId) &&
-                    Objects.equal(registartionHash, that.registartionHash);
+                    Objects.equal(registrationHash, that.registrationHash);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(listenerId, registartionHash);
+            return Objects.hashCode(listenerId, registrationHash);
         }
     }
 

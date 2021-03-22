@@ -58,5 +58,8 @@ public interface EventSubscriptionEntityService extends BaseHibernateService<Sub
     Set getActiveRegistrationSubscriptionIds();
 
     @Transient
+    Integer getActiveRegistrationCriteriaHash(Long subscriptionId);
+
+    @Transient
     void removeActiveRegistration(Long subscriptionId);
 }

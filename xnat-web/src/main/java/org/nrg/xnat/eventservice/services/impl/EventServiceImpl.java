@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.node.XnatNode;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -39,6 +40,7 @@ import org.nrg.xnat.eventservice.services.EventServicePrefsBean;
 import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityPaginatedRequest;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -80,6 +82,8 @@ public class EventServiceImpl implements EventService {
     private final ObjectMapper                        mapper;
     private final Configuration                       jaywayConf     = Configuration.builder().build().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
     private final EventServicePrefsBean               prefs;
+    private final XnatAppInfo                         xnatAppInfo;
+
 
     @Autowired
     public EventServiceImpl(EventSubscriptionEntityService subscriptionService, EventBus eventBus,
@@ -89,7 +93,8 @@ public class EventServiceImpl implements EventService {
                             UserManagementServiceI userManagementService,
                             EventPropertyService eventPropertyService,
                             ObjectMapper mapper,
-                            EventServicePrefsBean prefsBean) {
+                            EventServicePrefsBean prefsBean,
+                            final XnatAppInfo xnatAppInfo) {
         this.subscriptionService = subscriptionService;
         this.eventBus = eventBus;
         this.componentManager = componentManager;
@@ -99,6 +104,8 @@ public class EventServiceImpl implements EventService {
         this.eventPropertyService = eventPropertyService;
         this.mapper = mapper;
         this.prefs = prefsBean;
+        this.xnatAppInfo = xnatAppInfo;
+
     }
 
     @Override
@@ -539,14 +546,14 @@ public class EventServiceImpl implements EventService {
     @Scheduled(cron = "*/30 * * * * *")
     public void syncReactorRegistrations()
     {
+        XnatNode node = xnatAppInfo.getNode();
+        if (node == null || node.getNodeId() == null || node.getNodeId().isEmpty()) {
+            // Skip reactor sync, since this is not a multi-node XNAT
+            return;
+        }
+
         List<Subscription> allSubscriptions = subscriptionService.getAllSubscriptions();
         Set activeRegistrationSubscriptionIds = subscriptionService.getActiveRegistrationSubscriptionIds();
-
-        // Activate non-active enabled subscriptions
-        allSubscriptions.stream()
-                           .filter(s -> s.active())
-                           .filter(s -> !activeRegistrationSubscriptionIds.contains(s.id()))
-                           .forEach(s -> subscriptionService.activate(s));
 
         // Deactivate disabled active subscriptions
         allSubscriptions.stream()
@@ -561,6 +568,19 @@ public class EventServiceImpl implements EventService {
         activeRegistrationSubscriptionIds.stream()
                                          .filter(arsid -> !enabledSubscriptionIds.contains(arsid))
                                          .forEach(arsid -> subscriptionService.removeActiveRegistration((Long) arsid));
+
+        // Update Reactor subscription (reactivate) if subscription filter has been updated
+        allSubscriptions.stream()
+                .filter(s -> s.active())
+                .filter(s -> activeRegistrationSubscriptionIds.contains(s.id()))
+                .filter(s -> !s.eventFilter().getReactorCriteriaHash().equals(subscriptionService.getActiveRegistrationCriteriaHash(s.id())))
+                .forEach(s -> subscriptionService.activate(s));
+
+        // Activate non-active enabled subscriptions
+        allSubscriptions.stream()
+                .filter(s -> s.active())
+                .filter(s -> !activeRegistrationSubscriptionIds.contains(s.id()))
+                .forEach(s -> subscriptionService.activate(s));
     }
 
     private void throwIfDisabled() throws SubscriptionAccessException{

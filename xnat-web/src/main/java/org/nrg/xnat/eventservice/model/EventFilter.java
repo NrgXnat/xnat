@@ -8,8 +8,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
 import com.jayway.jsonpath.Criteria;
 import com.jayway.jsonpath.Filter;
-import com.jayway.jsonpath.Predicate;
-import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -57,6 +55,14 @@ public abstract class EventFilter {
         }
 
         return Filter.filter(criteria);
+    }
+
+    // return hash from properties used in Reactor criteria definition
+    public Integer getReactorCriteriaHash(){
+        StringBuilder stringBuilder = new StringBuilder(eventType());
+        projectIds().stream().forEach(pid -> stringBuilder.append(pid));
+        stringBuilder.append(status());
+        return stringBuilder.toString().hashCode();
     }
 
     public static EventFilter create(EventFilterCreator creator){

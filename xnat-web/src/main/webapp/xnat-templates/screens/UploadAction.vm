@@ -91,7 +91,12 @@
 
         function useOrShowDefaultUploader() {
             if (sitewideCustomHandlersLength === 0) {
-                $('#defaultUploader').click();
+                let uploaderLink = $('#defaultUploader');
+                if (uploaderLink.attr('href')) {
+                    window.location = uploaderLink.attr('href');
+                } else {
+                    uploaderLink.click();
+                }
             } else {
                 openUploaderSelectModalWithContents($('#defaultUploaderContents').html());
             }

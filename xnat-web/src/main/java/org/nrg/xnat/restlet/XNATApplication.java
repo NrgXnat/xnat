@@ -196,6 +196,7 @@ public class XNATApplication extends Application {
         //resources
         attachArchiveURI(router, "/projects/{PROJECT_ID}/resources", CatalogResourceList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/resources", CatalogResourceList.class);
+        attachArchiveURI(router, "/projects/{PROJECT_ID}/experiments/{EXPT_ID}/resources", CatalogResourceList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{EXPT_ID}/resources", CatalogResourceList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/resources", CatalogResourceList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/resources", CatalogResourceList.class);
@@ -213,6 +214,7 @@ public class XNATApplication extends Application {
         //resources (catalogs)
         attachArchiveURI(router, "/projects/{PROJECT_ID}/resources/{RESOURCE_ID}", CatalogResource.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/resources/{RESOURCE_ID}", CatalogResource.class);
+        attachArchiveURI(router, "/projects/{PROJECT_ID}/experiments/{EXPT_ID}/resources/{RESOURCE_ID}", CatalogResource.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{EXPT_ID}/resources/{RESOURCE_ID}", CatalogResource.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/resources/{RESOURCE_ID}", CatalogResource.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/resources/{RESOURCE_ID}", CatalogResource.class);
@@ -230,6 +232,7 @@ public class XNATApplication extends Application {
         //resource files
         attachArchiveURI(router, "/projects/{PROJECT_ID}/resources/{RESOURCE_ID}/files", FileList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/resources/{RESOURCE_ID}/files", FileList.class);
+        attachArchiveURI(router, "/projects/{PROJECT_ID}/experiments/{EXPT_ID}/resources/{RESOURCE_ID}/files", FileList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{EXPT_ID}/resources/{RESOURCE_ID}/files", FileList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/resources/{RESOURCE_ID}/files", FileList.class);
         attachArchiveURI(router, "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/resources/{RESOURCE_ID}/files", FileList.class);

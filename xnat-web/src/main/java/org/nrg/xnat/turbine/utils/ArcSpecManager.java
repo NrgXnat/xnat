@@ -9,6 +9,9 @@
 
 package org.nrg.xnat.turbine.utils;
 
+import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.ArcProjectI;
@@ -16,63 +19,52 @@ import org.nrg.xdat.om.ArcArchivespecification;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.preferences.SmtpServer;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.restlet.util.DateUtils;
 import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-
-import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
-
 import java.util.Date;
-import java.sql.SQLException;
-import org.nrg.xft.db.PoolDBUtils;
-import org.restlet.util.DateUtils;
+import java.util.List;
 
 /**
  * @author timo
- *
  */
+@Slf4j
 public class ArcSpecManager {
-    private static final Logger logger = LoggerFactory.getLogger(ArcSpecManager.class);
+    public static Date lastModified = null;
+
     private static ArcArchivespecification arcSpec = null;
 
     public synchronized static ArcArchivespecification GetFreshInstance() {
-		ArcArchivespecification arcSpec = null;
-        logger.warn("Getting Fresh ArcSpec...");
-		ArrayList<ArcArchivespecification> allSpecs = ArcArchivespecification.getAllArcArchivespecifications(null,false);
-	    if (allSpecs.size()>0) {
-	        arcSpec = allSpecs.get(0);
-        }
-	    return arcSpec;
+        log.info("Getting fresh ArcSpec...");
+		final List<ArcArchivespecification> allSpecs = ArcArchivespecification.getAllArcArchivespecifications(null, false);
+	    return allSpecs.isEmpty() ? null : allSpecs.get(0);
 	}
     
-    public synchronized static  ArcArchivespecification GetInstance(){
+    public synchronized static ArcArchivespecification GetInstance() {
     	return GetInstance(true);
     }
-    public static Date lastModified=null;
-    
-    public synchronized static  ArcArchivespecification GetInstance(boolean dbInit){
-        Date currentModDate=null;
+
+    public synchronized static ArcArchivespecification GetInstance(final boolean dbInit) {
+        final Date currentModDate;
         try {
-            currentModDate = (Date)PoolDBUtils.ReturnStatisticQuery("SELECT MAX(last_modified) AS last_modified FROM arc_archivespecification_meta_data", "last_modified", null, null);
-        } catch (SQLException e1) {
-            logger.error("",e1);
-        } catch (Exception e1) {
-            logger.error("",e1);
+            currentModDate = (Date) PoolDBUtils.ReturnStatisticQuery("SELECT MAX(last_modified) AS last_modified FROM arc_archivespecification_meta_data", "last_modified", null, null);
+        } catch (Exception e) {
+            log.error("An error occurred trying to query the last modified date for the ArcSpec", e);
+            return arcSpec;
         }
-        
-        if (arcSpec==null || (lastModified!=null && currentModDate!=null && DateUtils.before(lastModified, currentModDate))){
-            lastModified=currentModDate;
-            logger.info("Initializing ArcSpec...");
+
+        if (arcSpec == null || (lastModified != null && currentModDate != null && DateUtils.before(lastModified, currentModDate))) {
+            lastModified = currentModDate;
+            log.info("Initializing ArcSpec...");
             arcSpec = GetFreshInstance();
 
             try {
@@ -84,22 +76,22 @@ public class ArcSpecManager {
                         if (!arcSpecFileFolder.exists() && !arcSpecFileFolder.mkdirs()) {
                             throw new RuntimeException("Failed to create working file " + arcSpecFile.getAbsolutePath() + ", please check permissions and file system.");
                         }
-                        logger.debug("Initializing arcspec to cache file {}", arcSpecFile.getAbsolutePath());
+                        log.debug("Initializing arcspec to cache file {}", arcSpecFile.getAbsolutePath());
                         try (FileWriter writer = new FileWriter(arcSpecFile)) {
                             arcSpec.toXML(writer, true);
                         }
                     }
                 }
             } catch (IllegalArgumentException | IOException | SAXException e) {
-                logger.error("", e);
+                log.error("", e);
             }
-            logger.debug("Done writing out arc spec.");
-   
-            if(dbInit){
+
+            log.debug("Done writing out arc spec.");
+            if(dbInit) {
 	            try {
                     PrearcDatabase.initDatabase(XDAT.getBoolSiteConfigurationProperty("reloadPrearcDatabaseOnStartup", false));
 	    		} catch (Exception e) {
-	    			logger.error("",e);
+	    			log.error("", e);
 	    		}
             }
         }
@@ -107,8 +99,8 @@ public class ArcSpecManager {
         return arcSpec;
     }
 
-    public synchronized static  void Reset(){
-        arcSpec=null;
+    public synchronized static void Reset() {
+        arcSpec = null;
     }
 
     public synchronized static ArcArchivespecification initialize(final UserI user) throws Exception {
@@ -116,82 +108,60 @@ public class ArcSpecManager {
         final SiteConfigPreferences siteConfigPreferences = XDAT.getSiteConfigPreferences();
         final NotificationsPreferences notificationsPreferences = XDAT.getNotificationsPreferences();
         if (StringUtils.isNotBlank(siteConfigPreferences.getAdminEmail())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting site admin email to: {}", siteConfigPreferences.getAdminEmail());
-            }
+            log.info("Setting site admin email to: {}", siteConfigPreferences.getAdminEmail());
             arcSpec.setSiteAdminEmail(siteConfigPreferences.getAdminEmail());
         }
 
         if (StringUtils.isNotBlank(siteConfigPreferences.getSiteId())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting site ID to: {}", siteConfigPreferences.getSiteId());
-            }
+            log.info("Setting site ID to: {}", siteConfigPreferences.getSiteId());
             arcSpec.setSiteId(siteConfigPreferences.getSiteId());
         }
 
         if (StringUtils.isNotBlank(siteConfigPreferences.getSiteUrl())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting site URL to: {}", siteConfigPreferences.getSiteUrl());
-            }
+            log.info("Setting site URL to: {}", siteConfigPreferences.getSiteUrl());
             arcSpec.setSiteUrl(siteConfigPreferences.getSiteUrl());
         }
 
         final SmtpServer smtpServer = notificationsPreferences.getSmtpServer();
         if (smtpServer != null) {
             final String hostname = smtpServer.getHostname();
-            logger.info("Setting SMTP host to: {}", hostname);
+            log.info("Setting SMTP host to: {}", hostname);
             arcSpec.setSmtpHost(hostname);
         }
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Setting enable new registrations to: {}", siteConfigPreferences.getUserRegistration());
-        }
+        log.info("Setting enable new registrations to: {}", siteConfigPreferences.getUserRegistration());
         arcSpec.setEnableNewRegistrations(siteConfigPreferences.getUserRegistration());
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Setting require login to: {}", siteConfigPreferences.getRequireLogin());
-        }
+        log.info("Setting require login to: {}", siteConfigPreferences.getRequireLogin());
         arcSpec.setRequireLogin(siteConfigPreferences.getRequireLogin());
 
         if (StringUtils.isNotBlank(siteConfigPreferences.getPipelinePath())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting pipeline path to: {}", siteConfigPreferences.getPipelinePath());
-            }
+            log.info("Setting pipeline path to: {}", siteConfigPreferences.getPipelinePath());
             arcSpec.setProperty("globalPaths/pipelinePath", siteConfigPreferences.getPipelinePath());
         }
 
         if (StringUtils.isNotBlank(siteConfigPreferences.getArchivePath())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting archive path to: {}", siteConfigPreferences.getArchivePath());
-            }
+            log.info("Setting archive path to: {}", siteConfigPreferences.getArchivePath());
             arcSpec.setProperty("globalPaths/archivePath", siteConfigPreferences.getArchivePath());
         }
 
         if (StringUtils.isNotBlank(siteConfigPreferences.getPrearchivePath())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting prearchive path to: {}", siteConfigPreferences.getPrearchivePath());
-            }
+            log.info("Setting prearchive path to: {}", siteConfigPreferences.getPrearchivePath());
             arcSpec.setProperty("globalPaths/prearchivePath", siteConfigPreferences.getPrearchivePath());
         }
 
         if (StringUtils.isNotBlank(siteConfigPreferences.getCachePath())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting cache path to: {}", siteConfigPreferences.getCachePath());
-            }
+            log.info("Setting cache path to: {}", siteConfigPreferences.getCachePath());
             arcSpec.setProperty("globalPaths/cachePath", siteConfigPreferences.getCachePath());
         }
 
         if (StringUtils.isNotBlank(siteConfigPreferences.getFtpPath())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting FTP path to: {}", siteConfigPreferences.getFtpPath());
-            }
+            log.info("Setting FTP path to: {}", siteConfigPreferences.getFtpPath());
             arcSpec.setProperty("globalPaths/ftpPath", siteConfigPreferences.getFtpPath());
         }
 
         if (StringUtils.isNotBlank(siteConfigPreferences.getBuildPath())) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Setting build path to: {}", siteConfigPreferences.getBuildPath());
-            }
+            log.info("Setting build path to: {}", siteConfigPreferences.getBuildPath());
             arcSpec.setProperty("globalPaths/buildPath", siteConfigPreferences.getBuildPath());
         }
 
@@ -199,24 +169,15 @@ public class ArcSpecManager {
             setArcProjectPaths(arcProject, siteConfigPreferences);
         }
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Setting enable CSRF token to: {}", siteConfigPreferences.getEnableCsrfToken());
-        }
+        log.info("Setting enable CSRF token to: {}", siteConfigPreferences.getEnableCsrfToken());
         arcSpec.setEnableCsrfToken(siteConfigPreferences.getEnableCsrfToken());
 
-        if (logger.isInfoEnabled()) {
-            // logger.info("Saving arcspec: {}", displayArcSpec(arcSpec));
-            logger.info("Saving arcspec");
-        }
+        log.info("Saving arcspec");
         save(arcSpec, user, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.PROCESS, "Initialized archive specifications."));
         return arcSpec;
     }
 
-//    private static String displayArcSpec(final ArcArchivespecification arcSpec) {
-//        return "TBD.";
-//    }
-
-    public static boolean allowTransferEmail(){
+    public static boolean allowTransferEmail() {
         return GetInstance().getEmailspecifications_transfer();
     }
     

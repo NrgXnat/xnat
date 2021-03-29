@@ -482,7 +482,7 @@ public  class FileUtils {
     public static int CountFiles(File src, boolean stopAt1) {
         if (src.isDirectory()) {
             if (stopAt1) {
-                return HasFiles(src) ? 0 : 1;
+                return HasFiles(src) ? 1 : 0;
             }
             int count = 0;
             try (Stream<Path> stream = Files.walk(src.toPath())) {

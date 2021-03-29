@@ -951,7 +951,7 @@ public  class FileUtils {
             if (file.isDirectory()) {
                 FileUtils.MoveDir(file, destination.toFile(), true);
             } else {
-                FileUtils.MoveFile(file, destination.resolve(file.getName()).toFile(), true);
+                FileUtils.MoveFile(file, destination.toFile(), true);
             }
         } else if (file.isDirectory()) {
             org.apache.commons.io.FileUtils.deleteDirectory(file);

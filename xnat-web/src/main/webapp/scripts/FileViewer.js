@@ -360,7 +360,12 @@ function FileViewer(_obj){
 		XNAT.ui.dialog.static.wait("Refreshing Catalog Information",{id:"catalogs"});
 		var catCallback={
 			success:this.processCatalogs,
-			failure:this.handleFailure,
+			failure:function() {
+				if (!window.leaving) {
+					XNAT.ui.dialog.close("catalogs");
+					xmodal.message('File Viewer', "Error refreshing catalogs, changes may not persist");
+				}
+			},
             cache:false, // Turn off caching for IE
 			scope:this
         };
@@ -1037,7 +1042,7 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
                     if(this.cat.canDelete)
                         _html +="&nbsp; <a onclick=\"window.viewer.removeFile({file_name:'" + path +"',uri:'" + serverRoot + file.URI + "'});\" style=\"color: #900\"><i class=\"fa fa-trash-o\" title=\"Delete\"></i></a>";
 
-                    var fileNode=new YAHOO.widget.HTMLNode({html: _html, expanded: false}, fileNode);
+                    fileNode=new YAHOO.widget.HTMLNode({html: _html, expanded: false}, fileNode);
                     fileNode.labelStyle = "icon-f";
 
                 } else {
@@ -1058,7 +1063,7 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
                             newPath = newPath + "/" + splitPath[np];
                         }
                         newPath = newPath + '/*';
-                        var _lbl="<a target='_blank' onclick=\"location.href='" +serverRoot + newPath + "?format=zip';\">" + splitPath[sp] + "</a>"
+                        var _lbl="<td><a target='_blank' onclick=\"location.href='" +serverRoot + newPath + "?format=zip';\">" + splitPath[sp] + "</a>"
                         if(file.file_format!=""){
                             _lbl +="&nbsp;"+ file.file_format +"";
                         }
@@ -1071,12 +1076,11 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
 
                         if(this.cat.canDelete)
                             _lbl +="&nbsp;&nbsp;<a onclick=\"window.viewer.removeFile({file_name:'" + path +"',uri:'" + serverRoot + newPath + "'});\" style=\"color: #900\"><i class=\"fa fa-trash-o\" title=\"Delete\"></i></a>";
+						_lbl += "</td>";
 
 
-
-                        fileNode=new YAHOO.widget.TaskNode({label: _lbl, expanded: false}, fileNode);
-                        fileNode.labelStyle = "icon-f";
-
+						fileNode=new YAHOO.widget.HTMLNode({html: _lbl, expanded: false}, fileNode);
+						fileNode.labelStyle = "icon-f";
                         folderArray[folderArrayKey] = fileNode;
 
                     }
@@ -1179,9 +1183,11 @@ function UploadFileForm(_obj){
 							coll_select.options[coll_select.options.length]=new Option(cat.label,cat.xnat_abstractresource_id);
 						}
 	   	  			}
-					//	if(coll_select.options.length==0){
-					//		coll_select.options[coll_select.options.length]=new Option("NO LABEL","");
-					//	}
+
+					if(coll_select.options.length === 0){
+						xmodal.message('File Viewer', "Please create a folder (using the Add Folder dialog) before attempting to add files at this level.");
+						coll_select.disabled=true;
+					}
 	   	  		}else{
 	   	  			coll_select.disabled=true;
 	   	  			item_select.disabled=false;
@@ -1461,6 +1467,7 @@ function UploadFileForm(_obj){
             xmodal.message('File Viewer', "Please select a file to upload.");
   	    	return;
   	    }
+
 
 		var collection_name=coll_select.options[coll_select.selectedIndex].value;
 		var upload_level = document.getElementById("upload_level").value.trim();
@@ -1841,8 +1848,6 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
     var callback = {
         upload: function (response) {
 			XNAT.app.timeout.maintainLogin = false;
-            window.viewer.requiresRefresh = true;
-            window.viewer.refreshCatalogs("add_file");
             this.cancel();
             // CNDA-497: Filtered out <pre> text, which is sent on successful completion (i.e. no message)
             if (response.responseText && !response.responseText.toLowerCase().match(/^<pre.*?><\/pre>$/)) {
@@ -1859,16 +1864,24 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
                         opt.content += "</ul>";
                         opt.title = 'File Viewer';
                         xmodal.message(opt);
-                    }
+						XNAT.ui.dialog.close("add_file");
+                    } else {
+						window.viewer.requiresRefresh = true;
+						window.viewer.refreshCatalogs("add_file");
+					}
                 } catch (err) { // Fixes XNAT-2989
+                	// You get here if the response isn't JSON
                     var options = {};
                     if (response.responseText) {
-                        var reasons = response.responseText.match(/\<h3\>(.*[\n\r])+\<\/h3\>/g);
+						options = {width: 600, height: 400};
+                        var reasons = response.responseText.match(/\<h3\>.*\<\/h3\>/g);
                         if (reasons && reasons[0]) {
                             reasons = "<br><br>" + reasons[0].replace(/\<\/?h3\>/g, "").replace(/[\n\r]/g, "<br>");
-                            options = {width: 600, height: 400};
                             xmodal.message('Add Folder Error', "Failed to upload files." + reasons, "OK", options);
-                        }
+                        } else {
+							xmodal.message('Add Folder Error', "Failed to upload files." + response.responseText, "OK", options);
+						}
+						XNAT.ui.dialog.close("add_file");
                     }
                 }
             }

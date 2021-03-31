@@ -74,7 +74,8 @@
                         #if ($item.canEdit($user))
                             <span class="inline-actions">
                                 <a class="uploadImages" data-project="$om.getProject()" data-session="$om.getLabel()"
-                                   data-overwrite="append" data-modal="$!siteConfig.getBooleanValue("uploadDicomViaModal")">
+                                   data-overwrite="append" data-datatype="$om.getXSIType()"
+                                   data-modal="$!siteConfig.getBooleanValue("uploadDicomViaModal")">
                                     <i class="fa fa-upload" title="Upload images"></i>
                                 </a>
                             </span>

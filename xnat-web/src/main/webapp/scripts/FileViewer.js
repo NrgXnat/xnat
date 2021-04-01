@@ -1845,6 +1845,18 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
 	var form = document.getElementById("file_upload");
 	YAHOO.util.Connect.setForm(form,true);
 
+	function displayError(responseText) {
+		const options = {width: 600, height: 400};
+		let reasons = responseText.match(/\<h3\>.*\<\/h3\>/g);
+		if (reasons && reasons[0]) {
+			reasons = reasons[0].replace(/\<\/?h3\>/g, "").replace(/[\n\r]/g, "<br>");
+			xmodal.message('Add Folder Error', "Failed to upload files.<br><br>" + reasons, "OK", options);
+		} else {
+			xmodal.message('Add Folder Error', "Failed to upload files.<br><br>" + responseText, "OK", options);
+		}
+		XNAT.ui.dialog.close("add_file");
+	}
+
     var callback = {
         upload: function (response) {
 			XNAT.app.timeout.maintainLogin = false;
@@ -1865,26 +1877,18 @@ XNAT.app._uploadFile=function(arg1,arg2,container){
                         opt.title = 'File Viewer';
                         xmodal.message(opt);
 						XNAT.ui.dialog.close("add_file");
-                    } else {
-						window.viewer.requiresRefresh = true;
-						window.viewer.refreshCatalogs("add_file");
+					} else {
+                    	// this is JSON but not JSON we expect, so... just show it? (this shouldn't happen)
+                    	displayError(response.responseText);
 					}
                 } catch (err) { // Fixes XNAT-2989
                 	// You get here if the response isn't JSON
-                    var options = {};
-                    if (response.responseText) {
-						options = {width: 600, height: 400};
-                        var reasons = response.responseText.match(/\<h3\>.*\<\/h3\>/g);
-                        if (reasons && reasons[0]) {
-                            reasons = "<br><br>" + reasons[0].replace(/\<\/?h3\>/g, "").replace(/[\n\r]/g, "<br>");
-                            xmodal.message('Add Folder Error', "Failed to upload files." + reasons, "OK", options);
-                        } else {
-							xmodal.message('Add Folder Error', "Failed to upload files." + response.responseText, "OK", options);
-						}
-						XNAT.ui.dialog.close("add_file");
-                    }
+					displayError(response.responseText);
                 }
-            }
+            } else {
+				window.viewer.requiresRefresh = true;
+				window.viewer.refreshCatalogs("add_file");
+			}
         },
         failure: function (obj1) {
 			XNAT.app.timeout.maintainLogin = false;

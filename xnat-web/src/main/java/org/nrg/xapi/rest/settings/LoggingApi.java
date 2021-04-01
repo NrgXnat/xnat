@@ -125,7 +125,7 @@ public class LoggingApi extends AbstractXapiRestController {
     @ApiOperation(value = "Downloads the XNAT log files as a zip archive.",
                   notes = "This call takes a string map as JSON. PUT and POST are the same operation. Acceptable values in the map include: \"logFileSpec\" is a glob-style  wild card, e.g. '*.log', " +
                           "'application.*', etc. This defaults to '*'. \"path\" specifies the path to the folder containing the log files you want to access. The default value is the logs folder in " +
-                          "your XNAT home directory, but you can specify other paths to which the XNAT application server user has access, e.g. \"/var/log/tomcat7\" to retrieve the Tomcat logs. " +
+                          "your XNAT home directory, but you can specify other paths to which the XNAT application server user has access, e.g. \"/var/log/tomcat\" to retrieve the Tomcat logs. " +
                           "Finally \"includeEmptyFiles\" indicates whether empty files should be included. By default only files that contain data are included.",
                   response = StreamingResponseBody.class)
     @ApiResponses({@ApiResponse(code = 200, message = "XNAT logs successfully downloaded."),

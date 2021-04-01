@@ -9,10 +9,15 @@
 #
 
 [[ -z ${1} ]] && {
-    LIB_FOLDER=/var/lib/tomcat7/webapps/ROOT/WEB-INF/lib
+    for TC_ROOT in /var/lib/tomcat8 /var/lib/tomcat9 /var/lib/tomcat7 /var/lib/tomcat; do
+        [[ -d ${TC_ROOT} ]] && { break; }
+    done
+    LIB_FOLDER=${TC_ROOT}/webapps/ROOT/WEB-INF/lib
 } || {
     LIB_FOLDER="${1}"
 }
+
+[[ ! -d ${LIB_FOLDER} ]] && { echo "I couldn't find a valid folder to search: ${LIB_FOLDER} doesn't exist"; exit 1; }
 
 echo "Checking all jar files in the folder ${LIB_FOLDER}..."
 for JAR in $(ls ${LIB_FOLDER}/*.jar); do

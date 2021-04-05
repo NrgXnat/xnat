@@ -1,6 +1,5 @@
 package org.nrg.xnat.eventservice.config;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
@@ -27,6 +26,7 @@ import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.listeners.TestDefaultEventServiceListener;
 import org.nrg.xnat.eventservice.services.*;
 import org.nrg.xnat.eventservice.services.impl.*;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
@@ -35,11 +35,11 @@ import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import reactor.bus.EventBus;
 
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import javax.sql.DataSource;
 
 @Configuration
 @Import({HibernateConfig.class, ObjectMapperConfig.class, SerializerConfig.class})
@@ -67,6 +67,13 @@ public class EventServiceTestConfig {
     }
 
     @Bean
+    public XnatAppInfo xnatAppInfo() {
+        final XnatAppInfo xnatAppInfo = Mockito.mock(XnatAppInfo.class);
+        Mockito.when(xnatAppInfo.getNode()).thenReturn(null);
+        return xnatAppInfo;
+    }
+
+    @Bean
     public EventService eventService(EventSubscriptionEntityService subscriptionService, EventBus eventBus,
                                      EventServiceComponentManager componentManager,
                                      ActionManager actionManager,
@@ -74,8 +81,10 @@ public class EventServiceTestConfig {
                                      UserManagementServiceI userManagementService,
                                      EventPropertyService eventPropertyService,
                                      ObjectMapper mapper,
-                                     EventServicePrefsBean mockEventServicePrefsBean) {
-        return new EventServiceImpl(subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
+                                     EventServicePrefsBean mockEventServicePrefsBean,
+                                     final XnatAppInfo xnatAppInfo) {
+        return new EventServiceImpl(subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService,
+                                    userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean, xnatAppInfo);
     }
 
     @Bean
@@ -86,8 +95,9 @@ public class EventServiceTestConfig {
                                          UserManagementServiceI userManagementService,
                                          EventPropertyService eventPropertyService,
                                          ObjectMapper mapper,
-                                         EventServicePrefsBean mockEventServicePrefsBean) {
-        return new EventServiceImpl(subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean);
+                                         EventServicePrefsBean mockEventServicePrefsBean,
+                                         final XnatAppInfo xnatAppInfo) {
+        return new EventServiceImpl(subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean, xnatAppInfo);
     }
 
     @Bean
@@ -106,7 +116,6 @@ public class EventServiceTestConfig {
     public EventServicePrefsBean mockEventServicePrefsBean() {
         return Mockito.mock(EventServicePrefsBean.class);
     }
-
 
     @Bean
     public SubscriptionDeliveryEntityService subscriptionDeliveryEntityService(final @Lazy EventService eventService, final @Lazy EventSubscriptionEntityService eventSubscriptionService) {
@@ -146,16 +155,12 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public ActionManager actionManager(EventServiceComponentManager componentManager,
-                                       SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
-                                       EventPropertyService eventPropertyService) {
+    public ActionManager actionManager(EventServiceComponentManager componentManager, SubscriptionDeliveryEntityService subscriptionDeliveryEntityService, EventPropertyService eventPropertyService) {
         return new ActionManagerImpl(componentManager, subscriptionDeliveryEntityService, eventPropertyService);
     }
 
     @Bean
-    public ActionManager mockActionManager(EventServiceComponentManager mockComponentManager,
-                                           SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService,
-                                           EventPropertyService eventPropertyService) {
+    public ActionManager mockActionManager(EventServiceComponentManager mockComponentManager, SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService, EventPropertyService eventPropertyService) {
         return new ActionManagerImpl(mockComponentManager, mockSubscriptionDeliveryEntityService, eventPropertyService);
     }
 
@@ -184,13 +189,7 @@ public class EventServiceTestConfig {
         final LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
-        bean.setAnnotatedClasses(
-                SubscriptionEntity.class,
-                EventServiceFilterEntity.class,
-                SubscriptionDeliveryEntity.class,
-                TimedEventStatusEntity.class,
-                EventServicePayloadEntity.class,
-                TriggeringEventEntity.class);
+        bean.setAnnotatedClasses(SubscriptionEntity.class, EventServiceFilterEntity.class, SubscriptionDeliveryEntity.class, TimedEventStatusEntity.class, EventServicePayloadEntity.class, TriggeringEventEntity.class);
         return bean;
     }
 
@@ -206,8 +205,7 @@ public class EventServiceTestConfig {
 
     @SuppressWarnings("rawtypes")
     @Bean
-    public EventServiceComponentManager componentManager(final List<EventServiceListener> eventListeners,
-                                                         final List<EventServiceActionProvider> actionProviders) {
+    public EventServiceComponentManager componentManager(final List<EventServiceListener> eventListeners, final List<EventServiceActionProvider> actionProviders) {
         return new EventServiceComponentManagerImpl(eventListeners, actionProviders);
     }
 
@@ -248,9 +246,12 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public ImageAssessorEvent imageAssessorEvent() { return new ImageAssessorEvent();}
+    public ImageAssessorEvent imageAssessorEvent() {
+        return new ImageAssessorEvent();
+    }
 
     @Bean
-    public SampleEvent sampleEvent() { return new SampleEvent();}
-
+    public SampleEvent sampleEvent() {
+        return new SampleEvent();
+    }
 }

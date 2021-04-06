@@ -297,7 +297,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @Ignore
     @DirtiesContext
     public void createSubscription() throws Exception {
         List<SimpleEvent> events = mockEventService.getEvents();
@@ -395,7 +394,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @Ignore
     public void listSubscriptions() throws Exception {
         createSubscription();
         assertThat("No subscriptions found.", eventService.getSubscriptions(), is(not(empty())));
@@ -1459,7 +1457,6 @@ public class EventServiceIntegrationTest {
 
 
     @Test
-    @Ignore
     @DirtiesContext
     public void catchSpecificEventWithOpenFilter() throws Exception {
         String projectId1 = "PROJECTID_1";

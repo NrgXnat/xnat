@@ -60,7 +60,9 @@ public abstract class EventFilter {
     // return hash from properties used in Reactor criteria definition
     public Integer getReactorCriteriaHash(){
         StringBuilder stringBuilder = new StringBuilder(eventType());
-        projectIds().stream().forEach(pid -> stringBuilder.append(pid));
+        if ( projectIds() != null ) {
+            projectIds().stream().forEach(pid -> stringBuilder.append(pid));
+        }
         stringBuilder.append(status());
         return stringBuilder.toString().hashCode();
     }

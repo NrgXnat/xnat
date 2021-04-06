@@ -53,11 +53,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 import static org.nrg.xnat.helpers.prearchive.SessionException.Error.*;
@@ -67,6 +65,7 @@ public final class PrearcDatabase {
     public static Connection conn;
     final static String table = "prearchive";
     final static String tableWithSchema = PoolDBUtils.search_schema_name + "." + PrearcDatabase.table;
+    final static String uniquenessConstraint = "prearchive_study";
     private final static String tableSql = PrearcDatabase.createTableSql();
     private static final String QUERY_PREARC_TABLE_COLUMNS = "SELECT column_name FROM information_schema.columns WHERE table_schema = '" + PoolDBUtils.search_schema_name + "' AND table_name = '" + PrearcDatabase.table + "'";
     public static boolean ready = false;
@@ -265,8 +264,15 @@ public final class PrearcDatabase {
                     Collection inCommon = CollectionUtils.intersection(required, existing);
                     boolean allRequiredExist = inCommon.size() == required.size();
 
-                    // If we have all required columns and the ordering is good, we're done, the table matches.
-                    if (allRequiredExist && ordered) {
+                    // Determine if uniqueness constraint exists
+                    Long count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT count(*) FROM " +
+                            "information_schema.constraint_column_usage WHERE table_schema = '" +
+                            PoolDBUtils.search_schema_name + "' AND table_name ='" + table +
+                            "' AND constraint_name='" + uniquenessConstraint + "'", "count", null, null);
+
+                    // If we have all required columns and the ordering is good and the uniqueness constraint exists,
+                    // we're done, the table matches.
+                    if (allRequiredExist && ordered && count > 0) {
                         return null;
                     }
 
@@ -1980,7 +1986,7 @@ public final class PrearcDatabase {
             /**
              * Return the found session
              * (non-Javadoc)
-             * @see org.nrg.xnat.helpers.prearchive.PrearcDatabase.PredicatedOp#trueOp()
+             * @see PredicatedOp#trueOp()
              */
             Either<SessionData, SessionData> trueOp() throws SQLException, SessionException, Exception {
                 return new Either<SessionData, SessionData>() {
@@ -1996,29 +2002,57 @@ public final class PrearcDatabase {
 
                 SessionData resultSession = new SessionOp<SessionData>() {
                     public SessionData op() throws SQLException, SessionException, Exception {
-                        int dups = PrearcDatabase.countOf(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
-                        int suffix = 1;
+                        sessionData.setAutoArchive((Object) autoArchive);
+                        boolean duplicated;
+                        int suffix = 0;
                         String suffixString = "";
-                        while (dups == 1) {
-                            suffixString = "_" + suffix;
-                            dups = PrearcDatabase.countOf(sessionData.getFolderName() + suffixString, sessionData.getTimestamp(), sessionData.getProject());
-                            if (dups > 1) {
-                                throw new SessionException(DatabaseError, "Database is in a bad state, " + dups + "sessions (name : " + sessionData.getFolderName() + " timestamp: " + sessionData.getTimestamp() + " project : " + sessionData.getProject());
+                        do {
+                            if (suffix > 0) {
+                                appendSuffix(suffixString);
                             }
-                            suffix++;
-                        }
+                            if (sessionData.getProject() == null) {
+                                // We have to manually check for duplicates since nulls are considered distinct in postgres
+                                int dups;
+                                do {
+                                    if (suffix > 0) {
+                                        appendSuffix(suffixString);
+                                    }
+                                    dups = PrearcDatabase.countOf(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                                    suffix++;
+                                    suffixString = "_" + suffix;
+                                    if (suffix > 3) {
+                                        // this shouldn't happen, throw the exception
+                                        throw new SessionException(AlreadyExists, "Trying to add an existing session: " +
+                                                sessionData);
+                                    }
+                                } while (dups > 0);
+                            }
 
+                            PreparedStatement statement = this.pdb.getPreparedStatement(null, PrearcDatabase.insertSql());
+                            for (int i = 0; i < DatabaseSession.values().length; i++) {
+                                DatabaseSession.values()[i].setInsertStatement(statement, sessionData);
+                            }
+                            try {
+                                statement.executeUpdate();
+                                duplicated = false;
+                            } catch (SQLIntegrityConstraintViolationException e) {
+                                // If there's an integrity constraint violation, we're trying to insert a dupe
+                                duplicated = true;
+                                suffix++;
+                                suffixString = "_" + suffix;
+                                if (suffix > 3) {
+                                    // this shouldn't happen, throw the exception
+                                    throw e;
+                                }
+                            }
+                        } while (duplicated);
+                        return PrearcDatabase.getSession(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                    }
+
+                    private void appendSuffix(String suffixString) {
                         sessionData.setFolderName(sessionData.getFolderName() + suffixString);
                         sessionData.setName(sessionData.getName() + suffixString);
-                        sessionData.setUrl((new File(tsFile, sessionData.getFolderName()).getAbsolutePath()));
-                        sessionData.setAutoArchive((Object) autoArchive);
-
-                        PreparedStatement statement = this.pdb.getPreparedStatement(null, PrearcDatabase.insertSql());
-                        for (int i = 0; i < DatabaseSession.values().length; i++) {
-                            DatabaseSession.values()[i].setInsertStatement(statement, sessionData);
-                        }
-                        statement.executeUpdate();
-                        return PrearcDatabase.getSession(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                        sessionData.setUrl(new File(tsFile, sessionData.getFolderName()).getAbsolutePath());
                     }
                 }.run();
                 result.setLeft(resultSession);
@@ -2154,6 +2188,10 @@ public final class PrearcDatabase {
             values.add(d.getColumnName() + " " + d.getColumnDefinition());
         }
         s.append(StringUtils.join(values.toArray(), ','));
+        s.append(", CONSTRAINT ").append(uniquenessConstraint).append(" UNIQUE (").append(String.join(",", Arrays.asList(
+                DatabaseSession.TIMESTAMP.getColumnName(),
+                DatabaseSession.PROJECT.getColumnName(),
+                DatabaseSession.FOLDER_NAME.getColumnName()))).append(")");
         s.append(")");
         return s.toString();
     }

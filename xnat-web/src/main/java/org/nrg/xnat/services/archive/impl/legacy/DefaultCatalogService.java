@@ -1158,6 +1158,8 @@ public class DefaultCatalogService implements CatalogService {
                         FileUtils.copyFileToDirectory(file, destination);
                     }
                 } catch (IOException e) {
+                    log.error("Error copying {} to {}, attempting to copy as input stream", resource.getFilename(),
+                            destination, e);
                     FileUtils.copyInputStreamToFile(source.getInputStream(), destination.toPath().resolve(resourceName).toFile());
                 }
             } else if (source instanceof MultipartFile) {

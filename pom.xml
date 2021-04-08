@@ -64,8 +64,7 @@
         <signing.keypass>keypass</signing.keypass>
         <signing.tsa>https://timestamp.digicert.com</signing.tsa>
 
-        <xnat.version>1.8.2-SNAPSHOT</xnat.version>
-        <xnat-rel.version>1.8.0.1</xnat-rel.version>
+        <xnat.version>1.8.1</xnat.version>
         <xnatdev.version>1.8.2-SNAPSHOT</xnatdev.version>
 
         <!-- XNAT core library versions -->
@@ -85,20 +84,20 @@
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.2.1-SNAPSHOT</nrg.mizer.version>
-        <nrg.dicomtools.version>${xnatdev.version}</nrg.dicomtools.version>
+        <nrg.mizer.version>1.2.1</nrg.mizer.version>
+        <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>1.1.0-SNAPSHOT</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>6.3.1-SNAPSHOT</nrg.dicom-edit6.version>
-        <nrg.dicom.pixeleditor.version>1.3.0-SNAPSHOT</nrg.dicom.pixeleditor.version>
-        <nrg.dicomdb.version>5.3.0-SNAPSHOT</nrg.dicomdb.version>
-        <nrg.dicom-xnat.version>${xnatdev.version}</nrg.dicom-xnat.version>
+        <nrg.dicom-edit4.version>1.1.0</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>6.3.1</nrg.dicom-edit6.version>
+        <nrg.dicom.pixeleditor.version>1.3.0</nrg.dicom.pixeleditor.version>
+        <nrg.dicomdb.version>5.3.0</nrg.dicomdb.version>
+        <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.1.0-SNAPSHOT</nrg.ecat.version>
-        <nrg.extattr.version>4.3.0-SNAPSHOT</nrg.extattr.version>
-        <nrg.prearcimporter.version>${xnatdev.version}</nrg.prearcimporter.version>
-        <nrg.sessionbuilders.version>${xnatdev.version}</nrg.sessionbuilders.version>
-        <nrg.plexiviewer.version>${xnatdev.version}</nrg.plexiviewer.version>
+        <nrg.ecat.version>1.1.0</nrg.ecat.version>
+        <nrg.extattr.version>4.3.0</nrg.extattr.version>
+        <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
+        <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
+        <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>
         <pipeline.version>${xnat.version}</pipeline.version>
         <pipelinedev.version>${xnat.version}</pipelinedev.version>
         <data-client.version>${xnat.version}</data-client.version>

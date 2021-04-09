@@ -87,7 +87,8 @@
 
                         function findAdminTabs(idIndex){
                             if (gotTabs || idIndex >= spawnerIds.length) return;
-                            var spawnerNS = 'siteAdmin/' + spawnerIds[idIndex];
+                            var siteAdminSettingsNamespace = XNAT.data.siteConfig.siteAdminSettingsNamespace || 'siteAdmin';
+                            var spawnerNS = siteAdminSettingsNamespace + '/' + spawnerIds[idIndex];
                             XNAT.spawner
                                 .resolve(spawnerNS)
                                 .ok(function(){

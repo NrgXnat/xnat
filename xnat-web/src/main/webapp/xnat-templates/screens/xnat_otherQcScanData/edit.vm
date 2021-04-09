@@ -1,0 +1,58 @@
+<!-- BEGIN xnat:petQcScanData -->
+#set($yes_no_options = ["Yes", "No"])
+#set($session = $om.getImageSessionData())
+#set($tracer = $session.getProperty("tracer/name"))
+
+
+<tr>
+	<th colspan="2" align="left" class="qcScanHeader">
+		#set($imageScan_ID = $item.getStringProperty("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/imageScan_ID"))
+		#if ($imageScan_ID)
+			<font face="$ui.sansSerifFonts" size="3">Scan: $imageScan_ID</font> <div style="float:right">$!session.getScanById($imageScan_ID).getType()</div>
+			
+			<div style="display:none">
+				<input class="scan$imageScan_ID" type="checkbox" ID="scan_qc_$imageScan_ID" name="xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/imageScan_ID" value='${imageScan_ID}' #if($item.getProperty("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/pass"))CHECKED#end />
+			</div>
+		#else
+			<font face="$ui.sansSerifFonts" size="3">Scan: ERROR</font>
+		#end
+	</th>
+</tr>
+
+
+
+
+<tr>
+	<td colspan="2" class="noLPad">
+		<table>
+			<tr>
+				<td class="noLPad" style="font-weight:600">Does the scan pass quality control?</td>
+				<td>
+					#qcOptionalYesNoSelectWOnclick("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/pass" $item $vr "YUIDOM.get('scan_qc_$imageScan_ID').checked=true;return toggleRejection(this);")
+					#xdatHiddenBox("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/xnat_qcScanData_id" $item "")
+				</td>
+			</tr>
+				
+			<tr>
+				<td valign="top" class="noLPad">Additional QC Comments</td>
+				<td colspan="2">#xdatTextArea("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/comments" $item "" $vr 3 50)</td>
+			</tr>
+		</table>
+	</td>
+</tr>
+
+<script>
+YAHOO.util.Event.onDOMReady(function(){
+   var lastPass=document.getElementsByName("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/pass")[document.getElementsByName("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/pass").length - 1];
+   _addValidation(lastPass,new ConditionalRadio("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/pass",lastPass,{check:function(){
+		if(getValueById("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:otherQcScanData]/comments").value!=""){
+			return true;
+		}
+		
+		return false;
+   }}));
+});
+</script>
+<!-- END xnat:petQcScanData -->
+
+		

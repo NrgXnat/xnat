@@ -316,15 +316,15 @@ dependencies {
     runtimeOnly "org.python:jython-standalone"
 
     tomcat "org.apache.tomcat.embed:tomcat-embed-core",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli",
-            "org.apache.tomcat.embed:tomcat-embed-jasper"
+           "org.apache.tomcat.embed:tomcat-embed-logging-juli",
+           "org.apache.tomcat.embed:tomcat-embed-jasper"
 
     cargo "org.codehaus.cargo:cargo-core-uberjar",
-            "org.codehaus.cargo:cargo-ant",
-            "org.slf4j:jcl-over-slf4j",
-            "org.slf4j:slf4j-api",
-            "ch.qos.logback:logback-classic",
-            "ch.qos.logback:logback-core"
+          "org.codehaus.cargo:cargo-ant",
+          "org.slf4j:jcl-over-slf4j",
+          "org.slf4j:slf4j-api",
+          "ch.qos.logback:logback-classic",
+          "ch.qos.logback:logback-core"
 
     testImplementation "org.nrg:test"
     testImplementation "junit:junit"
@@ -374,7 +374,7 @@ task deployToTomcat(type: Copy, dependsOn: war) {
 cargo {
     // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command line in
     // the form -PdeployPort=8080 -PdeployContext=/ -PdeployHost=localhost -PdeployUser=deploy -PdeployPassword=deploy
-    containerId = "tomcat7x"
+    containerId = "tomcat8x"
     port = propertyWithDefault("deployPort", 8080) as int
 
     deployable {

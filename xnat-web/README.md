@@ -144,13 +144,13 @@ Deploy your generated war file to a local Tomcat instance with the **deployToTom
  Tomcat instance with the property **tomcatHome**. As with **archiveName** above, you can specify this on the command line:
 
 ```shell
-$ ./gradlew -PtomcatHome=/var/lib/tomcat7
+$ ./gradlew -PtomcatHome=/var/lib/tomcat
 ```
 
 Or in the **gradle.properties** file:
 
 ```properties
-tomcatHome=/var/lib/tomcat7
+tomcatHome=/var/lib/tomcat
 ```
 
 **tomcatHome** defaults to ‘.’, so if you don’t specify a value for it, you’ll end up with a folder named **webapps** in your local repository folder. That folder is also in
@@ -179,7 +179,7 @@ $ ./gradlew cargoUndeployRemote
 As you can probably guess, the first task deploys the application to the remote Tomcat. If there is already an application deployed at the specified context, this task will fail.
 In that case you can use the second task to redeploy. The third task undeploys the remote application, clearing the context.
 
-You'll need to have installed the [Tomcat manager application](https://tomcat.apache.org/tomcat-7.0-doc/manager-howto.html) onto the Tomcat server. You'll also need to configure
+You'll need to have installed the [Tomcat manager application](https://tomcat.apache.org/tomcat-8.5-doc/manager-howto.html) onto the Tomcat server. You'll also need to configure
 the **tomcat-users.xml** file appropriately. This is described in the Tomcat Manager How-to page, but a sample **tomcat-users.xml** might look like this:
 
 ```xml
@@ -206,7 +206,7 @@ You need to pass in a few values when you run the Gradle build with any of the C
 The easiest way to specify these values is to put them in your **gradle.properties** file, usually located in ~/.gradle but you can also have it in the root of the build folder.
 
 ```properties
-deployHost=xnat17dev.xnat.org
+deployHost=xnatdev.xnat.org
 deployPort=8080
 deployContext=/
 deployUser=deploy

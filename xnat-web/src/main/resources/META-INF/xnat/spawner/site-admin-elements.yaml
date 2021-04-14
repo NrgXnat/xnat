@@ -17,8 +17,20 @@ siteId:
     description: >
         The id used to refer to this site (also used to generate database ids).
         The Site ID must start with a letter and contain only letters, numbers
-        and underscores. It should be a short, one-word name or acronym which
-        describes your site. No spaces or non-alphanumeric characters.
+        and underscores. No spaces or non-alphanumeric characters.
+
+siteUrl:
+    kind: panel.element
+    label: Site Url
+    info: >
+        <p>This should be a functional address (i.e. if the user pasted this address in their web browser, they should come to the site). You are required to guarantee that this address is functional for reaching the site.</p>
+        <p>Note: "localhost" only works if the web browser is located on the same machine. </p>
+    contents:
+        siteUrlInput:
+            kind: input.text
+            validation: url onblur
+            after: >
+                <p class="description">The address you want visible to users in emails, and other external links. Include http(s) protocol.</p>
 
 siteDescriptionPage:
     tag: input|type=text|name=siteDescriptionPage|size=30|class=uri onblur|data-validate=uri onblur
@@ -32,29 +44,6 @@ siteDescriptionText:
         rows: 8
     after: >
         <p class="description">Specify a simple text description of this site.</p>
-
-passwordExpirationInterval:
-    kind: input.text
-    #    id: passwordExpirationInterval
-    name: passwordExpirationInterval
-    label: Password Expiration (Interval)
-    validation: interval onblur
-    after: >
-        <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
-        Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
-
-passwordExpirationDate:
-    kind: input.text
-    #    id: passwordExpirationDate
-    name: passwordExpirationDate
-    label: Password Expiration (Date)
-    validation: allow-empty date-iso onblur
-    after: >
-        <span id="datePicker">&nbsp;&nbsp;
-        <span id="openCal-passwordExpirationDate" class="fa fa-calendar"></span>
-        <br>
-        <p class="description">Expire passwords that were last changed before this date and require those users to change them.</p>
-        </span>
 
 siteDescriptionType:
     kind: panel.element
@@ -138,17 +127,6 @@ siteHomeLayout:
     name: siteHomeLayout
     label: Site Home Layout
 
-siteUrl:
-    kind: panel.input.text
-    name: siteUrl
-    label: Site Url
-    validation: url onblur
-    description: >
-        The address you want visible to users in emails, and other external links. This should be a
-        functional address (i.e. if the user pasted this address in their web browser, they should
-        come to the site). localhost only works if the web browser is located on the same machine.
-        You are required to guarantee that this address is functional for reaching the site.
-
 processingUrl:
     kind: panel.input.text
     name: processingUrl
@@ -160,14 +138,17 @@ processingUrl:
         site URL, provide one here.
 
 adminEmail:
-    kind: panel.input.email
-    name: adminEmail
+    kind: panel.element
     label: Site Admin Email
-    validation: email onblur
-    description: >
-        The administrative email account to receive system emails. This address will receive frequent emails
-        on system events, such as errors, processing completion, new user registration and so on. These emails
-        can be configured on the Notifications tab.
+    info: >
+        <p>This address will receive frequent emails on system events, such as errors, processing completion, new user registration and so on. </p>
+        <p>Additional emails for specific notification types can be configured on the Notifications tab.</p>
+    contents:
+        adminEmailInput:
+            kind: input.email
+            validation: email onblur
+            after: >
+                <p class="description">The administrative email account to receive system emails.</p>
 
 primaryAdminUsername:
     kind: panel.input.text
@@ -176,8 +157,22 @@ primaryAdminUsername:
     validation: id-strict max-length:40 onblur
     placeholder: User account to use when performing system functions
     description: >
-        This should be the login name of an enabled and valid user. The specified user must be a site
-        administrator.
+        The login name of an enabled and valid user with site administrator privileges. This field must be valid for proper system functioning.
+
+siteWideAlertInfo:
+    tag: div.message
+    element:
+        style:
+            marginBottom: 24px
+        html: >
+            <p>This panel can be used to create a notification banner that will be visible for all site visitors and logged-in users.
+            You can determine whether the banner is visible only on the login page, or on all site pages.</p>
+            <p>There are three stylistic treatments: </p>
+            <ul>
+                <li>"message" is informational</li>
+                <li>"alert" calls attention to critical info, such as scheduled maintenance downtime</li>
+                <li>"error" calls attention to severe info, such as a known bug or broken functionality</li>
+            </ul>
 
 siteWideAlertStatus:
     kind: panel.select.single
@@ -214,7 +209,6 @@ siteWideAlertType:
             value: error
     element:
         title: Select Alert Type
-#    value: alert
 
 fileSystemSettingsWarning:
     someInfo:
@@ -429,6 +423,7 @@ siteWideAlerts:
     contentType: json
     url: /xapi/siteConfig
     contents:
+        ${siteWideAlertInfo}
         ${siteWideAlertStatus}
         ${siteWideAlertMessage}
         ${siteWideAlertType}
@@ -658,6 +653,28 @@ userLoginsSessionControls:
                 example, instead of simply returning a "404 Not Found" error when an inaccessible resource is indicated,
                 a call to a data path by a browser may be redirected to the login page. Separate multiple data paths with
                 commas.
+
+passwordExpirationInterval:
+    kind: input.text
+    name: passwordExpirationInterval
+    label: Password Expiration (Interval)
+    validation: interval onblur
+    after: >
+        <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
+        Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
+
+passwordExpirationDate:
+    kind: input.text
+    name: passwordExpirationDate
+    label: Password Expiration (Date)
+    validation: allow-empty date-iso onblur
+    after: >
+        <span id="datePicker">&nbsp;&nbsp;
+        <span id="openCal-passwordExpirationDate" class="fa fa-calendar"></span>
+        <br>
+        <p class="description">Expire passwords that were last changed before this date and require those users to change them.</p>
+        </span>
+
 
 passwords:
     kind: panel.form

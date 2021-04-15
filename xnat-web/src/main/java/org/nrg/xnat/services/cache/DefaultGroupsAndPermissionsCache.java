@@ -13,6 +13,7 @@ import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.*;
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.helpers.Groups.*;
+import static org.nrg.xdat.security.helpers.Users.GUEST_USERNAME;
 import static org.nrg.xft.event.XftItemEventI.*;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -1716,7 +1717,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         while (results.next()) {
             final String elementName  = results.getString("element_name");
             final long   elementCount = results.getLong("element_count");
-            log.debug("Found element '{}' with {} instances", elementName, elementCount);
             elementCounts.put(elementName, elementCount);
         }
         return elementCounts;
@@ -1920,7 +1920,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                      "    original_data_type\n" +
                                                                      "FROM\n" +
                                                                      "    data_type_fns_correct_experiment_extension()";
-    private static final String GUEST_USERNAME                     = "guest";
     private static final String ACTIONS_PREFIX                     = "actions";
     private static final String TAG_PREFIX                         = "tag";
     private static final String PROJECT_PREFIX                     = "project";

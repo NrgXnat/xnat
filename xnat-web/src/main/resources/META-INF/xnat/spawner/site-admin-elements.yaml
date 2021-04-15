@@ -28,6 +28,7 @@ siteUrl:
     contents:
         siteUrlInput:
             kind: input.text
+            name: siteUrl
             validation: url onblur
             after: >
                 <p class="description">The address you want visible to users in emails, and other external links. Include http(s) protocol.</p>
@@ -146,6 +147,7 @@ adminEmail:
     contents:
         adminEmailInput:
             kind: input.email
+            name: adminEmail
             validation: email onblur
             after: >
                 <p class="description">The administrative email account to receive system emails.</p>
@@ -210,164 +212,6 @@ siteWideAlertType:
     element:
         title: Select Alert Type
 
-fileSystemSettingsWarning:
-    someInfo:
-        tag: div.message
-        element:
-            html: >
-                These settings must be defined during initial application configuration,
-                and are seldom, if ever, changed.
-            style:
-                fontWeight: bold
-archivePath:
-    kind: panel.input.text
-    name: archivePath
-    label: Archive Path
-    validation: required onblur
-    description: ""
-    element:
-        disabled: true
-cachePath:
-    kind: panel.input.text
-    name: cachePath
-    label: Cache Path
-    validation: required onblur
-    description: ""
-prearchivePath:
-    kind: panel.input.text
-    name: prearchivePath
-    label: Prearchive Path
-    validation: required onblur
-    description: ""
-#ftpPath:
-#    kind: panel.input.text
-#    name: ftpPath
-#    label: FTP Path
-#    validation: required onblur
-#    description: ""
-buildPath:
-    kind: panel.input.text
-    name: buildPath
-    label: Build Path
-    validation: required onblur
-    description: ""
-pipelinePath:
-    kind: panel.input.text
-    name: pipelinePath
-    label: Pipeline Path
-    validation: required onblur
-    description: ""
-inboxPath:
-    kind: panel.input.text
-    name: inboxPath
-    label: Inbox Path
-    validation: required onblur
-    description: ""
-zipExtensions:
-    kind: panel.input.text
-    name: zipExtensions
-    label: Zip Extensions
-checksums:
-    kind: panel.input.switchbox
-    name: checksums
-    label: Checksums?
-    onText: Enabled
-    offText: Disabled
-    description: >
-        Indicates whether checksums should be calculated for each image file as it's archived.
-        Activating this provides greater assurance of data integrity, but may add significant
-        overhead to the archive process.
-backupDeletedToCache:
-    kind: panel.input.switchbox
-    name: backupDeletedToCache
-    label: Backup to-be-deleted data to cache "recycle bin"?
-    onText: Enabled
-    offText: Disabled
-    description: >
-        Indicates whether XNAT should move files from deleted entities (projects, subjects, sessions, etc.)
-        into a DELETED subdirectory of the cache space (a.k.a., a "recycle bin") or just remove them completely.
-        Enabling the recycle bin offers some protection against accidental data loss, but may incur an IO penalty,
-        especially if the archive and cache directories are not on the same filesystem.
-maintainFileHistory:
-    kind: panel.input.switchbox
-    name: maintainFileHistory
-    label: Track file history?
-    onText: Enabled
-    offText: Disabled
-    description: >
-        Indicates whether XNAT should retain copies of deleted files in a .history subdirectory of the cache space for
-        version control. Only files corresponding to existing entities (projects, subjects, sessions, etc.) can be tracked.
-        Deleting an entire entity cannot be version controlled, though you can enable the cache "recycle bin" for some
-        added deletion protection.
-uiShowPrearchiveFileActions:
-    kind: panel.input.switchbox
-    name: uiShowPrearchiveFileActions
-    label: Show preachive file actions?
-    onText: Enabled
-    offText: Disabled
-    description: >
-        Should the prearchive File Actions dropdown be available in the scan section of the prearchive page?
-        This is a useful feature, but can be disabled for backwards compatibility.
-        
-triagePath:
-    kind: panel.input.text
-    name: triagePath
-    label: Quarantine Location
-    description: "Location of XNAT Quarantine."
-    
-#checksumsPropertyChangedListener:
-#    kind: panel.input.text
-#    id: checksumsPropertyChangedListener
-#    name: checksums.property.changed.listener
-#    label: Checksums Property Changed Listener?
-
-asyncOperationsSettingsWarning:
-    someInfo:
-        tag: div.message
-        element:
-            html: >
-                These settings can only be applied during application start-up. That means that any
-                changes to the values here require a restart of the application server.
-            style:
-                fontWeight: bold
-defaultTimeout:
-    kind: panel.input.text
-    name: defaultTimeout
-    label: Default Timeout
-    validation: required onblur
-    description: "Sets the timeout for asynchronous request handling."
-    info: >
-        <p>This sets the timeout for asynchronous request handling and defines the maximum lifespan of an asynchronous process.
-        Generally speaking, this should stay set to -1.</p>
-corePoolSize:
-    kind: panel.input.text
-    name: corePoolSize
-    label: Core Pool Size
-    validation: required onblur
-    description: "Sets the minimum number of threads available to the asynchronous task executor."
-maxPoolSize:
-    kind: panel.input.text
-    name: maxPoolSize
-    label: Max Pool Size
-    validation: required onblur
-    description: "Sets the maximum number of threads available to the asynchronous task executor."
-keepAliveSeconds:
-    kind: panel.input.text
-    name: keepAliveSeconds
-    label: Keep-Alive Time
-    validation: required onblur
-    description: "Sets the time (as a number of seconds) that idle threads above the core pool size should be kept alive before disposal."
-allowCoreThreadTimeOut:
-    kind: panel.input.switchbox
-    name: allowCoreThreadTimeOut
-    label: Allow Core Thread Time-Out?
-    onText: Enabled
-    offText: Disabled
-    description: "Indicates whether core threads are allowed to time out."
-    info: >
-        Allowing core threads to time out enables dynamic growing and shrinking even in combination with a non-zero queue
-        (since the max pool size will only grow once the queue is full).
-
 siteInfo:
     kind: panel.form
     name: siteInfo
@@ -378,31 +222,13 @@ siteInfo:
     contents:
         ${siteId}
         ${siteUrl}
-      #        ${processingUrl}
+#        ${processingUrl}
         ${siteDescriptionType}
         ${siteLogo}
         ${siteLoginLanding}
-      #        ${siteLandingLayout}
+#        ${siteLandingLayout}
         ${siteHome}
 #        ${siteHomeLayout}
-
-eventServiceConfig:
-    kind: panel.form
-    name: eventServiceConfig
-    label: Event Service Configuration
-    method: PUT
-    contentType: json
-    url: /xapi/events/prefs
-    contents:
-        enabled:
-            kind: panel.input.switchbox
-            name: enabled
-            label: Enable Event Service
-            onText: Enabled
-            offText: Disabled
-            description: >
-                <p>If enabled, Event Service will detect events and trigger actions linked by subscription.
-                If disabled, event detection, action triggers, and subscription creation will be disabled.</p>
 
 adminInfo:
     kind: panel.form
@@ -428,6 +254,9 @@ siteWideAlerts:
         ${siteWideAlertMessage}
         ${siteWideAlertType}
 
+
+## SECURITY
+
 generalSecuritySettings:
     kind: panel.form
     name: generalSecuritySettings
@@ -443,7 +272,7 @@ generalSecuritySettings:
                 <p>If you're using another service for SSL termination, including a front-end proxy such as Apache HTTPD
                 or nginx, or a load balancer such as AWS elastic load balancing, you should leave the security channel
                 set to "any".</p>
-                <p>For more information, see <a target="_blank" href="https://wiki.xnat.org/display/XNAT17/XNAT+Security+Settings+in+the+Admin+UI#XNATSecuritySettingsintheAdminUI-channel">our documentation page</a>.</p>
+                <p>For more information, see <a target="_blank" href="https://wiki.xnat.org/documentation/xnat-administration/xnat-security-settings-in-the-admin-ui">our documentation page</a>.</p>
             contents:
                 securityChannelMenu:
                     kind: select.menu
@@ -452,6 +281,8 @@ generalSecuritySettings:
                         any: Any
                         http: http
                         https: https
+                    after: >
+                        <p class="description">Set the http/s protocol used to access your XNAT installation</p>
         enabledProviders:
             kind: panel.input.textList
             label: Enabled Authentication Providers
@@ -469,61 +300,58 @@ generalSecuritySettings:
         restrictUserListAccessToAdmins:
             kind: panel.input.switchbox
             name: restrictUserListAccessToAdmins
-            label: "Restrict user list access <br>to site administrators?"
+            label: "Restrict user list access <br>to site administrators"
             onText: Restricted
             offText: Not Restricted
             description: >
-                Should this site restrict access to the list of system users to site administrators only?
-                If enabled, the site is more secure, but this restricts project owners from being able to
+                If set to "Restricted", the site is more secure, but this restricts project owners from being able to
                 administer users in their projects directly.
         uiAllowNonAdminProjectCreation:
             kind: panel.input.switchbox
-            label: "Allow non-administrators <br>to create projects?"
+            label: "Allow non-administrators <br>to create projects"
             onText: Allow
             offText: Do Not Allow
             description: >
-                Should this site allow non-administrator users to create new projects?
-                If enabled, the site is more secure, but this can make it more difficult for
+                If set to "Do Not Allow", the site is more secure, but this can make it more difficult for
                 regular users to create new projects for their research efforts.
         allowNonAdminsToClaimUnassignedSessions:
             kind: panel.input.switchbox
             name: allowNonAdminsToClaimUnassignedSessions
-            label: "Allow non-administrators <br>to find and claim <br>unassigned sessions?"
+            label: "Allow non-administrators <br>to find and claim <br>unassigned sessions"
             onText: Allow
             offText: Do Not Allow
             description: >
-                Should this site allow non-administrator users to search the prearchive for unassigned
-                sessions and claim any sessions matching the patient name, patient ID, or study date they
-                provide? Disabling this removes the "Find my study" feature and can help prevent users
-                from stealing another user's data. But it can also make it harder for users to get their
+                Setting this to "Do Not Allow" removes the "Find My Study" feature for non-administrators. But it can also make it harder for users to get their
                 data into XNAT and increase the burden on site administrators.
         displayHostName:
             kind: panel.select.single
             name: displayHostName
-            label: "Display host name<br>in footer?"
+            label: Display host name in footer
             options:
                 always: "Always"
                 multinode: "When multinode"
                 never: "Never"
             description: >
-                Should the host name for this server be displayed in the page footer? When set to <b>Always</b>
-                the host name is always displayed even in a single-server deployment. When set to <b>Multinode</b>,
-                the host name is automatically displayed when XNAT nodes detect a multi-server configuration, but
-                is otherwise not displayed. When set to <b>Never</b>, the host name is not displayed even in a
-                multinode configuration.
+                When set to <b>Always</b> the host name is always displayed even in a single-server deployment.
+                When set to <b>Multinode</b>, the host name is only displayed when XNAT nodes detect a multi-server configuration.
+                When set to <b>Never</b>, the host name is not displayed.
         ipsThatCanSendEmailsThroughRest:
-            kind: panel.input.text
-            name: ipsThatCanSendEmailsThroughRest
-            label: IPs that can send emails via REST
-            description: >
-                This must be a regular expression (do not include bounding '/' characters) which matches
-                trusted IPs from which users or pipelines should be able to send emails via an XNAT REST
-                call. By default this is set to allow all IPs but should be changed so that malicious
-                users do not use this to send phishing emails.
-            validation: "!pattern:^/"
-            element:
-                data:
-                    message: Please do not include bounding "/" characters in your regex pattern.
+            kind: panel.element
+            label: Email-enabled IP Addresses
+            info: >
+                <p>By default this is set to allow all IPs but should be changed so that malicious users do not use your XNAT server to send phishing emails.</p>
+            contents:
+                ipsThatCanSendEmailsThroughRestInput:
+                    kind: input.text
+                    name: ipsThatCanSendEmailsThroughRest
+                    after: >
+                        <p class="description">This must be a regular expression (do not include bounding '/' characters) which matches
+                        trusted IPs from which users or pipelines should be able to send emails via an XNAT REST call.</p>
+                    validation: "!pattern:^/"
+                    element:
+                        data:
+                            message: Please do not include bounding "/" characters in your regex pattern.
+
 
 userLoginsSessionControls:
     kind: panel.form
@@ -536,7 +364,7 @@ userLoginsSessionControls:
         sessionTimeout:
             kind: panel.input.text
             name: sessionTimeout
-            label: Session Timeout
+            label: User Session Timeout
             validation: interval onblur
             description: >
                 Interval for timing out user sessions. Uses
@@ -567,20 +395,20 @@ userLoginsSessionControls:
         #            kind: panel.input.checkbox
         #            id: allow-resume-on-next-login
         #            name: allowResumeOnNextLogin
-        #            label: Allow Resume On Next Login?
+        #            label: Allow Resume On Next Login
         #            description: Allow user to resume where they left off, if logging back in after a session timeout?
         maximumConcurrentSessions:
             kind: panel.input.number
             name: concurrentMaxSessions
             label: Maximum Concurrent Sessions
             validation: integer gte:1 onblur
-            description: The maximum number of permitted sessions a user can have open simultaneously. You must restart Tomcat for changes to this to take effect.
+            description: The maximum number of permitted sessions a user can have open simultaneously. Tomcat restart required to take effect.
         loginFailureMessage:
             kind: panel.textarea
             name: uiLoginFailureMessage
             label: Login Failure Message
             code: html
-            description: Text to show when a user fails to login
+            description: Text to show when a user fails to login. "%d" is replaced by the count of failed logins.
         maximumFailedLogins:
             kind: panel.input.number
             name: maxFailedLogins
@@ -606,12 +434,11 @@ userLoginsSessionControls:
         canResetFailedLoginsWithForgotPassword:
             kind: panel.input.switchbox
             name: canResetFailedLoginsWithForgotPassword
-            label: Reset failed login count on forgot password?
+            label: Reset failed login count on forgot password
             onText: Enabled
             offText: Disabled
             description: >
-                Indicates whether a user should be able to click the link from a forgot password email to reset their
-                count of failed logins. If enabled, a locked out user will be able to request a forgot password email
+                If set to "Enabled", a locked out user will be able to request a forgot password email
                 and click the link from that email to change their password and unlock their account.
         userInactivityLockout:
             kind: panel.input.text
@@ -641,18 +468,22 @@ userLoginsSessionControls:
                 request comes from an interactive agent (e.g. a browser) or some other kind of tool, such as curl or other
                 scriptable or automatable client. Separate multiple agent IDs with commas.
         dataPaths:
-            kind: panel.input.textList
-            size: 60
-            name: dataPaths
-            delim: ","
+            kind: panel.element
             label: Data Paths
-            placeholder: /xapi/**, /data/**, /REST/**, /fs/**
-            description: >
-                Ant patterns that define URL patterns that represent data paths (e.g. REST API calls). XNAT uses these
-                paths in conjunction with the interactive agent IDs above to determine the response to certain calls. For
+            info: >
+                <p>XNAT uses these paths in conjunction with the interactive agent IDs above to determine the response to certain calls. For
                 example, instead of simply returning a "404 Not Found" error when an inaccessible resource is indicated,
-                a call to a data path by a browser may be redirected to the login page. Separate multiple data paths with
-                commas.
+                a call to a data path by a browser may be redirected to the login page. </p>
+            contents:
+                dataPathsInput:
+                    kind: input.textList
+                    size: 60
+                    name: dataPaths
+                    delim: ","
+                    placeholder: /xapi/**, /data/**, /REST/**, /fs/**
+                    after: >
+                        <p class="description">URL patterns that represent data paths (e.g. REST API calls). Separate multiple data paths with commas.
+                        Uses <a target="_blank" href="https://ant.apache.org/manual/dirtasks.html">Apache Ant Pattern Notation</a></p>
 
 passwordExpirationInterval:
     kind: input.text
@@ -746,6 +577,8 @@ passwords:
             options:
                 None: None
                 Historical: Historical
+            description: >
+                If set to "Historical", users cannot reuse a password that was previously used within a defined duration of time
         passwordHistoryDuration:
             kind: panel.input.text
             id: password-history-duration
@@ -761,6 +594,8 @@ passwords:
             label: Require Passwords To Be Salted
             onText: Required
             offText: Not Required
+            description: >
+                If set to "Required", any user whose password is not salted in the database will be required to set a new password.
         passwordsjs:
             tag: script|src=/scripts/xnat/admin/passwords.js
 
@@ -776,46 +611,268 @@ csrf:
         enableCsrfToken:
             kind: panel.input.switchbox
             name: enableCsrfToken
-            label: Require CSRF Token?
+            label: Require CSRF Token
             onText: Required
             offText: Not Required
-            description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
+            description: >
+                If set to "Required" (highly recommended), all POST, PUT, and DELETE requests will require a token to prevent CSRF attacks
         csrfEmailAlert:
             kind: panel.input.switchbox
             name: csrfEmailAlert
             label: CSRF Email Alert
             onText: Enabled
             offText: Disabled
-            description: "Should this site send an email to the site admin whenever a CSRF attack is attempted?"
+            description: >
+                If enabled, this site will email the site admin whenever a CSRF attack is attempted
 
-securityServices:
+#securityServices:
+#    kind: panel.form
+#    name: securityServices
+#    label: Security Services
+#    url: /xapi/siteConfig
+#    method: POST
+#    contentType: json
+#    contents:
+#        securityServicesFeatureDefault:
+#            kind: panel.input.text
+#            name: featureService
+#            label: Feature Default
+#            size: 50
+#        securityServicesFeatureRepoDefault:
+#            kind: panel.input.text
+#            name: featureRepositoryService
+#            label: Feature Repository Default
+#            size: 50
+#        securityServicesRoleDefault:
+#            kind: panel.input.text
+#            name: roleService
+#            label: Role Default
+#            size: 50
+#        securityServicesRoleRepositoryDefault:
+#            kind: panel.input.text
+#            name: roleRepositoryService
+#            label: Role Repository Default
+#            size: 50
+
+## FILE SYSTEM
+
+fileSystemSettingsWarning:
+    tag: div.message
+    element:
+        html: >
+            These settings must be defined during initial application configuration,
+            and are seldom, if ever, changed.
+        style:
+            fontWeight: bold
+archivePath:
+    kind: panel.input.text
+    name: archivePath
+    label: Archive Path
+    validation: required onblur
+    description: ""
+    element:
+        disabled: true
+cachePath:
+    kind: panel.input.text
+    name: cachePath
+    label: Cache Path
+    validation: required onblur
+    description: ""
+prearchivePath:
+    kind: panel.input.text
+    name: prearchivePath
+    label: Prearchive Path
+    validation: required onblur
+    description: ""
+#ftpPath:
+#    kind: panel.input.text
+#    name: ftpPath
+#    label: FTP Path
+#    validation: required onblur
+#    description: ""
+buildPath:
+    kind: panel.input.text
+    name: buildPath
+    label: Build Path
+    validation: required onblur
+    description: ""
+pipelinePath:
+    kind: panel.input.text
+    name: pipelinePath
+    label: Pipeline Path
+    validation: required onblur
+    description: ""
+triagePath:
+    kind: panel.element
+    label: Resource Quarantine Path
+    info: >
+        <p>The Resource Quarantine, or Triage, can be enabled for custom resource uploads. See <a target="_blank" href="https://wiki.xnat.org/documentation/how-to-use-xnat/managing-resource-files-in-xnat/triaging-uploaded-resources">Resource Triage Documentation</a></p>
+    contents:
+        triagePathInput:
+            kind: input.text
+            name: triagePath
+            after: >
+                <p class="description">Location of XNAT Quarantine for uploaded resources.</p>
+inboxPath:
+    kind: panel.input.text
+    name: inboxPath
+    label: Inbox Path
+    validation: required onblur
+    description: ""
+zipExtensions:
+    kind: panel.input.text
+    name: zipExtensions
+    label: Zip Extensions
+checksums:
+    kind: panel.input.switchbox
+    name: checksums
+    label: Checksums
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Indicates whether checksums should be calculated for each image file as it's archived.
+        Activating this provides greater assurance of data integrity, but may add significant
+        overhead to the archive process.
+backupDeletedToCache:
+    kind: panel.input.switchbox
+    name: backupDeletedToCache
+    label: Backup to-be-deleted data to cache "recycle bin"
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Indicates whether XNAT should move files from deleted entities (projects, subjects, sessions, etc.)
+        into a DELETED subdirectory of the cache space (a.k.a., a "recycle bin") or just remove them completely.
+        Enabling the recycle bin offers some protection against accidental data loss, but may incur an IO penalty,
+        especially if the archive and cache directories are not on the same filesystem.
+maintainFileHistory:
+    kind: panel.input.switchbox
+    name: maintainFileHistory
+    label: Track file history
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Indicates whether XNAT should retain copies of deleted files in a .history subdirectory of the cache space for
+        version control. Only files corresponding to existing entities (projects, subjects, sessions, etc.) can be tracked.
+        Deleting an entire entity cannot be version controlled, though you can enable the cache "recycle bin" for some
+        added deletion protection.
+uiShowPrearchiveFileActions:
+    kind: panel.input.switchbox
+    name: uiShowPrearchiveFileActions
+    label: Show preachive file actions
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Should the prearchive File Actions dropdown be available in the scan section of the prearchive page?
+        This is a useful feature, but can be disabled for backwards compatibility.
+
+#checksumsPropertyChangedListener:
+#    kind: panel.input.text
+#    id: checksumsPropertyChangedListener
+#    name: checksums.property.changed.listener
+#    label: Checksums Property Changed Listener
+
+fileSystem:
     kind: panel.form
-    name: securityServices
-    label: Security Services
-    url: /xapi/siteConfig
+    name: fileSystem
+    label: File System
     method: POST
     contentType: json
+    url: /xapi/siteConfig
     contents:
-        securityServicesFeatureDefault:
-            kind: panel.input.text
-            name: featureService
-            label: Feature Default
-            size: 50
-        securityServicesFeatureRepoDefault:
-            kind: panel.input.text
-            name: featureRepositoryService
-            label: Feature Repository Default
-            size: 50
-        securityServicesRoleDefault:
-            kind: panel.input.text
-            name: roleService
-            label: Role Default
-            size: 50
-        securityServicesRoleRepositoryDefault:
-            kind: panel.input.text
-            name: roleRepositoryService
-            label: Role Repository Default
-            size: 50
+        ${fileSystemSettingsWarning}
+        ${archivePath}
+        ${cachePath}
+        ${prearchivePath}
+#        ${ftpPath}
+        ${buildPath}
+        ${pipelinePath}
+        ${triagePath}
+        ${inboxPath}
+
+fileSystemBehaviors:
+    kind: panel.form
+    label: File System Behaviors
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${zipExtensions}
+        ${checksums}
+        ${backupDeletedToCache}
+        ${maintainFileHistory}
+        ${uiShowPrearchiveFileActions}
+
+
+## ASYNC OPERATIONS
+
+asyncOperationsSettingsWarning:
+    someInfo:
+        tag: div.message
+        element:
+            html: >
+                These settings can only be applied during application start-up. That means that any
+                changes to the values here require a restart of the application server.
+            style:
+                fontWeight: bold
+defaultTimeout:
+    kind: panel.input.text
+    name: defaultTimeout
+    label: Default Timeout
+    validation: required onblur
+    description: "Sets the timeout for asynchronous request handling."
+    info: >
+        <p>This sets the timeout for asynchronous request handling and defines the maximum lifespan of an asynchronous process.
+        Generally speaking, this should stay set to -1.</p>
+corePoolSize:
+    kind: panel.input.text
+    name: corePoolSize
+    label: Core Pool Size
+    validation: required onblur
+    description: "Sets the minimum number of threads available to the asynchronous task executor."
+maxPoolSize:
+    kind: panel.input.text
+    name: maxPoolSize
+    label: Max Pool Size
+    validation: required onblur
+    description: "Sets the maximum number of threads available to the asynchronous task executor."
+keepAliveSeconds:
+    kind: panel.input.text
+    name: keepAliveSeconds
+    label: Keep-Alive Time
+    validation: required onblur
+    description: "Sets the time (as a number of seconds) that idle threads above the core pool size should be kept alive before disposal."
+allowCoreThreadTimeOut:
+    kind: panel.input.switchbox
+    name: allowCoreThreadTimeOut
+    label: Allow Core Thread Time-Out
+    onText: Enabled
+    offText: Disabled
+    description: "Indicates whether core threads are allowed to time out."
+    info: >
+        Allowing core threads to time out enables dynamic growing and shrinking even in combination with a non-zero queue
+        (since the max pool size will only grow once the queue is full).
+
+## EVENT SERVICE
+
+eventServiceConfig:
+    kind: panel.form
+    name: eventServiceConfig
+    label: Event Service Configuration
+    method: PUT
+    contentType: json
+    url: /xapi/events/prefs
+    contents:
+        enabled:
+            kind: panel.input.switchbox
+            name: enabled
+            label: Enable Event Service
+            onText: Enabled
+            offText: Disabled
+            description: >
+                <p>If enabled, Event Service will detect events and trigger actions linked by subscription.
+                If disabled, event detection, action triggers, and subscription creation will be disabled.</p>
+
+##
 
 emailServerSettings:
     kind: panel.form
@@ -828,7 +885,7 @@ emailServerSettings:
 
         smtpEnabled:
             kind: panel.input.switchbox
-            label: Enable SMTP?
+            label: Enable SMTP
             onText: Enabled
             offText: Disabled
 
@@ -854,7 +911,7 @@ emailServerSettings:
             text: Authentication
         smtpAuth:
             kind: panel.input.switchbox
-            label: SMTP Auth?
+            label: SMTP Auth
             onText: Enabled
             offText: Disabled
         smtpUsername:
@@ -869,7 +926,7 @@ emailServerSettings:
             text: Other Settings
         smtpStartTls:
             kind: panel.input.switchbox
-            label: Start TLS?
+            label: Start TLS
             onText: Enabled
             offText: Disabled
         smtpSslTrust:
@@ -982,7 +1039,7 @@ notifications:
         copyAdminOnNotifications:
             kind: panel.input.switchbox
             name: copyAdminOnNotifications
-            label: "Copy Administrator on Notifications?"
+            label: "Copy Administrator on Notifications"
             onText: Enabled
             offText: Disabled
             description: "Indicates whether the primary administrator should receive a copy of error, issue, new user, and update notifications if the administrator is not one of the configured recipients."
@@ -1178,7 +1235,7 @@ registrationOptions:
         requireEmailVerificationToRegister:
             kind: panel.input.switchbox
             name: emailVerification
-            label: "Require Email Verification?"
+            label: "Require Email Verification"
             onText: Required
             offText: Not Required
             description: >
@@ -1196,7 +1253,7 @@ registrationOptions:
         autoEnableUserRegistration:
             kind: panel.input.switchbox
             name: userRegistration
-            label: "Auto-enable <br>User Registration?"
+            label: "Auto-enable <br>User Registration"
             onText: Auto-enable
             offText: Do Not Auto-enable
             description: >
@@ -1206,17 +1263,17 @@ registrationOptions:
         autoEnablePar:
             kind: panel.input.switchbox
             name: par
-            label: "Auto-enable with <br>Project Access Request?"
+            label: "Auto-enable with <br>Project Access Request"
             onText: Auto-enable
             offText: Do Not Auto-enable
             description: >
                 If true, user accounts created when accepting project access requests will always be enabled (and verified) automatically. If false,
-                user accounts will only be enabled automatically if "Auto-enable User Registration?" is true. So this setting determines whether project
+                user accounts will only be enabled automatically if "Auto-enable User Registration" is true. So this setting determines whether project
                 access requests should override how user registration is normally handled. Either way the administrator receives an email notification
                 when a user registers.
         uiAllowNewUserComments:
             kind: panel.input.switchbox
-            label: "Allow User Comments <br>on Registration?"
+            label: "Allow User Comments <br>on Registration"
             onText: Allow
             offText: Do Not Allow
 
@@ -1247,7 +1304,7 @@ uploadChannels:
     contents:
         uiHideCompressedUploaderUploadOption:
             kind: panel.input.switchbox
-            label: "Hide Compressed Uploader?"
+            label: "Hide Compressed Uploader"
             onText: Hidden
             offText: Available
             description: >
@@ -1256,7 +1313,7 @@ uploadChannels:
                 the DICOM-zip importer is enabled regardless of this setting.)
         uiHideXnatUploadAssistantDownload:
             kind: panel.input.switchbox
-            label: "Hide XNAT Upload Assistant?"
+            label: "Hide XNAT Upload Assistant"
             onText: Hidden
             offText: Available
             description: >
@@ -1283,7 +1340,7 @@ sessionBuilder:
                 administrator.
         reloadPrearcDatabaseOnStartup:
             kind: panel.input.switchbox
-            label: "Reload Prearchive Database<br>On Start-up?"
+            label: "Reload Prearchive Database<br>On Start-up"
             onText: Enabled
             offText: Disabled
             description: >
@@ -1321,7 +1378,7 @@ projectRouting:
     contents:
         enableSitewideProjectRouting:
             kind: panel.input.switchbox
-            label: "Enable Custom Site-wide <br>Project Routing?"
+            label: "Enable Custom Site-wide <br>Project Routing"
             name: status
             id: enableSitewideProjectRouting
             onValue: enabled
@@ -1347,7 +1404,7 @@ subjectRouting:
     contents:
         enableSitewideSubjectRouting:
             kind: panel.input.switchbox
-            label: "Enable Custom Site-wide <br>Subject Routing?"
+            label: "Enable Custom Site-wide <br>Subject Routing"
             name: status
             id: enableSitewideSubjectRouting
             onValue: enabled
@@ -1373,7 +1430,7 @@ sessionRouting:
     contents:
         enableSitewideSessionRouting:
             kind: panel.input.switchbox
-            label: "Enable Custom Site-wide <br>Session Routing?"
+            label: "Enable Custom Site-wide <br>Session Routing"
             name: status
             id: enableSitewideSessionRouting
             values: enabled|disabled
@@ -1399,7 +1456,7 @@ anonymization:
     contents:
         enableSitewideAnonymizationScript:
             kind: panel.input.switchbox
-            label: "Enable Site-wide <br>Anonymization Script?"
+            label: "Enable Site-wide <br>Anonymization Script"
             onText: Enabled
             offText: Disabled
         sitewideAnonymizationScript:
@@ -1420,7 +1477,7 @@ seriesImportFilter:
         enableSitewideSeriesImportFilter:
             kind: panel.input.switchbox
             name: enableSitewideSeriesImportFilter
-            label: "Enable Site-wide <br>Series Import Filter?"
+            label: "Enable Site-wide <br>Series Import Filter"
             onText: Enabled
             offText: Disabled
         sitewideSeriesImportFilterMode:
@@ -1463,7 +1520,7 @@ petTracers:
 petMr:
     kind: panel.form
     name: petMr
-    label: "Separate PET-MR? (Site Wide)"
+    label: "Separate PET-MR (Site Wide)"
     method: POST
     contentType: json
     url: /xapi/siteConfig
@@ -1471,7 +1528,7 @@ petMr:
         petMr:
             kind: panel.select.single
             name: sitewidePetMr
-            label: "Separate PET-MR?"
+            label: "Separate PET-MR"
             description: >
                 Should data generated by PET-MR scanners be created as a single PET/MR imaging session, created as a single PET imaging session, or separated into PET and MR sessions?
             options:
@@ -1598,27 +1655,6 @@ dicomScpReceivers:
         dicomScpManagerScript:
             tag: script|src="~/scripts/xnat/admin/dicomScpManager.js"
 
-fileSystem:
-    kind: panel.form
-    name: fileSystem
-    label: File System
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        ${archivePath}
-        ${cachePath}
-        ${prearchivePath}
-#        ${ftpPath}
-        ${buildPath}
-        ${pipelinePath}
-        ${triagePath}
-        ${inboxPath}
-        ${zipExtensions}
-        ${checksums}
-        ${backupDeletedToCache}
-        ${maintainFileHistory}
-        ${uiShowPrearchiveFileActions}
 asyncOperations:
     kind: panel.form
     name: asyncOperations
@@ -1627,6 +1663,7 @@ asyncOperations:
     contentType: json
     url: /xapi/asyncOps
     contents:
+        ${asyncOperationsSettingsWarning}
         ${defaultTimeout}
         ${corePoolSize}
         ${allowCoreThreadTimeOut}
@@ -1676,7 +1713,7 @@ setScanTypeMapping:
     contents:
         scanTypeMapping:
             kind: panel.input.switchbox
-            label: Scan Type Mapping?
+            label: Scan Type Mapping
             onText: Enabled
             offText: Disabled
 
@@ -1689,13 +1726,13 @@ scanTableSettings:
     contents:
         uiDisplaySeriesDescription:
             kind: panel.input.switchbox
-            label: Display Series Description?
+            label: Display Series Description
             description: Display the series description in the image session scan table
             onText: Enabled
             offText: Disabled
         uiDisplaySeriesClass:
             kind: panel.input.switchbox
-            label: Display Series Class?
+            label: Display Series Class
             description: Display the series class in the image session scan table
             onText: Enabled
             offText: Disabled
@@ -1709,7 +1746,7 @@ setPreventCrossModalityMerge:
     contents:
         preventCrossModalityMerge:
             kind: panel.input.switchbox
-            label: Prevent cross-modality post-archive session merger?
+            label: Prevent cross-modality post-archive session merger
             description: Should scans received after session archive (with a matching Study Instance UID) be merged into the pre-existing session, even if the modality of the received session mismatches with the existing session.  I.e. can CT scans be merged into an existing PET session if the Study Instance UID matches?
             onText: Enabled
             offText: Disabled
@@ -1724,7 +1761,7 @@ manualQC:
         uiShowAddManualQCAction:
             kind: panel.input.switchbox
             label: Manual QC Actions Menu Item
-            description: Show "Add QC Entry" in the image session actions menu?
+            description: If Enabled, an "Add QC Entry" action will be added to the actions menu for all image session report pages
             onText: Enabled
             offText: Disabled
 
@@ -1787,7 +1824,7 @@ root:
                 ${userLoginsSessionControls}
                 ${passwords}
                 ${csrf}
-                ${securityServices}
+#                ${securityServices}
         emailServer:
             kind: tab
             name: emailServer
@@ -1906,6 +1943,7 @@ root:
             label: File System
             group: advanced
             contents:
+                ${fileSystemBehaviors}
                 ${fileSystem}
         asyncOperationsTab:
             kind: tab

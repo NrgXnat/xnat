@@ -939,17 +939,7 @@ div.warning.no-icon:before {
     content: '';
 }
 
-/* allow <p> tags without offset within the message */
-div.alert p:first-of-type,
-div.error p:first-of-type,
-div.justification p:first-of-type,
-div.message p:first-of-type,
-div.info p:first-of-type,
-div.note p:first-of-type,
-div.success p:first-of-type,
-div.warning p:first-of-type {
-    margin-top: 0;
-}
+
 
 #header div.alert,
 #header div.error,

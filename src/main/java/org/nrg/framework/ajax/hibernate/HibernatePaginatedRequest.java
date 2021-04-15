@@ -10,7 +10,9 @@ import org.nrg.framework.ajax.PaginatedRequest;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 
 import javax.annotation.Nonnull;
+import java.util.AbstractMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @NoArgsConstructor
@@ -22,10 +24,16 @@ public abstract class HibernatePaginatedRequest extends PaginatedRequest {
 
     @Nonnull
     public List<Criterion> getCriterion(final ClassMetadata classMetadata) {
-        if (filtersMap.entrySet().stream().anyMatch(entry -> !(entry.getValue() instanceof HibernateFilter))) {
+        final Map<String, HibernateFilter> filters = filtersMap.entrySet()
+                                                               .stream()
+                                                               .filter(entry -> HibernateFilter.class.isAssignableFrom(entry.getValue().getClass()))
+                                                               .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), (HibernateFilter) entry.getValue()))
+                                                               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (filters.isEmpty()) {
             throw new RuntimeException("Invalid filter");
         }
-        return filtersMap.entrySet().stream().map(entry -> ((HibernateFilter) entry.getValue()).makeCriterion(entry.getKey(), classMetadata)).collect(Collectors.toList());
+
+        return filters.entrySet().stream().map(entry -> entry.getValue().makeCriterion(entry.getKey(), classMetadata)).collect(Collectors.toList());
     }
 
     public Order getOrder() {

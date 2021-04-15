@@ -17,6 +17,7 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder(toBuilder = true)
+@SuppressWarnings({"JavaDoc", "WeakerAccess"})
 public abstract class PaginatedRequest {
     @Nullable
     @JsonProperty(value = "id")
@@ -39,7 +40,6 @@ public abstract class PaginatedRequest {
      *
      * @return A list containing one or more pairs of sort column and order.
      */
-    @SuppressWarnings("JavaDoc")
     @Nonnull
     @JsonProperty(value = "sortBys")
     @Singular

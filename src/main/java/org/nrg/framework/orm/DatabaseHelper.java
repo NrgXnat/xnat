@@ -48,7 +48,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @SuppressWarnings({"WeakerAccess", "unused", "UnusedReturnValue"})
 public class DatabaseHelper {
-
     public DatabaseHelper(final DataSource dataSource) {
         this(dataSource, null, null, null);
     }

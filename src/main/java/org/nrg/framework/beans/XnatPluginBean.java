@@ -9,24 +9,30 @@
 
 package org.nrg.framework.beans;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.base.Predicates;
-import com.google.common.collect.*;
+import static org.nrg.framework.annotations.XnatPlugin.*;
+import static org.nrg.framework.beans.XnatDataModelBean.PLUGIN_DATA_MODEL_PREFIX;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimaps;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatDataModel;
 import org.nrg.framework.annotations.XnatPlugin;
+import org.nrg.framework.utilities.StreamUtils;
 
 import javax.annotation.Nonnull;
 import javax.lang.model.element.TypeElement;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
-
-import static org.nrg.framework.annotations.XnatPlugin.*;
-import static org.nrg.framework.beans.XnatDataModelBean.PLUGIN_DATA_MODEL_PREFIX;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 @Getter
@@ -73,7 +79,7 @@ public class XnatPluginBean {
     }
 
     public XnatPluginBean(final String pluginClass, final String id, final String namespace, final String name, final String version, final String description, final String beanName, final String[] entityPackages, final String logConfigurationFile, final List<XnatDataModelBean> dataModelBeans) {
-        this(pluginClass, id, namespace, name, version, description, beanName, entityPackages != null ? Arrays.asList(entityPackages) : Collections.<String>emptyList(), logConfigurationFile, dataModelBeans);
+        this(pluginClass, id, namespace, name, version, description, beanName, entityPackages != null ? Arrays.asList(entityPackages) : Collections.emptyList(), logConfigurationFile, dataModelBeans);
     }
 
     public XnatPluginBean(final String pluginClass, final String id, final String namespace, final String name, final String version, final String description, final String beanName, final List<String> entityPackages, final String logConfigurationFile, final List<XnatDataModelBean> dataModelBeans) {
@@ -84,7 +90,7 @@ public class XnatPluginBean {
         _namespace = StringUtils.defaultIfBlank(namespace, null);
         _description = StringUtils.defaultIfBlank(description, null);
         _beanName = StringUtils.defaultIfBlank(beanName, getBeanName(pluginClass));
-        _entityPackages = entityPackages != null ? ImmutableList.copyOf(entityPackages) : Collections.<String>emptyList();
+        _entityPackages = entityPackages != null ? ImmutableList.copyOf(entityPackages) : Collections.emptyList();
         _logConfigurationFile = StringUtils.defaultIfBlank(logConfigurationFile, null);
         _dataModelBeans = ImmutableList.copyOf(dataModelBeans);
         _extendedAttributes = ArrayListMultimap.create();
@@ -95,12 +101,7 @@ public class XnatPluginBean {
     }
 
     public static List<XnatDataModelBean> convertDataModelsToBeans(final List<XnatDataModel> models) {
-        return Lists.transform(models, new Function<XnatDataModel, XnatDataModelBean>() {
-            @Override
-            public XnatDataModelBean apply(final XnatDataModel model) {
-                return new XnatDataModelBean(model);
-            }
-        });
+        return models.stream().map(XnatDataModelBean::new).collect(Collectors.toList());
     }
 
     /**
@@ -215,7 +216,7 @@ public class XnatPluginBean {
         properties.setProperty(PLUGIN_CLASS, _pluginClass);
         properties.setProperty(PLUGIN_NAME, _name);
         properties.setProperty(PLUGIN_DESCRIPTION, _description);
-        properties.setProperty(PLUGIN_ENTITY_PACKAGES, Joiner.on(", ").join(_entityPackages));
+        properties.setProperty(PLUGIN_ENTITY_PACKAGES, String.join(", ", _entityPackages));
         properties.setProperty(PLUGIN_LOG_CONFIGURATION, _logConfigurationFile);
         for (final XnatDataModelBean dataModel : _dataModelBeans) {
             properties.putAll(dataModel.asProperties());
@@ -236,16 +237,16 @@ public class XnatPluginBean {
     }
 
     private static List<XnatDataModelBean> getXnatDataModelBeansFromProperties(final Properties properties) {
-        return Lists.transform(Lists.newArrayList(Iterables.filter(properties.stringPropertyNames(), Predicates.contains(DATA_MODEL_PROPERTY))), new Function<String, XnatDataModelBean>() {
-            @Override
-            public XnatDataModelBean apply(final String property) {
-                final String[] atoms = property.split("\\.", 4);
-                return new XnatDataModelBean(atoms[1] + ":" + atoms[2], properties);
-            }
-        });
+        return properties.stringPropertyNames()
+                         .stream()
+                         .filter(DATA_MODEL_PROPERTY_PREDICATE)
+                         .map(property -> {
+                             final String[] atoms = property.split("\\.", 4);
+                             return new XnatDataModelBean(atoms[1] + ":" + atoms[2], properties);
+                         }).collect(Collectors.toList());
     }
 
-    private static final Pattern DATA_MODEL_PROPERTY = Pattern.compile("^" + StringUtils.replace(PLUGIN_DATA_MODEL_PREFIX, ".", "\\.") + ".*$");
+    private static final Predicate<String> DATA_MODEL_PROPERTY_PREDICATE = StreamUtils.predicateFromPatterns(Collections.singletonList(Pattern.compile("^" + StringUtils.replace(PLUGIN_DATA_MODEL_PREFIX, ".", "\\.") + ".*$")));
 
     private final String                            _pluginClass;
     private final String                            _id;

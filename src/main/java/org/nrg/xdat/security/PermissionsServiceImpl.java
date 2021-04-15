@@ -11,6 +11,7 @@ package org.nrg.xdat.security;
 
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.SecurityManager.*;
+import static org.nrg.xdat.security.helpers.Users.GUEST_USERNAME;
 import static org.nrg.xft.event.XftItemEvent.builder;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
@@ -916,7 +917,6 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         }
     }
 
-    private static final String GUEST_USERNAME                      = "guest";
     private static final String QUERY_USER_ELEMENT_ACCESS           = "SELECT  " +
                                                                       "  xdat_element_access_id  " +
                                                                       "FROM  " +

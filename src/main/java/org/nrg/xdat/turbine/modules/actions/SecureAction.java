@@ -9,9 +9,12 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
+import static org.springframework.http.HttpHeaders.USER_AGENT;
+
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.BrowserType;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
@@ -22,9 +25,11 @@ import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.utilities.StreamUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.InvalidCsrfException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -48,10 +53,9 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
-
-import static org.springframework.http.HttpHeaders.USER_AGENT;
+import java.util.stream.Collectors;
 
 /**
  * @author Tim
@@ -126,7 +130,7 @@ public abstract class SecureAction extends VelocitySecureAction {
     @SuppressWarnings("unused")
     public void redirectToScreen(final String report, final RunData data) {
         try {
-            final String popup = (String) TurbineUtils.GetPassedParameter("popup", data);
+            final String popup   = (String) TurbineUtils.GetPassedParameter("popup", data);
             final String project = (String) TurbineUtils.GetPassedParameter("project", data);
 
             final StringBuilder path = new StringBuilder(XDAT.getSiteConfigurationProperty("siteUrl", TurbineUtils.GetRelativeServerPath(data))).append("/app/template/").append(URLEncoder.encode(report, encoding));
@@ -154,26 +158,6 @@ public abstract class SecureAction extends VelocitySecureAction {
         }
     }
 
-    public static String csrfTokenErrorMessage(final HttpServletRequest request) {
-        final StringBuilder errorMessage = new StringBuilder();
-        errorMessage.append(request.getMethod()).append(" on URL: ").append(request.getRequestURL()).append(" from ").append(AccessLogger.GetRequestIp(request)).append(" (").append(request.getRemotePort()).append(") user: ").append(request.getRemoteHost()).append("\n");
-        errorMessage.append("Headers:\n");
-        Enumeration<String> headerNames = request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String hName = headerNames.nextElement();
-            errorMessage.append(hName).append(": ").append(request.getHeader(hName)).append("\n");
-        }
-        errorMessage.append("\n Cookies:\n");
-
-        final Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (final Cookie cookie : cookies) {
-                errorMessage.append(cookie.getName()).append(" ").append(cookie.getValue()).append(" ").append(cookie.getMaxAge()).append(" ").append(cookie.getDomain()).append("\n");
-            }
-        }
-        return errorMessage.toString();
-    }
-
     //just a wrapper for isCsrfTokenOk(request, token)
     public static boolean isCsrfTokenOk(final RunData runData) throws Exception {
         //occasionally, (really, only on "actions" that inherit off secure screen instead of secure action like report issue)
@@ -192,8 +176,6 @@ public abstract class SecureAction extends VelocitySecureAction {
     //if you change that behavior, look at every place this is used to be sure it actually
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(final HttpServletRequest request, final String clientToken, final boolean strict) throws Exception {
-        final boolean csrfEmailEnabled = XDAT.getSiteConfigPreferences().getCsrfEmailAlert();
-
         if (!XDAT.getSiteConfigPreferences().getEnableCsrfToken()) {
             return true;
         }
@@ -211,34 +193,34 @@ public abstract class SecureAction extends VelocitySecureAction {
             }
         }
 
-        final HttpSession session = request.getSession();
-        final String serverToken = (String) session.getAttribute("XNAT_CSRF");
+        final HttpSession session     = request.getSession();
+        final String      serverToken = (String) session.getAttribute("XNAT_CSRF");
 
         if (serverToken == null) {
-            final String errorMessage = csrfTokenErrorMessage(request);
-            if (csrfEmailEnabled) {
-                AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
-            }
-            throw new Exception("INVALID CSRF (" + errorMessage + ")");
+            handleCsrfTokenError(request);
         }
+        assert serverToken != null;
 
         final String method = request.getMethod();
         if (StringUtils.equalsAnyIgnoreCase(method, "POST", "PUT", "DELETE")) {
             //pull the token out of the parameter
             if (serverToken.equalsIgnoreCase(clientToken)) {
                 return true;
-            } else {
-                final String errorMessage = csrfTokenErrorMessage(request);
-                if (csrfEmailEnabled) {
-                    AdminUtils.sendAdminEmail("Possible CSRF Attempt", errorMessage);
-                }
-                throw new Exception("INVALID CSRF (" + errorMessage + ")");
             }
-        } else {
-            return true;
+            handleCsrfTokenError(request);
         }
+        return true;
     }
-    
+
+    public static void handleCsrfTokenError(final HttpServletRequest request) throws InvalidCsrfException {
+        final String errorMessage = csrfTokenErrorMessage(request);
+        if (XDAT.getSiteConfigPreferences().getCsrfEmailAlert()) {
+            AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
+        }
+        final UserI user = Users.getUserPrincipal(request.getUserPrincipal());
+        throw new InvalidCsrfException(errorMessage, user != null ? user.getUsername() : "guest");
+    }
+
     protected boolean isAuthorized(final RunData data) throws Exception {
         if (XDAT.getSiteConfigPreferences().getRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
             TurbineVelocity.getContext(data).put("logout", "true");
@@ -259,7 +241,7 @@ public abstract class SecureAction extends VelocitySecureAction {
             }
             return isAuthorized && isCsrfTokenOk(data);
         } else {
-            final UserI user = XDAT.getUserDetails();
+            final UserI   user         = XDAT.getUserDetails();
             final boolean isAuthorized = TurbineUtils.isAuthorized(data, user, allowGuestAccess());
 
             data.getParameters().add("new_session", "TRUE");
@@ -333,7 +315,7 @@ public abstract class SecureAction extends VelocitySecureAction {
             return false;
         }
 
-        final InvalidValueException error =  populator.getError();
+        final InvalidValueException error = populator.getError();
         data.addMessage(error.getMessage());
         TurbineUtils.SetEditItem(item, data);
         data.setScreenTemplate("XDATScreen_edit_projectData.vm");
@@ -364,5 +346,13 @@ public abstract class SecureAction extends VelocitySecureAction {
             data.setScreenTemplate(((String) TurbineUtils.GetPassedParameter("edit_screen", data)));
         }
     }
+
+    private static String csrfTokenErrorMessage(final HttpServletRequest request) {
+        final String headers = StreamUtils.asStream(request.getHeaderNames()).filter(name -> !StringUtils.equals("Authorization", name)).map(name -> " * " + name + ": " + request.getHeader(name)).collect(Collectors.joining("\n"));
+        final String cookies = Arrays.stream((Cookie[]) ArrayUtils.nullToEmpty(request.getCookies())).map(cookie -> " * " + String.join(" ", cookie.getName(), cookie.getValue(), Integer.toString(cookie.getMaxAge()), cookie.getDomain())).collect(Collectors.joining("\n"));
+        return String.format(CSRF_MESSAGE_FORMAT, request.getMethod(), request.getRequestURL(), AccessLogger.GetRequestIp(request), headers, cookies);
+    }
+
+    private static final String CSRF_MESSAGE_FORMAT = "%s on URL: %s from %s:\nHeaders:\n%s\nCookies:\n%s";
 }
 

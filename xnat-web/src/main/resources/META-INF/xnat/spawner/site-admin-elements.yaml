@@ -352,7 +352,6 @@ generalSecuritySettings:
                         data:
                             message: Please do not include bounding "/" characters in your regex pattern.
 
-
 userLoginsSessionControls:
     kind: panel.form
     name: userLoginsSessionControls
@@ -361,6 +360,9 @@ userLoginsSessionControls:
     url: /xapi/siteConfig
     contentType: json
     contents:
+        userSessionSubhead:
+            kind: panel.subhead
+            text: User Session Controls
         sessionTimeout:
             kind: panel.input.text
             name: sessionTimeout
@@ -403,6 +405,9 @@ userLoginsSessionControls:
             label: Maximum Concurrent Sessions
             validation: integer gte:1 onblur
             description: The maximum number of permitted sessions a user can have open simultaneously. Tomcat restart required to take effect.
+        loginFailureSubhead:
+            kind: panel.subhead
+            text: Managing Failed Logins
         loginFailureMessage:
             kind: panel.textarea
             name: uiLoginFailureMessage
@@ -440,6 +445,9 @@ userLoginsSessionControls:
             description: >
                 If set to "Enabled", a locked out user will be able to request a forgot password email
                 and click the link from that email to change their password and unlock their account.
+        userLockoutSettings:
+            kind: panel.subhead
+            text: User Lockout Settings
         userInactivityLockout:
             kind: panel.input.text
             name: inactivityBeforeLockout
@@ -456,6 +464,9 @@ userLoginsSessionControls:
             description: >
                 How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
                 <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+        userClientIdentificationSubhead:
+            kind: panel.subhead
+            text: User Client Identification
         interactiveAgentIds:
             kind: panel.input.textList
             size: 60
@@ -653,6 +664,202 @@ csrf:
 #            name: roleRepositoryService
 #            label: Role Repository Default
 #            size: 50
+
+## EMAIL SERVER
+
+emailServerSettings:
+    kind: panel.form
+    method: POST
+    contentType: json
+    url: /xapi/notifications
+    name: emailServerSettings
+    label: Mail Server Settings
+    contents:
+        emailSettingsWarning:
+            tag: div.message
+            html: >
+                <p>XNAT relies on its mail servers to send messages to its users as well as to alert admins when certain events happen. In addition, a properly configured mail server is necessary for users to be able to get sent links to reset their password when they forget it.</p>
+
+        smtpEnabled:
+            kind: panel.input.switchbox
+            label: Enable SMTP
+            onText: Enabled
+            offText: Disabled
+            description: >
+                This setting must be enabled in order for your XNAT to send notification emails.
+
+        serverSettings:
+            kind: panel.subhead
+            text: Server
+        smtpHostname:
+            kind: panel.input.text
+            label: Host
+            placeholder: localhost
+        smtpPort:
+            kind: panel.input.number
+            label: Port
+            placeholder: 25
+            validation: allow-empty integer
+        smtpProtocol:
+            kind: panel.input.text
+            label: Protocol
+            placeholder: smtp
+
+        authentication:
+            kind: panel.subhead
+            text: Authentication
+        smtpAuth:
+            kind: panel.input.switchbox
+            label: SMTP Auth
+            onText: Enabled
+            offText: Disabled
+        smtpUsername:
+            kind: panel.input.text
+            label: Username
+        smtpPassword:
+            kind: panel.input.password
+            label: Password
+
+        otherSettings:
+            kind: panel.subhead
+            text: Other Settings
+        smtpStartTls:
+            kind: panel.input.switchbox
+            label: Start TLS
+            onText: Enabled
+            offText: Disabled
+        smtpSslTrust:
+            kind: panel.input.text
+            label: SSL Trust
+        emailPrefix:
+            kind: panel.input.text
+            label: Email Prefix
+            placeholder: XNAT
+
+## NOTIFICATIONS
+
+notifications:
+    kind: panel.form
+    name: notifications
+    label: Notifications
+    url: /xapi/notifications
+    method: POST
+    contentType: json
+    contents:
+        helpContactInfo:
+            kind: panel.input.email
+            label: "Help Contact Info"
+            validation: allow-empty email onblur
+            description: >
+                Email address used for general help contact information in outgoing emails and pipeline notifications
+        emailMessageSubhead:
+            kind: panel.subhead
+            label: Email Messages
+
+        emailMessageUserRegistration:
+            kind: panel.textarea
+            label: "User Registration"
+            code: html
+            description: >
+                Text of message emailed to users upon registration. Link for email validation is auto-populated.
+        emailMessageForgotUsernameRequest:
+            kind: panel.textarea
+            label: "Forgot Username Request"
+            code: html
+            description: "Text of message emailed to users upon lost username request."
+        emailMessageForgotPasswordReset:
+            kind: panel.textarea
+            label: "Password Reset"
+            code: html
+            description: "Text of message emailed to users upon lost password reset. Link for password reset is auto-populated"
+
+        #        notifyAdminSubhead:
+        #            kind: panel.subhead
+        #            label: "Notify Administrator on..."
+        #
+        #        notifyAdminUserRegistration:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminUserRegistration
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminUserRegistration"
+        #            label: "User Registration"
+        #            description: "Whether to cc admin user on new user emails. Requires valid admin email address."
+        #        notifyAdminPipelineEmails:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminPipelineEmails
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminPipelineEmails"
+        #            label: "Pipeline Emails"
+        #            description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
+        #        notifyAdminProjectAccessRequest:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminProjectAccessRequest
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectAccessRequest"
+        #            label: "Project Access Request"
+        #            description: "Whether to cc admin user on user project access request. Requires valid admin email address."
+        #        notifyAdminSessionTransfer:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminSessionTransfer
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectOnSessionTransfer"
+        #            label: "Session Transfer"
+        #            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
+
+        emailRecipientSubhead:
+            kind: panel.subhead
+            label: "Notification Email Recipients"
+
+        emailAllowNonuserSubscribers:
+            kind: panel.element
+            label: "Allow Nonuser Subscribers"
+            info: >
+                <p>The notification email addresses defined in this panel, and as the site admin email, can potentially be sent to any email address.</p>
+                <p>This setting determines whether this site should allow notifications to be sent to email addresses that do not belong to valid users of this XNAT site. If set to \"Do Not Allow\", the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events.</p>
+            contents:
+                emailAllowNonuserSubscribersInput:
+                    kind: input.switchbox
+                    name: emailAllowNonuserSubscribers
+                    onText: Allow
+                    offText: Do Not Allow
+                    after: >
+                        <p class="description">If set to "Allow", site notifications can be sent to email addresses other than those belonging to users of this XNAT site</p>
+
+        emailRecipientErrorMessages:
+            kind: panel.input.email
+            label: "Error Messages"
+            name: "emailRecipientErrorMessages"
+            description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            size: 50
+            validation: allow-empty emails onblur
+        #            value: "!? XNAT.data.notifications['emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
+        emailRecipientIssueReports:
+            kind: panel.input.email
+            label: "Issue Reports"
+            name: "emailRecipientIssueReports"
+            description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            size: 50
+            validation: allow-empty emails onblur
+        #            value: "!? XNAT.data.notifications['emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
+        emailRecipientNewUserAlert:
+            kind: panel.input.email
+            label: "New User Alert"
+            name: "emailRecipientNewUserAlert"
+            description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            size: 50
+            validation: allow-empty emails onblur
+        #            value: "!? XNAT.data.notifications['emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
+        emailRecipientUpdate:
+            kind: panel.input.email
+            label: "Updates"
+            name: "emailRecipientUpdate"
+            description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            size: 50
+            validation: allow-empty emails onblur
+        #            value: "!? XNAT.data.notifications['emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
+        copyAdminOnNotifications:
+            kind: panel.input.switchbox
+            name: copyAdminOnNotifications
+            label: "Copy Administrator on Notifications"
+            onText: Enabled
+            offText: Disabled
+            description: "If enabled, the primary administrator will receive a copy of error, issue, new user, and update notifications."
 
 ## FILE SYSTEM
 
@@ -873,191 +1080,6 @@ eventServiceConfig:
                 If disabled, event detection, action triggers, and subscription creation will be disabled.</p>
 
 ##
-
-emailServerSettings:
-    kind: panel.form
-    method: POST
-    contentType: json
-    url: /xapi/notifications
-    name: emailServerSettings
-    label: Mail Server Settings
-    contents:
-
-        smtpEnabled:
-            kind: panel.input.switchbox
-            label: Enable SMTP
-            onText: Enabled
-            offText: Disabled
-
-        serverSettings:
-            kind: panel.subhead
-            text: Server
-        smtpHostname:
-            kind: panel.input.text
-            label: Host
-            placeholder: localhost
-        smtpPort:
-            kind: panel.input.number
-            label: Port
-            placeholder: 25
-            validation: allow-empty integer
-        smtpProtocol:
-            kind: panel.input.text
-            label: Protocol
-            placeholder: smtp
-
-        authentication:
-            kind: panel.subhead
-            text: Authentication
-        smtpAuth:
-            kind: panel.input.switchbox
-            label: SMTP Auth
-            onText: Enabled
-            offText: Disabled
-        smtpUsername:
-            kind: panel.input.text
-            label: Username
-        smtpPassword:
-            kind: panel.input.password
-            label: Password
-
-        otherSettings:
-            kind: panel.subhead
-            text: Other Settings
-        smtpStartTls:
-            kind: panel.input.switchbox
-            label: Start TLS
-            onText: Enabled
-            offText: Disabled
-        smtpSslTrust:
-            kind: panel.input.text
-            label: SSL Trust
-        emailPrefix:
-            kind: panel.input.text
-            label: Email Prefix
-            placeholder: XNAT
-
-notifications:
-    kind: panel.form
-    name: notifications
-    label: Notifications
-    url: /xapi/notifications
-    method: POST
-    contentType: json
-    contents:
-        helpContactInfo:
-            kind: panel.input.email
-            label: "Help Contact Info"
-            validation: allow-empty email onblur
-
-        emailMessageSubhead:
-            kind: panel.subhead
-            label: Email Messages
-
-        emailMessageUserRegistration:
-            kind: panel.textarea
-            label: "User Registration"
-            code: html
-            description: >
-                Text of message emailed to users upon registration. Link for email validation is auto-populated.
-        emailMessageForgotUsernameRequest:
-            kind: panel.textarea
-            label: "Forgot Username Request"
-            code: html
-            description: "Text of message emailed to users upon lost username request."
-        emailMessageForgotPasswordReset:
-            kind: panel.textarea
-            label: "Password Reset"
-            code: html
-            description: "Text of message emailed to users upon lost password reset. Link for password reset is auto-populated"
-
-        #        notifyAdminSubhead:
-        #            kind: panel.subhead
-        #            label: "Notify Administrator on..."
-        #
-        #        notifyAdminUserRegistration:
-        #            kind: panel.input.checkbox
-        #            id: notifyAdminUserRegistration
-        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminUserRegistration"
-        #            label: "User Registration"
-        #            description: "Whether to cc admin user on new user emails. Requires valid admin email address."
-        #        notifyAdminPipelineEmails:
-        #            kind: panel.input.checkbox
-        #            id: notifyAdminPipelineEmails
-        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminPipelineEmails"
-        #            label: "Pipeline Emails"
-        #            description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
-        #        notifyAdminProjectAccessRequest:
-        #            kind: panel.input.checkbox
-        #            id: notifyAdminProjectAccessRequest
-        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectAccessRequest"
-        #            label: "Project Access Request"
-        #            description: "Whether to cc admin user on user project access request. Requires valid admin email address."
-        #        notifyAdminSessionTransfer:
-        #            kind: panel.input.checkbox
-        #            id: notifyAdminSessionTransfer
-        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectOnSessionTransfer"
-        #            label: "Session Transfer"
-        #            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
-
-        emailRecipientSubhead:
-            kind: panel.subhead
-            label: "Email Recipient(s) for..."
-
-        emailRecipientErrorMessages:
-            kind: panel.input.email
-            label: "Error Messages"
-            name: "emailRecipientErrorMessages"
-            description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
-            size: 50
-            validation: allow-empty emails onblur
-        #            value: "!? XNAT.data.notifications['emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
-        emailRecipientIssueReports:
-            kind: panel.input.email
-            label: "Issue Reports"
-            name: "emailRecipientIssueReports"
-            description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
-            size: 50
-            validation: allow-empty emails onblur
-        #            value: "!? XNAT.data.notifications['emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
-        emailRecipientNewUserAlert:
-            kind: panel.input.email
-            label: "New User Alert"
-            name: "emailRecipientNewUserAlert"
-            description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
-            size: 50
-            validation: allow-empty emails onblur
-        #            value: "!? XNAT.data.notifications['emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
-        emailRecipientUpdate:
-            kind: panel.input.email
-            label: "Updates"
-            name: "emailRecipientUpdate"
-            description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
-            size: 50
-            validation: allow-empty emails onblur
-        #            value: "!? XNAT.data.notifications['emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
-        copyAdminOnNotifications:
-            kind: panel.input.switchbox
-            name: copyAdminOnNotifications
-            label: "Copy Administrator on Notifications"
-            onText: Enabled
-            offText: Disabled
-            description: "Indicates whether the primary administrator should receive a copy of error, issue, new user, and update notifications if the administrator is not one of the configured recipients."
-
-        otherSubhead:
-            kind: panel.subhead
-            label: "Other"
-
-        emailAllowNonuserSubscribers:
-            kind: panel.input.switchbox
-            name: emailAllowNonuserSubscribers
-            label: "Allow Nonuser Subscribers"
-            onText: Allow
-            offText: Do Not Allow
-            description: "Indicates whether this site should allow site notifications to be sent to email addresses that do not belong to valid users of this XNAT site."
-            info: >
-                 <p>The notification email addresses defined above, and as the site admin email, can potentially be sent to any email address.</p>
-                 <p>This setting indicates whether this site should allow notifications to be sent to email addresses that do not belong to valid users of this XNAT site. If set to \"Do Not Allow\", the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events.</p>
 
 themeManagement:
     kind: panel

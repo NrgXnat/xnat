@@ -129,7 +129,7 @@ public class SmtpServer {
     }
 
     public Properties getMailProperties() {
-        return new Properties(_mailProperties);
+        return _mailProperties;
     }
 
     public void setMailProperties(final Properties properties) {
@@ -202,10 +202,10 @@ public class SmtpServer {
         return properties;
     }
 
-    private String  _hostname;
-    private int     _port;
-    private String  _protocol;
-    private String  _username;
-    private String  _password;
+    private       String     _hostname;
+    private       int        _port;
+    private       String     _protocol;
+    private       String     _username;
+    private       String     _password;
     private final Properties _mailProperties = new Properties();
 }

@@ -517,7 +517,6 @@ passwordExpirationDate:
         <p class="description">Expire passwords that were last changed before this date and require those users to change them.</p>
         </span>
 
-
 passwords:
     kind: panel.form
     name: passwords
@@ -677,8 +676,11 @@ emailServerSettings:
     contents:
         emailSettingsWarning:
             tag: div.message
-            html: >
-                <p>XNAT relies on its mail servers to send messages to its users as well as to alert admins when certain events happen. In addition, a properly configured mail server is necessary for users to be able to get sent links to reset their password when they forget it.</p>
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    XNAT relies on its mail servers to send messages to its users as well as to alert admins when certain events happen. In addition, a properly configured mail server is necessary for users to be able to get sent links to reset their password when they forget it.
 
         smtpEnabled:
             kind: panel.input.switchbox
@@ -860,6 +862,302 @@ notifications:
             onText: Enabled
             offText: Disabled
             description: "If enabled, the primary administrator will receive a copy of error, issue, new user, and update notifications."
+
+## THEMES
+
+themeManagement:
+    kind: panel
+    name: themeManagement
+    id: theme-management-panel
+    label: Theme Management
+    footer: false
+    contents:
+        themeDocumentationNote:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    For help with themes, see <a href="https://wiki.xnat.org/documentation/xnat-administration/working-with-ui-themes">Working with UI Themes in XNAT</a>
+        themeStyle:
+            tag: style
+            # "|" preserves line breaks...
+            content: |
+                input.theme-uploader { width:244px; display: inline !important; }
+                body #theme-management-panel div.element-wrapper { position: relative; top: -5px; }
+        themeSelectorForm:
+            tag: "form|id=theme-selector"
+            contents:
+                themeSelection:
+                    kind: panel.select.single
+                    id: theme-selection
+                    name: themeSelection
+                    label: Select Theme
+                    description: Select a new global theme from those available on the system.
+                    element:
+                        style: "width:230px;margin-right:10px;"
+                    afterElement: >
+                        <span style="display:inline-block;margin-left:10px"></span>
+                        <button id="activate-theme" class="btn btn-sm" type="submit">Set Theme</button>
+                        <button id="remove-theme" class="btn btn-sm">Delete</button>
+        uploadTheme:
+            kind: panel.input.file
+            id: xnat-theme-upload
+            className: theme-uploader
+            name: themePackage
+            label: Upload Theme
+            description: Upload a zipped theme package for selection above.
+        themeScript:
+            tag: script|src=/scripts/xnat/admin/themeManagement.js
+
+## PLUGINS
+
+# create a container for the plugin table to be spawned into
+pluginTable:
+    tag: "div#plugin-table-container"
+
+pluginTableScript:
+    tag: script|src=/scripts/xnat/admin/pluginManager.js
+
+pluginList:
+    kind: panel
+    name: pluginList
+    label: List of Installed Plugins
+    footer: false
+    contents:
+        ${pluginTable}
+        ${pluginTableScript}
+
+
+pluginOpenUrlsConfig:
+    tag: div
+    contents:
+        pluginOpenUrlsContainer:
+            tag: "div#plugin-open-urls-config"
+        pluginOpenUrlsScript:
+            tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
+
+pluginOpenUrlsPanel:
+    kind: panel
+    label: Plugin Open URLs
+    footer: false
+    contents:
+        ${pluginOpenUrlsConfig}
+
+## REGISTRATION OPTIONS
+
+registrationOptionsPanel:
+    kind: panel.form
+    label: Registration Options
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        registrationOptionsMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    These settings control auto-enabling and auto-verification of user accounts on registration. Email notifications
+                    to site administrators on new user registrations are not affected by these settings.
+        requireEmailVerificationToRegister:
+            kind: panel.input.switchbox
+            label: "Require Email Verification"
+            name: emailVerification
+            onText: Required
+            offText: Not Required
+            description: >
+                If email verification is required (recommended), newly registered users and users who change their email address must
+                verify their email address before their account is verified. Verification happens via a link sent to the submitted email.
+        autoEnableUserRegistration:
+            kind: panel.input.switchbox
+            name: userRegistration
+            label: "Auto-enable <br>User Registration"
+            onText: Auto-enable
+            offText: Do Not Auto-enable
+            description: >
+                If set to "Auto-enable", user accounts will be enabled automatically when the user registers. If not, new user accounts
+                must be manually enabled by a site administrator.
+        autoEnablePar:
+            kind: panel.input.switchbox
+            label: "Auto-enable with <br>Project Access Request"
+            name: par
+            onText: Auto-enable
+            offText: Do Not Auto-enable
+            description: >
+                If an unregistered user receives a Project Access Request via email, the site administrator could assume that
+                the project owner knows this user and can verify the validity of their account. This setting allows for auto-enabling
+                users who register accounts after receiving a Project Access Request, overriding the Auto-enable setting above.
+        uiAllowNewUserComments:
+            kind: panel.input.switchbox
+            label: "Allow User Comments <br>on Registration"
+            onText: Allow
+            offText: Do Not Allow
+            description: >
+                User comments, if allowed, are displayed in the email notifications sent to the site administrator.
+
+## SESSION UPLOAD
+
+uploadChannels:
+    kind: panel.form
+    name: uploadChannels
+    label: "Image Session Upload Methods"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiHideCompressedUploaderUploadOption:
+            kind: panel.input.switchbox
+            label: "Hide Compressed Uploader"
+            onText: Hidden
+            offText: Available
+            description: >
+                If set to "Hidden", the Compressed Uploader is removed from the "Upload > Images" menu.
+                (The DICOM-zip importer is enabled regardless of this setting.)
+        uiHideXnatUploadAssistantDownload:
+            kind: panel.input.switchbox
+            label: "Hide XNAT Upload Assistant"
+            onText: Hidden
+            offText: Available
+            description: >
+                If set to "Hidden", the legacy XNAT Upload Assistant is removed from the "Upload > Images" menu.
+sessionBuilder:
+    kind: panel.form
+    name: sessionBuilder
+    label: "Session Builder"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        receivedFileUser:
+            kind: panel.input.text
+            label: Received File User
+            validation: id-strict max-length:40 onblur
+            placeholder: User account for performing import and archiving operations
+            description: >
+                This should be the login name of an enabled and valid user. The specified user must be a site
+                administrator.
+        reloadPrearcDatabaseOnStartup:
+            kind: panel.input.switchbox
+            label: "Reload Prearchive Database<br>On Start-up"
+            onText: Enabled
+            offText: Disabled
+            description: >
+                This controls whether the prearchive database is rebuilt when your XNAT server restarts. This can help
+                keep your system in sync with the data in prearchive, but can add to system load at start-up, especially
+                on systems that handle a lot of incoming data.
+        sessionXmlRebuilderRepeat:
+            kind: panel.input.number
+            label: Session Idle Check Interval
+            validation: integer onblur
+            placeholder: Interval in milliseconds
+            afterElement: <span class="after">milliseconds</span>
+            description: >
+                This controls how often the system checks to see if any incoming DICOM sessions in the prearchive have
+                been idle for longer than the configured session idle time. This value should be specified in
+                milliseconds and defaults to 60,000 ms or one minute.
+        sessionXmlRebuilderInterval:
+            kind: panel.input.number
+            label: Session Idle Time
+            validation: integer onblur
+            placeholder: Time in minutes
+            afterElement: <span class="after">minutes</span>
+            description: >
+                This tells the system how long a DICOM session should sit idle&mdash;that is, with no new data added to the
+                session&mdash;before attempting to build a session document from the DICOM data. This value is specified in
+                minutes and defaults to 5 minutes.
+
+anonymization:
+    kind: panel.form
+    name: Anonymization
+    label: "Anonymization Script (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        enableSitewideAnonymizationScript:
+            kind: panel.input.switchbox
+            label: "Enable Site-wide <br>Anonymization Script"
+            onText: Enabled
+            offText: Disabled
+        sitewideAnonymizationScript:
+            kind: panel.textarea
+            label: "Edit Anonymization Script"
+            code: text
+            description: >
+                This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="https://wiki.xnat.org/display/XTOOLS/DicomEdit" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
+
+seriesImportFilter:
+    kind: panel.form
+    name: seriesImportFilter
+    label: "Series Import Filter (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        enableSitewideSeriesImportFilter:
+            kind: panel.input.switchbox
+            name: enableSitewideSeriesImportFilter
+            label: "Enable Site-wide <br>Series Import Filter"
+            onText: Enabled
+            offText: Disabled
+        sitewideSeriesImportFilterMode:
+            kind: panel.select.single
+            name: sitewideSeriesImportFilterMode
+            label: Filter Mode
+            description: >
+                Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload assistant. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
+            options:
+                whitelist: Whitelist
+                blacklist: Blacklist
+                modalityMap: Modality Map
+        sitewideSeriesImportFilter:
+            kind: panel.textarea
+            name: sitewideSeriesImportFilter
+            label: "Edit Series Import Filter"
+            code: text
+            description: >
+                The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
+                <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive,
+                i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
+petTracers:
+    kind: panel.form
+    name: petTracers
+    label: "Pet Tracers (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        sitewidePetTracers:
+            kind: panel.textarea
+            name: sitewidePetTracers
+            label: "Pet Tracers"
+            code: text
+            validation: max-length:1000
+            description: >
+                This is the site-wide list of PET tracers. List entries should be separated by whitespace. Project owners can specify their own lists as needed.
+
+petMr:
+    kind: panel.form
+    name: petMr
+    label: "Separate PET-MR (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        petMr:
+            kind: panel.select.single
+            name: sitewidePetMr
+            label: "Separate PET-MR"
+            description: >
+                When data is received from a PET-MR scanner, XNAT can treat this as a single PET/MR imaging session, a single PET imaging session, or separate the data into PET and MR sessions
+            options:
+                #value: Label
+                petmr: Create as PET/MR session
+                pet: Create as PET session
+                separate: Separate into PET and MR sessions
+
 
 ## FILE SYSTEM
 
@@ -1081,71 +1379,6 @@ eventServiceConfig:
 
 ##
 
-themeManagement:
-    kind: panel
-    name: themeManagement
-    id: theme-management-panel
-    label: Theme Management
-    footer: false
-    contents:
-        themeStyle:
-            tag: style
-            # "|" preserves line breaks...
-            content: |
-                input.theme-uploader { width:244px; display: inline !important; }
-                body #theme-management-panel div.element-wrapper { position: relative; top: -5px; }
-                body #theme-management-panel div.panel-body{ padding-top: 50px; }
-        themeSelectorForm:
-            tag: "form|id=theme-selector"
-            contents:
-                themeSelection:
-                    kind: panel.select.single
-                    id: theme-selection
-                    name: themeSelection
-                    label: Select Theme
-                    description: Select a new global theme from those available on the system.
-                    #                    options:
-                    #                        None: None
-                    element:
-                        style: "width:230px;margin-right:10px;"
-                    afterElement: >
-                        <span style="display:inline-block;margin-left:10px"></span>
-                        <button id="activate-theme" class="btn btn-sm" type="submit">Set Theme</button>
-                        <button id="remove-theme" class="btn btn-sm">Delete</button>
-        uploadTheme:
-            kind: panel.input.file
-            id: xnat-theme-upload
-            className: theme-uploader
-            name: themePackage
-            label: Upload Theme
-            description: Upload a zipped theme package for selection above.
-        themeScript:
-            tag: script|src=/scripts/xnat/admin/themeManagement.js
-
-# create a container for the plugin table to be spawned into
-pluginTable:
-    tag: "div#plugin-table-container"
-
-pluginTableScript:
-    tag: script|src=/scripts/xnat/admin/pluginManager.js
-
-pluginOpenUrlsConfig:
-    tag: div
-    contents:
-        pluginOpenUrlsContainer:
-            tag: "div#plugin-open-urls-config"
-        pluginOpenUrlsScript:
-            tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
-
-pluginList:
-    kind: panel
-    name: pluginList
-    label: List of Installed Plugins
-    footer: false
-    contents:
-        ${pluginTable}
-        ${pluginTableScript}
-
 authenticationMethods:
     kind: panel.form
     name: authenticationMethods
@@ -1246,59 +1479,6 @@ userRoles:
 #    contents:
 
 
-registrationOptions:
-    kind: panel.form
-    name: registrationOptions
-    label: Registration Options
-    url: /xapi/siteConfig
-    method: POST
-    contentType: json
-    contents:
-        requireEmailVerificationToRegister:
-            kind: panel.input.switchbox
-            name: emailVerification
-            label: "Require Email Verification"
-            onText: Required
-            offText: Not Required
-            description: >
-                If true, users will receive an email after registering for an account and must click a
-                link in the email to verify their email address before they are able to use their account.
-                If false, no verification emails will be sent and users will not be required to verify their email
-                before using their account. Either way the administrator receives an email notification when a user registers.
-                If true, users who wish to change their email will also be required to verify their new email address.
-        #        emailVerificationMessage:
-        #            kind: panel.textarea
-        #            name: emailVerificationMessage
-        #            label: "Email Verification Message"
-        #            code: html
-        #            description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
-        autoEnableUserRegistration:
-            kind: panel.input.switchbox
-            name: userRegistration
-            label: "Auto-enable <br>User Registration"
-            onText: Auto-enable
-            offText: Do Not Auto-enable
-            description: >
-                If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
-                projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
-                receives an email notification when a user registers.
-        autoEnablePar:
-            kind: panel.input.switchbox
-            name: par
-            label: "Auto-enable with <br>Project Access Request"
-            onText: Auto-enable
-            offText: Do Not Auto-enable
-            description: >
-                If true, user accounts created when accepting project access requests will always be enabled (and verified) automatically. If false,
-                user accounts will only be enabled automatically if "Auto-enable User Registration" is true. So this setting determines whether project
-                access requests should override how user registration is normally handled. Either way the administrator receives an email notification
-                when a user registers.
-        uiAllowNewUserComments:
-            kind: panel.input.switchbox
-            label: "Allow User Comments <br>on Registration"
-            onText: Allow
-            offText: Do Not Allow
-
 manageDataTypes:
     kind: panel.form
     name: manageDataTypes
@@ -1315,80 +1495,6 @@ manageDataTypes:
             kind: panel.input.text
             name: imageSessionDisplayNamePlural
             label: "Plural Display Name For Generic Image Session Singular"
-
-uploadChannels:
-    kind: panel.form
-    name: uploadChannels
-    label: "Image Session Upload Methods"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        uiHideCompressedUploaderUploadOption:
-            kind: panel.input.switchbox
-            label: "Hide Compressed Uploader"
-            onText: Hidden
-            offText: Available
-            description: >
-                This controls whether the Compressed Uploader is made available in the "Upload > Images" menu.
-                By default, this is set to "false", which makes the Compressed Uploader available in the UI. (Note that
-                the DICOM-zip importer is enabled regardless of this setting.)
-        uiHideXnatUploadAssistantDownload:
-            kind: panel.input.switchbox
-            label: "Hide XNAT Upload Assistant"
-            onText: Hidden
-            offText: Available
-            description: >
-                The XNAT Upload Assistant has been deprecated in favor of the XNAT Desktop Client. However,
-                some legacy sites may prefer to make it available as an option. This setting controls whether
-                the Upload Assistant is hidden from the options in the "Upload > Images" menu. By default, this is
-                set to "true", which hides the Upload Assistant from view.
-
-sessionBuilder:
-    kind: panel.form
-    name: sessionBuilder
-    label: "Session Builder"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        receivedFileUser:
-            kind: panel.input.text
-            label: Received File User
-            validation: id-strict max-length:40 onblur
-            placeholder: User account for performing import and archiving operations
-            description: >
-                This should be the login name of an enabled and valid user. The specified user must be a site
-                administrator.
-        reloadPrearcDatabaseOnStartup:
-            kind: panel.input.switchbox
-            label: "Reload Prearchive Database<br>On Start-up"
-            onText: Enabled
-            offText: Disabled
-            description: >
-                This controls whether the prearchive database is rebuilt when your XNAT server restarts. This can help
-                keep your system in sync with the data in prearchive, but can add to system load at start-up, especially
-                on systems that handle a lot of incoming data.
-        sessionXmlRebuilderRepeat:
-            kind: panel.input.number
-            label: Session Idle Check Interval
-            validation: integer onblur
-            placeholder: Interval in milliseconds
-            afterElement: <span class="after">milliseconds</span>
-            description: >
-                This controls how often the system checks to see if any incoming DICOM sessions in the prearchive have
-                been idle for longer than the configured session idle time. This value should be specified in
-                milliseconds and defaults to 60,000 ms or one minute.
-        sessionXmlRebuilderInterval:
-            kind: panel.input.number
-            label: Session Idle Time
-            validation: integer onblur
-            placeholder: Time in minutes
-            afterElement: <span class="after">minutes</span>
-            description: >
-                This tells the system how long a DICOM session should sit idle&mdash;that is, with no new data added to the
-                session&mdash;before attempting to build a session document from the DICOM data. This value is specified in
-                minutes and defaults to 5 minutes.
 
 projectRouting:
     kind: panel.form
@@ -1467,97 +1573,6 @@ sessionRouting:
             code: text
             description: >
                 Use the <a href="https://wiki.xnat.org/workshop-2016/step-3-of-8-configure-dicom-project-routing-29032850.html" target="_blank">guide</a> for formatting this string.<br><br>Note that this setting will take precedence over the <a href="https://wiki.xnat.org/documentation/how-to-use-xnat/image-session-upload-methods-in-xnat/how-xnat-scans-dicom-to-map-to-project-subject-session">default XNAT routing rules</a>.
-
-anonymization:
-    kind: panel.form
-    name: Anonymization
-    label: "Anonymization Script (Site Wide)"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        enableSitewideAnonymizationScript:
-            kind: panel.input.switchbox
-            label: "Enable Site-wide <br>Anonymization Script"
-            onText: Enabled
-            offText: Disabled
-        sitewideAnonymizationScript:
-            kind: panel.textarea
-            label: "Edit Anonymization Script"
-            code: text
-            description: >
-                This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="https://wiki.xnat.org/display/XTOOLS/DicomEdit" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
-
-seriesImportFilter:
-    kind: panel.form
-    name: seriesImportFilter
-    label: "Series Import Filter (Site Wide)"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        enableSitewideSeriesImportFilter:
-            kind: panel.input.switchbox
-            name: enableSitewideSeriesImportFilter
-            label: "Enable Site-wide <br>Series Import Filter"
-            onText: Enabled
-            offText: Disabled
-        sitewideSeriesImportFilterMode:
-            kind: panel.select.single
-            name: sitewideSeriesImportFilterMode
-            label: Filter Mode
-            description: >
-                Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload assistant. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
-            options:
-                whitelist: Whitelist
-                blacklist: Blacklist
-                modalityMap: Modality Map
-        sitewideSeriesImportFilter:
-            kind: panel.textarea
-            name: sitewideSeriesImportFilter
-            label: "Edit Series Import Filter"
-            code: text
-            description: >
-                The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
-                <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive,
-                i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
-
-petTracers:
-    kind: panel.form
-    name: petTracers
-    label: "Pet Tracers (Site Wide)"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        sitewidePetTracers:
-            kind: panel.textarea
-            name: sitewidePetTracers
-            label: "Pet Tracers"
-            code: text
-            validation: max-length:1000
-            description: >
-                This is the site-wide list of PET tracers. List entries should be separated by whitespace. This list can also be replaced at the project level.
-
-petMr:
-    kind: panel.form
-    name: petMr
-    label: "Separate PET-MR (Site Wide)"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        petMr:
-            kind: panel.select.single
-            name: sitewidePetMr
-            label: "Separate PET-MR"
-            description: >
-                Should data generated by PET-MR scanners be created as a single PET/MR imaging session, created as a single PET imaging session, or separated into PET and MR sessions?
-            options:
-                #value: Label
-                petmr: Create as PET/MR session
-                pet: Create as PET session
-                separate: Separate into PET and MR sessions
 
 autoRunSettings:
     kind: panel.form
@@ -1875,20 +1890,17 @@ root:
             group: xnatSetup
             contents:
                 ${pluginList}
-        pluginOpenUrls:
-            kind: tab
-            name: pluginOpenUrls
-            label: Plugin Open URLs
-            group: xnatSetup
-            contents:
                 ${pluginOpenUrlsConfig}
-        eventService:
-            kind: tab
-            name: eventService
-            label: Event Service
-            group: xnatSetup
-            contents:
-                ${eventServiceConfig}
+
+#        eventService:
+#            kind: tab
+#            name: eventService
+#            label: Event Service
+#            group: xnatSetup
+#            contents:
+#                ${eventServiceConfig}
+
+
         #        authenticationMethods:
         #            kind: tab
         #            name: authenticationMethods
@@ -1918,7 +1930,7 @@ root:
             label: Registration Options
             group: manageAccess
             contents:
-                ${registrationOptions}
+                ${registrationOptionsPanel}
         #        manageDataTypes:
         #            kind: tab
         #            name: manageDataTypes

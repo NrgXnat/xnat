@@ -138,6 +138,17 @@ public interface PersistentWorkflowI {
 	void setCurrentStepId(String v);
 
 	/**
+	 * @return Returns the next_step_id.
+	 */
+	public abstract String getNextStepId();
+
+	/**
+	 * Sets the value for next_step_id.
+	 * @param v Value to Set.
+	 */
+	public abstract void setNextStepId(String v);
+
+	/**
 	 * @return Returns the status.
 	 */
 	String getStatus();

@@ -9,14 +9,9 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.io.File;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
@@ -27,72 +22,75 @@ import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.FileUtils;
 
-public class ReportIssue extends SecureAction {
-    private static final Logger logger = Logger.getLogger(ReportIssue.class);
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
+@Slf4j
+public class ReportIssue extends SecureAction {
     private static final String HTTP_USER_AGENT = "User-Agent";
-    private static final String HTTP_HOST = "Host";
-    private static final String JAVA_VENDOR = "java.vendor";
-    private static final String JAVA_VERSION = "java.version";
+    private static final String HTTP_HOST       = "Host";
+    private static final String JAVA_VENDOR     = "java.vendor";
+    private static final String JAVA_VERSION    = "java.version";
     private static final String JAVA_OS_VERSION = "os.version";
-    private static final String JAVA_OS_ARCH = "os.arch";
-    private static final String JAVA_OS_NAME = "os.name";
+    private static final String JAVA_OS_ARCH    = "os.arch";
+    private static final String JAVA_OS_NAME    = "os.name";
+    private static final String SUBJECT_FORMAT  = "%s Issue Report from %s";
 
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
-
-        final String adminEmail = XDAT.getSiteConfigPreferences().getAdminEmail();
-
-        final UserI user = TurbineUtils.getUser(data);
+    public void doPerform(final RunData data, final Context context) throws Exception {
+        final UserI           user       = XDAT.getUserDetails();
         final ParameterParser parameters = data.getParameters();
-        final String body = emailBody(user, parameters, data, context, false);
-        final String htmlBody = emailBody(user, parameters, data, context, true);
 
-        String subject = TurbineUtils.GetSystemName() + " Issue Report from " + user.getLogin();
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
+        properties.put(MailMessage.PROP_SUBJECT, getSubject(user));
+        properties.put(MailMessage.PROP_HTML, emailBody(user, parameters, data, context, true));
+        properties.put(MailMessage.PROP_TEXT, emailBody(user, parameters, data, context, false));
+
         // TODO: Need to figure out how to handle attachments in notifications.
-        Map<String, File> attachments = getAttachmentMap(data.getSession().getId(), parameters);
-
-        // XDAT.getMailService().sendHtmlMessage(adminEmail, new String[] { adminEmail }, null, null, subject, body, null, attachments);
-        Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put(MailMessage.PROP_FROM, adminEmail);
-        properties.put(MailMessage.PROP_SUBJECT, subject);
-        properties.put(MailMessage.PROP_HTML, htmlBody);
-        properties.put(MailMessage.PROP_TEXT, body);
-        if (attachments != null && attachments.size() > 0) {
+        final Map<String, File> attachments = getAttachmentMap(data.getSession().getId(), parameters);
+        if (!attachments.isEmpty()) {
             properties.put(MailMessage.PROP_ATTACHMENTS, attachments);
         }
+
         XDAT.verifyNotificationType(NotificationType.Issue);
         XDAT.getNotificationService().createNotification(NotificationType.Issue.toString(), properties);
+        TurbineUtils.setBannerMessage(data, "Thanks for your feedback. The administrator(s) have been notified and will contact you when the issue is resolved or if more information is required.");
     }
 
-    private Map<String, File> getAttachmentMap(String sessionId, ParameterParser parameters) {
-        Map<String, File> attachmentMap = new HashMap<String, File>();
-
-        final FileItem fi = parameters.getFileItem("upload");
-        if (fi != null) {
-            final String cachePath = location(ArcSpecManager.GetInstance().getGlobalCachePath(), "issuereports", sessionId);
-            checkFolder(cachePath);
-
-            final File file = new File(location(cachePath, fi.getName()));
-            try {
-                fi.write(file);
-                attachmentMap.put(fi.getName(), file);
-            } catch (Exception exception) {
-                logger.warn("Could not attach file, " + file.getAbsolutePath(), exception);
-            }
+    private Map<String, File> getAttachmentMap(final String sessionId, final ParameterParser parameters) {
+        final FileItem fileItem = parameters.getFileItem("upload");
+        if (fileItem == null || ((!(fileItem instanceof DiskFileItem) || !((DiskFileItem) fileItem).getStoreLocation().exists()) && fileItem.getSize() <= 0)) {
+            return Collections.emptyMap();
         }
 
-        return attachmentMap;
+        final Path cachePath = Paths.get(ArcSpecManager.GetInstance().getGlobalCachePath(), "issuereports", sessionId);
+        checkFolder(cachePath);
+
+        final Map<String, File> attachments = new HashMap<>();
+        final File              file         = cachePath.resolve(fileItem.getName()).toFile();
+        try {
+            fileItem.write(file);
+            attachments.put(fileItem.getName(), file);
+        } catch (Exception exception) {
+            log.warn("Could not attach file {}", file.getAbsolutePath(), exception);
+        }
+
+        return attachments;
     }
 
-    private String emailBody(UserI user, ParameterParser parameters, RunData data, Context context, boolean html) throws Exception {
-        if(html){
+    private String emailBody(final UserI user, final ParameterParser parameters, final RunData data, final Context context, final boolean html) throws Exception {
+        if (html) {
             context.put("html", "html");
             context.put("htmlDescription", parameters.get("description").replaceAll("\n", "<br/>"));
         } else {
@@ -114,7 +112,7 @@ public class ReportIssue extends SecureAction {
         context.put("postgres_version", PoolDBUtils.ReturnStatisticQuery("SELECT version();", "version", user.getDBName(), user.getLogin()));
         context.put("siteLogoPath", XDAT.getSiteLogoPath());
 
-        if(html){
+        if (html) {
             context.put("html", "html");
             return AdminUtils.populateVmTemplate(context, "/screens/email/html_issue_report.vm");
         } else {
@@ -122,14 +120,14 @@ public class ReportIssue extends SecureAction {
         }
     }
 
-    private void checkFolder(String path) {
-        final File f = new File(path);
-        if (!f.exists()) {
-            f.mkdirs();
+    private void checkFolder(final Path path) {
+        final File file = path.toFile();
+        if (!file.exists()) {
+            file.mkdirs();
         }
     }
 
-    private String location(String... pathParts) {
-        return StringUtils.join(pathParts, File.separator);
+    private static String getSubject(final UserI user) {
+        return String.format(SUBJECT_FORMAT, TurbineUtils.GetSystemName(), user.getUsername());
     }
 }

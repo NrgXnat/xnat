@@ -35,7 +35,6 @@ public class WorkflowStatusEventListener implements Consumer<Event<WorkflowStatu
         if (StringUtils.isBlank(bulkLaunchId) || userId == null) {
             return;
         }
-        eventService.triggerEvent(new BulkLaunchEvent(bulkLaunchId, userId, workflow.getWorkflowId(),
-                workflow.getId(), workflow.getStatus(), workflow.getDetails(), workflow.getComments()));
+        eventService.triggerEvent(new BulkLaunchEvent(bulkLaunchId, userId, workflow));
     }
 }

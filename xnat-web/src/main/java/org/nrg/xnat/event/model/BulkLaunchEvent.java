@@ -2,9 +2,7 @@ package org.nrg.xnat.event.model;
 
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.security.user.exceptions.UserInitException;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xnat.tracking.model.TrackableEvent;
 
 import javax.annotation.Nonnull;
@@ -16,28 +14,20 @@ public class BulkLaunchEvent implements TrackableEvent {
     private final Integer userId;
     private Integer n = null;
     private Integer failures = null;
+    private Integer steps = null;
     private boolean success = false;
     private boolean completed = false;
     private String message = null;
-    private Integer workflowId = null;
-    private String workflowItemId = null;
-    private String workflowStatus = null;
-    private String workflowDetails = null;
-    private String workflowContainerId = null;
+    private PersistentWorkflowI workflow = null;
 
     public BulkLaunchEvent(String id, Integer userId) {
         this.id = id;
         this.userId = userId;
     }
 
-    public BulkLaunchEvent(String bulkLaunchId, Integer userId, Integer workflowId, String workflowItemId,
-                           String workflowStatus, String workflowDetails, String workflowContainerId) {
+    public BulkLaunchEvent(String bulkLaunchId, Integer userId, PersistentWorkflowI workflow) {
         this(bulkLaunchId, userId);
-        this.workflowId = workflowId;
-        this.workflowItemId = workflowItemId;
-        this.workflowStatus = workflowStatus;
-        this.workflowDetails = workflowDetails;
-        this.workflowContainerId = workflowContainerId;
+        this.workflow = workflow;
     }
 
     private BulkLaunchEvent(String bulkLaunchId, Integer userId, boolean success, String message) {
@@ -50,6 +40,12 @@ public class BulkLaunchEvent implements TrackableEvent {
     public static BulkLaunchEvent initial(String bulkLaunchId, Integer userId, int n) {
         BulkLaunchEvent ble = new BulkLaunchEvent(bulkLaunchId, userId);
         ble.n = n;
+        return ble;
+    }
+
+    public static BulkLaunchEvent initial(String bulkLaunchId, Integer userId, int n, int steps) {
+        BulkLaunchEvent ble = initial(bulkLaunchId, userId, n);
+        ble.steps = steps;
         return ble;
     }
 
@@ -99,11 +95,14 @@ public class BulkLaunchEvent implements TrackableEvent {
         if (n != null) {
             statusLog.setTotal(n);
         }
+        if (steps != null) {
+            statusLog.setSteps(steps);
+        }
         if (failures != null) {
             statusLog.addFailures(failures);
         }
-        if (workflowId != null) {
-            statusLog.addOrUpdateWorkflow(workflowId, workflowItemId, workflowStatus, workflowDetails, workflowContainerId);
+        if (workflow != null) {
+            statusLog.addOrUpdateWorkflow(workflow);
         }
         if (statusLog.bulkLaunchComplete()) {
             XDAT.getContextService().getBean(NrgEventService.class).triggerEvent(

@@ -1392,6 +1392,7 @@ fileSystemSettingsWarning:
             and are seldom, if ever, changed.
         style:
             fontWeight: bold
+            marginBottom: 24px
 archivePath:
     kind: panel.input.text
     name: archivePath
@@ -1434,7 +1435,7 @@ triagePath:
     kind: panel.element
     label: Resource Quarantine Path
     info: >
-        <p>The Resource Quarantine, or Triage, can be enabled for custom resource uploads. See <a target="_blank" href="https://wiki.xnat.org/documentation/how-to-use-xnat/managing-resource-files-in-xnat/triaging-uploaded-resources">Resource Triage Documentation</a></p>
+        <p>The Resource Quarantine, or Triage, can be enabled for custom resource uploads. See <a target="_blank" href="https://wiki.xnat.org/documentation/how-to-use-xnat/managing-resource-files-in-xnat/using-the-resource-file-quarantine">Resource Quarantine Documentation</a></p>
     contents:
         triagePathInput:
             kind: input.text

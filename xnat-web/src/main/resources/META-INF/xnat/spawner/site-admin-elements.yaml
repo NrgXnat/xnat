@@ -17,8 +17,21 @@ siteId:
     description: >
         The id used to refer to this site (also used to generate database ids).
         The Site ID must start with a letter and contain only letters, numbers
-        and underscores. It should be a short, one-word name or acronym which
-        describes your site. No spaces or non-alphanumeric characters.
+        and underscores. No spaces or non-alphanumeric characters.
+
+siteUrl:
+    kind: panel.element
+    label: Site Url
+    info: >
+        <p>This should be a functional address (i.e. if the user pasted this address in their web browser, they should come to the site). You are required to guarantee that this address is functional for reaching the site.</p>
+        <p>Note: "localhost" only works if the web browser is located on the same machine. </p>
+    contents:
+        siteUrlInput:
+            kind: input.text
+            name: siteUrl
+            validation: url onblur
+            after: >
+                <p class="description">The address you want visible to users in emails, and other external links. Include http(s) protocol.</p>
 
 siteDescriptionPage:
     tag: input|type=text|name=siteDescriptionPage|size=30|class=uri onblur|data-validate=uri onblur
@@ -32,29 +45,6 @@ siteDescriptionText:
         rows: 8
     after: >
         <p class="description">Specify a simple text description of this site.</p>
-
-passwordExpirationInterval:
-    kind: input.text
-    #    id: passwordExpirationInterval
-    name: passwordExpirationInterval
-    label: Password Expiration (Interval)
-    validation: interval onblur
-    after: >
-        <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
-        Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
-
-passwordExpirationDate:
-    kind: input.text
-    #    id: passwordExpirationDate
-    name: passwordExpirationDate
-    label: Password Expiration (Date)
-    validation: allow-empty date-iso onblur
-    after: >
-        <span id="datePicker">&nbsp;&nbsp;
-        <span id="openCal-passwordExpirationDate" class="fa fa-calendar"></span>
-        <br>
-        <p class="description">Expire passwords that were last changed before this date and require those users to change them.</p>
-        </span>
 
 siteDescriptionType:
     kind: panel.element
@@ -138,17 +128,6 @@ siteHomeLayout:
     name: siteHomeLayout
     label: Site Home Layout
 
-siteUrl:
-    kind: panel.input.text
-    name: siteUrl
-    label: Site Url
-    validation: url onblur
-    description: >
-        The address you want visible to users in emails, and other external links. This should be a
-        functional address (i.e. if the user pasted this address in their web browser, they should
-        come to the site). localhost only works if the web browser is located on the same machine.
-        You are required to guarantee that this address is functional for reaching the site.
-
 processingUrl:
     kind: panel.input.text
     name: processingUrl
@@ -160,14 +139,18 @@ processingUrl:
         site URL, provide one here.
 
 adminEmail:
-    kind: panel.input.email
-    name: adminEmail
+    kind: panel.element
     label: Site Admin Email
-    validation: email onblur
-    description: >
-        The administrative email account to receive system emails. This address will receive frequent emails
-        on system events, such as errors, processing completion, new user registration and so on. These emails
-        can be configured on the Notifications tab.
+    info: >
+        <p>This address will receive frequent emails on system events, such as errors, processing completion, new user registration and so on. </p>
+        <p>Additional emails for specific notification types can be configured on the Notifications tab.</p>
+    contents:
+        adminEmailInput:
+            kind: input.email
+            name: adminEmail
+            validation: email onblur
+            after: >
+                <p class="description">The administrative email account to receive system emails.</p>
 
 primaryAdminUsername:
     kind: panel.input.text
@@ -176,8 +159,22 @@ primaryAdminUsername:
     validation: id-strict max-length:40 onblur
     placeholder: User account to use when performing system functions
     description: >
-        This should be the login name of an enabled and valid user. The specified user must be a site
-        administrator.
+        The login name of an enabled and valid user with site administrator privileges. This field must be valid for proper system functioning.
+
+siteWideAlertInfo:
+    tag: div.message
+    element:
+        style:
+            marginBottom: 24px
+        html: >
+            <p>This panel can be used to create a notification banner that will be visible for all site visitors and logged-in users.
+            You can determine whether the banner is visible only on the login page, or on all site pages.</p>
+            <p>There are three stylistic treatments: </p>
+            <ul>
+                <li>"message" is informational</li>
+                <li>"alert" calls attention to critical info, such as scheduled maintenance downtime</li>
+                <li>"error" calls attention to severe info, such as a known bug or broken functionality</li>
+            </ul>
 
 siteWideAlertStatus:
     kind: panel.select.single
@@ -214,165 +211,6 @@ siteWideAlertType:
             value: error
     element:
         title: Select Alert Type
-#    value: alert
-
-fileSystemSettingsWarning:
-    someInfo:
-        tag: div.message
-        element:
-            html: >
-                These settings must be defined during initial application configuration,
-                and are seldom, if ever, changed.
-            style:
-                fontWeight: bold
-archivePath:
-    kind: panel.input.text
-    name: archivePath
-    label: Archive Path
-    validation: required onblur
-    description: ""
-    element:
-        disabled: true
-cachePath:
-    kind: panel.input.text
-    name: cachePath
-    label: Cache Path
-    validation: required onblur
-    description: ""
-prearchivePath:
-    kind: panel.input.text
-    name: prearchivePath
-    label: Prearchive Path
-    validation: required onblur
-    description: ""
-ftpPath:
-    kind: panel.input.text
-    name: ftpPath
-    label: FTP Path
-    validation: required onblur
-    description: ""
-buildPath:
-    kind: panel.input.text
-    name: buildPath
-    label: Build Path
-    validation: required onblur
-    description: ""
-pipelinePath:
-    kind: panel.input.text
-    name: pipelinePath
-    label: Pipeline Path
-    validation: required onblur
-    description: ""
-inboxPath:
-    kind: panel.input.text
-    name: inboxPath
-    label: Inbox Path
-    validation: required onblur
-    description: ""
-zipExtensions:
-    kind: panel.input.text
-    name: zipExtensions
-    label: Zip Extensions
-checksums:
-    kind: panel.input.switchbox
-    name: checksums
-    label: Checksums?
-    onText: Enabled
-    offText: Disabled
-    description: >
-        Indicates whether checksums should be calculated for each image file as it's archived.
-        Activating this provides greater assurance of data integrity, but may add significant
-        overhead to the archive process.
-backupDeletedToCache:
-    kind: panel.input.switchbox
-    name: backupDeletedToCache
-    label: Backup to-be-deleted data to cache "recycle bin"?
-    onText: Enabled
-    offText: Disabled
-    description: >
-        Indicates whether XNAT should move files from deleted entities (projects, subjects, sessions, etc.)
-        into a DELETED subdirectory of the cache space (a.k.a., a "recycle bin") or just remove them completely.
-        Enabling the recycle bin offers some protection against accidental data loss, but may incur an IO penalty,
-        especially if the archive and cache directories are not on the same filesystem.
-maintainFileHistory:
-    kind: panel.input.switchbox
-    name: maintainFileHistory
-    label: Track file history?
-    onText: Enabled
-    offText: Disabled
-    description: >
-        Indicates whether XNAT should retain copies of deleted files in a .history subdirectory of the cache space for
-        version control. Only files corresponding to existing entities (projects, subjects, sessions, etc.) can be tracked.
-        Deleting an entire entity cannot be version controlled, though you can enable the cache "recycle bin" for some
-        added deletion protection.
-uiShowPrearchiveFileActions:
-    kind: panel.input.switchbox
-    name: uiShowPrearchiveFileActions
-    label: Show preachive file actions?
-    onText: Enabled
-    offText: Disabled
-    description: >
-        Should the prearchive File Actions dropdown be available in the scan section of the prearchive page?
-        This is a useful feature, but can be disabled for backwards compatibility.
-        
-triagePath:
-    kind: panel.input.text
-    name: triagePath
-    label: Quarantine Location
-    description: "Location of XNAT Quarantine."
-    
-#checksumsPropertyChangedListener:
-#    kind: panel.input.text
-#    id: checksumsPropertyChangedListener
-#    name: checksums.property.changed.listener
-#    label: Checksums Property Changed Listener?
-
-asyncOperationsSettingsWarning:
-    someInfo:
-        tag: div.message
-        element:
-            html: >
-                These settings can only be applied during application start-up. That means that any
-                changes to the values here require a restart of the application server.
-            style:
-                fontWeight: bold
-defaultTimeout:
-    kind: panel.input.text
-    name: defaultTimeout
-    label: Default Timeout
-    validation: required onblur
-    description: "Sets the timeout for asynchronous request handling."
-    info: >
-        <p>This sets the timeout for asynchronous request handling and defines the maximum lifespan of an asynchronous process.
-        Generally speaking, this should stay set to -1.</p>
-corePoolSize:
-    kind: panel.input.text
-    name: corePoolSize
-    label: Core Pool Size
-    validation: required onblur
-    description: "Sets the minimum number of threads available to the asynchronous task executor."
-maxPoolSize:
-    kind: panel.input.text
-    name: maxPoolSize
-    label: Max Pool Size
-    validation: required onblur
-    description: "Sets the maximum number of threads available to the asynchronous task executor."
-keepAliveSeconds:
-    kind: panel.input.text
-    name: keepAliveSeconds
-    label: Keep-Alive Time
-    validation: required onblur
-    description: "Sets the time (as a number of seconds) that idle threads above the core pool size should be kept alive before disposal."
-allowCoreThreadTimeOut:
-    kind: panel.input.switchbox
-    name: allowCoreThreadTimeOut
-    label: Allow Core Thread Time-Out?
-    onText: Enabled
-    offText: Disabled
-    description: "Indicates whether core threads are allowed to time out."
-    info: >
-        Allowing core threads to time out enables dynamic growing and shrinking even in combination with a non-zero queue
-        (since the max pool size will only grow once the queue is full).
 
 siteInfo:
     kind: panel.form
@@ -384,31 +222,13 @@ siteInfo:
     contents:
         ${siteId}
         ${siteUrl}
-      #        ${processingUrl}
+#        ${processingUrl}
         ${siteDescriptionType}
         ${siteLogo}
         ${siteLoginLanding}
-      #        ${siteLandingLayout}
+#        ${siteLandingLayout}
         ${siteHome}
 #        ${siteHomeLayout}
-
-eventServiceConfig:
-    kind: panel.form
-    name: eventServiceConfig
-    label: Event Service Configuration
-    method: PUT
-    contentType: json
-    url: /xapi/events/prefs
-    contents:
-        enabled:
-            kind: panel.input.switchbox
-            name: enabled
-            label: Enable Event Service
-            onText: Enabled
-            offText: Disabled
-            description: >
-                <p>If enabled, Event Service will detect events and trigger actions linked by subscription.
-                If disabled, event detection, action triggers, and subscription creation will be disabled.</p>
 
 adminInfo:
     kind: panel.form
@@ -429,9 +249,13 @@ siteWideAlerts:
     contentType: json
     url: /xapi/siteConfig
     contents:
+        ${siteWideAlertInfo}
         ${siteWideAlertStatus}
         ${siteWideAlertMessage}
         ${siteWideAlertType}
+
+
+## SECURITY
 
 generalSecuritySettings:
     kind: panel.form
@@ -448,7 +272,7 @@ generalSecuritySettings:
                 <p>If you're using another service for SSL termination, including a front-end proxy such as Apache HTTPD
                 or nginx, or a load balancer such as AWS elastic load balancing, you should leave the security channel
                 set to "any".</p>
-                <p>For more information, see <a target="_blank" href="https://wiki.xnat.org/display/XNAT17/XNAT+Security+Settings+in+the+Admin+UI#XNATSecuritySettingsintheAdminUI-channel">our documentation page</a>.</p>
+                <p>For more information, see <a target="_blank" href="https://wiki.xnat.org/documentation/xnat-administration/xnat-security-settings-in-the-admin-ui">our documentation page</a>.</p>
             contents:
                 securityChannelMenu:
                     kind: select.menu
@@ -457,6 +281,8 @@ generalSecuritySettings:
                         any: Any
                         http: http
                         https: https
+                    after: >
+                        <p class="description">Set the http/s protocol used to access your XNAT installation</p>
         enabledProviders:
             kind: panel.input.textList
             label: Enabled Authentication Providers
@@ -474,61 +300,57 @@ generalSecuritySettings:
         restrictUserListAccessToAdmins:
             kind: panel.input.switchbox
             name: restrictUserListAccessToAdmins
-            label: "Restrict user list access <br>to site administrators?"
+            label: "Restrict user list access <br>to site administrators"
             onText: Restricted
             offText: Not Restricted
             description: >
-                Should this site restrict access to the list of system users to site administrators only?
-                If enabled, the site is more secure, but this restricts project owners from being able to
+                If set to "Restricted", the site is more secure, but this restricts project owners from being able to
                 administer users in their projects directly.
         uiAllowNonAdminProjectCreation:
             kind: panel.input.switchbox
-            label: "Allow non-administrators <br>to create projects?"
+            label: "Allow non-administrators <br>to create projects"
             onText: Allow
             offText: Do Not Allow
             description: >
-                Should this site allow non-administrator users to create new projects?
-                If enabled, the site is more secure, but this can make it more difficult for
+                If set to "Do Not Allow", the site is more secure, but this can make it more difficult for
                 regular users to create new projects for their research efforts.
         allowNonAdminsToClaimUnassignedSessions:
             kind: panel.input.switchbox
             name: allowNonAdminsToClaimUnassignedSessions
-            label: "Allow non-administrators <br>to find and claim <br>unassigned sessions?"
+            label: "Allow non-administrators <br>to find and claim <br>unassigned sessions"
             onText: Allow
             offText: Do Not Allow
             description: >
-                Should this site allow non-administrator users to search the prearchive for unassigned
-                sessions and claim any sessions matching the patient name, patient ID, or study date they
-                provide? Disabling this removes the "Find my study" feature and can help prevent users
-                from stealing another user's data. But it can also make it harder for users to get their
+                Setting this to "Do Not Allow" removes the "Find My Study" feature for non-administrators. But it can also make it harder for users to get their
                 data into XNAT and increase the burden on site administrators.
         displayHostName:
             kind: panel.select.single
             name: displayHostName
-            label: "Display host name<br>in footer?"
+            label: Display host name in footer
             options:
                 always: "Always"
                 multinode: "When multinode"
                 never: "Never"
             description: >
-                Should the host name for this server be displayed in the page footer? When set to <b>Always</b>
-                the host name is always displayed even in a single-server deployment. When set to <b>Multinode</b>,
-                the host name is automatically displayed when XNAT nodes detect a multi-server configuration, but
-                is otherwise not displayed. When set to <b>Never</b>, the host name is not displayed even in a
-                multinode configuration.
+                When set to <b>Always</b> the host name is always displayed even in a single-server deployment.
+                When set to <b>Multinode</b>, the host name is only displayed when XNAT nodes detect a multi-server configuration.
+                When set to <b>Never</b>, the host name is not displayed.
         ipsThatCanSendEmailsThroughRest:
-            kind: panel.input.text
-            name: ipsThatCanSendEmailsThroughRest
-            label: IPs that can send emails via REST
-            description: >
-                This must be a regular expression (do not include bounding '/' characters) which matches
-                trusted IPs from which users or pipelines should be able to send emails via an XNAT REST
-                call. By default this is set to allow all IPs but should be changed so that malicious
-                users do not use this to send phishing emails.
-            validation: "!pattern:^/"
-            element:
-                data:
-                    message: Please do not include bounding "/" characters in your regex pattern.
+            kind: panel.element
+            label: Email-enabled IP Addresses
+            info: >
+                <p>By default this is set to allow all IPs but should be changed so that malicious users do not use your XNAT server to send phishing emails.</p>
+            contents:
+                ipsThatCanSendEmailsThroughRestInput:
+                    kind: input.text
+                    name: ipsThatCanSendEmailsThroughRest
+                    after: >
+                        <p class="description">This must be a regular expression (do not include bounding '/' characters) which matches
+                        trusted IPs from which users or pipelines should be able to send emails via an XNAT REST call.</p>
+                    validation: "!pattern:^/"
+                    element:
+                        data:
+                            message: Please do not include bounding "/" characters in your regex pattern.
 
 userLoginsSessionControls:
     kind: panel.form
@@ -538,10 +360,13 @@ userLoginsSessionControls:
     url: /xapi/siteConfig
     contentType: json
     contents:
+        userSessionSubhead:
+            kind: panel.subhead
+            text: User Session Controls
         sessionTimeout:
             kind: panel.input.text
             name: sessionTimeout
-            label: Session Timeout
+            label: User Session Timeout
             validation: interval onblur
             description: >
                 Interval for timing out user sessions. Uses
@@ -572,20 +397,23 @@ userLoginsSessionControls:
         #            kind: panel.input.checkbox
         #            id: allow-resume-on-next-login
         #            name: allowResumeOnNextLogin
-        #            label: Allow Resume On Next Login?
+        #            label: Allow Resume On Next Login
         #            description: Allow user to resume where they left off, if logging back in after a session timeout?
         maximumConcurrentSessions:
             kind: panel.input.number
             name: concurrentMaxSessions
             label: Maximum Concurrent Sessions
             validation: integer gte:1 onblur
-            description: The maximum number of permitted sessions a user can have open simultaneously. You must restart Tomcat for changes to this to take effect.
+            description: The maximum number of permitted sessions a user can have open simultaneously. Tomcat restart required to take effect.
+        loginFailureSubhead:
+            kind: panel.subhead
+            text: Managing Failed Logins
         loginFailureMessage:
             kind: panel.textarea
             name: uiLoginFailureMessage
             label: Login Failure Message
             code: html
-            description: Text to show when a user fails to login
+            description: Text to show when a user fails to login. "%d" is replaced by the count of failed logins.
         maximumFailedLogins:
             kind: panel.input.number
             name: maxFailedLogins
@@ -611,13 +439,15 @@ userLoginsSessionControls:
         canResetFailedLoginsWithForgotPassword:
             kind: panel.input.switchbox
             name: canResetFailedLoginsWithForgotPassword
-            label: Reset failed login count on forgot password?
+            label: Reset failed login count on forgot password
             onText: Enabled
             offText: Disabled
             description: >
-                Indicates whether a user should be able to click the link from a forgot password email to reset their
-                count of failed logins. If enabled, a locked out user will be able to request a forgot password email
+                If set to "Enabled", a locked out user will be able to request a forgot password email
                 and click the link from that email to change their password and unlock their account.
+        userLockoutSettings:
+            kind: panel.subhead
+            text: User Lockout Settings
         userInactivityLockout:
             kind: panel.input.text
             name: inactivityBeforeLockout
@@ -634,6 +464,9 @@ userLoginsSessionControls:
             description: >
                 How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
                 <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+        userClientIdentificationSubhead:
+            kind: panel.subhead
+            text: User Client Identification
         interactiveAgentIds:
             kind: panel.input.textList
             size: 60
@@ -646,18 +479,43 @@ userLoginsSessionControls:
                 request comes from an interactive agent (e.g. a browser) or some other kind of tool, such as curl or other
                 scriptable or automatable client. Separate multiple agent IDs with commas.
         dataPaths:
-            kind: panel.input.textList
-            size: 60
-            name: dataPaths
-            delim: ","
+            kind: panel.element
             label: Data Paths
-            placeholder: /xapi/**, /data/**, /REST/**, /fs/**
-            description: >
-                Ant patterns that define URL patterns that represent data paths (e.g. REST API calls). XNAT uses these
-                paths in conjunction with the interactive agent IDs above to determine the response to certain calls. For
+            info: >
+                <p>XNAT uses these paths in conjunction with the interactive agent IDs above to determine the response to certain calls. For
                 example, instead of simply returning a "404 Not Found" error when an inaccessible resource is indicated,
-                a call to a data path by a browser may be redirected to the login page. Separate multiple data paths with
-                commas.
+                a call to a data path by a browser may be redirected to the login page. </p>
+            contents:
+                dataPathsInput:
+                    kind: input.textList
+                    size: 60
+                    name: dataPaths
+                    delim: ","
+                    placeholder: /xapi/**, /data/**, /REST/**, /fs/**
+                    after: >
+                        <p class="description">URL patterns that represent data paths (e.g. REST API calls). Separate multiple data paths with commas.
+                        Uses <a target="_blank" href="https://ant.apache.org/manual/dirtasks.html">Apache Ant Pattern Notation</a></p>
+
+passwordExpirationInterval:
+    kind: input.text
+    name: passwordExpirationInterval
+    label: Password Expiration (Interval)
+    validation: interval onblur
+    after: >
+        <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
+        Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
+
+passwordExpirationDate:
+    kind: input.text
+    name: passwordExpirationDate
+    label: Password Expiration (Date)
+    validation: allow-empty date-iso onblur
+    after: >
+        <span id="datePicker">&nbsp;&nbsp;
+        <span id="openCal-passwordExpirationDate" class="fa fa-calendar"></span>
+        <br>
+        <p class="description">Expire passwords that were last changed before this date and require those users to change them.</p>
+        </span>
 
 passwords:
     kind: panel.form
@@ -729,6 +587,8 @@ passwords:
             options:
                 None: None
                 Historical: Historical
+            description: >
+                If set to "Historical", users cannot reuse a password that was previously used within a defined duration of time
         passwordHistoryDuration:
             kind: panel.input.text
             id: password-history-duration
@@ -744,6 +604,8 @@ passwords:
             label: Require Passwords To Be Salted
             onText: Required
             offText: Not Required
+            description: >
+                If set to "Required", any user whose password is not salted in the database will be required to set a new password.
         passwordsjs:
             tag: script|src=/scripts/xnat/admin/passwords.js
 
@@ -759,46 +621,50 @@ csrf:
         enableCsrfToken:
             kind: panel.input.switchbox
             name: enableCsrfToken
-            label: Require CSRF Token?
+            label: Require CSRF Token
             onText: Required
             offText: Not Required
-            description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
+            description: >
+                If set to "Required" (highly recommended), all POST, PUT, and DELETE requests will require a token to prevent CSRF attacks
         csrfEmailAlert:
             kind: panel.input.switchbox
             name: csrfEmailAlert
             label: CSRF Email Alert
             onText: Enabled
             offText: Disabled
-            description: "Should this site send an email to the site admin whenever a CSRF attack is attempted?"
+            description: >
+                If enabled, this site will email the site admin whenever a CSRF attack is attempted
 
-securityServices:
-    kind: panel.form
-    name: securityServices
-    label: Security Services
-    url: /xapi/siteConfig
-    method: POST
-    contentType: json
-    contents:
-        securityServicesFeatureDefault:
-            kind: panel.input.text
-            name: featureService
-            label: Feature Default
-            size: 50
-        securityServicesFeatureRepoDefault:
-            kind: panel.input.text
-            name: featureRepositoryService
-            label: Feature Repository Default
-            size: 50
-        securityServicesRoleDefault:
-            kind: panel.input.text
-            name: roleService
-            label: Role Default
-            size: 50
-        securityServicesRoleRepositoryDefault:
-            kind: panel.input.text
-            name: roleRepositoryService
-            label: Role Repository Default
-            size: 50
+#securityServices:
+#    kind: panel.form
+#    name: securityServices
+#    label: Security Services
+#    url: /xapi/siteConfig
+#    method: POST
+#    contentType: json
+#    contents:
+#        securityServicesFeatureDefault:
+#            kind: panel.input.text
+#            name: featureService
+#            label: Feature Default
+#            size: 50
+#        securityServicesFeatureRepoDefault:
+#            kind: panel.input.text
+#            name: featureRepositoryService
+#            label: Feature Repository Default
+#            size: 50
+#        securityServicesRoleDefault:
+#            kind: panel.input.text
+#            name: roleService
+#            label: Role Default
+#            size: 50
+#        securityServicesRoleRepositoryDefault:
+#            kind: panel.input.text
+#            name: roleRepositoryService
+#            label: Role Repository Default
+#            size: 50
+
+## EMAIL SERVER
 
 emailServerSettings:
     kind: panel.form
@@ -808,12 +674,21 @@ emailServerSettings:
     name: emailServerSettings
     label: Mail Server Settings
     contents:
+        emailSettingsWarning:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    XNAT relies on its mail servers to send messages to its users as well as to alert admins when certain events happen. In addition, a properly configured mail server is necessary for users to be able to get sent links to reset their password when they forget it.
 
         smtpEnabled:
             kind: panel.input.switchbox
-            label: Enable SMTP?
+            label: Enable SMTP
             onText: Enabled
             offText: Disabled
+            description: >
+                This setting must be enabled in order for your XNAT to send notification emails.
 
         serverSettings:
             kind: panel.subhead
@@ -837,7 +712,7 @@ emailServerSettings:
             text: Authentication
         smtpAuth:
             kind: panel.input.switchbox
-            label: SMTP Auth?
+            label: SMTP Auth
             onText: Enabled
             offText: Disabled
         smtpUsername:
@@ -852,7 +727,7 @@ emailServerSettings:
             text: Other Settings
         smtpStartTls:
             kind: panel.input.switchbox
-            label: Start TLS?
+            label: Start TLS
             onText: Enabled
             offText: Disabled
         smtpSslTrust:
@@ -862,6 +737,8 @@ emailServerSettings:
             kind: panel.input.text
             label: Email Prefix
             placeholder: XNAT
+
+## NOTIFICATIONS
 
 notifications:
     kind: panel.form
@@ -875,7 +752,8 @@ notifications:
             kind: panel.input.email
             label: "Help Contact Info"
             validation: allow-empty email onblur
-
+            description: >
+                Email address used for general help contact information in outgoing emails and pipeline notifications
         emailMessageSubhead:
             kind: panel.subhead
             label: Email Messages
@@ -928,7 +806,22 @@ notifications:
 
         emailRecipientSubhead:
             kind: panel.subhead
-            label: "Email Recipient(s) for..."
+            label: "Notification Email Recipients"
+
+        emailAllowNonuserSubscribers:
+            kind: panel.element
+            label: "Allow Nonuser Subscribers"
+            info: >
+                <p>The notification email addresses defined in this panel, and as the site admin email, can potentially be sent to any email address.</p>
+                <p>This setting determines whether this site should allow notifications to be sent to email addresses that do not belong to valid users of this XNAT site. If set to \"Do Not Allow\", the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events.</p>
+            contents:
+                emailAllowNonuserSubscribersInput:
+                    kind: input.switchbox
+                    name: emailAllowNonuserSubscribers
+                    onText: Allow
+                    offText: Do Not Allow
+                    after: >
+                        <p class="description">If set to "Allow", site notifications can be sent to email addresses other than those belonging to users of this XNAT site</p>
 
         emailRecipientErrorMessages:
             kind: panel.input.email
@@ -965,22 +858,12 @@ notifications:
         copyAdminOnNotifications:
             kind: panel.input.switchbox
             name: copyAdminOnNotifications
-            label: "Copy Administrator on Notifications?"
+            label: "Copy Administrator on Notifications"
             onText: Enabled
             offText: Disabled
-            description: "Indicates whether the primary administrator should receive a copy of error, issue, new user, and update notifications if the administrator is not one of the configured recipients."
+            description: "If enabled, the primary administrator will receive a copy of error, issue, new user, and update notifications."
 
-        otherSubhead:
-            kind: panel.subhead
-            label: "Other"
-
-        emailAllowNonuserSubscribers:
-            kind: panel.input.switchbox
-            name: emailAllowNonuserSubscribers
-            label: "Allow Nonuser Subscribers"
-            onText: Allow
-            offText: Do Not Allow
-            description: "Indicates whether this site should restrict email addresses for site notifications to addresses that are associated with valid active users of the XNAT installation. If turned on, the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events."
+## THEMES
 
 themeManagement:
     kind: panel
@@ -989,13 +872,19 @@ themeManagement:
     label: Theme Management
     footer: false
     contents:
+        themeDocumentationNote:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    For help with themes, see <a href="https://wiki.xnat.org/documentation/xnat-administration/working-with-ui-themes">Working with UI Themes in XNAT</a>
         themeStyle:
             tag: style
             # "|" preserves line breaks...
             content: |
                 input.theme-uploader { width:244px; display: inline !important; }
                 body #theme-management-panel div.element-wrapper { position: relative; top: -5px; }
-                body #theme-management-panel div.panel-body{ padding-top: 50px; }
         themeSelectorForm:
             tag: "form|id=theme-selector"
             contents:
@@ -1005,8 +894,6 @@ themeManagement:
                     name: themeSelection
                     label: Select Theme
                     description: Select a new global theme from those available on the system.
-                    #                    options:
-                    #                        None: None
                     element:
                         style: "width:230px;margin-right:10px;"
                     afterElement: >
@@ -1023,20 +910,14 @@ themeManagement:
         themeScript:
             tag: script|src=/scripts/xnat/admin/themeManagement.js
 
+## PLUGINS
+
 # create a container for the plugin table to be spawned into
 pluginTable:
     tag: "div#plugin-table-container"
 
 pluginTableScript:
     tag: script|src=/scripts/xnat/admin/pluginManager.js
-
-pluginOpenUrlsConfig:
-    tag: div
-    contents:
-        pluginOpenUrlsContainer:
-            tag: "div#plugin-open-urls-config"
-        pluginOpenUrlsScript:
-            tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
 
 pluginList:
     kind: panel
@@ -1046,6 +927,683 @@ pluginList:
     contents:
         ${pluginTable}
         ${pluginTableScript}
+
+
+pluginOpenUrlsConfig:
+    tag: div
+    contents:
+        pluginOpenUrlsContainer:
+            tag: "div#plugin-open-urls-config"
+        pluginOpenUrlsScript:
+            tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
+
+pluginOpenUrlsPanel:
+    kind: panel
+    label: Plugin Open URLs
+    footer: false
+    contents:
+        ${pluginOpenUrlsConfig}
+
+## REGISTRATION OPTIONS
+
+registrationOptionsPanel:
+    kind: panel.form
+    label: Registration Options
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        registrationOptionsMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    These settings control auto-enabling and auto-verification of user accounts on registration. Email notifications
+                    to site administrators on new user registrations are not affected by these settings.
+        requireEmailVerificationToRegister:
+            kind: panel.input.switchbox
+            label: "Require Email Verification"
+            name: emailVerification
+            onText: Required
+            offText: Not Required
+            description: >
+                If email verification is required (recommended), newly registered users and users who change their email address must
+                verify their email address before their account is verified. Verification happens via a link sent to the submitted email.
+        autoEnableUserRegistration:
+            kind: panel.input.switchbox
+            name: userRegistration
+            label: "Auto-enable <br>User Registration"
+            onText: Auto-enable
+            offText: Do Not Auto-enable
+            description: >
+                If set to "Auto-enable", user accounts will be enabled automatically when the user registers. If not, new user accounts
+                must be manually enabled by a site administrator.
+        autoEnablePar:
+            kind: panel.input.switchbox
+            label: "Auto-enable with <br>Project Access Request"
+            name: par
+            onText: Auto-enable
+            offText: Do Not Auto-enable
+            description: >
+                If an unregistered user receives a Project Access Request via email, the site administrator could assume that
+                the project owner knows this user and can verify the validity of their account. This setting allows for auto-enabling
+                users who register accounts after receiving a Project Access Request, overriding the Auto-enable setting above.
+        uiAllowNewUserComments:
+            kind: panel.input.switchbox
+            label: "Allow User Comments <br>on Registration"
+            onText: Allow
+            offText: Do Not Allow
+            description: >
+                User comments, if allowed, are displayed in the email notifications sent to the site administrator.
+
+## SESSION UPLOAD
+
+uploadChannels:
+    kind: panel.form
+    name: uploadChannels
+    label: "Image Session Upload Methods"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiHideCompressedUploaderUploadOption:
+            kind: panel.input.switchbox
+            label: "Hide Compressed Uploader"
+            onText: Hidden
+            offText: Available
+            description: >
+                If set to "Hidden", the Compressed Uploader is removed from the "Upload > Images" menu.
+                (The DICOM-zip importer is enabled regardless of this setting.)
+        uiHideXnatUploadAssistantDownload:
+            kind: panel.input.switchbox
+            label: "Hide XNAT Upload Assistant"
+            onText: Hidden
+            offText: Available
+            description: >
+                If set to "Hidden", the legacy XNAT Upload Assistant is removed from the "Upload > Images" menu.
+sessionBuilder:
+    kind: panel.form
+    name: sessionBuilder
+    label: "Session Builder"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        receivedFileUser:
+            kind: panel.input.text
+            label: Received File User
+            validation: id-strict max-length:40 onblur
+            placeholder: User account for performing import and archiving operations
+            description: >
+                This should be the login name of an enabled and valid user. The specified user must be a site
+                administrator.
+        reloadPrearcDatabaseOnStartup:
+            kind: panel.input.switchbox
+            label: "Reload Prearchive Database<br>On Start-up"
+            onText: Enabled
+            offText: Disabled
+            description: >
+                This controls whether the prearchive database is rebuilt when your XNAT server restarts. This can help
+                keep your system in sync with the data in prearchive, but can add to system load at start-up, especially
+                on systems that handle a lot of incoming data.
+        sessionXmlRebuilderRepeat:
+            kind: panel.input.number
+            label: Session Idle Check Interval
+            validation: integer onblur
+            placeholder: Interval in milliseconds
+            afterElement: <span class="after">milliseconds</span>
+            description: >
+                This controls how often the system checks to see if any incoming DICOM sessions in the prearchive have
+                been idle for longer than the configured session idle time. This value should be specified in
+                milliseconds and defaults to 60,000 ms or one minute.
+        sessionXmlRebuilderInterval:
+            kind: panel.input.number
+            label: Session Idle Time
+            validation: integer onblur
+            placeholder: Time in minutes
+            afterElement: <span class="after">minutes</span>
+            description: >
+                This tells the system how long a DICOM session should sit idle&mdash;that is, with no new data added to the
+                session&mdash;before attempting to build a session document from the DICOM data. This value is specified in
+                minutes and defaults to 5 minutes.
+
+anonymization:
+    kind: panel.form
+    name: Anonymization
+    label: "Anonymization Script (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        enableSitewideAnonymizationScript:
+            kind: panel.input.switchbox
+            label: "Enable Site-wide <br>Anonymization Script"
+            onText: Enabled
+            offText: Disabled
+        sitewideAnonymizationScript:
+            kind: panel.textarea
+            label: "Edit Anonymization Script"
+            code: text
+            description: >
+                This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="https://wiki.xnat.org/display/XTOOLS/DicomEdit" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
+
+seriesImportFilter:
+    kind: panel.form
+    name: seriesImportFilter
+    label: "Series Import Filter (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        enableSitewideSeriesImportFilter:
+            kind: panel.input.switchbox
+            name: enableSitewideSeriesImportFilter
+            label: "Enable Site-wide <br>Series Import Filter"
+            onText: Enabled
+            offText: Disabled
+        sitewideSeriesImportFilterMode:
+            kind: panel.select.single
+            name: sitewideSeriesImportFilterMode
+            label: Filter Mode
+            description: >
+                Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload assistant. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
+            options:
+                whitelist: Whitelist
+                blacklist: Blacklist
+                modalityMap: Modality Map
+        sitewideSeriesImportFilter:
+            kind: panel.textarea
+            name: sitewideSeriesImportFilter
+            label: "Edit Series Import Filter"
+            code: text
+            description: >
+                The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
+                <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive,
+                i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
+petTracers:
+    kind: panel.form
+    name: petTracers
+    label: "Pet Tracers (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        sitewidePetTracers:
+            kind: panel.textarea
+            name: sitewidePetTracers
+            label: "Pet Tracers"
+            code: text
+            validation: max-length:1000
+            description: >
+                This is the site-wide list of PET tracers. List entries should be separated by whitespace. Project owners can specify their own lists as needed.
+
+petMr:
+    kind: panel.form
+    name: petMr
+    label: "Separate PET-MR (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        petMr:
+            kind: panel.select.single
+            name: sitewidePetMr
+            label: "Separate PET-MR"
+            description: >
+                When data is received from a PET-MR scanner, XNAT can treat this as a single PET/MR imaging session, a single PET imaging session, or separate the data into PET and MR sessions
+            options:
+                #value: Label
+                petmr: Create as PET/MR session
+                pet: Create as PET session
+                separate: Separate into PET and MR sessions
+
+## CUSTOM DICOM ROUTING
+
+projectRouting:
+    kind: panel.form
+    name: projectRouting
+    label: "Project Routing (Site Wide)"
+    method: PUT
+    contentType: json
+    url: /data/config/dicom/projectRules
+    contents:
+        customDicomRoutingMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html:
+                    Each of the Custom DICOM Routing panels allow you to set a custom routing scheme for determining Project,
+                    Subject, or Session Label from the DICOM fields in incoming data as it is being handled by the session importer.
+                    See <a target="_blank" href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui">
+                    Custom DICOM Routing Documentation</a> for guidance formatting these fields.
+                    Note that each of these settings will take precedence over the <a target="_blank" href="https://wiki.xnat.org/documentation/how-to-use-xnat/image-session-upload-methods-in-xnat/how-xnat-scans-dicom-to-map-to-project-subject-session">
+                    default XNAT routing rules</a>.
+        enableSitewideProjectRouting:
+            kind: panel.input.switchbox
+            label: "Enable Custom Site-wide <br>Project Routing"
+            name: status
+            id: enableSitewideProjectRouting
+            onValue: enabled
+            values: enabled|disabled
+            onText: Enabled
+            offText: Disabled
+        sitewideProjectRouting:
+            kind: panel.textarea
+            label: "Edit Project Routing Rules"
+            name: contents
+            id: sitewideProjectRouting
+            code: text
+            description: >
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+
+
+subjectRouting:
+    kind: panel.form
+    name: subjectRouting
+    label: "Subject Routing (Site Wide)"
+    method: PUT
+    contentType: json
+    url: /data/config/dicom/subjectRules
+    contents:
+        enableSitewideSubjectRouting:
+            kind: panel.input.switchbox
+            label: "Enable Custom Site-wide <br>Subject Routing"
+            name: status
+            id: enableSitewideSubjectRouting
+            onValue: enabled
+            values: enabled|disabled
+            onText: Enabled
+            offText: Disabled
+        sitewideSubjectRouting:
+            kind: panel.textarea
+            label: "Edit Subject Routing Rules"
+            name: contents
+            id: sitewideSubjectRouting
+            code: text
+            description: >
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+
+sessionRouting:
+    kind: panel.form
+    name: sessionRouting
+    label: "Session Routing (Site Wide)"
+    method: PUT
+    contentType: json
+    url: /data/config/dicom/sessionRules
+    contents:
+        enableSitewideSessionRouting:
+            kind: panel.input.switchbox
+            label: "Enable Custom Site-wide <br>Session Routing"
+            name: status
+            id: enableSitewideSessionRouting
+            values: enabled|disabled
+            onValue: enabled
+            onText: Enabled
+            offText: Disabled
+        sitewideSessionRouting:
+            kind: panel.textarea
+            label: "Edit Session Routing Rules"
+            name: contents
+            id: sitewideSessionRouting
+            code: text
+            description: >
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+
+
+## PIPELINE SETTINGS
+
+pipelineSettings:
+    kind: panel.form
+    label: Pipeline Settings
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${processingUrl}
+
+autoRunSettings:
+    kind: panel.form
+    label: AutoRun
+    method: POST
+    contentType: json
+    url: /xapi/pipelines
+    contents:
+        autoRunEnabled:
+            kind: panel.input.switchbox
+            name: autoRunEnabled
+            label: Launch AutoRun
+            onText: AutoRun Enabled
+            offText: AutoRun Disabled
+            description: >
+                Determines whether XNAT should launch the AutoRun pipeline as new sessions are archived. Requires the pipeline engine
+                to be installed at the location stored in the <b>pipelinePath</b> site configuration option.
+
+        allowAutoRunProjectOverride:
+            kind: panel.input.switchbox
+            name: allowAutoRunProjectOverride
+            label: Allow Project Override
+            onText: Project Override Enabled
+            offText: Project Override Disabled
+            description: >
+                Determines whether Project Owners can enable or disable the AutoRun pipeline for their projects, regardless of the
+                site-wide setting.
+
+## DICOM SCP RECEIVERS
+
+dicomScpEditor:
+    kind: panel.form
+    name: dicomScpEditor
+    header: false
+    footer: false
+    load: false
+    action: "#!"
+    method: null
+    #contentType: json
+    element:
+        style:
+            border: none
+            marginBottom: 0
+    contents:
+        scpId:
+            kind: panel.input.hidden
+            id: scp-id
+            name: id
+            className: hidden
+        aeTitle:
+            kind: panel.input.text
+            id: scp-title
+            name: aeTitle
+            label: AE Title
+            #description: AE Title for DICOM Receiver
+            validation: not-empty
+        port:
+            kind: panel.input.number
+            id: scp-port
+            name: port
+            label: Port
+            #description: Port for DICOM Receiver
+            validation: integer gte:1 lte:65535
+        enabled:
+            kind: input.hidden
+            id: scp-enabled
+            name: enabled
+            className: hidden
+        customProcessing:
+            kind: panel.input.switchbox
+            name: customProcessing
+            label: Custom Processing
+            #show: false
+            #            className: hidden
+            onText: "Custom Processing: <b>Enabled</b>"
+            offText: "Custom Processing <b>Disabled</b>"
+            description: Enable or Disable Custom Processing for DICOM Receiver
+        identifier:
+            kind: panel.select.single
+            id: scp-identifier
+            name: identifier
+            label: Identifier
+            className: hidden
+            element:
+                title: Select DICOM Object Identifier
+                disabled: disabled
+            description: >
+                Select the DICOM object identifier to associate with this AE. If none is selected, the default identifier is applied.
+#            fileNamer:
+#                kind: panel.input.text
+#                name: fileNamer
+#                label: File Namer
+#            identifier:
+#                kind: panel.input.text
+#                name: identifier
+#                label: Identifier
+
+dicomScpReceivers:
+    kind: panel
+    name: dicomScpReceivers
+    label: Manage DICOM SCP Receivers
+    footer: false
+    contents:
+        cautionMessage:
+            tag: div.warning.bold
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    Caution: Changes to these settings take effect immediately.
+                    Note that any changes, including defining a new receiver and
+                    editing or deleting an existing receiver, require restarting
+                    <i>all other receivers</i> on the same port. Before performing
+                    any operations like this, verify that there are no transmissions
+                    currently in progress to any of the receivers on that port.
+        dicomScpManager:
+            tag: "div#dicom-scp-manager"
+        dicomScpManagerScript:
+            tag: script|src="~/scripts/xnat/admin/dicomScpManager.js"
+
+## FILE SYSTEM
+
+fileSystemSettingsWarning:
+    tag: div.message
+    element:
+        html: >
+            These settings must be defined during initial application configuration,
+            and are seldom, if ever, changed.
+        style:
+            fontWeight: bold
+            marginBottom: 24px
+archivePath:
+    kind: panel.input.text
+    name: archivePath
+    label: Archive Path
+    validation: required onblur
+    description: ""
+    element:
+        disabled: true
+cachePath:
+    kind: panel.input.text
+    name: cachePath
+    label: Cache Path
+    validation: required onblur
+    description: ""
+prearchivePath:
+    kind: panel.input.text
+    name: prearchivePath
+    label: Prearchive Path
+    validation: required onblur
+    description: ""
+#ftpPath:
+#    kind: panel.input.text
+#    name: ftpPath
+#    label: FTP Path
+#    validation: required onblur
+#    description: ""
+buildPath:
+    kind: panel.input.text
+    name: buildPath
+    label: Build Path
+    validation: required onblur
+    description: ""
+pipelinePath:
+    kind: panel.input.text
+    name: pipelinePath
+    label: Pipeline Path
+    validation: required onblur
+    description: ""
+triagePath:
+    kind: panel.element
+    label: Resource Quarantine Path
+    info: >
+        <p>The Resource Quarantine, or Triage, can be enabled for custom resource uploads. See <a target="_blank" href="https://wiki.xnat.org/documentation/how-to-use-xnat/managing-resource-files-in-xnat/using-the-resource-file-quarantine">Resource Quarantine Documentation</a></p>
+    contents:
+        triagePathInput:
+            kind: input.text
+            name: triagePath
+            after: >
+                <p class="description">Location of XNAT Quarantine for uploaded resources.</p>
+inboxPath:
+    kind: panel.input.text
+    name: inboxPath
+    label: Inbox Path
+    validation: required onblur
+    description: ""
+zipExtensions:
+    kind: panel.input.text
+    name: zipExtensions
+    label: Zip Extensions
+    description: >
+        Determines which filetypes should be handled by the ZipUtils class and ZIP CompressionMethod in the XNAT file system.
+        (.tar and .gz are handled separately)
+checksums:
+    kind: panel.input.switchbox
+    name: checksums
+    label: Checksums
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Determines whether checksums will be calculated for each image file as it is archived.
+        Enabling checksums provides greater assurance of data integrity, but may add significant
+        overhead to the archive process.
+backupDeletedToCache:
+    kind: panel.input.switchbox
+    name: backupDeletedToCache
+    label: Backup to-be-deleted data to cache "recycle bin"
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Determines whether XNAT should move files from deleted entities (projects, subjects, sessions, etc.)
+        into a DELETED subdirectory of the cache space (a.k.a., a "recycle bin") or just remove them completely.
+        Enabling the recycle bin offers some protection against accidental data loss, but may incur an IO penalty,
+        especially if the archive and cache directories are not on the same filesystem.
+maintainFileHistory:
+    kind: panel.input.switchbox
+    name: maintainFileHistory
+    label: Track file history
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Determines whether XNAT should retain copies of deleted files in a .history subdirectory of the cache space for
+        version control. Only files corresponding to existing entities (projects, subjects, sessions, etc.) can be tracked.
+        Deleting an entire entity cannot be version controlled, though you can enable the cache "recycle bin" for some
+        added deletion protection.
+uiShowPrearchiveFileActions:
+    kind: panel.input.switchbox
+    name: uiShowPrearchiveFileActions
+    label: Show preachive file actions
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Enables the File Actions dropdown in the scan section of the Prearchive.
+
+#checksumsPropertyChangedListener:
+#    kind: panel.input.text
+#    id: checksumsPropertyChangedListener
+#    name: checksums.property.changed.listener
+#    label: Checksums Property Changed Listener
+
+fileSystem:
+    kind: panel.form
+    name: fileSystem
+    label: File System
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${fileSystemSettingsWarning}
+        ${archivePath}
+        ${cachePath}
+        ${prearchivePath}
+#        ${ftpPath}
+        ${buildPath}
+        ${pipelinePath}
+        ${triagePath}
+        ${inboxPath}
+
+fileSystemBehaviors:
+    kind: panel.form
+    label: File System Behaviors
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${zipExtensions}
+        ${checksums}
+        ${backupDeletedToCache}
+        ${maintainFileHistory}
+        ${uiShowPrearchiveFileActions}
+
+
+## ASYNC OPERATIONS
+
+asyncOperationsSettingsWarning:
+    someInfo:
+        tag: div.message
+        element:
+            html: >
+                These settings can only be applied during application start-up. That means that any
+                changes to the values here require a restart of the application server.
+            style:
+                fontWeight: bold
+defaultTimeout:
+    kind: panel.input.text
+    name: defaultTimeout
+    label: Default Timeout
+    validation: required onblur
+    description: "Sets the timeout for asynchronous request handling."
+    info: >
+        <p>This sets the timeout for asynchronous request handling and defines the maximum lifespan of an asynchronous process.
+        Generally speaking, this should stay set to -1.</p>
+corePoolSize:
+    kind: panel.input.text
+    name: corePoolSize
+    label: Core Pool Size
+    validation: required onblur
+    description: "Sets the minimum number of threads available to the asynchronous task executor."
+maxPoolSize:
+    kind: panel.input.text
+    name: maxPoolSize
+    label: Max Pool Size
+    validation: required onblur
+    description: "Sets the maximum number of threads available to the asynchronous task executor."
+keepAliveSeconds:
+    kind: panel.input.text
+    name: keepAliveSeconds
+    label: Keep-Alive Time
+    validation: required onblur
+    description: "Sets the time (as a number of seconds) that idle threads above the core pool size should be kept alive before disposal."
+allowCoreThreadTimeOut:
+    kind: panel.input.switchbox
+    name: allowCoreThreadTimeOut
+    label: Allow Core Thread Time-Out
+    onText: Enabled
+    offText: Disabled
+    description: "Indicates whether core threads are allowed to time out."
+    info: >
+        Allowing core threads to time out enables dynamic growing and shrinking even in combination with a non-zero queue
+        (since the max pool size will only grow once the queue is full).
+
+## EVENT SERVICE
+
+eventServiceConfig:
+    kind: panel.form
+    name: eventServiceConfig
+    label: Event Service Configuration
+    method: PUT
+    contentType: json
+    url: /xapi/events/prefs
+    contents:
+        enabled:
+            kind: panel.input.switchbox
+            name: enabled
+            label: Enable Event Service
+            onText: Enabled
+            offText: Disabled
+            description: >
+                <p>If enabled, Event Service will detect events and trigger actions linked by subscription.
+                If disabled, event detection, action triggers, and subscription creation will be disabled.</p>
+
+##
 
 authenticationMethods:
     kind: panel.form
@@ -1147,59 +1705,6 @@ userRoles:
 #    contents:
 
 
-registrationOptions:
-    kind: panel.form
-    name: registrationOptions
-    label: Registration Options
-    url: /xapi/siteConfig
-    method: POST
-    contentType: json
-    contents:
-        requireEmailVerificationToRegister:
-            kind: panel.input.switchbox
-            name: emailVerification
-            label: "Require Email Verification?"
-            onText: Required
-            offText: Not Required
-            description: >
-                If true, users will receive an email after registering for an account and must click a
-                link in the email to verify their email address before they are able to use their account.
-                If false, no verification emails will be sent and users will not be required to verify their email
-                before using their account. Either way the administrator receives an email notification when a user registers.
-                If true, users who wish to change their email will also be required to verify their new email address.
-        #        emailVerificationMessage:
-        #            kind: panel.textarea
-        #            name: emailVerificationMessage
-        #            label: "Email Verification Message"
-        #            code: html
-        #            description: Email message sent to newly registered users who have to verify their email address. FULL_NAME will be replaced by the user's first and last name and VERIFICATION_URL will be replaced by the URL where they can verify their email.
-        autoEnableUserRegistration:
-            kind: panel.input.switchbox
-            name: userRegistration
-            label: "Auto-enable <br>User Registration?"
-            onText: Auto-enable
-            offText: Do Not Auto-enable
-            description: >
-                If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
-                projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
-                receives an email notification when a user registers.
-        autoEnablePar:
-            kind: panel.input.switchbox
-            name: par
-            label: "Auto-enable with <br>Project Access Request?"
-            onText: Auto-enable
-            offText: Do Not Auto-enable
-            description: >
-                If true, user accounts created when accepting project access requests will always be enabled (and verified) automatically. If false,
-                user accounts will only be enabled automatically if "Auto-enable User Registration?" is true. So this setting determines whether project
-                access requests should override how user registration is normally handled. Either way the administrator receives an email notification
-                when a user registers.
-        uiAllowNewUserComments:
-            kind: panel.input.switchbox
-            label: "Allow User Comments <br>on Registration?"
-            onText: Allow
-            offText: Do Not Allow
-
 manageDataTypes:
     kind: panel.form
     name: manageDataTypes
@@ -1217,388 +1722,6 @@ manageDataTypes:
             name: imageSessionDisplayNamePlural
             label: "Plural Display Name For Generic Image Session Singular"
 
-uploadChannels:
-    kind: panel.form
-    name: uploadChannels
-    label: "Image Session Upload Methods"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        uiHideCompressedUploaderUploadOption:
-            kind: panel.input.switchbox
-            label: "Hide Compressed Uploader?"
-            onText: Hidden
-            offText: Available
-            description: >
-                This controls whether the Compressed Uploader is made available in the "Upload > Images" menu.
-                By default, this is set to "false", which makes the Compressed Uploader available in the UI. (Note that
-                the DICOM-zip importer is enabled regardless of this setting.)
-        uiHideXnatUploadAssistantDownload:
-            kind: panel.input.switchbox
-            label: "Hide XNAT Upload Assistant?"
-            onText: Hidden
-            offText: Available
-            description: >
-                The XNAT Upload Assistant has been deprecated in favor of the XNAT Desktop Client. However,
-                some legacy sites may prefer to make it available as an option. This setting controls whether
-                the Upload Assistant is hidden from the options in the "Upload > Images" menu. By default, this is
-                set to "true", which hides the Upload Assistant from view.
-
-sessionBuilder:
-    kind: panel.form
-    name: sessionBuilder
-    label: "Session Builder"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        receivedFileUser:
-            kind: panel.input.text
-            label: Received File User
-            validation: id-strict max-length:40 onblur
-            placeholder: User account for performing import and archiving operations
-            description: >
-                This should be the login name of an enabled and valid user. The specified user must be a site
-                administrator.
-        reloadPrearcDatabaseOnStartup:
-            kind: panel.input.switchbox
-            label: "Reload Prearchive Database<br>On Start-up?"
-            onText: Enabled
-            offText: Disabled
-            description: >
-                This controls whether the prearchive database is rebuilt when your XNAT server restarts. This can help
-                keep your system in sync with the data in prearchive, but can add to system load at start-up, especially
-                on systems that handle a lot of incoming data.
-        sessionXmlRebuilderRepeat:
-            kind: panel.input.number
-            label: Session Idle Check Interval
-            validation: integer onblur
-            placeholder: Interval in milliseconds
-            afterElement: <span class="after">milliseconds</span>
-            description: >
-                This controls how often the system checks to see if any incoming DICOM sessions in the prearchive have
-                been idle for longer than the configured session idle time. This value should be specified in
-                milliseconds and defaults to 60,000 ms or one minute.
-        sessionXmlRebuilderInterval:
-            kind: panel.input.number
-            label: Session Idle Time
-            validation: integer onblur
-            placeholder: Time in minutes
-            afterElement: <span class="after">minutes</span>
-            description: >
-                This tells the system how long a DICOM session should sit idle&mdash;that is, with no new data added to the
-                session&mdash;before attempting to build a session document from the DICOM data. This value is specified in
-                minutes and defaults to 5 minutes.
-
-projectRouting:
-    kind: panel.form
-    name: projectRouting
-    label: "Project Routing (Site Wide)"
-    method: PUT
-    contentType: json
-    url: /data/config/dicom/projectRules
-    contents:
-        enableSitewideProjectRouting:
-            kind: panel.input.switchbox
-            label: "Enable Custom Site-wide <br>Project Routing?"
-            name: status
-            id: enableSitewideProjectRouting
-            onValue: enabled
-            values: enabled|disabled
-            onText: Enabled
-            offText: Disabled
-        sitewideProjectRouting:
-            kind: panel.textarea
-            label: "Edit Project Routing Rules"
-            name: contents
-            id: sitewideProjectRouting
-            code: text
-            description: >
-                Use the <a href="https://wiki.xnat.org/workshop-2016/step-3-of-8-configure-dicom-project-routing-29032850.html" target="_blank">guide</a> for formatting this string.<br><br>Note that this setting will take precedence over the <a href="https://wiki.xnat.org/documentation/how-to-use-xnat/image-session-upload-methods-in-xnat/how-xnat-scans-dicom-to-map-to-project-subject-session">default XNAT routing rules</a>.
-
-subjectRouting:
-    kind: panel.form
-    name: subjectRouting
-    label: "Subject Routing (Site Wide)"
-    method: PUT
-    contentType: json
-    url: /data/config/dicom/subjectRules
-    contents:
-        enableSitewideSubjectRouting:
-            kind: panel.input.switchbox
-            label: "Enable Custom Site-wide <br>Subject Routing?"
-            name: status
-            id: enableSitewideSubjectRouting
-            onValue: enabled
-            values: enabled|disabled
-            onText: Enabled
-            offText: Disabled
-        sitewideSubjectRouting:
-            kind: panel.textarea
-            label: "Edit Subject Routing Rules"
-            name: contents
-            id: sitewideSubjectRouting
-            code: text
-            description: >
-                Use the <a href="https://wiki.xnat.org/workshop-2016/step-3-of-8-configure-dicom-project-routing-29032850.html" target="_blank">guide</a> for formatting this string.<br><br>Note that this setting will take precedence over the <a href="https://wiki.xnat.org/documentation/how-to-use-xnat/image-session-upload-methods-in-xnat/how-xnat-scans-dicom-to-map-to-project-subject-session">default XNAT routing rules</a>.
-
-sessionRouting:
-    kind: panel.form
-    name: sessionRouting
-    label: "Session Routing (Site Wide)"
-    method: PUT
-    contentType: json
-    url: /data/config/dicom/sessionRules
-    contents:
-        enableSitewideSessionRouting:
-            kind: panel.input.switchbox
-            label: "Enable Custom Site-wide <br>Session Routing?"
-            name: status
-            id: enableSitewideSessionRouting
-            values: enabled|disabled
-            onValue: enabled
-            onText: Enabled
-            offText: Disabled
-        sitewideSessionRouting:
-            kind: panel.textarea
-            label: "Edit Session Routing Rules"
-            name: contents
-            id: sitewideSessionRouting
-            code: text
-            description: >
-                Use the <a href="https://wiki.xnat.org/workshop-2016/step-3-of-8-configure-dicom-project-routing-29032850.html" target="_blank">guide</a> for formatting this string.<br><br>Note that this setting will take precedence over the <a href="https://wiki.xnat.org/documentation/how-to-use-xnat/image-session-upload-methods-in-xnat/how-xnat-scans-dicom-to-map-to-project-subject-session">default XNAT routing rules</a>.
-
-anonymization:
-    kind: panel.form
-    name: Anonymization
-    label: "Anonymization Script (Site Wide)"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        enableSitewideAnonymizationScript:
-            kind: panel.input.switchbox
-            label: "Enable Site-wide <br>Anonymization Script?"
-            onText: Enabled
-            offText: Disabled
-        sitewideAnonymizationScript:
-            kind: panel.textarea
-            label: "Edit Anonymization Script"
-            code: text
-            description: >
-                This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="https://wiki.xnat.org/display/XTOOLS/DicomEdit" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
-
-seriesImportFilter:
-    kind: panel.form
-    name: seriesImportFilter
-    label: "Series Import Filter (Site Wide)"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        enableSitewideSeriesImportFilter:
-            kind: panel.input.switchbox
-            name: enableSitewideSeriesImportFilter
-            label: "Enable Site-wide <br>Series Import Filter?"
-            onText: Enabled
-            offText: Disabled
-        sitewideSeriesImportFilterMode:
-            kind: panel.select.single
-            name: sitewideSeriesImportFilterMode
-            label: Filter Mode
-            description: >
-                Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload assistant. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
-            options:
-                whitelist: Whitelist
-                blacklist: Blacklist
-                modalityMap: Modality Map
-        sitewideSeriesImportFilter:
-            kind: panel.textarea
-            name: sitewideSeriesImportFilter
-            label: "Edit Series Import Filter"
-            code: text
-            description: >
-                The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
-                <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive,
-                i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
-
-petTracers:
-    kind: panel.form
-    name: petTracers
-    label: "Pet Tracers (Site Wide)"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        sitewidePetTracers:
-            kind: panel.textarea
-            name: sitewidePetTracers
-            label: "Pet Tracers"
-            code: text
-            validation: max-length:1000
-            description: >
-                This is the site-wide list of PET tracers. List entries should be separated by whitespace. This list can also be replaced at the project level.
-
-petMr:
-    kind: panel.form
-    name: petMr
-    label: "Separate PET-MR? (Site Wide)"
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        petMr:
-            kind: panel.select.single
-            name: sitewidePetMr
-            label: "Separate PET-MR?"
-            description: >
-                Should data generated by PET-MR scanners be created as a single PET/MR imaging session, created as a single PET imaging session, or separated into PET and MR sessions?
-            options:
-                #value: Label
-                petmr: Create as PET/MR session
-                pet: Create as PET session
-                separate: Separate into PET and MR sessions
-
-autoRunSettings:
-    kind: panel.form
-    label: AutoRun
-    method: POST
-    contentType: json
-    url: /xapi/pipelines
-    contents:
-        autoRunEnabled:
-            kind: panel.input.switchbox
-            name: autoRunEnabled
-            label: Launch AutoRun
-            description: >
-                Indicates whether XNAT should launch the AutoRun pipeline as new sessions are archived. When enabled, you must
-                have the pipeline engine installed at the location stored in the <b>pipelinePath</b> site configuration option.
-
-        allowAutoRunProjectOverride:
-            kind: panel.input.switchbox
-            name: allowAutoRunProjectOverride
-            label: Allow Project Override
-            description: >
-                Indicates whether the AutoRun pipeline can be enabled or disabled for specific projects.
-
-pipelineSettings:
-    kind: panel.form
-    label: Pipeline Settings
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        ${processingUrl}
-
-dicomScpEditor:
-    kind: panel.form
-    name: dicomScpEditor
-    header: false
-    footer: false
-    load: false
-    action: "#!"
-    method: null
-    #contentType: json
-    element:
-        style:
-            border: none
-            marginBottom: 0
-    contents:
-        scpId:
-            kind: panel.input.hidden
-            id: scp-id
-            name: id
-            className: hidden
-        aeTitle:
-            kind: panel.input.text
-            id: scp-title
-            name: aeTitle
-            label: AE Title
-            #description: AE Title for DICOM Receiver
-            validation: not-empty
-        port:
-            kind: panel.input.number
-            id: scp-port
-            name: port
-            label: Port
-            #description: Port for DICOM Receiver
-            validation: integer gte:1 lte:65535
-        enabled:
-            kind: input.hidden
-            id: scp-enabled
-            name: enabled
-            className: hidden
-        customProcessing:
-            kind: panel.input.switchbox
-            name: customProcessing
-            label: Custom Processing
-            #show: false
-            #            className: hidden
-            onText: "Custom Processing: <b>Enabled</b>"
-            offText: "Custom Processing <b>Disabled</b>"
-            description: Enable or Disable Custom Processing for DICOM Receiver
-        identifier:
-            kind: panel.select.single
-            id: scp-identifier
-            name: identifier
-            label: Identifier
-            className: hidden
-            element:
-                title: Select DICOM Object Identifier
-                disabled: disabled
-            description: >
-                Select the DICOM object identifier to associate with this AE. If none is selected, the default identifier is applied.
-#            fileNamer:
-#                kind: panel.input.text
-#                name: fileNamer
-#                label: File Namer
-#            identifier:
-#                kind: panel.input.text
-#                name: identifier
-#                label: Identifier
-
-dicomScpReceivers:
-    kind: panel
-    name: dicomScpReceivers
-    label: Manage DICOM SCP Receivers
-    footer: false
-    contents:
-        cautionMessage:
-            tag: div.warning.bold
-            content: >
-                Caution: Changes to these settings take effect immediately.
-                Note that any changes, including defining a new receiver and
-                editing or deleting an existing receiver, require restarting
-                <i>all other receivers</i> on the same port. Before performing
-                any operations like this, verify that there are no transmissions
-                currently in progress to any of the receivers on that port.
-        dicomScpManager:
-            tag: "div#dicom-scp-manager"
-        dicomScpManagerScript:
-            tag: script|src="~/scripts/xnat/admin/dicomScpManager.js"
-
-fileSystem:
-    kind: panel.form
-    name: fileSystem
-    label: File System
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        ${archivePath}
-        ${cachePath}
-        ${prearchivePath}
-        ${ftpPath}
-        ${buildPath}
-        ${pipelinePath}
-        ${triagePath}
-        ${inboxPath}
-        ${zipExtensions}
-        ${checksums}
-        ${backupDeletedToCache}
-        ${maintainFileHistory}
-        ${uiShowPrearchiveFileActions}
 asyncOperations:
     kind: panel.form
     name: asyncOperations
@@ -1607,6 +1730,7 @@ asyncOperations:
     contentType: json
     url: /xapi/asyncOps
     contents:
+        ${asyncOperationsSettingsWarning}
         ${defaultTimeout}
         ${corePoolSize}
         ${allowCoreThreadTimeOut}
@@ -1656,7 +1780,7 @@ setScanTypeMapping:
     contents:
         scanTypeMapping:
             kind: panel.input.switchbox
-            label: Scan Type Mapping?
+            label: Scan Type Mapping
             onText: Enabled
             offText: Disabled
 
@@ -1669,13 +1793,13 @@ scanTableSettings:
     contents:
         uiDisplaySeriesDescription:
             kind: panel.input.switchbox
-            label: Display Series Description?
+            label: Display Series Description
             description: Display the series description in the image session scan table
             onText: Enabled
             offText: Disabled
         uiDisplaySeriesClass:
             kind: panel.input.switchbox
-            label: Display Series Class?
+            label: Display Series Class
             description: Display the series class in the image session scan table
             onText: Enabled
             offText: Disabled
@@ -1687,12 +1811,20 @@ setPreventCrossModalityMerge:
     contentType: json
     url: /xapi/siteConfig
     contents:
+        crossModalityMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    Session merging happens when incoming data has a matching Study Instance UID to data already in the XNAT archive.
+                    However, if incoming data has scans of a different modality (i.e. PET) than the archived session (i.e. CT), how
+                    should XNAT react?
         preventCrossModalityMerge:
             kind: panel.input.switchbox
-            label: Prevent cross-modality post-archive session merger?
-            description: Should scans received after session archive (with a matching Study Instance UID) be merged into the pre-existing session, even if the modality of the received session mismatches with the existing session.  I.e. can CT scans be merged into an existing PET session if the Study Instance UID matches?
-            onText: Enabled
-            offText: Disabled
+            label: Prevent cross-modality post-archive session merger
+            onText: Cross-modality Merger Prevented
+            offText: Cross-modality Merger Allowed
 
 manualQC:
     kind: panel.form
@@ -1704,7 +1836,7 @@ manualQC:
         uiShowAddManualQCAction:
             kind: panel.input.switchbox
             label: Manual QC Actions Menu Item
-            description: Show "Add QC Entry" in the image session actions menu?
+            description: If Enabled, an "Add QC Entry" action will be added to the actions menu for all image session report pages
             onText: Enabled
             offText: Disabled
 
@@ -1767,7 +1899,7 @@ root:
                 ${userLoginsSessionControls}
                 ${passwords}
                 ${csrf}
-                ${securityServices}
+#                ${securityServices}
         emailServer:
             kind: tab
             name: emailServer
@@ -1796,20 +1928,17 @@ root:
             group: xnatSetup
             contents:
                 ${pluginList}
-        pluginOpenUrls:
-            kind: tab
-            name: pluginOpenUrls
-            label: Plugin Open URLs
-            group: xnatSetup
-            contents:
                 ${pluginOpenUrlsConfig}
-        eventService:
-            kind: tab
-            name: eventService
-            label: Event Service
-            group: xnatSetup
-            contents:
-                ${eventServiceConfig}
+
+#        eventService:
+#            kind: tab
+#            name: eventService
+#            label: Event Service
+#            group: xnatSetup
+#            contents:
+#                ${eventServiceConfig}
+
+
         #        authenticationMethods:
         #            kind: tab
         #            name: authenticationMethods
@@ -1839,7 +1968,7 @@ root:
             label: Registration Options
             group: manageAccess
             contents:
-                ${registrationOptions}
+                ${registrationOptionsPanel}
         #        manageDataTypes:
         #            kind: tab
         #            name: manageDataTypes
@@ -1887,6 +2016,7 @@ root:
             group: advanced
             contents:
                 ${fileSystem}
+                ${fileSystemBehaviors}
         asyncOperationsTab:
             kind: tab
             label: Async Operations
@@ -1953,7 +2083,7 @@ dataStorage:
     contents:
         ${archivePath}
         ${prearchivePath}
-        ${ftpPath}
+#        ${ftpPath}
         ${buildPath}
         ${pipelinePath}
         ${cachePath}

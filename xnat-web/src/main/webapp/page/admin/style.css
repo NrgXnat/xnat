@@ -126,6 +126,7 @@ body.xnat div.xmodal .panel-body { padding: 0 ; }
 .panel .panel-element .element-label {
     width: 30%; padding-right: 10px; float: left;
     color: #222; font-weight: bold; text-align: right;
+    text-transform: capitalize;
 }
 .panel .panel-element.stacked .element-label {
     width: inherit; display: block; float: none;

@@ -129,13 +129,13 @@ siteSetup:
                     value: ''
                     validation: required path
 
-                ftpPath:
-                    kind: panel.input.text
-                    name: ftpPath
-                    label: FTP Location
-                    size: 35
-                    value: ''
-                    validation: required path
+#                ftpPath:
+#                    kind: panel.input.text
+#                    name: ftpPath
+#                    label: FTP Location
+#                    size: 35
+#                    value: ''
+#                    validation: required path
 
                 pipelinePath:
                     kind: panel.input.text

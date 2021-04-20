@@ -2015,8 +2015,8 @@ root:
             label: File System
             group: advanced
             contents:
-                ${fileSystemBehaviors}
                 ${fileSystem}
+                ${fileSystemBehaviors}
         asyncOperationsTab:
             kind: tab
             label: Async Operations

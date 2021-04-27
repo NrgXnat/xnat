@@ -816,10 +816,11 @@ notifications:
                 <p>This setting determines whether this site should allow notifications to be sent to email addresses that do not belong to valid users of this XNAT site. If set to \"Do Not Allow\", the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events.</p>
             contents:
                 emailAllowNonuserSubscribersInput:
-                    kind: input.switchbox
+                    kind: select.single
                     name: emailAllowNonuserSubscribers
-                    onText: Allow
-                    offText: Do Not Allow
+                    options:
+                        true: Allow
+                        false: Do Not Allow
                     after: >
                         <p class="description">If set to "Allow", site notifications can be sent to email addresses other than those belonging to users of this XNAT site</p>
 
@@ -1510,7 +1511,7 @@ fileSystem:
     contentType: json
     url: /xapi/siteConfig
     contents:
-        ${fileSystemSettingsWarning}
+#        ${fileSystemSettingsWarning}
         ${archivePath}
         ${cachePath}
         ${prearchivePath}

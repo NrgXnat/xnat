@@ -113,11 +113,8 @@ public class XDATScreen_edit_xnat_qcManualAssessorData
 						scan = new XnatPetqcscandata(user);
 					} else if (XnatMrscandata.SCHEMA_ELEMENT_NAME.equals(imageScan.getXSIType())) {
 						scan = new XnatMrqcscandata(user);
-					} else if (XnatCtscandata.SCHEMA_ELEMENT_NAME.equals(imageScan.getXSIType())) {
-						scan = new XnatOtherqcscandata(user);
 					} else {
-						// do not create anything but PET and MR QCs for now (e.g. PET/CT, only do QC on PET)
-						continue;
+						scan = new XnatOtherqcscandata(user);
 					}
 					scan.setImagescanId(imageScan.getId());
 					qcAccessor.setScans_scan(scan);

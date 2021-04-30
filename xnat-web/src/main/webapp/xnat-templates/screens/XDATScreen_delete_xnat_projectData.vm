@@ -73,6 +73,12 @@
             if (_a.length == 0) {
                 xmodal.message('Delete Action', 'Please select at least one item to delete.');
             } else {
+                if (_a.length < window.pdTree.getNodeCount()) {
+                    // Not all boxes are selected, don't delete entire project
+                    let projectNode = window.pdTree.getNodeByProperty("primary_label", "$!om.getId()");
+                    projectNode.setCheckState(0);
+                    _a = window.pdTree.getCheckedNodes();
+                }
                 var removeFiles = document.getElementById("removeFiles");
                 if (removeFiles.checked) {
                     xmodal.confirm({

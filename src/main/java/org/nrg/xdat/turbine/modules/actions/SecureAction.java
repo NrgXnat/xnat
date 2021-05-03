@@ -14,8 +14,8 @@ import static org.springframework.http.HttpHeaders.USER_AGENT;
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.BrowserType;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
@@ -46,16 +46,17 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 
-import javax.annotation.Nonnull;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * @author Tim
@@ -159,7 +160,7 @@ public abstract class SecureAction extends VelocitySecureAction {
     }
 
     //just a wrapper for isCsrfTokenOk(request, token)
-    public static boolean isCsrfTokenOk(final RunData runData) throws Exception {
+    public static boolean isCsrfTokenOk(final RunData runData) throws InvalidCsrfException {
         //occasionally, (really, only on "actions" that inherit off secure screen instead of secure action like report issue)
         //the HTTPServletRequest parameters magically get cleared. that's why this method is here.
         String clientToken = TurbineUtils.escapeParam(runData.getParameters().get("XNAT_CSRF"));
@@ -168,14 +169,14 @@ public abstract class SecureAction extends VelocitySecureAction {
 
     //just a wrapper for isCsrfTokenOk(request, token)
     @SuppressWarnings({"unused", "UnusedReturnValue"})
-    public static boolean isCsrfTokenOk(final HttpServletRequest request, final boolean strict) throws Exception {
+    public static boolean isCsrfTokenOk(final HttpServletRequest request, final boolean strict) throws InvalidCsrfException {
         return isCsrfTokenOk(request, request.getParameter("XNAT_CSRF"), strict);
     }
 
     //this is a little silly in that it either returns true or throws an exception...
     //if you change that behavior, look at every place this is used to be sure it actually
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
-    public static boolean isCsrfTokenOk(final HttpServletRequest request, final String clientToken, final boolean strict) throws Exception {
+    public static boolean isCsrfTokenOk(final HttpServletRequest request, final String clientToken, final boolean strict) throws InvalidCsrfException {
         if (!XDAT.getSiteConfigPreferences().getEnableCsrfToken()) {
             return true;
         }
@@ -225,39 +226,17 @@ public abstract class SecureAction extends VelocitySecureAction {
         if (XDAT.getSiteConfigPreferences().getRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
             TurbineVelocity.getContext(data).put("logout", "true");
             data.getParameters().setString("logout", "true");
-            boolean isAuthorized = false;
-
-            UserI user = XDAT.getUserDetails();
-            if (user == null || user.isGuest()) {
-                data.getParameters().add("nextPage", data.getTemplateInfo().getScreenTemplate());
-                if (!data.getAction().equalsIgnoreCase("")) {
-                    data.getParameters().add("nextAction", data.getAction());
-                } else {
-                    data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
-                }
-            } else {
-                AccessLogger.LogActionAccess(data);
-                isAuthorized = true;
-            }
-            return isAuthorized && isCsrfTokenOk(data);
         } else {
-            final UserI   user         = XDAT.getUserDetails();
-            final boolean isAuthorized = TurbineUtils.isAuthorized(data, user, allowGuestAccess());
-
             data.getParameters().add("new_session", "TRUE");
-            AccessLogger.LogActionAccess(data);
-
-            if (!isAuthorized) {
-                String Destination = data.getTemplateInfo().getScreenTemplate();
-                data.getParameters().add("nextPage", Destination);
-                if (!data.getAction().equalsIgnoreCase("")) {
-                    data.getParameters().add("nextAction", data.getAction());
-                } else {
-                    data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
-                }
-            }
-            return isAuthorized && isCsrfTokenOk(data);
         }
+
+        AccessLogger.LogActionAccess(data);
+        if (!TurbineUtils.isAuthorized(data, XDAT.getUserDetails(), allowGuestAccess())) {
+            data.getParameters().add("nextPage", data.getTemplateInfo().getScreenTemplate());
+            data.getParameters().add("nextAction", StringUtils.defaultIfBlank(data.getAction(), Turbine.getConfiguration().getString("action.login")));
+            return false;
+        }
+        return isCsrfTokenOk(data);
     }
 
     public boolean allowGuestAccess() {
@@ -266,11 +245,7 @@ public abstract class SecureAction extends VelocitySecureAction {
 
     public static EventUtils.TYPE getEventType(final RunData data) {
         final String id = (String) TurbineUtils.GetPassedParameter(EventUtils.EVENT_TYPE, data);
-        if (id != null) {
-            return EventUtils.getType(id, EventUtils.TYPE.WEB_FORM);
-        } else {
-            return EventUtils.TYPE.WEB_FORM;
-        }
+        return StringUtils.isNotBlank(id) ? EventUtils.getType(id, EventUtils.TYPE.WEB_FORM) : EventUtils.TYPE.WEB_FORM;
     }
 
     public static String getReason(RunData data) {
@@ -293,15 +268,11 @@ public abstract class SecureAction extends VelocitySecureAction {
         return EventUtils.newEventInstance(cat, getEventType(data), (getAction(data) != null) ? getAction(data) : action, getReason(data), getComment(data));
     }
 
-    public void handleException(RunData data, XFTItem first, Throwable error, String itemIdentifier) {
-        log.error("", error);
+    public void handleException(final RunData data, final XFTItem first, final Throwable error, final String itemIdentifier) {
+        log.error("An error occurred", error);
         data.getSession().setAttribute(itemIdentifier, first);
         data.addMessage(error.getMessage());
-        if (data.getParameters().getString("edit_screen") != null) {
-            data.setScreenTemplate(data.getParameters().getString("edit_screen"));
-        } else {
-            data.setScreenTemplate("Index.vm");
-        }
+        data.setScreenTemplate(StringUtils.defaultIfBlank(data.getParameters().getString("edit_screen"), "Index.vm"));
     }
 
     public void notifyAdmin(UserI authenticatedUser, RunData data, int code, String subject, String message) throws IOException {
@@ -324,11 +295,7 @@ public abstract class SecureAction extends VelocitySecureAction {
 
     @SuppressWarnings("unused")
     protected void displayProjectConflicts(final Collection<String> conflicts, final RunData data, final XFTItem item) {
-        final StringBuilder message = new StringBuilder();
-        for (final String conflict : conflicts) {
-            message.append(conflict).append("<br/>");
-        }
-        displayProjectEditError(message.toString(), data, item);
+        displayProjectEditError(String.join("<br/>", conflicts), data, item);
     }
 
     @SuppressWarnings("unused")
@@ -337,22 +304,36 @@ public abstract class SecureAction extends VelocitySecureAction {
     }
 
     // Displays an error to the user.
-    public void displayProjectEditError(String msg, RunData data, XFTItem item) {
-        if (null != msg && !msg.isEmpty()) {
-            data.addMessage(msg);
+    public void displayProjectEditError(final String message, final RunData data, final XFTItem item) {
+        if (StringUtils.isNotBlank(message)) {
+            data.addMessage(message);
         }
         TurbineUtils.SetEditItem(item, data);
-        if (TurbineUtils.GetPassedParameter("edit_screen", data) != null) {
-            data.setScreenTemplate(((String) TurbineUtils.GetPassedParameter("edit_screen", data)));
+        final String editScreen = (String) TurbineUtils.GetPassedParameter("edit_screen", data);
+        if (StringUtils.isNotBlank(editScreen)) {
+            data.setScreenTemplate(editScreen);
         }
     }
 
     private static String csrfTokenErrorMessage(final HttpServletRequest request) {
-        final String headers = StreamUtils.asStream(request.getHeaderNames()).filter(name -> !StringUtils.equals("Authorization", name)).map(name -> " * " + name + ": " + request.getHeader(name)).collect(Collectors.joining("\n"));
-        final String cookies = Arrays.stream((Cookie[]) ArrayUtils.nullToEmpty(request.getCookies())).map(cookie -> " * " + String.join(" ", cookie.getName(), cookie.getValue(), Integer.toString(cookie.getMaxAge()), cookie.getDomain())).collect(Collectors.joining("\n"));
-        return String.format(CSRF_MESSAGE_FORMAT, request.getMethod(), request.getRequestURL(), AccessLogger.GetRequestIp(request), headers, cookies);
+        final Enumeration<String> headerNames = request.getHeaderNames();
+        final String              headerText  = headerNames != null && headerNames.hasMoreElements() ? StreamUtils.asStream(headerNames).map(name -> " * " + name + ": " + formatHeaderValues(name, request)).collect(Collectors.joining("\n")) : NO_HEADERS_OR_COOKIES;
+        final Cookie[]            cookies     = request.getCookies();
+        final String              cookieText  = cookies != null && cookies.length > 0 ? Arrays.stream(cookies).map(cookie -> " * " + String.join(" ", cookie.getName(), cookie.getValue(), Integer.toString(cookie.getMaxAge()), cookie.getDomain())).collect(Collectors.joining("\n")) : NO_HEADERS_OR_COOKIES;
+        return String.format(CSRF_MESSAGE_FORMAT, request.getMethod(), request.getRequestURL(), AccessLogger.GetRequestIp(request), headerText, cookieText);
     }
 
-    private static final String CSRF_MESSAGE_FORMAT = "%s on URL: %s from %s:\nHeaders:\n%s\nCookies:\n%s";
+    private static String formatHeaderValues(final String name, final HttpServletRequest request) {
+        if (StringUtils.equalsIgnoreCase(AUTH_HEADER_NAME, name)) {
+            final String value = request.getHeader(AUTH_HEADER_NAME);
+            return StringUtils.containsWhitespace(value) ? RegExUtils.removePattern(value, "\\s+.*$") + " " + AUTH_HEADER_MASK_VALUE : AUTH_HEADER_MASK_VALUE;
+        }
+        return StreamUtils.asStream(request.getHeaders(name)).collect(Collectors.joining(", "));
+    }
+
+    private static final String CSRF_MESSAGE_FORMAT    = "%s on URL: %s from %s:\nHeaders:\n%s\nCookies:\n%s";
+    private static final String AUTH_HEADER_NAME       = "Authorization";
+    private static final String AUTH_HEADER_MASK_VALUE = "XXXXXXXXX";
+    private static final String NO_HEADERS_OR_COOKIES  = " * <none>";
 }
 

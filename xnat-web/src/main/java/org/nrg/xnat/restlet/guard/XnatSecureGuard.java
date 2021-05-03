@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.restlet.guard;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.TurbineException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
@@ -18,18 +19,18 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.representations.RESTLoginRepresentation;
-import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.nrg.xnat.restlet.util.RequestUtil;
+import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.restlet.Filter;
 import org.restlet.data.*;
 import org.restlet.resource.Representation;
 import org.restlet.resource.StringRepresentation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 
+@Slf4j
 public class XnatSecureGuard extends Filter {
     /**
      * Attempts to log the user in, first by checking the for an existing
@@ -40,17 +41,16 @@ public class XnatSecureGuard extends Filter {
     protected int beforeHandle(Request request, Response response) {
         if (authenticate(request)) {
             return CONTINUE;
-        } else {
-            unauthorized(request, response);
-            return STOP;
         }
+        unauthorized(request, response);
+        return STOP;
     }
 
     protected Representation loginRepresentation(Request request) {
         try {
             return new RESTLoginRepresentation(MediaType.TEXT_HTML, request, null);
         } catch (TurbineException e) {
-            logger.error("", e);
+            log.error("", e);
             return new StringRepresentation("An error has occurred. Unable to load login page.");
         }
     }
@@ -71,6 +71,17 @@ public class XnatSecureGuard extends Filter {
         return Users.getUser(login);
     }
 
+    private Optional<UserI> getUser(final String username, final String password) {
+        try {
+            final UserI user = getUser(username);
+            if (Authenticator.Authenticate(user, new Authenticator.Credentials(username, password))) {
+                return Optional.of(user);
+            }
+        } catch (Exception ignored) {
+        }
+        return Optional.empty();
+    }
+
     private AliasTokenService getAliasTokenService() {
         if (_aliasTokenService == null) {
             _aliasTokenService = XDAT.getContextService().getBean(AliasTokenService.class);
@@ -78,7 +89,7 @@ public class XnatSecureGuard extends Filter {
         return _aliasTokenService;
     }
 
-    private boolean authenticate(Request request) {
+    private boolean authenticate(final Request request) {
         // THIS BREAKS THE TRADITIONAL REST MODEL
         // But, if the user is already logged into the website and navigates
         // to a REST GET, they shouldn't have to re-login , TO
@@ -88,50 +99,33 @@ public class XnatSecureGuard extends Filter {
             //Check for a CsrfToken if necessary.
             try {
                 //isCsrfTokenOk either returns true or throws an exception...
-                SecureAction.isCsrfTokenOk(httpRequest, false);
+                return SecureAction.isCsrfTokenOk(httpRequest, false);
             } catch (Exception e) {
                 throw new RuntimeException(e);//LOL.
             }
-            return true;
-        } else {
-            final ChallengeResponse challengeResponse = request.getChallengeResponse();
-            if (challengeResponse != null) {
-                UserI user = authenticateBasic(challengeResponse);
-                if (user != null) {
-                    return true;
-                }
-            } else {
-                return !XDAT.getSiteConfigPreferences().getRequireLogin();
-            }
         }
-        return false;
+        final ChallengeResponse challengeResponse = request.getChallengeResponse();
+        return challengeResponse != null ? authenticateBasic(challengeResponse) != null : !XDAT.getSiteConfigPreferences().getRequireLogin();
     }
 
-    private UserI authenticateBasic(ChallengeResponse challengeResponse) {
+    private UserI authenticateBasic(final ChallengeResponse challengeResponse) {
         final String username = challengeResponse.getIdentifier();
         final String password = new String(challengeResponse.getSecret());
+        return getUser(username, password).orElseGet(() -> getUserFromToken(username));
+    }
 
-        UserI user;
-
-        try {
-            user = getUser(username);
-            if (!Authenticator.Authenticate(user, new Authenticator.Credentials(username, password))) {
-                user = null;
-            }
-        } catch (Exception e) {
-            user = null;
-        }
-
-        if (user == null && AliasToken.isAliasFormat(username)) {
-            AliasToken token = getAliasTokenService().locateToken(username);
+    private UserI getUserFromToken(final String username) {
+        if (AliasToken.isAliasFormat(username)) {
             try {
-                user = Users.getUser(token.getXdatUserId());
-            } catch (Exception exception) {
-                user = null;
+                final AliasToken token = getAliasTokenService().locateToken(username);
+                if (token != null) {
+                    return Users.getUser(token.getXdatUserId());
+                }
+            } catch (Exception e) {
+                log.info("An error occurred trying to perform basic authentication for user {}", username, e);
             }
         }
-
-        return user;
+        return null;
     }
 
     private void unauthorized(Request request, Response response) {
@@ -162,7 +156,6 @@ public class XnatSecureGuard extends Filter {
         return _detector;
     }
 
-    private static final Logger logger     = LoggerFactory.getLogger(XnatSecureGuard.class);
     private static final String HTTP_REALM = "XNAT Protected Area";
 
     private InteractiveAgentDetector _detector;

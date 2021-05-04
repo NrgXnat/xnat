@@ -10,34 +10,16 @@
 package org.nrg.xnat.initialization;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
+import static org.nrg.xdat.security.helpers.Users.GUEST_USERNAME;
 import static org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import javax.servlet.SessionCookieConfig;
-import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.nrg.xnat.security.OnXnatLogin;
-import org.nrg.xnat.security.XnatAuthenticationEntryPoint;
-import org.nrg.xnat.security.XnatAuthenticationEventPublisher;
-import org.nrg.xnat.security.XnatAuthenticationFilter;
-import org.nrg.xnat.security.XnatBasicAuthConfigurer;
-import org.nrg.xnat.security.XnatExpiredPasswordFilter;
-import org.nrg.xnat.security.XnatInitCheckFilter;
-import org.nrg.xnat.security.XnatLogoutSuccessHandler;
-import org.nrg.xnat.security.XnatProviderManager;
-import org.nrg.xnat.security.XnatRedirectStrategy;
-import org.nrg.xnat.security.XnatSecurityExtension;
-import org.nrg.xnat.security.XnatUrlAuthenticationFailureHandler;
+import org.nrg.xnat.security.*;
 import org.nrg.xnat.security.preferences.SecurityPreferences;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider;
@@ -90,6 +72,10 @@ import org.springframework.security.web.session.SimpleRedirectSessionInformation
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.RequestContextFilter;
+
+import java.util.*;
+import javax.servlet.SessionCookieConfig;
+import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
@@ -298,7 +284,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         final InteractiveAgentDetector     detector                 = interactiveAgentDetector();
         final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, detector);
 
-        http.apply(new XnatBasicAuthConfigurer<HttpSecurity>(authenticationEntryPoint, _aliasTokenService));
+        http.apply(new XnatBasicAuthConfigurer<>(authenticationEntryPoint, _aliasTokenService));
 
         http.sessionManagement()
             .sessionCreationPolicy(IF_REQUIRED)
@@ -308,16 +294,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionRegistry(sessionRegistry())
             .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)));
 
-        http.headers().frameOptions().sameOrigin()
-            .cacheControl().disable()
-            .contentSecurityPolicy("frame-ancestors 'self'").and()
-            .httpStrictTransportSecurity().disable();
-
-        http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint).and()
-            .csrf().disable()
-            .anonymous().key(Users.ANONYMOUS_AUTH_PROVIDER_KEY);
-
-        http.logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser");
+        http.headers().frameOptions().sameOrigin().cacheControl().disable().contentSecurityPolicy("frame-ancestors 'self'")
+            .and().httpStrictTransportSecurity().disable()
+            .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
+            .and().csrf().disable()
+            .anonymous().key(Users.ANONYMOUS_AUTH_PROVIDER_KEY).principal(GUEST_USERNAME)
+            .and().logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser");
 
         // If we can get the default channel processing filter as a bean, we could remove this.
         http.addFilter(channelProcessingFilter())
@@ -340,12 +322,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     private boolean containsDbAuthProvider(final List<AuthenticationProvider> providers) {
-        for (final AuthenticationProvider provider : providers) {
-            if (provider instanceof XnatAuthenticationProvider && StringUtils.equals(_dbAuthProviderName, ((XnatAuthenticationProvider) provider).getName())) {
-                return true;
-            }
-        }
-        return false;
+        return providers.stream().anyMatch(provider -> provider instanceof XnatAuthenticationProvider && StringUtils.equals(_dbAuthProviderName, ((XnatAuthenticationProvider) provider).getName()));
     }
 
     private static List<AuthenticationProvider> expand(final List<AuthenticationProvider> providers) {

@@ -219,7 +219,7 @@ public abstract class SecureAction extends VelocitySecureAction {
             AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
         }
         final UserI user = Users.getUserPrincipal(request.getUserPrincipal());
-        throw new InvalidCsrfException(errorMessage, user != null ? user.getUsername() : "guest");
+        throw new InvalidCsrfException(errorMessage, user != null ? user.getUsername() : Users.DEFAULT_GUEST_USERNAME);
     }
 
     protected boolean isAuthorized(final RunData data) throws Exception {

@@ -9,6 +9,8 @@
 
 package org.nrg.xdat.services;
 
+import static org.junit.Assert.*;
+
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Before;
@@ -17,30 +19,29 @@ import org.junit.runner.RunWith;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.configuration.TestAliasTokenServiceConfig;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.event.EventMetaI;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import static org.junit.Assert.*;
+import javax.inject.Inject;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestAliasTokenServiceConfig.class)
 public class TestAliasTokenService {
 
-    private static final Map<String, ?> ADMIN = createUser("admin", "Admin", "User", "admin@xnat.org", "admin", true);
-    private static final Map<String, ?> USER  = createUser("user", "Normal", "User", "user@xnat.org", "user", true);
-    private static final Map<String, ?> GUEST = createUser("guest", "Guest", "User", "info@xnat.org", "guest", true);
+    private static final Map<String, ?> ADMIN = createUser("admin", "Admin", "Istrator", "admin@xnat.org", "admin", false);
+    private static final Map<String, ?> USER  = createUser("user", "Normal", "User", "user@xnat.org", "user", false);
+    private static final Map<String, ?> GUEST = createUser(Users.DEFAULT_GUEST_USERNAME, "Guest", "User", "info@xnat.org", Users.DEFAULT_GUEST_USERNAME, true);
 
     private static Map<String, ?> createUser(final String username, final String firstName, final String lastName, final String email, final String password, final boolean isGuest) {
         return new HashMap<String, Object>() {{
             put("username", username);
-            put("guest", isGuest);
+            put(Users.DEFAULT_GUEST_USERNAME, isGuest);
             put("firstname", firstName);
             put("lastname", lastName);
             put("email", email);
@@ -61,7 +62,7 @@ public class TestAliasTokenService {
         if (_userService.getUser("user") == null) {
             _userService.save(_userService.createUser(USER), null, true, (EventMetaI) null);
         }
-        if (_userService.getUser("guest") == null) {
+        if (_userService.getGuestUser() == null) {
             _userService.save(_userService.createUser(GUEST), null, true, (EventMetaI) null);
         }
     }

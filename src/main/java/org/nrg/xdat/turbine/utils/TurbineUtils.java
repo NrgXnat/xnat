@@ -34,6 +34,7 @@ import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
@@ -561,7 +562,7 @@ public class TurbineUtils {
     }
 
     public boolean isGuest(final UserI user) {
-        return user == null || StringUtils.equals("guest", user.getLogin());
+        return user == null || user.isGuest();
     }
 
     public boolean canEdit(final UserI user, final XFTItem item) throws Exception {

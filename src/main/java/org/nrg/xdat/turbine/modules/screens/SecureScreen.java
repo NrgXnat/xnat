@@ -212,7 +212,6 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                             logger.error("problem looking for concurrent session IP addresses.", e);
                         }
                     }
-                    //if(sessionCount > 100 || (sessionCount > 1 && ip.size() > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest"))){
                     if (!user.isGuest()) {
                         context.put("sessionCount", sessionIds.size());
                         context.put("sessionIpCount", uniqueIPs.size());
@@ -357,7 +356,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
                 }
             } else {
-                if (!allowGuestAccess() && user.getLogin().equals("guest")) {
+                if (!allowGuestAccess() && user.isGuest()) {
                     isAuthorized = false;
                 }
             }

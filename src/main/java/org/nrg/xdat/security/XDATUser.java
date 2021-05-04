@@ -270,8 +270,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return <b>true</b> if the user is a guest, <b>false</b> otherwise.
      */
     public boolean isGuest() {
-        final String username = getUsername();
-        return StringUtils.isBlank(username) || StringUtils.equalsIgnoreCase("guest", username);
+        return Users.isGuest(getUsername());
     }
 
     /**

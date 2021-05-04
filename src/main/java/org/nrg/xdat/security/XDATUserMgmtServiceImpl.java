@@ -12,9 +12,7 @@ package org.nrg.xdat.security;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.Authenticator.Credentials;
@@ -28,7 +26,6 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.security.validators.PasswordValidatorChain;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
@@ -43,11 +40,8 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.*;
 import javax.annotation.Nonnull;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 @SuppressWarnings("unused")
 @Service
@@ -69,42 +63,31 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
     }
 
     @Override
-    public UserI getUser(String username) throws UserNotFoundException, UserInitException {
-        if (StringUtils.equals(_guestName, username)) {
-            return _guest;
+    public UserI getUser(final String username) throws UserNotFoundException, UserInitException {
+        if (Users.isGuest(username)) {
+            return getGuestUser();
         }
         return new XDATUser(username);
     }
 
     @Override
-    public UserI getUser(Integer userId) throws UserNotFoundException, UserInitException {
-        if (Objects.equals(_guestId, userId)) {
+    public UserI getUser(final Integer userId) throws UserNotFoundException, UserInitException {
+        if (Objects.equals(getGuestUserId(), userId)) {
             return _guest;
         }
-        XdatUser u = XdatUser.getXdatUsersByXdatUserId(userId, null, true);
-        if (u != null) {
-            return new XDATUser(u.getItem());
-        } else {
-            throw new UserNotFoundException(userId);
-        }
+        return new XDATUser(Optional.ofNullable(XdatUser.getXdatUsersByXdatUserId(userId, null, true)).orElseThrow(() -> new UserNotFoundException(userId)).getItem());
     }
 
     @Override
     @Nonnull
     public UserI getGuestUser() throws UserNotFoundException, UserInitException {
         if (_guest == null) {
-            try {
-                _guest = getUser(XDAT.getSiteConfigurationProperty("security.user.guestName", "guest"));
-            } catch (ConfigServiceException e) {
-                log.error("", e);
-                _guest = getUser("guest");
+            final XdatUser user = XdatUser.getXdatUsersByLogin(Users.DEFAULT_GUEST_USERNAME, null, false);
+            if (user == null) {
+                throw new UserNotFoundException(Users.DEFAULT_GUEST_USERNAME);
             }
-            if (_guest == null) {
-                log.error("Unable to create the guest user");
-            } else {
-                _guestId = _guest.getID();
-                _guestName = _guest.getLogin();
-            }
+            _guest = new XDATUser(user.getItem());
+            _guestId = _guest.getID();
         }
         return _guest;
     }
@@ -113,7 +96,6 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
     public void invalidateGuest() {
         _guest = null;
         _guestId = null;
-        _guestName = null;
     }
 
     @Override
@@ -133,11 +115,9 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
     }
 
     @Override
-    public UserI createUser(Map<String, ?> properties) throws UserFieldMappingException {
+    public UserI createUser(final Map<String, ?> properties) throws UserFieldMappingException {
         try {
-            PopulateItem populator = new PopulateItem(properties, null, org.nrg.xft.XFT.PREFIX + ":user", true);
-            ItemI        found     = populator.getItem();
-            return new XDATUser(found);
+            return new XDATUser(new PopulateItem(properties, null, org.nrg.xft.XFT.PREFIX + ":user", true).getItem());
         } catch (Exception e) {
             throw new UserFieldMappingException(e);
         }
@@ -190,7 +170,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
      */
     @Override
     public void save(UserI user, UserI authenticatedUser, boolean overrideSecurity, EventDetails event) throws Exception {
-        save(user,authenticatedUser,overrideSecurity,event,null);
+        save(user, authenticatedUser, overrideSecurity, event, null);
     }
 
     @Override
@@ -224,7 +204,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
                 }
 
                 SaveItemHelper.authorizedSave(((XDATUser) user), authenticatedUser, true, false, event);
-                if(newUserAuth == null) {
+                if (newUserAuth == null) {
                     newUserAuth = new XdatUserAuth(user.getLogin(), XdatUserAuthService.LOCALDB);
                 }
                 userAuthService.create(newUserAuth);
@@ -280,7 +260,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
             // This means the password was actually updated, so reset the password updated date and failed login attempts.
             if (!StringUtils.equals(existing.getPassword(), user.getPassword())) {
                 final XdatUserAuth auth = userAuthService.getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
-                if(auth!=null) {
+                if (auth != null) {
                     auth.setPasswordUpdated(new Date());
                     userAuthService.resetFailedLogins(auth);
                 }
@@ -290,7 +270,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
 
     @Override
     public void save(final UserI user, final UserI authenticatedUser, final boolean overrideSecurity, final EventMetaI event) throws Exception {
-        save(user,authenticatedUser,overrideSecurity,event,null);
+        save(user, authenticatedUser, overrideSecurity, event, null);
     }
 
     @Override
@@ -315,11 +295,18 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
         return ((XDATUser) user).login(credentials.password);
     }
 
+    @Nonnull
+    protected Integer getGuestUserId() throws UserNotFoundException, UserInitException {
+        if (_guestId == null) {
+            getGuestUser();
+        }
+        return _guestId;
+    }
+
     private static final String QUERY_CHECK_USER_EXISTS = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
 
     private final NamedParameterJdbcTemplate _template;
 
-    private UserI _guest;
-    private String _guestName;
+    private UserI   _guest;
     private Integer _guestId;
 }

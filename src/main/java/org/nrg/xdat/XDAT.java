@@ -1014,7 +1014,7 @@ public class XDAT {
 	public static void logShortStackTrace(final Logger logger, final String message, final Map<String, ?> properties, final int depth) {
         final StringBuilder buffer = new StringBuilder(message).append("\n");
         if (properties != null) {
-            buffer.append("Properties: ").append(properties.toString()).append("\n");
+            buffer.append("Properties: ").append(properties).append("\n");
         }
         buffer.append(formatShortStackTrace(Thread.currentThread().getStackTrace(), depth));
         log.error(buffer.toString());

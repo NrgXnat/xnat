@@ -12,6 +12,7 @@ package org.nrg.xdat.security;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -88,7 +89,7 @@ public class Authorizer implements AuthorizerI{
 		if (requiresSecurity(action, e, user)) {
 			final String xsiType = e.getXSIType();
 			if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
-				throwException(new InvalidPermissionException("guest", action, xsiType, null));
+				throwException(new InvalidPermissionException(user.getUsername(), action, xsiType, null));
 			}
 
 			final String username = user.getUsername();
@@ -107,9 +108,9 @@ public class Authorizer implements AuthorizerI{
 			authorize(action, item.getGenericSchemaElement(), user);
 			final String xsiType = item.getXSIType();
 			final String idValue = item.getIDValue();
-			final String username = user != null ? user.getUsername() : "guest";
 			if (ElementSecurity.IsSecureElement(xsiType)) {
 				if (!Permissions.can(user, item, action)) {
+					final String username = user != null ? user.getUsername() : Users.DEFAULT_GUEST_USERNAME;
 					AdminUtils.sendAdminEmail(user, "Unauthorized Data Retrieval Attempt", "Unauthorized access of item " + idValue + " of data type '" + xsiType + "' by '" + username + "' prevented.");
 					throwException(new InvalidPermissionException(username, action, xsiType, idValue));
 				}

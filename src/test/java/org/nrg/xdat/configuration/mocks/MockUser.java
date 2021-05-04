@@ -100,7 +100,7 @@ public class MockUser extends AbstractHibernateEntity implements UserI {
     @Transient
     @Override
     public boolean isGuest() {
-        return !StringUtils.equals("guest", _username);
+        return Users.isGuest(_username);
     }
 
     @Override

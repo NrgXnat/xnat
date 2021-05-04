@@ -44,11 +44,11 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import javax.annotation.Nonnull;
 
 @SuppressWarnings("RedundantThrows")
 @Slf4j
@@ -858,8 +858,8 @@ public class Permissions {
         if (found != null) {
             try {
                 return getProjectAccessByQuery(found, projectId);
-            }catch(Exception e) {
-                log.debug("Unable to get project access by query",e);
+            } catch (Exception e) {
+                log.debug("Unable to get project access by query", e);
             }
         }
         try {
@@ -1073,7 +1073,7 @@ public class Permissions {
             public void processRow(final ResultSet resultSet) throws SQLException {
                 final String project = resultSet.getString("project");
                 if (!experiments.containsKey(project)) {
-                    experiments.put(project, new HashMap<String, String>());
+                    experiments.put(project, new HashMap<>());
                 }
                 experiments.get(project).put(resultSet.getString("id"), resultSet.getString("label"));
             }
@@ -1253,7 +1253,7 @@ public class Permissions {
 
     private static final List<String>       PROJECT_GROUPS         = Arrays.asList(AccessLevel.Collaborator.code(), AccessLevel.Member.code(), AccessLevel.Owner.code());
     private static final int                PROJECT_GROUP_COUNT    = PROJECT_GROUPS.size();
-    private static final SqlParameterSource GUEST_QUERY_PARAMETERS = new MapSqlParameterSource("username", "guest");
+    private static final SqlParameterSource GUEST_QUERY_PARAMETERS = new MapSqlParameterSource(Users.USERNAME_PROPERTY, Users.DEFAULT_GUEST_USERNAME);
 
     private static final String QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE = "SELECT id, label, project FROM data_type_fns_get_all_accessible_expts_of_type(:username, :dataType) WHERE can_${action} = TRUE";
     private static final String QUERY_ALL_READABLE_EXPTS_OF_TYPE   = StringSubstitutor.replace(QUERY_ALL_ACCESSIBLE_EXPTS_OF_TYPE, ImmutableMap.of("action", SecurityManager.READ));

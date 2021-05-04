@@ -50,8 +50,7 @@ public class ModifyPassword extends ModifyAction {
             error(new Exception("User 'null' cannot change password."), data);
             return;
         }
-
-        if (user.getUsername().equals("guest")) {
+        if (user.isGuest()) {
             error(new Exception("Guest account password must be managed in the administration section."), data);
             return;
         }

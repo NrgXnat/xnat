@@ -9,6 +9,11 @@
 
 package org.nrg.xapi.rest;
 
+import static lombok.AccessLevel.PROTECTED;
+import static org.nrg.framework.exceptions.NrgServiceError.Unknown;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -26,21 +31,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
-
-import static lombok.AccessLevel.PROTECTED;
-import static org.nrg.framework.exceptions.NrgServiceError.Unknown;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Provides basic functions for integrating Spring REST controllers with XNAT.
- * <p>
- * This replaces the {@link org.nrg.xdat.rest.AbstractXapiRestController} implementation.
  */
-// TODO: This is because IntelliJ refuses to make module associations between Gradle and Maven projects, so these show as unused.
-@SuppressWarnings({"unused", "deprecation", "Duplicates"})
 @Getter(PROTECTED)
 @Accessors(prefix = "_")
 @Slf4j
@@ -221,6 +217,7 @@ public abstract class AbstractXapiRestController {
      *
      * @param properties The properties and values being set.
      */
+    @SuppressWarnings("unused")
     protected void logSetProperties(final Map<String, String> properties) {
         if (log.isInfoEnabled()) {
             final StringBuilder message = new StringBuilder("User ").append(getSessionUser().getUsername()).append(" is setting the values for the following properties:\n");

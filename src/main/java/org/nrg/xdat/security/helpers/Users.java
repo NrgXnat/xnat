@@ -69,7 +69,9 @@ import javax.servlet.http.HttpServletRequest;
 @SuppressWarnings({"WeakerAccess", "SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Slf4j
 public class Users {
-    public static final String                 GUEST_USERNAME              = "guest";
+    public static final String                 USERNAME_PROPERTY           = "username";
+    public static final String                 DEFAULT_ANON_USERNAME       = "anonymousUser";
+    public static final String                 DEFAULT_GUEST_USERNAME      = "guest";
     public static final String                 ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-auth-provider";
     public static final String                 ROLE_ANONYMOUS              = "ROLE_ANONYMOUS";
     public static final String                 ROLE_ADMIN                  = "ROLE_ADMIN";
@@ -147,6 +149,20 @@ public class Users {
             _authorities.put(qualified, new SimpleGrantedAuthority(qualified));
         }
         return _authorities.get(qualified);
+    }
+
+    public static boolean isGuest(final String username) {
+        return StringUtils.isBlank(username) || StringUtils.equalsAnyIgnoreCase(username, DEFAULT_GUEST_USERNAME, DEFAULT_ANON_USERNAME);
+    }
+
+    public static boolean isGuest(final Object principal) {
+        if (principal == null) {
+            return true;
+        }
+        if (principal instanceof UserI) {
+            return ((UserI) principal).isGuest();
+        }
+        return isGuest(principal instanceof String ? (String) principal : principal.toString());
     }
 
     /**

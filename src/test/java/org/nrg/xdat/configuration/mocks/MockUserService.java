@@ -13,6 +13,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.security.Authenticator;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
@@ -56,7 +57,7 @@ public class MockUserService extends AbstractHibernateEntityService<MockUser, Mo
 
     @Override
     public UserI getGuestUser() {
-        return getDao().findByUniqueProperty("username", "guest");
+        return getDao().findByUniqueProperty(Users.USERNAME_PROPERTY, Users.DEFAULT_GUEST_USERNAME);
     }
 
     @Override

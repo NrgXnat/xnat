@@ -121,6 +121,11 @@ public interface PersistentWorkflowI {
 	Object getCurrentStepLaunchTime();
 
 	/**
+	 * @return Returns the current_step_launch_time.
+	 */
+	Date getCurrentStepLaunchTimeDate();
+
+	/**
 	 * Sets the value for current_step_launch_time.
 	 * @param v Value to Set.
 	 */
@@ -136,6 +141,17 @@ public interface PersistentWorkflowI {
 	 * @param v Value to Set.
 	 */
 	void setCurrentStepId(String v);
+
+	/**
+	 * @return Returns the next_step_id.
+	 */
+	String getNextStepId();
+
+	/**
+	 * Sets the value for next_step_id.
+	 * @param v Value to Set.
+	 */
+	void setNextStepId(String v);
 
 	/**
 	 * @return Returns the status.

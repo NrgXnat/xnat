@@ -49,9 +49,7 @@ public class ModifyEmail extends ModifyAction {
         final String submittedCsrf = data.getParameters().getString("XNAT_CSRF");
         final String sessionCsrf = (String) data.getSession().getAttribute("XNAT_CSRF");
         if (!StringUtils.equals(submittedCsrf, sessionCsrf)) {
-            final String errorMessage = SecureAction.csrfTokenErrorMessage(data.getRequest());
-            AdminUtils.sendAdminEmail("Possible phishing or intrusion Attempt", "The XNAT_CSRF token was not properly set in the session when someone tried to change a password.\n" + errorMessage);
-            throw new Exception("INVALID CSRF (" + errorMessage + ")");
+            SecureAction.handleCsrfTokenError(data.getRequest());
         }
         
         setDataAndContext(data, context);

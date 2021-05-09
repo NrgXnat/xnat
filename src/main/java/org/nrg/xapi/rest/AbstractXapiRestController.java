@@ -76,19 +76,7 @@ public abstract class AbstractXapiRestController {
      * @return The user object for the current session, or null if the user object can't be found.
      */
     protected UserI getSessionUser() {
-        final Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof UserI) {
-            log.debug("Found principal for user: {}", ((UserI) principal).getUsername());
-            return (UserI) principal;
-        }
-        try {
-            return Users.getGuest();
-        } catch (UserNotFoundException e) {
-            log.warn("Tried to get guest user but couldn't find it.", e);
-        } catch (UserInitException e) {
-            log.error("Tried to get guest user but got a user init error.", e);
-        }
-        return null;
+        return Users.getUserPrincipal(SecurityContextHolder.getContext().getAuthentication().getPrincipal());
     }
 
     /**

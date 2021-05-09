@@ -12,6 +12,7 @@ package org.nrg.xft.utils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTTool;
@@ -19,22 +20,25 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.springframework.util.ResourceUtils;
 
-import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import javax.annotation.Nullable;
 
 @SuppressWarnings({"RedundantThrows", "DuplicateThrows"})
 @Slf4j
@@ -460,55 +464,51 @@ public  class FileUtils {
     }
 
     /**
-     * @param file
+     * Reads the contents of the specified file and returns the contents in a list of strings.
      *
-     * @return ArrayList of Strings (one string for each line in the file)
+     * @param file The file to be read.
+     *
+     * @return A list of strings (one string for each line in the file)
      */
     public static List<String> FileLinesToArrayList(final File file) throws FileNotFoundException, IOException {
-        return IOUtils.readLines(new FileInputStream(file), Charset.defaultCharset());
+        // BOMInputStream detects byte-order marks in encoded text and removes them to return plain text.
+        try (final InputStream input = new BOMInputStream(new FileInputStream(file))) {
+            return IOUtils.readLines(input, Charset.defaultCharset());
+        }
     }
 
-    public static List<List<String>> CSVFileToArrayList(File f) throws FileNotFoundException, IOException {
-        ArrayList<List<String>> all  = new ArrayList<>();
-        List<String>            rows = FileLinesToArrayList(f);
-        for (String row : rows)
-        {
-            all.add(XftStringUtils.CommaDelimitedStringToArrayList(row));
-        }
-        all.trimToSize();
-        return all;
+    public static List<List<String>> CSVFileToArrayList(final File file) throws FileNotFoundException, IOException {
+        return FileLinesToArrayList(file).stream().map(XftStringUtils::CommaDelimitedStringToArrayList).collect(Collectors.toList());
     }
 
     public static int CountFiles(File src, boolean stopAt1) {
-        if (src.isDirectory()) {
-            if (stopAt1) {
-                return HasFiles(src) ? 1 : 0;
-            }
-            int count = 0;
-            try (Stream<Path> stream = Files.walk(src.toPath())) {
-                count += stream
-                        .filter(file -> !Files.isDirectory(file))
-                        .count();
-            } catch (IOException e) {
-                // Don't throw checked exceptions to match previous signature
-                throw new RuntimeException(e);
-            }
-            return count;
-        } else {
+        if (!src.isDirectory()) {
             return 1;
         }
+        if (stopAt1) {
+            return HasFiles(src) ? 1 : 0;
+        }
+        int count = 0;
+        try (Stream<Path> stream = Files.walk(src.toPath())) {
+            count += stream
+                .filter(file -> !Files.isDirectory(file))
+                .count();
+        } catch (IOException e) {
+            // Don't throw checked exceptions to match previous signature
+            throw new RuntimeException(e);
+        }
+        return count;
     }
 
     public static boolean HasFiles(File src) {
-        if (src.isDirectory()) {
-            try (Stream<Path> stream = Files.walk(src.toPath())) {
-                return stream.anyMatch(file -> !Files.isDirectory(file));
-            } catch (IOException e) {
-                // Don't throw checked exceptions to match previous signature
-                throw new RuntimeException(e);
-            }
-        } else {
+        if (!src.isDirectory()) {
             return true;
+        }
+        try (final Stream<Path> stream = Files.walk(src.toPath())) {
+            return stream.anyMatch(file -> !Files.isDirectory(file));
+        } catch (IOException e) {
+            // Don't throw checked exceptions to match previous signature
+            throw new RuntimeException(e);
         }
     }
 

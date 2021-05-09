@@ -43,7 +43,7 @@ import java.util.Properties;
 public class NotificationsPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String NOTIFICATIONS_TOOL_ID = "notifications";
 
-    private static final String USER_REG_EMAIL        = "Welcome to the SITE_NAME Web Archive!<br><br>You can now log on to the SITE_NAME at:<a href=\"SITE_URL\">SITE_URL</a><br><br>Your username is: USER_USERNAME<br><br><br>For support, contact the <a href=\"mailto:ADMIN_EMAIL?subject=SITE_NAME Assistance\">SITE_NAME Management </A>";
+    private static final String USER_REG_EMAIL        = "Welcome to the SITE_NAME Web Archive!<br><br>You can now log on to the SITE_NAME at: <a href=\"SITE_URL\">SITE_URL</a><br><br>Your username is: USER_USERNAME<br><br><br>For support, contact the <a href=\"mailto:ADMIN_EMAIL?subject=SITE_NAME Assistance\">SITE_NAME Management </a>";
     private static final String FORGOT_USERNAME_EMAIL = "\nYou requested your username, which is: USER_USERNAME\n<br><br><br>Please login to the site for additional user information <a href=\"SITE_URL\">SITE_NAME</a>.\n";
     private static final String FORGOT_PASSWORD_EMAIL = "Dear USER_FIRSTNAME USER_LASTNAME,\nPlease click this link to reset your password: <a href=\"RESET_URL\">RESET_URL</a> <br/>\r\nThis link will expire in 24 hours.";
 

@@ -55,8 +55,6 @@ import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -65,26 +63,29 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
 
 @SuppressWarnings({"WeakerAccess", "SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Slf4j
 public class Users {
-    public static final String                  ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-auth-provider";
-    public static final String                  ROLE_ANONYMOUS              = "ROLE_ANONYMOUS";
-    public static final String                  ROLE_ADMIN                  = "ROLE_ADMIN";
-    public static final String                  ROLE_DATA_ADMIN             = "ROLE_" + ALL_DATA_ADMIN_GROUP;
-    public static final String                  ROLE_DATA_ACCESS            = "ROLE_" + ALL_DATA_ACCESS_GROUP;
-    public static final String                  ROLE_USER                   = "ROLE_USER";
-    public static final SimpleGrantedAuthority  AUTHORITY_ANONYMOUS         = new SimpleGrantedAuthority(ROLE_ANONYMOUS);
-    public static final SimpleGrantedAuthority  AUTHORITY_ADMIN             = new SimpleGrantedAuthority(ROLE_ADMIN);
-    public static final SimpleGrantedAuthority  AUTHORITY_DATA_ADMIN        = new SimpleGrantedAuthority(ROLE_DATA_ADMIN);
-    public static final SimpleGrantedAuthority  AUTHORITY_DATA_ACCESS       = new SimpleGrantedAuthority(ROLE_DATA_ACCESS);
-    public static final SimpleGrantedAuthority  AUTHORITY_USER              = new SimpleGrantedAuthority(ROLE_USER);
-    public static final List<GrantedAuthority>  AUTHORITIES_ANONYMOUS       = Collections.singletonList(AUTHORITY_ANONYMOUS);
-    public static final List<GrantedAuthority>  AUTHORITIES_ADMIN           = new ArrayList<>(Arrays.asList(AUTHORITY_ADMIN, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ADMIN      = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ADMIN, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_DATA_ACCESS     = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
-    public static final List<GrantedAuthority>  AUTHORITIES_USER            = Collections.singletonList(AUTHORITY_USER);
+    public static final String                 GUEST_USERNAME              = "guest";
+    public static final String                 ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-auth-provider";
+    public static final String                 ROLE_ANONYMOUS              = "ROLE_ANONYMOUS";
+    public static final String                 ROLE_ADMIN                  = "ROLE_ADMIN";
+    public static final String                 ROLE_DATA_ADMIN             = "ROLE_" + ALL_DATA_ADMIN_GROUP;
+    public static final String                 ROLE_DATA_ACCESS            = "ROLE_" + ALL_DATA_ACCESS_GROUP;
+    public static final String                 ROLE_USER                   = "ROLE_USER";
+    public static final SimpleGrantedAuthority AUTHORITY_ANONYMOUS         = new SimpleGrantedAuthority(ROLE_ANONYMOUS);
+    public static final SimpleGrantedAuthority AUTHORITY_ADMIN             = new SimpleGrantedAuthority(ROLE_ADMIN);
+    public static final SimpleGrantedAuthority AUTHORITY_DATA_ADMIN        = new SimpleGrantedAuthority(ROLE_DATA_ADMIN);
+    public static final SimpleGrantedAuthority AUTHORITY_DATA_ACCESS       = new SimpleGrantedAuthority(ROLE_DATA_ACCESS);
+    public static final SimpleGrantedAuthority AUTHORITY_USER              = new SimpleGrantedAuthority(ROLE_USER);
+    public static final List<GrantedAuthority> AUTHORITIES_ANONYMOUS       = Collections.singletonList(AUTHORITY_ANONYMOUS);
+    public static final List<GrantedAuthority> AUTHORITIES_ADMIN           = new ArrayList<>(Arrays.asList(AUTHORITY_ADMIN, AUTHORITY_USER));
+    public static final List<GrantedAuthority> AUTHORITIES_DATA_ADMIN      = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ADMIN, AUTHORITY_USER));
+    public static final List<GrantedAuthority> AUTHORITIES_DATA_ACCESS     = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
+    public static final List<GrantedAuthority> AUTHORITIES_USER            = Collections.singletonList(AUTHORITY_USER);
 
     /**
      * Returns the currently configured user management service.  You can customize the implementation returned by
@@ -146,6 +147,37 @@ public class Users {
             _authorities.put(qualified, new SimpleGrantedAuthority(qualified));
         }
         return _authorities.get(qualified);
+    }
+
+    /**
+     * Tries to get a user object from the submitted parameter. If the object's a {@link UserI} object, it just returns
+     * that. If it's a <b>String</b>, it tries to retrieve the user object with that username. Otherwise it returns the
+     * guest user.
+     *
+     * @param principal The principal to coerce into a {@link UserI} object.
+     *
+     * @return The user object for the submitted principal.
+     */
+    public static UserI getUserPrincipal(final Object principal) {
+        if (principal instanceof UserI) {
+            log.debug("Found principal for user: {}", ((UserI) principal).getUsername());
+            return (UserI) principal;
+        }
+        try {
+            if (principal instanceof String) {
+                final UserI user = getUser((String) principal);
+                if (user != null) {
+                    log.debug("Found principal for user: {}", principal);
+                    return user;
+                }
+            }
+            return Users.getGuest();
+        } catch (UserNotFoundException e) {
+            log.warn("Tried to get guest user but couldn't find it.", e);
+        } catch (UserInitException e) {
+            log.error("Tried to get guest user but got a user init error.", e);
+        }
+        return null;
     }
 
     /**

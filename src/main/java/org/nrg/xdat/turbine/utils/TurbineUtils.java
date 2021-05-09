@@ -824,7 +824,6 @@ public class TurbineUtils {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static void OutputSessionParameters(RunData data) {
         if (data != null) {
             logger.debug("\n\nSession Parameters");
@@ -1529,7 +1528,6 @@ public class TurbineUtils {
      * @param filename     The suggested filename for downloaded content.
      * @param isAttachment Indicates whether the content is an attachment or inline.
      */
-    @SuppressWarnings("unchecked")
     public static void setContentDisposition(HttpServletResponse response, String filename, boolean isAttachment) {
         if (response.containsHeader(CONTENT_DISPOSITION)) {
             throw new IllegalStateException("A content disposition header has already been added to this response.");
@@ -1553,15 +1551,10 @@ public class TurbineUtils {
             XDAT.setGuestUserDetails();
             final String destination = data.getTemplateInfo().getScreenTemplate();
             data.getParameters().add("nextPage", destination);
-            if (!data.getAction().equalsIgnoreCase("")) {
-                data.getParameters().add("nextAction", data.getAction());
-            } else {
-                data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
-            }
+            data.getParameters().add("nextAction", StringUtils.defaultIfBlank(data.getAction(), Turbine.getConfiguration().getString("action.login")));
             return allowGuestAccess;
-        } else {
-            return !(!allowGuestAccess && user.isGuest());
         }
+        return !(!allowGuestAccess && user.isGuest());
     }
 
     public boolean isNullObject(final Object object) {

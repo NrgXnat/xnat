@@ -94,7 +94,7 @@
         <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.1.0</nrg.ecat.version>
-        <nrg.extattr.version>4.3.0</nrg.extattr.version>
+        <nrg.extattr.version>4.3.1</nrg.extattr.version>
         <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>

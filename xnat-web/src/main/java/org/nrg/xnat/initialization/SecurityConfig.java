@@ -10,7 +10,7 @@
 package org.nrg.xnat.initialization;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
-import static org.nrg.xdat.security.helpers.Users.GUEST_USERNAME;
+import static org.nrg.xdat.security.helpers.Users.DEFAULT_GUEST_USERNAME;
 import static org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED;
 
 import lombok.extern.slf4j.Slf4j;
@@ -298,7 +298,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .and().httpStrictTransportSecurity().disable()
             .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
             .and().csrf().disable()
-            .anonymous().key(Users.ANONYMOUS_AUTH_PROVIDER_KEY).principal(GUEST_USERNAME)
+            .anonymous().key(Users.ANONYMOUS_AUTH_PROVIDER_KEY).principal(DEFAULT_GUEST_USERNAME)
             .and().logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser");
 
         // If we can get the default channel processing filter as a bean, we could remove this.

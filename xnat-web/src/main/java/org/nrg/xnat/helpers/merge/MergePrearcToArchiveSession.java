@@ -9,14 +9,13 @@
 
 package org.nrg.xnat.helpers.merge;
 
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.model.*;
-import org.nrg.xdat.om.*;
+import org.nrg.xdat.om.XnatAbstractresource;
+import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
@@ -24,20 +23,26 @@ import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
-import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.data.Status;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariables;
 
 @Slf4j
 public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesessiondata> {
+    public static final String PROJECT               = "project";
+    public static final String LABEL                 = "label";
+    public static final String SUBJECT_ID            = "subject_ID";
+    public static final String DEFAULT_BACKUP_FOLDER = "merge";
+    public static final String CATALOG_BACKUP        = "catalog_bk";
+    public static final String XML_EXTENSION         = ".xml";
+
+    private final PrearcSession _prearcSession;
+
     public MergePrearcToArchiveSession(Object control, final PrearcSession prearcSession, final XnatImagesessiondata src, final String srcRootPath, final File destDIR, final XnatImagesessiondata existing, final String destRootPath, boolean addFilesToExisting, boolean overwrite_files, SaveHandlerI<XnatImagesessiondata> saver, final UserI u, final EventMetaI now) {
         super(control, prearcSession.getSessionDir(), src, srcRootPath, destDIR, existing, destRootPath, addFilesToExisting, overwrite_files, saver, u, now);
         setAnonymizer(new PrearcSessionAnonymizer(src, src.getProject(), srcDIR.getAbsolutePath()));
@@ -46,73 +51,64 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
 
     @Override
     public String getCacheBKDirName() {
-        return "merge";
+        return DEFAULT_BACKUP_FOLDER;
     }
 
     @Override
     public void finalize(final XnatImagesessiondata session) {
-        PrearcUtils.setupScans(session,  destRootPath.replace('\\', '/'));
+        PrearcUtils.setupScans(session, destRootPath);
     }
 
     @Override
     public void postSave(final XnatImagesessiondata session) {
-        PrearcUtils.cleanupScans(session, destRootPath.replace('\\', '/'), c);
+        PrearcUtils.cleanupScans(session, destRootPath, c);
     }
 
     @Override
-    public MergeSessionsA.Results<XnatImagesessiondata> mergeSessions(final XnatImagesessiondata src, final String srcRootPath, final XnatImagesessiondata dest, final String destRootPath, final File rootBackUp) throws ClientException, ServerException {
-        if (dest == null) {
-            return new Results<>(src);
+    public MergeSessionsA.Results<XnatImagesessiondata> mergeSessions(final XnatImagesessiondata original, final String sourcePath, final XnatImagesessiondata destination, final String destinationPath, final File backupFolder) throws ClientException, ServerException {
+        if (destination == null) {
+            return new Results<>(original);
         }
 
-        final Results<XnatImagesessiondata> results   = new Results<>();
-        final List<XnatImagescandataI>      srcScans  = src.getScans_scan();
-        final List<XnatImagescandataI>      destScans = dest.getScans_scan();
-        final String srcProject  = src.getProject();
-        final String destProject = dest.getProject();
+        final Results<XnatImagesessiondata> results            = new Results<>();
+        final List<XnatImagescandataI>      sourceScans        = original.getScans_scan();
+        final List<XnatImagescandataI>      destinationScans   = destination.getScans_scan();
+        final String                        sourceProject      = original.getProject();
+        final String                        destinationProject = destination.getProject();
 
         final List<File> toDelete = new ArrayList<>();
         processing("Merging new meta-data into existing meta-data.");
         try {
-            for (final XnatImagescandataI srcScan : srcScans) {
-                final XnatImagescandataI destScan = MergeUtils.getMatchingScan(srcScan, destScans);
-                if (destScan == null) {
-                    dest.addScans_scan(srcScan);
+            for (final XnatImagescandataI sourceScan : sourceScans) {
+                final XnatImagescandataI destinationScan = MergeUtils.getMatchingScan(sourceScan, destinationScans);
+                if (destinationScan == null) {
+                    destination.addScans_scan(sourceScan);
                 } else {
-                    final List<XnatAbstractresourceI> source      = srcScan.getFile();
-                    final List<XnatAbstractresourceI> destination = destScan.getFile();
-
-                    for (final XnatAbstractresourceI srcRes : source) {
-                        final XnatAbstractresourceI destRes = MergeUtils.getMatchingResource(srcRes, destination);
-                        if (destRes == null) {
-                            destScan.addFile(srcRes);
-                        } else {
-                            if (destRes instanceof XnatResourcecatalogI) {
-                                MergeSessionsA.Results<File> r = mergeCatalogs(srcProject, srcRootPath, (XnatResourcecatalogI) srcRes,
-                                        destProject, destRootPath, (XnatResourcecatalogI) destRes);
-                                if (r != null) {
-                                    toDelete.add(r.result);
-                                    results.addAll(r);
-                                } else {
-                                    CatalogUtils.populateStats((XnatAbstractresource) srcRes, srcRootPath);
-                                }
-                            } else if (destRes instanceof XnatResourceseriesI) {
-                                srcRes.setLabel(srcRes.getLabel() + "2");
-                                srcScan.addFile(destRes);
-
-                                destScan.addFile(srcRes);
-                            } else if (destRes instanceof XnatResourceI) {
-                                srcRes.setLabel(srcRes.getLabel() + "2");
-                                srcScan.addFile(destRes);
-
-                                destScan.addFile(srcRes);
+                    final List<XnatAbstractresourceI> destinationScanResources = destinationScan.getFile();
+                    for (final XnatAbstractresourceI sourceScanResource : sourceScan.getFile()) {
+                        final XnatAbstractresourceI destinationScanResource = MergeUtils.getMatchingResource(sourceScanResource, destinationScanResources);
+                        if (destinationScanResource instanceof XnatResourcecatalogI) {
+                            final MergeSessionsA.Results<File> result = mergeCatalogs(sourceProject, sourcePath, (XnatResourcecatalogI) sourceScanResource, destinationProject, destinationPath, (XnatResourcecatalogI) destinationScanResource);
+                            if (result != null) {
+                                toDelete.add(result.result);
+                                results.addAll(result);
+                            } else {
+                                CatalogUtils.populateStats((XnatAbstractresource) sourceScanResource, sourcePath);
                             }
+                        } else if (destinationScanResource instanceof XnatResourceseriesI) {
+                            sourceScanResource.setLabel(sourceScanResource.getLabel() + "2");
+                            sourceScan.addFile(destinationScanResource);
+                            destinationScan.addFile(sourceScanResource);
+                        } else if (destinationScanResource instanceof XnatResourceI) {
+                            sourceScanResource.setLabel(sourceScanResource.getLabel() + "2");
+                            sourceScan.addFile(destinationScanResource);
+                            destinationScan.addFile(sourceScanResource);
+                        } else {
+                            destinationScan.addFile(sourceScanResource);
                         }
                     }
                 }
             }
-
-
         } catch (MergeCatCatalog.DCMEntryConflict e) {
             failed("Duplicate DCM UID cannot be merged at this time.");
             throw new ClientException(Status.CLIENT_ERROR_CONFLICT, e.getMessage(), e);
@@ -121,46 +117,38 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
             throw new ServerException(e.getMessage(), e);
         }
 
-        final File backup = new File(rootBackUp, "catalog_bk");
+        final File backup = new File(backupFolder, CATALOG_BACKUP);
         if (!backup.mkdirs() && !backup.exists()) {
             throw new ServerException("Unable to create back-up folder: " + backup.getAbsolutePath());
         }
 
-        final List<Callable<Boolean>> followup = new ArrayList<>();
-        followup.add(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                try {
-                    int count = 0;
-                    for (File f : toDelete) {
-                        File catBkDir = new File(backup, "" + count++);
-                        if (!catBkDir.mkdirs() && !catBkDir.exists()) {
-                            throw new ServerException("Unable to create back-up folder: " + catBkDir.getAbsolutePath());
-                        }
-
-                        FileUtils.MoveFile(f, new File(catBkDir, f.getName()), false);
-                    }
-                    return Boolean.TRUE;
-                } catch (Exception e) {
-                    throw new ServerException(e.getMessage(), e);
-                }
-            }
-        });
-
-        if (src.getXSIType().equals(dest.getXSIType())) {
+        if (StringUtils.equals(original.getXSIType(), destination.getXSIType())) {
             try {
-                src.copyValuesFrom(dest);
+                original.copyValuesFrom(destination);
             } catch (Exception e) {
                 failed("Failed to merge upload into existing data.");
                 throw new ServerException(e.getMessage(), e);
             }
-
-            results.setResult(src);
+            results.setResult(original);
         } else {
-            results.setResult(dest);
+            results.setResult(destination);
         }
 
-        results.getBeforeDirMerge().addAll(followup);
+        results.getBeforeDirMerge().add(() -> {
+            try {
+                final AtomicInteger count = new AtomicInteger();
+                for (final File file : toDelete) {
+                    final File catalogBackupFolder = new File(backup, Integer.toString(count.getAndIncrement()));
+                    if (!catalogBackupFolder.mkdirs() && !catalogBackupFolder.exists()) {
+                        throw new ServerException("Unable to create back-up folder: " + catalogBackupFolder.getAbsolutePath());
+                    }
+                    FileUtils.MoveFile(file, new File(catalogBackupFolder, file.getName()), false);
+                }
+                return Boolean.TRUE;
+            } catch (Exception e) {
+                throw new ServerException(e.getMessage(), e);
+            }
+        });
         return results;
     }
 
@@ -169,7 +157,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         // Now that we're at the project level, let's re-anonymize.
         final boolean wasAnonymized = !_prearcSession.getSessionData().getPreventAnon() && anonymizer.call();
 
-        final File sessionXml = new File(srcDIR.getPath() + ".xml");
+        final File sessionXml = new File(srcDIR.getPath() + XML_EXTENSION);
 
         // If anonymization wasn't performed or the session XML doesn't exist yet...
         if (!wasAnonymized || !sessionXml.exists()) {
@@ -178,10 +166,10 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
 
         // Otherwise, we need to rebuild the session XML to match the anonymized DICOM.
-        final Map<String, String> params = Maps.newLinkedHashMap();
-        params.put("project", StringUtils.defaultString(src.getProject(), ""));
-        params.put("label", StringUtils.defaultString(src.getLabel(), ""));
-        params.put("subject_ID", getSubjectId(src));
+        final Map<String, String> params = new LinkedHashMap<>();
+        params.put(PROJECT, StringUtils.defaultString(src.getProject(), ""));
+        params.put(LABEL, StringUtils.defaultString(src.getLabel(), ""));
+        params.put(SUBJECT_ID, getSubjectId(src));
 
         final Map<String, Object> sessionValues = removePrearcVariables(_prearcSession.getAdditionalValues());
         for (final String key : sessionValues.keySet()) {
@@ -203,9 +191,6 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     }
 
     private String getSubjectId(final XnatImagesessiondata session) {
-        final XnatSubjectdata subject = session.getSubjectData();
-        return subject != null ? subject.getLabel() : "";
+        return Optional.ofNullable(session.getSubjectId()).orElseGet(() -> session.getSubjectData() != null ? session.getSubjectData().getId() : "");
     }
-
-    private final PrearcSession _prearcSession;
 }

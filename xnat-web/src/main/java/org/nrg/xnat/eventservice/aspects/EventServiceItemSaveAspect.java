@@ -201,14 +201,11 @@ public class EventServiceItemSaveAspect {
                 }
             } else if (isItemA(item, XnatType.SUBJECT_ASSESSOR)) {
                 XnatSubjectassessordataI subjectAssessor = item instanceof XnatSubjectassessordataI ? (XnatSubjectassessordataI) item : new XnatSubjectassessordata(item);
-                Boolean alreadyStored = xnatObjectIntrospectionService.storedInDatabase(subjectAssessor);
-                if (!alreadyStored){
-                    triggerSubjectAssessorCreate(subjectAssessor, user);
-                }
+                Boolean subAssessorAlreadyStored = xnatObjectIntrospectionService.storedInDatabase(subjectAssessor);
 
                 if (isItemA(item, XnatType.SESSION)) {
                     XnatImagesessiondataI session = item instanceof XnatImagesessiondataI ? (XnatImagesessiondataI) item : new XnatImagesessiondata(item);
-                    if (!alreadyStored) {
+                    if (!subAssessorAlreadyStored) {
                         log.debug("New Session Data Save" + " : xsiType:" + item.getXSIType());
 
                         // ** Proceed with save operation ** //
@@ -234,6 +231,15 @@ public class EventServiceItemSaveAspect {
                         }
                     }
                 }
+
+                // If subject assessor hasn't already been allowed to complete save, do it now
+                if (proceedingReturn == null) {
+                    proceedingReturn = proceedAndCaptureException(joinPoint);
+                }
+                if (proceedingReturn != null && proceedingReturn.throwable == null && !subAssessorAlreadyStored){
+                    triggerSubjectAssessorCreate(subjectAssessor, user);
+                }
+
                 if(log.isDebugEnabled() && sw.isRunning()) {
                     sw.stop();
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");

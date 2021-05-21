@@ -377,6 +377,12 @@
             __searchGroups.filter('.' + method).removeClass('disabled').
                 find(INPUTS).prop('disabled', false).removeClass('disabled');
 
+            // select an option in the by-id selectors
+            if (method === 'by-id') {
+                __searchGroups.filter('.'+method).
+                    find('select').find('option').first().prop('selected','selected');
+            }
+
             // update the radio buttons/checkboxes
             __searchMethodInputs.prop('checked',false);
             __searchMethodInputs.filter('.' + method).prop('checked', true);

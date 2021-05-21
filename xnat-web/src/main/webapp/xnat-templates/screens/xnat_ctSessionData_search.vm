@@ -106,7 +106,7 @@
             <input type="radio" class="search-method by-id" value="by-id" name="search-by"></label>
         </h3>
 
-        <select name="xnat:ctSessionData.COMBO0_FIELDS">
+        <select name="xnat:ctSessionData.COMBO0_FIELDS" required>
             <option value="xnat:ctSessionData/ID_in,xnat:ctSessionData/label_in,xnat:ctSessionData/sharing/share/label_in" #if($!search.getWebFormValue("xnat:ctSessionData.COMBO0_FIELDS")=="xnat:ctSessionData/ID_in,xnat:ctSessionData/label_in,xnat:ctSessionData/sharing/share/label_in")SELECTED#end>$displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID</option>
             <option value="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in" #if($!search.getWebFormValue("xnat:ctSessionData.COMBO0_FIELDS")=="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in")SELECTED#end>$displayManager.getSingularDisplayNameForSubject().toUpperCase()</option>
         </select>

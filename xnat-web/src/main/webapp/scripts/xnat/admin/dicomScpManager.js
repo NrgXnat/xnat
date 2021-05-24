@@ -144,6 +144,9 @@ var XNAT = getObject(XNAT || {});
 
         item = getObject(item);
 
+        if (item['identifier'] === undefined) item['identifier'] = 'dicomObjectIdentifier';
+
+
         var $container = spawn('div.dicom-scp-editor-container');
 
         // spawn the editor form directly into the dialog (no template)
@@ -186,6 +189,11 @@ var XNAT = getObject(XNAT || {});
                     identifierSelect.closest('.panel-element')
                                     .hidden(false)
 
+                } else {
+                    // explicitly store the default XNAT identifier value with the SCP receiver     definition
+                    $form.find('#scp-identifier').parents('.panel-element').empty().append(
+                        '<input type="hidden" name="identifier" value="dicomObjectIdentifier" />'
+                    );
                 }
 
                 if (isNew) { item.enabled = true }

@@ -372,7 +372,10 @@
                 isChecked = this.checked;
 
             __searchGroups.addClass('disabled').
-                find(INPUTS).not(SEARCH_METHOD_CKBOXES).changeVal('').prop('disabled', true).addClass('disabled');
+                find(INPUTS).not(SEARCH_METHOD_CKBOXES).not('input[type=hidden]').changeVal('');
+
+            __searchGroups.
+                find(INPUTS).not(SEARCH_METHOD_CKBOXES).prop('disabled', true).addClass('disabled');
 
             __searchGroups.filter('.' + method).removeClass('disabled').
                 find(INPUTS).prop('disabled', false).removeClass('disabled');

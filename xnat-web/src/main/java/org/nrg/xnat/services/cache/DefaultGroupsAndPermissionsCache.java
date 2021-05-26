@@ -13,7 +13,7 @@ import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.*;
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.helpers.Groups.*;
-import static org.nrg.xdat.security.helpers.Users.GUEST_USERNAME;
+import static org.nrg.xdat.security.helpers.Users.DEFAULT_GUEST_USERNAME;
 import static org.nrg.xft.event.XftItemEventI.*;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -674,8 +674,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     if (StringUtils.isNotBlank(access)) {
                         switch (access) {
                             case "public":
-                                if (getActionElementDisplays(GUEST_USERNAME).get(SecurityManager.CREATE).stream().noneMatch(CONTAINS_MR_SESSION)) {
-                                    initActionElementDisplays(GUEST_USERNAME, true);
+                                if (getActionElementDisplays(DEFAULT_GUEST_USERNAME).get(SecurityManager.CREATE).stream().noneMatch(CONTAINS_MR_SESSION)) {
+                                    initActionElementDisplays(DEFAULT_GUEST_USERNAME, true);
                                 }
 
                             case "protected":
@@ -694,8 +694,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                 return updateProjectRelatedCaches(xsiType, id, true);
 
                             case "public":
-                                if (getActionElementDisplays(GUEST_USERNAME).get(SecurityManager.CREATE).stream().noneMatch(CONTAINS_MR_SESSION)) {
-                                    initActionElementDisplays(GUEST_USERNAME, true);
+                                if (getActionElementDisplays(DEFAULT_GUEST_USERNAME).get(SecurityManager.CREATE).stream().noneMatch(CONTAINS_MR_SESSION)) {
+                                    initActionElementDisplays(DEFAULT_GUEST_USERNAME, true);
                                 }
 
                             case "protected":
@@ -741,7 +741,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         evict(GUEST_CACHE_ID);
         evict(GUEST_ACTION_READ);
         resetGuestBrowseableElementDisplays();
-        initActionElementDisplays(GUEST_USERNAME, true);
+        initActionElementDisplays(DEFAULT_GUEST_USERNAME, true);
 
         final Set<String> readableCountCacheIds = new HashSet<>(getCacheIdsForUserReadableCounts());
         if (affectsOtherDataTypes) {
@@ -1618,7 +1618,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private boolean isGuest(final String username) {
-        return _guest != null ? StringUtils.equalsIgnoreCase(_guest.getUsername(), username) : StringUtils.equalsIgnoreCase(GUEST_USERNAME, username);
+        return _guest != null ? StringUtils.equalsIgnoreCase(_guest.getUsername(), username) : StringUtils.equalsIgnoreCase(DEFAULT_GUEST_USERNAME, username);
     }
 
     private List<UserGroupI> getUserGroupList(final List<String> groupIds) {
@@ -1926,12 +1926,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final String USER_ELEMENT_PREFIX                = "user";
     private static final String ELEMENT_ACCESS_MANAGERS_PREFIX     = "eam";
     private static final String GROUPS_ELEMENT_PREFIX              = "groups";
-    private static final String GUEST_ACTION_READ                  = getCacheIdForActionElements(GUEST_USERNAME);
+    private static final String GUEST_ACTION_READ                  = getCacheIdForActionElements(DEFAULT_GUEST_USERNAME);
 
     private static final Pattern REGEX_EXTRACT_USER_FROM_CACHE_ID   = Pattern.compile("^(?<prefix>" + ACTIONS_PREFIX + "|" + USER_ELEMENT_PREFIX + "):(?<username>[^:]+)(?<remainder>:.*)?$");
     private static final Pattern REGEX_USER_READABLE_COUNTS         = Pattern.compile("^(?<prefix>" + USER_ELEMENT_PREFIX + "):(?<username>[^:]+):" + READABLE + "$");
     private static final Pattern REGEX_USER_PROJECT_ACCESS_CACHE_ID = Pattern.compile("^" + USER_ELEMENT_PREFIX + ":(?<username>[A-z0-9_]+):" + XnatProjectdata.SCHEMA_ELEMENT_NAME + ":(?<access>[A-z]+)$");
-    private static final String  GUEST_CACHE_ID                     = getCacheIdForUserElements(GUEST_USERNAME, BROWSEABLE);
+    private static final String  GUEST_CACHE_ID                     = getCacheIdForUserElements(DEFAULT_GUEST_USERNAME, BROWSEABLE);
 
     private static final Predicate<ElementDisplay> CONTAINS_MR_SESSION = display -> StringUtils.equalsIgnoreCase(XnatMrsessiondata.SCHEMA_ELEMENT_NAME, display.getElementName());
 

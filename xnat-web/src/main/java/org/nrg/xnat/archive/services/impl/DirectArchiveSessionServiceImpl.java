@@ -3,10 +3,13 @@ package org.nrg.xnat.archive.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.ajax.Filter;
+import org.nrg.framework.ajax.hibernate.HibernateFilter;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
+import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.db.MaterializedView;
@@ -17,11 +20,14 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.archive.ArchivingException;
+import org.nrg.xnat.archive.entities.DirectArchiveSession;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.archive.services.DirectArchiveSessionService;
+import org.nrg.xnat.archive.xapi.DirectArchiveSessionPaginatedRequest;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
+import org.nrg.xnat.services.cache.DefaultGroupsAndPermissionsCache;
 import org.nrg.xnat.services.messaging.archive.DirectArchiveRequest;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.utils.WorkflowUtils;
@@ -33,7 +39,9 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.nrg.xft.event.XftItemEventI.CREATE;
 
@@ -43,10 +51,12 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     @Autowired
     public DirectArchiveSessionServiceImpl(final DirectArchiveSessionHibernateService directArchiveSessionHibernateService,
                                            final JmsTemplate jmsTemplate,
-                                           final XnatUserProvider receivedFileUserProvider) {
+                                           final XnatUserProvider receivedFileUserProvider,
+                                           final DefaultGroupsAndPermissionsCache groupsAndPermissionsCache) {
         this.directArchiveSessionHibernateService = directArchiveSessionHibernateService;
         this.jmsTemplate = jmsTemplate;
         this.receivedFileUserProvider = receivedFileUserProvider;
+        this.groupsAndPermissionsCache = groupsAndPermissionsCache;
     }
 
     @Override
@@ -162,6 +172,20 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         }
     }
 
+    @Override
+    public List<SessionData> getPaginated(UserI user, DirectArchiveSessionPaginatedRequest request) {
+        // restrict to projects user can access
+        Map<String, Filter> filtersMap = request.getFiltersMap();
+        HibernateFilter projectFilter = HibernateFilter.builder()
+                .values(groupsAndPermissionsCache.getProjectsForUser(user.getUsername(), SecurityManager.READ).toArray())
+                .operator(HibernateFilter.Operator.IN).build();
+        filtersMap.put("project", projectFilter);
+        request.setFiltersMap(filtersMap);
+
+        return directArchiveSessionHibernateService.getPaginated(request).stream()
+                .map(DirectArchiveSession::toSessionData).collect(Collectors.toList());
+    }
+
     private void saveSubject(XnatImagesessiondata session, EventMetaI c) throws Exception {
         UserI user = c.getUser();
         String project = session.getProject();
@@ -265,4 +289,5 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     private final JmsTemplate jmsTemplate;
     private final XnatUserProvider receivedFileUserProvider;
     private final DirectArchiveSessionHibernateService directArchiveSessionHibernateService;
+    private final DefaultGroupsAndPermissionsCache groupsAndPermissionsCache;
 }

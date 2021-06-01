@@ -1,9 +1,12 @@
 package org.nrg.xnat.archive.services;
 
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
+import org.nrg.xnat.archive.xapi.DirectArchiveSessionPaginatedRequest;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public interface DirectArchiveSessionService {
@@ -18,4 +21,5 @@ public interface DirectArchiveSessionService {
 
     void triggerArchive();
 
+    List<SessionData> getPaginated(UserI user, DirectArchiveSessionPaginatedRequest request);
 }

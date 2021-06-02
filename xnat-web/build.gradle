@@ -36,7 +36,6 @@ description "XNAT is an open-source imaging informatics software platform dedica
 repositories {
     mavenLocal()
     maven { url "https://www.dcm4che.org/maven2" }
-    jcenter()
     mavenCentral()
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }

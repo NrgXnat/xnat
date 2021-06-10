@@ -99,6 +99,7 @@ var XNAT = getObject(XNAT || {});
         // add a "find by ID" input field after the table renders
         let target = $('#'+directArchiveTableContainerId);
         target.empty();
+        target.show();
         directArchiveTable.history = XNAT.ui.ajaxTable.AjaxTable(XNAT.url.restUrl('/xapi/direct-archive'),
             'direct-archive-history-table', directArchiveTableContainerId, 'Direct archive', 'Sessions',
             directArchiveTableObject(), null, null, null,
@@ -107,5 +108,11 @@ var XNAT = getObject(XNAT || {});
         directArchiveTable.history.load();
     };
 
-    $(document).ready(directArchiveTable.init);
+    $(document).ready(function() {
+        XNAT.xhr.getJSON(XNAT.url.rootUrl('/xapi/dicomscp')).success(function(data) {
+            if (data.length > 0 && data.some(dr => dr.directArchive)) {
+                directArchiveTable.init();
+            }
+        });
+    });
 }));

@@ -78,14 +78,29 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
         //noinspection unchecked
         _cache = XDAT.getContextService().getBean(UserProjectCache.class);
-        _doCustomProcessing = (Boolean) _parameters.get(CUSTOM_PROC_PARAM);
-        _directArchive = (Boolean) _parameters.get(DIRECT_ARCHIVE_PARAM);
+        _doCustomProcessing = parseParam(CUSTOM_PROC_PARAM, false);
+        _directArchive = parseParam(DIRECT_ARCHIVE_PARAM, false);
 
         // spring beans
         _mizer = XDAT.getContextService().getBeanSafely(MizerService.class);
         _processorInstanceService = XDAT.getContextService().getBeanSafely(ArchiveProcessorInstanceService.class);
         _directArchiveSessionService = XDAT.getContextService().getBeanSafely(DirectArchiveSessionService.class);
         _directArchive &= _directArchiveSessionService != null;
+    }
+
+    private boolean parseParam(String paramName, boolean defaultValue) {
+        if (!_parameters.containsKey(paramName)) {
+            return defaultValue;
+        }
+        Object value = _parameters.get(paramName);
+        if (value instanceof String) {
+            return Boolean.parseBoolean((String) value);
+        } else if (value instanceof Boolean) {
+            return (Boolean) value;
+        } else {
+            log.error("{} is not a valid value for {}, using default {}", value, paramName, defaultValue);
+            return defaultValue;
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

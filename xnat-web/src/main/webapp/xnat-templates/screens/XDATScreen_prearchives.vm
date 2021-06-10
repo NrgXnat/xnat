@@ -31,7 +31,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 <div id="col_table"></div>
 
 <br>
-<div id="direct-archive-table" class="data-table-wrapper clean"></div>
+<div id="direct-archive-table" class="data-table-wrapper clean" style="display: none"></div>
 <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/xnat/app/scanTable/scanTable.css')"/>
 <script type="text/javascript" src="$content.getURI('scripts/prearchive/directArchive.js')"></script>
 

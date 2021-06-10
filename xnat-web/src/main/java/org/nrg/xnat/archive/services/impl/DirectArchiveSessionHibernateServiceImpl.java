@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nullable;
 import javax.transaction.Transactional;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -80,7 +81,9 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public void setStatusToQueuedArchiving(long id) throws NotFoundException {
-        setStatus(id, PrearcUtils.PrearcStatus.ARCHIVING);
+        DirectArchiveSession das = get(id);
+        das.setUploadDate(new Date());
+        setStatus(das, PrearcUtils.PrearcStatus.ARCHIVING, null);
     }
 
     @Override
@@ -111,6 +114,14 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     private void setStatus(long id, PrearcUtils.PrearcStatus status, @Nullable String message) throws NotFoundException {
         DirectArchiveSession das = get(id);
+        das.setStatus(status);
+        if (StringUtils.isNotBlank(message)) {
+            das.setMessage(message);
+        }
+        update(das);
+    }
+
+    private void setStatus(DirectArchiveSession das, PrearcUtils.PrearcStatus status, @Nullable String message) {
         das.setStatus(status);
         if (StringUtils.isNotBlank(message)) {
             das.setMessage(message);

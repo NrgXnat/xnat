@@ -837,10 +837,6 @@ public class CatalogUtils {
         final AtomicInteger added = new AtomicInteger(0);
         final AtomicInteger modded = new AtomicInteger(0);
 
-        //For resource stats
-        final AtomicLong size = new AtomicLong(0);
-        final AtomicInteger count = new AtomicInteger(0);
-
         //Build a hashmap so that instead of repeatedly looping through all the catalog entries,
         //comparing URI to our relative path, we can just do an O(1) lookup in our hashmap
         final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
@@ -933,6 +929,10 @@ public class CatalogUtils {
             //multiple catalog files
             return Pair.of(false, null);
         }
+
+        //For resource stats
+        final AtomicLong size = new AtomicLong(0);
+        final AtomicInteger count = new AtomicInteger(0);
         final AtomicBoolean modified = new AtomicBoolean(rtn_val == 1);
         int nRemoved = 0;
         if (removeMissingFiles || populateStats) {
@@ -947,10 +947,6 @@ public class CatalogUtils {
                     mapEntry.catalog.getEntries_entry().remove(mapEntry.entry);
                     modified.set(true);
                     nRemoved++;
-                    if (populateStats) {
-                        size.getAndAdd(-1 * getCatalogEntrySize(mapEntry.entry));
-                        count.getAndDecrement();
-                    }
                 }
             }
         }

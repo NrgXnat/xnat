@@ -23,6 +23,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 <script type="text/javascript">
 	window.XNAT.app.prearchive = {};
 	window.XNAT.app.prearchive.project="$!project";
+	window.XNAT.app.prearchive.hideArchiveBtn = (!$turbineUtils.isSiteAdmin($user) && $siteConfig.uiPrearchiveHideArchiveBtn);
 </script>
 
 <br>

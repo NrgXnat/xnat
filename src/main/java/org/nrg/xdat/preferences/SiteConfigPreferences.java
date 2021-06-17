@@ -1796,6 +1796,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     public boolean getUiHideDesktopClientDownload() {
         return getBooleanValue("uiHideDesktopClientDownload");
     }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiPrearchiveHideArchiveBtn() {
+        return getBooleanValue("uiPrearchiveHideArchiveBtn");
+    }
+
+    public void setUiPrearchiveHideArchiveBtn(final boolean uiPrearchiveHideArchiveBtn) {
+        try {
+            setBooleanValue(uiPrearchiveHideArchiveBtn, "uiPrearchiveHideArchiveBtn");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiPrearchiveHideArchiveBtn': something is very wrong here.", e);
+        }
+    }
     
     public boolean isComplete() {
         return getMissingInitSettings().size() == 0;

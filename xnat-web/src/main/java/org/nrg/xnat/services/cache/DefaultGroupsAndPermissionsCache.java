@@ -9,13 +9,6 @@
 
 package org.nrg.xnat.services.cache;
 
-import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
-import static org.nrg.xapi.rest.users.DataAccessApi.*;
-import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
-import static org.nrg.xdat.security.helpers.Groups.*;
-import static org.nrg.xdat.security.helpers.Users.DEFAULT_GUEST_USERNAME;
-import static org.nrg.xft.event.XftItemEventI.*;
-
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -80,6 +73,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
+import static org.nrg.xapi.rest.users.DataAccessApi.*;
+import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
+import static org.nrg.xdat.security.helpers.Groups.*;
+import static org.nrg.xdat.security.helpers.Users.DEFAULT_GUEST_USERNAME;
+import static org.nrg.xft.event.XftItemEventI.*;
 
 @SuppressWarnings("Duplicates")
 @Service("groupsAndPermissionsCache")
@@ -680,6 +680,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     final String access = Permissions.getProjectAccess(_template, id);
                     if (StringUtils.isNotBlank(access)) {
                         switch (access) {
+                            case "private":
+                                resetProjectCount();
+                                break;
+
                             case "public":
                                 if (getActionElementDisplays(DEFAULT_GUEST_USERNAME).get(SecurityManager.CREATE).stream().noneMatch(CONTAINS_MR_SESSION)) {
                                     initActionElementDisplays(DEFAULT_GUEST_USERNAME, true);

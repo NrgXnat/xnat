@@ -9,6 +9,8 @@ import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
+import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
+import org.nrg.xdat.bean.reader.XDATXMLReader;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Users;
@@ -21,6 +23,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.archive.ArchivingException;
+import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.archive.services.DirectArchiveSessionService;
@@ -31,13 +34,16 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.services.cache.DefaultGroupsAndPermissionsCache;
 import org.nrg.xnat.services.messaging.archive.DirectArchiveRequest;
+import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
+import org.xml.sax.SAXException;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.jms.Destination;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,17 +56,21 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static org.nrg.xft.event.XftItemEventI.CREATE;
+import static org.nrg.xnat.archive.Operation.Rebuild;
+import static org.nrg.xnat.archive.Operation.Separate;
 
 @Slf4j
 @Service
 public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionService {
     @Autowired
     public DirectArchiveSessionServiceImpl(final DirectArchiveSessionHibernateService directArchiveSessionHibernateService,
+                                           final Destination prearchiveOperationRequest,
                                            final JmsTemplate jmsTemplate,
                                            final XnatUserProvider receivedFileUserProvider,
                                            final DefaultGroupsAndPermissionsCache groupsAndPermissionsCache) {
         this.directArchiveSessionHibernateService = directArchiveSessionHibernateService;
         this.jmsTemplate = jmsTemplate;
+        this.prearchiveOperationDestination = prearchiveOperationRequest;
         this.receivedFileUserProvider = receivedFileUserProvider;
         this.groupsAndPermissionsCache = groupsAndPermissionsCache;
     }
@@ -114,15 +124,27 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             directArchiveSessionHibernateService.setStatusToQueuedArchiving(id);
         } catch (Exception e) {
             log.error("Unable to build DirectArchiveSession id={}, moving to prearchive", id, e);
-            moveToPrearchive(id, target, receivedFileUserProvider.get(), e);
+            moveToPrearchive(id, target, e);
         }
     }
 
     @Override
     public void archive(long id) throws NotFoundException, ArchivingException {
+        SessionData target = directArchiveSessionHibernateService.setStatusToArchivingAndReturn(id);
+        try {
+            // If PET/MR are to be separated, we have to go through the prearchive
+            if (handleSeparatePetMr(id, target)) {
+                return;
+            }
+        } catch (Exception e) {
+            log.error("Issue during move to prearchive for PET/MR split for DirectArchiveSession id={}", id, e);
+            directArchiveSessionHibernateService.setStatusToError(id, e);
+            return;
+        }
+
+        // Now, archive
         PersistentWorkflowI workflow = null;
         UserI user = receivedFileUserProvider.get();
-        SessionData target = directArchiveSessionHibernateService.setStatusToArchivingAndReturn(id);
         String location = target.getUrl();
         XnatImagesessiondata session;
         try {
@@ -136,12 +158,13 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             saveSubject(session, workflow.buildEvent());
             setupScans(session, location);
             saveSession(session, workflow.buildEvent());
+            Files.delete(Paths.get(location + ".xml"));
         } catch (Exception e) {
-            log.error("Unable to archive DirectArchiveSession id={}", id, e);
+            log.error("Unable to archive DirectArchiveSession id={}, attempting to move to prearchive", id, e);
             if (workflow != null) {
                 failWorkflow(workflow, e);
             }
-            moveToPrearchive(id, target, user, e);
+            moveToPrearchive(id, target, e);
             return;
         }
 
@@ -288,8 +311,35 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         }
     }
 
-    private void moveToPrearchive(long id, SessionData target, UserI user, @Nonnull Exception origException)
+    private boolean handleSeparatePetMr(long id, SessionData target) throws IOException, SAXException, NotFoundException {
+        if (!PrearcUtils.shouldSeparatePetMr(target.getProject())) {
+            // not splitting
+            return false;
+        }
+        final File sessionXml = new File(target.getUrl() + ".xml");
+        final XnatImagesessiondataBean bean = (XnatImagesessiondataBean) new XDATXMLReader().parse(sessionXml);
+        if (!(bean instanceof XnatPetmrsessiondataBean)) {
+            // nothing to split
+            return false;
+        }
+        moveToPrearchiveAndRequestSeparatePetMr(id, target);
+        return true;
+    }
+
+    private void moveToPrearchiveAndRequestSeparatePetMr(long id, SessionData target) throws NotFoundException {
+        doPrearchiveMove(id, target, Separate, PrearcUtils.PrearcStatus.RECEIVING, null);
+    }
+
+    private void moveToPrearchive(long id, SessionData target, Exception origException)
             throws NotFoundException {
+        doPrearchiveMove(id, target, Rebuild, null, origException);
+    }
+
+    private void doPrearchiveMove(long id, SessionData target, Operation nextOperation,
+                                  @Nullable PrearcUtils.PrearcStatus status,
+                                  @Nullable Exception origException)
+            throws NotFoundException {
+        UserI user = receivedFileUserProvider.get();
         try {
             File prearchivePath = PrearcUtils.getPrearcSessionDir(user, target.getProject(), target.getTimestamp(),
                     target.getFolderName(), true);
@@ -318,22 +368,33 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                 }
             }
 
-            // add exception info to prearchive log for Details view
-            File logFile = prearchivePath.toPath()
-                    .resolve(Paths.get( "logs", "directArchive" + id + ".log")).toFile();
-            Files.createDirectories(logFile.getParentFile().toPath());
-            try (FileWriter fileWriter = new FileWriter(logFile);
-                 PrintWriter printWriter = new PrintWriter(fileWriter)) {
-                printWriter.print("Attempt to direct-archive failed\n");
-                origException.printStackTrace(printWriter);
+            if (origException != null) {
+                // add exception info to prearchive log for Details view
+                File logFile = prearchivePath.toPath()
+                        .resolve(Paths.get("logs", "directArchive" + id + ".log")).toFile();
+                Files.createDirectories(logFile.getParentFile().toPath());
+                try (FileWriter fileWriter = new FileWriter(logFile);
+                     PrintWriter printWriter = new PrintWriter(fileWriter)) {
+                    printWriter.print("Attempt to direct-archive failed\n");
+                    origException.printStackTrace(printWriter);
+                }
             }
 
             // create db entry
             target.setUrl(prearchivePath.getAbsolutePath());
-            PrearcUtils.PrearcStatus status = Files.exists(xmlDest) ?
-                    PrearcUtils.PrearcStatus.ERROR : PrearcUtils.PrearcStatus.RECEIVING;
+            if (status == null) {
+                status = Files.exists(xmlDest) ?
+                        PrearcUtils.PrearcStatus.ERROR : PrearcUtils.PrearcStatus.RECEIVING;
+            }
             target.setStatus(status);
-            PrearcDatabase.eitherGetOrCreateSession(target, prearchivePath.getParentFile(), PrearchiveCode.AutoArchive);
+            PrearcDatabase.Either<SessionData, SessionData> sd = PrearcDatabase.eitherGetOrCreateSession(target,
+                    prearchivePath.getParentFile(), PrearchiveCode.AutoArchive);
+            SessionData prearchiveSession = sd.isLeft() ? sd.getLeft() : sd.getRight();
+            if (prearchiveSession != null && prearchiveSession.getStatus() == PrearcUtils.PrearcStatus.RECEIVING) {
+                jmsTemplate.convertAndSend(prearchiveOperationDestination,
+                        new PrearchiveOperationRequest(receivedFileUserProvider.get(), nextOperation,
+                                prearchiveSession, new File(prearchiveSession.getUrl())));
+            }
             directArchiveSessionHibernateService.delete(id);
         } catch (Exception e) {
             log.error("Unable to move {} to prearchive", target, e);
@@ -342,6 +403,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     private final JmsTemplate jmsTemplate;
+    private final Destination prearchiveOperationDestination;
     private final XnatUserProvider receivedFileUserProvider;
     private final DirectArchiveSessionHibernateService directArchiveSessionHibernateService;
     private final DefaultGroupsAndPermissionsCache groupsAndPermissionsCache;

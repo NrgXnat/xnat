@@ -238,25 +238,27 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         UserI user = c.getUser();
         String project = session.getProject();
         String subjectLabelOrId = StringUtils.firstNonBlank(session.getSubjectId(), session.getDcmpatientname());
-        // try by ID
-        XnatSubjectdata existing = XnatSubjectdata.getXnatSubjectdatasById(subjectLabelOrId, user, false);
-        if (existing == null) {
-            // try by label
-            existing = XnatSubjectdata.GetSubjectByProjectIdentifierCaseInsensitive(session.getProject(),
-                    subjectLabelOrId, user, false);
-        }
-        if (existing != null) {
-            session.setSubjectId(existing.getId());
-            return;
-        }
-        final XnatSubjectdata subject = new XnatSubjectdata(user);
-        subject.setProject(project);
-        subject.setLabel(subjectLabelOrId);
+        synchronized (this) {
+            // try by ID
+            XnatSubjectdata existing = XnatSubjectdata.getXnatSubjectdatasById(subjectLabelOrId, user, false);
+            if (existing == null) {
+                // try by label
+                existing = XnatSubjectdata.GetSubjectByProjectIdentifierCaseInsensitive(session.getProject(),
+                        subjectLabelOrId, user, false);
+            }
+            if (existing != null) {
+                session.setSubjectId(existing.getId());
+                return;
+            }
+            final XnatSubjectdata subject = new XnatSubjectdata(user);
+            subject.setProject(project);
+            subject.setLabel(subjectLabelOrId);
 
-        subject.setId(XnatSubjectdata.CreateNewID());
-        SaveItemHelper.authorizedSave(subject, user, false, false, c);
-        XDAT.triggerXftItemEvent(subject, CREATE);
-        session.setSubjectId(subject.getId());
+            subject.setId(XnatSubjectdata.CreateNewID());
+            SaveItemHelper.authorizedSave(subject, user, false, false, c);
+            XDAT.triggerXftItemEvent(subject, CREATE);
+            session.setSubjectId(subject.getId());
+        }
     }
 
     private void setSessionId(XnatImagesessiondata session) throws Exception {

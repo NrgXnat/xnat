@@ -1,7 +1,7 @@
 /*
  * core: org.nrg.xdat.configuration.mocks.MockUserService
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -12,17 +12,19 @@ package org.nrg.xdat.configuration.mocks;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.nrg.xdat.entities.XdatUserAuth;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
@@ -37,17 +39,31 @@ public class MockUserService extends AbstractHibernateEntityService<MockUser, Mo
 
     @Override
     public boolean exists(final String username) {
-        return getUser(username) != null;
+        try {
+            getUser(username);
+            return true;
+        } catch (UserNotFoundException ignored) {
+            return false;
+        }
+    }
+
+    @Nonnull
+    @Override
+    public UserI getUser(final String username) throws UserNotFoundException {
+        final UserI user = getDao().findByUniqueProperty("username", username);
+        if (user == null) {
+            throw new UserNotFoundException(username);
+        }
+        return user;
     }
 
     @Override
-    public UserI getUser(final String username) {
-        return getDao().findByUniqueProperty("username", username);
-    }
-
-    @Override
-    public UserI getUser(final Integer userId) {
-        return getDao().findByUniqueProperty("id", userId);
+    public UserI getUser(final Integer userId) throws UserNotFoundException {
+        final UserI user = getDao().findByUniqueProperty("id", userId);
+        if (user == null) {
+            throw new UserNotFoundException(Integer.toString(userId));
+        }
+        return user;
     }
 
     @Override

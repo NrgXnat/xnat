@@ -1,7 +1,7 @@
 /*
  * core: org.nrg.xdat.turbine.modules.actions.XDATRegisterUser
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -219,16 +219,15 @@ public class XDATRegisterUser extends VelocitySecureAction {
     }
 
     public void directRequest(final RunData data, final Context context, final UserI user) throws Exception {
-        String nextPage   = (String) TurbineUtils.GetPassedParameter("nextPage", data);
-        String nextAction = (String) TurbineUtils.GetPassedParameter("nextAction", data);
+        final String nextPage   = (String) TurbineUtils.GetPassedParameter("nextPage", data);
+        final String nextAction = (String) TurbineUtils.GetPassedParameter("nextAction", data);
 
         data.setScreenTemplate("Index.vm");
 
         if ((getPreferences().getUserRegistration() && !getPreferences().getEmailVerification()) || ((getPreferences().getUserRegistration() || getPreferences().getPar()) && hasPAR(data))) {
             if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
                 data.setAction(nextAction);
-                final VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
-                action.doPerform(data, context);
+                ((VelocityAction) ActionLoader.getInstance().getInstance(nextAction)).doPerform(data, context);
             } else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(Turbine.getConfiguration().getString("template.home"))) {
                 data.setScreenTemplate(nextPage);
             }
@@ -349,7 +348,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
             return required;
         }
         final Pattern pattern = VALIDATORS.get(name);
-        final String  value   = data.getParameters().getString(name);
+        final String  value   = StringUtils.trim(data.getParameters().getString(name));
         log.debug("Validating \"{}\" variable with value \"{}\" using pattern \"{}\"", name, value, pattern);
         return !pattern.matcher(value).matches();
     }

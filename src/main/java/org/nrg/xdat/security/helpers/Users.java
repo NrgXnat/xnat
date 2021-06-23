@@ -1,7 +1,7 @@
 /*
  * core: org.nrg.xdat.security.helpers.Users
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.ContextService;
@@ -62,6 +64,8 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
@@ -88,6 +92,63 @@ public class Users {
     public static final List<GrantedAuthority> AUTHORITIES_DATA_ADMIN      = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ADMIN, AUTHORITY_USER));
     public static final List<GrantedAuthority> AUTHORITIES_DATA_ACCESS     = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
     public static final List<GrantedAuthority> AUTHORITIES_USER            = Collections.singletonList(AUTHORITY_USER);
+    public static final String                 EXPRESSION_USERNAME         = "[A-z][A-z0-9_-]{2,16}";
+    public static final String                 EXPRESSION_EMAIL            = "[_A-Za-z0-9-]+(?:\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)*\\.[A-Za-z]{2,}";
+    public static final String                 EXPRESSION_COMBINED         = "^(?<username>" + EXPRESSION_USERNAME + ")[\\s]*<(?<email>" + EXPRESSION_EMAIL + ")>$";
+    public static final Pattern                PATTERN_USERNAME            = Pattern.compile("^" + EXPRESSION_USERNAME + "$");
+    public static final Pattern                PATTERN_EMAIL               = Pattern.compile("^" + EXPRESSION_EMAIL + "$");
+    public static final Pattern                PATTERN_COMBINED            = Pattern.compile(EXPRESSION_COMBINED);
+
+    /**
+     * Indicates whether the submitted username complies with requirements. Note that this doesn't check whether or not
+     * the username already exists on the system, just that it complies with XNAT's required format.
+     *
+     * @param username The username to check.
+     *
+     * @return Returns true if the username is valid, false otherwise.
+     */
+    public static boolean isValidUsername(final String username) {
+        return PATTERN_USERNAME.matcher(username).matches();
+    }
+
+    /**
+     * Indicates whether the submitted email address complies with requirements. Note that this doesn't check whether or
+     * not the email is already used on the system, just that it complies with the required format.
+     *
+     * @param email The email to check.
+     *
+     * @return Returns true if the username is valid, false otherwise.
+     */
+    public static boolean isValidEmail(final String email) {
+        return PATTERN_EMAIL.matcher(email).matches();
+    }
+
+    /**
+     * Indicates whether the submitted username and email address combination complies with requirements. Note that this
+     * doesn't check whether the username already exists or the email is already used on the system, just that the value
+     * complies with the required format.
+     *
+     * @param combined The combined username and email to check.
+     *
+     * @return Returns true if the username and email are valid, false otherwise.
+     */
+    public static boolean isValidUsernameAndEmail(final String combined) {
+        return PATTERN_COMBINED.matcher(combined).matches();
+    }
+
+    /**
+     * Indicates whether the submitted username and email address combination complies with requirements. Note that this
+     * doesn't check whether the username already exists or the email is already used on the system, just that the value
+     * complies with the required format.
+     *
+     * @param combined The combined username and email to check.
+     *
+     * @return Returns true if the username and email are valid, false otherwise.
+     */
+    public static Pair<String, String> extractUsernameAndEmail(final String combined) {
+        final Matcher matcher = PATTERN_COMBINED.matcher(combined);
+        return matcher.find() ? Pair.of(matcher.group("username"), matcher.group("email")) : ImmutablePair.nullPair();
+    }
 
     /**
      * Returns the currently configured user management service.  You can customize the implementation returned by
@@ -181,12 +242,10 @@ public class Users {
         }
         try {
             if (principal instanceof String) {
-                final UserI user = getUser((String) principal);
-                if (user != null) {
-                    log.debug("Found principal for user: {}", principal);
-                    return user;
-                }
+                log.debug("Found principal for user: {}", principal);
+                return getUser((String) principal);
             }
+            log.debug("Didn't find principal for user: {}, returning guest", principal);
             return Users.getGuest();
         } catch (UserNotFoundException e) {
             log.warn("Tried to get guest user but couldn't find it.", e);

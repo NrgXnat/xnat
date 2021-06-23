@@ -28,6 +28,7 @@ import org.nrg.xnat.archive.entities.DirectArchiveSession;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.archive.services.DirectArchiveSessionService;
 import org.nrg.xnat.archive.xapi.DirectArchiveSessionPaginatedRequest;
+import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
@@ -142,17 +143,24 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             return;
         }
 
-        // Now, archive
+        // Now, anonymize and archive
+        // No perms checking, just use received file user
+        boolean anonymized = false;
         PersistentWorkflowI workflow = null;
         UserI user = receivedFileUserProvider.get();
         String location = target.getUrl();
+        String project = target.getProject();
         XnatImagesessiondata session;
         try {
-            // No perms checking, just use received file user
-            session = new XNATSessionPopulater(user,
-                    new File(location),
-                    target.getProject(),
-                    false).populate();
+            session = populateSession(user, location, project);
+            if (!target.getPreventAnon()) {
+                anonymized = new ProjectAnonymizer(session, project, location).call();
+                if (anonymized) {
+                    // rebuild XML and update session
+                    PrearcUtils.buildSession(target);
+                    session = populateSession(user, location, project);
+                }
+            }
             setSessionId(session);
             workflow = createWorkflow(user, session);
             saveSubject(session, workflow.buildEvent());
@@ -163,6 +171,10 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             log.error("Unable to archive DirectArchiveSession id={}, attempting to move to prearchive", id, e);
             if (workflow != null) {
                 failWorkflow(workflow, e);
+            }
+            if (anonymized) {
+                // keep from anonymizing again
+                target.setPreventAnon(true);
             }
             moveToPrearchive(id, target, e);
             return;
@@ -177,6 +189,14 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             log.error("Issue after direct archive DirectArchiveSession id={}", id, e);
             failWorkflow(workflow, e);
         }
+    }
+
+    private XnatImagesessiondata populateSession(UserI user, String location, String project)
+            throws IOException, SAXException {
+        return new XNATSessionPopulater(user,
+                new File(location),
+                project,
+                false).populate();
     }
 
     @Override

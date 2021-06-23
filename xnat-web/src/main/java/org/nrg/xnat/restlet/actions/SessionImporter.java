@@ -258,16 +258,19 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
             try {
                 this.processing("Populating session");
                 final FinishImageUpload    finisher           = ListenerUtils.addListeners(this, new FinishImageUpload(listenerControl, user, session, destination, overrideExceptions, allowSessionMerge, true));
-                final XnatImagesessiondata imageSession       = new XNATSessionPopulater(user, session.getSessionDir(), session.getProject(), false).populate();
+                XnatImagesessiondata imageSession             = new XNATSessionPopulater(user, session.getSessionDir(), session.getProject(), false).populate();
+                final SessionData sessionData                 = PrearcDatabase.getSession(session.getFolderName(), session.getTimestamp(), session.getProject());
 
                 this.processing("Performing anonymization");
                 final SiteWideAnonymizer   siteWideAnonymizer = new SiteWideAnonymizer(imageSession, true);
-                siteWideAnonymizer.call();
+                if (siteWideAnonymizer.call()) {
+                    // rebuild XML
+                    PrearcUtils.buildSession(sessionData);
+                }
                 if (finisher.isAutoArchive()) {
                     this.processing("Archiving");
                     final List<String> urls = Collections.singletonList(finisher.call());
                     if (PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.QUEUED_DELETING)) {
-                        final SessionData sessionData = PrearcDatabase.getSession(session.getFolderName(), session.getTimestamp(), session.getProject());
                         final File        sessionDir  = session.getSessionDir();
                         XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Delete, sessionData, sessionDir));
                     }

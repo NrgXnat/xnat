@@ -344,6 +344,7 @@ var XNAT = getObject(XNAT || {});
                 .th({ addClass: 'left', html: '<b>AE Title</b>' })
                 .th('<b>Port</b>')
                 .th('<b>Identifier</b>').addClass((Object.keys(dicomScpManager.identifiers).length > 1) ? '' : 'hidden') // only show this if there are multiple identifiers
+                .th('<b>Archive Behavior</b>')
                 .th('<b>Enabled</b>')
                 .th('<b>Actions</b>');
 
@@ -439,6 +440,19 @@ var XNAT = getObject(XNAT || {});
             }, 'Delete');
         }
 
+        function displayBehavior(item){
+            var archiveBehavior = (item.directArchive) ? 'Direct Archive Behavior Enabled' : 'Uses Standard Prearchive Behavior';
+            var customRemapping = (item.customProcessing) ? 'Custom Remapping Enabled' : 'Uses Standard Anonymization';
+            var dqrEnabled = (item.identifier.slice(0,3) === 'dqr') ? 'DQR Routing Enabled' : 'Uses Standard Project Routing';
+            return spawn('ul', {
+                style: { 'margin': '0', 'padding-left': '1.5em' }
+            },[
+                [ 'li',archiveBehavior ],
+                [ 'li',customRemapping ],
+                [ 'li',dqrEnabled ]
+            ]);
+        }
+
         dicomScpManager.getAll().done(function(data){
             data.forEach(function(item){
                 // var identifierLabel = dicomScpManager.identifiers[item.identifier] || dicomScpManager.identifiers['dicomObjectIdentifier'];
@@ -448,6 +462,7 @@ var XNAT = getObject(XNAT || {});
                         .td([editLink(item, item.aeTitle)]).addClass('aeTitle')
                         .td([['div.mono.center', item.port]]).addClass('port')
                         .td(identifierLabel).addClass((Object.keys(dicomScpManager.identifiers).length > 1) ? '' : 'hidden') // only show this if there are multiple identifiers
+                        .td([displayBehavior(item)]).addClass('behavior')
                         .td([enabledCheckbox(item)]).addClass('status')
                         .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });

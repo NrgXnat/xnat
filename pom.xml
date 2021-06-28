@@ -2430,28 +2430,6 @@
 
     <repositories>
         <repository>
-            <id>dcm4che</id>
-            <name>dcm4che</name>
-            <url>https://www.dcm4che.org/maven2</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>jcenter</id>
-            <name>JCenter</name>
-            <url>https://jcenter.bintray.com</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
             <id>org.nrg.maven.artifacts.release</id>
             <name>XNAT Release Maven Repo</name>
             <url>https://nrgxnat.jfrog.io/nrgxnat/libs-release</url>

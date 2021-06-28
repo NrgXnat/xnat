@@ -9,36 +9,34 @@
 
 package org.nrg.xdat.security.services;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 
 @Service
+@Slf4j
 public class RoleRepositoryHolder implements RoleRepositoryServiceI {
-	public RoleRepositoryHolder(){
-		try {
-			roleRepositoryService = Class.forName(RoleRepositoryServiceI.DEFAULT_ROLE_REPO_SERVICE).asSubclass(RoleRepositoryServiceI.class).newInstance();
-		}
-		catch(Exception e){
-			logger.error("",e);
-		}
-	}
+    public RoleRepositoryHolder() {
+        try {
+            roleRepositoryService = Class.forName(RoleRepositoryServiceI.DEFAULT_ROLE_REPO_SERVICE).asSubclass(RoleRepositoryServiceI.class).newInstance();
+        } catch (Exception e) {
+            log.error("An error occurred trying to create the role repository service {}", RoleRepositoryServiceI.DEFAULT_ROLE_REPO_SERVICE, e);
+        }
+    }
 
-	public RoleRepositoryHolder(RoleRepositoryServiceI roleRepositoryService){
-		this.roleRepositoryService=roleRepositoryService;
-	}
+    public RoleRepositoryHolder(final RoleRepositoryServiceI roleRepositoryService) {
+        this.roleRepositoryService = roleRepositoryService;
+    }
 
-	public void setRoleRepositoryService(RoleRepositoryServiceI roleRepositoryService){
-		this.roleRepositoryService=roleRepositoryService;
-	}
+    public void setRoleRepositoryService(final RoleRepositoryServiceI roleRepositoryService) {
+        this.roleRepositoryService = roleRepositoryService;
+    }
 
-	@Override
-	public Collection<RoleDefinitionI> getRoles() {
-		return roleRepositoryService.getRoles();
-	}
+    @Override
+    public Collection<RoleDefinitionI> getRoles() {
+        return roleRepositoryService.getRoles();
+    }
 
-	private RoleRepositoryServiceI roleRepositoryService;
-	private final static Logger logger = Logger.getLogger(RoleRepositoryHolder.class);
-
+    private RoleRepositoryServiceI roleRepositoryService;
 }

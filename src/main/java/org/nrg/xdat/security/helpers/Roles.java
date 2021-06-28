@@ -1,7 +1,7 @@
 /*
  * core: org.nrg.xdat.security.helpers.Roles
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -64,7 +64,29 @@ public class Roles {
         return getRoleService().getRoles(user);
     }
 
-    private static RoleRepositoryHolder getRoleRepositoryService() {
+    public static RoleRepositoryServiceI getConfiguredRoleRepositoryService() {
+        final String className = XDAT.safeSiteConfigProperty("security.roleRepositoryService.default", "org.nrg.xdat.security.services.impl.RoleRepositoryServiceImpl");
+        log.info("Building new RoleRepositoryServiceI instance with implementation {}", className);
+        try {
+            return Class.forName(className).asSubclass(RoleRepositoryServiceI.class).newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            log.error("An error occurred trying to instantiate the configured role repository service.", e);
+            return null;
+        }
+    }
+
+    public static RoleServiceI getConfiguredRoleService() {
+        final String className = XDAT.safeSiteConfigProperty("security.roleService.default", "org.nrg.xdat.security.services.impl.RoleServiceImpl");
+        log.info("Building new RoleServiceI instance with implementation {}", className);
+        try {
+            return Class.forName(className).asSubclass(RoleServiceI.class).newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            log.error("An error occurred trying to instantiate the configured role service.", e);
+            return null;
+        }
+    }
+
+    public static RoleRepositoryHolder getRoleRepositoryService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
 
         // First find out if it exists in the application context.
@@ -79,16 +101,11 @@ public class Roles {
         //default to RoleRepositoryServiceImpl implementation (unless a different default is configured)
         //we can swap in other ones later by setting a default
         //we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
-        try {
-            String className = XDAT.safeSiteConfigProperty("security.roleRepositoryService.default", "org.nrg.xdat.security.services.impl.RoleRepositoryServiceImpl");
-            return new RoleRepositoryHolder((RoleRepositoryServiceI) Class.forName(className).newInstance());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            log.error("An error occurred trying to instantiate the configured role repository service.", e);
-        }
-        return null;
+        final RoleRepositoryServiceI service = getConfiguredRoleRepositoryService();
+        return service != null ? new RoleRepositoryHolder(service) : null;
     }
 
-    private static RoleHolder getRoleService() {
+    public static RoleHolder getRoleService() {
         // First find out if it exists in the application context.
         final ContextService contextService = XDAT.getContextService();
         if (contextService != null) {
@@ -101,14 +118,7 @@ public class Roles {
         //default to RoleServiceImpl implementation (unless a different default is configured)
         //we can swap in other ones later by setting a default
         //we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
-        try {
-            final String                     className = XDAT.safeSiteConfigProperty("security.roleService.default", "org.nrg.xdat.security.services.impl.RoleServiceImpl");
-            final NamedParameterJdbcTemplate template  = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
-            return new RoleHolder((RoleServiceI) Class.forName(className).newInstance(), template);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            log.error("An error occurred trying to instantiate the configured role service.", e);
-        }
-
-        return null;
+        final RoleServiceI service = getConfiguredRoleService();
+        return service != null ? new RoleHolder(service, XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class)) : null;
     }
 }

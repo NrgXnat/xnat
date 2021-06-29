@@ -25,6 +25,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.Operation;
+import org.nrg.xnat.archive.PrearcSessionArchiver;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.archive.services.DirectArchiveSessionService;
@@ -65,6 +66,8 @@ import static org.nrg.xnat.archive.Operation.Separate;
 @Slf4j
 @Service
 public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionService {
+    private static final Map<String, Object> EMPTY_MAP = Collections.emptyMap();
+
     @Autowired
     public DirectArchiveSessionServiceImpl(final DirectArchiveSessionHibernateService directArchiveSessionHibernateService,
                                            final Destination prearchiveOperationRequest,
@@ -174,10 +177,12 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                 }
             }
             setSessionId(session);
+            PrearcSessionArchiver.preArchive(user, session, EMPTY_MAP, null);
             workflow = createWorkflow(user, session);
             saveSubject(session, workflow.buildEvent());
             setupScans(session, location);
             saveSession(session, workflow.buildEvent());
+            PrearcSessionArchiver.postArchive(user, session, EMPTY_MAP);
             Files.delete(Paths.get(location + ".xml"));
         } catch (Exception e) {
             log.error("Unable to archive DirectArchiveSession id={}, attempting to move to prearchive", id, e);

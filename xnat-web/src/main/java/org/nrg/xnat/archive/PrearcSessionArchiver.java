@@ -941,7 +941,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         Boolean execute(UserI user, XnatImagesessiondata src, Map<String, Object> params, XnatImagesessiondata existing) throws ServerException, ClientException;
     }
 
-    private void postArchive(UserI user, XnatImagesessiondata src, Map<String, Object> params) {
+    public static void postArchive(UserI user, XnatImagesessiondata src, Map<String, Object> params) {
         try {
             List<Class<?>> classes = Reflection.getClassesForPackage("org.nrg.xnat.actions.postArchive");
 
@@ -961,7 +961,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         }
     }
 
-    private void preArchive(UserI user, XnatImagesessiondata src, Map<String, Object> params, XnatImagesessiondata existing) {
+    public static void preArchive(UserI user, XnatImagesessiondata src, Map<String, Object> params, XnatImagesessiondata existing) {
         List<Class<?>> classes;
         try {
             classes = Reflection.getClassesForPackage("org.nrg.xnat.actions.preArchive");

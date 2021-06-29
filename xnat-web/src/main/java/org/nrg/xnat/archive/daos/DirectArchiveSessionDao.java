@@ -28,17 +28,30 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
     }
 
     /**
-     * Find DirectArchiveSession by project, folderName, timestamp
+     * Find DirectArchiveSession by project, tag, name (per PrearcDatabase#eitherGetOrCreateSession)
      * @param session the sessiondata
      * @return the direct archive session entity or null if none found
      * @throws NonUniqueResultException if multiple sessions match
      */
     @Nullable
     public DirectArchiveSession findBySessionData(SessionData session) throws NonUniqueResultException {
+        return findByProjectTagName(session.getProject(), session.getTag(), session.getName());
+    }
+
+    /**
+     * Find DirectArchiveSession by project, tag, name (per PrearcDatabase#eitherGetOrCreateSession)
+     * @param project project
+     * @param tag studyInstanceUID
+     * @param name session name
+     * @return the direct archive session entity or null if none found
+     * @throws NonUniqueResultException if multiple sessions match
+     */
+    @Nullable
+    public DirectArchiveSession findByProjectTagName(String project, String tag, String name) throws NonUniqueResultException {
         Map<String, Object> properties = new HashMap<>();
-        properties.put("project", session.getProject());
-        properties.put("tag", session.getTag());
-        properties.put("name", session.getName());
+        properties.put("project", project);
+        properties.put("tag", tag);
+        properties.put("name", name);
         List<DirectArchiveSession> matches = findByProperties(properties);
         if (matches == null) {
             return null;

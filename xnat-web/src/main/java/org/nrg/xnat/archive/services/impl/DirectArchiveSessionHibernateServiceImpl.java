@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.daos.DirectArchiveSessionDao;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
@@ -17,6 +18,7 @@ import javax.transaction.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,6 +38,12 @@ public class DirectArchiveSessionHibernateServiceImpl
     @Override
     public SessionData findBySessionData(SessionData incoming) {
         DirectArchiveSession das = getDao().findBySessionData(incoming);
+        return das == null ? null : das.toSessionData();
+    }
+
+    @Override
+    public SessionData findByProjectTagName(UserI user, String project, String tag, String name) {
+        DirectArchiveSession das = getDao().findByProjectTagName(project, tag, name);
         return das == null ? null : das.toSessionData();
     }
 

@@ -20,6 +20,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.archive.ArchivingException;
@@ -50,6 +51,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -90,6 +92,16 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         if (id != null) {
             directArchiveSessionHibernateService.touch(id);
         }
+    }
+
+    @Override
+    public SessionData findByProjectTagName(UserI user, String project, String tag, String name)
+            throws InvalidPermissionException {
+        List<String> projects = groupsAndPermissionsCache.getProjectsForUser(user.getUsername(), SecurityManager.READ);
+        if (!projects.contains(project)) {
+            throw new InvalidPermissionException("direct archive project " + project);
+        }
+        return directArchiveSessionHibernateService.findByProjectTagName(user, project, tag, name);
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.nrg.xnat.archive.services;
 
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -12,6 +13,8 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
     void touch(long id) throws NotFoundException;
 
     SessionData findBySessionData(SessionData incoming);
+    SessionData findByProjectTagName(UserI user, String project, String tag, String name);
+
     SessionData create(SessionData initialize) throws ArchivingException;
 
     SessionData setStatusToBuildingAndReturn(long id) throws NotFoundException, ArchivingException;

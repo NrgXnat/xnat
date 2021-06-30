@@ -90,6 +90,11 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     @Override
+    public void delete(String project, long id) throws InvalidPermissionException, NotFoundException {
+        directArchiveSessionHibernateService.delete(project, id);
+    }
+
+    @Override
     public void touch(SessionData session) throws NotFoundException {
         Long id = session.getId();
         if (id != null) {
@@ -98,13 +103,8 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     @Override
-    public SessionData findByProjectTagName(UserI user, String project, String tag, String name)
-            throws InvalidPermissionException {
-        List<String> projects = groupsAndPermissionsCache.getProjectsForUser(user.getUsername(), SecurityManager.READ);
-        if (!projects.contains(project)) {
-            throw new InvalidPermissionException("direct archive project " + project);
-        }
-        return directArchiveSessionHibernateService.findByProjectTagName(user, project, tag, name);
+    public SessionData findByProjectTagName(String project, String tag, String name){
+        return directArchiveSessionHibernateService.findByProjectTagName(project, tag, name);
     }
 
     @Override

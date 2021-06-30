@@ -190,6 +190,7 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
         s.setUploadDate(uploadDate);
         s.setLastBuiltDate(lastBuiltDate);
         s.setStatus(status);
+        s.setMessage(message);
         s.setScan_date(scanDate);
         s.setScan_time(scanTime);
         s.setUrl(location);

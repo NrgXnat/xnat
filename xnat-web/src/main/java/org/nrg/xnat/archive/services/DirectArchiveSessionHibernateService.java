@@ -2,6 +2,7 @@ package org.nrg.xnat.archive.services;
 
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
@@ -11,9 +12,10 @@ import java.util.List;
 
 public interface DirectArchiveSessionHibernateService extends BaseHibernateService<DirectArchiveSession> {
     void touch(long id) throws NotFoundException;
+    void delete(String project, long id) throws InvalidPermissionException, NotFoundException;
 
     SessionData findBySessionData(SessionData incoming);
-    SessionData findByProjectTagName(UserI user, String project, String tag, String name);
+    SessionData findByProjectTagName(String project, String tag, String name);
 
     SessionData create(SessionData initialize) throws ArchivingException;
 

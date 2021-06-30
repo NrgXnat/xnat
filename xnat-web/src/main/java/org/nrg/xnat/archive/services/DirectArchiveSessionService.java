@@ -12,10 +12,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public interface DirectArchiveSessionService {
     void delete(SessionData session);
+    void delete(String project, long id) throws InvalidPermissionException, NotFoundException;
 
     void touch(SessionData session) throws NotFoundException;
 
-    SessionData findByProjectTagName(UserI sessionUser, String project, String tag, String name) throws InvalidPermissionException;
+    SessionData findByProjectTagName(String project, String tag, String name);
 
     SessionData getOrCreate(SessionData initialize, AtomicBoolean isNew) throws ArchivingException;
 

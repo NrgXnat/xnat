@@ -27,7 +27,7 @@ public final class SessionData implements Serializable {
     private PrearcStatus      status;
     private SessionDataTriple sessionTriple = new SessionDataTriple();
     private Date              scan_date;
-    private String            scan_time, subject, url, session, tag, source, visit, protocol, timeZone;
+    private String            scan_time, subject, url, session, tag, source, visit, protocol, timeZone, message;
     private PrearchiveCode autoArchive;
     private Boolean        preventAnon       = false;
     private Boolean        preventAutoCommit = false;
@@ -372,6 +372,15 @@ public final class SessionData implements Serializable {
 
     public SessionDataTriple getSessionDataTriple() {
         return sessionTriple;
+    }
+
+    @Nullable
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     @Override

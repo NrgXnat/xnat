@@ -88,12 +88,53 @@ var XNAT = getObject(XNAT || {});
                     td: {className: 'status word-wrapped'},
                     label: labelMap.status.label,
                     apply: function () {
-                        return this[labelMap.status.column];
+                        const status = this[labelMap.status.column];
+                        if (status.match(/^error/i)) {
+                            const message = this['message'];
+                            const project = this[labelMap.project.column];
+                            const id = this['id'];
+                            const statusSpan = spawn('span.text-error|title="' + message + '"', status);
+                            const statusActions = spawn("span.inline-actions", [
+                                spawn('i.fa.fa-times.da-delete|title="Delete"|data-project="'+ project + '"|data-id="' + id + '"')
+                            ]);
+                            return spawn("span", [statusSpan, statusActions]);
+                        } else {
+                            return status;
+                        }
                     }
                 }
             }
         }
     }
+
+    $(document).on('click', '.da-delete', function () {
+        const data = $(this).data();
+        XNAT.ui.dialog.open({
+            title: 'Delete',
+            content: 'Are you sure you want to delete this entry?',
+            buttons: [
+                {
+                    label: 'Yes',
+                    isDefault: true,
+                    close: true,
+                    action: function () {
+                        XNAT.xhr.delete({
+                            url: XNAT.url.restUrl('/xapi/direct-archive?project=' + data.project + "&id=" + data.id),
+                            success: directArchiveTable.history.reload,
+                            error: function (xhr) {
+                                XNAT.ui.dialog.message('Error', xhr.statusText + ': ' + xhr.responseText);
+                            }
+                        });
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    isDefault: false,
+                    close: true
+                }
+            ]
+        });
+    });
 
     directArchiveTable.init = directArchiveTable.refresh = function() {
         // add a "find by ID" input field after the table renders

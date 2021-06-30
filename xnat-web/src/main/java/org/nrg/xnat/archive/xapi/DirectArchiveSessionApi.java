@@ -4,8 +4,11 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.Project;
 import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.exception.InvalidPermissionException;
@@ -20,8 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @Slf4j
 @XapiRestController
@@ -44,13 +46,21 @@ public class DirectArchiveSessionApi extends AbstractXapiRestController {
         return new ResponseEntity<>(directArchiveSessionService.getPaginated(getSessionUser(), request), HttpStatus.OK);
     }
 
-    @XapiRequestMapping(method = GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @XapiRequestMapping(method = GET, produces = MediaType.APPLICATION_JSON_VALUE, restrictTo = AccessLevel.Read)
     @ApiOperation(value = "Get direct archive session")
-    public ResponseEntity<SessionData> getSession(@RequestParam String project,
-                                                    @RequestParam String tag,
-                                                    @RequestParam String name) throws InvalidPermissionException {
-        return new ResponseEntity<>(directArchiveSessionService.findByProjectTagName(getSessionUser(), project, tag, name),
+    public ResponseEntity<SessionData> getSession(@Project @RequestParam String project,
+                                                  @RequestParam String tag,
+                                                  @RequestParam String name) {
+        return new ResponseEntity<>(directArchiveSessionService.findByProjectTagName(project, tag, name),
                 HttpStatus.OK);
+    }
+
+    @XapiRequestMapping(method = DELETE, produces = MediaType.APPLICATION_JSON_VALUE, restrictTo = AccessLevel.Delete)
+    @ApiOperation(value = "Delete direct archive session")
+    public ResponseEntity<Void> delete(@Project @RequestParam String project,
+                                       @RequestParam long id) throws InvalidPermissionException, NotFoundException {
+        directArchiveSessionService.delete(project, id);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @ResponseStatus(value = HttpStatus.FORBIDDEN)

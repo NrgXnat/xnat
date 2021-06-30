@@ -426,7 +426,7 @@ public class UsersApi extends AbstractXapiRestController {
     public void usersIdEnabledFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, NotModifiedException, InitializationException {
         final UserI user = getUserManagementService().getUser(username);
         if (user.isEnabled() == flag) {
-            throw new NotModifiedException("Tried to set the enabled flag for user " + username + " to " + flag + ", which is already its value.");
+            return;
         }
         user.setEnabled(flag);
         try {
@@ -468,7 +468,7 @@ public class UsersApi extends AbstractXapiRestController {
     public void usersIdVerifiedFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @ApiParam(value = "The value to set for the verified status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, NotModifiedException, InitializationException {
         final UserI user = getUserManagementService().getUser(username);
         if (user.isVerified() == flag) {
-            throw new NotModifiedException("Tried to set the verified flag for user " + username + " to " + flag + ", which is already its value.");
+            return;
         }
         user.setVerified(flag);
         try {

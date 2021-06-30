@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.dcm4che2.io.DicomCodingException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xft.security.UserI;
@@ -20,6 +21,7 @@ import org.nrg.xft.utils.fileExtraction.Format;
 import org.nrg.xnat.helpers.ArchiveEntryFileWriterWrapper;
 import org.nrg.xnat.helpers.TarEntryFileWriterWrapper;
 import org.nrg.xnat.helpers.ZipEntryFileWriterWrapper;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
@@ -54,6 +56,8 @@ public final class DicomZipImporter extends ImporterHandlerA {
      */
     @Override
     public List<String> call() throws ClientException, ServerException {
+        ClientException nonDcmException = null;
+        boolean ignoreUnparsable = PrearcUtils.parseParam(params, IGNORE_UNPARSABLE_PARAM, false);
         final Set<String> uris = Sets.newLinkedHashSet();
         try {
             switch (format) {
@@ -62,7 +66,15 @@ public final class DicomZipImporter extends ImporterHandlerA {
                         ZipEntry ze;
                         while (null != (ze = zin.getNextEntry())) {
                             if (!ze.isDirectory()) {
-                                importEntry(new ZipEntryFileWriterWrapper(ze, zin), uris);
+                                try {
+                                    importEntry(new ZipEntryFileWriterWrapper(ze, zin), uris);
+                                } catch (ClientException e) {
+                                    if (ignoreUnparsable && e.getCause() instanceof DicomCodingException) {
+                                        nonDcmException = e;
+                                    } else {
+                                        throw e;
+                                    }
+                                }
                             }
                         }
                     }
@@ -77,7 +89,15 @@ public final class DicomZipImporter extends ImporterHandlerA {
                         TarArchiveEntry ze;
                         while (null != (ze = zin.getNextTarEntry())) {
                             if (!ze.isDirectory()) {
-                                importEntry(new TarEntryFileWriterWrapper(ze, zin), uris);
+                                try {
+                                    importEntry(new TarEntryFileWriterWrapper(ze, zin), uris);
+                                } catch (ClientException e) {
+                                    if (ignoreUnparsable && e.getCause() instanceof DicomCodingException) {
+                                        nonDcmException = e;
+                                    } else {
+                                        throw e;
+                                    }
+                                }
                             }
                         }
                     }
@@ -89,6 +109,9 @@ public final class DicomZipImporter extends ImporterHandlerA {
             throw new ClientException("unable to read data from file", e);
         }
 
+        if (uris.isEmpty() && nonDcmException != null) {
+            throw nonDcmException;
+        }
         return Lists.newArrayList(uris);
     }
 
@@ -107,4 +130,5 @@ public final class DicomZipImporter extends ImporterHandlerA {
     private final UserI               u;
     private final Map<String, Object> params;
     private final Format              format;
+    private static final String       IGNORE_UNPARSABLE_PARAM = "Ignore-Unparsable";
 }

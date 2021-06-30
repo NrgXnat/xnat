@@ -1074,4 +1074,19 @@ public class PrearcUtils {
             super(String.format("Unable to obtain lock on %4$s within %1$s/%2$s/%3$s", session.getProject(), session.getTimestamp(), session.getFolderName(), fileName), e);
         }
     }
+
+    public static boolean parseParam(Map<String, Object> parameters, String paramName, boolean defaultValue) {
+        if (!parameters.containsKey(paramName)) {
+            return defaultValue;
+        }
+        Object value = parameters.get(paramName);
+        if (value instanceof String) {
+            return Boolean.parseBoolean((String) value);
+        } else if (value instanceof Boolean) {
+            return (Boolean) value;
+        } else {
+            log.error("{} is not a valid value for {}, using default {}", value, paramName, defaultValue);
+            return defaultValue;
+        }
+    }
 }

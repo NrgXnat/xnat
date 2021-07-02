@@ -219,15 +219,6 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                     } else if (!StringUtils.isEmpty(expt_id)) {
                         prearcParameters.put("xnat:experimentData/label", expt_id);
                     }
-
-                    if (params.containsKey(PrearcImporterHelper.SUBJECT)) {
-                        prearcParameters.put("xnat:subjectAssessorData/subject_ID", prearcParameters.remove(PrearcImporterHelper.SUBJECT));
-                        params.remove(PrearcImporterHelper.SUBJECT);
-                    }
-                    if (params.containsKey(PrearcImporterHelper.SESSION)) {
-                        prearcParameters.put("xnat:experimentData/label", prearcParameters.remove(PrearcImporterHelper.SESSION));
-                        params.remove(PrearcImporterHelper.SESSION);
-                    }
                 }
             }
 

@@ -162,14 +162,14 @@ public class PrearcUtils {
                         "'. Data may be publicly accessible until archived.";
                 throw new Exception(message, e);
             }
-        }
 
-        try (final FileOutputStream fos = new FileOutputStream(xml)) {
-            final FileLock fl = fos.getChannel().lock();
-            try {
-                item.toXML(fos, false);
-            } finally {
-                fl.release();
+            try (final FileOutputStream fos = new FileOutputStream(xml)) {
+                final FileLock fl = fos.getChannel().lock();
+                try {
+                    item.toXML(fos, false);
+                } finally {
+                    fl.release();
+                }
             }
         }
     }

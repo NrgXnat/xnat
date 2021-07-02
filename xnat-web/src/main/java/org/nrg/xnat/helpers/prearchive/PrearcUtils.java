@@ -176,12 +176,6 @@ public class PrearcUtils {
 
     public static Map<String, Object> getAdditionalValues(Map<String, Object> params) {
         final Map<String, Object> additionalValues = XMLPathShortcuts.identifyUsableFields(params, XMLPathShortcuts.EXPERIMENT_DATA, false);
-        if (params.containsKey(PrearcImporterHelper.SUBJECT)) {
-            additionalValues.put("xnat:subjectAssessorData/subject_ID", params.remove(PrearcImporterHelper.SUBJECT));
-        }
-        if (params.containsKey(PrearcImporterHelper.SESSION)) {
-            additionalValues.put("xnat:experimentData/label", params.remove(PrearcImporterHelper.SESSION));
-        }
         if (params.containsKey("TIMEZONE")) {
             additionalValues.put("TIMEZONE", params.get("TIMEZONE"));
         }
@@ -906,6 +900,12 @@ public class PrearcUtils {
     public static void buildSession(final SessionData sd, final File sessionDir, final String session, final String timestamp,
                                     final String project, final String visit, final String protocol,
                                     final String timezone, final String source) throws PrearcDatabase.SyncFailedException {
+        buildSession(sd, sessionDir, session, sd.getSubject(), timestamp, project, visit, protocol, timezone, source);
+    }
+
+    public static void buildSession(final SessionData sd, final File sessionDir, final String session, final String timestamp,
+                                    final String project, final String subject, final String visit, final String protocol,
+                                    final String timezone, final String source) throws PrearcDatabase.SyncFailedException {
         final Map<String, String> params = new LinkedHashMap<>();
         if (!Strings.isNullOrEmpty(project) && !UNASSIGNED.equals(project)) {
             params.put("project", project);
@@ -914,9 +914,8 @@ public class PrearcUtils {
             params.put("separatePetMr", PrearcUtils.getSeparatePetMr());
         }
         params.put("label", session);
-        final String subject = sd.getSubject();
         if (!Strings.isNullOrEmpty(subject)) {
-            params.put("subject_ID", sd.getSubject());
+            params.put("subject_ID", subject);
         }
         if (!Strings.isNullOrEmpty(visit)) {
             params.put("visit", visit);

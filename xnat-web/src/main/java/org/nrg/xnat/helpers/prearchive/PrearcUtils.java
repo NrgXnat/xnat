@@ -36,22 +36,25 @@ import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.exception.InvalidValueException;
+import org.nrg.xft.exception.XftItemException;
+import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xnat.archive.XNATSessionBuilder;
+import org.nrg.xnat.helpers.PrearcImporterHelper;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder.Session;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.resource.ResourceException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -104,6 +107,88 @@ public class PrearcUtils {
 
     public static boolean shouldSeparatePetMr(final String project) {
         return getSeparatePetMr(project).equals("separate");
+    }
+
+    public static void addAdditionalValuesToXml(File f, Map<String, Object> additionalValues) throws Exception {
+        final String s = f.getAbsolutePath() + ".xml";
+        final File xml = new File(s);
+        if (!xml.exists()) {
+            throw new Exception("failed to load generated xml file ('" + xml.getName() + "'). " +
+                    "Data may be publicly accessible until archived.");
+        }
+
+        final SAXReader reader = new SAXReader(null);
+        final org.nrg.xft.XFTItem item = reader.parse(s);
+        for (Map.Entry<String, Object> entry : additionalValues.entrySet()) {
+            String key = entry.getKey();
+            if (key.startsWith("onBuild:")) {
+                key = key.substring(8);
+            }
+
+            Object value = entry.getValue();
+            if (value.toString().startsWith("format:")) {
+                value = value.toString().substring(7);
+                String[] chunks = value.toString().split(",");
+                String format = chunks[0];
+
+                Object[] formatValues = new Object[(chunks.length - 1)];
+                for (int i = 1; i < chunks.length; i++) {
+                    String chunk = chunks[i];
+                    if (chunk.startsWith("d:")) {
+                        //special handling for dates
+                        Date d = item.getDateProperty(chunk.substring(2));
+                        formatValues[(i - 1)] = d;
+                    } else {
+                        String v = item.getStringProperty(chunk);
+                        formatValues[(i - 1)] = v;
+                    }
+                }
+
+                value = String.format(format, formatValues);
+            }
+
+            try {
+                item.setProperty(key, value);
+            } catch (FieldNotFoundException e) {
+                String message = "Couldn't set field " + e.FIELD + " on item of type '" +
+                        item.getXSIType() + "' to value '" + value + "' (field not found): " + e.MESSAGE;
+                throw new XftItemException(message, e);
+            } catch (InvalidValueException e) {
+                String message = "Couldn't set field " + key + " on item of type '" +
+                        item.getXSIType() + "' to value '" + value + "' (invalid value): " + e.getMessage();
+                throw new XftItemException(message, e);
+            } catch (Throwable e) {
+                String message = "Failed to set appropriate field for '" + f.getName() +
+                        "'. Data may be publicly accessible until archived.";
+                throw new Exception(message, e);
+            }
+
+            try (final FileOutputStream fos = new FileOutputStream(xml)) {
+                final FileLock fl = fos.getChannel().lock();
+                try {
+                    item.toXML(fos, false);
+                } finally {
+                    fl.release();
+                }
+            }
+        }
+    }
+
+    public static Map<String, Object> getAdditionalValues(Map<String, Object> params) {
+        final Map<String, Object> additionalValues = XMLPathShortcuts.identifyUsableFields(params, XMLPathShortcuts.EXPERIMENT_DATA, false);
+        if (params.containsKey(PrearcImporterHelper.SUBJECT)) {
+            additionalValues.put("xnat:subjectAssessorData/subject_ID", params.remove(PrearcImporterHelper.SUBJECT));
+        }
+        if (params.containsKey(PrearcImporterHelper.SESSION)) {
+            additionalValues.put("xnat:experimentData/label", params.remove(PrearcImporterHelper.SESSION));
+        }
+        if (params.containsKey("TIMEZONE")) {
+            additionalValues.put("TIMEZONE", params.get("TIMEZONE"));
+        }
+        if (params.containsKey("SOURCE")) {
+            additionalValues.put("SOURCE", params.get("SOURCE"));
+        }
+        return additionalValues;
     }
 
     public enum PrearcStatus {
@@ -172,13 +257,13 @@ public class PrearcUtils {
                 String[] projectIds = StringUtils.split(requestedProject, ',');
                 for (final String projectId : projectIds) {
                     String cleanProject = cleanProject(projectId);
-                    if(cleanProject!=null || Roles.isSiteAdmin(user)) {
+                    if (cleanProject != null || Roles.isSiteAdmin(user)) {
                         projects.add(cleanProject);
                     }
                 }
             } else {
                 String cleanProject = cleanProject(requestedProject);
-                if(cleanProject!=null || Roles.isSiteAdmin(user)) {
+                if (cleanProject != null || Roles.isSiteAdmin(user)) {
                     projects.add(cleanProject);
                 }
             }
@@ -224,8 +309,8 @@ public class PrearcUtils {
      * 4/30/12- removed requirement that user object be not null.  null users are allowed here for administrative code that happens outside the permissions structure (like logging).
      * 4/30/12- refactored to prevent unnecessary database queries
      *
-     * @param username    Name of the user getting the directory.
-     * @param project Project abbreviation or alias
+     * @param username Name of the user getting the directory.
+     * @param project  Project abbreviation or alias
      * @return prearchive root directory
      * @throws ResourceException if the named project does not exist, or if the user does not
      *                           have create permission for it, or if the prearchive directory
@@ -268,10 +353,9 @@ public class PrearcUtils {
                 }
                 String arcSpecPathForProject = ArcSpecManager.GetInstance().getPrearchivePathForProject(project);
                 String newPathForProject = arcSpecPathForProject.replaceFirst("^/data/xnat/prearchive/", "");
-                if(!StringUtils.equals(arcSpecPathForProject,newPathForProject)){
+                if (!StringUtils.equals(arcSpecPathForProject, newPathForProject)) {
                     prearcPath = Paths.get(prearchRootPref, newPathForProject).toString();
-                }
-                else{
+                } else {
                     prearcPath = arcSpecPathForProject;
                 }
                 List<ArcProjectI> projectsList = ArcSpecManager.GetInstance().getProjects_project();
@@ -295,10 +379,9 @@ public class PrearcUtils {
                     }
                     String arcSpecPathForProject = proj.getPrearchivePath();
                     String newPathForProject = arcSpecPathForProject.replaceFirst("^/data/xnat/prearchive/", "");
-                    if(!StringUtils.equals(arcSpecPathForProject,newPathForProject)){
+                    if (!StringUtils.equals(arcSpecPathForProject, newPathForProject)) {
                         prearcPath = Paths.get(prearchRootPref, newPathForProject).toString();
-                    }
-                    else{
+                    } else {
                         prearcPath = arcSpecPathForProject;
                     }
                     proj.setProperty("arc:project/paths/prearchivePath", Paths.get(ArcSpecManager.GetInstance().getGlobalPrearchivePath(), proj.getId()).toString());
@@ -330,7 +413,7 @@ public class PrearcUtils {
      * @param project If the project is null, it is the unassigned project
      *                project abbreviation or alias
      * @return true if the user has permissions to access the project, false otherwise
-     * @throws Exception When something goes wrong.
+     * @throws Exception   When something goes wrong.
      * @throws IOException When an error occurs reading or writing data.
      */
     @SuppressWarnings("unused")
@@ -483,7 +566,7 @@ public class PrearcUtils {
     public static File getPrearcSessionDir(final UserI user, final String project, final String timestamp, final String session, final boolean allowUnassigned) throws Exception {
         if (user == null || timestamp == null || session == null) {
             throw new IllegalArgumentException(String.format("Invalid prearchive session: user %s; timestamp %s; session %s",
-                                                             user, timestamp, session));
+                    user, timestamp, session));
         }
         return new File(new File(getPrearcDir(user, project, allowUnassigned), timestamp), session);
     }
@@ -494,7 +577,7 @@ public class PrearcUtils {
 
         public boolean accept(final File f) {
             return scanCatalogPattern.matcher(f.getName()).matches()
-                   || conversionLogPattern.matcher(f.getName()).matches();
+                    || conversionLogPattern.matcher(f.getName()).matches();
         }
     };
 
@@ -598,7 +681,7 @@ public class PrearcUtils {
     private static File getLogDir(final String project, final String timestamp, final String session) throws Exception {
         if (timestamp == null || session == null) {
             throw new IllegalArgumentException(String.format("Invalid prearchive session: timestamp %s; session %s",
-                                                             timestamp, session));
+                    timestamp, session));
         }
         final XnatUserProvider provider = XDAT.getContextService().getBeanSafely("receivedFileUserProvider", XnatUserProvider.class);
         final UserI receivedFileUser = provider != null ? provider.get() : Users.getUser(XDAT.getSiteConfigurationProperty("receivedFileUser"));
@@ -819,7 +902,7 @@ public class PrearcUtils {
         buildSession(sd, new File(sd.getUrl()), sd.getName(), sd.getTimestamp(), sd.getProject(), sd.getVisit(),
                 sd.getProtocol(), sd.getTimeZone(), sd.getSource());
     }
-    
+
     public static void buildSession(final SessionData sd, final File sessionDir, final String session, final String timestamp,
                                     final String project, final String visit, final String protocol,
                                     final String timezone, final String source) throws PrearcDatabase.SyncFailedException {
@@ -852,7 +935,7 @@ public class PrearcUtils {
 
         try {
             final File sessionXmlFile = new File(sessionDir.getPath() + ".xml");
-            log.info("Attempting to build prearchive session in folder '{}' into the session XML file '{}'", 
+            log.info("Attempting to build prearchive session in folder '{}' into the session XML file '{}'",
                     sessionDir.getPath(), sessionXmlFile.getPath());
 
             final Boolean success = new XNATSessionBuilder(sessionDir, sessionXmlFile, true, params).call();
@@ -910,7 +993,7 @@ public class PrearcUtils {
     }
 
     private static void updateResourceWithArchivePathAndPopulateStats(XnatAbstractresource resource, String root,
-                                                               boolean setContentToRawIfMissing) {
+                                                                      boolean setContentToRawIfMissing) {
         resource.prependPathsWith(root);
 
         if (setContentToRawIfMissing && XNATUtils.isNullOrEmpty(resource.getContent())) {
@@ -945,7 +1028,7 @@ public class PrearcUtils {
      * @param filename The filename to be locked.
      * @return PrearcFileLock
      * @throws SessionFileLockException When an attempt is made to access a locked file.
-     * @throws IOException When an error occurs reading or writing data.
+     * @throws IOException              When an error occurs reading or writing data.
      */
     public static PrearcFileLock lockFile(final SessionDataTriple session, final String filename) throws SessionFileLockException, IOException {
         //putting these in a subdirectory of the cache space

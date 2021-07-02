@@ -129,20 +129,7 @@ public class PrearcImporterHelper extends PrearcImporterA{
 		
 		final List<File> files = new ArrayList<>();
 		try {
-			final Map<String,Object> additionalValues=XMLPathShortcuts.identifyUsableFields(params,XMLPathShortcuts.EXPERIMENT_DATA,false);
-			if(params.containsKey(SUBJECT)){
-				additionalValues.put("xnat:subjectAssessorData/subject_ID", params.remove(SUBJECT));
-			}
-
-			if(params.containsKey(SESSION)){
-				additionalValues.put("xnat:experimentData/label", params.remove(SESSION));
-			}
-			if(params.containsKey("TIMEZONE")){
-				additionalValues.put("TIMEZONE", params.get("TIMEZONE"));
-			}
-			if(params.containsKey("SOURCE")){
-				additionalValues.put("SOURCE", params.get("SOURCE"));
-			}
+			Map<String, Object> additionalValues = PrearcUtils.getAdditionalValues(params);
 			if(StringUtils.isEmpty(old_timestamp))old_timestamp=new_timestamp;
 								
 			if(destination_specified || project==null){

@@ -15,10 +15,12 @@ import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
+import org.nrg.xft.exception.XftItemException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.PrearcImporterFactory;
 import org.nrg.xnat.event.archive.ArchiveStatusProducer;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;
@@ -63,82 +65,18 @@ public class ImageUploadHelper extends ArchiveStatusProducer implements Callable
 		for(final File f : sessions){
 			response.add(f);
 
-			if (f.isDirectory())
-			{
-				final String s = f.getAbsolutePath() + ".xml";
-				final File xml = new File(s);
-				if (xml.exists())
-				{
-					if(this.additionalValues!=null && this.additionalValues.size()>0){
-						processing("Setting additional values for '" + f.getName() + "'");
-						final SAXReader reader = new SAXReader(null);
-						try {   
-							final org.nrg.xft.XFTItem item = reader.parse(s);
-							for (Map.Entry<String, Object> entry :additionalValues.entrySet())
-							{
-								String key=entry.getKey();
-								if(key.startsWith("onBuild:")){
-									key=key.substring(8);
-								}
-								
-								Object value=entry.getValue();
-								if(value.toString().startsWith("format:")){
-									value=value.toString().substring(7);
-									String [] chunks=value.toString().split(",");
-									String format=chunks[0];
-									
-									Object [] formatValues=new Object[(chunks.length-1)];
-									for(int i=1;i<chunks.length;i++){
-										String chunk=chunks[i];
-										if(chunk.startsWith("d:")){
-											//special handling for dates
-											Date d=item.getDateProperty(chunk.substring(2));
-											formatValues[(i-1)]=d;
-										}else{
-											String v=item.getStringProperty(chunk);
-											formatValues[(i-1)]=v;
-										}
-									}
-									
-									value=String.format(format, formatValues);
-								}
-
-								try {
-									item.setProperty(key, value);
-								} catch (FieldNotFoundException e) {
-									String message = "Couldn't set field " + e.FIELD + " on item of type '" +
-											item.getXSIType() + "' to value '" + value + "' (field not found): " + e.MESSAGE;
-									log.warn(message);
-									warning(message);
-								} catch (InvalidValueException e) {
-									String message = "Couldn't set field " + key + " on item of type '" +
-											item.getXSIType() + "' to value '" + value + "' (invalid value): " + e.getMessage();
-									log.warn(message);
-									warning(message);
-								} catch (Throwable e) {
-									final String message = "Failed to set appropriate field for '" + f.getName() +
-											"'. Data may be publicly accessible until archived.";
-									log.error(message, e);
-									failed(message);
-								}
-							}
-
-							try (final FileOutputStream fos = new FileOutputStream(xml)) {
-								final FileLock fl = fos.getChannel().lock();
-								try {
-									item.toXML(fos, false);
-								} finally {
-									fl.release();
-								}
-							}
-						} catch (Throwable e) {
-							log.error("Failed to parse " + s, e);
-							failed("failed to set appropriate field(s) for '" + f.getName() + "': " + e.getMessage() +
-									". Data may be publicly accessible until archived.");
-						}
-					}
-				} else {
-					failed("failed to load generated xml file ('" + xml.getName() + "').  Data may be publicly accessible until archived.");
+			if (f.isDirectory()) {
+				if(this.additionalValues!=null && this.additionalValues.size()>0){
+					processing("Setting additional values for '" + f.getName() + "'");
+					try {
+                        PrearcUtils.addAdditionalValuesToXml(f, additionalValues);
+                    } catch (XftItemException e) {
+                        log.warn(e.getMessage());
+                        warning(e.getMessage());
+                    } catch (Throwable e) {
+                        log.error(e.getMessage(), e);
+                        failed(e.getMessage());
+                    }
 				}
 			}
 		}

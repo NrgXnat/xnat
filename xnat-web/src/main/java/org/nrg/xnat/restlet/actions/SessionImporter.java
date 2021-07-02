@@ -20,7 +20,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.exception.XftItemException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.FinishImageUpload;
 import org.nrg.xnat.helpers.PrearcImporterHelper;
@@ -28,7 +27,6 @@ import org.nrg.xnat.helpers.merge.SiteWideAnonymizer;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
-import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
@@ -260,26 +258,20 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
             try {
                 this.processing("Populating session");
                 final FinishImageUpload    finisher           = ListenerUtils.addListeners(this, new FinishImageUpload(listenerControl, user, session, destination, overrideExceptions, allowSessionMerge, true));
-                final XnatImagesessiondata imageSession       = new XNATSessionPopulater(user, session.getSessionDir(), session.getProject(), false).populate();
-                final SessionData sessionData                 = session.getSessionData();
-                final File        sessionDir                  = session.getSessionDir();
+                XnatImagesessiondata imageSession             = new XNATSessionPopulater(user, session.getSessionDir(), session.getProject(), false).populate();
+                final SessionData sessionData                 = PrearcDatabase.getSession(session.getFolderName(), session.getTimestamp(), session.getProject());
 
                 this.processing("Performing anonymization");
                 final SiteWideAnonymizer   siteWideAnonymizer = new SiteWideAnonymizer(imageSession, true);
                 if (siteWideAnonymizer.call()) {
                     // rebuild XML
                     PrearcUtils.buildSession(sessionData);
-                    try {
-                        PrearcUtils.addAdditionalValuesToXml(sessionDir, PrearcUtils.getAdditionalValues(prearcParameters));
-                    } catch (XftItemException e) {
-                        log.warn(e.getMessage());
-                        warning(e.getMessage());
-                    }
                 }
                 if (finisher.isAutoArchive()) {
                     this.processing("Archiving");
                     final List<String> urls = Collections.singletonList(finisher.call());
                     if (PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.QUEUED_DELETING)) {
+                        final File        sessionDir  = session.getSessionDir();
                         XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Delete, sessionData, sessionDir));
                     }
                     this.completed("Archive:" + Joiner.on(";").join(urls), true);

@@ -19,6 +19,7 @@ import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.FinishImageUpload;
@@ -266,8 +267,10 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 final SiteWideAnonymizer   siteWideAnonymizer = new SiteWideAnonymizer(imageSession, true);
                 if (siteWideAnonymizer.call()) {
                     // rebuild XML
+                    XnatSubjectdata s = imageSession.getSubjectData();
+                    String subject = s != null ? s.getLabel() : imageSession.getSubjectId();
                     PrearcUtils.buildSession(sessionData, sessionDir, imageSession.getLabel(), sessionData.getTimestamp(),
-                            imageSession.getProject(), imageSession.getSubjectId(), imageSession.getVisit(),
+                            imageSession.getProject(), subject, imageSession.getVisit(),
                             imageSession.getProtocol(), (String) session.getAdditionalValues().get("TIMEZONE"),
                             (String) session.getAdditionalValues().get("SOURCE"));
                 }

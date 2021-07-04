@@ -122,7 +122,11 @@ var XNAT = getObject(XNAT || {});
                             url: XNAT.url.restUrl('/xapi/direct-archive?project=' + data.project + "&id=" + data.id),
                             success: directArchiveTable.history.reload,
                             error: function (xhr) {
-                                XNAT.ui.dialog.message('Error', xhr.statusText + ': ' + xhr.responseText);
+                                let message = xhr.responseText;
+                                if (xhr.status === 403) {
+                                    message = 'only admins or project owners can delete direct archive entries';
+                                }
+                                XNAT.ui.dialog.message('Error', xhr.statusText + (message ? ': ' + message : ''));
                             }
                         });
                     }

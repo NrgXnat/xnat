@@ -143,7 +143,7 @@ public class SimpleEntityServiceTest {
         final SimpleEntityPaginatedRequest request1 = new SimpleEntityPaginatedRequest();
         request1.setPageSize(10);
         request1.setPageNumber(1);
-        request1.setFiltersMap(ImmutableMap.of("name", HibernateFilter.builder().operator(HibernateFilter.Operator.LIKE).value("simple%").build()));
+        request1.setFiltersMap(ImmutableMap.of("username", HibernateFilter.builder().operator(HibernateFilter.Operator.LIKE).value("simple%").build()));
         final SimpleEntityPaginatedRequest request2 = new SimpleEntityPaginatedRequest();
         request2.setPageSize(10);
         request2.setPageNumber(1);

@@ -423,7 +423,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/enabled/{flag}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
-    public void usersIdEnabledFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, NotModifiedException, InitializationException {
+    public void usersIdEnabledFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, InitializationException {
         final UserI user = getUserManagementService().getUser(username);
         if (user.isEnabled() == flag) {
             return;
@@ -465,7 +465,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/verified/{flag}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
-    public void usersIdVerifiedFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @ApiParam(value = "The value to set for the verified status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, NotModifiedException, InitializationException {
+    public void usersIdVerifiedFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @ApiParam(value = "The value to set for the verified status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, InitializationException {
         final UserI user = getUserManagementService().getUser(username);
         if (user.isVerified() == flag) {
             return;
@@ -780,8 +780,8 @@ public class UsersApi extends AbstractXapiRestController {
 
     private void validateUser(final User model) throws DataFormatException, ResourceAlreadyExistsException, UserInitException {
         final DataFormatException exception = new DataFormatException();
-        exception.validateBlankAndRegex("username", model.getUsername(), Patterns.USERNAME);
-        exception.validateBlankAndRegex("email", model.getEmail(), Patterns.EMAIL);
+        exception.validateBlankAndRegex("username", model.getUsername(), Users.PATTERN_USERNAME);
+        exception.validateBlankAndRegex("email", model.getEmail(), Users.PATTERN_EMAIL);
         exception.validateBlankAndRegex("firstName", model.getFirstName(), Patterns.LIMIT_XSS_CHARS);
         exception.validateBlankAndRegex("lastName", model.getLastName(), Patterns.LIMIT_XSS_CHARS);
         if (exception.hasDataFormatErrors()) {

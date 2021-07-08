@@ -1904,3 +1904,4 @@ var XNAT = getObject(XNAT);
     return XNAT.admin.usersGroups = XNAT.usersGroups = usersGroups;
 
 }));
+//# sourceURL=browsertools://scripts/xnat/admin/usersGroups.js

@@ -441,15 +441,17 @@ var XNAT = getObject(XNAT || {});
         }
 
         function displayBehavior(item){
+            item.identifier = item.identifier || 'dicomObjectIdentifier';
             var archiveBehavior = (item.directArchive) ? 'Direct Archive Behavior Enabled' : 'Uses Standard Prearchive Behavior';
             var customRemapping = (item.customProcessing) ? 'Custom Remapping Enabled' : 'Uses Standard Anonymization';
-            var dqrEnabled = (item.identifier.slice(0,3) === 'dqr') ? 'DQR Routing Enabled' : 'Uses Standard Project Routing';
+            var projectRouting = (item.identifier === 'dicomObjectIdentifier') ? 'Uses Standard Project Routing' :
+                (item.identifier.slice(0,3) === 'dqr') ? 'DQR Routing Enabled' : 'Uses Custom Project Routing';
             return spawn('ul', {
                 style: { 'margin': '0', 'padding-left': '1.5em' }
             },[
                 [ 'li',archiveBehavior ],
                 [ 'li',customRemapping ],
-                [ 'li',dqrEnabled ]
+                [ 'li',projectRouting ]
             ]);
         }
 
@@ -459,12 +461,12 @@ var XNAT = getObject(XNAT || {});
                 var identifierLabel = item.identifier || 'dicomObjectIdentifier';
                 identifierLabel += (identifierLabel === 'dicomObjectIdentifier') ? ' (Default)' : '';
                 scpTable.tr({ title: item.aeTitle, data: { id: item.id, port: item.port } })
-                        .td([editLink(item, item.aeTitle)]).addClass('aeTitle')
+                        .td({ style: 'max-width: 180px' },[editLink(item, item.aeTitle)]).addClass('aeTitle word-wrapped')
                         .td([['div.mono.center', item.port]]).addClass('port')
                         .td(identifierLabel).addClass((Object.keys(dicomScpManager.identifiers).length > 1) ? '' : 'hidden') // only show this if there are multiple identifiers
-                        .td([displayBehavior(item)]).addClass('behavior')
+                        .td({ style: 'min-width: 150px' },[displayBehavior(item)]).addClass('behavior')
                         .td([enabledCheckbox(item)]).addClass('status')
-                        .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
+                        .td([['div.center', [editButton(item), spacer(4), deleteButton(item)]]]).addClass('nowrap');
             });
 
             if (container) {

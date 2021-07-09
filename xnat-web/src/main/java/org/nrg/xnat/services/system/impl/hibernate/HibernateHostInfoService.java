@@ -1,14 +1,14 @@
 /*
  * web: org.nrg.xnat.services.system.impl.hibernate.HibernateHostInfoService
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  */
 
 /*
- * 
+ *
  */
 package org.nrg.xnat.services.system.impl.hibernate;
 
@@ -23,12 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
  * {@inheritDoc}
  */
 @Service
+@Transactional
 public class HibernateHostInfoService extends AbstractHibernateEntityService<HostInfo, HostInfoDAO> implements HostInfoService {
     /**
      * {@inheritDoc}
      */
     @Override
-    @Transactional
     public String getHostNumber() {
         return getDao().getHostNumber();
     }
@@ -37,8 +37,7 @@ public class HibernateHostInfoService extends AbstractHibernateEntityService<Hos
      * {@inheritDoc}
      */
     @Override
-    @Transactional
-    public String getHostNumber(String hostName) {
+    public String getHostNumber(final String hostName) {
         return getDao().getHostNumber(hostName);
     }
 }

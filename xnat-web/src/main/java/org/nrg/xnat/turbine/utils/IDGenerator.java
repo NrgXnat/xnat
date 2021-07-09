@@ -18,17 +18,20 @@ import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.identifier.IDGeneratorFactory;
 import org.nrg.xft.identifier.IDGeneratorI;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.system.HostInfoService;
-import org.python.apache.commons.compress.utils.Lists;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import static lombok.AccessLevel.PRIVATE;
 import static org.nrg.xft.identifier.IDGeneratorFactory.DEFAULT_COLUMN;
@@ -43,20 +46,21 @@ import static org.nrg.xft.identifier.IDGeneratorFactory.DEFAULT_DIGITS;
 @Accessors(prefix = "_")
 @Slf4j
 public class IDGenerator implements IDGeneratorI {
-    @SuppressWarnings("unused")
-    public IDGenerator() {
-        this(XDAT.getJdbcTemplate(), XDAT.getSiteConfigPreferences(), XDAT.getContextService().getBean(HostInfoService.class));
-    }
-
-    public IDGenerator(final JdbcTemplate template, final SiteConfigPreferences preferences, final HostInfoService hostInfoService) {
-        if (!ObjectUtils.allNotNull(template, preferences, hostInfoService)) {
+    public IDGenerator(final JdbcTemplate template, final SiteConfigPreferences preferences, final HostInfoService hostInfoService, final XnatAppInfo appInfo) {
+        if (!ObjectUtils.allNotNull(template, preferences, hostInfoService, appInfo)) {
             throw new NrgServiceRuntimeException("The ID generator class must be created in an initialized application context, but at least one of JdbcTemplate, SiteConfigPreferences, or HostInfoService was null");
         }
         _template = template;
         _siteId = StringUtils.replaceChars(RegExUtils.removeAll(preferences.getSiteId(), "[ \"'^]"), '-', '_');
-        final String hostNumberValue = hostInfoService.getHostNumber();
-        final int hostNumber = NumberUtils.isCreatable(hostNumberValue) ? NumberUtils.createInteger(hostNumberValue) : 0;
-        _hostInfo = hostNumber > 1 ? hostNumber : null;
+        final String hostNumber = hostInfoService.getHostNumber();
+        _hostNumber = NumberUtils.isCreatable(hostNumber) ? NumberUtils.createNumber(hostNumber).toString() : "";
+        if (StringUtils.isBlank(_hostNumber) && appInfo.hasMultipleActiveNodes()) {
+            try {
+                log.warn("The host number for this server isn't a number, but the application info indicates that this deployment has multiple active nodes. Check for an entry in xhbm_host_info where host_name is: {}", InetAddress.getLocalHost().getHostName());
+            } catch (UnknownHostException e) {
+                log.error("The application info indicates that this deployment has multiple active nodes, but I couldn't get the host name due to an unexpected error", e);
+            }
+        }
         setColumn(DEFAULT_COLUMN);
         setDigits(DEFAULT_DIGITS);
     }
@@ -74,16 +78,11 @@ public class IDGenerator implements IDGeneratorI {
             log.debug("Generating ID for site {} and table {} using template \"{}\" and {} off-limits IDs", getSiteId(), getTable(), getIdTemplate(), offLimits.size());
         }
 
-        final AtomicInteger count = new AtomicInteger(offLimits.size() + 1);
-        String              candidate;
-        do {
-            candidate = format(getIdTemplate(), count.getAndIncrement());
-            log.trace("Generated candidate ID {}", candidate);
-        } while (offLimits.contains(candidate));
-
-        log.debug("Found unused candidate {}, adding to claimed IDs", candidate);
-        getClaimedIds().add(candidate);
-        return candidate;
+        final AtomicInteger index      = new AtomicInteger(offLimits.size());
+        final String        identifier = Stream.generate(index::incrementAndGet).map(this::format).filter(candidate -> !offLimits.contains(candidate)).findFirst().orElseThrow(() -> new NrgServiceRuntimeException("Found a candidate ID but then it didn't exist: this shouldn't happen"));
+        log.debug("Found unused candidate {}, adding to claimed IDs", identifier);
+        getClaimedIds().add(identifier);
+        return identifier;
     }
 
     @Override
@@ -105,6 +104,28 @@ public class IDGenerator implements IDGeneratorI {
         _format = "%s%0" + _digits + "d";
     }
 
+    private String getQuery(final String template) {
+        return String.format(QUERY_FORMAT, getColumn(), getTable(), template);
+    }
+
+    private String format(final int id) {
+        return String.format(_format, getIdTemplate(), id);
+    }
+
+    private Set<String> getClaimedIds() {
+        if (_claimedIds == null) {
+            _claimedIds = new HashSet<>(_template.queryForList(getQuery(getIdTemplate()), String.class));
+        }
+        return _claimedIds;
+    }
+
+    private String getIdTemplate() {
+        if (_idTemplate == null) {
+            _idTemplate = _siteId + _hostNumber + "_" + getCode();
+        }
+        return _idTemplate;
+    }
+
     private static String getDefaultCode(final String tableName) {
         switch (StringUtils.lowerCase(tableName)) {
             case IDGeneratorFactory.KEY_SUBJECTS:
@@ -119,43 +140,21 @@ public class IDGenerator implements IDGeneratorI {
         }
     }
 
-    private String getQuery(final String template) {
-        return String.format(QUERY_FORMAT, getColumn(), getTable(), template);
-    }
-
-    private String format(final String template, final int id) {
-        return String.format(_format, template, id);
-    }
-
-    private static final String    QUERY_FORMAT = "SELECT DISTINCT %1$s FROM (SELECT %1$s FROM %2$s WHERE %1$s LIKE '%3$s%%' UNION SELECT DISTINCT %1$s FROM %2$s_history WHERE %1$s LIKE '%3$s%%') SEARCH";
+    private static final String QUERY_FORMAT = "SELECT DISTINCT %1$s FROM (SELECT %1$s FROM %2$s WHERE %1$s LIKE '%3$s%%' UNION SELECT DISTINCT %1$s FROM %2$s_history WHERE %1$s LIKE '%3$s%%') SEARCH";
 
     @Getter(PRIVATE)
     private final JdbcTemplate _template;
     @Getter(PRIVATE)
-    private final Integer      _hostInfo;
+    private final String       _hostNumber;
     @Getter(PRIVATE)
     private final String       _siteId;
 
-    private Set<String> getClaimedIds(){
-        if(_claimedIds==null){
-            _claimedIds=new HashSet<>(_template.queryForList(getQuery(getIdTemplate()), String.class));
-        }
-        return _claimedIds;
-    }
-
-    private String getIdTemplate(){
-        if(_iDtemplate==null) {
-            _iDtemplate = _siteId + ObjectUtils.defaultIfNull(_hostInfo, "") + "_" + getCode();
-        }
-        return _iDtemplate;
-    }
     private Set<String> _claimedIds = null;
+    private String      _idTemplate = null;
 
     private String  _column;
     private String  _table;
     private Integer _digits;
     private String  _code;
-    private String _iDtemplate = null;
-
-    private String _format;
+    private String  _format;
 }

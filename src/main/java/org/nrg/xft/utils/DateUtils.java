@@ -11,6 +11,7 @@ package org.nrg.xft.utils;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -193,6 +194,13 @@ public class DateUtils {
 
     public static String getMsTimestamp() {
         return Long.toString(CALENDAR.getTimeInMillis());
+    }
+
+    public static Date getDateForTimestamp(final Timestamp timestamp) {
+        if (timestamp == null) {
+            return null;
+        }
+        return new Date(timestamp.getTime());
     }
 
     public static class TimestampSafeComparator implements Comparator<Date> {

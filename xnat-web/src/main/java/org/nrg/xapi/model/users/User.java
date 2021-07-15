@@ -1,7 +1,7 @@
 /*
  * web: org.nrg.xapi.model.users.User
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -78,6 +78,30 @@ public class User {
     private static final String          QUERY_CURRENT_USERS    = String.join(" ", QUERY_USER_PROFILES, QUERY_LIMIT_TO_CURRENT, QUERY_ORDER_BY);
     private static final String          QUERY_USER_PROFILE     = String.join(" ", QUERY_USER_PROFILES, QUERY_LIMIT_TO_USER);
 
+    /**
+     * The user's encrypted password.
+     **/
+    @ApiModelProperty(value = "The user's encrypted password.")
+    public String getPassword() {
+        return getSecuredProperty(_password);
+    }
+
+    /**
+     * The salt used to encrypt the user's _password.
+     **/
+    @ApiModelProperty(value = "The salt used to encrypt the user's password.")
+    public String getSalt() {
+        return getSecuredProperty(_salt);
+    }
+
+    /**
+     * The user's authorization record used when logging in.
+     **/
+    @ApiModelProperty(value = "The user's authorization record used when logging in.")
+    public UserAuthI getAuthorization() {
+        return getSecuredProperty(_authorization);
+    }
+
     @ApiModelProperty(value = "The user's full name.")
     @JsonIgnore
     public String getFullName() {
@@ -98,6 +122,10 @@ public class User {
                "  lastSuccessfulLogin: " + _lastSuccessfulLogin + "\n" +
                "  authorization: " + _authorization + "\n" +
                "}\n";
+    }
+
+    private <T> T getSecuredProperty(final T property) {
+        return _secured ? null : property;
     }
 
     @ApiModelProperty(value = "The user's unique key.")

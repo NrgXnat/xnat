@@ -119,7 +119,7 @@ var XNAT = getObject(XNAT || {});
                     close: true,
                     action: function () {
                         XNAT.xhr.delete({
-                            url: XNAT.url.restUrl('/xapi/direct-archive?project=' + data.project + "&id=" + data.id),
+                            url: XNAT.url.restUrl('/xapi/direct-archive/' + data.id),
                             success: directArchiveTable.history.reload,
                             error: function (xhr) {
                                 let message = xhr.responseText;

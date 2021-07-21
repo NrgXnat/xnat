@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
@@ -19,7 +20,6 @@ import javax.transaction.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,10 +37,10 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
-    public void delete(String project, long id) throws InvalidPermissionException, NotFoundException {
+    public void delete(long id, UserI user) throws InvalidPermissionException, NotFoundException {
         DirectArchiveSession das = get(id);
-        if (!project.equals(das.getProject())) {
-            throw new InvalidPermissionException("direct archive project mismatch");
+        if (!Permissions.canDeleteProject(user, das.getProject())) {
+            throw new InvalidPermissionException(das.getProject());
         }
         delete(das);
     }
@@ -52,9 +52,12 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
-    public SessionData findByProjectTagName(String project, String tag, String name) {
+    public SessionData findByProjectTagName(String project, String tag, String name) throws NotFoundException {
         DirectArchiveSession das = getDao().findByProjectTagName(project, tag, name);
-        return das == null ? null : das.toSessionData();
+        if (das == null) {
+            throw new NotFoundException("No matching direct archive session");
+        }
+        return das.toSessionData();
     }
 
     @Override

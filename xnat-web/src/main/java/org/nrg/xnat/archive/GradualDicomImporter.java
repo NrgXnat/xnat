@@ -358,7 +358,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             // There is no direct archive commit (yet) so just return the session triple
             return _directArchive ?
                     Collections.singletonList(
-                            String.format("/xapi/direct-archive?project=%s&tag=%s&name=%s",
+                            String.format("/xapi/direct-archive/%s/%s/%s",
                                     session.getProject(), session.getTag(), session.getName())) :
                     Collections.singletonList(session.getExternalUrl());
         } catch (ClientException e) {

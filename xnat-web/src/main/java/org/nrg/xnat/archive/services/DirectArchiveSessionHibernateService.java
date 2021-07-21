@@ -12,10 +12,10 @@ import java.util.List;
 
 public interface DirectArchiveSessionHibernateService extends BaseHibernateService<DirectArchiveSession> {
     void touch(long id) throws NotFoundException;
-    void delete(String project, long id) throws InvalidPermissionException, NotFoundException;
+    void delete(long id, UserI user) throws InvalidPermissionException, NotFoundException;
 
     SessionData findBySessionData(SessionData incoming);
-    SessionData findByProjectTagName(String project, String tag, String name);
+    SessionData findByProjectTagName(String project, String tag, String name) throws NotFoundException;
 
     SessionData create(SessionData initialize) throws ArchivingException;
 

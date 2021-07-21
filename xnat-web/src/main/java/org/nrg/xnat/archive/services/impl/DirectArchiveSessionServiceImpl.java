@@ -3,6 +3,8 @@ package org.nrg.xnat.archive.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.framework.ajax.Filter;
 import org.nrg.framework.ajax.hibernate.HibernateFilter;
 import org.nrg.framework.constants.PrearchiveCode;
@@ -46,6 +48,7 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.jms.Destination;
 import java.io.*;
@@ -91,8 +94,8 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     @Override
-    public void delete(String project, long id) throws InvalidPermissionException, NotFoundException {
-        directArchiveSessionHibernateService.delete(project, id);
+    public void delete(long id, UserI user) throws InvalidPermissionException, NotFoundException {
+        directArchiveSessionHibernateService.delete(id, user);
     }
 
     @Override
@@ -104,7 +107,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     @Override
-    public SessionData findByProjectTagName(String project, String tag, String name){
+    public SessionData findByProjectTagName(String project, String tag, String name) throws NotFoundException {
         return directArchiveSessionHibernateService.findByProjectTagName(project, tag, name);
     }
 
@@ -227,22 +230,33 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             return;
         }
         for (SessionData session : sessions) {
-            Long id = session.getId();
-            if (id == null || PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
-                continue;
-            }
             try {
-                directArchiveSessionHibernateService.setStatusToQueuedBuilding(id);
-            } catch (Exception e) {
-                log.error("Issue setting status to queued building for DirectArchiveSession id={}", id, e);
-                continue;
+                triggerArchive(session);
+            } catch (ClientException e) {
+                log.warn("Skip trigger archive", e);
+            } catch (ServerException e) {
+                log.error("Unable to trigger archive", e);
             }
-            try {
-                XDAT.sendJmsRequest(jmsTemplate, new DirectArchiveRequest(id));
-            } catch (Exception e) {
-                log.error("Issue submitting request for DirectArchiveSession id={}", id, e);
-                directArchiveSessionHibernateService.setStatusBackToReceiving(id);
-            }
+        }
+    }
+
+    @Override
+    public synchronized void triggerArchive(@Nonnull SessionData session) throws ClientException, ServerException {
+        Long id = session.getId();
+        if (id == null || PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
+            throw new ClientException("Refusing to trigger archive on DirectArchiveSession id=" + id +
+                    " because it is still receiving new files or doesn't have an id");
+        }
+        try {
+            directArchiveSessionHibernateService.setStatusToQueuedBuilding(id);
+        } catch (Exception e) {
+            throw new ServerException("Issue setting status to queued building for DirectArchiveSession id=" + id, e);
+        }
+        try {
+            XDAT.sendJmsRequest(jmsTemplate, new DirectArchiveRequest(id));
+        } catch (Exception e) {
+            directArchiveSessionHibernateService.setStatusBackToReceiving(id);
+            throw new ServerException("Issue submitting request for DirectArchiveSession id=" + id, e);
         }
     }
 

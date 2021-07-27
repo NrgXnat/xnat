@@ -56,9 +56,9 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
         _username = request.getUsername();
         _sessionData = request.getSessionData();
         _sessionDir = request.getSessionDir();
-        _parameters = new HashMap<>(ObjectUtils.defaultIfNull(request.getParameters(), Collections.<String, Object>emptyMap()));
+        _parameters = new HashMap<>(ObjectUtils.defaultIfNull(request.getParameters(), Collections.emptyMap()));
         _operation = getConfiguredOperation();
-        _requestId = (request.getParameters() != null && request.getParameters().containsKey(DicomInboxImportRequest.IMPORT_REQUEST_ID)) ? (Long) request.getParameters().get(DicomInboxImportRequest.IMPORT_REQUEST_ID) : -1;
+        _requestId = request.getParameters().containsKey(DicomInboxImportRequest.IMPORT_REQUEST_ID) ? (Long) request.getParameters().get(DicomInboxImportRequest.IMPORT_REQUEST_ID) : -1;
         _listenerId = request.getListenerId();
     }
 

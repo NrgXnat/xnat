@@ -55,9 +55,10 @@ public class PrearchiveArchiveHandler extends AbstractPrearchiveOperationHandler
 
     private String commitSessionToArchive() throws Exception {
         if (PrearcDatabase.setStatus(getSession().getFolderName(), getSession().getTimestamp(), getSession().getProject(), PrearcUtils.PrearcStatus.ARCHIVING)) {
-            final boolean override = getOverrideExceptions() != null ? getOverrideExceptions() : false;
-            final boolean append   = getAllowSessionMerge() != null ? getAllowSessionMerge() : getSession().getSessionData() != null && getSession().getSessionData().getAutoArchive() != null && getSession().getSessionData().getAutoArchive() != PrearchiveCode.Manual;
-            return PrearcDatabase.archive(getListenerId(), getSession(), override, append, getSession().isOverwriteFiles(), getUser(), null);
+            final PrearcSession           session     = getSession();
+            final boolean                 override    = getOverrideExceptions() != null ? getOverrideExceptions() : false;
+            final boolean                 append      = getAllowSessionMerge() != null ? getAllowSessionMerge() : session.getSessionData() != null && session.getSessionData().getAutoArchive() != null && session.getSessionData().getAutoArchive() != PrearchiveCode.Manual;
+            return PrearcDatabase.archive(getListenerId(), session, override, append, session.isOverwriteFiles(), getUser(), null);
         } else {
             throw new ServerException("Unable to lock session for archiving.");
         }

@@ -170,6 +170,10 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         params.put(PROJECT, StringUtils.defaultString(src.getProject(), ""));
         params.put(LABEL, StringUtils.defaultString(src.getLabel(), ""));
         params.put(SUBJECT_ID, getSubjectId(src));
+        final PrearcUtils.HandlePetMr separatePetMr = PrearcUtils.getSeparatePetMr(params.get(PROJECT));
+        if (separatePetMr != PrearcUtils.HandlePetMr.Default) {
+            params.put(PrearcUtils.SEPARATE_PET_MR, separatePetMr.value());
+        }
 
         final Map<String, Object> sessionValues = removePrearcVariables(_prearcSession.getAdditionalValues());
         for (final String key : sessionValues.keySet()) {

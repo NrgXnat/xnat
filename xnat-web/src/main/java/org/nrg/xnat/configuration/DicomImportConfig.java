@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import static org.nrg.xnat.helpers.prearchive.PrearcUtils.*;
+
 @Configuration
 @ComponentScan({"org.nrg.dcm.scp", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl", "org.nrg.xnat.services.messaging.archive"})
 public class DicomImportConfig {
@@ -50,6 +52,6 @@ public class DicomImportConfig {
 
     @Bean
     public List<String> excludedDicomImportFields() {
-        return Arrays.asList("SOURCE", "separatePetMr", "prearchivePath");
+        return Arrays.asList(PARAM_SOURCE, SEPARATE_PET_MR, PREARCHIVE_PATH);
     }
 }

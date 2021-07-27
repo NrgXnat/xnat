@@ -36,6 +36,7 @@ import org.restlet.data.Status;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.nrg.xft.event.XftItemEventI.CREATE;
@@ -92,7 +93,9 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
                         final SessionData   sessionData = sessions.get(modality);
                         final PrearcSession session     = new PrearcSession(sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), null, getUser());
                         if (receiving && session.isAutoArchive()) {
-                            final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive, session.getSessionData(), session.getSessionDir());
+                            final Map<String, Object> parameters = new HashMap<>();
+                            parameters.put("separatePetMr", PrearcUtils.HandlePetMr.Separate.value());
+                            final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive, session.getSessionData(), session.getSessionDir(), parameters);
                             XDAT.sendJmsRequest(request);
                         }
                         // XNAT-6106: HACKITY HACKITY HACK HACK HACK!! Sleep for 1 second between queuing each session.

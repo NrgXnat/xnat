@@ -52,12 +52,15 @@ import java.net.MalformedURLException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
@@ -67,14 +70,23 @@ import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
 public class PrearcUtils {
     public static final String APPEND                = "append";
     public static final String DELETE                = "delete";
+    public static final String PREARCHIVE_PATH       = "prearchivePath";
     public static final String PREARC_TIMESTAMP      = "PREARC_TIMESTAMP";
     public static final String PREARC_SESSION_FOLDER = "PREARC_SESSION_FOLDER";
-    public static final String CONTENT_RAW           = "RAW";
     public static final String SEPARATE_PET_MR       = "separatePETMR";
-    public static final String CONFIG = "config";
-    public static final String SEPARATE = "separate";
-    public static final String PREFIX_QUEUED = "QUEUED_";
-    public static final String PREFIX_PENDING = "_";
+    public static final String SEPARATE              = "separate";
+    public static final String PETMR                 = "petmr";
+    public static final String PET                   = "pet";
+    public static final String CONFIG                = "config";
+    public static final String PREFIX_QUEUED         = "QUEUED_";
+    public static final String PREFIX_PENDING        = "_";
+    public static final String PARAM_SOURCE          = "SOURCE";
+    public static final String PARAM_TIMEZONE        = "TIMEZONE";
+    public static final String PARAM_PROTOCOL        = "protocol";
+    public static final String PARAM_VISIT           = "visit";
+    public static final String PARAM_SUBJECT_ID      = "subject_ID";
+    public static final String PARAM_LABEL           = "label";
+    public static final String PARAM_PROJECT         = "project";
 
     public enum PrearcStatus {
         ARCHIVING,
@@ -122,42 +134,60 @@ public class PrearcUtils {
         private final boolean _interruptable;
     }
 
-    public static String getSeparatePetMr() {
-        final String siteWide = XDAT.getSiteConfigPreferences().getSitewidePetMr();
+    public enum HandlePetMr {
+        Default,
+        Separate,
+        Pet,
+        PetMr;
 
-        if (StringUtils.isEmpty(siteWide)) {
-            return "";
+        public static HandlePetMr get(final String value) {
+            if (StringUtils.isBlank(value)) {
+                return Default;
+            }
+            final String key = StringUtils.deleteWhitespace(StringUtils.lowerCase(value));
+            switch (key) {
+                case SEPARATE:
+                    return Separate;
+                case PET:
+                    return Pet;
+                case PETMR:
+                    return PetMr;
+                default:
+                    throw new RuntimeException("Unknown PET/MR setting " + key);
+            }
         }
-        return siteWide;
+
+        public String value() {
+            return this == Default ? "" : StringUtils.lowerCase(name());
+        }
     }
 
-    public static String getSeparatePetMr(final String project) {
-        final Configuration configuration = XDAT.getConfigService().getConfig(SEPARATE_PET_MR, CONFIG, Scope.Project, project);
-        if (configuration == null) {
+    public static HandlePetMr getSeparatePetMr() {
+        return HandlePetMr.get(XDAT.getSiteConfigPreferences().getSitewidePetMr());
+    }
+
+    public static HandlePetMr getSeparatePetMr(final String project) {
+        if (StringUtils.isBlank(project) || StringUtils.equals(UNASSIGNED, project)) {
             return getSeparatePetMr();
         }
-        final String contents = configuration.getContents();
-        return StringUtils.isEmpty(contents) ? getSeparatePetMr() : contents;
+        final Configuration configuration = XDAT.getConfigService().getConfig(SEPARATE_PET_MR, CONFIG, Scope.Project, project);
+        return configuration == null ? getSeparatePetMr() : HandlePetMr.get(configuration.getContents());
     }
 
     public static boolean shouldSeparatePetMr() {
-        return getSeparatePetMr().equals(SEPARATE);
+        return getSeparatePetMr() == HandlePetMr.Separate;
     }
 
     public static boolean shouldSeparatePetMr(final String project) {
-        return getSeparatePetMr(project).equals(SEPARATE);
+        return getSeparatePetMr(project) == HandlePetMr.Separate;
     }
 
     public static final Map<PrearcStatus, PrearcStatus> inProcessStatusMap = createInProcessMap();
 
     public static Map<PrearcStatus, PrearcStatus> createInProcessMap() {
-        Map<PrearcStatus, PrearcStatus> map = new HashMap<>();
-        for (PrearcStatus s : PrearcStatus.values()) {
-            if (s != PrearcStatus.READY && s != PrearcStatus.ERROR && s.toString().charAt(0) != '_' && !s.toString().startsWith(PREFIX_QUEUED)) {
-                map.put(s, PrearcStatus.valueOf(PREFIX_PENDING + s.name()));
-            }
-        }
-        return map;
+        return Arrays.stream(PrearcStatus.values())
+                     .filter(status -> status != PrearcStatus.READY && status != PrearcStatus.ERROR && !StringUtils.startsWithAny(status.toString(), "_", PREFIX_QUEUED))
+                     .collect(Collectors.toMap(Function.identity(), status -> PrearcStatus.valueOf(PREFIX_PENDING + status.name())));
     }
 
     @SuppressWarnings("unchecked")
@@ -230,6 +260,7 @@ public class PrearcUtils {
      *                           have create permission for it, or if the prearchive directory
      *                           does not exist.
      */
+    @SuppressWarnings("unused")
     public static File getPrearcDir(final String username, final String project, final boolean allowUnassigned) throws Exception {
         return getPrearcDir(StringUtils.isNotBlank(username) ? Users.getUser(username) : null, project, allowUnassigned);
     }
@@ -252,10 +283,10 @@ public class PrearcUtils {
      */
     public static File getPrearcDir(final UserI user, final String project, final boolean allowUnassigned) throws Exception {
         String prearcPath;
-        String prearchRootPref = XDAT.getSiteConfigPreferences().getPrearchivePath();
+        String prearcRootPref = XDAT.getSiteConfigPreferences().getPrearchivePath();
         if (project == null || project.equals(UNASSIGNED)) {
             if (allowUnassigned || user == null || Roles.isSiteAdmin(user)) {
-                prearcPath = prearchRootPref;
+                prearcPath = prearcRootPref;
             } else {
                 throw new InsufficientPrivilegesException(user.getUsername(), XnatProjectdata.SCHEMA_ELEMENT_NAME, UNASSIGNED);
             }
@@ -270,7 +301,7 @@ public class PrearcUtils {
                 final String arcSpecPathForProject = ArcSpecManager.GetInstance().getPrearchivePathForProject(project);
                 final String newPathForProject     = RegExUtils.replaceFirst(arcSpecPathForProject, "^/data/xnat/prearchive/", "");
                 if (!StringUtils.equals(arcSpecPathForProject, newPathForProject)) {
-                    prearcPath = Paths.get(prearchRootPref, newPathForProject).toString();
+                    prearcPath = Paths.get(prearcRootPref, newPathForProject).toString();
                 } else {
                     prearcPath = arcSpecPathForProject;
                 }
@@ -288,7 +319,7 @@ public class PrearcUtils {
                     String arcSpecPathForProject = proj.getPrearchivePath();
                     String newPathForProject     = arcSpecPathForProject.replaceFirst("^/data/xnat/prearchive/", "");
                     if (!StringUtils.equals(arcSpecPathForProject, newPathForProject)) {
-                        prearcPath = Paths.get(prearchRootPref, newPathForProject).toString();
+                        prearcPath = Paths.get(prearcRootPref, newPathForProject).toString();
                     } else {
                         prearcPath = arcSpecPathForProject;
                     }
@@ -433,6 +464,7 @@ public class PrearcUtils {
      *
      * @return A new blank session data object.
      */
+    @SuppressWarnings("unused")
     public static SessionData blankSession(String project, String sessionLabel, String tag) throws IOException {
         if (sessionLabel == null || tag == null) {
             throw new IOException("Cannot create a SessionData object with a session label or study instance uid");
@@ -459,6 +491,7 @@ public class PrearcUtils {
         return sess;
     }
 
+    @SuppressWarnings("unused")
     public static void deleteProject(String project) throws Exception {
         final List<SessionData> sessions = PrearcDatabase.getSessionsInProject(project);
         for (final SessionData session : sessions) {
@@ -494,12 +527,7 @@ public class PrearcUtils {
         }
 
         addSession(user, project, timestamp, session, allowUnassigned);
-        if (deleted != null) {
-            PrearcDatabase.setAutoArchive(session, timestamp, project, deleted.getAutoArchive());
-            PrearcDatabase.setPreventAnon(session, timestamp, project, deleted.getPreventAnon());
-            PrearcDatabase.setSource(session, timestamp, project, deleted.getSource());
-            PrearcDatabase.setPreventAutoCommit(session, timestamp, project, deleted.getPreventAutoCommit());
-        }
+        cleanUpDeletedSession(project, timestamp, session, deleted);
     }
 
     public static void resetStatus(final UserI user, final String project, final String timestamp, final String session, final String uID, final boolean allowUnassigned) throws Exception {
@@ -512,12 +540,7 @@ public class PrearcUtils {
         }
 
         addSession(user, project, timestamp, session, uID, allowUnassigned);
-        if (deleted != null) {
-            PrearcDatabase.setAutoArchive(session, timestamp, project, deleted.getAutoArchive());
-            PrearcDatabase.setPreventAnon(session, timestamp, project, deleted.getPreventAnon());
-            PrearcDatabase.setSource(session, timestamp, project, deleted.getSource());
-            PrearcDatabase.setPreventAutoCommit(session, timestamp, project, deleted.getPreventAutoCommit());
-        }
+        cleanUpDeletedSession(project, timestamp, session, deleted);
     }
 
     public static void addSession(final UserI user, final String project, final String timestamp, final String session, final boolean allowUnassigned) throws Exception {
@@ -578,7 +601,7 @@ public class PrearcUtils {
      * <p/>
      * In the future, we might want to move this to a database table.  However, the current prearchive table doesn't have a primary key column (really?).
      * So, there would be no way to reliably join from the logs table to the prearchive table.  Also, this would make more sense to do as part of a image session logging framework
-     * which would capture a lot more than just preachive logs, but requires more requirements gathering.
+     * which would capture a lot more than just prearchive logs, but requires more requirements gathering.
      * <p/>
      * As such, this is more of a stub implementation, that should probably change when the above problems are dealt with.  It will facilitate the current requirement, which
      * is just that we can show the last exception via REST.
@@ -757,27 +780,15 @@ public class PrearcUtils {
     public static String getLastLog(final String project, final String timestamp, final String session) {
         try {
             final File logDir = getLogDir(project, timestamp, session);
-
             if (logDir.exists()) {
-                File         lastFile = null;
-                final File[] files    = logDir.listFiles();
+                final File[] files = logDir.listFiles();
                 if (files != null && files.length > 0) {
-                    for (File f : files) {
-                        if (lastFile == null) {
-                            lastFile = f;
-                        } else {
-                            if (f.lastModified() > lastFile.lastModified()) {
-                                lastFile = f;
-                            }
-                        }
-                    }
+                    final File lastFile = Arrays.stream(files).max(Comparator.comparingLong(File::lastModified)).orElse(null);
+                    return FileUtils.readFileToString(lastFile, Charset.defaultCharset());
                 }
-                //noinspection deprecation
-                return lastFile != null ? FileUtils.readFileToString(lastFile) : null;
             }
         } catch (Exception e) {
             log.error("", e);
-            return null;
         }
         return null;
     }
@@ -817,26 +828,26 @@ public class PrearcUtils {
                                     final String timezone, final String source) throws PrearcDatabase.SyncFailedException {
         final Map<String, String> params = new LinkedHashMap<>();
         if (StringUtils.isNotBlank(project) && !StringUtils.equals(UNASSIGNED, project)) {
-            params.put("project", project);
-            params.put("separatePetMr", PrearcUtils.getSeparatePetMr(project));
+            params.put(PARAM_PROJECT, project);
+            params.put(SEPARATE_PET_MR, PrearcUtils.getSeparatePetMr(project).value());
         } else {
-            params.put("separatePetMr", PrearcUtils.getSeparatePetMr());
+            params.put(SEPARATE_PET_MR, PrearcUtils.getSeparatePetMr().value());
         }
-        params.put("label", session);
+        params.put(PARAM_LABEL, session);
         if (StringUtils.isNotBlank(subject)) {
-            params.put("subject_ID", subject);
+            params.put(PARAM_SUBJECT_ID, subject);
         }
         if (StringUtils.isNotBlank(visit)) {
-            params.put("visit", visit);
+            params.put(PARAM_VISIT, visit);
         }
         if (StringUtils.isNotBlank(protocol)) {
-            params.put("protocol", protocol);
+            params.put(PARAM_PROTOCOL, protocol);
         }
         if (StringUtils.isNotBlank(timezone)) {
-            params.put("TIMEZONE", timezone);
+            params.put(PARAM_TIMEZONE, timezone);
         }
         if (StringUtils.isNotBlank(source)) {
-            params.put("SOURCE", source);
+            params.put(PARAM_SOURCE, source);
         }
 
         PrearcUtils.cleanLockDirs(sd.getSessionDataTriple());
@@ -902,6 +913,15 @@ public class PrearcUtils {
             ((XnatResourcecatalog) resource).clearFiles();
         }
         CatalogUtils.populateStats(resource, root);
+    }
+
+    private static void cleanUpDeletedSession(final String project, final String timestamp, final String session, final SessionData deleted) throws Exception {
+        if (deleted != null) {
+            PrearcDatabase.setAutoArchive(session, timestamp, project, deleted.getAutoArchive());
+            PrearcDatabase.setPreventAnon(session, timestamp, project, deleted.getPreventAnon());
+            PrearcDatabase.setSource(session, timestamp, project, deleted.getSource());
+            PrearcDatabase.setPreventAutoCommit(session, timestamp, project, deleted.getPreventAutoCommit());
+        }
     }
 
     private final static Object syncLock = new Object();

@@ -43,7 +43,7 @@ public class PrearchiveMoveHandler extends AbstractPrearchiveOperationHandler {
         }
 
         final String destination = (String) getParameters().get(PARAM_DESTINATION);
-        final String session = getSessionData().getFolderName();
+        final String session     = getSessionData().getFolderName();
         if (!getSessionDir().getParentFile().exists()) {
             PrearcDatabase.unsafeSetStatus(session, getSessionData().getTimestamp(), getSessionData().getProject(), PrearcUtils.PrearcStatus._DELETING);
             PrearcDatabase.deleteCacheRow(session, getSessionData().getTimestamp(), getSessionData().getProject());
@@ -63,24 +63,25 @@ public class PrearchiveMoveHandler extends AbstractPrearchiveOperationHandler {
 
         log.debug("Found the session XML in the file {}, processing.", sessionXml.getAbsolutePath());
 
-        final XnatImagesessiondataBean bean = (XnatImagesessiondataBean) new XDATXMLReader().parse(sessionXml);
-        final String                   separatePetMr = PrearcUtils.getSeparatePetMr(destination);
-        final Operation operation;
+        final XnatImagesessiondataBean bean          = (XnatImagesessiondataBean) new XDATXMLReader().parse(sessionXml);
+        final PrearcUtils.HandlePetMr  separatePetMr = PrearcUtils.getSeparatePetMr(destination);
+        final Operation                operation;
         if (bean instanceof XnatPetmrsessiondataBean) {
             switch (separatePetMr) {
-                case "separate":
+                case Separate:
                     log.debug("Found create separate PET and MR sessions setting for project {}, now working to separate that.", getSessionData().getProject());
                     operation = Separate;
                     break;
-                case "pet":
+                case Pet:
                     log.debug("Found a PET/MR session XML in the file {} with the separate PET/MR flag set to true for the site or project, creating a new request to separate the session.", sessionXml.getAbsolutePath());
                     operation = Rebuild;
                     break;
+                case PetMr:
                 default:
                     log.debug("Found a PET/MR session XML in the file {} but the separate PET/MR flag set to false or not set for the site or project. No more to be done.", sessionXml.getAbsolutePath());
                     return;
             }
-        } else if (bean instanceof XnatPetsessiondataBean && separatePetMr.equals("petmr")) {
+        } else if (bean instanceof XnatPetsessiondataBean && separatePetMr == PrearcUtils.HandlePetMr.Separate) {
             log.debug("Found a session XML for a {} session in the file {}. Not PET/MR so not separating.", bean.getFullSchemaElementName(), sessionXml.getAbsolutePath());
             operation = Rebuild;
         } else {

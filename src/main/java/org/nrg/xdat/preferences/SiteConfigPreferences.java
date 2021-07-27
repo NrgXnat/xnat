@@ -599,12 +599,12 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
 
     @NrgPreference
     public String getSitewidePetMr() {
-        return getValue("sitewidePetMr");
+        return StringUtils.deleteWhitespace(getValue("sitewidePetMr"));
     }
 
     public void setSitewidePetMr(final String sitewidePetMr) {
         try {
-            set(sitewidePetMr, "sitewidePetMr");
+            set(StringUtils.deleteWhitespace(sitewidePetMr), "sitewidePetMr");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'sitewidePetMr': something is very wrong here.", e);
         }
@@ -661,6 +661,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
         }
     }
+
     @NrgPreference(defaultValue = "true")
     public boolean getPreventCrossModalityMerge() {
         return getBooleanValue("preventCrossModalityMerge");
@@ -1018,7 +1019,9 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "false")
-    public boolean getUiDisplayScanModality() { return getBooleanValue("uiDisplayScanModality"); }
+    public boolean getUiDisplayScanModality() {
+        return getBooleanValue("uiDisplayScanModality");
+    }
 
     public void setUiDisplayScanModality(final boolean uiDisplayScanModality) {
         try {
@@ -1627,7 +1630,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiHideXnatUploadAssistantDownload': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "true")
     public boolean getUiShowPrearchiveFileActions() {
         return getBooleanValue("uiShowPrearchiveFileActions");
@@ -1640,7 +1643,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiShowPrearchiveFileActions': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "true", aliases = "security.allow-non-private-projects")
     public boolean getSecurityAllowNonPrivateProjects() {
         return getBooleanValue("securityAllowNonPrivateProjects");
@@ -1653,7 +1656,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'securityAllowNonPrivateProjects': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "true")
     public boolean getUiAllowPetTracerConfiguration() {
         return getBooleanValue("uiAllowPetTracerConfiguration");
@@ -1666,7 +1669,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiAllowPetTracerConfiguration': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "true")
     public boolean getUiShowScanTypeMapping() {
         return getBooleanValue("uiShowScanTypeMapping");
@@ -1679,7 +1682,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiShowScanTypeMapping': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "true")
     public boolean getEmailProjectAccessRequestToAdmin() {
         return getBooleanValue("emailProjectAccessRequestToAdmin");
@@ -1692,7 +1695,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'emailProjectAccessRequestToAdmin': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "true")
     public boolean getUiExptAllowLabelChange() {
         return getBooleanValue("uiExptAllowLabelChange");
@@ -1705,7 +1708,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiExptAllowLabelChange': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "true")
     public boolean getUiExptAllowProjectChange() {
         return getBooleanValue("uiExptAllowProjectChange");
@@ -1718,7 +1721,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiExptAllowProjectChange': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "true")
     public boolean getUiExptAllowSubjectChange() {
         return getBooleanValue("uiExptAllowSubjectChange");
@@ -1731,7 +1734,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiExptAllowSubjectChange': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "4", aliases = "defaultPrearchiveCode")
     public int getDefaultProjectAutoArchiveSetting() {
         return getIntegerValue("defaultProjectAutoArchiveSetting");
@@ -1744,7 +1747,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'defaultProjectAutoArchiveSetting': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "true")
     public boolean getUiAllowMoreProjectInvestigators() {
         return getBooleanValue("uiAllowMoreProjectInvestigators");
@@ -1757,20 +1760,20 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiAllowMoreProjectInvestigators': something is very wrong here.", e);
         }
     }
-    
+
     public void setSecurityMaxLoginInterval(final int securityMaxLoginInterval) {
         try {
-        	setIntegerValue(securityMaxLoginInterval, "securityMaxLoginInterval");
+            setIntegerValue(securityMaxLoginInterval, "securityMaxLoginInterval");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'securityMaxLoginInterval': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "1")
     public int getSecurityMaxLoginInterval() {
         return getIntegerValue("securityMaxLoginInterval");
     }
-    
+
     public void setSecurityLastModifiedInterval(final int securityLastModifiedInterval) {
         try {
             setIntegerValue(securityLastModifiedInterval, "securityLastModifiedInterval");
@@ -1778,12 +1781,12 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'securityLastModifiedInterval': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "1")
     public int getSecurityLastModifiedInterval() {
         return getIntegerValue("securityLastModifiedInterval");
     }
-    
+
     public void setUiHideDesktopClientDownload(final boolean uiHideDesktopClientDownload) {
         try {
             setBooleanValue(uiHideDesktopClientDownload, "uiHideDesktopClientDownload");
@@ -1791,7 +1794,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiHideDesktopClientDownload': something is very wrong here.", e);
         }
     }
-    
+
     @NrgPreference(defaultValue = "false")
     public boolean getUiHideDesktopClientDownload() {
         return getBooleanValue("uiHideDesktopClientDownload");
@@ -1809,7 +1812,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'uiPrearchiveHideArchiveBtn': something is very wrong here.", e);
         }
     }
-    
+
     public boolean isComplete() {
         return getMissingInitSettings().size() == 0;
     }

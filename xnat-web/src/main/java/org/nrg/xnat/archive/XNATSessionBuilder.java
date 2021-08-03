@@ -22,9 +22,9 @@ import org.nrg.framework.services.ContextService;
 import org.nrg.resources.SupplementalResourceBuilderUtils;
 import org.nrg.session.SessionBuilder;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.XFT;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.*;
 
 @Slf4j
@@ -204,8 +205,8 @@ public class XNATSessionBuilder implements Callable<Boolean> {
     private void buildDicomSession(final FileWriter fileWriter) throws IOException {
         // Hard-coded implementation for DICOM.
         // Turn the parameters into an array of XnatAttrDef.Constant attribute definitions
-        final boolean createPetMrAsPet = PrearcUtils.HandlePetMr.get(params.get(SEPARATE_PET_MR)) == PrearcUtils.HandlePetMr.Pet;
-        final XnatAttrDef[] attrDefs = params.entrySet().stream().map(entry -> new XnatAttrDef.Constant(entry.getKey(), createPetMrAsPet && entry.getKey().equals("label") && entry.getValue().toLowerCase().contains(PrearcUtils.HandlePetMr.PetMr.value())
+        final boolean createPetMrAsPet = HandlePetMr.get(params.get(SEPARATE_PET_MR)) == HandlePetMr.Pet;
+        final XnatAttrDef[] attrDefs = params.entrySet().stream().map(entry -> new XnatAttrDef.Constant(entry.getKey(), createPetMrAsPet && entry.getKey().equals("label") && entry.getValue().toLowerCase().contains(HandlePetMr.PetMr.value())
                                                                                                                         ? new StringBuilder(new StringBuilder(entry.getValue()).reverse().toString().replaceFirst("(?i)rmtep", "TEP")).reverse().toString()
                                                                                                                         : entry.getValue())).toArray(XnatAttrDef[]::new);
         try (final DICOMSessionBuilder dicomSessionBuilder = new DICOMSessionBuilder(dir, fileWriter, attrDefs)) {

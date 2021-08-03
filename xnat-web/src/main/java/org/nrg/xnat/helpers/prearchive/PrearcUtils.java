@@ -9,21 +9,24 @@
 
 package org.nrg.xnat.helpers.prearchive;
 
+import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
+import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.framework.constants.Scope;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.ArcProjectI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.*;
+import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
@@ -62,25 +65,17 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
-import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
-
 @SuppressWarnings("ResultOfMethodCallIgnored")
 @Slf4j
 public class PrearcUtils {
     public static final String APPEND                = "append";
     public static final String DELETE                = "delete";
-    public static final String PREARCHIVE_PATH       = "prearchivePath";
+    public static final String PREARCHIVE_PATH       = HandlePetMr.PREARCHIVE_PATH;
     public static final String PREARC_TIMESTAMP      = "PREARC_TIMESTAMP";
     public static final String PREARC_SESSION_FOLDER = "PREARC_SESSION_FOLDER";
-    public static final String SEPARATE_PET_MR       = "separatePETMR";
-    public static final String SEPARATE              = "separate";
-    public static final String PETMR                 = "petmr";
-    public static final String PET                   = "pet";
-    public static final String CONFIG                = "config";
     public static final String PREFIX_QUEUED         = "QUEUED_";
     public static final String PREFIX_PENDING        = "_";
-    public static final String PARAM_SOURCE          = "SOURCE";
+    public static final String PARAM_SOURCE          = HandlePetMr.PARAM_SOURCE;
     public static final String PARAM_TIMEZONE        = "TIMEZONE";
     public static final String PARAM_PROTOCOL        = "protocol";
     public static final String PARAM_VISIT           = "visit";
@@ -132,54 +127,6 @@ public class PrearcUtils {
         }
 
         private final boolean _interruptable;
-    }
-
-    public enum HandlePetMr {
-        Default,
-        Separate,
-        Pet,
-        PetMr;
-
-        public static HandlePetMr get(final String value) {
-            if (StringUtils.isBlank(value)) {
-                return Default;
-            }
-            final String key = StringUtils.deleteWhitespace(StringUtils.lowerCase(value));
-            switch (key) {
-                case SEPARATE:
-                    return Separate;
-                case PET:
-                    return Pet;
-                case PETMR:
-                    return PetMr;
-                default:
-                    throw new RuntimeException("Unknown PET/MR setting " + key);
-            }
-        }
-
-        public String value() {
-            return this == Default ? "" : StringUtils.lowerCase(name());
-        }
-    }
-
-    public static HandlePetMr getSeparatePetMr() {
-        return HandlePetMr.get(XDAT.getSiteConfigPreferences().getSitewidePetMr());
-    }
-
-    public static HandlePetMr getSeparatePetMr(final String project) {
-        if (StringUtils.isBlank(project) || StringUtils.equals(UNASSIGNED, project)) {
-            return getSeparatePetMr();
-        }
-        final Configuration configuration = XDAT.getConfigService().getConfig(SEPARATE_PET_MR, CONFIG, Scope.Project, project);
-        return configuration == null ? getSeparatePetMr() : HandlePetMr.get(configuration.getContents());
-    }
-
-    public static boolean shouldSeparatePetMr() {
-        return getSeparatePetMr() == HandlePetMr.Separate;
-    }
-
-    public static boolean shouldSeparatePetMr(final String project) {
-        return getSeparatePetMr(project) == HandlePetMr.Separate;
     }
 
     public static final Map<PrearcStatus, PrearcStatus> inProcessStatusMap = createInProcessMap();
@@ -829,9 +776,9 @@ public class PrearcUtils {
         final Map<String, String> params = new LinkedHashMap<>();
         if (StringUtils.isNotBlank(project) && !StringUtils.equals(UNASSIGNED, project)) {
             params.put(PARAM_PROJECT, project);
-            params.put(SEPARATE_PET_MR, PrearcUtils.getSeparatePetMr(project).value());
+            params.put(SEPARATE_PET_MR, HandlePetMr.getSeparatePetMr(project).value());
         } else {
-            params.put(SEPARATE_PET_MR, PrearcUtils.getSeparatePetMr().value());
+            params.put(SEPARATE_PET_MR, HandlePetMr.getSeparatePetMr().value());
         }
         params.put(PARAM_LABEL, session);
         if (StringUtils.isNotBlank(subject)) {
@@ -890,7 +837,7 @@ public class PrearcUtils {
                .stream()
                .map(XnatImagescandataI::getFile)
                .flatMap(Collection::stream)
-               .filter(file -> file instanceof XnatResourcecatalog)
+               .filter(XnatResourcecatalog.class::isInstance)
                .map(XnatResourcecatalog.class::cast)
                .forEach(catalog -> {
                    try {

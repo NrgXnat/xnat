@@ -13,6 +13,7 @@ import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.id.ClassicDicomObjectIdentifier;
 import org.nrg.dcm.id.TemplatizedDicomFileNamer;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.DicomObjectIdentifier;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.*;
 
 @Configuration
@@ -52,6 +54,6 @@ public class DicomImportConfig {
 
     @Bean
     public List<String> excludedDicomImportFields() {
-        return Arrays.asList(PARAM_SOURCE, SEPARATE_PET_MR, PREARCHIVE_PATH);
+        return HandlePetMr.DEFAULT_EXCLUDED_FIELDS;
     }
 }

@@ -12,6 +12,7 @@ import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
 import org.nrg.xdat.bean.reader.XDATXMLReader;
 import org.nrg.xdat.om.*;
+import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.XnatUserProvider;
@@ -351,7 +352,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     private boolean handleSeparatePetMr(long id, SessionData target) throws IOException, SAXException, NotFoundException {
-        if (!PrearcUtils.shouldSeparatePetMr(target.getProject())) {
+        if (!HandlePetMr.shouldSeparatePetMr(target.getProject())) {
             // not splitting
             return false;
         }

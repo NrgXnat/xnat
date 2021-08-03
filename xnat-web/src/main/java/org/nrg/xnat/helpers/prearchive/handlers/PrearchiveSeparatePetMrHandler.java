@@ -19,6 +19,7 @@ import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
 import org.nrg.xdat.bean.reader.XDATXMLReader;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -94,7 +95,7 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
                         final PrearcSession session     = new PrearcSession(sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), null, getUser());
                         if (receiving && session.isAutoArchive()) {
                             final Map<String, Object> parameters = new HashMap<>();
-                            parameters.put("separatePetMr", PrearcUtils.HandlePetMr.Separate.value());
+                            parameters.put(HandlePetMr.SEPARATE_PET_MR, HandlePetMr.Separate.value());
                             final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive, session.getSessionData(), session.getSessionDir(), parameters);
                             XDAT.sendJmsRequest(request);
                         }

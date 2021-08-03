@@ -15,6 +15,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
 import org.nrg.xdat.bean.reader.XDATXMLReader;
+import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
@@ -91,7 +92,7 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
     }
 
     private boolean handleSeparablePetMrSession(final String folderName, final String timestamp, final String project) throws Exception {
-        final boolean separatePetMr = PrearcUtils.isUnassigned(getSessionData()) ? PrearcUtils.shouldSeparatePetMr() : PrearcUtils.shouldSeparatePetMr(project);
+        final boolean separatePetMr = PrearcUtils.isUnassigned(getSessionData()) ? HandlePetMr.shouldSeparatePetMr() : HandlePetMr.shouldSeparatePetMr(project);
         if (!separatePetMr) {
             return false;
         }

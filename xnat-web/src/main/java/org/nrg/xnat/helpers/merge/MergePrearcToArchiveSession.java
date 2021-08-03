@@ -16,6 +16,7 @@ import org.nrg.action.ServerException;
 import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
@@ -30,6 +31,7 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
 import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariables;
 
 @Slf4j
@@ -170,9 +172,9 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         params.put(PROJECT, StringUtils.defaultString(src.getProject(), ""));
         params.put(LABEL, StringUtils.defaultString(src.getLabel(), ""));
         params.put(SUBJECT_ID, getSubjectId(src));
-        final PrearcUtils.HandlePetMr separatePetMr = PrearcUtils.getSeparatePetMr(params.get(PROJECT));
-        if (separatePetMr != PrearcUtils.HandlePetMr.Default) {
-            params.put(PrearcUtils.SEPARATE_PET_MR, separatePetMr.value());
+        final HandlePetMr separatePetMr = HandlePetMr.getSeparatePetMr(params.get(PROJECT));
+        if (separatePetMr != HandlePetMr.Default) {
+            params.put(SEPARATE_PET_MR, separatePetMr.value());
         }
 
         final Map<String, Object> sessionValues = removePrearcVariables(_prearcSession.getAdditionalValues());

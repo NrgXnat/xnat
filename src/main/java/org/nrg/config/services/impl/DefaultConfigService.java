@@ -38,6 +38,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.nrg.config.entities.Configuration.DISABLED_STRING;
+import static org.nrg.config.entities.Configuration.ENABLED_STRING;
+
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Service
 @Slf4j
@@ -52,6 +55,43 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         _dataDAO = dataDAO;
         _transactionManager = transactionManager;
         _jdbcTemplate = jdbcTemplate;
+    }
+
+    /**
+     * Removes special characters and capitalizes the next character.
+     *
+     * @param name The name to format.
+     *
+     * @return A Java-formatted string.
+     */
+    public static String formatForJava(String name) {
+        if (StringUtils.isBlank(name)) {
+            return name;
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        name = name.replace('/', '.');
+        name = name.replaceAll("[^A-Za-z0-9.]", "_");
+
+        String first = name.substring(0, 1);
+        sb.append(first.toUpperCase());
+        name = name.substring(1).toLowerCase();
+
+        while (name.contains("_")) {
+            int i = name.indexOf("_");
+            if (i + 2 > name.length()) {
+                break;
+            } else if (i != 0) {
+                sb.append(name, 0, i);
+                sb.append(name.substring(i + 1, i + 2).toUpperCase());
+                name = name.substring(i + 2);
+            } else {
+                name = name.substring(1);
+            }
+        }
+        sb.append(name);
+        return sb.toString();
     }
 
     @Override
@@ -304,7 +344,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @Transactional
     @Override
     public void disable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException {
-        setStatusImpl(xnatUser, reason, toolName, path, Configuration.DISABLED_STRING, Scope.Site, null);
+        setStatusImpl(xnatUser, reason, toolName, path, DISABLED_STRING, Scope.Site, null);
     }
 
     //fail silently if the configuration does not exist...
@@ -312,13 +352,13 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @Override
     @Deprecated
     public void disable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException {
-        setStatusImpl(xnatUser, reason, toolName, path, Configuration.DISABLED_STRING, projectID != null ? Scope.Project : Scope.Site, getProjectIdFromLong(projectID));
+        setStatusImpl(xnatUser, reason, toolName, path, DISABLED_STRING, projectID != null ? Scope.Project : Scope.Site, getProjectIdFromLong(projectID));
     }
 
     @Transactional
     @Override
     public void disable(final String xnatUser, final String reason, final String toolName, final String path, final Scope scope, final String entityId) throws ConfigServiceException {
-        setStatusImpl(xnatUser, reason, toolName, path, Configuration.DISABLED_STRING, scope, entityId);
+        setStatusImpl(xnatUser, reason, toolName, path, DISABLED_STRING, scope, entityId);
     }
 
     @Transactional
@@ -348,42 +388,44 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return _dao.getConfigurationsByTool(toolName, scope, entityId);
     }
 
-    private Configuration getConfigImpl(String toolName, String path, Scope scope, String entityId) {
-        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
+    private List<Configuration> getHistoryImpl(String toolName, String path, Scope scope, String entityId) {
+        if (StringUtils.isBlank(entityId) && scope != Scope.Site) {
+            throw new NrgServiceRuntimeException("You've specified scope " + scope + " without an entity ID. Scope MUST be set to Site if entity ID is blank.");
+        }
+        final List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() == 0) {
             return null;
         }
-        list.sort(ConfigComparatorByCreateDate);
-        return list.get(list.size() - 1);
+        return list.stream().sorted(ConfigComparatorByCreateDate).collect(Collectors.toList());
+    }
+
+    private Configuration getConfigImpl(final String toolName, final String path, final Scope scope, final String entityId) {
+        final List<Configuration> list = getHistoryImpl(toolName, path, scope, entityId);
+        return list != null && !list.isEmpty() ? list.get(list.size() - 1) : null;
     }
 
     private String getConfigContentsImpl(String toolName, String path, Scope scope, String entityId) {
-        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
-        if (list == null || list.size() == 0) {
-            return null;
-        }
-        list.sort(ConfigComparatorByCreateDate);
-        return list.get(list.size() - 1).getContents();
+        final Configuration configuration = getConfigImpl(toolName, path, scope, entityId);
+        return configuration != null && StringUtils.equals(configuration.getStatus(), ENABLED_STRING) ? configuration.getContents() : null;
     }
 
     private Configuration getConfigByIdImpl(String toolName, String path, String id, Scope scope, String entityId) {
         //I think it is more efficient to just pull by the ID and make sure it matches the other passed in variables.
-        Configuration c = _dao.findById(Long.parseLong(id));
+        final Configuration configuration = _dao.findById(Long.parseLong(id));
 
         //findById is silly in that it will return a non-null object even if it doesn't find a match (I didn't write it). If it didn't find a match it
         //will throw an exception the first time you try to access a property. So, we'll use that to test for a valid return, here.
         //this also takes care of a null return.
         try {
-            final String tool = c.getTool();
+            final String tool = configuration.getTool();
             log.debug("Successfully retrieved tool {} for configuration ID {}", tool, id);
         } catch (Exception e) {
             return null;
         }
-        if (StringUtils.equals(c.getTool(), toolName) && StringUtils.equals(c.getPath(), path) && (c.getScope() == scope && StringUtils.equals(entityId, c.getEntityId()))) {
-            return c;
-        } else {
-            return null;
+        if (StringUtils.equals(configuration.getTool(), toolName) && StringUtils.equals(configuration.getPath(), path) && (configuration.getScope() == scope && StringUtils.equals(entityId, configuration.getEntityId()))) {
+            return configuration;
         }
+        return null;
     }
 
     private Configuration getConfigByVersionImpl(final String toolName, final String path, final int version, final Scope scope, final String entityId) {
@@ -401,13 +443,16 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return list.stream().filter(configuration -> configuration.getVersion() == version).findFirst().orElse(null);
     }
 
-    private Configuration replaceConfigImpl(String xnatUser, String reason, String toolName, String path, String status, Boolean unversioned, String contents, final Scope scope, final String entityId) throws ConfigServiceException {
+    private Configuration replaceConfigImpl(final String username, final String reason, final String toolName, final String path, final String status, final Boolean unversioned, final String contents, final Scope scope, final String entityId) throws ConfigServiceException {
         if (contents != null && contents.length() > ConfigService.MAX_FILE_LENGTH) {
             throw new ConfigServiceException("file size must be less than " + ConfigService.MAX_FILE_LENGTH + " characters.");
         }
 
-        //if a current config exists and the contents are the same as the previous version, share the config data
-        Configuration oldConfig = getConfigImpl(toolName, path, scope, entityId);
+        //if a current config exists but has disabled status, we can only proceed if the incoming status is enabled.
+        final Configuration oldConfig = getConfigImpl(toolName, path, scope, entityId);
+        if (oldConfig != null && StringUtils.equals(oldConfig.getStatus(), DISABLED_STRING) && !StringUtils.equals(status, ENABLED_STRING)) {
+            throw new ConfigServiceException("The requested configuration is disabled and must be re-enabled before it can be updated");
+        }
 
         // We will version the configuration if:
         //  Case1) There is no config and unversioned is specified and false, or not specified (defaults to false)
@@ -456,7 +501,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         configuration.setPath(path);
         configuration.setScope(scope);
         configuration.setEntityId(entityId);
-        configuration.setXnatUser(xnatUser);
+        configuration.setXnatUser(username);
         configuration.setReason(reason);
         configuration.setStatus(StringUtils.isBlank(status) ? ((oldConfig != null && !StringUtils.isBlank(oldConfig.getStatus())) ? oldConfig.getStatus() : Configuration.ENABLED_STRING) : status);
         configuration.setVersion(1 + ((oldConfig != null && doVersion) ? oldConfig.getVersion() : 0));
@@ -480,43 +525,6 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         path = formatForJava(path);
 
         doDynamicActions(configuration, ignoreExceptions, "org.nrg.config.extensions", action, toolName, path);
-    }
-
-    /**
-     * Removes special characters and capitalizes the next character.
-     *
-     * @param name The name to format.
-     *
-     * @return A Java-formatted string.
-     */
-    public static String formatForJava(String name) {
-        if (StringUtils.isBlank(name)) {
-            return name;
-        }
-
-        StringBuilder sb = new StringBuilder();
-
-        name = name.replace('/', '.');
-        name = name.replaceAll("[^A-Za-z0-9.]", "_");
-
-        String first = name.substring(0, 1);
-        sb.append(first.toUpperCase());
-        name = name.substring(1).toLowerCase();
-
-        while (name.contains("_")) {
-            int i = name.indexOf("_");
-            if (i + 2 > name.length()) {
-                break;
-            } else if (i != 0) {
-                sb.append(name, 0, i);
-                sb.append(name.substring(i + 1, i + 2).toUpperCase());
-                name = name.substring(i + 2);
-            } else {
-                name = name.substring(1);
-            }
-        }
-        sb.append(name);
-        return sb.toString();
     }
 
     private void doDynamicActions(Configuration config, boolean ignoreExceptions, String... _package) {
@@ -554,46 +562,26 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     }
 
     private String getStatusImpl(String toolName, String path, Scope scope, String entityId) {
-        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
-        if (list == null || list.size() == 0) {
-            return null;
-        }
-        list.sort(ConfigComparatorByCreateDate);
-        return list.get(list.size() - 1).getStatus();
+        final Configuration configuration = getConfigImpl(toolName, path, scope, entityId);
+        return configuration != null ? configuration.getStatus() : null;
     }
 
     //fail silently if the configuration does not exist, throws an unsupported operation exception if status is null.
-    private void setStatusImpl(String xnatUser, String reason, String toolName, String path, String status, Scope scope, String entityId) throws ConfigServiceException {
-        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
-        if (list == null || list.size() == 0) {
-            //fail silently if the configuration does not exist...
-            return;
+    private void setStatusImpl(final String xnatUser, final String reason, final String toolName, final String path, final String status, final Scope scope, final String entityId) throws ConfigServiceException {
+        final Configuration configuration = getConfigImpl(toolName, path, scope, entityId);
+        if (configuration == null) {
+            if (scope == Scope.Site) {
+                throw new ConfigServiceException("Couldn't find the site configuration for tool " + toolName + " and path " + path + ".");
+            }
+            throw new ConfigServiceException("Couldn't find the site configuration for tool " + toolName + " and path " + path + " with scope " + scope.name() + " and entity ID " + entityId + ".");
         }
-        list.sort(ConfigComparatorByCreateDate);
-        Configuration entity = list.get(list.size() - 1);
-
-        if (!entity.isEnabled()) {
+        if (!configuration.isEnabled()) {
             throw new ConfigServiceException("Can't set the status on a disabled configuration.");
         }
 
-        if (!entity.getStatus().equals(status)) {
-            if (StringUtils.isBlank(reason)) {
-                reason = "Setting status to " + status;
-            }
-            replaceConfigImpl(xnatUser, reason, toolName, path, status, entity.isUnversioned(), entity.getContents(), entity.getScope(), entity.getEntityId());
+        if (!configuration.getStatus().equals(status)) {
+            replaceConfigImpl(xnatUser, reason, toolName, path, status, configuration.isUnversioned(), configuration.getConfigData().getContents(), scope, entityId);
         }
-    }
-
-    private List<Configuration> getHistoryImpl(String toolName, String path, Scope scope, String entityId) {
-        if (StringUtils.isBlank(entityId) && scope != Scope.Site) {
-            throw new NrgServiceRuntimeException("You've specified scope " + scope + " without an entity ID. Scope MUST be set to Site if entity ID is blank.");
-        }
-        final List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
-        if (list == null || list.size() == 0) {
-            return null;
-        }
-        list.sort(ConfigComparatorByCreateDate);
-        return list;
     }
 
     private String getProjectIdFromLong(final Long project) {

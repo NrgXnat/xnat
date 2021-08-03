@@ -18,6 +18,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
 import javax.persistence.*;
+import java.util.Objects;
 import java.util.Properties;
 
 @SuppressWarnings("deprecation")
@@ -30,11 +31,10 @@ public class Configuration extends AbstractHibernateEntity {
 
     @Transient
     public String getContents() {
-        if (configData != null) {
+        if (configData != null && StringUtils.equals(status, ENABLED_STRING)) {
             return configData.getContents();
-        } else {
-            return null;
         }
+        return null;
     }
 
     public String getXnatUser() {
@@ -158,17 +158,7 @@ public class Configuration extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        int result = getScope().hashCode();
-        result = 31 * result + (getEntityId() != null ? getEntityId().hashCode() : 0);
-        result = 31 * result + getTool().hashCode();
-        result = 31 * result + getPath().hashCode();
-        result = 31 * result + (getConfigData() != null ? getConfigData().hashCode() : 0);
-        result = 31 * result + (getXnatUser() != null ? getXnatUser().hashCode() : 0);
-        result = 31 * result + (getReason() != null ? getReason().hashCode() : 0);
-        result = 31 * result + (getStatus() != null ? getStatus().hashCode() : 0);
-        result = 31 * result + getVersion();
-        result = 31 * result + (isUnversioned() ? 1 : 0);
-        return result;
+        return Objects.hash(super.hashCode(), project, scope, entityId, tool, path, configData, xnatUser, reason, status, version, unversioned);
     }
 
     @SuppressWarnings("unused")

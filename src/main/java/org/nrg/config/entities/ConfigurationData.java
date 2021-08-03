@@ -9,6 +9,8 @@
 
 package org.nrg.config.entities;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -41,25 +43,28 @@ public class ConfigurationData extends AbstractHibernateEntity {
         return configurations;
     }
 
+    @SuppressWarnings("unused")
     public void setConfigurations(Set<Configuration> configurations) {
         this.configurations = configurations;
     }
 
-    /**
-     * This method looks only at the contents of the configuration data and ignores the associated configurations.
-     *
-     * @param object The object to which this object should be compared.
-     *
-     * @return True if the contents of the configuration data object are equal.
-     */
     @Override
     public boolean equals(final Object object) {
-        return this == object || object instanceof ConfigurationData && getContents().equals(((ConfigurationData) object).getContents());
+        if (this == object) {
+            return true;
+        }
+
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+
+        final ConfigurationData that = (ConfigurationData) object;
+        return new EqualsBuilder().appendSuper(super.equals(object)).append(contents, that.contents).isEquals();
     }
 
     @Override
     public int hashCode() {
-        return getContents().hashCode();
+        return new HashCodeBuilder(17, 37).appendSuper(super.hashCode()).append(contents).toHashCode();
     }
 
     private Set<Configuration> configurations;

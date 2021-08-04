@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.assertj.core.api.AssertionsForClassTypes.failBecauseExceptionWasNotThrown;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.nrg.config.entities.Configuration.DISABLED_STRING;
 
@@ -34,7 +33,7 @@ public class TestDefaultConfigService {
     private static final String PROPERTIES_STATUS   = "status";
     public static final  String PROPERTIES_VERSION  = "version";
 
-    private ConfigService              _configService;
+    private ConfigService _configService;
 
     @Autowired
     public void setConfigService(final ConfigService configService) {
@@ -59,17 +58,9 @@ public class TestDefaultConfigService {
         final Configuration retrieved1 = _configService.getConfigByVersion(TOOL, PATH, 1);
         assertThat(retrieved1).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_1).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 1).isEqualTo(config1);
 
-        try {
-            _configService.replaceConfig(USERNAME, REASON, TOOL, PATH, VALUE_6);
-            failBecauseExceptionWasNotThrown(ConfigServiceException.class);
-        } catch (ConfigServiceException ignored) {
-            // We have to re-enable the configuration
-        }
-
-        _configService.enable(USERNAME, REASON, TOOL, PATH);
-
+        _configService.replaceConfig(USERNAME, REASON, TOOL, PATH, VALUE_6);
         final Configuration config6 = _configService.getConfig(TOOL, PATH);
-        assertThat(config6).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_4).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 6);
+        assertThat(config6).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_6).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 6);
 
         final Configuration config7 = _configService.replaceConfig(USERNAME, REASON, TOOL, PATH, VALUE_7);
         assertThat(config7).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_7).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 7);
@@ -93,17 +84,9 @@ public class TestDefaultConfigService {
         final Configuration retrieved1 = _configService.getConfigByVersion(TOOL, PATH, 1, Scope.Project, PROJECT_1);
         assertThat(retrieved1).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_1).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 1).isEqualTo(config1);
 
-        try {
-            _configService.replaceConfig(USERNAME, REASON, TOOL, PATH, VALUE_6, Scope.Project, PROJECT_1);
-            failBecauseExceptionWasNotThrown(ConfigServiceException.class);
-        } catch (ConfigServiceException ignored) {
-            // We have to re-enable the configuration
-        }
-
-        _configService.enable(USERNAME, REASON, TOOL, PATH, Scope.Project, PROJECT_1);
-
+        _configService.replaceConfig(USERNAME, REASON, TOOL, PATH, VALUE_6, Scope.Project, PROJECT_1);
         final Configuration config6 = _configService.getConfig(TOOL, PATH, Scope.Project, PROJECT_1);
-        assertThat(config6).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_4).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 6);
+        assertThat(config6).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_6).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 6);
 
         final Configuration config7 = _configService.replaceConfig(USERNAME, REASON, TOOL, PATH, VALUE_7, Scope.Project, PROJECT_1);
         assertThat(config7).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_7).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 7);

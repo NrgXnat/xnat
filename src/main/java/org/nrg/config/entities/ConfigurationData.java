@@ -9,6 +9,7 @@
 
 package org.nrg.config.entities;
 
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.hibernate.annotations.Cache;
@@ -26,8 +27,13 @@ import java.util.Set;
 @Auditable
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+@NoArgsConstructor
 public class ConfigurationData extends AbstractHibernateEntity {
     public static final int MAX_FILE_LENGTH = 1073741824; // 1 GB
+
+    public ConfigurationData(final String contents) {
+        setContents(contents);
+    }
 
     @Column(columnDefinition = "TEXT", length = MAX_FILE_LENGTH)
     public String getContents() {

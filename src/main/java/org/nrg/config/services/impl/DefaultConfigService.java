@@ -35,6 +35,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -113,17 +114,17 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
                         final long testForSiteRefs = _jdbcTemplate.queryForObject("SELECT COUNT(*) FROM xhbm_configuration WHERE scope IS NULL AND project IS NULL", Long.class);
                         if (testForSiteRefs > 0) {
                             final int updatedSiteRefs = _jdbcTemplate.update("UPDATE xhbm_configuration SET scope = ? WHERE scope IS NULL AND project IS NULL", Scope.Site.ordinal());
-                            log.info("Updated " + updatedSiteRefs + " rows with no project or scope/entity set, set to use site scope.");
+                            log.info("Updated {} rows with no project or scope/entity set, set to use site scope.", updatedSiteRefs);
                         }
                         final long testForEntityRefs = _jdbcTemplate.queryForObject("SELECT COUNT(*) FROM xhbm_configuration WHERE scope IS NULL AND (entity_id IS NULL OR entity_id = '')", Long.class);
                         if (testForEntityRefs > 0) {
                             final int updatedEntityRefs = _jdbcTemplate.update("UPDATE xhbm_configuration SET scope = ?, entity_id = (SELECT id FROM xnat_projectdata WHERE projectdata_info = xhbm_configuration.project) WHERE scope IS NULL AND (entity_id IS NULL OR entity_id = '')", Scope.Project.ordinal());
-                            log.info("Updated " + updatedEntityRefs + " rows with no scope or entity ID set, set to use project scope, updated entity_id from join with project ID.");
+                            log.info("Updated {} rows with no scope or entity ID set, set to use project scope, updated entity_id from join with project ID.", updatedEntityRefs);
                         }
                         final long testForProjectRefs = _jdbcTemplate.queryForObject("SELECT COUNT(*) FROM xhbm_configuration WHERE project IS NULL AND (entity_id IS NOT NULL AND entity_id != '')", Long.class);
                         if (testForProjectRefs > 0) {
                             final int updatedProjectRefs = _jdbcTemplate.update("UPDATE xhbm_configuration SET project = (SELECT projectdata_info FROM xnat_projectdata WHERE id = xhbm_configuration.entity_id) WHERE project IS NULL AND (entity_id IS NOT NULL AND entity_id != '')");
-                            log.info("Updated " + updatedProjectRefs + " rows with no scope or entity ID set, set to use project scope, updated entity_id from join with project ID.");
+                            log.info("Updated {} rows with no scope or entity ID set, set to use project scope, updated entity_id from join with project ID.", updatedProjectRefs);
                         }
                     }
                 } catch (DataAccessException exception) {
@@ -449,33 +450,47 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         }
 
         //if a current config exists but has disabled status, we can only proceed if the incoming status is enabled.
-        final Configuration oldConfig = getConfigImpl(toolName, path, scope, entityId);
-        if (oldConfig != null && StringUtils.equals(oldConfig.getStatus(), DISABLED_STRING) && !StringUtils.equals(status, ENABLED_STRING)) {
-            throw new ConfigServiceException("The requested configuration is disabled and must be re-enabled before it can be updated");
+        final Configuration     previousConfig     = getConfigImpl(toolName, path, scope, entityId);
+        final ConfigurationData previousConfigData = previousConfig != null ? previousConfig.getConfigData() : null;
+        final boolean           hasPreviousConfig  = previousConfig != null;
+        final String            previousStatus     = hasPreviousConfig ? previousConfig.getStatus() : null;
+        final boolean           hasPreviousStatus  = hasPreviousConfig && StringUtils.isNotBlank(previousStatus);
+        final boolean           isPreviousEnabled  = hasPreviousStatus && StringUtils.equals(previousStatus, ENABLED_STRING);
+
+        // Presume that if the config is being replaced without explicitly setting
+        // the status that it should be enabled.
+        final boolean enabled = StringUtils.isBlank(status) || StringUtils.equals(status, ENABLED_STRING);
+
+        if (!isPreviousEnabled && enabled) {
+            if (scope == Scope.Site) {
+                log.info("User {} is re-enabling the {}:{} configuration", username, toolName, path);
+            } else {
+                log.info("User {} is re-enabling the {}:{} configuration for {} {}", username, toolName, path, scope.name().toLowerCase(Locale.getDefault()), entityId);
+            }
         }
 
         // We will version the configuration if:
-        //  Case1) There is no config and unversioned is specified and false, or not specified (defaults to false)
-        //  Case2) There is a config, but unversioned is specified and false (parameter overrides current configuration, so we don't need to check)
-        //  Case3) NOT(There is a config, unversioned is either not specified or is true, and the config is set to unversioned)
+        //  Case1: There is no config and unversioned is specified and false, or not specified (defaults to false)
+        //  Case2: There is a config, but unversioned is specified and false (parameter overrides current configuration, so we don't need to check)
+        //  Case3: NOT(There is a config, unversioned is either not specified or is true, and the config is set to unversioned)
         final boolean unversionedValueOrDefault    = unversioned != null ? unversioned : UNVERSIONED_DEFAULT;
         final boolean unversionedSpecifiedAndFalse = unversioned != null && !unversioned;
-        boolean doVersion = ((oldConfig == null && !unversionedValueOrDefault) ||
-                             (oldConfig != null && unversionedSpecifiedAndFalse) ||
-                             (oldConfig != null && !oldConfig.isUnversioned()));
+        final boolean doVersion = !hasPreviousConfig && !unversionedValueOrDefault ||
+                                  hasPreviousConfig && unversionedSpecifiedAndFalse ||
+                                  hasPreviousConfig && !previousConfig.isUnversioned();
 
-        Configuration configuration;
-        boolean       update;
+        final Configuration configuration;
+        final boolean       update;
         // If these things...
-        if (oldConfig != null && !doVersion) {
+        if (hasPreviousConfig && !doVersion) {
             // We're going to update a non-versioned configuration.
             update = true;
-            configuration = oldConfig;
             // If the contents have changed in a non-versioned configuration, delete the existing configuration data.
-            if (configuration.getConfigData() != null && !StringUtils.equals(contents, configuration.getConfigData().getContents())) {
-                _dataDAO.delete(configuration.getConfigData());
-                configuration.setConfigData(null);
+            if (previousConfigData != null && !StringUtils.equals(contents, previousConfigData.getContents())) {
+                _dataDAO.delete(previousConfigData);
+                previousConfig.setConfigData(null);
             }
+            configuration = previousConfig;
         } else {
             // But if not those things, we're creating a new (possibly versioned or non-versioned, we don't care) configuration
             update = false;
@@ -485,13 +500,12 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         // If we have contents and there are no contents set for the configuration...
         if (configuration.getConfigData() == null) {
             // If the old configuration data doesn't differ, we'll just re-use that.
-            if (oldConfig != null && oldConfig.getConfigData() != null && StringUtils.equals(contents, oldConfig.getConfigData().getContents())) {
-                configuration.setConfigData(oldConfig.getConfigData());
+            if (hasPreviousConfig && previousConfigData != null && StringUtils.equals(contents, previousConfigData.getContents())) {
+                configuration.setConfigData(previousConfigData);
             } else {
                 // But if it doesn't, we need to create a new configuration data. For non-versioned configurations, we
                 // already deleted the existing configuration data.
-                ConfigurationData configurationData = new ConfigurationData();
-                configurationData.setContents(contents);
+                final ConfigurationData configurationData = new ConfigurationData(contents);
                 _dataDAO.create(configurationData);
                 configuration.setConfigData(configurationData);
             }
@@ -503,8 +517,8 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         configuration.setEntityId(entityId);
         configuration.setXnatUser(username);
         configuration.setReason(reason);
-        configuration.setStatus(StringUtils.isBlank(status) ? ((oldConfig != null && !StringUtils.isBlank(oldConfig.getStatus())) ? oldConfig.getStatus() : Configuration.ENABLED_STRING) : status);
-        configuration.setVersion(1 + ((oldConfig != null && doVersion) ? oldConfig.getVersion() : 0));
+        configuration.setStatus(enabled ? Configuration.ENABLED_STRING : DISABLED_STRING);
+        configuration.setVersion((hasPreviousConfig && doVersion ? previousConfig.getVersion() : 0) + 1);
         configuration.setUnversioned(!doVersion);
 
         notifyListeners("preChange", toolName, path, configuration, true);//developers can insert pre-change logic that can prevent the storage of the configuration by throwing an exception

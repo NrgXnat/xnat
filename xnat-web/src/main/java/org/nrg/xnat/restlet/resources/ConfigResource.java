@@ -24,6 +24,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.restlet.Context;
@@ -313,55 +314,37 @@ public class ConfigResource extends SecureResource {
 
             fixAnonPath();
 
-            Representation entity = getRequest().getEntity();
-            MediaType mt;
-            Map<String, String> jsonParams = null;
-            String status;
-            if (entity != null && (mt = entity.getMediaType()) != null && mt.equals(MediaType.APPLICATION_JSON)) {
-                jsonParams = getSerializer().deserializeJson(entity.getText(),
-                        new TypeReference<HashMap<String, String>>() {});
+            final Representation entity    = getRequest().getEntity();
+            final MediaType      mediaType = entity != null ? entity.getMediaType() : null;
+
+            final Map<String, String> jsonParams;
+            final String              status;
+            if (entity != null && mediaType != null && mediaType.equals(MediaType.APPLICATION_JSON)) {
+                jsonParams = getSerializer().deserializeJson(entity.getText(), new TypeReference<HashMap<String, String>>() {});
                 status = jsonParams.get("status");
             } else {
+                jsonParams = null;
                 status = getQueryVariable("status");
             }
 
-            boolean handledStatus = false;
-            //if this is a status update, do it and return
-            if (StringUtils.isNotBlank(status)) {
-                final Matcher matcher = REGEX_ENABLED_VALUES.matcher(status);
-                // Add support for true or false to make compatible with generic controls in settingsManager.js.
-                if (!matcher.matches() && !status.equals("true") && !status.equals("false")) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Only valid values for the status flag are enabled or true and disabled or false: " + status);
-                    return;
-                }
-                if ("enabled".equals(status) || "true".equals(status)) {
-                    if (StringUtils.isBlank(projectId)) {
-                        configService.enable(user.getUsername(), reason, toolName, path);
-                    } else {
-                        configService.enable(user.getUsername(), reason, toolName, path, Scope.Project, projectId);
-                    }
-                    handledStatus = true;
-                } else {
-                    if (StringUtils.isBlank(projectId)) {
-                        configService.disable(user.getUsername(), reason, toolName, path);
-                    } else {
-                        configService.disable(user.getUsername(), reason, toolName, path, Scope.Project, projectId);
-                    }
-                    getResponse().setStatus(Status.SUCCESS_OK);
-                    return;
-                }
+            final boolean hasStatus = StringUtils.isNotBlank(status);
+            final boolean hasBodyContent = entity != null && entity.getAvailableSize() > 0 || jsonParams != null && jsonParams.containsKey("contents");
 
-                if(StringUtils.isBlank(projectId)) {
-                    DefaultAnonUtils.invalidateSitewideAnonCache();
-                }
+            if (!hasStatus && !hasBodyContent) {
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify either the status querystring parameter or a configuration object in the request body.");
+                return;
             }
 
-            boolean hasBodyContent = (entity != null && entity.getAvailableSize() > 0) ||
-                    (jsonParams != null && jsonParams.containsKey("contents"));
+            if (hasStatus && !StringUtils.equalsAnyIgnoreCase(status, "enabled", "true", "disabled", "false")) {
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Only valid values for the status flag are enabled or true and disabled or false: " + status);
+                return;
+            }
 
-            // If we handled the status and there was no content posted, i.e.
-            // no change to the configuration's contents, then we're done, OK.
-            if (handledStatus && !hasBodyContent) {
+            //if this is JUST a status update, do it and return
+            if (hasStatus && !hasBodyContent) {
+                handleStatus(status, user.getUsername());
+                // If we handled the status and there was no content posted, i.e.
+                // no change to the configuration's contents, then we're done, OK.
                 getResponse().setStatus(Status.SUCCESS_OK);
                 return;
             }
@@ -371,8 +354,8 @@ public class ConfigResource extends SecureResource {
             // status, since a status change operation with no body presumes that
             // all you wanted to do was change the status and returns OK (see lines
             // immediately above here).
-            final String contents = hasBodyContent ? getBodyContents(jsonParams) : "";
-            if (contents == null) {
+            final String contents = getBodyContents(jsonParams);
+            if (StringUtils.isBlank(contents)) {
                 throw new ConfigServiceException("No contents provided");
             }
 
@@ -491,5 +474,26 @@ public class ConfigResource extends SecureResource {
         return path;
     }
 
-    private static final Pattern REGEX_ENABLED_VALUES = Pattern.compile("(en|dis)abled");
+    private boolean handleStatus(final String status, final String username) throws ConfigServiceException {
+        if (StringUtils.equalsAnyIgnoreCase(status, "enabled", "true")) {
+            if (StringUtils.isBlank(projectId)) {
+                configService.enable(username, reason, toolName, path);
+            } else {
+                configService.enable(username, reason, toolName, path, Scope.Project, projectId);
+            }
+        } else {
+            if (StringUtils.isBlank(projectId)) {
+                configService.disable(username, reason, toolName, path);
+            } else {
+                configService.disable(username, reason, toolName, path, Scope.Project, projectId);
+            }
+            getResponse().setStatus(Status.SUCCESS_OK);
+        }
+
+        if(StringUtils.isBlank(projectId) && StringUtils.equals(toolName, DicomEdit.ToolName)) {
+            DefaultAnonUtils.invalidateSitewideAnonCache();
+        }
+
+        return true;
+    }
 }

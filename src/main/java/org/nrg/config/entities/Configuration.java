@@ -31,10 +31,7 @@ public class Configuration extends AbstractHibernateEntity {
 
     @Transient
     public String getContents() {
-        if (configData != null && StringUtils.equals(status, ENABLED_STRING)) {
-            return configData.getContents();
-        }
-        return null;
+        return configData != null ? configData.getContents() : null;
     }
 
     public String getXnatUser() {

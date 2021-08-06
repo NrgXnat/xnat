@@ -53,7 +53,7 @@ public class TestDefaultConfigService {
 
         _configService.disable(USERNAME, DISABLE, TOOL, PATH);
         final Configuration config5 = _configService.getConfig(TOOL, PATH);
-        assertThat(config5).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_STATUS, DISABLED_STRING).hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, null);
+        assertThat(config5).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_STATUS, DISABLED_STRING).hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_4);
 
         final Configuration retrieved1 = _configService.getConfigByVersion(TOOL, PATH, 1);
         assertThat(retrieved1).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_1).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 1).isEqualTo(config1);
@@ -79,7 +79,7 @@ public class TestDefaultConfigService {
 
         _configService.disable(USERNAME, DISABLE, TOOL, PATH, Scope.Project, PROJECT_1);
         final Configuration config5 = _configService.getConfig(TOOL, PATH, Scope.Project, PROJECT_1);
-        assertThat(config5).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_STATUS, DISABLED_STRING).hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, null);
+        assertThat(config5).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_STATUS, DISABLED_STRING).hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_4);
 
         final Configuration retrieved1 = _configService.getConfigByVersion(TOOL, PATH, 1, Scope.Project, PROJECT_1);
         assertThat(retrieved1).isNotNull().hasFieldOrPropertyWithValue(PROPERTIES_CONTENTS, VALUE_1).hasFieldOrPropertyWithValue(PROPERTIES_VERSION, 1).isEqualTo(config1);

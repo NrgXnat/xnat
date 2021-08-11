@@ -25,6 +25,7 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatSecurity;
 import org.nrg.xdat.schema.SchemaElement;
@@ -34,7 +35,6 @@ import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
@@ -76,6 +76,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import static org.nrg.config.entities.Configuration.DISABLED_STRING;
 import static org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader.safeJoin;
 
 /**
@@ -1048,7 +1049,7 @@ public class TurbineUtils {
     public boolean resourceExists(String screen){
     	return Velocity.resourceExists(screen);
     }
-    
+
     public String validateTemplate(String screen, String project) {
         if (StringUtils.isNotBlank(project)) {
             final String key = (screen.endsWith(".vm") ? screen.substring(0, screen.length() - 3) : screen) + "_" + project + ".vm";
@@ -1145,38 +1146,14 @@ public class TurbineUtils {
             throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
         }
     }
-    
-    public String getConfigValue(String project, String toolName, String path, boolean inherit, String _default){
-    	Long projectId=null;
-    	if(project != null){
-    		try {
-				Number p=(Number)PoolDBUtils.ReturnStatisticQuery("SELECT projectData_info FROM xnat_projectData WHERE ID='" + project + "'", "projectdata_info", null, null);
-				if(p!=null){
-					projectId=p.longValue();
-				}
-			} catch (SQLException e) {
-				logger.error("",e);
-			} catch (Exception e) {
-				logger.error("",e);
-			}
-    	}
-		
-    	Configuration config=XDAT.getConfigService().getConfig(toolName, path, projectId);
-    	
-    	if(projectId!=null && config==null && inherit){
-    		config=XDAT.getConfigService().getConfig(toolName, path, null);
-    	}
-    	
-    	if(config==null){
-    		return _default;
-    	}else{
-    		return config.getContents();
-    	}
+
+    public String getConfigValue(final String project, final String toolName, final String path, final boolean inherit, final String defaultValue) {
+        return XDAT.getConfigValue(project, toolName, path, inherit, defaultValue);
     }
-    
+
     public boolean getBooleanConfigValue(String project, String toolName, String path, boolean inherit, boolean _default){
     	String config=this.getConfigValue(project, toolName, path, inherit, null);
-    	
+
     	if(config==null){
     		return _default;
     	}else{
@@ -1186,7 +1163,7 @@ public class TurbineUtils {
     		return this.toBoolean(config);
     	}
     }
-    
+
     public String getConfigValue(String project, String toolName, String path, boolean inherit,String key, String _default){
 		String thevalue=(String)TurbineUtils.GetInstance().getConfigValue(project, toolName, path, inherit, _default);
 		if (StringUtils.equals(_default,thevalue)){
@@ -1195,9 +1172,9 @@ public class TurbineUtils {
 		try{
 			JSONObject obj=new JSONObject(thevalue);
 			if(StringUtils.isEmpty(key)){
-				return thevalue;	
+				return thevalue;
 			}else{
-				
+
 				return obj.getString(key);
 			}
 		}catch(JSONException ex){

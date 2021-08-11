@@ -1,15 +1,14 @@
 package org.nrg.xdat.preferences;
 
-import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
-
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.config.entities.Configuration;
-import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 
 public enum HandlePetMr {
     Default,
@@ -52,8 +51,7 @@ public enum HandlePetMr {
         if (StringUtils.isBlank(project) || StringUtils.equals(UNASSIGNED, project)) {
             return getSeparatePetMr();
         }
-        final Configuration configuration = XDAT.getConfigService().getConfig(SEPARATE_PET_MR, CONFIG, Scope.Project, project);
-        return configuration == null || StringUtils.isBlank(configuration.getContents()) ? getSeparatePetMr() : HandlePetMr.get(configuration.getContents());
+        return HandlePetMr.get(Optional.ofNullable(XDAT.getConfigValue(project, SEPARATE_PET_MR, CONFIG, false)).orElseGet(() -> XDAT.getSiteConfigPreferences().getSitewidePetMr()));
     }
 
     public static boolean shouldSeparatePetMr() {

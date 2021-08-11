@@ -9,9 +9,8 @@
 
 package org.nrg.xdat;
 
-import static org.nrg.xdat.security.helpers.Users.*;
-
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +21,7 @@ import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.configuration.SerializerConfig;
+import org.nrg.framework.constants.Scope;
 import org.nrg.framework.event.EventI;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -87,6 +87,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.nrg.config.entities.Configuration.DISABLED_STRING;
+import static org.nrg.xdat.security.helpers.Users.*;
+
 /**
  * @author Tim
  */
@@ -143,17 +146,45 @@ public class XDAT {
 		return cache != null ? cache.getTotalCounts(): Collections.emptyMap();
 	}
 
-    public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
-        return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
-    }
+	public static String getConfigValue(final Configuration config) {
+		return getConfigValue(config, null);
+	}
 
-    public static String getWhitelistConfiguration(UserI user) throws ConfigServiceException {
-        final Configuration whitelist = XDAT.getConfigService().getConfig(IP_WHITELIST_TOOL, IP_WHITELIST_PATH);
-        if (whitelist != null && StringUtils.isNotBlank(whitelist.getContents())) {
-			return whitelist.getContents();
-        }
-        return createDefaultWhitelist(user).getContents();
-    }
+	public static String getConfigValue(final Configuration config, final String defaultValue) {
+		return config == null || StringUtils.equals(DISABLED_STRING, config.getStatus()) ? defaultValue : config.getContents();
+	}
+
+	public static String getConfigValue(final String toolName, final String path) {
+		return getConfigValue(toolName, path, null);
+	}
+
+	public static String getConfigValue(final String toolName, final String path, final String defaultValue) {
+		return getConfigValue(Optional.ofNullable(getConfigService().getConfig(toolName, path)).orElse(null), defaultValue);
+	}
+
+	public static String getConfigValue(final String project, final String toolName, final String path, final boolean inherit) {
+		return getConfigValue(project, toolName, path, inherit, null);
+	}
+
+	public static String getConfigValue(final String project, final String toolName, final String path, final boolean inherit, final String defaultValue) {
+		return getConfigValue(Optional.ofNullable(getConfigService().getConfig(toolName, path, Scope.Project, project))
+									  .orElseGet(() -> inherit ? XDAT.getConfigService().getConfig(toolName, path) : null));
+	}
+
+	public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
+		return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
+	}
+
+	public static String getWhitelistConfiguration(UserI user) throws ConfigServiceException {
+		return Optional.ofNullable(getConfigValue(IP_WHITELIST_TOOL, IP_WHITELIST_PATH)).orElseGet(() -> {
+			try {
+				return createDefaultWhitelist(user).getContents();
+			} catch (ConfigServiceException e) {
+				log.error("User {} tried to create the default whitelist configuration but an error occurred", user.getUsername(), e);
+				return null;
+			}
+		});
+	}
 
 	public static String getSiteConfigurationProperty(final String property) throws ConfigServiceException {
     	return getSiteConfigurationProperty(property, null);

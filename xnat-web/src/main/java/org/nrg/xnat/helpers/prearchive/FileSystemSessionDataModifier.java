@@ -10,6 +10,7 @@
 package org.nrg.xnat.helpers.prearchive;
 
 import com.google.common.base.Function;
+import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.DicomObject;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
@@ -17,7 +18,6 @@ import org.nrg.dcm.xnat.XnatAttrDef;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
-import org.nrg.dicom.mizer.service.Mizer;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -125,7 +125,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                 XnatImagesessiondataBean doc = null;
                 try {
                     final Configuration configuration = DefaultAnonUtils.getService().getProjectScriptConfiguration(newProject);
-                    if (configuration != null) {
+                    if (configuration != null && StringUtils.equals(Configuration.ENABLED_STRING, configuration.getStatus())) {
                         final String anonScript = configuration.getContents();
                         final XnatAttrDef[] params = {new XnatAttrDef.Constant("project", newProject)};
                         final MizerService mizerService = XDAT.getContextService().getBeanSafely(MizerService.class);

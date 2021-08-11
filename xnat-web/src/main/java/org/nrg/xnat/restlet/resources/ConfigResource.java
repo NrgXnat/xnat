@@ -232,7 +232,7 @@ public class ConfigResource extends SecureResource {
                 //we generated a list of configurations, so represent those.
                 table.initTable(configColumns);  //"tool","path","project","user","create_date","reason","contents", "unversioned", "version", "status"};
                 for (Configuration c : configurations) {
-                    if (c != null) {
+                    if (c != null && StringUtils.equals(Configuration.ENABLED_STRING, c.getStatus())) {
                         //TODO: Since ConfigService is using projectdata_info Long instead of the Project Name String, then we may have to convert
                         //the long id back to a project name string. Luckily, here we already have the project name (passed in)
                         //If you ever have to do that, it would look something like this:

@@ -310,13 +310,8 @@ public abstract class DefaultPipelineScreen extends SecureReport {
     }
 
     public ArrayList<XnatImagescandata> getScansFromScantypeConfig(String toolName, String fileName) {
-
-        Configuration config = XDAT.getConfigService().getConfig(toolName, fileName, Scope.Project, project);
-        if (config != null && config.getContents() != null) {
-            return ((XnatImagesessiondata) om).getScansByTypeCsv(config.getContents().trim());
-        } else {
-            return Lists.newArrayList();
-        }
+        final String config = XDAT.getConfigValue(project, toolName, fileName, false);
+        return StringUtils.isNotBlank(config) ? ((XnatImagesessiondata) om).getScansByTypeCsv(config.trim()) : new ArrayList<>();
     }
 
     protected List<XnatImagesessiondata> getPreviousImagingSessions(final XnatImagesessiondata latestImagingSession) {

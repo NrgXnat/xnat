@@ -157,7 +157,7 @@ public final class DicomEdit extends SecureResource {
                                         }
                                         table.initTable(scriptColumns);
                                         for (Configuration c : cs) {
-                                            if (c != null) {
+                                            if (c != null && StringUtils.equals(Configuration.ENABLED_STRING, c.getStatus())) {
                                                 String[] scriptArray = {
                                                         StringUtils.isBlank(c.getEntityId()) ? "-1" : c.getEntityId(),
                                                         c.getXnatUser(),

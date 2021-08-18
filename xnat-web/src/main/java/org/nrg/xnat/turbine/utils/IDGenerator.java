@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.identifier.IDGeneratorFactory;
@@ -52,8 +51,7 @@ public class IDGenerator implements IDGeneratorI {
         }
         _template = template;
         _siteId = StringUtils.replaceChars(RegExUtils.removeAll(preferences.getSiteId(), "[ \"'^]"), '-', '_');
-        final String hostNumber = hostInfoService.getHostNumber();
-        _hostNumber = NumberUtils.isCreatable(hostNumber) ? NumberUtils.createNumber(hostNumber).toString() : "";
+        _hostNumber = StringUtils.defaultIfBlank(hostInfoService.getHostNumber(), "");
         if (StringUtils.isBlank(_hostNumber) && appInfo.hasMultipleActiveNodes()) {
             try {
                 log.warn("The host number for this server isn't a number, but the application info indicates that this deployment has multiple active nodes. Check for an entry in xhbm_host_info where host_name is: {}", InetAddress.getLocalHost().getHostName());
@@ -61,6 +59,7 @@ public class IDGenerator implements IDGeneratorI {
                 log.error("The application info indicates that this deployment has multiple active nodes, but I couldn't get the host name due to an unexpected error", e);
             }
         }
+        log.debug("Initializing ID generator with site ID {} and host number {}", _siteId, _hostNumber);
         setColumn(DEFAULT_COLUMN);
         setDigits(DEFAULT_DIGITS);
     }
@@ -71,9 +70,8 @@ public class IDGenerator implements IDGeneratorI {
     @Override
     public synchronized String generateIdentifier() {
         final Set<String> offLimits = getClaimedIds();
-
         if (log.isTraceEnabled() && !offLimits.isEmpty()) {
-            log.debug("Generating ID for site {} and table {} using template \"{}\" and {} off-limits IDs:\n * {}", getSiteId(), getTable(), getIdTemplate(), offLimits.size(), StringUtils.join(offLimits, "\n * "));
+            log.trace("Generating ID for site {} and table {} using template \"{}\" and {} off-limits IDs:\n * {}", getSiteId(), getTable(), getIdTemplate(), offLimits.size(), StringUtils.join(offLimits, "\n * "));
         } else {
             log.debug("Generating ID for site {} and table {} using template \"{}\" and {} off-limits IDs", getSiteId(), getTable(), getIdTemplate(), offLimits.size());
         }
@@ -88,9 +86,8 @@ public class IDGenerator implements IDGeneratorI {
     @Override
     public void setTable(final String table) {
         _table = StringUtils.lowerCase(table);
-        if (StringUtils.isBlank(_code)) {
-            setCode(getDefaultCode(_table));
-        }
+        _code = getDefaultCode(_table);
+        log.debug("Set ID generator table to {} and code to {}", _table, _code);
     }
 
     @Override
@@ -122,7 +119,9 @@ public class IDGenerator implements IDGeneratorI {
     private String getIdTemplate() {
         if (_idTemplate == null) {
             _idTemplate = _siteId + _hostNumber + "_" + getCode();
+            log.debug("Set ID generator template to: {}", _idTemplate);
         }
+        log.debug("Returning ID generator template to: {}", _idTemplate);
         return _idTemplate;
     }
 

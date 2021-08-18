@@ -28,6 +28,7 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
 
     public HostInfoDAO() {
         _hostName = getDiscoveredHostName();
+        log.info("Initializing DAO, got host name {}", _hostName);
     }
 
     /**
@@ -35,7 +36,7 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
      *
      * If there's no existing {@link HostInfo} entry for the specified host name, this method creates a new entry for the
      * host name if the <b>setValue</b> parameter is set to true and returns the host number for that new entry.
-     * Otherwise the returned host number is just an empty string.
+     * Otherwise, the returned host number is just an empty string.
      *
      * @param hostName The host name for which you want to retrieve the host number.
      * @param setValue Indicates whether the host name should be saved and the ID of the new entry returned.
@@ -48,12 +49,18 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
         final List<HostInfo> infos = GenericUtils.convertToTypedList(criteria.list(), HostInfo.class);
         if (infos.isEmpty()) {
             if (!setValue) {
+                log.debug("Found no results for host {} and I was told not to set the value so returning empty string (note that I think the host name is {})", hostName, _hostName);
                 return "";
             }
             create(new HostInfo(hostName));
-            return getHostNumber(hostName, false);
+            final String hostNumber = getHostNumber(hostName, false);
+            log.debug("Found no results for host {}, set value and got host number {} (note that I think the host name is {})", hostName, hostNumber, _hostName);
+            return hostNumber;
         }
-        return String.format("%02d", infos.get(0).getId());
+        final long   hostNumber = infos.get(0).getId();
+        final String formatted  = String.format("%02d", hostNumber);
+        log.debug("Found {} results for host {}, returning ID {} from first entry, formatted that will be: {} (note that I think the host name is {})", infos.size(), hostName, hostNumber, formatted, _hostName);
+        return formatted;
     }
 
     /**
@@ -75,7 +82,7 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
      *
      * If there's no existing {@link HostInfo} entry for the specified host name, this method creates a new entry for the
      * host name if the <b>setValue</b> parameter is set to true and returns the host number for that new entry.
-     * Otherwise the returned host number is just an empty string.
+     * Otherwise, the returned host number is just an empty string.
      *
      * @return The host number for the current host.
      */
@@ -85,9 +92,11 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
 
     private static String getDiscoveredHostName() {
         try {
-            return InetAddress.getLocalHost().getHostName();
+            final String hostName = InetAddress.getLocalHost().getHostName();
+            log.debug("Got host name {} from system call", hostName);
+            return hostName;
         } catch (UnknownHostException e) {
-            log.error("An error occurred trying to get the host name for this server", e);
+            log.error("Something is wrong with the configuration on this host, returning 0 but you may not like the results", e);
             return "0";
         }
     }

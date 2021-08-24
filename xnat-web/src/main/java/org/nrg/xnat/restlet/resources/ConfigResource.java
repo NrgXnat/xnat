@@ -188,7 +188,7 @@ public class ConfigResource extends SecureResource {
                     }
                     // we now react to the meta and contents parameters. if we're here, there is zero or 1 configuration added to the array.
                     // if contents=true, just send the contents as a string.
-                    // if meta=true, zero out contents and just send the configuration meta data.
+                    // if meta=true, zero out contents and just send the configuration metadata.
                     // if meta=true && contents==true, send teh configuration as-is.
                     // if meta=false && contents==false, this is the same as not specifying either in the querystring. So, just act as if they didn't.
                     if (contents && !meta) {
@@ -366,14 +366,21 @@ public class ConfigResource extends SecureResource {
             final Status        response   = prevConfig == null ? Status.SUCCESS_CREATED : Status.SUCCESS_OK;
 
             // If there's not a previous config, or the previous configuration is not enabled, or the contents have changed...
-            if (prevConfig == null || !StringUtils.equalsAnyIgnoreCase(prevConfig.getStatus(), "enabled", "true") || !contents.equals(prevConfig.getContents())) {
+            if (prevConfig == null ||
+                !hasStatus && !StringUtils.equalsAnyIgnoreCase(prevConfig.getStatus(), "enabled", "true") ||
+                hasStatus && !StringUtils.equalsAnyIgnoreCase(prevConfig.getStatus(), status) ||
+                !contents.equals(prevConfig.getContents())) {
                 //save/update the configuration
+                final Configuration configuration;
                 if (StringUtils.isBlank(isUnversionedParam)) {
-                    configService.replaceConfig(user.getUsername(), reason, toolName, path, contents, StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
+                    configuration = configService.replaceConfig(user.getUsername(), reason, toolName, path, contents, StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
                 } else {
-                    configService.replaceConfig(user.getUsername(), reason, toolName, path, Boolean.parseBoolean(isUnversionedParam), contents, StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
+                    configuration = configService.replaceConfig(user.getUsername(), reason, toolName, path, Boolean.parseBoolean(isUnversionedParam), contents, StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
                 }
-                if (projectId == null) {
+                if (hasStatus && !StringUtils.equals(status, configuration.getStatus())) {
+                    handleStatus(status, user.getUsername());
+                }
+                if (projectId == null && StringUtils.equals(DicomEdit.ToolName, toolName)) {
                     DefaultAnonUtils.invalidateSitewideAnonCache();
                 }
             }
@@ -401,7 +408,7 @@ public class ConfigResource extends SecureResource {
                 }
                 configService.disable(user.getLogin(), "Disabling this setting", toolName, path);
             } else {
-                if (!(Permissions.canDelete(user, "xnat:subjectData/project", projectId) || Roles.isSiteAdmin(user))) {  //Users should be able to delete project config if have project edit permissions or are site admins. Otherwise they are forbidden.
+                if (!(Permissions.canDelete(user, "xnat:subjectData/project", projectId) || Roles.isSiteAdmin(user))) {  //Users should be able to delete project config if they have project edit permissions or are site admins but are otherwise forbidden.
                     final String message = String.format("User %s can not access project %s to modify configuration setting %s for the tool %s", user.getUsername(), projectId, path, toolName);
                     _log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
@@ -464,7 +471,7 @@ public class ConfigResource extends SecureResource {
                 path = path + remainingPart;
             }
 
-            //lop off any query string parameters.
+            // Lop off any query string parameters.
             int index = path.indexOf('?');
             if (index > 0) {
                 path = StringUtils.left(path, index);

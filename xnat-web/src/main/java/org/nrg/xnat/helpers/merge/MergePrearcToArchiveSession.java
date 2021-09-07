@@ -200,3 +200,4 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         return Optional.ofNullable(session.getSubjectId()).orElseGet(() -> session.getSubjectData() != null ? session.getSubjectData().getId() : "");
     }
 }
+

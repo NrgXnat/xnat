@@ -54,6 +54,7 @@ public class DicomSCPInstance {
         map.put("fileNamer", _fileNamer);
         map.put("enabled", _enabled);
         map.put("customProcessing", _customProcessing);
+        map.put("directArchive", _directArchive);
         return map;
     }
 
@@ -66,4 +67,6 @@ public class DicomSCPInstance {
     private boolean _enabled          = true;
     @Builder.Default
     private boolean _customProcessing = false;
+    @Builder.Default
+    private boolean _directArchive    = false;
 }

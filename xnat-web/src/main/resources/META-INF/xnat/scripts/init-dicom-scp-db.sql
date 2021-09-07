@@ -6,6 +6,7 @@ CREATE TABLE dicom_scp_instance (
   file_namer VARCHAR(1024),
   enabled    BOOLEAN DEFAULT TRUE,
   custom_processing    BOOLEAN DEFAULT FALSE,
+  direct_archive       BOOLEAN DEFAULT FALSE,
   UNIQUE (ae_title, port)
 );
 

@@ -261,7 +261,6 @@
     overflow-y: scroll; /* XNAT-6500 */
 }
 .scrollable-table tbody {
-    overflow-y: auto;
     max-height: 600px;
 }
 

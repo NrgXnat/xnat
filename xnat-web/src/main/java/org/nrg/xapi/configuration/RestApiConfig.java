@@ -1,7 +1,7 @@
 /*
  * web: org.nrg.xapi.configuration.RestApiConfig
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -11,8 +11,6 @@ package org.nrg.xapi.configuration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
-import org.nrg.xapi.model.users.UserFactory;
-import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.spawner.configuration.SpawnerConfig;
 import org.springframework.context.MessageSource;
@@ -35,16 +33,10 @@ import java.util.Locale;
 
 @Configuration
 @EnableSwagger2
-@ComponentScan(value = {"org.nrg.xapi.rest", "org.nrg.xnat.eventservice.rest", "org.nrg.xnat.snapshot.rest"}, includeFilters = @Filter(ControllerAdvice.class))
+@ComponentScan(value = {"org.nrg.xapi.model.users", "org.nrg.xapi.rest", "org.nrg.xnat.eventservice.rest", "org.nrg.xnat.snapshot.rest"}, includeFilters = @Filter(ControllerAdvice.class))
 @Import({SpawnerConfig.class})
-//@Import({SpawnerConfig.class, SnapshotGenerationApiConfig.class})
 @Slf4j
 public class RestApiConfig {
-    @Bean
-    public UserFactory userFactory(final XdatUserAuthService service) {
-        return new UserFactory(service);
-    }
-
     @Bean
     public Docket api(final XnatAppInfo info, final MessageSource messageSource) {
         log.debug("Initializing the Swagger Docket object");

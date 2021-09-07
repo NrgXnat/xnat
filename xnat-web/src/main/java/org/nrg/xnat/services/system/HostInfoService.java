@@ -11,7 +11,6 @@ package org.nrg.xnat.services.system;
 
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xnat.entities.HostInfo;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Provides information about the current host.
@@ -28,7 +27,9 @@ public interface HostInfoService extends BaseHibernateService<HostInfo> {
      * Gets the host number of the host with the indicated name.
      *
      * @param hostName The name of the host.
+     *
      * @return The host number of the indicated host.
      */
-    String getHostNumber(String hostName);
+    @SuppressWarnings("unused")
+    String getHostNumber(final String hostName);
 }

@@ -1340,6 +1340,13 @@ dicomScpEditor:
             onText: "Custom Processing: <b>Enabled</b>"
             offText: "Custom Processing <b>Disabled</b>"
             description: Enable or Disable Custom Processing for DICOM Receiver
+        directArchive:
+            kind: panel.input.switchbox
+            name: directArchive
+            label: Direct Archive
+            onText: "Direct to archive: <b>Enabled</b>"
+            offText: "Direct to archive: <b>Disabled</b> (use prearchive)"
+            description: Enable or Disable Direct Archive for DICOM Receiver (if disabled, data comes through the prearchive)
         identifier:
             kind: panel.select.single
             id: scp-identifier

@@ -19,6 +19,7 @@ import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.FinishImageUpload;
@@ -259,16 +260,24 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 this.processing("Populating session");
                 final FinishImageUpload    finisher           = ListenerUtils.addListeners(this, new FinishImageUpload(listenerControl, user, session, destination, overrideExceptions, allowSessionMerge, true));
                 final XnatImagesessiondata imageSession       = new XNATSessionPopulater(user, session.getSessionDir(), session.getProject(), false).populate();
+                final SessionData sessionData                 = session.getSessionData();
+                final File        sessionDir                  = session.getSessionDir();
 
                 this.processing("Performing anonymization");
                 final SiteWideAnonymizer   siteWideAnonymizer = new SiteWideAnonymizer(imageSession, true);
-                siteWideAnonymizer.call();
+                if (siteWideAnonymizer.call()) {
+                    // rebuild XML
+                    XnatSubjectdata s = imageSession.getSubjectData();
+                    String subject = s != null ? s.getLabel() : imageSession.getSubjectId();
+                    PrearcUtils.buildSession(sessionData, sessionDir, imageSession.getLabel(), sessionData.getTimestamp(),
+                            imageSession.getProject(), subject, imageSession.getVisit(),
+                            imageSession.getProtocol(), (String) session.getAdditionalValues().get("TIMEZONE"),
+                            (String) session.getAdditionalValues().get("SOURCE"));
+                }
                 if (finisher.isAutoArchive()) {
                     this.processing("Archiving");
                     final List<String> urls = Collections.singletonList(finisher.call());
                     if (PrearcDatabase.setStatus(session.getFolderName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.QUEUED_DELETING)) {
-                        final SessionData sessionData = PrearcDatabase.getSession(session.getFolderName(), session.getTimestamp(), session.getProject());
-                        final File        sessionDir  = session.getSessionDir();
                         XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Delete, sessionData, sessionDir));
                     }
                     this.completed("Archive:" + Joiner.on(";").join(urls), true);

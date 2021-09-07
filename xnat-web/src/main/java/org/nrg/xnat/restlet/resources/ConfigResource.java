@@ -24,6 +24,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.restlet.Context;
@@ -42,25 +43,23 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ConfigResource extends SecureResource {
 
-    private static final String PROJECT_ID = "PROJECT_ID";
-    private static final String TOOL_NAME = "TOOL_NAME";
+    private static final String PROJECT_ID   = "PROJECT_ID";
+    private static final String TOOL_NAME    = "TOOL_NAME";
     private static final String PATH_TO_FILE = "PATH_TO_FILE";
-    private static final String REASON = "REASON";
+    private static final String REASON       = "REASON";
 
     private static final Logger _log = LoggerFactory.getLogger(ConfigResource.class);
 
     private static final String[] configColumns = {"tool", "path", "project", "user", "create_date", "reason", "contents", "unversioned", "version", "status"};
-    private static final String[] listColumns = {"tool"};
+    private static final String[] listColumns   = {"tool"};
 
     private final String projectId;
     private final String toolName;
     private final String reason;
-    private String path;
+    private       String path;
 
     // TODO: if we start using projectdata_info instead of id in config service:
     // private final long projectId;
@@ -83,6 +82,7 @@ public class ConfigResource extends SecureResource {
         path = getFullConfigPath();
     }
 
+    @SuppressWarnings("CommentedOutCode")
     @Override
     public Representation represent(Variant variant) throws ResourceException {
 
@@ -91,10 +91,10 @@ public class ConfigResource extends SecureResource {
             final MediaType mt = overrideVariant(variant);
 
             //handle query variables
-            final boolean getHistory = "getHistory".equalsIgnoreCase(getQueryVariable("action"));
-            Integer version = null;
-            final boolean meta = isQueryVariableTrueHelper(getQueryVariable("meta"));
-            final boolean contents = isQueryVariableTrueHelper(getQueryVariable("contents"));
+            final boolean getHistory     = "getHistory".equalsIgnoreCase(getQueryVariable("action"));
+            Integer       version        = null;
+            final boolean meta           = isQueryVariableTrueHelper(getQueryVariable("meta"));
+            final boolean contents       = isQueryVariableTrueHelper(getQueryVariable("contents"));
             final boolean acceptNotFound = isQueryVariableTrueHelper(getQueryVariable("accept-not-found"));
 
             try {
@@ -122,8 +122,8 @@ public class ConfigResource extends SecureResource {
             }
 
             final List<Configuration> configurations = new ArrayList<>();
-            final List<String> list = new ArrayList<>();
-            final List<String> tools;
+            final List<String>        list           = new ArrayList<>();
+            final List<String>        tools;
 
             if (StringUtils.isBlank(toolName) && StringUtils.isBlank(path) && StringUtils.isBlank(projectId)) {
                 //  /REST/config
@@ -141,8 +141,8 @@ public class ConfigResource extends SecureResource {
             } else if (StringUtils.isBlank(path)) {
                 //  /REST/projects/{PROJECT_ID}/config/{TOOL_NAME}  or    /REST/config/{TOOL_NAME}
                 final List<Configuration> l = StringUtils.isBlank(projectId)
-                        ? configService.getConfigsByTool(toolName)
-                        : configService.getConfigsByTool(toolName, Scope.Project, projectId);
+                                              ? configService.getConfigsByTool(toolName)
+                                              : configService.getConfigsByTool(toolName, Scope.Project, projectId);
                 if (l != null) {
                     configurations.addAll(l);  //addAll is not null safe.
                 }
@@ -153,8 +153,8 @@ public class ConfigResource extends SecureResource {
                 if (getHistory) {
                     //   /REST/config/{TOOL_NAME}/{PATH_TO_FILE}&action=getHistory  or  /REST/projects/{PROJECT_ID}/config/{TOOL_NAME}/{PATH_TO_FILE}&action=getHistory
                     final List<Configuration> foundConfigs = isSiteWide
-                            ? configService.getHistory(toolName, path)
-                            : configService.getHistory(toolName, path, Scope.Project, projectId);
+                                                             ? configService.getHistory(toolName, path)
+                                                             : configService.getHistory(toolName, path, Scope.Project, projectId);
                     if (foundConfigs != null) {
                         configurations.addAll(foundConfigs);  //addAll is not null safe.
                     }
@@ -188,7 +188,7 @@ public class ConfigResource extends SecureResource {
                     }
                     // we now react to the meta and contents parameters. if we're here, there is zero or 1 configuration added to the array.
                     // if contents=true, just send the contents as a string.
-                    // if meta=true, zero out contents and just send the configuration meta data.
+                    // if meta=true, zero out contents and just send the configuration metadata.
                     // if meta=true && contents==true, send teh configuration as-is.
                     // if meta=false && contents==false, this is the same as not specifying either in the querystring. So, just act as if they didn't.
                     if (contents && !meta) {
@@ -226,14 +226,13 @@ public class ConfigResource extends SecureResource {
                         table.insertRow(scriptArray);
                     }
                 }
-                return representTable(table, mt, new Hashtable<String, Object>());
+                return representTable(table, mt, new Hashtable<>());
 
             } else if (configurations.size() > 0 && configurations.get(0) != null) {
                 //we generated a list of configurations, so represent those.
                 table.initTable(configColumns);  //"tool","path","project","user","create_date","reason","contents", "unversioned", "version", "status"};
                 for (Configuration c : configurations) {
                     if (c != null) {
-
                         //TODO: Since ConfigService is using projectdata_info Long instead of the Project Name String, then we may have to convert
                         //the long id back to a project name string. Luckily, here we already have the project name (passed in)
                         //If you ever have to do that, it would look something like this:
@@ -261,14 +260,14 @@ public class ConfigResource extends SecureResource {
                         table.insertRow(scriptArray);
                     }
                 }
-                return representTable(table, mt, new Hashtable<String, Object>());
+                return representTable(table, mt, new Hashtable<>());
             } else {
                 //if we fell through to here, nothing existed at the supplied URI
                 final String message = String.format("Couldn't find config for user %s and project %s on tool [%s] path [%s]", user.getUsername(), projectId, toolName, path);
                 _log.debug(message);
                 if (acceptNotFound) {
                     getResponse().setStatus(Status.SUCCESS_NO_CONTENT, message);
-                    return representTable(table, mt, new Hashtable<String, Object>());
+                    return representTable(table, mt, new Hashtable<>());
                 } else {
                     getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
                     throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);
@@ -299,9 +298,9 @@ public class ConfigResource extends SecureResource {
     public void handlePut() {
         /*
          * PUT is idempotent: if the network is botched and the client is not sure whether his request made it through,
-		 * it can just send it a second (or 100th) time, and it is guaranteed by the HTTP spec that this has exactly the 
-		 * same effect as sending once.
-		 */
+         * it can just send it a second (or 100th) time, and it is guaranteed by the HTTP spec that this has exactly the
+         * same effect as sending once.
+         */
         final UserI user = getUser();
         try {
             //check access, almost copy-paste code in the GET method.
@@ -313,55 +312,38 @@ public class ConfigResource extends SecureResource {
 
             fixAnonPath();
 
-            Representation entity = getRequest().getEntity();
-            MediaType mt;
-            Map<String, String> jsonParams = null;
-            String status;
-            if (entity != null && (mt = entity.getMediaType()) != null && mt.equals(MediaType.APPLICATION_JSON)) {
-                jsonParams = getSerializer().deserializeJson(entity.getText(),
-                        new TypeReference<HashMap<String, String>>() {});
+            final Representation entity    = getRequest().getEntity();
+            final MediaType      mediaType = entity != null ? entity.getMediaType() : null;
+
+            final Map<String, String> jsonParams;
+            final String              status;
+            if (entity != null && mediaType != null && mediaType.equals(MediaType.APPLICATION_JSON)) {
+                jsonParams = getSerializer().deserializeJson(entity.getText(), new TypeReference<HashMap<String, String>>() {
+                });
                 status = jsonParams.get("status");
             } else {
+                jsonParams = null;
                 status = getQueryVariable("status");
             }
 
-            boolean handledStatus = false;
-            //if this is a status update, do it and return
-            if (StringUtils.isNotBlank(status)) {
-                final Matcher matcher = REGEX_ENABLED_VALUES.matcher(status);
-                // Add support for true or false to make compatible with generic controls in settingsManager.js.
-                if (!matcher.matches() && !status.equals("true") && !status.equals("false")) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Only valid values for the status flag are enabled or true and disabled or false: " + status);
-                    return;
-                }
-                if ("enabled".equals(status) || "true".equals(status)) {
-                    if (StringUtils.isBlank(projectId)) {
-                        configService.enable(user.getUsername(), reason, toolName, path);
-                    } else {
-                        configService.enable(user.getUsername(), reason, toolName, path, Scope.Project, projectId);
-                    }
-                    handledStatus = true;
-                } else {
-                    if (StringUtils.isBlank(projectId)) {
-                        configService.disable(user.getUsername(), reason, toolName, path);
-                    } else {
-                        configService.disable(user.getUsername(), reason, toolName, path, Scope.Project, projectId);
-                    }
-                    getResponse().setStatus(Status.SUCCESS_OK);
-                    return;
-                }
+            final boolean hasStatus      = StringUtils.isNotBlank(status);
+            final boolean hasBodyContent = entity != null && entity.getAvailableSize() > 0 || jsonParams != null && jsonParams.containsKey("contents");
 
-                if(StringUtils.isBlank(projectId)) {
-                    DefaultAnonUtils.invalidateSitewideAnonCache();
-                }
+            if (!hasStatus && !hasBodyContent) {
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify either the status querystring parameter or a configuration object in the request body.");
+                return;
             }
 
-            boolean hasBodyContent = (entity != null && entity.getAvailableSize() > 0) ||
-                    (jsonParams != null && jsonParams.containsKey("contents"));
+            if (hasStatus && !StringUtils.equalsAnyIgnoreCase(status, "enabled", "true", "disabled", "false")) {
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Only valid values for the status flag are enabled or true and disabled or false: " + status);
+                return;
+            }
 
-            // If we handled the status and there was no content posted, i.e.
-            // no change to the configuration's contents, then we're done, OK.
-            if (handledStatus && !hasBodyContent) {
+            //if this is JUST a status update, do it and return
+            if (hasStatus && !hasBodyContent) {
+                handleStatus(status, user.getUsername());
+                // If we handled the status and there was no content posted, i.e.
+                // no change to the configuration's contents, then we're done, OK.
                 getResponse().setStatus(Status.SUCCESS_OK);
                 return;
             }
@@ -371,31 +353,38 @@ public class ConfigResource extends SecureResource {
             // status, since a status change operation with no body presumes that
             // all you wanted to do was change the status and returns OK (see lines
             // immediately above here).
-            final String contents = hasBodyContent ? getBodyContents(jsonParams) : "";
-            if (contents == null) {
+            final String contents = getBodyContents(jsonParams);
+            if (StringUtils.isBlank(contents)) {
                 throw new ConfigServiceException("No contents provided");
             }
 
             final String isUnversionedParam = getQueryVariable("unversioned");
 
-            //if there is a previous configuration check to see if its contents equals the new contents, if so, just return success.
-            //do not update the configuration for puts are idempotent
+            // If there is a previous configuration check to see if it's enabled and if its contents equals the new contents. If so, just return success.
+            // Do not update the configuration for puts are idempotent.
             final Configuration prevConfig = StringUtils.isBlank(projectId) ? configService.getConfig(toolName, path) : configService.getConfig(toolName, path, Scope.Project, projectId);
-            if (prevConfig != null && contents.equals(prevConfig.getContents())) {
-                getResponse().setStatus(Status.SUCCESS_OK);
-            } else {
+            final Status        response   = prevConfig == null ? Status.SUCCESS_CREATED : Status.SUCCESS_OK;
+
+            // If there's not a previous config, or the previous configuration is not enabled, or the contents have changed...
+            if (prevConfig == null ||
+                !hasStatus && !StringUtils.equalsAnyIgnoreCase(prevConfig.getStatus(), "enabled", "true") ||
+                hasStatus && !StringUtils.equalsAnyIgnoreCase(prevConfig.getStatus(), status) ||
+                !contents.equals(prevConfig.getContents())) {
                 //save/update the configuration
+                final Configuration configuration;
                 if (StringUtils.isBlank(isUnversionedParam)) {
-                    configService.replaceConfig(user.getUsername(), reason, toolName, path, contents, StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
+                    configuration = configService.replaceConfig(user.getUsername(), reason, toolName, path, contents, StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
                 } else {
-                    boolean isUnversioned = Boolean.parseBoolean(isUnversionedParam);
-                    configService.replaceConfig(user.getUsername(), reason, toolName, path, isUnversioned, contents, StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
+                    configuration = configService.replaceConfig(user.getUsername(), reason, toolName, path, Boolean.parseBoolean(isUnversionedParam), contents, StringUtils.isBlank(projectId) ? Scope.Site : Scope.Project, projectId);
                 }
-                if(projectId==null){
+                if (hasStatus && !StringUtils.equals(status, configuration.getStatus())) {
+                    handleStatus(status, user.getUsername());
+                }
+                if (projectId == null && StringUtils.equals(DicomEdit.ToolName, toolName)) {
                     DefaultAnonUtils.invalidateSitewideAnonCache();
                 }
-                getResponse().setStatus(Status.SUCCESS_CREATED);
             }
+            getResponse().setStatus(response);
         } catch (ConfigServiceException e) {
             _log.error("Configuration service error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
@@ -419,7 +408,7 @@ public class ConfigResource extends SecureResource {
                 }
                 configService.disable(user.getLogin(), "Disabling this setting", toolName, path);
             } else {
-                if (!(Permissions.canDelete(user, "xnat:subjectData/project", projectId) || Roles.isSiteAdmin(user))) {  //Users should be able to delete project config if have project edit permissions or are site admins. Otherwise they are forbidden.
+                if (!(Permissions.canDelete(user, "xnat:subjectData/project", projectId) || Roles.isSiteAdmin(user))) {  //Users should be able to delete project config if they have project edit permissions or are site admins but are otherwise forbidden.
                     final String message = String.format("User %s can not access project %s to modify configuration setting %s for the tool %s", user.getUsername(), projectId, path, toolName);
                     _log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
@@ -477,12 +466,12 @@ public class ConfigResource extends SecureResource {
         //restlet matches the first part of the path and ignores the rest.
         //if path is not null, we need to see if there's anything at the end of the URL to add.
         if (path != null) {
-        	final String remainingPart = getRequest().getResourceRef().getRemainingPart();
-        	if (remainingPart != null) {
-        		path = path + remainingPart;
-        	}
+            final String remainingPart = getRequest().getResourceRef().getRemainingPart();
+            if (remainingPart != null) {
+                path = path + remainingPart;
+            }
 
-            //lop off any query string parameters.
+            // Lop off any query string parameters.
             int index = path.indexOf('?');
             if (index > 0) {
                 path = StringUtils.left(path, index);
@@ -491,5 +480,24 @@ public class ConfigResource extends SecureResource {
         return path;
     }
 
-    private static final Pattern REGEX_ENABLED_VALUES = Pattern.compile("(en|dis)abled");
+    private void handleStatus(final String status, final String username) throws ConfigServiceException {
+        if (StringUtils.equalsAnyIgnoreCase(status, "enabled", "true")) {
+            if (StringUtils.isBlank(projectId)) {
+                configService.enable(username, reason, toolName, path);
+            } else {
+                configService.enable(username, reason, toolName, path, Scope.Project, projectId);
+            }
+        } else {
+            if (StringUtils.isBlank(projectId)) {
+                configService.disable(username, reason, toolName, path);
+            } else {
+                configService.disable(username, reason, toolName, path, Scope.Project, projectId);
+            }
+            getResponse().setStatus(Status.SUCCESS_OK);
+        }
+
+        if (StringUtils.isBlank(projectId) && StringUtils.equals(toolName, DicomEdit.ToolName)) {
+            DefaultAnonUtils.invalidateSitewideAnonCache();
+        }
+    }
 }

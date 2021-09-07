@@ -522,6 +522,15 @@ public class XnatAppInfo {
         return _primaryNode;
     }
 
+    /**
+     * Indicates whether there are multiple nodes in a distributed XNAT deployment or if this is a stand-alone system.
+     *
+     * @return Returns true if there are multiple active nodes or false if this XNAT is a stand-alone server.
+     */
+    public boolean hasMultipleActiveNodes() {
+        return _hasMultipleActiveNodes;
+    }
+
     @SuppressWarnings("unused")
     public String getHostName() {
         return _hostName;

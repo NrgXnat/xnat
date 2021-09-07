@@ -356,6 +356,9 @@
     <logger name="org.nrg.xnat.configuration" additivity="false" level="WARN">
         <appender-ref ref="configuration"/>
     </logger>
+    <logger name="org.nrg.xnat.daos" additivity="false" level="WARN">
+        <appender-ref ref="configuration"/>
+    </logger>
     <logger name="org.nrg.xnat.web" additivity="false" level="WARN">
         <appender-ref ref="xapi"/>
     </logger>

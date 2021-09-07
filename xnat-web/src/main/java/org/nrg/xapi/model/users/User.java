@@ -1,7 +1,7 @@
 /*
  * web: org.nrg.xapi.model.users.User
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -12,13 +12,21 @@ package org.nrg.xapi.model.users;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.entities.UserAuthI;
+import org.nrg.xdat.om.XdatUser;
+import org.nrg.xft.utils.DateUtils;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.Date;
+import java.util.List;
 
 /**
  * A transport container for user details. The {@link #isSecured() secured property} controls whether security-related
@@ -28,150 +36,62 @@ import java.util.Date;
  * calls with all data intact.
  */
 @ApiModel(description = "Contains the properties that define a user on the system.")
+@Data
+@Accessors(prefix = "_")
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
-    public static final RowMapper<User> Mapper = new RowMapper<User>() {
-        @Override
-        public User mapRow(final ResultSet resultSet, final int index) throws SQLException {
-            final Timestamp lastModified        = resultSet.getTimestamp("last_modified");
-            final Timestamp lastSuccessfulLogin = resultSet.getTimestamp("lastSuccessfulLogin");
-            return new User(resultSet.getInt("id"),
-                            resultSet.getString("username"),
-                            resultSet.getString("firstName"),
-                            resultSet.getString("lastName"),
-                            resultSet.getString("email"),
-                            null,
-                            null,
-                            null,
-                            true,
-                            lastModified != null ? new Date(lastModified.getTime()) : null,
-                            null,
-                            resultSet.getInt("enabled") == 1,
-                            resultSet.getInt("verified") == 1,
-                            lastSuccessfulLogin != null ? new Date(lastSuccessfulLogin.getTime()) : null);
+    public static List<User> getAllUsers(final NamedParameterJdbcTemplate template) {
+        return template.query(QUERY_ORDERED_PROFILES, USER_ROW_MAPPER);
+    }
+
+    public static List<User> getCurrentUsers(final NamedParameterJdbcTemplate template, final int maxLoginInterval, final int lastModifiedInterval) {
+        return template.query(QUERY_CURRENT_USERS, new MapSqlParameterSource("maxLoginInterval", maxLoginInterval).addValue("lastModifiedInterval", lastModifiedInterval), USER_ROW_MAPPER);
+    }
+
+    public static User getUser(final NamedParameterJdbcTemplate template, final String username) throws NotFoundException {
+        try {
+            return template.queryForObject(QUERY_USER_PROFILE, new MapSqlParameterSource("username", username), USER_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NotFoundException(XdatUser.SCHEMA_ELEMENT_NAME, username);
         }
-    };
-
-    /**
-     * The user's unique key.
-     **/
-    @ApiModelProperty(value = "The user's unique key.")
-    public Integer getId() {
-        return _id;
     }
 
-    public void setId(final Integer id) {
-        _id = id;
-    }
-
-    /**
-     * The user's login name.
-     **/
-    @ApiModelProperty(value = "The user's login name.")
-    public String getUsername() {
-        return _username;
-    }
-
-    public void setUsername(final String username) {
-        _username = username;
-    }
-
-    /**
-     * The user's first name.
-     **/
-    @ApiModelProperty(value = "The user's first name.")
-    public String getFirstName() {
-        return _firstName;
-    }
-
-    @SuppressWarnings("unused")
-    public void setFirstName(final String firstName) {
-        _firstName = firstName;
-    }
-
-    /**
-     * The user's last name.
-     **/
-    @ApiModelProperty(value = "The user's last name.")
-    public String getLastName() {
-        return _lastName;
-    }
-
-    @SuppressWarnings("unused")
-    public void setLastName(final String lastName) {
-        _lastName = lastName;
-    }
-
-    /**
-     * The user's _email address.
-     **/
-    @ApiModelProperty(value = "The user's email address.")
-    public String getEmail() {
-        return _email;
-    }
-
-    public void setEmail(final String email) {
-        _email = email;
-    }
-
-    /**
-     * Whether the user is enabled.
-     **/
-    @ApiModelProperty(value = "Whether the user is enabled.")
-    public Boolean isEnabled() {
-        return _isEnabled;
-    }
-
-    public void setEnabled(final boolean isEnabled) {
-        _isEnabled = isEnabled;
-    }
-
-    /**
-     * Whether the user is verified.
-     **/
-    @ApiModelProperty(value = "Whether the user is verified.")
-    public Boolean isVerified() {
-        return _isVerified;
-    }
-
-    public void setVerified(final boolean isVerified) {
-        _isVerified = isVerified;
-    }
+    private static final RowMapper<User> USER_ROW_MAPPER        = (resultSet, index) -> new User(resultSet.getInt("id"),
+                                                                                                 resultSet.getString("username"),
+                                                                                                 resultSet.getString("firstName"),
+                                                                                                 resultSet.getString("lastName"),
+                                                                                                 resultSet.getString("email"),
+                                                                                                 null,
+                                                                                                 null,
+                                                                                                 true,
+                                                                                                 DateUtils.getDateForTimestamp(resultSet.getTimestamp("last_modified")),
+                                                                                                 null,
+                                                                                                 resultSet.getInt("enabled") == 1,
+                                                                                                 resultSet.getInt("verified") == 1,
+                                                                                                 DateUtils.getDateForTimestamp(resultSet.getTimestamp("last_successful_login")));
+    private static final String          QUERY_USER_PROFILES    = "SELECT u.login AS username, u.xdat_user_id AS id, u.firstname, u.lastname, u.email, u.enabled, u.verified, m.last_modified, a.max_login AS last_successful_login FROM xdat_user u JOIN xdat_user_meta_data m ON u.user_info = m.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) a ON u.login = a.xdat_username";
+    private static final String          QUERY_ORDER_BY         = "ORDER BY u.xdat_user_id";
+    private static final String          QUERY_LIMIT_TO_CURRENT = "WHERE u.enabled = 1 OR ((a.max_login > CURRENT_DATE - (INTERVAL '1 year' * :maxLoginInterval) OR (a.max_login IS NULL AND (m.last_modified > CURRENT_DATE - (INTERVAL '1 year' * :lastModifiedInterval)))))";
+    private static final String          QUERY_LIMIT_TO_USER    = "WHERE u.login=:username";
+    private static final String          QUERY_ORDERED_PROFILES = String.join(" ", QUERY_USER_PROFILES, QUERY_ORDER_BY);
+    private static final String          QUERY_CURRENT_USERS    = String.join(" ", QUERY_USER_PROFILES, QUERY_LIMIT_TO_CURRENT, QUERY_ORDER_BY);
+    private static final String          QUERY_USER_PROFILE     = String.join(" ", QUERY_USER_PROFILES, QUERY_LIMIT_TO_USER);
 
     /**
      * The user's encrypted password.
      **/
     @ApiModelProperty(value = "The user's encrypted password.")
     public String getPassword() {
-        return _secured ? null : _password;
-    }
-
-    public void setPassword(final String password) {
-        _password = password;
+        return getSecuredProperty(_password);
     }
 
     /**
-     * The _salt used to encrypt the user's _password.
+     * The salt used to encrypt the user's _password.
      **/
     @ApiModelProperty(value = "The salt used to encrypt the user's password.")
     public String getSalt() {
-        return _secured ? null : _salt;
-    }
-
-    @SuppressWarnings("unused")
-    public void setSalt(final String salt) {
-        _salt = salt;
-    }
-
-    /**
-     * The date and time the user record was last modified.
-     **/
-    @ApiModelProperty(value = "The date and time the user record was last modified.")
-    public Date getLastModified() {
-        return _lastModified;
-    }
-
-    public void setLastModified(final Date lastModified) {
-        _lastModified = lastModified;
+        return getSecuredProperty(_salt);
     }
 
     /**
@@ -179,47 +99,13 @@ public class User {
      **/
     @ApiModelProperty(value = "The user's authorization record used when logging in.")
     public UserAuthI getAuthorization() {
-        return _secured ? null : _authorization;
-    }
-
-    @SuppressWarnings("unused")
-    public void setAuthorization(final UserAuthI authorization) {
-        _authorization = authorization;
-    }
-
-    /**
-     * Returns the date and time of the last successful login attempt for the most recently used authentication provider.
-     *
-     * @return The date and time of the last successful login attempt for the most recently used authentication provider.
-     */
-    @SuppressWarnings("unused")
-    @ApiModelProperty("The date and time of the last successful login attempt for the most recently used authentication provider.")
-    public Date getLastSuccessfulLogin() {
-        return _lastSuccessfulLogin;
-    }
-
-    /**
-     * Sets the date and time of the last successful login attempt for the most recently used authentication provider.
-     */
-    @SuppressWarnings("unused")
-    public void setLastSuccessfulLogin(Date lastSuccessfulLogin) {
-        _lastSuccessfulLogin = lastSuccessfulLogin;
+        return getSecuredProperty(_authorization);
     }
 
     @ApiModelProperty(value = "The user's full name.")
     @JsonIgnore
     public String getFullName() {
         return String.format("%s %s", getFirstName(), getLastName());
-    }
-
-    @SuppressWarnings({"unused", "WeakerAccess"})
-    @ApiModelProperty(value = "Indicates whether the user object is secured, which causes secure fields like password and salt to return null.")
-    public boolean isSecured() {
-        return _secured;
-    }
-
-    public void setSecured(final boolean secured) {
-        _secured = secured;
     }
 
     @Override
@@ -230,7 +116,6 @@ public class User {
                "  firstName: " + _firstName + "\n" +
                "  lastName: " + _lastName + "\n" +
                "  email: " + _email + "\n" +
-               "  dbName: " + _dbName + "\n" +
                "  password: " + _password + "\n" +
                "  salt: " + _salt + "\n" +
                "  lastModified: " + _lastModified + "\n" +
@@ -239,39 +124,34 @@ public class User {
                "}\n";
     }
 
-    public User(int id, String username, String first, String last, String email, String dbName, String password, String salt, boolean secured, Date lastModified, UserAuthI authorization, boolean isEnabled, boolean isVerified, Date lastSuccessfulLogin) {
-        _id = id;
-        _username = username;
-        _firstName = first;
-        _lastName = last;
-        _email = email;
-        _dbName = dbName;
-        _password = password;
-        _salt = salt;
-        _secured = secured;
-        _lastModified = lastModified;
-        _authorization = authorization;
-        _isEnabled = isEnabled;
-        _isVerified = isVerified;
-        _lastSuccessfulLogin = lastSuccessfulLogin;
+    private <T> T getSecuredProperty(final T property) {
+        return _secured ? null : property;
     }
 
-    public User() {
-
-    }
-
+    @ApiModelProperty(value = "The user's unique key.")
     private Integer   _id;
+    @ApiModelProperty(value = "The user's login name.")
     private String    _username;
+    @ApiModelProperty(value = "The user's first name.")
     private String    _firstName;
+    @ApiModelProperty(value = "The user's last name.")
     private String    _lastName;
+    @ApiModelProperty(value = "The user's email address.")
     private String    _email;
-    private String    _dbName;
+    @ApiModelProperty(value = "The user's encrypted password.")
     private String    _password;
+    @ApiModelProperty(value = "The salt used to encrypt the user's password.")
     private String    _salt;
+    @ApiModelProperty(value = "Indicates whether the user object is secured, which causes secure fields like password and salt to return null.")
     private boolean   _secured;
+    @ApiModelProperty(value = "The date and time the user record was last modified.")
     private Date      _lastModified;
+    @ApiModelProperty(value = "The user's authorization record used when logging in.")
     private UserAuthI _authorization;
-    private Boolean   _isEnabled;
-    private Boolean   _isVerified;
+    @ApiModelProperty(value = "Whether the user is enabled.")
+    private Boolean   _enabled;
+    @ApiModelProperty(value = "Whether the user is verified.")
+    private Boolean   _verified;
+    @ApiModelProperty("The date and time of the last successful login attempt for the most recently used authentication provider.")
     private Date      _lastSuccessfulLogin;
 }

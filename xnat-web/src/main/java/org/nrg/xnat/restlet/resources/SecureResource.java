@@ -1320,7 +1320,7 @@ public abstract class SecureResource extends Resource {
     }
 
     public String wrapPartialDataURI(String uri) {
-        return StringUtils.prependIfMissing(uri, "/data");
+        return uri.startsWith("/xapi/") ? uri : StringUtils.prependIfMissing(uri, "/data");
     }
 
     public void setResponseStatus(final ActionException e) {

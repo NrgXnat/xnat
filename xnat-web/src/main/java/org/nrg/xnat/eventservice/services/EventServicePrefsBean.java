@@ -12,6 +12,7 @@ import org.nrg.xnat.eventservice.model.EventServicePrefs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * Event Service preferences, stored as a prefs bean.
@@ -21,15 +22,13 @@ import org.springframework.beans.factory.annotation.Autowired;
     description = "Preferences to enable/disable Event Service functionality")
 public class EventServicePrefsBean extends AbstractPreferenceBean {
     private static final Logger _log = LoggerFactory.getLogger(EventServicePrefsBean.class);
-
-    public EventServicePrefsBean(final NrgPreferenceService preferenceService) {
-        super(preferenceService);
-    }
+    private final EventService eventService;
 
     @Autowired
-    public EventServicePrefsBean(final NrgPreferenceService preferenceService, final ConfigPaths configFolderPaths, final
+    public EventServicePrefsBean(@Lazy final EventService eventService, final NrgPreferenceService preferenceService, final ConfigPaths configFolderPaths, final
                                  OrderedProperties initPrefs) {
         super(preferenceService, configFolderPaths, initPrefs);
+        this.eventService = eventService;
     }
 
     // ** Enable/Disable all Event Service operations - overriding all other ES prefs ** //
@@ -41,6 +40,9 @@ public class EventServicePrefsBean extends AbstractPreferenceBean {
         if (enabled != null) {
             try {
                 setBooleanValue(enabled, "enabled");
+                if (enabled){
+                    eventService.reactivateAllSubscriptions();
+                }
             } catch (InvalidPreferenceName e) {
                 _log.error("Error setting Event Service preference \"name\".", e.getMessage());
             }

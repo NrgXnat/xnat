@@ -5,17 +5,13 @@ import org.apache.commons.lang.StringUtils;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.nrg.action.ServerException;
-import org.nrg.config.entities.Configuration;
 import org.nrg.dicom.mizer.service.MizerService;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
-import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
 import org.restlet.data.Status;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 
 @Component

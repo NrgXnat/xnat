@@ -144,6 +144,9 @@ var XNAT = getObject(XNAT || {});
 
         item = getObject(item);
 
+        if (item['identifier'] === undefined) item['identifier'] = 'dicomObjectIdentifier';
+
+
         var $container = spawn('div.dicom-scp-editor-container');
 
         // spawn the editor form directly into the dialog (no template)
@@ -186,6 +189,11 @@ var XNAT = getObject(XNAT || {});
                     identifierSelect.closest('.panel-element')
                                     .hidden(false)
 
+                } else {
+                    // explicitly store the default XNAT identifier value with the SCP receiver     definition
+                    $form.find('#scp-identifier').parents('.panel-element').empty().append(
+                        '<input type="hidden" name="identifier" value="dicomObjectIdentifier" />'
+                    );
                 }
 
                 if (isNew) { item.enabled = true }
@@ -198,6 +206,7 @@ var XNAT = getObject(XNAT || {});
                     $form.find('[name="port"]').val(item.port);
                     $form.find('[name="enabled"]').val(item.enabled);
                     $form.find('[name="customProcessing"]').prop('checked', item.customProcessing).val(item.customProcessing);
+                    $form.find('[name="directArchive"]').prop('checked', item.directArchive).val(item.directArchive);
                 }
 
                 spawneri.render($container);
@@ -226,6 +235,12 @@ var XNAT = getObject(XNAT || {});
                                 var customProcessing$ = $formPanel.find('[name="customProcessing"]');
                                 if (customProcessing$.length) {
                                     customProcessing$[0].value = customProcessing$[0].checked + '';
+                                }
+
+                                // set the value for 'directArchive' on-the-fly
+                                var directArchive$ = $formPanel.find('[name="directArchive"]');
+                                if (directArchive$.length) {
+                                    directArchive$[0].value = directArchive$[0].checked + '';
                                 }
 
                                 console.log(item.id);
@@ -329,6 +344,7 @@ var XNAT = getObject(XNAT || {});
                 .th({ addClass: 'left', html: '<b>AE Title</b>' })
                 .th('<b>Port</b>')
                 .th('<b>Identifier</b>').addClass((Object.keys(dicomScpManager.identifiers).length > 1) ? '' : 'hidden') // only show this if there are multiple identifiers
+                .th('<b>Archive Behavior</b>')
                 .th('<b>Enabled</b>')
                 .th('<b>Actions</b>');
 
@@ -424,17 +440,33 @@ var XNAT = getObject(XNAT || {});
             }, 'Delete');
         }
 
+        function displayBehavior(item){
+            item.identifier = item.identifier || 'dicomObjectIdentifier';
+            var archiveBehavior = (item.directArchive) ? 'Direct Archive Behavior Enabled' : 'Uses Standard Prearchive Behavior';
+            var customRemapping = (item.customProcessing) ? 'Custom Remapping Enabled' : 'Uses Standard Anonymization';
+            var projectRouting = (item.identifier === 'dicomObjectIdentifier') ? 'Uses Standard Project Routing' :
+                (item.identifier.slice(0,3) === 'dqr') ? 'DQR Routing Enabled' : 'Uses Custom Project Routing';
+            return spawn('ul', {
+                style: { 'margin': '0', 'padding-left': '1.5em' }
+            },[
+                [ 'li',archiveBehavior ],
+                [ 'li',customRemapping ],
+                [ 'li',projectRouting ]
+            ]);
+        }
+
         dicomScpManager.getAll().done(function(data){
             data.forEach(function(item){
                 // var identifierLabel = dicomScpManager.identifiers[item.identifier] || dicomScpManager.identifiers['dicomObjectIdentifier'];
                 var identifierLabel = item.identifier || 'dicomObjectIdentifier';
                 identifierLabel += (identifierLabel === 'dicomObjectIdentifier') ? ' (Default)' : '';
                 scpTable.tr({ title: item.aeTitle, data: { id: item.id, port: item.port } })
-                        .td([editLink(item, item.aeTitle)]).addClass('aeTitle')
+                        .td({ style: 'max-width: 180px' },[editLink(item, item.aeTitle)]).addClass('aeTitle word-wrapped')
                         .td([['div.mono.center', item.port]]).addClass('port')
                         .td(identifierLabel).addClass((Object.keys(dicomScpManager.identifiers).length > 1) ? '' : 'hidden') // only show this if there are multiple identifiers
+                        .td({ style: 'min-width: 150px' },[displayBehavior(item)]).addClass('behavior')
                         .td([enabledCheckbox(item)]).addClass('status')
-                        .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
+                        .td([['div.center', [editButton(item), spacer(4), deleteButton(item)]]]).addClass('nowrap');
             });
 
             if (container) {

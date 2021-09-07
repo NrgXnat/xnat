@@ -82326,26 +82326,31 @@ qx.$$packageData['0']={"locales":{"C":{"alternateQuotationEnd":"’","alternateQ
       __buttons : [{
         name : s,
         action : s,
+        hidden: window.XNAT.app.prearchive.hideArchiveBtn,
         enabled : prearchiveui.Sessions.ARCHIVABLE,
         button : null
       }, {
         name : i,
         action : l,
+        hidden: false,
         enabled : prearchiveui.Sessions.ARCHIVABLE,
         button : null
       }, {
         name : w,
         action : o,
+        hidden: false,
         enabled : prearchiveui.Sessions.MOVABLE,
         button : null
       }, {
         name : a,
         action : a,
+        hidden: false,
         enabled : prearchiveui.Sessions.DELETABLE,
         button : null
       }, {
         name : h,
         action : t,
+        hidden: false,
         enabled : prearchiveui.Sessions.RESETABLE,
         button : null
       }],
@@ -82392,6 +82397,10 @@ qx.$$packageData['0']={"locales":{"C":{"alternateQuotationEnd":"’","alternateQ
           paddingTop : 0
         });
         this.__buttons.map(function(G){
+
+          if(G.hidden == true){
+            return;
+          }
 
           var D = function(e){
 

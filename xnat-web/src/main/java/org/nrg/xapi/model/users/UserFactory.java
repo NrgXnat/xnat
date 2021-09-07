@@ -1,7 +1,7 @@
 /*
  * web: org.nrg.xapi.model.users.UserFactory
  * XNAT http://www.xnat.org
- * Copyright (c) 2017, Washington University School of Medicine
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -12,9 +12,7 @@ package org.nrg.xapi.model.users;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -22,11 +20,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class UserFactory {
-    @Autowired
-    public UserFactory(final XdatUserAuthService service) {
-        _service = service;
-    }
-
     public User getUser() {
         return new User();
     }
@@ -40,12 +33,11 @@ public class UserFactory {
     }
 
     public User getUser(final UserI xdatUser) {
-        final User user = new User();
-        populateUser(user, xdatUser);
-        return user;
+        return populateUser(xdatUser);
     }
-    
-    private User populateUser(final User user, final UserI xdatUser) {
+
+    private User populateUser(final UserI xdatUser) {
+        final User user = new User();
         user.setId(xdatUser.getID());
         user.setUsername(xdatUser.getUsername());
         user.setFirstName(xdatUser.getFirstname());
@@ -60,6 +52,4 @@ public class UserFactory {
         user.setSecured(true);
         return user;
     }
-
-    private final XdatUserAuthService _service;
 }

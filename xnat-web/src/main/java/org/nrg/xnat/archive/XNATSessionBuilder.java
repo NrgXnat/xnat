@@ -9,27 +9,22 @@
 
 package org.nrg.xnat.archive;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
-import org.nrg.dcm.xnat.XnatImagescandataBeanFactory;
 import org.nrg.dcm.xnat.XnatImagesessiondataBeanFactory;
 import org.nrg.ecat.xnat.PETSessionBuilder;
 import org.nrg.framework.services.ContextService;
 import org.nrg.resources.SupplementalResourceBuilderUtils;
 import org.nrg.session.SessionBuilder;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.XFT;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -44,99 +39,43 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
+import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
+import static org.nrg.xnat.helpers.prearchive.PrearcUtils.*;
 
+@Slf4j
 public class XNATSessionBuilder implements Callable<Boolean> {
-    private static final Logger logger = LoggerFactory.getLogger(XNATSessionBuilder.class);
-
     //config params for loading injecting a different executor for pooling the session builders.
-    private static final String _executorFileName = "session-builder.properties";
-    private static final String _executorIdentifier = "org.nrg.SessionBuilder.executor.impl";
+    private static final String                                                 EXECUTOR_FILE_NAME           = "session-builder.properties";
+    private static final String                                                 EXECUTOR_IDENTIFIER          = "org.nrg.SessionBuilder.executor.impl";
+    private static final String                                                 SEQUENCE                     = "sequence";
+    private static final String                                                 CLASS_NAME                   = "className";
+    private static final String[]                                               PROP_OBJECT_FIELDS           = new String[]{CLASS_NAME, SEQUENCE};
+    private static final String                                                 PROP_OBJECT_IDENTIFIER       = "org.nrg.SessionBuilder.impl";
+    private static final String                                                 SESSION_BUILDER_PROPERTIES   = "session-builder.properties";
+    private static final String                                                 PROJECT_PARAM                = "project";
+    private static final String                                                 DICOM                        = "DICOM";
+    private static final BuilderConfig                                          DICOM_BUILDER                = new BuilderConfig(DICOM, DICOMSessionBuilder.class, 0);
+    private static final String                                                 ECAT                         = "ECAT";
+    private static final BuilderConfig                                          ECAT_BUILDER                 = new BuilderConfig(ECAT, PETSessionBuilder.class, 1);
+    private static final Class<?>[]                                             PARAMETER_TYPES              = new Class[]{File.class, Writer.class};
+    private static final List<BuilderConfig>                                    BUILDER_CLASSES              = initializeBuilderClasses();
+    private static final List<Class<? extends XnatImagesessiondataBeanFactory>> SESSION_DATA_FACTORY_CLASSES = new ArrayList<>();
 
-    //config params for session builder specification
-    private static final String SEQUENCE = "sequence";
-    private static final String CLASS_NAME = "className";
-    private static final String[] PROP_OBJECT_FIELDS = new String[]{CLASS_NAME, SEQUENCE};
-    private static final String PROP_OBJECT_IDENTIFIER = "org.nrg.SessionBuilder.impl";
-    private static final String SESSION_BUILDER_PROPERTIES = "session-builder.properties";
+    private static ContextService  _contextService  = null;
+    private static ExecutorService _executorService = null;
 
-    private static final String PROJECT_PARAM = "project";
-
-
-    private static final String DICOM = "DICOM";
-    private static final BuilderConfig DICOM_BUILDER = new BuilderConfig(DICOM, DICOMSessionBuilder.class, 0);
-
-    private static final String ECAT = "ECAT";
-    private static final BuilderConfig ECAT_BUILDER = new BuilderConfig(ECAT, PETSessionBuilder.class, 1);
-
-    private static List<BuilderConfig> builderClasses;
-
-    private static final Class<?>[] PARAMETER_TYPES = new Class[]{File.class, Writer.class};
-
-    private static final List<Class<? extends XnatImagesessiondataBeanFactory>> sessionDataFactoryClasses = Lists.newArrayList();
-    private static final List<XnatImagesessiondataBeanFactory> sessionDataFactories = Lists.newArrayList();
-    private static final List<XnatImagescandataBeanFactory> scanDataFactories = Lists.newArrayList();
-    private static ContextService contextService = null;
-
-    private final File dir, xml;
-    private final boolean isInPrearchive;
+    private final File                dir;
+    private final File                xml;
+    private final boolean             isInPrearchive;
     private final Map<String, String> params;
 
-    static {
-        builderClasses = new ArrayList<>();
-
-        //EXAMPLE PROPERTIES FILE
-        //org.nrg.SessionBuilder.impl=NIFTI
-        //org.nrg.SessionBuilder.impl.NIFTI.className=org.nrg.builders.CustomNiftiBuilder
-        //org.nrg.SessionBuilder.impl.NIFTI.sequence=3
-        try {
-            final File props = new File(XFT.GetConfDir(), SESSION_BUILDER_PROPERTIES);
-            final Map<String, Map<String, Object>> confBuilders = PropertiesHelper.RetrievePropertyObjects(props, PROP_OBJECT_IDENTIFIER, PROP_OBJECT_FIELDS);
-            for (final String key : confBuilders.keySet()) {
-                final String className = (String) confBuilders.get(key).get(CLASS_NAME);
-                final String seqS = (String) confBuilders.get(key).get(SEQUENCE);
-
-                if (className != null) {
-                    try {
-                        final Class<?> c = Class.forName(className);
-                        Integer seq = 3;//default
-                        if (seqS != null) {
-                            seq = Integer.valueOf(seqS);
-                        }
-                        builderClasses.add(new BuilderConfig(key, c, seq));
-                    } catch (NumberFormatException e) {
-                        LoggerFactory.getLogger(XNATSessionBuilder.class).error("An error occurred trying to convert the value " + seqS + " to an integer. Please check your builder configuration.", e);
-                    } catch (ClassNotFoundException e) {
-                        LoggerFactory.getLogger(XNATSessionBuilder.class).error("Couldn't locate the class " + className + ". Please check your builder configuration and classpath.", e);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            LoggerFactory.getLogger(XNATSessionBuilder.class).error("", e);
-        }
-
-        if (!CollectionUtils.exists(builderClasses, new Predicate() {
-            public boolean evaluate(Object bc) {
-                return ((BuilderConfig) bc).getCode().equals(DICOM);
-            }
-        })) {
-            builderClasses.add(DICOM_BUILDER);
-        }
-
-        if (!CollectionUtils.exists(builderClasses, new Predicate() {
-            public boolean evaluate(Object bc) {
-                return ((BuilderConfig) bc).getCode().equals(ECAT);
-            }
-        })) {
-            builderClasses.add(ECAT_BUILDER);
-        }
-    }
-
     /**
-     * @param dir               The directory containing the session to build.
-     * @param xml               The XML output location.
-     * @param isInPrearchive    Indicates whether the session is in the prearchive.
-     * @param params            Parameters passed into the session builder for this particular context.
+     * @param dir            The directory containing the session to build.
+     * @param xml            The XML output location.
+     * @param isInPrearchive Indicates whether the session is in the prearchive.
+     * @param params         Parameters passed into the session builder for this particular context.
      */
     public XNATSessionBuilder(final File dir, final File xml, final boolean isInPrearchive, final Map<String, String> params) {
         if (null == dir || null == xml) {
@@ -149,26 +88,25 @@ public class XNATSessionBuilder implements Callable<Boolean> {
     }
 
     /**
-     * @param dir               The directory containing the session to build.
-     * @param xml               The XML output location.
-     * @param project           The project with which the session is associated.
-     * @param isInPrearchive    Indicates whether the session is in the prearchive.
+     * @param dir            The directory containing the session to build.
+     * @param xml            The XML output location.
+     * @param project        The project with which the session is associated.
+     * @param isInPrearchive Indicates whether the session is in the prearchive.
      */
     public XNATSessionBuilder(final File dir, final File xml, final String project, final boolean isInPrearchive) {
         this(dir, xml, isInPrearchive, Collections.singletonMap(PROJECT_PARAM, project));
     }
 
-    public Boolean execute() {
+    public boolean execute() {
         final ExecutorService executor = getExecutor();
         try {
             return executor.submit(this).get();
         } catch (InterruptedException e) {
-            logger.error("session build interrupted", e);
-            return false;
+            log.error("session build interrupted", e);
         } catch (ExecutionException e) {
-            logger.error("session build failed", e);
-            return false;
+            log.error("session build failed", e);
         }
+        return false;
     }
 
     /**
@@ -182,8 +120,8 @@ public class XNATSessionBuilder implements Callable<Boolean> {
     @SuppressWarnings("unused")
     @Deprecated
     public XNATSessionBuilder setSessionDataFactoryClasses(final Iterable<Class<? extends XnatImagesessiondataBeanFactory>> classes) {
-        sessionDataFactoryClasses.clear();
-        Iterables.addAll(sessionDataFactoryClasses, classes);
+        SESSION_DATA_FACTORY_CLASSES.clear();
+        classes.forEach(SESSION_DATA_FACTORY_CLASSES::add);
         return this;
     }
 
@@ -197,120 +135,104 @@ public class XNATSessionBuilder implements Callable<Boolean> {
     @SuppressWarnings("unchecked")
     public Boolean call() throws IOException {
         xml.getParentFile().mkdirs();
-        final FileWriter fw = new FileWriter(xml);
 
-        if (null == contextService && sessionDataFactoryClasses.isEmpty()) {
-            contextService = XDAT.getContextService();
-            try {
-                //Legacy support for a bean of a list of classes
-                sessionDataFactoryClasses.addAll(contextService.getBean("sessionDataFactoryClasses",
-                        Collection.class));
-            } catch (Exception e) {
-                // Ignore
-            }
-        }
-
-        for (final BuilderConfig bc : builderClasses) {
-            switch (bc.getCode()) {
-                case DICOM:
-                    buildDicomSession(fw);
-                    break;
-
-                case ECAT:
-                    buildPetSession(fw);
-                    break;
-
-                default:
-                    buildCustomSession(fw, bc);
+        try (final FileWriter fileWriter = new FileWriter(xml)) {
+            if (null == _contextService && SESSION_DATA_FACTORY_CLASSES.isEmpty()) {
+                _contextService = XDAT.getContextService();
+                try {
+                    //Legacy support for a bean of a list of classes
+                    SESSION_DATA_FACTORY_CLASSES.addAll(_contextService.getBean("sessionDataFactoryClasses", Collection.class));
+                } catch (Exception ignored) {
+                    // Ignore
+                }
             }
 
-            if (xml.exists() && xml.length() > 0) {
-                break;
+            for (final BuilderConfig bc : BUILDER_CLASSES) {
+                switch (bc.getCode()) {
+                    case DICOM:
+                        buildDicomSession(fileWriter);
+                        break;
+
+                    case ECAT:
+                        buildPetSession(fileWriter);
+                        break;
+
+                    default:
+                        buildCustomSession(fileWriter, bc);
+                }
+
+                if (xml.exists() && xml.length() > 0) {
+                    break;
+                }
             }
         }
 
         // Insert any supplemental resources
         SupplementalResourceBuilderUtils.addSupplementalResourcesToXml(Collections.singleton(xml),
-                Collections.singleton(dir));
+                                                                       Collections.singleton(dir));
 
         return Boolean.TRUE;
     }
 
-    @SuppressWarnings("unchecked")
-    private void buildCustomSession(final FileWriter fw, final BuilderConfig bc) {
+    private void buildCustomSession(final FileWriter fileWriter, final BuilderConfig builderConfig) {
         //this is currently unused... and probably should be re-written.  It was a first pass.
         try {
-            Constructor con = bc.c.getConstructor(PARAMETER_TYPES);
+            final Constructor<? extends SessionBuilder> constructor = builderConfig.sessionBuilderClass.getConstructor(PARAMETER_TYPES);
             try {
-                SessionBuilder sessionBuilder = (SessionBuilder) con.newInstance(dir.getPath(), fw);
+                final SessionBuilder sessionBuilder = constructor.newInstance(dir, fileWriter);
                 sessionBuilder.setIsInPrearchive(isInPrearchive);
                 sessionBuilder.run();
             } catch (IllegalArgumentException | InstantiationException | InvocationTargetException | IllegalAccessException e) {
-                logger.error("An error occurred trying to build the non-DICOM non-ECAT session", e);
+                log.error("An error occurred trying to build the non-DICOM non-ECAT session", e);
             }
         } catch (SecurityException | NoSuchMethodException e) {
-            logger.error("An error occurred trying to build the specified session builder class", e);
+            log.error("An error occurred trying to build the specified session builder class", e);
         }
     }
 
     private void buildPetSession(final FileWriter fw) {
         //hard coded implementation for ECAT
         final PETSessionBuilder petSessionBuilder = new PETSessionBuilder(dir, fw, params.get(PROJECT_PARAM));
-        logger.debug("assigning session params for ECAT session builder from {}", params);
+        log.debug("assigning session params for ECAT session builder from {}", params);
 
-        petSessionBuilder.setSessionLabel(params.get("label"));
-        petSessionBuilder.setSubject(params.get("subject_ID"));
-        petSessionBuilder.setTimezone(params.containsKey("TIMEZONE") ? params.get("TIMEZONE") : TimeZone.getDefault().toString());
+        petSessionBuilder.setSessionLabel(params.get(PARAM_LABEL));
+        petSessionBuilder.setSubject(params.get(PARAM_SUBJECT_ID));
+        petSessionBuilder.setTimezone(Optional.ofNullable(params.get(PARAM_TIMEZONE)).orElseGet(() -> TimeZone.getDefault().toString()));
         petSessionBuilder.setIsInPrearchive(isInPrearchive);
         petSessionBuilder.run();
     }
 
-    private void buildDicomSession(final FileWriter fw) throws IOException {
+    private void buildDicomSession(final FileWriter fileWriter) throws IOException {
         // Hard-coded implementation for DICOM.
         // Turn the parameters into an array of XnatAttrDef.Constant attribute definitions
-        final boolean createPetMrAsPet = params.containsKey("separatePetMr") && params.get("separatePetMr").equals("pet");
-        final ArrayList<XnatAttrDef> xnatAttrDefs = Lists.newArrayList(Iterables.transform(params.entrySet(),
-                new Function<Map.Entry<String, String>, XnatAttrDef>() {
-                    public XnatAttrDef apply(final Map.Entry<String, String> me) {
-                        final String key = me.getKey();
-                        final String value;
-                        if (createPetMrAsPet && key.equals("label") && me.getValue().toUpperCase().contains("PETMR")) {
-                            value = new StringBuilder(new StringBuilder(me.getValue()).reverse().toString().replaceFirst("(?i)rmtep", "TEP")).reverse().toString();
-                        } else {
-                            value = me.getValue();
-                        }
-                        return new XnatAttrDef.Constant(key, value);
-                    }
-                }));
-        final XnatAttrDef attrDefs[] = xnatAttrDefs.toArray(new XnatAttrDef[xnatAttrDefs.size()]);
-
-        try (final DICOMSessionBuilder dicomSessionBuilder = new DICOMSessionBuilder(dir, fw, attrDefs)) {
-            @SuppressWarnings("unchecked")
-            final List<String> excludedFields = XDAT.getContextService().getBean("excludedDicomImportFields", List.class);
+        final boolean createPetMrAsPet = HandlePetMr.get(params.get(SEPARATE_PET_MR)) == HandlePetMr.Pet;
+        final XnatAttrDef[] attrDefs = params.entrySet().stream().map(entry -> new XnatAttrDef.Constant(entry.getKey(), createPetMrAsPet && entry.getKey().equals("label") && entry.getValue().toLowerCase().contains(HandlePetMr.PetMr.value())
+                                                                                                                        ? new StringBuilder(new StringBuilder(entry.getValue()).reverse().toString().replaceFirst("(?i)rmtep", "TEP")).reverse().toString()
+                                                                                                                        : entry.getValue())).toArray(XnatAttrDef[]::new);
+        try (final DICOMSessionBuilder dicomSessionBuilder = new DICOMSessionBuilder(dir, fileWriter, attrDefs)) {
+            @SuppressWarnings("unchecked") final List<String> excludedFields = XDAT.getContextService().getBean("excludedDicomImportFields", List.class);
             if (excludedFields != null) {
                 dicomSessionBuilder.setExcludedFields(excludedFields);
             }
             dicomSessionBuilder.setIsInPrearchive(isInPrearchive);
-            if (!sessionDataFactoryClasses.isEmpty()) {
+            if (!SESSION_DATA_FACTORY_CLASSES.isEmpty()) {
                 // spring bean sessionDataFactories will take precedence over these in attempting to match
                 // classes added to this list will override the defaults in DICOMSessionBuilder
-                dicomSessionBuilder.setSessionBeanFactoryClasses(sessionDataFactoryClasses);
+                dicomSessionBuilder.setSessionBeanFactoryClasses(SESSION_DATA_FACTORY_CLASSES);
             }
             if (!params.isEmpty()) {
                 dicomSessionBuilder.setParameters(params);
             }
             dicomSessionBuilder.run();
         } catch (IOException e) {
-            logger.warn("unable to process session directory " + dir, e);
+            log.warn("unable to process session directory {}", dir, e);
             throw e;
         } catch (SQLException e) {
-            logger.error("unable to process session directory " + dir, e);
+            log.error("unable to process session directory {}", dir, e);
         } catch (Throwable e) {
-            logger.error("", e);
+            log.error("An unexpected error occurred trying to process session directory {}", dir, e);
         }
     }
-
-    private static ExecutorService _executorService = null;
 
     private static ExecutorService getExecutor() {
         if (_executorService == null) {
@@ -323,59 +245,74 @@ public class XNATSessionBuilder implements Callable<Boolean> {
     }
 
     private static ExecutorService initializeExecutorFromProperties() {
-        final PropertiesHelper.ImplLoader<ExecutorService> loader = new PropertiesHelper.ImplLoader<>(_executorFileName, _executorIdentifier);
+        final PropertiesHelper.ImplLoader<ExecutorService> loader = new PropertiesHelper.ImplLoader<>(EXECUTOR_FILE_NAME, EXECUTOR_IDENTIFIER);
         try {
-            return loader.buildNoArgs(Executors.newFixedThreadPool(PropertiesHelper.GetIntegerProperty(_executorFileName, _executorIdentifier + ".size", 2)));
+            return loader.buildNoArgs(Executors.newFixedThreadPool(PropertiesHelper.GetIntegerProperty(EXECUTOR_FILE_NAME, EXECUTOR_IDENTIFIER + ".size", 2)));
         } catch (IllegalArgumentException | SecurityException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException | ConfigurationException e) {
-            logger.error("An error occurred trying to build the executor based on the file name {} and identifier {}", _executorFileName, _executorIdentifier, e);
+            log.error("An error occurred trying to build the executor based on the file name {} and identifier {}", EXECUTOR_FILE_NAME, EXECUTOR_IDENTIFIER, e);
             return Executors.newCachedThreadPool();
         }
     }
 
-    private static class BuilderConfig implements Comparable {
-        protected String code;
-        protected Class c;
-        protected Integer order;
+    private static int getSequence(final String sequence) {
+        return StringUtils.isNotBlank(sequence) ? Integer.parseInt(sequence) : 3;
+    }
 
-        BuilderConfig(final String code, final Class c, final Integer order) {
-            if (code == null) throw new NullPointerException();
-            if (c == null) throw new NullPointerException();
+    private static BuilderConfig getBuilderConfig(final Map.Entry<String, Map<String, Object>> entry) {
+        final String className = (String) entry.getValue().get(CLASS_NAME);
+        final String sequence  = (String) entry.getValue().get(SEQUENCE);
+        try {
+            return new BuilderConfig(entry.getKey(), Class.forName(className).asSubclass(SessionBuilder.class), getSequence(sequence));
+        } catch (NumberFormatException e) {
+            log.error("An error occurred trying to convert the value {} to an integer. Please check your builder configuration.", sequence, e);
+        } catch (ClassNotFoundException e) {
+            log.error("Couldn't locate the class {}. Please check your builder configuration and classpath.", className, e);
+        }
+        return null;
+    }
+
+    private static List<BuilderConfig> initializeBuilderClasses() {
+        //EXAMPLE PROPERTIES FILE
+        //org.nrg.SessionBuilder.impl=NIFTI
+        //org.nrg.SessionBuilder.impl.NIFTI.className=org.nrg.builders.CustomNiftiBuilder
+        //org.nrg.SessionBuilder.impl.NIFTI.sequence=3
+        final File properties = new File(XFT.GetConfDir(), SESSION_BUILDER_PROPERTIES);
+        final List<BuilderConfig> configurations = PropertiesHelper.RetrievePropertyObjects(properties, PROP_OBJECT_IDENTIFIER, PROP_OBJECT_FIELDS).entrySet()
+                                                                   .stream()
+                                                                   .filter(entry -> StringUtils.isNotBlank((String) entry.getValue().get(CLASS_NAME)))
+                                                                   .map(XNATSessionBuilder::getBuilderConfig)
+                                                                   .filter(Objects::nonNull).collect(Collectors.toList());
+        if (configurations.stream().noneMatch(config -> config.getCode().equals(DICOM))) {
+            configurations.add(DICOM_BUILDER);
+        }
+        if (configurations.stream().noneMatch(config -> config.getCode().equals(ECAT))) {
+            configurations.add(ECAT_BUILDER);
+        }
+        return configurations;
+    }
+
+    @Value
+    private static class BuilderConfig implements Comparable<BuilderConfig> {
+        String                          code;
+        Class<? extends SessionBuilder> sessionBuilderClass;
+        Integer                         order;
+
+        BuilderConfig(final String code, final Class<? extends SessionBuilder> builderClass, final Integer order) {
+            if (code == null) {
+                throw new NullPointerException();
+            }
+            if (builderClass == null) {
+                throw new NullPointerException();
+            }
 
             this.code = code;
-            this.c = c;
+            this.sessionBuilderClass = builderClass;
             this.order = (order == null) ? 0 : order;
         }
 
         @Override
-        public int compareTo(@Nonnull final Object object) {
-            if (!BuilderConfig.class.isAssignableFrom(object.getClass())) {
-                throw new ClassCastException("Can't cast from " + object.getClass().getName() + " to " + BuilderConfig.class.getName());
-            }
-            return getOrder().compareTo(((BuilderConfig) object).getOrder());
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public void setCode(String code) {
-            this.code = code;
-        }
-
-        public Class getC() {
-            return c;
-        }
-
-        public void setC(Class c) {
-            this.c = c;
-        }
-
-        public Integer getOrder() {
-            return order;
-        }
-
-        public void setOrder(Integer order) {
-            this.order = order;
+        public int compareTo(@Nonnull final BuilderConfig config) {
+            return getOrder().compareTo(config.getOrder());
         }
     }
 }

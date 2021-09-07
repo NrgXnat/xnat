@@ -16,10 +16,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.xnat.archive.operations.DicomImportOperation;
-import org.nrg.xnat.processor.importer.ProcessorImporterMap;
 import org.nrg.xnat.restlet.actions.importer.*;
-import org.nrg.xnat.processor.importer.ProcessorImporterHandlerA;
 import org.nrg.xnat.status.StatusList;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -179,39 +176,6 @@ public class Importer extends SecureResource {
                     }
                 }
             }
-            if (handler != null && fw.size() <= 1) {
-
-                try {
-                    final ProcessorImporterMap processorImporterMap
-                            = XDAT.getContextService().getBean("processorImporterMap", ProcessorImporterMap.class);
-                    Set<String> handlerStrings = processorImporterMap.keySet();
-                    if (handlerStrings.contains(handler)) {
-                        FileWriterWrapperI fww = null;
-                        if (fw.size() == 1) {
-                            fww = fw.get(0);
-                        }
-
-                        final Class<? extends ProcessorImporterHandlerA> importerClass = processorImporterMap.get(handler);
-                        final ProcessorImporterHandlerA processorImporter = XDAT.getContextService().getBean(importerClass);
-                        final DicomImportOperation operation = processorImporter.getOperation(handler, user, fww, params);
-                        if (storeStatusList(operation)) {
-                            return;
-                        }
-                        response = processorImporter.doImport(operation);
-
-                        if (entity != null && APPLICATION_XMIRC.equals(entity.getMediaType())) {
-                            returnString("OK", Status.SUCCESS_OK);
-                            return;
-                        }
-
-                        returnDefaultRepresentation();
-                        return;
-                    }
-
-                } catch (Throwable t) {
-                    logger.error("Failed to get map of processor importers.", t);
-                }
-            }
 
             ImporterHandlerA importer;
             if (fw.size() == 0 && handler != null && !HANDLERS_ALLOWING_CALLS_WITHOUT_FILES.contains(handler)) {
@@ -313,20 +277,6 @@ public class Importer extends SecureResource {
             }
             final StatusList sq = new StatusList();
             importer.addStatusListener(sq);
-
-            storeStatusList(listenerControl, sq);
-        }
-        return false;
-    }
-
-    public boolean storeStatusList(final DicomImportOperation operation) {
-        if (httpSessionListener) {
-            if (StringUtils.isEmpty(listenerControl)) {
-                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "'" + XNATRestConstants.TRANSACTION_RECORD_ID + "' is required when requesting '" + HTTP_SESSION_LISTENER + "'.");
-                return true;
-            }
-            final StatusList sq = new StatusList();
-            operation.addStatusListener(sq);
 
             storeStatusList(listenerControl, sq);
         }

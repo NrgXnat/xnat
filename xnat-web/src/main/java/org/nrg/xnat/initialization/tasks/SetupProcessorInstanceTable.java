@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.initialization.tasks;
 
-import org.nrg.xnat.archive.operations.ProcessorGradualDicomImportOperation;
+import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
 import org.nrg.xnat.processors.MizerArchiveProcessor;
@@ -41,7 +41,7 @@ public class SetupProcessorInstanceTable extends AbstractInitializingTask {
         if (processorChanges == 0) {
             //The processor instances table is new. Add default processor instances.
             final ArchiveProcessorInstance defaultSiteAnonProcessor = new ArchiveProcessorInstance();
-            defaultSiteAnonProcessor.setLocation(ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE);
+            defaultSiteAnonProcessor.setLocation(GradualDicomImporter.NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE);
             defaultSiteAnonProcessor.setLabel("Site Anonymization");
             defaultSiteAnonProcessor.setPriority(10);
             defaultSiteAnonProcessor.setProcessorClass(MizerArchiveProcessor.class.getCanonicalName());
@@ -52,7 +52,7 @@ public class SetupProcessorInstanceTable extends AbstractInitializingTask {
             _archiveProcessorInstanceService.create(defaultSiteAnonProcessor);
 
             final ArchiveProcessorInstance defaultRemappingProcessor = new ArchiveProcessorInstance();
-            defaultRemappingProcessor.setLocation(ProcessorGradualDicomImportOperation.NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED);
+            defaultRemappingProcessor.setLocation(GradualDicomImporter.NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED);
             defaultRemappingProcessor.setLabel("Remapping");
             defaultRemappingProcessor.setPriority(10);
             defaultRemappingProcessor.setProcessorClass(StudyRemappingArchiveProcessor.class.getCanonicalName());

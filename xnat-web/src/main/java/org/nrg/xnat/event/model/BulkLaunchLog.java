@@ -2,6 +2,7 @@ package org.nrg.xnat.event.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 
@@ -82,8 +83,8 @@ public class BulkLaunchLog {
             } else if (status.equals(PersistentWorkflowUtils.COMPLETE)) {
                 // Keep track of completions so we know when we've completed all the steps
                 // No need to track failures bc as soon as we hit one, we abort
-                String itemId = workflow.getId();
-                int count = itemSteps.containsKey(itemId) ? itemSteps.get(itemId) : 0;
+                String itemId = getWorkflowItemId(workflow);
+                int count = itemSteps.getOrDefault(itemId, 0);
                 itemSteps.put(itemId, ++count);
                 if (count == steps) {
                     // if this is the last step, increment the success count
@@ -93,6 +94,14 @@ public class BulkLaunchLog {
             }
         }
         workflows.put(id, new WorkflowLog(workflow, statusRecorded));
+    }
+
+    private String getWorkflowItemId(PersistentWorkflowI workflow) {
+        String suffix = StringUtils.defaultIfBlank(workflow.getScanId(), "");
+        if (StringUtils.isNotBlank(suffix)) {
+            suffix = "-" + suffix;
+        }
+        return workflow.getId() + suffix;
     }
 
     @JsonIgnore
@@ -149,6 +158,7 @@ public class BulkLaunchLog {
         private Date currentStepLaunchTime;
         private String percentageComplete;
         private String jobId;
+        private String scanId;
         private boolean statusRecorded;
 
         public WorkflowLog(){}
@@ -172,6 +182,7 @@ public class BulkLaunchLog {
             this.currentStepLaunchTime = workflow.getCurrentStepLaunchTimeDate();
             this.percentageComplete = workflow.getPercentagecomplete();
             this.jobId = workflow.getJobid();
+            this.scanId = workflow.getScanId();
             this.statusRecorded = statusRecorded;
         }
 
@@ -325,6 +336,14 @@ public class BulkLaunchLog {
 
         public void setJobId(String jobId) {
             this.jobId = jobId;
+        }
+
+        public String getScanId() {
+            return scanId;
+        }
+
+        public void setScanId(String scanId) {
+            this.scanId = scanId;
         }
     }
 }

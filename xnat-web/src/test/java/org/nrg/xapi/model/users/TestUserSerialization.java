@@ -81,8 +81,8 @@ public class TestUserSerialization {
         assertTrue(StringUtils.isNotBlank(securedOutput.getEmail()));
         assertTrue(StringUtils.isBlank(securedOutput.getPassword()));
         assertTrue(StringUtils.isBlank(securedOutput.getSalt()));
-        assertTrue(securedOutput.isEnabled());
-        assertNull(securedOutput.isVerified());
+        assertTrue(securedOutput.getEnabled());
+        assertNull(securedOutput.getVerified());
 
         final User unsecuredOutput = _serializer.deserializeJson(unsecureJson, User.class);
         assertNotNull(unsecuredOutput);
@@ -90,8 +90,8 @@ public class TestUserSerialization {
         assertTrue(StringUtils.isNotBlank(unsecuredOutput.getEmail()));
         assertTrue(StringUtils.isNotBlank(unsecuredOutput.getPassword()));
         assertTrue(StringUtils.isNotBlank(unsecuredOutput.getSalt()));
-        assertTrue(unsecuredOutput.isEnabled());
-        assertNull(unsecuredOutput.isVerified());
+        assertTrue(unsecuredOutput.getEnabled());
+        assertNull(unsecuredOutput.getVerified());
     }
 
     private SerializerService _serializer;

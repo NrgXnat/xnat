@@ -123,7 +123,7 @@
             <input type="radio" class="search-method by-id" value="by-id" name="search-by"></label>
         </h3>
 
-        <select name="xnat:mrSessionData.COMBO0_FIELDS">
+        <select name="xnat:mrSessionData.COMBO0_FIELDS" required>
             <option value="xnat:mrSessionData/ID_in,xnat:mrSessionData/label_in,xnat:mrSessionData/sharing/share/label_in"
                 #if($!search.getWebFormValue("xnat:mrSessionData.COMBO0_FIELDS")=="xnat:mrSessionData/ID_in,xnat:mrSessionData/label_in,xnat:mrSessionData/sharing/share/label_in")SELECTED#end>
                 $displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID

@@ -75,8 +75,8 @@
             <input type="radio" class="search-method by-id" value="by-id" name="search-by"></label>
         </h3>
 
-        <select name="xnat:subjectData.COMBO1_FIELDS">
-            <option value="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in" #if($!search.getWebFormValue("xnat:subjectData.COMBO1_FIELDS")=="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in")SELECTED#end>$displayManager.getSingularDisplayNameForSubject().toUpperCase()</option>
+        <select name="xnat:subjectData.COMBO1_FIELDS" required>
+            <option value="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in" selected>$displayManager.getSingularDisplayNameForSubject().toUpperCase()</option>
         </select>
 
         <textarea class="exact-ids" name="xnat:subjectData.COMBO1" cols="30" rows="6">$!search.getWebFormValue("xnat:subjectData.COMBO1")</textarea>

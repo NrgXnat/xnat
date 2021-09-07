@@ -70,9 +70,11 @@
     </form>
 #startElementActionBox()
 	#if($allowArchive)
-        <li class="yuimenuitem">
-			<a id="archiveLink" href="#" class="nolink" onclick="XNAT.app.archiveValidator.validate()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Archive</a>
-        </li>
+	    #if($turbineUtils.isSiteAdmin($user) || !$siteConfig.uiPrearchiveHideArchiveBtn)
+            <li class="yuimenuitem">
+                <a id="archiveLink" href="#" class="nolink" onclick="XNAT.app.archiveValidator.validate()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Archive</a>
+            </li>
+        #end
         <li class="yuimenuitem">
 			<a href="$content.getURI("/data${url}?format=html&screen=XDATScreen_uploaded_xnat_imageSessionData.vm")"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Modify and Archive</a>
         </li>

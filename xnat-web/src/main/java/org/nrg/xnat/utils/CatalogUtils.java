@@ -15,6 +15,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.filefilter.*;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -82,6 +83,8 @@ public class CatalogUtils {
     public static final String ABSOLUTE_PATH = "absolutePath";
     public static final String LOCATOR       = "locator";
     public static final String URI           = "URI";
+    public static final IOFileFilter XNAT_CATALOGABLE_FILE_FILTER = new AndFileFilter(new NotFileFilter(new SuffixFileFilter("_catalog.xml")),
+            new NotFileFilter(new PrefixFileFilter(ThreadAndProcessFileLock.LOCKFILE_PREFIX)));
 
     public static class CatalogEntryAttributes {
         public String relativePath;
@@ -834,10 +837,6 @@ public class CatalogUtils {
         final AtomicInteger added = new AtomicInteger(0);
         final AtomicInteger modded = new AtomicInteger(0);
 
-        //For resource stats
-        final AtomicLong size = new AtomicLong(0);
-        final AtomicInteger count = new AtomicInteger(0);
-
         //Build a hashmap so that instead of repeatedly looping through all the catalog entries,
         //comparing URI to our relative path, we can just do an O(1) lookup in our hashmap
         final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
@@ -859,8 +858,8 @@ public class CatalogUtils {
                         content = null;
                     }
 
-                    if (f.equals(catalogData.catFile) || f.isHidden()) {
-                        //don't add the catalog xml, ignore hidden files
+                    if (f.equals(catalogData.catFile)) {
+                        //don't add the catalog xml
                         return FileVisitResult.CONTINUE;
                     }
 
@@ -870,6 +869,11 @@ public class CatalogUtils {
                         log.error("Multiple catalog files - not refreshing");
                         rtn.set(-1);
                         return FileVisitResult.TERMINATE;
+                    }
+
+                    if (!XNAT_CATALOGABLE_FILE_FILTER.accept(f)) {
+                        //ignore files XNAT doesn't track (e.g., lock files)
+                        return FileVisitResult.CONTINUE;
                     }
 
                     //check if file exists in catalog already
@@ -925,6 +929,10 @@ public class CatalogUtils {
             //multiple catalog files
             return Pair.of(false, null);
         }
+
+        //For resource stats
+        final AtomicLong size = new AtomicLong(0);
+        final AtomicInteger count = new AtomicInteger(0);
         final AtomicBoolean modified = new AtomicBoolean(rtn_val == 1);
         int nRemoved = 0;
         if (removeMissingFiles || populateStats) {
@@ -939,10 +947,6 @@ public class CatalogUtils {
                     mapEntry.catalog.getEntries_entry().remove(mapEntry.entry);
                     modified.set(true);
                     nRemoved++;
-                    if (populateStats) {
-                        size.getAndAdd(-1 * getCatalogEntrySize(mapEntry.entry));
-                        count.getAndDecrement();
-                    }
                 }
             }
         }
@@ -1629,7 +1633,7 @@ public class CatalogUtils {
                 final FileExtractor extractor = new FileExtractor();
                 final List<File>    files     =  extractor.extract(filename, fileWriter.getInputStream(), destinationDir, overwrite, ci);
                 for (final File file : files) {
-                    if (!file.isDirectory()) {
+                    if (!file.isDirectory() && XNAT_CATALOGABLE_FILE_FILTER.accept(file)) {
                         // relative path is used to compare to existing catalog entries, and add if missing.
                         // entry paths are relative to the location of the catalog file.
                         final String relativePath = destinationDir.toUri().relativize(file.toURI()).getPath();
@@ -1655,6 +1659,9 @@ public class CatalogUtils {
                 }
 
                 final File saveTo = destinationDir.resolve(instance).toFile();
+                if (saveTo.isFile() && !XNAT_CATALOGABLE_FILE_FILTER.accept(saveTo)) {
+                    throw new Exception("XNAT cannot catalog " + saveTo.getName());
+                }
 
                 if (saveTo.exists() && !overwrite) {
                     duplicates.add(instance);
@@ -1677,7 +1684,7 @@ public class CatalogUtils {
 
                     if (saveTo.isDirectory()) {
                         log.debug("Found a directory: {}", saveTo.getAbsolutePath());
-                        for (final File file : listFiles(saveTo, null, true)) {
+                        for (final File file : listFiles(saveTo, XNAT_CATALOGABLE_FILE_FILTER, DirectoryFileFilter.DIRECTORY)) {
                             final String relativePath = instance + "/" +
                                     FileUtils.RelativizePath(saveTo, file).replace('\\', '/');
                             log.debug("Adding or updating catalog entry for file {}", file);
@@ -2612,7 +2619,7 @@ public class CatalogUtils {
         final AtomicBoolean    modified     = new AtomicBoolean();
         final XnatResourceInfo info         = XnatResourceInfo.builder().created(now).lastModified(now).eventId(event_id).build();
         for (final File file : files) {
-            if (!file.equals(catFile)) {//don't add the catalog xml to its own list
+            if (!file.equals(catFile) && XNAT_CATALOGABLE_FILE_FILTER.accept(file)) {//don't add the catalog xml or other files XNAT wont catalog
                 //relative path is used to compare to existing catalog entries, and add it if its missing.  entry paths are relative to the location of the catalog file.
                 final String relative = catFolderURI.relativize(file.toURI()).getPath();
                 if (!checkEntryByURI(content, relative)) {
@@ -2675,7 +2682,7 @@ public class CatalogUtils {
 
         if (files != null) {
             for (final String f : files) {
-                if (!(f.endsWith(".xml"))) {//ignore catalog files
+                if (XNAT_CATALOGABLE_FILE_FILTER.accept(new File(f))) {
                     if (!cataloged.remove(f)) {
                         unreferenced.add(f);
                     }

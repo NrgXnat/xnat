@@ -16,6 +16,8 @@ import java.util.Date;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 
+import javax.annotation.Nullable;
+
 public final class SessionData implements Serializable {
     private static final long   serialVersionUID = 7915299491932778685L;
     public static final  String UPLOADER         = "uploader";
@@ -25,12 +27,23 @@ public final class SessionData implements Serializable {
     private PrearcStatus      status;
     private SessionDataTriple sessionTriple = new SessionDataTriple();
     private Date              scan_date;
-    private String            scan_time, subject, url, session, tag, source, visit, protocol, timeZone;
+    private String            scan_time, subject, url, session, tag, source, visit, protocol, timeZone, message;
     private PrearchiveCode autoArchive;
     private Boolean        preventAnon       = false;
     private Boolean        preventAutoCommit = false;
+    @Nullable
+    private Long id;
 
     public SessionData() {
+    }
+
+    @Nullable
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(@Nullable Long id) {
+        this.id = id;
     }
 
     public String getFolderName() {
@@ -359,6 +372,15 @@ public final class SessionData implements Serializable {
 
     public SessionDataTriple getSessionDataTriple() {
         return sessionTriple;
+    }
+
+    @Nullable
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     @Override

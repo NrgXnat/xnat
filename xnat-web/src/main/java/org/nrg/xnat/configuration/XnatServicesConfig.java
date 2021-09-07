@@ -18,6 +18,7 @@ import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.identifier.IDGeneratorI;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.system.HostInfoService;
 import org.nrg.xnat.turbine.utils.IDGenerator;
 import org.springframework.context.annotation.Bean;
@@ -48,8 +49,8 @@ public class XnatServicesConfig {
     }
 
     @Bean
-    public IDGeneratorI subjectIdGenerator(final JdbcTemplate template, final SiteConfigPreferences preferences, final HostInfoService hostInfoService) {
-        final IDGeneratorI generator = new IDGenerator(template, preferences, hostInfoService);
+    public IDGeneratorI subjectIdGenerator(final JdbcTemplate template, final SiteConfigPreferences preferences, final HostInfoService hostInfoService, final XnatAppInfo appInfo) {
+        final IDGeneratorI generator = new IDGenerator(template, preferences, hostInfoService, appInfo);
         generator.setTable(KEY_SUBJECTS);
         generator.setDigits(DEFAULT_DIGITS);
         generator.setColumn(DEFAULT_COLUMN);
@@ -57,8 +58,8 @@ public class XnatServicesConfig {
     }
 
     @Bean
-    public IDGeneratorI experimentIdGenerator(final JdbcTemplate template, final SiteConfigPreferences preferences, final HostInfoService hostInfoService) {
-        final IDGeneratorI generator = new IDGenerator(template, preferences, hostInfoService);
+    public IDGeneratorI experimentIdGenerator(final JdbcTemplate template, final SiteConfigPreferences preferences, final HostInfoService hostInfoService, final XnatAppInfo appInfo) {
+        final IDGeneratorI generator = new IDGenerator(template, preferences, hostInfoService, appInfo);
         generator.setTable(KEY_EXPERIMENTS);
         generator.setDigits(DEFAULT_DIGITS);
         generator.setColumn(DEFAULT_COLUMN);
@@ -66,8 +67,8 @@ public class XnatServicesConfig {
     }
 
     @Bean
-    public IDGeneratorI visitIdGenerator(final JdbcTemplate template, final SiteConfigPreferences preferences, final HostInfoService hostInfoService) {
-        final IDGeneratorI generator = new IDGenerator(template, preferences, hostInfoService);
+    public IDGeneratorI visitIdGenerator(final JdbcTemplate template, final SiteConfigPreferences preferences, final HostInfoService hostInfoService, final XnatAppInfo appInfo) {
+        final IDGeneratorI generator = new IDGenerator(template, preferences, hostInfoService, appInfo);
         generator.setTable(KEY_VISITS);
         generator.setDigits(DEFAULT_DIGITS);
         generator.setColumn(DEFAULT_COLUMN);

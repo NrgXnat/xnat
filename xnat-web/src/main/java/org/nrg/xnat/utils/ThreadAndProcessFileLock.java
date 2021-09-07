@@ -55,6 +55,7 @@ public class ThreadAndProcessFileLock {
     // we can keep our actual concurrency control objects (within ThreadAndProcessFileLock) specific to files
     private final static Map<File, ThreadAndProcessFileLock> lockMap = new HashMap<>();
     private final static Map<File, AtomicInteger> accessorCount = new HashMap<>();
+    public static final String LOCKFILE_PREFIX = ".~lock-";
 
     public synchronized static ThreadAndProcessFileLock getThreadAndProcessFileLock(File file,
                                                                                     boolean readOnly)
@@ -130,7 +131,7 @@ public class ThreadAndProcessFileLock {
         this.readOnly = readOnly;
 
         // Open channel on the dummy file to synchronize across processes
-        this.dummyFile = new File(file.getParent(), "." + file.getName() + ".lock");
+        this.dummyFile = new File(file.getParent(), LOCKFILE_PREFIX + file.getName());
         openDummyRAF(true);
         this.channel = dummyRAF.getChannel();
 

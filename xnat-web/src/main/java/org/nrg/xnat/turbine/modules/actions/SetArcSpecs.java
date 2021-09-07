@@ -1,7 +1,7 @@
 /*
  * web: org.nrg.xnat.turbine.modules.actions.SetArcSpecs
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -9,22 +9,15 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.jetbrains.annotations.NotNull;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
-import org.nrg.notify.entities.Category;
-import org.nrg.notify.entities.Channel;
-import org.nrg.notify.entities.Definition;
-import org.nrg.notify.entities.Subscriber;
-import org.nrg.notify.entities.Subscription;
+import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.XDAT;
@@ -35,37 +28,41 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.modules.actions.AdminAction;
 import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
-public class SetArcSpecs extends AdminAction {
-    static Logger logger = Logger.getLogger(SetArcSpecs.class);
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-    /* (non-Javadoc)
-     * @see org.apache.turbine.modules.actions.VelocitySecureAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
+@Slf4j
+@SuppressWarnings("unused")
+public class SetArcSpecs extends AdminAction {
+    /**
+     * Sets the arc specification attributes based on submitted data.
+     *
+     * @param data    The run-data for the request.
+     * @param context The context for the request.
      */
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
-        PopulateItem populater = PopulateItem.Populate(data,"arc:ArchiveSpecification",true);
-        XFTItem item = populater.getItem();
-        item.setUser(TurbineUtils.getUser(data));
-        
-        ArcArchivespecification arcSpec = new ArcArchivespecification(item);
+    public void doPerform(final RunData data, final Context context) throws Exception {
+        final PopulateItem populater = PopulateItem.Populate(data, "arc:ArchiveSpecification", true);
+        final XFTItem      item      = populater.getItem();
+        item.setUser(XDAT.getUserDetails());
+
+        final ArcArchivespecification arcSpec = new ArcArchivespecification(item);
         ArcSpecManager.save(arcSpec, newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, "Modified archive specifications."));
-        
-        Channel channel = XDAT.getHtmlMailChannel();
 
-        List<ArcArchivespecificationNotificationTypeI> types = arcSpec.getNotificationTypes_notificationType();
-        for (ArcArchivespecificationNotificationTypeI type : types) {
-            List<Subscriber> subscribers = getSubscribersFromAddresses(type.getEmailAddresses());
-            Definition definition = getDefinitionForEvent(type.getNotificationType());
+        final Channel channel = XDAT.getHtmlMailChannel();
 
-            Map<Subscriber, Subscription> subscriptions = getNotificationService().getSubscriptionService().getSubscriberMapOfSubscriptionsForDefinition(definition);
+        for (final ArcArchivespecificationNotificationTypeI type : arcSpec.getNotificationTypes_notificationType()) {
+            final Definition                    definition    = getDefinitionForEvent(type.getNotificationType());
+            final Map<Subscriber, Subscription> subscriptions = getNotificationService().getSubscriptionService().getSubscriberMapOfSubscriptionsForDefinition(definition);
 
-            for (Subscriber subscriber : subscribers) {
+            for (final Subscriber subscriber : getSubscribersFromAddresses(type.getEmailAddresses())) {
                 // If we don't have a subscription for this notification...
                 if (!subscriptions.containsKey(subscriber)) {
                     // Create one.
@@ -78,9 +75,9 @@ public class SetArcSpecs extends AdminAction {
             }
 
             // If there are any left-over subscriptions...
-            if (subscriptions.size() > 0) {
+            if (!subscriptions.isEmpty()) {
                 // Those are no longer wanted (they weren't specified in the submitted list), so let's remove those subscriptions.
-                for (Subscription subscription : subscriptions.values()) {
+                for (final Subscription subscription : subscriptions.values()) {
                     getNotificationService().getSubscriptionService().delete(subscription);
                 }
             }
@@ -90,10 +87,35 @@ public class SetArcSpecs extends AdminAction {
     }
 
     /**
+     * Gets the site-wide notification definition for the specified event. If the definition already exists, this method
+     * returns that. Otherwise, it creates a new definition for the event and returns that.
+     *
      * @param event An event identifier.
+     *
      * @return The definition associated with the submitted event.
      */
     private Definition getDefinitionForEvent(String event) {
+        final Category         category    = getOrCreateCategory(event);
+        final List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
+        if (!CollectionUtils.isEmpty(definitions)) {
+            return definitions.get(0);
+        }
+        final Definition definition = getNotificationService().getDefinitionService().newEntity();
+        definition.setCategory(category);
+        getNotificationService().getDefinitionService().create(definition);
+        return definition;
+    }
+
+    /**
+     * Gets the site-wide category for the specified event. If the category already exists for the event, this method
+     * returns that. Otherwise, it creates a new category for the event and returns that.
+     *
+     * @param event The event for which you want a category.
+     *
+     * @return The existing category if possible, otherwise a newly created category.
+     */
+    @NotNull
+    private Category getOrCreateCategory(final String event) {
         Category category = getNotificationService().getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, event);
         if (category == null) {
             category = getNotificationService().getCategoryService().newEntity();
@@ -101,16 +123,7 @@ public class SetArcSpecs extends AdminAction {
             category.setEvent(event);
             getNotificationService().getCategoryService().create(category);
         }
-        Definition definition;
-        List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
-        if (definitions == null || definitions.size() == 0) {
-            definition = getNotificationService().getDefinitionService().newEntity();
-            definition.setCategory(category);
-            getNotificationService().getDefinitionService().create(definition);
-        } else {
-            definition = definitions.get(0);
-        }
-        return definition;
+        return category;
     }
 
     /**
@@ -127,67 +140,70 @@ public class SetArcSpecs extends AdminAction {
      * users than are specified in the <b>emailAddresses</b> parameter.
      *
      * @param addresses The comma-separated list of usernames, email addresses, and combined IDs.
+     *
      * @return A list of {@link Subscriber} objects representing those users.
      */
     private List<Subscriber> getSubscribersFromAddresses(String addresses) {
-        List<Subscriber> subscribers = new ArrayList<Subscriber>();
+        final List<Subscriber> subscribers = new ArrayList<>();
+        final List<String>     errors      = new ArrayList<>();
         for (String address : addresses.split("[\\s]*,[\\s]*")) {
-            String username = null;
-            String email = null;
-            Matcher userMatcher = PATTERN_USERNAME.matcher(address);
-            if (userMatcher.matches()) {
+            final String username;
+            final String email;
+            if (Users.isValidUsername(address)) {
                 // Handle this as a username.
                 username = address;
                 try {
-					UserI user = Users.getUser(username);
-					if (user != null) {
-					    email = user.getEmail();
-					} else {
-					    // TODO: Need to add users that aren't located to a list of error messages.
-					    continue;
-					}
-				} catch (UserNotFoundException e) {
-					logger.error("",e);
-				} catch (UserInitException e) {
-					logger.error("",e);
-				}
+                    final UserI user = Users.getUser(username);
+                    email = user.getEmail();
+                } catch (UserNotFoundException e) {
+                    errors.add(address);
+                    log.error("User {} not found", username, e);
+                    continue;
+                } catch (UserInitException e) {
+                    errors.add(address);
+                    log.error("An error occurred trying to retrieve user {}", username, e);
+                    continue;
+                }
+            } else if (Users.isValidEmail(address)) {
+                // Handle this as an email.
+                final List<? extends UserI> users = Users.getUsersByEmail(email = address);
+                if (users == null || users.size() == 0) {
+                    // If we didn't find the user, do something.
+                    // TODO: Need to add users that aren't located to a list of error messages.
+                    continue;
+                }
+                username = users.get(0).getLogin();
+            } else if (Users.isValidUsernameAndEmail(address)) {
+                final Pair<String, String> usernameAndEmail = Users.extractUsernameAndEmail(address);
+                username = usernameAndEmail.getKey();
+                email = usernameAndEmail.getValue();
             } else {
-                Matcher emailMatcher = PATTERN_EMAIL.matcher(address);
-                if (emailMatcher.matches()) {
-                    // Handle this as an email.
-                    List<? extends UserI> users = Users.getUsersByEmail(email = address);
-                    if (users == null || users.size() == 0) {
-                        // If we didn't find the user, do something.
-                        // TODO: Need to add users that aren't located to a list of error messages.
-                        continue;
-                    } else {
-                        username = users.get(0).getLogin();
-                    }
-                } else {
-                    Matcher combinedMatcher = PATTERN_COMBINED.matcher(address);
-                    if (combinedMatcher.matches()) {
-                        // Handle this as a combined. username will match first capture, email second capture (0 capture in regex is full expression).
-                        username = combinedMatcher.group(1);
-                        email = combinedMatcher.group(2);
-                    } else {
-                        // TODO: Need to add users that aren't located to a list of error messages.
-                    }
-                }
+                // TODO: Need to add users that aren't located to a list of error messages.
+                username = email = null;
             }
 
-            Subscriber subscriber = getNotificationService().getSubscriberService().getSubscriberByName(username);
-            if (subscriber == null) {
-                try {
-                    subscriber = getNotificationService().getSubscriberService().createSubscriber(username, email);
-                } catch (DuplicateSubscriberException exception) {
-                    // This shouldn't happen, since we just checked for the subscriber's existence.
-                }
+            if (username != null && email != null) {
+                subscribers.add(getSubscriber(username, email));
             }
-
-            subscribers.add(subscriber);
         }
 
+        if (!errors.isEmpty()) {
+            log.error("For some reason I couldn't resolve {} addresses: {}", errors.size(), String.join(", ", errors));
+        }
         return subscribers;
+    }
+
+    private Subscriber getSubscriber(final String username, final String email) {
+        return Optional.ofNullable(getNotificationService().getSubscriberService().getSubscriberByName(username)).orElseGet(() -> createSubscriber(username, email));
+    }
+
+    private Subscriber createSubscriber(final String username, final String email) {
+        try {
+            return getNotificationService().getSubscriberService().createSubscriber(username, email);
+        } catch (DuplicateSubscriberException e) {
+            // This shouldn't happen, since we just checked for the subscriber's existence.
+            throw new RuntimeException("A totally unanticipated error occurred", e);
+        }
     }
 
     /**
@@ -201,13 +217,6 @@ public class SetArcSpecs extends AdminAction {
         }
         return _notificationService;
     }
-
-    private static final String EXPRESSION_USERNAME = "[a-zA-Z][a-zA-Z0-9_-]{3,15}";
-    private static final String EXPRESSION_EMAIL = "[_A-Za-z0-9-]+(?:\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)*(?:\\.[A-Za-z]{2,})";
-    private static final String EXPRESSION_COMBINED = "(" + EXPRESSION_USERNAME + ")[\\s]*<(" + EXPRESSION_EMAIL + ")>";
-    private static final Pattern PATTERN_USERNAME = Pattern.compile(EXPRESSION_USERNAME);
-    private static final Pattern PATTERN_EMAIL = Pattern.compile(EXPRESSION_EMAIL);
-    private static final Pattern PATTERN_COMBINED = Pattern.compile(EXPRESSION_COMBINED);
 
     private NotificationService _notificationService;
 }

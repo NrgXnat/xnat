@@ -42,7 +42,6 @@ import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
-import org.nrg.xnat.processor.importer.ProcessorGradualDicomImporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DuplicateKeyException;
@@ -72,15 +71,13 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     public static final String TOOL_ID = "dicomScpManager";
 
     @Autowired
-    public DicomSCPManager(final ExecutorService executorService, final NrgPreferenceService preferenceService, final ConfigPaths configPaths, final OrderedProperties initPrefs, final DataTypeAwareEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final ProcessorGradualDicomImporter importer, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
+    public DicomSCPManager(final ExecutorService executorService, final NrgPreferenceService preferenceService, final ConfigPaths configPaths, final OrderedProperties initPrefs, final DataTypeAwareEventService eventService, final XnatUserProvider receivedFileUserProvider, final ApplicationContext context, final SiteConfigPreferences siteConfigPreferences, final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier, final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
         super(preferenceService, eventService, configPaths, initPrefs);
 
         _provider = receivedFileUserProvider;
         _context = context;
 
         _isEnableDicomReceiver = siteConfigPreferences.isEnableDicomReceiver();
-
-        _importer = importer;
 
         String primaryBeanId = null;
 
@@ -182,7 +179,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         _handlerProxy.handlePreference(preference, value);
     }
 
-    @NrgPreference(defaultValue = "{'1': {'id': '1', 'aeTitle': 'XNAT', 'port': 8104, 'customProcessing': false, 'enabled': true}}", key = "id")
+    @NrgPreference(defaultValue = "{'1': {'id': '1', 'aeTitle': 'XNAT', 'port': 8104, 'customProcessing': false, 'directArchive': false, 'enabled': true}}", key = "id")
     public Map<String, DicomSCPInstance> getDicomSCPInstances() {
         return getMapValue(PREF_ID);
     }
@@ -399,10 +396,6 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         return getDicomObjectIdentifiers().get(_primaryDicomObjectIdentifierBeanId);
     }
 
-    public ProcessorGradualDicomImporter getImporter() {
-        return _importer;
-    }
-
     public void resetDicomObjectIdentifier() {
         final DicomObjectIdentifier<XnatProjectdata> objectIdentifier = getDefaultDicomObjectIdentifier();
         if (objectIdentifier instanceof CompositeDicomObjectIdentifier) {
@@ -591,7 +584,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private static final String GET_PORTS_FOR_ENABLED_INSTANCES   = "SELECT DISTINCT port FROM dicom_scp_instance WHERE enabled = TRUE";
 
     // Update queries: updating DicomSCPs required.
-    private static final String CREATE_OR_UPDATE_INSTANCE = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled, custom_processing) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled, :customProcessing)";
+    private static final String CREATE_OR_UPDATE_INSTANCE = "MERGE INTO dicom_scp_instance (id, ae_title, PORT, identifier, file_namer, enabled, custom_processing, direct_archive) KEY(id) VALUES(:id, :aeTitle, :port, :identifier, :fileNamer, :enabled, :customProcessing, :directArchive)";
     private static final String DELETE_ALL_INSTANCES      = "DELETE FROM dicom_scp_instance";
 
     private final PreferenceHandlerMethod _handlerProxy = new AbstractXnatPreferenceHandlerMethod("enableDicomReceiver") {
@@ -601,14 +594,17 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
         }
     };
 
-    private static final RowMapper<DicomSCPInstance> DICOM_SCP_INSTANCE_ROW_MAPPER = (resultSet, rowNum) -> DicomSCPInstance.builder()
-                                                                                                                            .id(resultSet.getInt("id"))
-                                                                                                                            .aeTitle(resultSet.getString("ae_title"))
-                                                                                                                            .port(resultSet.getInt("port"))
-                                                                                                                            .identifier(resultSet.getString("identifier"))
-                                                                                                                            .fileNamer(resultSet.getString("file_namer"))
-                                                                                                                            .enabled(resultSet.getBoolean("enabled"))
-                                                                                                                            .customProcessing(resultSet.getBoolean("custom_processing")).build();
+    private static final RowMapper<DicomSCPInstance> DICOM_SCP_INSTANCE_ROW_MAPPER = (resultSet, rowNum) ->
+            DicomSCPInstance.builder()
+                    .id(resultSet.getInt("id"))
+                    .aeTitle(resultSet.getString("ae_title"))
+                    .port(resultSet.getInt("port"))
+                    .identifier(resultSet.getString("identifier"))
+                    .fileNamer(resultSet.getString("file_namer"))
+                    .enabled(resultSet.getBoolean("enabled"))
+                    .customProcessing(resultSet.getBoolean("custom_processing"))
+                    .directArchive(resultSet.getBoolean("direct_archive"))
+                    .build();
 
     private final XnatUserProvider              _provider;
     private final ApplicationContext            _context;
@@ -616,7 +612,6 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private final Set<String>                   _dicomObjectIdentifierBeanIds;
     private final EmbeddedDatabase              _database;
     private final NamedParameterJdbcTemplate    _template;
-    private final ProcessorGradualDicomImporter _importer;
     private final DicomSCPStore                 _dicomSCPStore;
 
     private boolean _isEnableDicomReceiver;

@@ -9,7 +9,6 @@
 
 package org.nrg.config.services.impl;
 
-import com.google.common.base.Joiner;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -35,9 +34,10 @@ import java.io.*;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
- * Manages all of the implementation around retrieving properties files and converting them into properties that can be used in the site configuration service. The abstract methods defined by this class can be implemented to control how the persistent store is implemented.
+ * Manages all the implementation around retrieving properties files and converting them into properties that can be used in the site configuration service. The abstract methods defined by this class can be implemented to control how the persistent store is implemented.
  */
 @Slf4j
 public abstract class PropertiesBasedSiteConfigurationService implements InitializingBean, ServletContextAware, SiteConfigurationService {
@@ -59,7 +59,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
 
     /**
      * Initializes all properties from the persistent store. This method is called after the service has parsed all
-     * discovered properties files. The <b>properties</b> parameter that's passed into this method contains all of the
+     * discovered properties files. The <b>properties</b> parameter that's passed into this method contains all the
      * property values found during parsing. Any properties in this properties bundle that already exist in the
      * persistent store will have their value overwritten with the persisted value (i.e. the value in the persistent
      * store takes precedence over the discovered value). Any properties that don't already exist in the persistent
@@ -364,7 +364,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     /**
-     * We won't know the servlet path until runtime, so this can't be done via Spring. Servlet will set the root and then we'll update the location list here.
+     * We won't know the servlet path until runtime, so this can't be done via Spring. Servlet will set the root, and then we'll update the location list here.
      */
     private void prependConfigFilesLocationsRootToAllConfigFilesLocations() {
         if (StringUtils.isNotBlank(getConfigFilesLocationsRoot())) {
@@ -521,7 +521,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     /**
-     * Allow them to specify transience as persist=false OR mynamespace.persist=false
+     * Allow them to specify transience as persist=false OR namespace.persist=false
      * <p/>
      * You really shouldn't have both in the same file, but if you do, the namespaced one will take precedence.
      */
@@ -563,17 +563,18 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
             }
         }
 
-        if (notFoundLocations.size() > 0) {
-            log.info("Found {} locations that didn't exist: {}", notFoundLocations.size(), Joiner.on(", ").join(notFoundLocations.keySet()));
+        if (!notFoundLocations.isEmpty()) {
+            log.info("Found {} locations that didn't exist: {}", notFoundLocations.size(), String.join(", ", notFoundLocations.keySet()));
         }
 
-        if (siteConfigFiles.size() == 0) {
+        if (siteConfigFiles.isEmpty()) {
             try {
                 final List<org.springframework.core.io.Resource> resources = BasicXnatResourceLocator.getResources(SITE_CONFIGURATION_PROPERTIES_RESOURCE);
-                if (resources.size() == 0) {
+                if (resources.isEmpty()) {
                     throw new SiteConfigurationFileNotFoundException(SITE_CONFIGURATION_PROPERTIES_FILENAME, _configFilesLocations);
-                } else if (resources.size() > 1) {
-                    log.warn("I somehow managed to find more than one site configuration file, {} to be exact: {}", resources.size(), Joiner.on(", ").join(resources));
+                }
+                if (resources.size() > 1) {
+                    log.warn("I somehow managed to find more than one site configuration file, {} to be exact: {}", resources.size(), resources.stream().map(Object::toString).collect(Collectors.joining(", ")));
                 }
                 return resources.get(0).getInputStream();
             } catch (IOException e) {

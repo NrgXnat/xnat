@@ -9,6 +9,9 @@
 
 package org.nrg.config.entities;
 
+import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -24,8 +27,13 @@ import java.util.Set;
 @Auditable
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+@NoArgsConstructor
 public class ConfigurationData extends AbstractHibernateEntity {
     public static final int MAX_FILE_LENGTH = 1073741824; // 1 GB
+
+    public ConfigurationData(final String contents) {
+        setContents(contents);
+    }
 
     @Column(columnDefinition = "TEXT", length = MAX_FILE_LENGTH)
     public String getContents() {
@@ -41,25 +49,28 @@ public class ConfigurationData extends AbstractHibernateEntity {
         return configurations;
     }
 
+    @SuppressWarnings("unused")
     public void setConfigurations(Set<Configuration> configurations) {
         this.configurations = configurations;
     }
 
-    /**
-     * This method looks only at the contents of the configuration data and ignores the associated configurations.
-     *
-     * @param object The object to which this object should be compared.
-     *
-     * @return True if the contents of the configuration data object are equal.
-     */
     @Override
     public boolean equals(final Object object) {
-        return this == object || object instanceof ConfigurationData && getContents().equals(((ConfigurationData) object).getContents());
+        if (this == object) {
+            return true;
+        }
+
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+
+        final ConfigurationData that = (ConfigurationData) object;
+        return new EqualsBuilder().appendSuper(super.equals(object)).append(contents, that.contents).isEquals();
     }
 
     @Override
     public int hashCode() {
-        return getContents().hashCode();
+        return new HashCodeBuilder(17, 37).appendSuper(super.hashCode()).append(contents).toHashCode();
     }
 
     private Set<Configuration> configurations;

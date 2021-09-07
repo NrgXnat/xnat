@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Date;
 
 public class EmailCustomSearch {
     private static final Logger logger = LoggerFactory.getLogger(EmailCustomSearch.class);
@@ -58,9 +59,14 @@ public class EmailCustomSearch {
                 if (toAddress != null || ccAddress != null || bccAddress != null) {
                     try {
                         Object search_id = PoolDBUtils.LogCustomSearch(user.getUsername(), xmlString, user.getDBName());
-                        String formattedMessage = formatHtmlMessage(req, user, message, search_id);
-                        XDAT.getMailService().sendHtmlMessage(user.getEmail(), tos, ccs, bccs, subject, formattedMessage);
-                        _return = ("<DIV class=\"warning\">Message sent.</DIV>");
+
+                        if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                            String formattedMessage = formatHtmlMessage(req, user, message, search_id);
+                            XDAT.getMailService().sendHtmlMessage(user.getEmail(), tos, ccs, bccs, subject, formattedMessage);
+                            _return = ("<DIV class=\"warning\">Message sent.</DIV>");
+                        } else {
+                            _return = ("<DIV class=\"error\">Unable to send mail.</DIV>");
+                        }
                     } catch (Exception e) {
                         logger.error("", e);
                         _return = ("<DIV class=\"error\">Unable to send mail.</DIV>");
@@ -104,20 +110,24 @@ public class EmailCustomSearch {
 	private String formatHtmlMessage(HttpServletRequest req, UserI user, String msg, Object search_id) {
 		if (req.getParameter("htmlmessage") == null) {
             try {
+                String body = XDAT.getNotificationsPreferences().getEmailMessageDataAlertCustom();
+                body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+                body = body.replaceAll("USER_LASTNAME", user.getLastname());
+                body = body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+                String requestLink = TurbineUtils.GetFullServerPath() + "/app/action/DisplaySearchAction" + "/search_id/" + search_id;
+                String requestLinkFull = "<a href=\"" + requestLink + "\">this link</a>";
 
-                return "<html>" +
-                       "<body>" +
-                       user.getFirstname() + " " + user.getLastname() +
-                       " thought you might be interested in a data set contained in the " + TurbineUtils.GetSystemName() + "." +
-                       " Please follow <A HREF=\"" + TurbineUtils.GetFullServerPath() + "/app/action/DisplaySearchAction" +
-                       "/search_id/" + search_id +
-                       "\">this link</A> to view the data.<BR><BR>" +
-                       "Message from sender:<BR>" +
-                       msg +
-                       "<BR><BR>This email was sent by the <A HREF=\"" + TurbineUtils.GetFullServerPath() + "\">" + TurbineUtils.GetSystemName() + "</A> data management system on " + Calendar.getInstance().getTime() + "." +
-                       "  If you have questions or concerns, please contact <A HREF=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">" + TurbineUtils.GetSystemName() + " help</A>." +
-                       "</body>" +
-                       "</html>";
+                body = body.replaceAll("REQUEST_LINK", requestLinkFull);
+                body = body.replaceAll("SENDER_MESSAGE", msg);
+                String siteLink = "<a href=\"" + TurbineUtils.GetFullServerPath() + "\">" + TurbineUtils.GetSystemName() + "</a>";
+                body = body.replaceAll("SITE_URL", siteLink);
+                Date date = Calendar.getInstance().getTime();
+                String dateString = TurbineUtils.GetInstance().formatDateTime(date);
+                body = body.replaceAll("TIME_SENT", dateString);
+                String helpContact = "<a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">" + TurbineUtils.GetSystemName()+ " help</a>";
+                body = body.replaceAll("HELP_CONTACT", helpContact);
+
+                return body;
             } catch (Exception e) {
                 logger.error("",e);
                 return "error";

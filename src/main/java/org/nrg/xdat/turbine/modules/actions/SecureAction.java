@@ -84,7 +84,13 @@ public abstract class SecureAction extends VelocitySecureAction {
         log.error("An error occurred", e);
         if (e instanceof InvalidPermissionException) {
             try {
-                AdminUtils.sendAdminEmail(XDAT.getUserDetails(), "Possible Authorization Bypass Attempt", "User attempted to access or modify protected content at action: " + data.getAction() + "; " + e.getMessage());
+                if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                    String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                    String type = "to access or modify protected content at action: " + data.getAction() + "; " + e.getMessage();
+                    body = body.replaceAll("TYPE", type);
+                    body = body.replaceAll("USER_DETAILS", "");
+                    AdminUtils.sendAdminEmail(XDAT.getUserDetails(), "Possible Authorization Bypass Attempt", body);
+                }
                 data.getResponse().sendError(403);
             } catch (IOException ignored) {
             }

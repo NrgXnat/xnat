@@ -15,6 +15,7 @@ import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -68,7 +69,13 @@ public class ModifyUser extends SecureAction {
 		
 		String login=submitted.getLogin();
 		if(login==null){
-			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+			if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+				String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+				String type = "attempted. User attempted to modify a user account other than thier own. This typically requires tampering with the HTTP form submission process.";
+				body = body.replaceAll("TYPE", type);
+				body = body.replaceAll("USER_DETAILS", "");
+				notifyAdmin(authenticatedUser, data, 403, "Possible Authorization Bypass event", body);
+			}
 			return;
 		}
 		
@@ -112,7 +119,13 @@ public class ModifyUser extends SecureAction {
 		try {
 			Users.save(submitted, authenticatedUser,false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM,((oldUser==null))?"Added User "+login:"Modified User "+login));
 		} catch (InvalidPermissionException e) {
-			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+			if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+				String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+				String type = "attempted. User attempted to modify a user account other than thier own. This typically requires tampering with the HTTP form submission process.";
+				body = body.replaceAll("TYPE", type);
+				body = body.replaceAll("USER_DETAILS", "");
+				notifyAdmin(authenticatedUser, data, 403, "Possible Authorization Bypass event", body);
+			}
 			return;
 		} catch (PasswordComplexityException e){
 			data.setMessage( e.getMessage());

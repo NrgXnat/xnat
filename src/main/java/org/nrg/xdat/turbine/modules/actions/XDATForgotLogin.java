@@ -101,8 +101,11 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     } else {
                         usernames = String.format("<br><br><ul><li>%s</li></ul>", auths.stream().map(XdatUserAuth::getAuthUser).collect(Collectors.joining("</li><li>")));
                     }
-                    final String message = formatMessage(user, _notifications.getEmailMessageForgotUsernameRequest(), "", usernames);
-                    _mailService.sendHtmlMessage(admin, email, subject, message);
+                    String body = _notifications.getEmailMessageForgotUsernameRequest();
+                    body = body.replaceAll("USER_USERNAME", user.getUsername());
+                    String siteLink = "<a href=\"" + TurbineUtils.GetFullServerPath() + "\">" + TurbineUtils.GetFullServerPath() + "</a>";
+                    body = body.replaceAll("SITE_URL", siteLink);
+                    _mailService.sendHtmlMessage(admin, email, subject, body);
                     if (_requestLog != null) {
                         _requestLog.logEmailRequest(email, new Date());
                     }
@@ -146,8 +149,16 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     data.setScreenTemplate("Login.vm");
                 } else {
                     final AliasToken token   = _aliasTokenService.issueTokenForUser(user, true, null);
-                    final String     message = formatMessage(user, _notifications.getEmailMessageForgotPasswordReset(), TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?a=" + token.getAlias() + "&s=" + token.getSecret(), "");
-                    _mailService.sendHtmlMessage(admin, to, subject, message);
+                    String body = XDAT.getNotificationsPreferences().getEmailMessageForgotPasswordReset();
+                    body=body.replaceAll("USER_FIRSTNAME",user.getFirstname());
+                    body=body.replaceAll("USER_LASTNAME",user.getLastname());
+
+                    String resetLink = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?token=" + null;
+
+                    String resetUrl = "<a href=\"" + resetLink + "\">" + resetLink + "</a>";
+                    body=body.replaceAll("RESET_URL",resetUrl);
+                    body=body.replaceAll("USER_USERNAME",user.getUsername());
+                    _mailService.sendHtmlMessage(admin, to, subject, body);
                     if (_requestLog != null) {
                         _requestLog.logEmailRequest(to, new Date());
                     }
@@ -163,7 +174,14 @@ public class XDATForgotLogin extends VelocitySecureAction {
             // If the user is NOT enabled, notify administrator(s).
             final String message = "Disabled user attempted to reset password: " + user.getUsername();
             log.warn(message);
-            AdminUtils.sendAdminEmail(user, "Possible hack attempt", "Someone attempted reset the password for the account " + user.getUsername() + ", but this account is currently disabled. You can contact the registered account owner through the email address: " + user.getEmail() + ".");
+            if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                String type = "attempt. Someone attempted reset the password for the account " + user.getUsername() + ", but this account is currently disabled";
+                body = body.replaceAll("TYPE", type);
+                String userDetails = "You can contact the registered account owner through the email address: " + user.getEmail() + ".";
+                body = body.replaceAll("USER_DETAILS", userDetails);
+                AdminUtils.sendAdminEmail(user, "Possible hack attempt", body);
+            }
             data.setMessage("Your account is currently disabled. Please contact the system administrator.");
             data.setScreenTemplate("Login.vm");
         }

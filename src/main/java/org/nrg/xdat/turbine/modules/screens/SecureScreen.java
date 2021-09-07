@@ -461,7 +461,13 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         data.setMessage("Unauthorized access.  Please login to gain access to this page.");
         logAccess(data, "Unauthorized access.");
         logger.error("Unauthorized Access to an Admin Screen (prevented).");
-        AdminUtils.sendAdminEmail(XDAT.getUserDetails(), "Unauthorized Admin Access Attempt", "Unauthorized Access to an Admin Screen (" + data.getScreen() + ") prevented.");
+        if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+            String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+            String type = "to an Admin Screen (" + data.getScreen() + ")";
+            body = body.replaceAll("TYPE", type);
+            body = body.replaceAll("USER_DETAILS", "");
+            AdminUtils.sendAdminEmail(XDAT.getUserDetails(), "Unauthorized Admin Access Attempt", body);
+        }
         data.getResponse().sendError(HttpServletResponse.SC_FORBIDDEN);
     }
 

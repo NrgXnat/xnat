@@ -27,7 +27,13 @@ public class XDATSudoLogin extends SecureAction {
             final UserI su = Users.getUser(login);
             XDAT.loginUser(data, su, false);
         } else {
-            notifyAdmin(user, data, 403, "Non-admin sudo attempt", "User attempted to sudo to another user account.");
+            if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                String type = "attempted. to sudo to another user account.";
+                body = body.replaceAll("TYPE", type);
+                body = body.replaceAll("USER_DETAILS", "");
+                notifyAdmin(user, data, 403, "Non-admin sudo attempt", body);
+            }
         }
     }
 }

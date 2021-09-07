@@ -87,7 +87,14 @@ public class RefreshAction extends AdminAction {
 
                 logger.error("Unauthorized Access by " + TurbineUtils.getUser(data).getLogin() +" to Refresh Actions (prevented).");
 
-                AdminUtils.sendAdminEmail(TurbineUtils.getUser(data),"Unauthorized Admin Access Attempt", "Unauthorized Access by " + TurbineUtils.getUser(data).getLogin() +" to Refresh Actions (prevented).");
+                if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                    String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                    String type = "to Refresh Actions ";
+                    body = body.replaceAll("TYPE", type);
+                    String userDetails = " by " + TurbineUtils.getUser(data).getLogin();
+                    body = body.replaceAll("USER_DETAILS", userDetails);
+                    AdminUtils.sendAdminEmail(TurbineUtils.getUser(data), "Unauthorized Admin Access Attempt", body);
+                }
             }
 
         }

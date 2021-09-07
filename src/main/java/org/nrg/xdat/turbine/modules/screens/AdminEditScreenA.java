@@ -41,9 +41,13 @@ public abstract class AdminEditScreenA extends EditScreenA {
                 data.setMessage("Unauthorized access.  Please login to gain access to this page.");
                 logAccess(data, "Unauthorized access (prevented).");
                 log.error("Unauthorized Access to an Admin Screen (prevented).");
-                AdminUtils.sendAdminEmail(user, "Unauthorized Admin Access Attempt", "Unauthorized Access to an Admin Screen (" + data.getScreen() + ") prevented.");
-
-
+                if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                    String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                    String type = "to an Admin Screen (" + data.getScreen() + ")";
+                    body = body.replaceAll("TYPE", type);
+                    body = body.replaceAll("USER_DETAILS", "");
+                    AdminUtils.sendAdminEmail(user, "Unauthorized Admin Access Attempt", body);
+                }
             }
         }
 

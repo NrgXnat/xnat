@@ -10,6 +10,7 @@
 package org.nrg.xdat.security;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
@@ -94,10 +95,24 @@ public class Authorizer implements AuthorizerI{
 
 			final String username = user.getUsername();
 			if (protectedNamespace.get(action).contains(e.getType().getForeignPrefix())) {
-				AdminUtils.sendAdminEmail(user, "Unauthorized Admin Data Access Attempt", "Unauthorized access of '" + xsiType + "' by '" + username + "' prevented.");
+				if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+					String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+					String type = "of " + xsiType;
+					body = body.replaceAll("TYPE", type);
+					String userDetails = " by " +username;
+					body = body.replaceAll("USER_DETAILS", userDetails);
+					AdminUtils.sendAdminEmail(user, "Unauthorized Admin Data Access Attempt", body);
+				}
 				throwException(new InvalidPermissionException(username, action, xsiType, null, "Only site administrators can read core documents."));
 			} else if (!ElementSecurity.IsSecureElement(xsiType)) {
-				AdminUtils.sendAdminEmail(user, "Unauthorized Data Access Attempt", "Unauthorized access of '" + xsiType + "' by '" + username + "' prevented.");
+				if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+					String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+					String type = "of " + xsiType;
+					body = body.replaceAll("TYPE", type);
+					String userDetails = " by " +username;
+					body = body.replaceAll("USER_DETAILS", userDetails);
+					AdminUtils.sendAdminEmail(user, "Unauthorized Data Access Attempt", body);
+				}
 				throwException(new InvalidPermissionException(username, action, xsiType, null));
 			}
 		}
@@ -111,7 +126,14 @@ public class Authorizer implements AuthorizerI{
 			if (ElementSecurity.IsSecureElement(xsiType)) {
 				if (!Permissions.can(user, item, action)) {
 					final String username = user != null ? user.getUsername() : Users.DEFAULT_GUEST_USERNAME;
-					AdminUtils.sendAdminEmail(user, "Unauthorized Data Retrieval Attempt", "Unauthorized access of item " + idValue + " of data type '" + xsiType + "' by '" + username + "' prevented.");
+					if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+						String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+						String type = "of item " + idValue + " of data type '" + xsiType;
+						body = body.replaceAll("TYPE", type);
+						String userDetails = " by " +username;
+						body = body.replaceAll("USER_DETAILS", userDetails);
+						AdminUtils.sendAdminEmail(user, "Unauthorized Data Retrieval Attempt", body);
+					}
 					throwException(new InvalidPermissionException(username, action, xsiType, idValue));
 				}
 			}

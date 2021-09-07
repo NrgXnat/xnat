@@ -127,7 +127,13 @@ public class ModifyPassword extends ModifyAction {
                 redirect(false, "Password unchanged.");
             }
         } catch (InvalidPermissionException e) {
-            notifyAdmin(user, data, 403, "Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+            if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                String type = "attempted. User attempted to modify a user account other than thier own. This typically requires tampering with the HTTP form submission process.";
+                body = body.replaceAll("TYPE", type);
+                body = body.replaceAll("USER_DETAILS", "");
+                notifyAdmin(user, data, 403, "Possible Authorization Bypass event", body);
+            }
         } catch (PasswordComplexityException e) {
             redirect(false, e.getMessage());
         } catch (Exception e) {

@@ -84,7 +84,13 @@ public class ModifyUserGroups extends SecureAction {
                     PersistentWorkflowUtils.complete(wrk, ci);
                 } catch (InvalidPermissionException e) {
                     PersistentWorkflowUtils.fail(wrk, ci);
-                    notifyAdmin(authenticatedUser, data, 403, "Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+                    if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                        String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                        String type = "attempted. User attempted to modify a user account other than thier own. This typically requires tampering with the HTTP form submission process.";
+                        body = body.replaceAll("TYPE", type);
+                        body = body.replaceAll("USER_DETAILS", "");
+                        notifyAdmin(authenticatedUser, data, 403, "Possible Authorization Bypass event", body);
+                    }
                     return;
                 } catch (Exception e) {
                     PersistentWorkflowUtils.fail(wrk, ci);

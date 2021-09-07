@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -238,7 +239,13 @@ public class SearchCriteria implements SQLClause {
             String temp = (String) value;
 
             if (PoolDBUtils.HackCheck(temp)) {
-                AdminUtils.sendAdminEmail("Possible SQL Injection Attempt", "VALUE:" + temp);
+                if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                    String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                    String typeMessage = "VALUE:" + temp;
+                    body = body.replaceAll("TYPE", typeMessage);
+                    body = body.replaceAll("USER_DETAILS", "");
+                    AdminUtils.sendAdminEmail("Possible SQL Injection Attempt", body);
+                }
                 throw new Exception("Invalid search value (" + temp + ")");
             }
 

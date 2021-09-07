@@ -101,7 +101,13 @@ public class XDATLoginUser extends VelocityAction{
             if(username.toLowerCase().contains("script"))
             {
             	e= new Exception("Illegal username &lt;script&gt; usage.");
-				AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml4(username));
+				if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+					String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+					String type = StringEscapeUtils.escapeHtml4(username);
+					body = body.replaceAll("TYPE", type);
+					body = body.replaceAll("USER_DETAILS", "");
+					AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", body);
+				}
             	log.error("", e);
                 data.setScreenTemplate("Error.vm");
                 data.getParameters().setString("exception", e.toString());

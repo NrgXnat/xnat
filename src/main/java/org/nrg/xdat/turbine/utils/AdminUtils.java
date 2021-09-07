@@ -54,23 +54,34 @@ public class AdminUtils {
     }
 
     public static void sendDisabledUserVerificationNotification(final UserI user, final Context context) throws Exception {
-        context.put("time", Calendar.getInstance().getTime());
-        context.put("server", TurbineUtils.GetFullServerPath());
-        context.put("siteLogoPath", XDAT.getSiteLogoPath());
-        context.put("system", TurbineUtils.GetSystemName());
-        context.put("user", user);
-
-        final String body = populateVmTemplate(context, "/screens/email/DisabledUserVerification.vm");
         final String subject = "Expired User reverified: " + user.getFirstname() + " " + user.getLastname();
 
-		Map<String, Object> properties = new HashMap<>();
-        properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
-        properties.put(MailMessage.PROP_SUBJECT, subject);
-        properties.put(MailMessage.PROP_HTML, body);
-        XDAT.verifyNotificationType(NotificationType.Issue);
-        XDAT.getNotificationService().createNotification(NotificationType.Issue.toString(), properties);
+		if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+			String body = XDAT.getNotificationsPreferences().getEmailMessageDisabledUserVerification();
 
-		sendAdminNotificationCopy(subject, body, NotificationType.Issue);
+			Date date = Calendar.getInstance().getTime();
+			String dateString = TurbineUtils.GetInstance().formatDateTime(date);
+			body = body.replaceAll("DATE_INPUT", dateString);
+			body = body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+			body = body.replaceAll("SITE_URL", TurbineUtils.GetFullServerPath());
+			body = body.replaceAll("USER_USERNAME", user.getUsername());
+			body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+			body = body.replaceAll("USER_LASTNAME", user.getLastname());
+			body = body.replaceAll("USER_LOGIN", user.getLogin());
+
+			String url = TurbineUtils.GetFullServerPath() + "/app/action/DisplayItemAction/search_value/" + user.getLogin() + "/search_element/xdat:user/search_field/xdat:user.login";
+
+			String loginUrl = "<a href=\"" + url + "\">";
+			body = body.replaceAll("LOGIN_URL", loginUrl);
+
+			Map<String, Object> properties = new HashMap<>();
+			properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
+			properties.put(MailMessage.PROP_SUBJECT, subject);
+			properties.put(MailMessage.PROP_HTML, body);
+			XDAT.verifyNotificationType(NotificationType.Issue);
+			XDAT.getNotificationService().createNotification(NotificationType.Issue.toString(), properties);
+			sendAdminNotificationCopy(subject, body, NotificationType.Issue);
+		}
 	}
 
 	public static void sendNewUserNotification(final UserI user, final Context context) throws Exception {
@@ -102,35 +113,30 @@ public class AdminUtils {
 		if (user == null) {
 			throw new Exception("Unable to send verification email. Required User is null.");
 		}
-		sendNewUserVerificationEmail(user.getEmail(), user.getFirstname(), user.getLastname(), user.getLogin(), user.isEnabled());
+		sendNewUserVerificationEmail(user.getEmail(), user.getUsername(), user.getFirstname(), user.getLastname(), user.isEnabled());
 	}
+
 
 	public static void sendNewUserVerificationEmail(final String email, final String firstName, final String lastName, final String userName, final boolean isEnabled) throws Exception {
 		if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
-			if ((email == null || email.equals("")) || (firstName == null || firstName.equals("")) ||
-				(lastName == null || lastName.equals("")) || (userName == null || userName.equals(""))) {
-				throw new Exception("Unable to send verification email. One or more required fields is empty.");
-			}
-
 			final AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(userName);
-			final Context context = new VelocityContext();
-			final String fullName = firstName + " " + lastName;
+			String body = XDAT.getNotificationsPreferences().getEmailMessageNewUserVerification();
 			final String verificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret();
-			final String resendVerificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/ForgotLogin.vm";
-			context.put("name", fullName);
-			context.put("verifyEmailLink", verificationUrl);
-			context.put("resendEmailLink", resendVerificationUrl);
-			context.put("isEnabled", isEnabled);
-			context.put("siteName", TurbineUtils.GetSystemName());
 
-			final String subject = TurbineUtils.GetSystemName() + " Email Verification";
-			final String emailText = populateVmTemplate(context, "/screens/email/NewUserVerification.vm");
-			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(),
-												  email,
-												  subject,
-												  emailText.replaceAll("FULL_NAME", fullName)
-														   .replaceAll("VERIFICATION_URL", verificationUrl)
-														   .replaceAll("SITE_NAME", TurbineUtils.GetSystemName()));
+			String verifyUrl = "<a href=\"" + verificationUrl + "\">Verify your email address on XNAT</a>";
+
+			final String resendVerificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/ForgotLogin.vm";
+
+			String forgotLoginUrl = "<a href=\"" + resendVerificationUrl + "\">Request a new email verification link from XNAT</a>";
+
+			body = body.replaceAll("USER_FIRSTNAME", firstName);
+			body = body.replaceAll("USER_LASTNAME", lastName);
+			body = body.replaceAll("VERIFY_URL", verifyUrl);
+			body = body.replaceAll("FORGOT_LOGIN_URL", forgotLoginUrl);
+
+			String subject = "Verify Your Email Address For " + TurbineUtils.GetSystemName();
+
+			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), new String[] { email }, new String[] { XDAT.getSiteConfigPreferences().getAdminEmail() }, null, subject, body);
 		}
 	}
 
@@ -144,9 +150,12 @@ public class AdminUtils {
 		if(XDAT.getNotificationsPreferences().getSmtpEnabled()){
 			String body = XDAT.getNotificationsPreferences().getEmailMessageUserRegistration();
 			body = body.replaceAll("USER_USERNAME",username);
-			body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
+			String siteUrLink = "<a href=\"" + TurbineUtils.GetFullServerPath() + "\">" + TurbineUtils.GetFullServerPath() + "</a>";
+			body = body.replaceAll("SITE_URL",siteUrLink);
 			body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
-			body = body.replaceAll("ADMIN_EMAIL",XDAT.getSiteConfigPreferences().getAdminEmail());
+
+			String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + "Assistance\">" + TurbineUtils.GetSystemName() + "Management </a>";
+			body = body.replaceAll("ADMIN_EMAIL",adminEmailLink);
 
 			UserI user = Users.getUser(username);
 			body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
@@ -179,16 +188,21 @@ public class AdminUtils {
 		UserI user = XDAT.getUserDetails();
 		assert user != null;
 		String email = user.getEmail();
-		if (!StringUtils.isBlank(email)) {
-		    context.put("time", Calendar.getInstance().getTime());
-		    context.put("system", TurbineUtils.GetSystemName());
-			context.put("siteLogoPath", XDAT.getSiteLogoPath());
-		    context.put("server", TurbineUtils.GetFullServerPath());
-		    context.put("user", user.getLogin() + " (" + user.getFirstname() + " " + user.getLastname() + ")");
-			context.put("error", message);
+		if (!StringUtils.isBlank(email) && XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+
 
 			final String subject = TurbineUtils.GetSystemName() + ": Error Thrown";
-			final String body = populateVmTemplate(context, "/screens/email/ErrorReport.vm");
+
+			String body = XDAT.getNotificationsPreferences().getEmailMessageErrorMessage();
+
+			body = body.replaceAll("SITE_URL", TurbineUtils.GetFullServerPath());
+			body = body.replaceAll("USER_LOGIN", user.getLogin());
+			body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+			body = body.replaceAll("USER_LASTNAME", user.getLastname());
+			Date date = Calendar.getInstance().getTime();
+			String dateString = TurbineUtils.GetInstance().formatDateTime(date);
+			body = body.replaceAll("ERROR_TIME", dateString);
+			body = body.replaceAll("ERROR_MESSAGE", message);
 
 			try {
 				// XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), getErrorEmailIds(), TurbineUtils.GetSystemName() + ": Error Thrown", body);
@@ -313,29 +327,39 @@ public class AdminUtils {
 	 * @see #sendNewUserCreationNotification(String, String, String, String, String, String, String, org.apache.velocity.context.Context)
 	 */
 	private static void sendNewUserRequestNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
-		context.put("time", Calendar.getInstance().getTime());
-		context.put("server", TurbineUtils.GetFullServerPath());
-		context.put("siteLogoPath", XDAT.getSiteLogoPath());
-		context.put("system", TurbineUtils.GetSystemName());
-		context.put("username", username);
-		context.put("first", first);
-		context.put("last", last);
-		context.put("email", email);
-		context.put("comments", comments);
-		context.put("phone", phone);
-		context.put("lab", lab);
 
-		final String body = populateVmTemplate(context, "/screens/email/NewUserRequest.vm");
-		final String subject = TurbineUtils.GetSystemName() + " New User Request: " + first + " " + last;
+		if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+			String body = XDAT.getNotificationsPreferences().getEmailMessageNewUserRequest();
+			Date date = Calendar.getInstance().getTime();
+			String dateString = TurbineUtils.GetInstance().formatDateTime(date);
+			body = body.replaceAll("TIME", dateString);
+			body = body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+			body = body.replaceAll("SITE_URL", TurbineUtils.GetFullServerPath());
+			body = body.replaceAll("USER_USERNAME", username);
+			body = body.replaceAll("USER_FIRSTNAME", first);
+			body = body.replaceAll("USER_LASTNAME", last);
+			body = body.replaceAll("USER_PHONE", phone);
+			body = body.replaceAll("LAB_NAME", lab);
+			body = body.replaceAll("USER_EMAIL", email);
+			body = body.replaceAll("USER_COMMENTS", comments);
+			body = body.replaceAll("PROJECT_ACCESS_REQUESTS", "");
 
-		final Map<String, Object> properties = new HashMap<>();
-		properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
-		properties.put(MailMessage.PROP_SUBJECT, subject);
-		properties.put(MailMessage.PROP_HTML, body);
-		XDAT.verifyNotificationType(NotificationType.NewUser);
-		XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
+			String url = TurbineUtils.GetFullServerPath()+ "/app/action/DisplayItemAction/search_value/" + username + "/search_element/xdat:user/search_field/xdat:user.login";
 
-		sendAdminNotificationCopy(subject, body, NotificationType.NewUser);
+			String reviewLink = "<a href=\"" + url + "\">Review and Enable " + username + "</a>";
+			body = body.replaceAll("REVIEW_LINK", reviewLink);
+
+			final String subject = TurbineUtils.GetSystemName() + " New User Request: " + first + " " + last;
+
+			final Map<String, Object> properties = new HashMap<>();
+			properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
+			properties.put(MailMessage.PROP_SUBJECT, subject);
+			properties.put(MailMessage.PROP_HTML, body);
+			XDAT.verifyNotificationType(NotificationType.NewUser);
+			XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
+
+			sendAdminNotificationCopy(subject, body, NotificationType.NewUser);
+		}
 	}
 
 	/**
@@ -350,29 +374,41 @@ public class AdminUtils {
 	 * @throws Exception When something goes wrong.
 	 */
 	private static void sendNewUserCreationNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
-		context.put("time", Calendar.getInstance().getTime());
-		context.put("server", TurbineUtils.GetFullServerPath());
-		context.put("siteLogoPath", XDAT.getSiteLogoPath());
-		context.put("system", TurbineUtils.GetSystemName());
-		context.put("username", username);
-		context.put("first", first);
-		context.put("last", last);
-		context.put("email", email);
-		context.put("comments", comments);
-		context.put("phone", phone);
-		context.put("lab", lab);
 
-		final String body = populateVmTemplate(context, "/screens/email/NewUserNotification.vm");
-		final String subject = "New User Created: " + first + " " + last;
+		if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+			String body = XDAT.getNotificationsPreferences().getEmailMessageNewUserNotification();
+			Date date = Calendar.getInstance().getTime();
+			String dateString = TurbineUtils.GetInstance().formatDateTime(date);
+			body = body.replaceAll("TIME", dateString);
+			body = body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+			body = body.replaceAll("SITE_URL", TurbineUtils.GetFullServerPath());
+			body = body.replaceAll("USER_USERNAME", username);
+			body = body.replaceAll("USER_FIRSTNAME", first);
+			body = body.replaceAll("USER_LASTNAME", last);
+			body = body.replaceAll("USER_PHONE", phone);
+			body = body.replaceAll("LAB_NAME", lab);
+			body = body.replaceAll("USER_EMAIL", email);
+			body = body.replaceAll("USER_COMMENTS", comments);
+			body = body.replaceAll("PROJECT_ACCESS_REQUESTS", "");
 
-		final Map<String, Object> properties = new HashMap<>();
-		properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
-		properties.put(MailMessage.PROP_SUBJECT, subject);
-		properties.put(MailMessage.PROP_HTML, body);
-		XDAT.verifyNotificationType(NotificationType.NewUser);
-		XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
+			String url = TurbineUtils.GetFullServerPath()+ "/app/action/DisplayItemAction/search_value/" + username + "/search_element/xdat:user/search_field/xdat:user.login";
 
-		sendAdminNotificationCopy(subject, body, NotificationType.NewUser);
+			String reviewLink = "<a href=\"" + url + "\">Review the new user account <b>" + username + "</b></a>";
+
+			body = body.replaceAll("REVIEW_LINK", reviewLink);
+
+			final String subject = "New User Created: " + first + " " + last;
+
+			final Map<String, Object> properties = new HashMap<>();
+			properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
+			properties.put(MailMessage.PROP_SUBJECT, subject);
+			properties.put(MailMessage.PROP_HTML, body);
+			XDAT.verifyNotificationType(NotificationType.NewUser);
+			XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
+
+			sendAdminNotificationCopy(subject, body, NotificationType.NewUser);
+		}
+
 	}
 
     private static String resolveLoginFailureMessage() {

@@ -23,6 +23,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 
 import java.util.Calendar;
+import java.util.Date;
 
 /**
  * @author Tim
@@ -47,26 +48,27 @@ public class EmailReportAction extends EmailAction {
 			String[] bccs = StringUtils.split(bccAddress == null ? "" : bccAddress, ", ");
 			
 			String subject = getSubject(data,context).replace("&apos;", "'"); // standard email HTML doesn't use this tag;
-			String message = getHtmlMessage(data,context).replace("&apos;", "'");
-			String text = getTxtMessage(data,context).replace("&apos;", "'");
 
-			try {
-				XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), tos, ccs, bccs, subject, message, text);
-			    data.setMessage("Message sent.");
-			    context.put("messageType", "success");
-			} catch (Exception e) {
-			    logger.error("Unable to send mail");
-			    data.setMessage("Unable to send mail.");
-			}
-            
             try {
-				SchemaElement se=SchemaElement.GetElement(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));
-				data.setScreenTemplate(DisplayItemAction.GetReportScreen(se));
-			} catch (XFTInitException e) {
-				logger.error(e);
-			} catch (ElementNotFoundException e) {
-				logger.error(e);
-			}
+                if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                    String message = getHtmlMessage(data, context).replace("&apos;", "'");
+                    XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), tos, ccs, bccs, subject, message);
+                    data.setMessage("Message sent.");
+                    context.put("messageType", "success");
+                }
+            } catch (Exception e) {
+                logger.error("Unable to send mail");
+                data.setMessage("Unable to send mail.");
+            }
+
+            try {
+                SchemaElement se = SchemaElement.GetElement(((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element", data)));
+                data.setScreenTemplate(DisplayItemAction.GetReportScreen(se));
+            } catch (XFTInitException e) {
+                logger.error(e);
+            } catch (ElementNotFoundException e) {
+                logger.error(e);
+            }
 		    
 		}
     }
@@ -108,27 +110,27 @@ public class EmailReportAction extends EmailAction {
         {
             try {
                 UserI user = TurbineUtils.getUser(data);
+
+                String body = XDAT.getNotificationsPreferences().getEmailMessageDataAlertCustom();
+                body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+                body = body.replaceAll("USER_LASTNAME", user.getLastname());
+                body = body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+                String requestLink = TurbineUtils.GetFullServerPath() + "/app/action/DisplaySearchAction" + "/search_element/" + TurbineUtils.GetPassedParameter("search_element", data) +
+                        "/search_field/" + TurbineUtils.GetPassedParameter("search_field",data) + "/search_value/" + TurbineUtils.GetPassedParameter("search_value", data);
+                String requestLinkFull = "<a href=\"" + requestLink + "\">this link</a>";
+
+                body = body.replaceAll("REQUEST_LINK", requestLinkFull);
+                body = body.replaceAll("SENDER_MESSAGE", (String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data));
+                String siteLink = "<a href=\"" + TurbineUtils.GetFullServerPath() + "\">" + TurbineUtils.GetSystemName() + "</a>";
+                body = body.replaceAll("SITE_URL", siteLink);
+                Date date = Calendar.getInstance().getTime();
+                String dateString = TurbineUtils.GetInstance().formatDateTime(date);
+                body = body.replaceAll("TIME_SENT", dateString);
+
+                String helpContact = "<a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">" + TurbineUtils.GetSystemName()+ " help</a>";
+                body = body.replaceAll("HELP_CONTACT", helpContact);
                 
-                StringBuffer sb = new StringBuffer();
-                sb.append("<html>");
-                sb.append("<body>");
-                sb.append(user.getFirstname()).append(" ").append(user.getLastname());
-                sb.append(" thought you might be interested in a data set contained in the ").append(TurbineUtils.GetSystemName()).append(".");
-                sb.append(" Please follow <A HREF=\"").append(TurbineUtils.GetFullServerPath()).append("/app/action/DisplayItemAction");
-                sb.append("/search_element/").append((String)TurbineUtils.GetPassedParameter("search_element", data));
-                sb.append("/search_field/").append((String)TurbineUtils.GetPassedParameter("search_field",data));
-                sb.append("/search_value/").append((String)TurbineUtils.GetPassedParameter("search_value", data));
-                sb.append("\">this link</A> to view the data.<BR><BR>");
-                
-                sb.append("Message from sender:<BR>");
-                sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
-                sb.append("<BR><BR>This email was sent by the <A HREF=\"").append(TurbineUtils.GetFullServerPath()).append("\">").append(TurbineUtils.GetSystemName()).append("</A> data management system on ").append(Calendar.getInstance().getTime()).append(".");
-                sb.append("  If you have questions or concerns, please contact <A HREF=\"mailto:").append(XDAT.getNotificationsPreferences().getHelpContactInfo()).append("\">").append(TurbineUtils.GetSystemName()).append(" help</A>.");
-                
-                sb.append("</body>");
-                sb.append("</html>");
-                
-                return sb.toString();
+                return body;
             } catch (Exception e) {
                 logger.error("",e);
                 return "error";

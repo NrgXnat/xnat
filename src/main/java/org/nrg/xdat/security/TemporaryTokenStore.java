@@ -150,12 +150,12 @@ public final class TemporaryTokenStore {
 		String body = XDAT.getNotificationsPreferences().getEmailMessageForgotPasswordReset();
 		body=body.replaceAll("USER_FIRSTNAME",u.getFirstname());
 		body=body.replaceAll("USER_LASTNAME",u.getLastname());
-		body=body.replaceAll("RESET_URL",TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?token=" + null);
+
+		String resetLink = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?token=" + null;
+
+		String resetUrl = "<a href=\"" + resetLink + "\">" + resetLink + "</a>";
+		body=body.replaceAll("RESET_URL",resetUrl);
 		body=body.replaceAll("USER_USERNAME",u.getUsername());
-		body=body.replaceAll("ADMIN_EMAIL",XDAT.getSiteConfigPreferences().getAdminEmail());
-		body=body.replaceAll("HELP_EMAIL",XDAT.getNotificationsPreferences().getHelpContactInfo());
-		body=body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
-		body=body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
 		final String emailBody = body;
 
 		CallableWith<Void,String> emailAction = new CallableWith<Void,String>() {

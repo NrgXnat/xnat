@@ -10,6 +10,7 @@
 package org.nrg.xdat.search;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.schema.SchemaElement;
@@ -253,7 +254,13 @@ public class DisplayCriteria implements SQLClause {
             String temp = (String) value;
 
             if (hackCheck && PoolDBUtils.HackCheck(temp)) {
-                AdminUtils.sendAdminEmail("Possible SQL Injection Attempt", "VALUE:" + temp);
+                if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                    String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                    String type = "VALUE:" + temp;
+                    body = body.replaceAll("TYPE", type);
+                    body = body.replaceAll("USER_DETAILS", "");
+                    AdminUtils.sendAdminEmail("Possible SQL Injection Attempt", body);
+                }
                 throw new Exception("Invalid search value (" + temp + ")");
             }
 

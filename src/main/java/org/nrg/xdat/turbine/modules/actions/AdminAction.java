@@ -11,6 +11,7 @@ package org.nrg.xdat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -35,7 +36,13 @@ public abstract class AdminAction extends SecureAction {
         data.setMessage("Unauthorized access.  Please login to gain access to this page.");
         log.error("Unauthorized Access to an Admin Action (prevented).");
         AccessLogger.LogActionAccess(data, "Unauthorized access");
-        AdminUtils.sendAdminEmail(user, "Unauthorized Admin Access Attempt", "Unauthorized Access to an Admin Action (" + data.getAction() + ") prevented.");
+        if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+            String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+            String type = "to an Admin Action (" + data.getAction() + ")";
+            body = body.replaceAll("TYPE", type);
+            body = body.replaceAll("USER_DETAILS", "");
+            AdminUtils.sendAdminEmail(user, "Unauthorized Admin Access Attempt", body);
+        }
         data.getResponse().sendError(403);
         return false;
     }

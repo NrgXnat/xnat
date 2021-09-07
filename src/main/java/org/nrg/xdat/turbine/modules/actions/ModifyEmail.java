@@ -113,13 +113,27 @@ public class ModifyEmail extends ModifyAction {
                 //email user
 
                 try {
-                    AdminUtils.sendUserHTMLEmail("Email Change Request Submitted","A request was made to change the email address for the user with username "+ user.getUsername() +" to "+newEmail+". If you did not make this request, someone else may have gotten access to your account and you should contact the site administrator: "+preferences.getAdminEmail()+".", false, new String[]{existing.getEmail()});
+                    if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                        String body = XDAT.getNotificationsPreferences().getEmailMessageEmailAddressChangeRequest();
+                        body = body.replaceAll("USER_USERNAME", user.getUsername());
+                        body = body.replaceAll("NEW_EMAIL", newEmail);
+                        body = body.replaceAll("ADMIN_EMAIL", preferences.getAdminEmail());
+                        AdminUtils.sendUserHTMLEmail("Email Change Request Submitted",body, false, new String[]{existing.getEmail()});
+                    }
                 } catch (MailException e) {
                     logger.error("An error occurred trying to send an email to the following addresses: " + existing.getEmail(), e);
                 }
 
                 try {
-                    AdminUtils.sendUserHTMLEmail("Verify Email Address Change Request", "A request was made to change the email address for the user with username "+ user.getUsername() +" to this address. If you did not make this request, you can ignore this email. If you made this request and wish to have this change take effect, please log into your account and click <A href=\""+TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?confirmationToken=" + guid+"\">this link</a>.", false, new String[]{newEmail});
+                    if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                        String body = XDAT.getNotificationsPreferences().getEmailMessageVerifyEmailChangeRequest();
+                        body = body.replaceAll("USER_USERNAME", user.getUsername());
+                        String link = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?confirmationToken=" + guid;
+
+                        String changeEmailLink = "<a href=\"" + link + "\">this link</a>";
+                        body = body.replaceAll("CHANGE_EMAIL_LINK", changeEmailLink);
+                        AdminUtils.sendUserHTMLEmail("Verify Email Address Change Request", body, false, new String[]{newEmail});
+                    }
                 } catch (MailException e) {
                     logger.error("An error occurred trying to send an email to the administrator and the following addresses: " + user.getEmail(), e);
                 }
@@ -147,16 +161,26 @@ public class ModifyEmail extends ModifyAction {
                     // Update the email address for the user principal in the application session.
                     user.setEmail(existing.getEmail());
 
-                    final String message = "Your email address was successfully changed to " + existing.getEmail() + ".";
-                    try {
-                        AdminUtils.sendUserHTMLEmail(EMAIL_ADDRESS_CHANGED, message, true, new String[]{user.getEmail(), existing.getEmail()});
-                    } catch (MailException e) {
-                        logger.error("An error occurred trying to send an email to the administrator and the following addresses: " + user.getEmail() + ", " + existing.getEmail() + ".\nSubject: \"" + EMAIL_ADDRESS_CHANGED + "\"\nMessage:\n" + message, e);
+                    if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                        String body = XDAT.getNotificationsPreferences().getEmailMessageAddressChanged();
+                        body = body.replaceAll("NEW_EMAIL", existing.getEmail());
+                        try {
+                            AdminUtils.sendUserHTMLEmail(EMAIL_ADDRESS_CHANGED, body, true, new String[]{user.getEmail(), existing.getEmail()});
+                        } catch (MailException e) {
+                            logger.error("An error occurred trying to send an email to the administrator and the following addresses: " + user.getEmail() + ", " + existing.getEmail() + ".\nSubject: \"" + EMAIL_ADDRESS_CHANGED + "\"\nMessage:\n" + body, e);
+                        }
                     }
+
 
                     redirect(true, "Email address changed.");
                 } catch (InvalidPermissionException e) {
-                    notifyAdmin(user, data, 403, "Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+                    if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                        String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                        String type = "attempted. User attempted to modify a user account other than thier own. This typically requires tampering with the HTTP form submission process.";
+                        body = body.replaceAll("TYPE", type);
+                        body = body.replaceAll("USER_DETAILS", "");
+                        notifyAdmin(user, data, 403, "Possible Authorization Bypass event", body);
+                    }
                 } catch (Exception e) {
                     logger.error("Error Storing User", e);
                 }

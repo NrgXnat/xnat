@@ -2154,7 +2154,13 @@ public class DBAction {
                     String upper = s.toUpperCase();
                     if (s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))) {
                         if (!allowInvalidValues) {
-                            AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", s);
+                            if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                                String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                                String typeMessage = s;
+                                body = body.replaceAll("TYPE", typeMessage);
+                                body = body.replaceAll("USER_DETAILS", "");
+                                AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", body);
+                            }
                             throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");
                         }
                     }
@@ -2167,7 +2173,13 @@ public class DBAction {
                 String upper = s.toUpperCase();
                 if (s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))) {
                     if (!allowInvalidValues) {
-                        AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", s);
+                        if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                            String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                            String typeMessage = s;
+                            body = body.replaceAll("TYPE", typeMessage);
+                            body = body.replaceAll("USER_DETAILS", "");
+                            AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", body);
+                        }
                         throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");
                     }
                 }

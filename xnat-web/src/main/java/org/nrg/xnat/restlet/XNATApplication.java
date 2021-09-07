@@ -291,6 +291,8 @@ public class XNATApplication extends Application {
         attachURI(router, PREARC_PROJECT_URI, PrearcSessionListResource.class);
         attachURI(router, PREARC_SESSION_URI, PrearcSessionResource.class);
         attachURI(router, PREARC_SESSION_URI + "/resources", PrearcSessionResourcesList.class);
+        attachURI(router, PREARC_SESSION_URI + "/resources/{RESOURCE_ID}", PrearcSessionResourceCatalog.class);
+        attachURI(router, PREARC_SESSION_URI + "/resources/{RESOURCE_ID}/files", PrearcSessionResourceCatalogFiles.class);
         attachURI(router, PREARC_SESSION_URI + "/scans", PrearcScansListResource.class);
         attachURI(router, PREARC_SESSION_URI + "/scans/{SCAN_ID}", PrearcScanResource.class);
         attachURI(router, PREARC_SESSION_URI + "/scans/{SCAN_ID}/resources", PrearcScanResourceList.class);

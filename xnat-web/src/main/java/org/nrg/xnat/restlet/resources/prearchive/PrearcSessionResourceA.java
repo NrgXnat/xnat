@@ -17,12 +17,14 @@ import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
+import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
 import java.io.File;
@@ -90,4 +92,49 @@ public abstract class PrearcSessionResourceA extends SecureResource {
 		}
 	}
 
+	protected Representation getRepresentation(Variant variant, String type, String id) {
+		final MediaType mt=overrideVariant(variant);
+		if (MediaType.APPLICATION_GNU_ZIP.equals(mt) || MediaType.APPLICATION_ZIP.equals(mt)) {
+			try {
+				final File sessionDIR;
+				final File srcXML;
+				try {
+					sessionDIR = PrearcUtils.getPrearcSessionDir(getUser(), project, timestamp, session,false);
+					srcXML=new File(sessionDIR.getAbsolutePath()+".xml");
+				} catch (InvalidPermissionException e) {
+					logger.error("",e);
+					throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN,e);
+				} catch (Exception e) {
+					logger.error("",e);
+					throw new ServerException(e);
+				}
+
+				if(!srcXML.exists()){
+					throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND,"Unable to locate prearc resource.",new Exception());
+				}
+
+				File resDir = new File(new File(sessionDIR,type), id);
+
+				final ZipRepresentation zip;
+				try{
+					zip = new ZipRepresentation(mt, resDir.getName(),identifyCompression(null));
+				} catch (ActionException e) {
+					logger.error("",e);
+					this.setResponseStatus(e);
+					return null;
+				}
+				zip.addFolder(resDir.getName(), resDir);
+				return zip;
+			} catch (ClientException e) {
+				this.getResponse().setStatus(e.getStatus(),e);
+				return null;
+			} catch (ServerException e) {
+				this.getResponse().setStatus(e.getStatus(),e);
+				return null;
+			}
+		} else {
+			this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Requested type " + mt + " is not supported");
+			return null;
+		}
+	}
 }

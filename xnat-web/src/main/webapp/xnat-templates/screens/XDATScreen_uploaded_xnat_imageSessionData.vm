@@ -8,7 +8,7 @@ XNAT.app.isUpload = true;
 </script>
 			#parse($turbineUtils.getTemplateName("edit",$om.getXSIType(),$project,"edit"))
 
-<!-- begin validation warnings dialog -->
+	<!-- begin validation warnings dialog -->
 <style type="text/css">
 #val_warning_div{
 	margin-top:12px;
@@ -126,7 +126,7 @@ dd.valMessage 	{	width:630px;	}
 		$(scan1).html(_html);
 	});
 	
-	$("select.scanActionSelect").click(function(){
+	$("select.scanActionSelect").change(function(){
 		var action= $(this).val();
 		if(action=="files"){
 			XNAT.app.prearchiveActions.reviewFileDetails('$url', $(this).attr("data-scan-id"), 'DICOM');
@@ -136,6 +136,48 @@ dd.valMessage 	{	width:630px;	}
 			XNAT.app.prearchiveActions.reviewDicomTags('$url', $(this).attr("data-scan-id"));
 		}
 		
+		$(this).val("");
+	});
+
+	$(document).ready(function(){
+		const resources = [];
+		#foreach($res in $om.getResources_resource())
+			resources.push('$!res.getLabel()');
+		#end
+		if (resources.length === 0) {
+			return;
+		}
+		let trs = '';
+		for (let i = 0; i < resources.length; i++) {
+			trs += '<tr id="resourceTR"' + resources[i] + '>' +
+				'<td>' + resources[i] + '</td>' +
+				'<td nowrap>' +
+					'<select class="resourceActionSelect" data-resource-id="' + resources[i]+ '">' +
+					'	<option value="">Actions</option>' +
+					'	<option value="download">Download Files</option>' +
+					'	<option value="review">Review File Details</option>' +
+				'</td>' +
+                '<td nowrap><div id="res' + resources[i] + 'Files" class="fileCountAndSize">' +
+                '<a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>' +
+			'</tr>';
+		}
+
+		const resTable = $('<br><hr><div class="edit_header1" style="margin-bottom:16px">Resources</div>' +
+			'<table>' +
+				'<tr><th>Label</th><th></th><th></th></tr>' +
+				trs +
+			'</table>');
+
+		$('#scan_tbody').parents('table').after(resTable);
+	});
+
+	$(document).on('change', '.resourceActionSelect', function(){
+		const action = $(this).val();
+		if (action=="download"){
+			XNAT.app.prearchiveActions.downloadResFiles('$url', $(this).attr("data-resource-id"));
+		} else if(action=="review"){
+			XNAT.app.prearchiveActions.reviewResFileDetails('$url', $(this).attr("data-resource-id"));
+		}
 		$(this).val("");
 	});
 </script>
@@ -179,30 +221,6 @@ dd.valMessage 	{	width:630px;	}
     jq(document.body).on('click','a.nolink',function(e){
         e.preventDefault();
     });
-
-    XNAT.app.prearchiveActions.downloadAllFiles = function( url ){
-        window.location = serverRoot + '/REST' + url + '?format=zip';
-        return false;
-    };
-
-    XNAT.app.prearchiveActions.downloadFiles = function( url, scan_id ){
-        window.location = serverRoot + '/REST' + url + '/scans/' + scan_id + '?format=zip';
-        return false;
-    };
-
-    XNAT.app.prearchiveActions.reviewFileDetails = function( url, scan_id, label ){
-        var RESTurl = serverRoot +
-            '/data' + url + '/scans/' + scan_id + '/resources/' + label +
-            '/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true';
-        XNAT.app.fileDialog.loadScan(RESTurl, 'Scan ' + scan_id + ' files');
-    };
-
-    XNAT.app.prearchiveActions.reviewDicomTags = function( url, scan_id ){
-        var RESTurl = serverRoot +
-            '/data/services/dicomdump?src=' + url + '/scans/' + scan_id +
-            '&format=html&requested_screen=DicomScanTable.vm&popup=true';
-        XNAT.app.headerDialog.load(RESTurl, 'Scan ' + scan_id + ' DICOM');
-    };
 
     XNAT.app.fileDialog.url='$url';
     XNAT.app.headerDialog.url='$url';

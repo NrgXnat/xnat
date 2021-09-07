@@ -18,11 +18,8 @@ XNAT.app.fileCounter={
 
 		var tempURL=serverRoot+"/REST" + this.url +"/resources?format=json&sortBy=category,cat_id,label&timestamp=" + (new Date()).getTime();
 
+        $(".fileCountAndSize").html("Loading...");
         YAHOO.util.Connect.asyncRequest('GET',tempURL,catCallback,null,this);
-
-		for(var sc=0;sc<this.scans.length;sc++){
-			$("#scan"+this.scans[sc]+"Files").html("Loading...");
-		}
 	},
 	processCatalogs:function(o){
     	var catalogs = JSON.parse(o.responseText).ResultSet.Result;
@@ -30,19 +27,20 @@ XNAT.app.fileCounter={
         var prearchiveSessionFileSize = 0.0;
 
     	for(var catC=0;catC<catalogs.length;catC++){
-
-    		var scan=document.getElementById("scan"+catalogs[catC].cat_id+"Files");
-    		if(scan!=null){
-				if(catalogs[catC].file_count!=undefined && catalogs[catC].file_count!=null){
-		  			scan.innerHTML=catalogs[catC].file_count + " files, "+ size_format(catalogs[catC].file_size);
-		  			if(catalogs[catC].file_count>0) {
-                        prearchiveSessionFileCount = prearchiveSessionFileCount + parseInt(catalogs[catC].file_count,10);
+    	    let catalog = catalogs[catC];
+    	    const elementId = catalog.category === 'scans' ? "scan"+catalog.cat_id+"Files" : "res"+catalog.label+"Files"
+    		var element =document.getElementById(elementId);
+    		if(element!=null){
+				if(catalog.file_count!=undefined && catalog.file_count!=null){
+                    element.innerHTML=catalog.file_count + " files, "+ size_format(catalog.file_size);
+		  			if(catalog.file_count>0) {
+                        prearchiveSessionFileCount = prearchiveSessionFileCount + parseInt(catalog.file_count,10);
                     }
-                    if(catalogs[catC].file_size>0) {
-                        prearchiveSessionFileSize = prearchiveSessionFileSize + parseFloat(catalogs[catC].file_size);
+                    if(catalog.file_size>0) {
+                        prearchiveSessionFileSize = prearchiveSessionFileSize + parseFloat(catalog.file_size);
                     }
 				}else{
-		  			scan.innerHTML=size_format(catalogs[catC].file_size);
+                    element.innerHTML=size_format(catalog.file_size);
 				}
     		}
     	}

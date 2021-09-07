@@ -177,6 +177,43 @@ XNAT.app.validator={
 	}
 };
 
+XNAT.app.prearchiveActions.downloadResFiles = function( url, resId ){
+	window.location = serverRoot + '/REST' + url + '/resources/' + resId + '?format=zip';
+	return false;
+}
+
+XNAT.app.prearchiveActions.reviewResFileDetails = function( url, resId ){
+	var RESTurl = serverRoot +
+		'/data' + url + '/resources/' + resId +
+		'/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true';
+	XNAT.app.fileDialog.loadScan(RESTurl, 'Resource ' + resId + ' files');
+}
+
+
+XNAT.app.prearchiveActions.downloadAllFiles = function( url ){
+	window.location = serverRoot + '/REST' + url + '?format=zip';
+	return false;
+};
+
+XNAT.app.prearchiveActions.downloadFiles = function( url, scan_id ){
+	window.location = serverRoot + '/REST' + url + '/scans/' + scan_id + '?format=zip';
+	return false;
+};
+
+XNAT.app.prearchiveActions.reviewFileDetails = function( url, scan_id, label ){
+	var RESTurl = serverRoot +
+		'/data' + url + '/scans/' + scan_id + '/resources/' + label +
+		'/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true';
+	XNAT.app.fileDialog.loadScan(RESTurl, 'Scan ' + scan_id + ' files');
+};
+
+XNAT.app.prearchiveActions.reviewDicomTags = function( url, scan_id ){
+	var RESTurl = serverRoot +
+		'/data/services/dicomdump?src=' + url + '/scans/' + scan_id +
+		'&format=html&requested_screen=DicomScanTable.vm&popup=true';
+	XNAT.app.headerDialog.load(RESTurl, 'Scan ' + scan_id + ' DICOM');
+};
+
 //project selector dialog
 XNAT.app.move_project_dialog = new YAHOO.widget.Dialog("move_project_dialog", { fixedcenter:true, visible:false, width:"400px", height:"150px", modal:true, close:true, draggable:true,resizable:true});
 XNAT.app.move_project_dialog.cfg.queueProperty("buttons", [

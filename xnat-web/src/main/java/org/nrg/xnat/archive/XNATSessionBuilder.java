@@ -22,9 +22,14 @@ import org.nrg.framework.services.ContextService;
 import org.nrg.resources.SupplementalResourceBuilderUtils;
 import org.nrg.session.SessionBuilder;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.bean.XnatAbstractresourceBean;
+import org.nrg.xdat.bean.XnatImagesessiondataBean;
+import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.XFT;
+import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
+import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -136,6 +141,18 @@ public class XNATSessionBuilder implements Callable<Boolean> {
     public Boolean call() throws IOException {
         xml.getParentFile().mkdirs();
 
+        // handle resources here
+        List<XnatAbstractresourceBean> resources = null;
+        if (xml.exists()) {
+            try {
+                XnatImagesessiondataBean session = PrearcTableBuilder.parseSession(xml);
+                resources = session.getResources_resource();
+            } catch (Exception e) {
+                log.error("Couldn't parse previous session xml {}, no resources will be copied into the rebuilt version",
+                        xml, e);
+            }
+        }
+
         try (final FileWriter fileWriter = new FileWriter(xml)) {
             if (null == _contextService && SESSION_DATA_FACTORY_CLASSES.isEmpty()) {
                 _contextService = XDAT.getContextService();
@@ -167,9 +184,17 @@ public class XNATSessionBuilder implements Callable<Boolean> {
             }
         }
 
-        // Insert any supplemental resources
-        SupplementalResourceBuilderUtils.addSupplementalResourcesToXml(Collections.singleton(xml),
-                                                                       Collections.singleton(dir));
+        if (resources != null && !resources.isEmpty()) {
+            try {
+                XnatImagesessiondataBean postSession = PrearcTableBuilder.parseSession(xml);
+                postSession.setResources_resource((ArrayList<XnatAbstractresourceBean>) resources);
+                try (FileWriter fw = new FileWriter(xml)) {
+                    postSession.toXML(fw);
+                }
+            } catch (Exception e) {
+                log.error("Unable to add resources to xml {} after rebuild", xml, e);
+            }
+        }
 
         return Boolean.TRUE;
     }

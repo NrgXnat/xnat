@@ -98,7 +98,7 @@
         <tr id="scanTR$!{scanId}">
 			<td>$!{scanId}</td>
 			<td>#escapeCleanHTML("$!scan.getSeriesDescription()")</td>
-			<td nowrap><div id="scan$!{scanId}Files"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
+			<td nowrap><div id="scan$!{scanId}Files" class="fileCountAndSize"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
 			<td nowrap>
 				&nbsp;&nbsp;<button id="scanB1$$!{scanId}" onclick="XNAT.app.prearchiveActions.downloadFiles('$url', '$!{scanId}')">Download Files</button>
 				#foreach($res in $scan.getFile())
@@ -110,6 +110,26 @@
 		</tr>
 	#end
 	</table>
+
+    #set($resources = $session.getResources_resource())
+    #if($resources.size() > 0)
+        <h3>Resources</h3>
+        <table>
+            <tr><th>Label</th><th>Files</th><th>Actions</th></tr>
+            #foreach($res in $resources)
+                #define($resLabel)#escapeAll("$!res.getLabel()")#end
+                <tr id="resourceTR$!{resLabel}">
+                    <td>#escapeCleanHTML("$!resLabel")</td>
+                    <td nowrap><div id="res$!{resLabel}Files"  class="fileCountAndSize"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
+                    <td nowrap>
+                        &nbsp;&nbsp;<button id="res1$!{resLabel}" onclick="XNAT.app.prearchiveActions.downloadResFiles('$url', '$!{resLabel}')">Download Files</button>
+                            &nbsp;&nbsp;<button id="res2$!{resLabel}" onclick="XNAT.app.prearchiveActions.reviewResFileDetails('$url', '$!{resLabel}')">Review File Details</button>
+                        &nbsp;&nbsp;<button id="res3$$!{resLabel}" onclick="XNAT.app.scanDeleter.requestDelete('$!{resLabel}', false);">Delete Resource</button>
+                    </td>
+                </tr>
+            #end
+        </table>
+    #end
 
     ## move this out of the table
     <p id="prearchiveSessionTotals"></p>
@@ -222,30 +242,6 @@
     jq(document.body).on('click','a.nolink',function(e){
         e.preventDefault();
     });
-
-    XNAT.app.prearchiveActions.downloadAllFiles = function( url ){
-        window.location = serverRoot + '/REST' + url + '?format=zip';
-        return false;
-    }
-
-    XNAT.app.prearchiveActions.downloadFiles = function( url, scan_id ){
-        window.location = serverRoot + '/REST' + url + '/scans/' + scan_id + '?format=zip';
-        return false;
-    }
-
-    XNAT.app.prearchiveActions.reviewFileDetails = function( url, scan_id, label ){
-        var RESTurl = serverRoot +
-            '/data' + url + '/scans/' + scan_id + '/resources/' + label +
-            '/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true';
-        XNAT.app.fileDialog.loadScan(RESTurl, 'Scan ' + scan_id + ' files');
-    }
-
-    XNAT.app.prearchiveActions.reviewDicomTags = function( url, scan_id ){
-        var RESTurl = serverRoot +
-            '/data/services/dicomdump?src=' + url + '/scans/' + scan_id +
-            '&format=html&requested_screen=DicomScanTable.vm&popup=true';
-        XNAT.app.headerDialog.load(RESTurl, 'Scan ' + scan_id + ' DICOM');
-    }
 
     XNAT.app.fileDialog.url='$url';
     XNAT.app.headerDialog.url='$url';

@@ -18,6 +18,9 @@ import org.nrg.action.ActionException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
@@ -26,6 +29,7 @@ import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class RequestAccess extends SecureAction {
     static Logger logger = Logger.getLogger(RequestAccess.class);
@@ -46,28 +50,6 @@ public class RequestAccess extends SecureAction {
         else{
             ProjectAccessRequest.CreatePAR(project.getId(), access_level, user);
 
-            context.put("user", user);
-            context.put("server", TurbineUtils.GetFullServerPath());
-            context.put("siteLogoPath", XDAT.getSiteLogoPath());
-            context.put("process", "Transfer to the archive.");
-            context.put("system", TurbineUtils.GetSystemName());
-            context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
-            context.put("projectOM", project);
-            context.put("access_level", access_level);
-            context.put("comments", comments);
-            context.put("displayManager", DisplayManager.GetInstance());
-            StringWriter sw = new StringWriter();
-            Template template;
-            try {
-                template = Velocity.getTemplate("/screens/email/RequestProjectAccessEmail.vm");
-                template.merge(context, sw);
-            } catch (Exception exception) {
-                logger.error("Unable to send mail", exception);
-                throw exception;
-            }
-
-            String message = sw.toString();
-
             ArrayList<String> ownerEmails;
             try {
                 ownerEmails = project.getOwnerEmails();
@@ -81,32 +63,72 @@ public class RequestAccess extends SecureAction {
                 to = ownerEmails.toArray(new String[ownerEmails.size()]);
             }
 
-            String[] bcc = null;
-            if (ArcSpecManager.GetInstance().getEmailspecifications_projectAccess()) {
-                bcc = new String[]{XDAT.getSiteConfigPreferences().getAdminEmail()};
-            }
-
-            String from = XDAT.getSiteConfigPreferences().getAdminEmail();
-            String subject = TurbineUtils.GetSystemName() + " Access Request for " + project.getName();
-
-            data.setMessage("Access request sent.");
-
-            try {
-                XDAT.getMailService().sendHtmlMessage(from, to, null, bcc, subject, message);
-            } catch (Exception exception) {
-                logger.error("Send failed. Retrying by sending each email individually.", exception);
-                int successfulSends = 0;
-                for (String recipient : to) {
-                    try {
-                        XDAT.getMailService().sendHtmlMessage(from, new String[]{recipient}, null, bcc, subject, message);
-                        successfulSends++;
-                    } catch (Exception e) {
-                        logger.error("Unable to send mail to " + recipient + ".", e);
-                    }
+            if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                String body = XDAT.getNotificationsPreferences().getEmailMessageProjectRequestAccess();
+                body = body.replaceAll("USER_USERNAME", user.getUsername());
+                body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+                body = body.replaceAll("USER_LASTNAME", user.getLastname());
+                body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
+                body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
+                String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + "Assistance\">" + TurbineUtils.GetSystemName() + "Management </a>";
+                body = body.replaceAll("ADMIN_MAIL",adminEmailLink);
+                body = body.replaceAll("USER_EMAIL", user.getEmail());
+                if (comments == null) {
+                    body = body.replaceAll("RQA_COMMENTS", "");
+                } else {
+                    body = body.replaceAll("RQA_COMMENTS", comments);
                 }
-                if (successfulSends == 0) {
-                    logger.error("Unable to send mail", exception);
-                    data.setMessage("No project owners have emails which could receive the access request. Please contact the system administrator for additional assistance.");
+                body = body.replaceAll("PROJECT_NAME", project.getName());
+                body = body.replaceAll("RQ_ACCESS_LEVEL", access_level);
+
+                if (access_level.toLowerCase().equals("owner")) {
+                    body = body.replaceAll("LIST_PERMISSIONS", "read, edit and manage anything affiliated with this project.");
+                } else if(access_level.toLowerCase().equals("member")) {
+                    body = body.replaceAll("LIST_PERMISSIONS", "read and edit the project.");
+                } else if (access_level.toLowerCase().equals("collaborator")) {
+                    body = body.replaceAll("LIST_PERMISSIONS", "read the project and experiment data. The user will NOT be able to edit the data.");
+                } else {
+                    String permission = "perform the actions as defined by the " + access_level + " custom group.";
+                    body = body.replaceAll("LIST_PERMISSIONS", permission);
+                }
+
+                body = body.replaceAll("LIST_PERMISSIONS", "permissionLevel");
+
+                final String respondAccessUrl = TurbineUtils.GetFullServerPath() +"/app/template/RequestProjectAccessForm.vm/project/" + project.getId() + "/id/" + user.getID().toString() + "/access_level/" + access_level;
+
+                String accessUrl = "<a href=\"" + respondAccessUrl + "\">" + respondAccessUrl + "</a>";
+
+                body = body.replaceAll("ACCESS_URL", accessUrl);
+
+
+                String subject = TurbineUtils.GetSystemName() + " Access Request for " + project.getName();
+
+                String[] bcc = null;
+                if (ArcSpecManager.GetInstance().getEmailspecifications_projectAccess()) {
+                    bcc = new String[]{XDAT.getSiteConfigPreferences().getAdminEmail()};
+                }
+
+                String from = XDAT.getSiteConfigPreferences().getAdminEmail();
+
+                data.setMessage("Access request sent.");
+
+                try {
+                    XDAT.getMailService().sendHtmlMessage(from, to, null, bcc, subject, body);
+                } catch (Exception exception) {
+                    logger.error("Send failed. Retrying by sending each email individually.", exception);
+                    int successfulSends = 0;
+                    for (String recipient : to) {
+                        try {
+                            XDAT.getMailService().sendHtmlMessage(from, new String[]{recipient}, null, bcc, subject, body);
+                            successfulSends++;
+                        } catch (Exception e) {
+                            logger.error("Unable to send mail to " + recipient + ".", e);
+                        }
+                    }
+                    if (successfulSends == 0) {
+                        logger.error("Unable to send mail", exception);
+                        data.setMessage("No project owners have emails which could receive the access request. Please contact the system administrator for additional assistance.");
+                    }
                 }
             }
         }

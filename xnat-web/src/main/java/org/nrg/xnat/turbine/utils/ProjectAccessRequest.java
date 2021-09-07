@@ -22,6 +22,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.ItemAccessHistory;
 import org.nrg.xft.db.PoolDBUtils;
@@ -459,8 +460,7 @@ public class ProjectAccessRequest {
         }
     }
 
-    public static void InviteUser(Context context, String invitee, UserI user, String subject) throws Exception {
-    	XnatProjectdata project = (XnatProjectdata) context.get("projectOM");
+    public static void InviteUser(XnatProjectdata project, String invitee, UserI user, String subject, String access_level) throws Exception {
     	ProjectAccessRequest request = null;
 		try {
             if (!CREATED_PAR_TABLE.get()) {
@@ -470,7 +470,7 @@ public class ProjectAccessRequest {
 	         invitee = StringUtils.remove(invitee, '\'');
             String guid = UUID.randomUUID().toString();
 
-            PoolDBUtils.ExecuteNonSelectQuery("INSERT INTO xs_par_table (email, guid, proj_id, approver_id, level) VALUES ('" + invitee + "', '" + guid + "', '" + project.getId() + "', " + user.getID() + ", '" + context.get("access_level") + "');", user.getDBName(), user.getLogin());
+            PoolDBUtils.ExecuteNonSelectQuery("INSERT INTO xs_par_table (email, guid, proj_id, approver_id, level) VALUES ('" + invitee + "', '" + guid + "', '" + project.getId() + "', " + user.getID() + ", '" + access_level + "');", user.getDBName(), user.getLogin());
 
             request = RequestPAR("xs_par_table.email = '" + invitee + "' AND guid = '" + guid + "' AND proj_id = '" + project.getId() + "' AND approved IS NULL", user);
 	    } catch (SQLException exception) {
@@ -479,13 +479,6 @@ public class ProjectAccessRequest {
 	         _logger.error("General error occurred when inviting user " + invitee, exception);
 	    }
 
-	    context.put("par", request);
-        context.put("displayManager", DisplayManager.GetInstance());
-
-        StringWriter writer = new StringWriter();
-        Template template = Velocity.getTemplate("/screens/email/InviteProjectAccessEmail.vm");
-        template.merge(context, writer);
-
         String bcc = null;
         if (ArcSpecManager.GetInstance().getEmailspecifications_projectAccess()) {
 	        bcc = XDAT.getSiteConfigPreferences().getAdminEmail();
@@ -493,12 +486,33 @@ public class ProjectAccessRequest {
 
         String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 
-        try {
-            XDAT.getMailService().sendHtmlMessage(from, invitee, user.getEmail(), bcc, subject, writer.toString());
-        } catch (MessagingException exception) {
-            _logger.error("Unable to send mail", exception);
-            throw exception;
+        if(XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+            String body = XDAT.getNotificationsPreferences().getEmailMessageInviteProjectAccess();
+
+            body = body.replaceAll("PROJECT_NAME", project.getName());
+            body = body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+            body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+            body = body.replaceAll("USER_LASTNAME", user.getLastname());
+            body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
+            String adminEmail = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "\">" + XDAT.getSiteConfigPreferences().getAdminEmail() + "</a>";
+
+            body = body.replaceAll("ADMIN_MAIL", adminEmail);
+
+            String acceptURL = TurbineUtils.GetFullServerPath() + "/app/action/AcceptProjectAccess/par/" + request._guid + "?hash=" + request.getHashedEmail();
+
+            String acceptLink = "<a href=\"" + acceptURL + "\">" + acceptURL + ".</a>";
+
+            body = body.replaceAll("ACCEPT_URL", acceptLink);
+
+            try {
+                XDAT.getMailService().sendHtmlMessage(from, invitee, user.getEmail(), bcc, subject, body);
+            } catch (MessagingException exception) {
+                _logger.error("Unable to send mail", exception);
+                throw exception;
+            }
         }
+
+
     }
 
     @SuppressWarnings({"unused", "RedundantThrows"})

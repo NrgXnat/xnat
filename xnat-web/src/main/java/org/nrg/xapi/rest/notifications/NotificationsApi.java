@@ -365,6 +365,342 @@ public class NotificationsApi extends AbstractXapiRestController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Sets the email message for new user verification.",
+            notes = "Sets the email message that people should receive when are requested to verify their email address for a new account. Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "User verification email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the user verification email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/newuserverification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageNewUserVerification(@ApiParam(value = "The email message for user registration.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageNewUserVerification(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message for a user project access request.",
+            notes = "Sets the email message that owners/members/etc. should receive when a user requests access to a project. Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Project access request email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the project access request email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/projectaccessrequest"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageProjectAccessRequest(@ApiParam(value = "The email message for project access request.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageProjectRequestAccess(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message for approving a project access request.",
+            notes = "Sets the email message that a new user should receive when they have received approval to access a project. Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Project access approval email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the project access approval email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/approveprojectaccess"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageApproveProjectAccess(@ApiParam(value = "The email message for project access approval.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageProjectAccessApproval(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message for denying a project access request.",
+            notes = "Sets the email message that a new user should receive when they have been denied in their request to access a project. Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Project access denial email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the project access denial email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/denyprojectaccess"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageDenyProjectAccess(@ApiParam(value = "The email message for project access denial.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageProjectAccessDenial(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message for inviting a new user to the project by email address.",
+            notes = "Sets the email message that a new user should receive when they have been invited to a new project by email address. Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Project access invite email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the project access invite email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/inviteprojectacess"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageProjectAccessInvite(@ApiParam(value = "The email message for project access invite.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageInviteProjectAccess(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent after a user re-enables an account disabled due to inactivity.",
+            notes = "Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Disabled user account verification email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the email message for disabled account user verification."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/diableduseraccountverification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageDisabledAccountUserVerification(@ApiParam(value = "The new email message for disabled account user verification.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageDisabledUserVerification(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent when an error occurs.",
+            notes = "Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message sent when an error occurs successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the error email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/error"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageError(@ApiParam(value = "The new email message to be sent when an error occurs.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageErrorMessage(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent to subscribers when a new user has been created.",
+            notes = "Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message sent to subscribers upon new user creation successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the new user notification email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/newusernotification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageNewUserNotification(@ApiParam(value = "The new email message to be sent to subscribers when new users are created.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageNewUserNotification(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent to subscribers when a new user account has been created but auto-enable has been turned off.",
+            notes = "Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message sent to subscribers upon new user request successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the new user request email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/newuserrequest"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageNewUserRequest(@ApiParam(value = "The new email message to be sent to subscribers when a new user account has been created but auto-enable has been turned off.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageNewUserRequest(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent out when an experiment pipeline has completed successfully without errors.",
+            notes = "Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message sent upon pipeline success successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the pipeline success email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/pipelinesuccessdefault"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessagePipelineSuccessDefault(@ApiParam(value = "The new email message to be sent when an experiment pipeline has completed successfully without errors.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessagePipelineDefaultSuccess(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent out when an experiment pipeline fails before completion due to error.",
+            notes = "Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Pipeline failure email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the pipeline failure email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/pipelinefailure"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessagePipelineFailure(@ApiParam(value = "The new email message sent out when an experiment pipeline fails before completion due to error.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessagePipelineDefaultFailure(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent out when an automated pipeline is run successfully and a session is archived in the system.",
+            notes = "Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Pipeline autorun success email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the pipeline autorun success email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/pipelinesuccessautorun"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessagePipelineSuccessAutorun(@ApiParam(value = "The new email message sent out when an automated pipeline is run successfully and a session is archived in the system.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessagePipelineAutorunSuccess(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message when a batch data transfer to the archive has been successfully completed.",
+            notes = "Link should be auto-populated.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Batch transfer email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the batch transfer email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/batchtransfer"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageBatchTransfer(@ApiParam(value = "The new email message sent out when a batch data transfer to the archive has been successfully completed.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageBatchWorkflowComplete(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent when one of several types of unauthorized data or login access attempts are recognized by the system.",
+            notes = "Individual type of access attempt should automatically be populated based on the situation.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Unauthorized data attempt message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set the unauthorized data attempt email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/unauthorizeddataattempt"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageUnauthorizedDataAttempt(@ApiParam(value = "The new email message sent when one of several types of unauthorized data or login access attempts are recognized by the system.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageUnauthorizedDataAttempt(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent to both the former and new email address associated with an account to alert the user that the email has successfully been changed.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Account email change request email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set email message for an email address change request."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/emailchangerequest"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageEmailChangedRequest(@ApiParam(value = "The new email message sent to both the former and new email address associated with an account to alert the user that the email has successfully been changed.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageEmailAddressChangeRequest(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent to a new email address for a user to verify the change made to the account's associated email.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Verify new email address email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set email message for verification of a new account email address."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/emailchangeverification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageEmailChangeVerification(@ApiParam(value = "The new email message sent to a new email address for a user to verify the change made to the account's associated email.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageVerifyEmailChangeRequest(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Sets the email message sent to both the former and new email address associated with an account to alert the user that the email has successfully been changed.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Confirm account email address changed email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set email message for confirmation of an account email address change."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/emailadresschangedconfirmation"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailAddressChangedConfirmation(@ApiParam(value = "The new email message sent to both the former and new email address associated with an account to alert the user that the email has successfully been changed.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageAddressChanged(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+
+    }
+
+    @ApiOperation(value = "Sets the email message sent when XNAT is unable to find the filesystem (e.g,, archive, build, prearchive directories).",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "System path error email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set email message for system path errors."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/systempatherror"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageSystemPathError(@ApiParam(value = "The new email message sent when XNAT is unable to find the filesystem (e.g,, archive, build, prearchive directories).", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageSystemPathError(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+
+    }
+
+    @ApiOperation(value = "Sets the email message sent when a user has uploaded a file or files to the system by reference.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Upload by reference email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set email message for upload by reference notification."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/uploadbyreference"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageUploadByReference(@ApiParam(value = "The new email message sent when a user has uploaded a file or files to the system by reference.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageSystemPathError(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+
+    }
+
+    @ApiOperation(value = "Sets the email message sent when a user has attempted to upload a file or files to the system by reference but the process failed.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Upload by reference failure email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set email message for upload by reference failure notification."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/uploadbyreferencefailure"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageUploadByReferenceFailure(@ApiParam(value = "The new email message sent when a user has attempted to upload a file or files to the system by reference but the process failed.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageUploadByReferenceFailure(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+
+    }
+
+    @ApiOperation(value = "Sets the email message sent out by from one user to another to alert them of possibly useful data.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Data alert email message successfully set."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to set email message for data alerts."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/dataalertcustom"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> setEmailMessageDataAlertCustom(@ApiParam(value = "The new email message sent out by from one user to another to alert them of possibly useful data.", required = true) @RequestParam final String message) {
+        _notificationsPrefs.setEmailMessageDataAlertCustom(message);
+        return new ResponseEntity<>(HttpStatus.OK);
+
+    }
+
+
+    @ApiOperation(value = "Resets the email message for the specified api call to its original value.",
+            response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message successfully reset."),
+            @ApiResponse(code =  401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to reset email message."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/resetemailmessage"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST}, restrictTo = Admin)
+    public ResponseEntity<Properties> resetEmailMessage(@ApiParam(value = "The API call corresponding to the email which should be reset.", required = true) @RequestParam final String apiToReset) {
+        if (apiToReset.equals("registration")) {
+            _notificationsPrefs.resetEmailMessageUserRegistration();
+        } else if (apiToReset.equals("forgotusername")) {
+            _notificationsPrefs.resetEmailMessageForgotUsername();
+        } else if(apiToReset.equals("passwordreset")) {
+            _notificationsPrefs.resetEmailMessageForgotPassword();
+        } else if (apiToReset.equals("newuserverification")) {
+            _notificationsPrefs.resetEmailMessageNewUserVerification();
+        } else if (apiToReset.equals("projectaccessrequest")) {
+            _notificationsPrefs.resetEmailMessageProjectRequestAccess();
+        } else if (apiToReset.equals("approveprojectaccess")) {
+            _notificationsPrefs.resetEmailMessageProjectAccessApproval();
+        } else if (apiToReset.equals("denyprojectaccess")) {
+            _notificationsPrefs.resetEmailMessageProjectAccessDenial();
+        } else if (apiToReset.equals("inviteprojectacess")) {
+            _notificationsPrefs.resetEmailMessageInviteProjectAccess();
+        } else if (apiToReset.equals("diableduseraccountverification")){
+            _notificationsPrefs.resetEmailMessageDisabledUserVerification();
+        } else if (apiToReset.equals("newusernotification")) {
+            _notificationsPrefs.resetEmailMessageNewUserNotification();
+        } else if (apiToReset.equals("newuserrequest")) {
+            _notificationsPrefs.resetEmailMessageNewUserRequest();
+        } else if (apiToReset.equals("pipelinesuccessdefault")){
+            _notificationsPrefs.resetEmailMessagePipelineDefaultSuccess();
+        } else if (apiToReset.equals("pipelinefailure")) {
+            _notificationsPrefs.resetEmailMessagePipelineDefaultFailure();
+        } else if (apiToReset.equals("pipelinesuccessautorun")) {
+            _notificationsPrefs.resetEmailMessagePipelineAutorunSuccess();
+        } else if(apiToReset.equals("batchtransfer")){
+            _notificationsPrefs.resetEmailMessageBatchWorkflowComplete();
+        } else if (apiToReset.equals("unauthorizeddataattempt")) {
+            _notificationsPrefs.resetEmailMessageUnauthorizedDataAttempt();
+        } else if (apiToReset.equals("emailchangerequest")) {
+            _notificationsPrefs.resetEmailMessageEmailAddressChangeRequest();
+        } else if (apiToReset.equals("emailchangeverification")) {
+            _notificationsPrefs.resetEmailMessageVerifyEmailChangeRequest();
+        } else if (apiToReset.equals("emailadresschangedconfirmation")) {
+            _notificationsPrefs.resetEmailMessageAddressChanged();
+        } else if (apiToReset.equals("systempatherror")) {
+            _notificationsPrefs.resetEmailMessageSystemPathError();
+        } else if (apiToReset.equals("uploadbyreference")) {
+            _notificationsPrefs.resetEmailMessageUploadByReferenceSuccess();
+        } else if (apiToReset.equals("uploadbyreferencefailure")) {
+            _notificationsPrefs.resetEmailMessageUploadByReferenceFailure();
+        } else if (apiToReset.equals("dataalertcustom")) {
+            _notificationsPrefs.resetEmailMessageDataAlertCustom();
+        }
+
+        else if(apiToReset.equals("error")) {
+            _notificationsPrefs.resetEmailMessageErrorMessage();
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     @ApiOperation(value = "Returns the email message for contacting help.",
                   notes = "This returns the email message that people should receive when contacting help.",
                   response = String.class)
@@ -410,7 +746,260 @@ public class NotificationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = {"messages/passwordreset"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
     public ResponseEntity<String> getEmailMessageForgotPasswordReset() {
-        return new ResponseEntity<>(_notificationsPrefs.getEmailMessageForgotPasswordReset(), HttpStatus.OK);
+        String resp = _notificationsPrefs.getEmailMessageForgotPasswordReset();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message for new user verification.",
+                response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for new user verification successfully returned."),
+                @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                @ApiResponse(code = 403, message = "Not authorized to get email message for new user verification."),
+                @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/newuserverification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageNewUserVerification() throws Exception{
+        String resp = _notificationsPrefs.getEmailMessageNewUserVerification();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message for a user project access request.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Email message for project access request successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for project access request."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/projectaccessrequest"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageProjectAccessRequest() {
+        String resp = _notificationsPrefs.getEmailMessageProjectRequestAccess();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message for approving a project access request.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Project access approval email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for project access approval."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/approveprojectaccess"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageApproveProjectAccess() {
+        String resp = _notificationsPrefs.getEmailMessageProjectAccessApproval();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message for denying a project access request.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Project access denial email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for project access denial."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/denyprojectaccess"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageDenyProjectAccess() {
+        String resp = _notificationsPrefs.getEmailMessageProjectAccessDenial();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message for inviting a new user to the project by email address.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Project access invite email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for project access invite."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/inviteprojectacess"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageProjectAccessInvite() {
+        String resp = _notificationsPrefs.getEmailMessageInviteProjectAccess();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent after a user re-enables an account disabled due to inactivity.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Disabled account user verification email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for disabled account user verification."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/diableduseraccountverification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageDisabledAccountUserVerification() {
+        String resp = _notificationsPrefs.getEmailMessageDisabledUserVerification();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent when an error occurs.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Error email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for errors occurring within the system."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/error"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageError() {
+        String resp = _notificationsPrefs.getEmailMessageErrorMessage();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent to subscribers when a new user has been created.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "New user created email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for new user creation."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/newusernotification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageNewUserNotification() {
+        String resp = _notificationsPrefs.getEmailMessageNewUserNotification();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent to subscribers when a new user account has been created but auto-enable has been turned off.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "New user requested email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for new user requests."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/newuserrequest"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageNewUserRequest() {
+        String resp = _notificationsPrefs.getEmailMessageNewUserRequest();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent out when an experiment pipeline has completed successfully without errors.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Pipeline success email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for experiment pipeline success."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/pipelinesuccessdefault"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessagePipelineSuccessDefault() {
+        String resp = _notificationsPrefs.getEmailMessagePipelineDefaultSuccess();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent out when an experiment pipeline fails before completion due to error.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Pipeline failure email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for pipeline failure."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/pipelinefailure"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessagePipelineFailure() {
+        String resp = _notificationsPrefs.getEmailMessagePipelineDefaultFailure();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent out when an automated pipeline is run successfully and a session is archived in the system.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Pipeline autorun success email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for pipeline autorun success."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/pipelinesuccessautorun"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessagePipelineSuccessAutorun() {
+        String resp = _notificationsPrefs.getEmailMessagePipelineAutorunSuccess();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message when a batch data transfer to the archive has been successfully completed.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Batch transfer completed email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for batch transfer completed."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/batchtransfer"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageBatchTransfer() {
+        String resp = _notificationsPrefs.getEmailMessageBatchWorkflowComplete();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent when one of several types of unauthorized data or login access attempts are recognized by the system.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Unauthorized data attempt email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for unauthorized data attempt."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/unauthorizeddataattempt"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageUnauthorizedDataAttempt() {
+        String resp = _notificationsPrefs.getEmailMessageUnauthorizedDataAttempt();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent to alert a user that someone has requested to change the email for the account associated with that email address.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Account email change request email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for an email address change request."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/emailchangerequest"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageEmailChangedRequest() {
+        String resp = _notificationsPrefs.getEmailMessageEmailAddressChangeRequest();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent to a new email address for a user to verify the change made to the account's associated email.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Verify new email address email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for verification of a new account email address."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/emailchangeverfification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageEmailChangeVerification() {
+        String resp = _notificationsPrefs.getEmailMessageVerifyEmailChangeRequest();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent to both the former and new email address associated with an account to alert the user that the email has successfully been changed.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Confirm account email address changed email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for confirmation of an account email address change."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/emailadresschangedconfirmation"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getMessageEmailAddressChangedConfirmation() {
+        String resp = _notificationsPrefs.getEmailMessageAddressChanged();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent when XNAT is unable to find the filesystem (e.g,, archive, build, prearchive directories).",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "System path error email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for system path errors."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/systempatherror"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageSystemPathError() {
+        String resp = _notificationsPrefs.getEmailMessageSystemPathError();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent when a user has uploaded a file or files to the system by reference.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Upload by reference email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for upload by reference notification."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/uploadbyreference"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageUploadByReference() {
+        String resp = _notificationsPrefs.getEmailMessageUploadByReferenceSuccess();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent when a user has attempted to upload a file or files to the system by reference but the process failed.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Upload by reference failure email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for upload by reference failure notification."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/uploadbyreferencefailure"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageUploadByReferenceFailure() {
+        String resp = _notificationsPrefs.getEmailMessageUploadByReferenceFailure();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Returns the email message sent out by from one user to another to alert them of possibly useful data.",
+            response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Data alert email message successfully returned."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to get email message for data alerts."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = {"messages/dataalertcustom"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    public ResponseEntity<String> getEmailMessageDataAlertCustom() {
+        String resp = _notificationsPrefs.getEmailMessageDataAlertCustom();
+        return new ResponseEntity<>(resp, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Sets whether admins should be notified of user registration.",

@@ -66,18 +66,17 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
      * @param wrk the wrk
      * @param expt the expt
      * @param params the params
-     * @param emailTemplate the email template
      * @param emailSubject the email subject
      * @param list_name the list_name
      * @param otherEmails the other emails
      * @throws Exception the exception
      */
-    public void send(WorkflowStatusEvent e, WrkWorkflowdata wrk, XnatExperimentdata expt,Map<String,Object> params,String emailTemplate, String emailSubject, String list_name, List<String> otherEmails) throws Exception{
+    public void send(WorkflowStatusEvent e, WrkWorkflowdata wrk, XnatExperimentdata expt,Map<String,Object> params, String emailSubject, String emailBody, String list_name, List<String> otherEmails) throws Exception{
         //temporary notification manager until we have the notification stuff flushed out.
         if (completed(e)) {
-            (new NotifyProjectPipelineListeners(expt, wrk, emailTemplate, emailSubject, wrk.getUser(), params, list_name, otherEmails, "success")).send();
+            (new NotifyProjectPipelineListeners(expt, wrk, emailSubject, emailBody, wrk.getUser(), params, list_name, otherEmails, "success")).send();
         } else {
-            (new NotifyProjectPipelineListeners(expt,wrk,emailTemplate,emailSubject,wrk.getUser(),params,list_name,otherEmails, "failure")).send();
+            (new NotifyProjectPipelineListeners(expt,wrk,emailSubject,emailBody,wrk.getUser(),params,list_name,otherEmails, "failure")).send();
         }
     }
 
@@ -87,12 +86,11 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
      * @param e the e
      * @param wrk the wrk
      * @param pipelineName the pipeline name
-     * @param template the template
      * @param subject the subject
      * @param notificationFileName the notification file name
      * @param params the params
      */
-    public void standardPipelineEmailImpl(final WorkflowStatusEvent e, WrkWorkflowdata wrk, final String pipelineName, final String template, final String subject, final String notificationFileName, Map<String,Object> params){
+    public void standardPipelineEmailImpl(final WorkflowStatusEvent e, WrkWorkflowdata wrk, final String pipelineName, final String subject, String body, final String notificationFileName, Map<String,Object> params){
 
         try {
             String _pipelineName = wrk.getPipelineName();
@@ -255,7 +253,7 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandle
                 } else {
                     _subject = TurbineUtils.GetSystemName()+" update: " + expt.getLabel() +" "+subject;
                 }
-                send(e, wrk, expt, params, template, _subject, notificationFileName, new ArrayList<String>());
+                send(e, wrk, expt, params, _subject, body, notificationFileName, new ArrayList<String>());
             }
         } catch (Throwable e1) {
             log.error("", e1);

@@ -11,6 +11,7 @@ package org.nrg.xnat.event.listeners;
 
 import com.google.common.collect.Maps;
 
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
@@ -77,9 +78,11 @@ public class AutoRunEmailHandler extends PipelineEmailHandlerAbst implements Con
      */
         final String PIPELINE_NAME = "xnat_tools/AutoRun.xml";
         if (completed(e)) {
-            standardPipelineEmailImpl(e, (WrkWorkflowdata) e.getWorkflow(), PIPELINE_NAME, "/screens/PipelineEmail_AutoRun_success.vm", " archiving complete", "archival.lst", params);
+            String body = XDAT.getNotificationsPreferences().getEmailMessagePipelineAutorunSuccess();
+            standardPipelineEmailImpl(e, (WrkWorkflowdata) e.getWorkflow(), PIPELINE_NAME, " archiving complete",body, "archival.lst", params);
         } else if (failed(e)) {
-            standardPipelineEmailImpl(e, (WrkWorkflowdata) e.getWorkflow(), PIPELINE_NAME, DEFAULT_TEMPLATE_FAILURE, DEFAULT_SUBJECT_FAILURE, "archival.lst", params);
+            String body = XDAT.getNotificationsPreferences().getEmailMessagePipelineDefaultFailure();
+            standardPipelineEmailImpl(e, (WrkWorkflowdata) e.getWorkflow(), PIPELINE_NAME, DEFAULT_SUBJECT_FAILURE, body, "archival.lst", params);
         }
     }
 

@@ -127,16 +127,29 @@ public class ManageProjectAccess extends SecureAction {
     
     private void sendEmailsToNewMembers(final Context context, final UserI user, final XnatProjectdata project, final List<UserI> newMembers) {
         newMembers.stream().map(UserI::getEmail).collect(Collectors.toSet()).forEach(email -> {
-            context.put("user", user);
-            context.put("server", TurbineUtils.GetFullServerPath());
-            context.put("siteLogoPath", XDAT.getSiteLogoPath());
-            context.put("process", "Transfer to the archive.");
-            context.put("system", TurbineUtils.GetSystemName());
-            context.put("access_level", "collaborator");
-            context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
-            context.put("projectOM", project);
             try {
-                ProcessAccessRequest.SendAccessApprovalEmail(context, email, user, TurbineUtils.GetSystemName() + " Access Granted for " + project.getName());
+                String body = XDAT.getNotificationsPreferences().getEmailMessageProjectAccessApproval();
+                body = body.replaceAll("PROJECT_NAME", project.getName());
+                body = body.replaceAll("RQ_ACCESS_LEVEL", "collaborator");
+                body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
+
+                final String respondAccessUrl = TurbineUtils.GetFullServerPath() +"/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/" + project.getId();
+
+                String accessUrl = "<a href=\"" + respondAccessUrl + "\">" + respondAccessUrl + "</a>";
+
+                body = body.replaceAll("ACCESS_URL", accessUrl);
+                body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
+
+                String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + "Assistance\">" + TurbineUtils.GetSystemName() + "Management </a>";
+                body = body.replaceAll("ADMIN_MAIL",adminEmailLink);
+
+                String subject = TurbineUtils.GetSystemName() + " Access Request for " + project.getName();
+
+                String[] cc = new String[]{user.getEmail()};
+                String[] to = new String[]{email};
+                String[] bcc = new String[]{XDAT.getSiteConfigPreferences().getAdminEmail()};
+
+                ProcessAccessRequest.SendAccessApprovalEmail(body, subject, to, cc, bcc);
             } catch (Exception e) {
                 log.error("An error occurred trying to send a new member email to user {} at email {}", user.getUsername(), email, e);
             }

@@ -419,20 +419,35 @@ public class BatchTransfer extends Thread{
     }
 
     public String getEmailCompletionMessage(final UserI user, final List<String> messages, final List<List<String>> errors, final String system, final String adminEmail) {
-        final VelocityContext context = new VelocityContext() {{
-            put("user", user);
-            put("server", server);
-            put("siteLogoPath", XDAT.getSiteLogoPath());
-            put("process", "Transfer to the archive.");
-            put("messages", messages);
-            put("errors", errors);
-            put("system", system);
-            put("admin_email", adminEmail);
-        }};
-        StringWriter sw = new StringWriter();
-        Template template = Velocity.getTemplate("/screens/BatchWorkflowCompleteEmail.vm");
-        template.merge(context, sw);
-        return sw.toString();
+
+        String body = XDAT.getNotificationsPreferences().getEmailMessageBatchWorkflowComplete();
+
+        body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+        body = body.replaceAll("USER_LASTNAME", user.getLastname());
+        body = body.replaceAll("PROCESS_NAME", "Transfer to the archive.");
+        body = body.replaceAll("NUMBER_MESSAGES", ((Integer) messages.size()).toString());
+        String messagesString = "";
+        for (String message : messages) {
+            messagesString = messagesString + "\n<br>" + message;
+        }
+        body = body.replaceAll("MESSAGES_LIST", messagesString);
+
+        String errorString = ((Integer) errors.size()).toString() + " error(s) occurred.";
+        for (List<String> error : errors) {
+            errorString = errorString + "\n<br>" + error.get(0) + ": " + error.get(1);
+        }
+
+        body = body.replaceAll("ERRORS_LIST", errorString);
+
+        String siteUrl = "<a href=\"" + server + "\">the website</a>";
+
+        body = body.replaceAll("SITE_URL", siteUrl);
+        body = body.replaceAll("SITE_NAME", system);
+
+        String adminMail = "<a href=\"mailto:" + adminEmail + "\">" + adminEmail + "</a>";
+        body = body.replaceAll("ADMIN_MAIL", adminMail);
+
+        return body;
     }
     
     /* (non-Javadoc)

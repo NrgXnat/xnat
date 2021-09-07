@@ -11,6 +11,7 @@ package org.nrg.xnat.initialization.tasks;
 
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.mail.services.MailService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.security.UserI;
@@ -129,7 +130,15 @@ public class SystemPathVerification extends AbstractInitializingTask {
         if (numResources > 0) {
             //only send an email if the system is supposed to have resources
             try {
-                _mailService.sendHtmlMessage(adminEmail, adminEmail, emailSubj, html);
+                if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                    String body = XDAT.getNotificationsPreferences().getEmailMessageSystemPathError();
+                    String errorsList = "";
+                    for (final String error : errors) {
+                        errorsList = errorsList + "<br>\n\t" + index++ + ". " +error;
+                    }
+                    body = body.replaceAll("ERRORS_LIST", errorsList);
+                    _mailService.sendHtmlMessage(adminEmail, adminEmail, emailSubj, body);
+                }
             } catch (Throwable e) {
                 logger.error("", e);
             }

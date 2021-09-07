@@ -58,23 +58,15 @@ public class GrantProjectAccess {
                             "No RunData Service configured!");
                 }
                 RunData data = rundataService.getRunData(req, response, sc);
-                Context context = TurbineVelocity.getContext(data);
                 UserI user = XDAT.getUserDetails();
 
                 XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectID, user, false);
 
-                context.put("user", user);
-                context.put("server", TurbineUtils.GetFullServerPath());
-                context.put("siteLogoPath", XDAT.getSiteLogoPath());
-                context.put("process", "Transfer to the archive.");
-                context.put("system", TurbineUtils.GetSystemName());
-                context.put("access_level", level);
-                context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
-                context.put("projectOM", project);
+
                 //SEND email to user
-                ProjectAccessRequest.InviteUser(context, email, user, user.getFirstname() + " " + user.getLastname()
+                ProjectAccessRequest.InviteUser(project, email, user, user.getFirstname() + " " + user.getLastname()
                         + " has invited you to join the " + project.getName() + " "
-                        + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase() + ".");
+                        + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase() + ".", level);
             } catch (Exception e) {
 
             }

@@ -10,6 +10,7 @@
 package org.nrg.xnat.event.listeners;
 
 import com.google.common.collect.Maps;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
@@ -65,9 +66,11 @@ public class DicomToNiftiEmailHandler extends PipelineEmailHandlerAbst implement
         /* The pipeline name. */
 		final String PIPELINE_NAME = "mricron/DicomToNifti.xml";
 		if (completed(e)) {
-            standardPipelineEmailImpl(e, wrk, PIPELINE_NAME, DEFAULT_TEMPLATE_SUCCESS, DEFAULT_SUBJECT_SUCCESS, "processed.lst", params);
+			String body = _preferences.getEmailMessagePipelineDefaultSuccess();
+            standardPipelineEmailImpl(e, wrk, PIPELINE_NAME, DEFAULT_SUBJECT_SUCCESS, body, "processed.lst", params);
         } else if (failed(e)) {
-            standardPipelineEmailImpl(e, wrk, PIPELINE_NAME, DEFAULT_TEMPLATE_FAILURE, DEFAULT_SUBJECT_FAILURE, "processed.lst", params);
+			String body = _preferences.getEmailMessagePipelineDefaultFailure();
+            standardPipelineEmailImpl(e, wrk, PIPELINE_NAME, DEFAULT_SUBJECT_FAILURE, body, "processed.lst", params);
         }
     }
 

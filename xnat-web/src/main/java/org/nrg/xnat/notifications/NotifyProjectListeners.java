@@ -39,17 +39,18 @@ import java.util.concurrent.Callable;
 public class NotifyProjectListeners implements Callable<Boolean> {
 	private static final String NOTIFICATIONS = "notifications";
 	private final XnatExperimentdata _expt;
-	private final String _template,_subject,_action;
+	private final String _subject,_action;
+	private String _body;
 	private final UserI _user;
 	private final Map _params;
 	private final List<String> _emails;
 	private final ProjectListenersI listenersBuilder;
 	
-	public NotifyProjectListeners(XnatExperimentdata expt,String template, String subject, UserI user, Map params, String action, List<String> emails, ProjectListenersI listeners){
-		this._template=template;
+	public NotifyProjectListeners(XnatExperimentdata expt, String subject, String body, UserI user, Map params, String action, List<String> emails, ProjectListenersI listeners){
 		this._user=user;
 		this._expt=expt;
 		this._subject=subject;
+		this._body = body;
 		if(params==null){
 			this._params=Maps.newHashMap();
 		}else{
@@ -60,8 +61,8 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 		this.listenersBuilder=(listeners!=null)?listeners:new ResourceBasedProjectListeners();
 	}
 	
-	public NotifyProjectListeners(XnatExperimentdata expt,String template, String subject, UserI user, Map params, String action, List<String> emails){
-		this(expt,template,subject,user,params,action,emails,null);
+	public NotifyProjectListeners(XnatExperimentdata expt, String subject, String body, UserI user, Map params, String action, List<String> emails){
+		this(expt,subject,body,user,params,action,emails,null);
 	}
 	
 	public static interface ProjectListenersI{
@@ -79,27 +80,64 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 			}
 			
 			if(email.size()>0){
-				Context context =new VelocityContext(_params);
-				
-				
+
 				String from = XDAT.getSiteConfigPreferences().getAdminEmail();
-				context.put("user", _user);
-				context.put("expt", _expt);
-				context.put("username", _user.getUsername());
-				context.put("server", TurbineUtils.GetFullServerPath());
-				context.put("siteLogoPath", XDAT.getSiteLogoPath());
-				context.put("system", TurbineUtils.GetSystemName());
-				context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
-				context.put("contactEmail", XDAT.getNotificationsPreferences().getHelpContactInfo());
-				context.put("params", _params);
-				if(_params.get("justification")!=null){
-					context.put("justification",_params.get("justification"));
-				}else if(_params.get("event_reason")!=null){
-					context.put("justification",_params.get("event_reason"));
+
+				_body = _body.replaceAll("USER_FIRSTNAME", _user.getFirstname());
+				_body = _body.replaceAll("USER_LASTNAME", _user.getLastname());
+				_body = _body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+				_body = _body.replaceAll("PROJECT_NAME", _expt.getProject());
+				if (_params.containsKey("subject")) {
+					_body = _body.replaceAll("SUBJECT_NAME", _params.get("subject").toString());
 				}
-				String body = AdminUtils.populateVmTemplate(context, _template);
+
+				String success_url = TurbineUtils.GetFullServerPath() + "/data/experiments/" + _expt.getId() + "?format=html";
+
+				String successUrlFinal = "<a href=\""+ success_url + "\">here</a>";
+
+				_body = _body.replaceAll("SUCCESS_URL", successUrlFinal);
+				if (_params.containsKey("pipelineName")) {
+					_body = _body.replaceAll("PIPELINE_NAME", _params.get("pipelineName").toString());
+				}
+
+				_body = _body.replaceAll("EXPERIMENT_NAME", _expt.getLabel());
+				String userEmail = "<a href=\"mailto:" + _user.getEmail()+ "\">" + _user.getUsername() + "</a>";
+
+				_body = _body.replaceAll("USER_EMAIL",userEmail);
+				_body = _body.replaceAll("USER_USERNAME",_user.getUsername());
+
+				String contactEmail = "<a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "</a>";
+				_body = _body.replaceAll("CONTACT_EMAIL", contactEmail);
+
+				if (_params.containsKey("stdout") && _params.containsKey("stderr")) {
+					_body = _body.replaceAll("ATTACHMENTS_STATEMENT", "The stdout and stderr log files are attached.");
+				} else if (_params.containsKey("stdout")) {
+					_body.replaceAll("ATTACHMENTS_STATEMENT", "The stdout log file is attached.");
+				} else if (_params.containsKey("stderr")) {
+					_body.replaceAll("ATTACHMENTS_STATEMENT", "The stderr log file is attached.");
+				} else {
+					_body.replaceAll("ATTACHMENTS_STATEMENT", "");
+				}
+
+				if (_params.containsKey("stdout")) {
+					String stdoutString = "TAIL stdout<br>\n";
+					List<String> stdout= (List<String>) _params.get("stdout");
+					for (String outLine: stdout) {
+						stdoutString = stdoutString + outLine + "<br>\n";
+					}
+					_body = _body.replaceAll("STDOUT",stdoutString);
+				}
+
+				if (_params.containsKey("stderr")) {
+					String stderrString = "TAIL stderr<br>\n";
+					List<String> stderr= (List<String>) _params.get("stderr");
+					for (String errLine: stderr) {
+						stderrString = stderrString + errLine + "<br>\n";
+					}
+					_body = _body.replaceAll("STDERR",stderrString);
+				}
 				
-				XDAT.getMailService().sendHtmlMessage(from, email.toArray(new String[email.size()]), TurbineUtils.GetSystemName()+" update: " + _expt.getLabel() +" "+_subject, body);
+				XDAT.getMailService().sendHtmlMessage(from, email.toArray(new String[email.size()]), TurbineUtils.GetSystemName()+" update: " + _expt.getLabel() +" "+_subject, _body);
 				return true;
 			}else{
 				return false;

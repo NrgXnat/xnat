@@ -133,19 +133,10 @@ public class ProjectMemberResource extends SecureResource {
                     //NEW USER
                     try {
                         for (String uID : _unknown) {
-                            VelocityContext context = new VelocityContext();
-                            context.put("user", user);
-                            context.put("server", TurbineUtils.GetFullServerPath(request));
-                            context.put("siteLogoPath", XDAT.getSiteLogoPath());
-                            context.put("process", "Transfer to the archive.");
-                            context.put("system", TurbineUtils.GetSystemName());
-                            context.put("access_level", _groupId);
-                            context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
-                            context.put("projectOM", _project);
                             //SEND email to user
                             final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, _project.getId(), _project.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.INVITE_USER_TO_PROJECT + " (" + uID + ")"));
                             try {
-                                ProjectAccessRequest.InviteUser(context, uID, user, user.getFirstname() + " " + user.getLastname() + " has invited you to join the " + _project.getName() + " " + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase() + ".");
+                                ProjectAccessRequest.InviteUser(_project, uID, user, user.getFirstname() + " " + user.getLastname() + " has invited you to join the " + _project.getName() + " " + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase() + ".", _groupId);
                                 WorkflowUtils.complete(wrk, wrk.buildEvent());
                             } catch (Exception e) {
                                 WorkflowUtils.fail(wrk, wrk.buildEvent());
@@ -173,16 +164,27 @@ public class ProjectMemberResource extends SecureResource {
 
                             if (sendmail) {
                                 try {
-                                    final VelocityContext context = new VelocityContext();
-                                    context.put("user", user);
-                                    context.put("server", TurbineUtils.GetFullServerPath(request));
-                                    context.put("siteLogoPath", XDAT.getSiteLogoPath());
-                                    context.put("process", "Transfer to the archive.");
-                                    context.put("system", TurbineUtils.GetSystemName());
-                                    context.put("access_level", _group.getDisplayname());
-                                    context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
-                                    context.put("projectOM", _project);
-                                    ProcessAccessRequest.SendAccessApprovalEmail(context, newUser.getEmail(), user, TurbineUtils.GetSystemName() + " Access Granted for " + _project.getName());
+                                    String body = XDAT.getNotificationsPreferences().getEmailMessageProjectAccessApproval();
+                                    body = body.replaceAll("PROJECT_NAME", _project.getName());
+                                    body = body.replaceAll("RQ_ACCESS_LEVEL", _group.getDisplayname());
+                                    body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
+
+                                    final String respondAccessUrl = TurbineUtils.GetFullServerPath() +"/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/" + _project.getId();
+
+                                    String accessUrl = "<a href=\"" + respondAccessUrl + "\">" + respondAccessUrl + "</a>";
+
+                                    body = body.replaceAll("ACCESS_URL", accessUrl);
+                                    body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
+
+                                    String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + "Assistance\">" + TurbineUtils.GetSystemName() + " Management </a>";
+                                    body = body.replaceAll("ADMIN_MAIL",adminEmailLink);
+
+                                    String subject = TurbineUtils.GetSystemName() + " Access Request for " + _project.getName();
+
+                                    String[] to = new String[]{newUser.getEmail()};
+                                    String[] cc = new String[]{user.getEmail()};
+                                    String[] bcc = new String[]{XDAT.getSiteConfigPreferences().getAdminEmail()};
+                                    ProcessAccessRequest.SendAccessApprovalEmail(body, subject, to, cc, bcc);
                                 } catch (Throwable e) {
                                     log.error("", e);
                                 }

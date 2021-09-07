@@ -88,29 +88,47 @@ public class MoveStoredFileRequestListener implements JmsRequestListener<MoveSto
 
         if (request.getNotifyList().length > 0) {
             final StringBuilder message = new StringBuilder();
-
+            String body = "";
             final String subject;
-            if (success) {
-                subject = "Upload by reference complete";
-                message.append("<p>The upload by reference requested by ").append(wrk.getUsername()).append(" has finished successfully.</p>");
-                if (!duplicates.isEmpty()) {
-                    message.append("<p>The following files were not uploaded because they already exist on the server:<br><ul>");
-                    for (final String duplicate : duplicates) {
-                        message.append("<li>").append(duplicate).append("</li>");
+            if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                if (success) {
+                    subject = "Upload by reference complete";
+
+                    body = XDAT.getNotificationsPreferences().getEmailMessageUploadByReferenceSuccess();
+                    body = body.replaceAll("USER_USERNAME", wrk.getUsername());
+                    if (!duplicates.isEmpty()){
+                        String duplicatesList = "The following files were not uploaded because they already exist on the server:<br>\n";
+                        for (final String duplicate : duplicates) {
+                            duplicatesList = duplicatesList + duplicate + "<br>\n";
+                        }
+                        body = body.replaceAll("DUPLICATES_LIST", duplicatesList);
                     }
-                    message.append("</ul></p>");
+                    else {
+                        body = body.replaceAll("DUPLICATES_LIST", "");
+                    }
+                }
+//                message.append("<p>The upload by reference requested by ").append(wrk.getUsername()).append(" has finished successfully.</p>");
+//                if (!duplicates.isEmpty()) {
+//                    message.append("<p>The following files were not uploaded because they already exist on the server:<br><ul>");
+//                    for (final String duplicate : duplicates) {
+//                        message.append("<li>").append(duplicate).append("</li>");
+//                    }
+//                    message.append("</ul></p>");
+//                }
+                else {
+                    body = XDAT.getNotificationsPreferences().getEmailMessageUploadByReferenceFailure();
+                    body = body.replaceAll("USER_USERNAME", wrk.getUsername());
+                    subject = "Upload by reference error";
+//                    message.append("<p>The upload by reference requested by ").append(request.getUser().getUsername()).append(" has encountered an error.</p>").append("<p>Please contact your IT staff or the application logs for more information.</p>");
+                }
+
+                try {
+                    XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), request.getNotifyList(), subject, body);
+                } catch (MessagingException e) {
+                    log.error("Failed to send email.", e);
                 }
             }
-            else {
-                subject = "Upload by reference error";
-                message.append("<p>The upload by reference requested by ").append(request.getUser().getUsername()).append(" has encountered an error.</p>").append("<p>Please contact your IT staff or the application logs for more information.</p>");
-            }
 
-            try {
-                XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), request.getNotifyList(), subject, message.toString());
-            } catch (MessagingException e) {
-                log.error("Failed to send email.", e);
-            }
         }
     }
 

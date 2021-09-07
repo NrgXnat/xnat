@@ -25,14 +25,15 @@ import javax.validation.constraints.Size;
 import java.util.Date;
 
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"name"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = "name"))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 @AllArgsConstructor
 @NoArgsConstructor
 public class SimpleEntity extends AbstractHibernateEntity {
     @Builder
-    public SimpleEntity(final Integer total, final String description, final String name, final Date disabled, final Date timestamp, final Date created, final Boolean enabled, final Long id) {
+    public SimpleEntity(final String name, final String username, final String description, final Integer total, final Date disabled, final Date timestamp, final Date created, final Boolean enabled, final Long id) {
         setName(name);
+        setUsername(username);
         setDescription(description);
         setTotal(total);
         if (id != null) {
@@ -60,6 +61,16 @@ public class SimpleEntity extends AbstractHibernateEntity {
 
     public void setName(final String name) {
         _name = name;
+    }
+
+    @NotEmpty
+    @Size(max = 100)
+    public String getUsername() {
+        return _username;
+    }
+
+    public void setUsername(final String username) {
+        _username = username;
     }
 
     @NotEmpty
@@ -96,6 +107,7 @@ public class SimpleEntity extends AbstractHibernateEntity {
     */
 
     private String  _name;
+    private String  _username;
     private String  _description;
     private Integer _total;
     // private JsonNode _attributes;

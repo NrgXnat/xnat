@@ -9,12 +9,11 @@
 
 package org.nrg.framework.ajax;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.google.common.collect.ImmutableMap;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.assertj.core.api.ObjectAssert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -28,16 +27,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.validation.ConstraintViolationException;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SuppressWarnings("CommentedOutCode")
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = SimpleEntityServiceTestConfiguration.class)
 @Transactional
+@Slf4j
 public class SimpleEntityServiceTest {
     @Test(expected = ConstraintViolationException.class)
     public void testNullSimpleEntity() {
@@ -72,7 +76,7 @@ public class SimpleEntityServiceTest {
     @Test
     public void testMultiColumnSort() {
         Collections.shuffle(SORTABLES);
-        final List<SimpleEntity> entities = SORTABLES.stream().map(properties -> _service.create(SimpleEntity.builder().name(properties.getLeft()).description(properties.getMiddle()).total(properties.getRight()).build())).collect(Collectors.toList());
+        final List<SimpleEntity> entities = SORTABLES.stream().map(_service::create).collect(Collectors.toList());
         assertThat(entities).isNotNull().isNotEmpty().hasSize(SORTABLES.size());
 
         final SimpleEntityPaginatedRequest request = SimpleEntityPaginatedRequest.builder().pageSize(3).sortBy(Pair.of("description", PaginatedRequest.SortDir.ASC)).sortBy(Pair.of("total", PaginatedRequest.SortDir.DESC)).build();
@@ -82,9 +86,9 @@ public class SimpleEntityServiceTest {
         final List<SimpleEntity> page2 = _service.getPaginated(request);
         request.setPageNumber(3);
         final List<SimpleEntity> page3 = _service.getPaginated(request);
-        assertThat(page1.stream().map(SimpleEntity::getName)).isNotNull().isNotEmpty().hasSize(3).containsExactly("one-3", "one-2", "one-1");
-        assertThat(page2.stream().map(SimpleEntity::getName)).isNotNull().isNotEmpty().hasSize(3).containsExactly("two-3", "two-2", "two-1");
-        assertThat(page3.stream().map(SimpleEntity::getName)).isNotNull().isNotEmpty().hasSize(3).containsExactly("three-3", "three-2", "three-1");
+        assertThat(page1.stream().map(SimpleEntity::getUsername)).isNotNull().isNotEmpty().hasSize(3).containsExactly("one-3", "one-2", "one-1");
+        assertThat(page2.stream().map(SimpleEntity::getUsername)).isNotNull().isNotEmpty().hasSize(3).containsExactly("two-3", "two-2", "two-1");
+        assertThat(page3.stream().map(SimpleEntity::getUsername)).isNotNull().isNotEmpty().hasSize(3).containsExactly("three-3", "three-2", "three-1");
     }
 
     @Test
@@ -128,7 +132,7 @@ public class SimpleEntityServiceTest {
 
     @Test
     public void testPaginatedAndSerialized() {
-        final List<SimpleEntity> allEntities     = IntStream.range(1, 101).mapToObj(index -> _service.create("simple" + index, index % 2 == 0 ? "even" : "odd", index)).collect(Collectors.toList());
+        final List<SimpleEntity> allEntities     = IntStream.range(1, 101).mapToObj(index -> _service.create("Simple " + index, "simple" + index, index % 2 == 0 ? "even" : "odd", index)).collect(Collectors.toList());
         final List<SimpleEntity> evenEntities    = allEntities.stream().filter(entity -> StringUtils.equals(entity.getDescription(), "even")).collect(Collectors.toList());
         final List<SimpleEntity> first50Entities = allEntities.subList(0, 50);
 
@@ -139,7 +143,7 @@ public class SimpleEntityServiceTest {
         final SimpleEntityPaginatedRequest request1 = new SimpleEntityPaginatedRequest();
         request1.setPageSize(10);
         request1.setPageNumber(1);
-        request1.setFiltersMap(ImmutableMap.of("name", HibernateFilter.builder().operator(HibernateFilter.Operator.LIKE).value("simple%").build()));
+        request1.setFiltersMap(ImmutableMap.of("username", HibernateFilter.builder().operator(HibernateFilter.Operator.LIKE).value("simple%").build()));
         final SimpleEntityPaginatedRequest request2 = new SimpleEntityPaginatedRequest();
         request2.setPageSize(10);
         request2.setPageNumber(1);
@@ -167,6 +171,32 @@ public class SimpleEntityServiceTest {
     }
 
     @Test
+    public void testPaging() {
+        final List<String>       names    = PREFIXES.stream().map(prefix -> IntStream.range(0, ITEMS_PER_PREFIX).boxed().map(suffix -> prefix + "-" + suffix).collect(Collectors.toList())).flatMap(Collection::stream).collect(Collectors.toList());
+        final List<SimpleEntity> entities = names.stream().map(this::getSimpleEntity).collect(Collectors.toList());
+        assertThat(entities).isNotNull().isNotEmpty().hasSize(TOTAL_ITEMS);
+
+        final Map<String, Long> expectedCounts = entities.stream().collect(Collectors.groupingBy(SimpleEntity::getUsername, Collectors.counting()));
+        assertThat(expectedCounts).isNotNull().isNotEmpty().hasSize(USERNAMES.size()).containsOnlyKeys(USERNAMES);
+        assertThat(expectedCounts.values().stream().reduce(0L, Long::sum)).isEqualTo(TOTAL_ITEMS);
+
+        final Map<String, Long> actualCounts = USERNAMES.stream().collect(Collectors.toMap(Function.identity(), username -> _service.getAllForUserCount(username)));
+        assertThat(actualCounts).isNotNull().isNotEmpty().containsExactlyInAnyOrderEntriesOf(expectedCounts);
+        assertThat(actualCounts.values().stream().reduce(0L, Long::sum)).isEqualTo(TOTAL_ITEMS);
+
+        final List<SimpleEntity> orderedByDate = _service.findAllOrderedByTimestamp();
+        assertThat(orderedByDate).isNotNull().isNotEmpty().hasSize(TOTAL_ITEMS);
+
+        final SimpleEntityPaginatedRequest request               = SimpleEntityPaginatedRequest.builder().pageSize(200).build();
+        final List<SimpleEntity>           first200OrderedByDate = _service.findAllOrderedByTimestamp(request);
+        assertThat(first200OrderedByDate).isNotNull().isNotEmpty().hasSize(200).containsAll(orderedByDate.subList(0, 200));
+    }
+
+    private SimpleEntity getSimpleEntity(final String name) {
+        return _service.create(SimpleEntity.builder().name(name).username(USERNAMES.get(RANDOM.nextInt(USERNAMES.size()))).description(RandomStringUtils.randomAscii(10, RANDOM.nextInt(30) + 11)).total(RANDOM.nextInt(1000) + 1).timestamp(getUniqueRandomDate()).build());
+    }
+
+    @Test
     @Ignore("Support for JSON types across PostgreSQL and H2 doesn't work properly with the current way of configuring json and jsonb columns: see https://github.com/vladmihalcea/hibernate-types/issues/179 for info on possible fixes")
     public void testAttributes() {
         final SimpleEntity entity = buildTestSimpleEntity();
@@ -178,9 +208,11 @@ public class SimpleEntityServiceTest {
                              .hasFieldOrPropertyWithValue("description", DESCRIPTION)
                              .hasFieldOrPropertyWithValue("total", TOTAL)
                              .hasFieldOrProperty("attributes");
-        // final JsonNode            attributes = retrieved.getAttributes();
-        // final Map<String, String> map        = _serializer.getObjectMapper().convertValue(attributes, TYPE_REF_MAP_STRING_STRING);
-        // assertThat(map).isNotNull().hasSize(3).containsOnlyKeys("1", "2", "3").containsEntry("1", "one").containsEntry("2", "two").containsEntry("3", "three");
+        /*
+         final JsonNode            attributes = retrieved.getAttributes();
+         final Map<String, String> map        = _serializer.getObjectMapper().convertValue(attributes, TYPE_REF_MAP_STRING_STRING);
+         assertThat(map).isNotNull().hasSize(3).containsOnlyKeys("1", "2", "3").containsEntry("1", "one").containsEntry("2", "two").containsEntry("3", "three");
+        */
     }
 
     private String toJson(final PaginatedRequest request) {
@@ -202,27 +234,46 @@ public class SimpleEntityServiceTest {
     private SimpleEntity buildTestSimpleEntity() {
         final SimpleEntity pacs = new SimpleEntity();
         pacs.setName(DEFAULT_NAME);
+        pacs.setUsername(DEFAULT_USERNAME);
         pacs.setDescription(DESCRIPTION);
         pacs.setTotal(TOTAL);
         return pacs;
     }
 
-    private static final String DEFAULT_NAME = "Simple Thing";
-    private static final String DESCRIPTION  = "This is a very simple thing that we don't care about much";
-    private static final int    TOTAL        = 1234;
-    private static final String NULL_NAME    = "testNullSimpleEntity";
-    private static final String FOO_NAME     = "FOO";
+    private static Date getUniqueRandomDate() {
+        final Date date = Stream.generate(SimpleEntityServiceTest::getRandomDate).filter(generated -> !USED_DATES.contains(generated.getTime())).findFirst().orElseThrow(() -> new RuntimeException("This shouldn't happen tbh"));
+        USED_DATES.add(date.getTime());
+        log.info("Got random date: {}", date.getTime());
+        return date;
+    }
+
+    private static Date getRandomDate() {
+        return Date.from(Instant.now().minus(Duration.ofDays(RANDOM.nextInt(365))));
+    }
+
+    private static final String     DEFAULT_NAME     = "Simple Thing";
+    private static final String     DEFAULT_USERNAME = "simple.thing";
+    private static final String     DESCRIPTION      = "This is a very simple thing that we don't care about much";
+    private static final int        TOTAL            = 1234;
+    private static final String     NULL_NAME        = "testNullSimpleEntity";
+    private static final String     FOO_NAME         = "FOO";
+    private static final List<Long> USED_DATES       = new ArrayList<>();
     // private static final String JSON         = "{\"1\": \"one\", \"2\": \"two\", \"3\": \"three\"}";
 
-    private static final List<Triple<String, String, Integer>> SORTABLES = Arrays.asList(Triple.of("one-1", "1", 1),
-                                                                                         Triple.of("one-2", "1", 2),
-                                                                                         Triple.of("one-3", "1", 3),
-                                                                                         Triple.of("two-1", "2", 1),
-                                                                                         Triple.of("two-2", "2", 2),
-                                                                                         Triple.of("two-3", "2", 3),
-                                                                                         Triple.of("three-1", "3", 1),
-                                                                                         Triple.of("three-2", "3", 2),
-                                                                                         Triple.of("three-3", "3", 3));
+    private static final List<String>       PREFIXES         = Arrays.asList("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten");
+    private static final int                ITEMS_PER_PREFIX = 100;
+    private static final int                TOTAL_ITEMS      = PREFIXES.size() * ITEMS_PER_PREFIX;
+    private static final List<String>       USERNAMES        = Arrays.asList("Adyson Barrett", "Alani Bean", "Arabella Summers", "Harold Mckinney", "Hayden Wiley", "Jameson Lynn", "Jayvon Rangel", "Julie Higgins", "Reece Burns", "Rosemary Little", "Vincent Murray", "Yadira Santos");
+    private static final Random             RANDOM           = new Random();
+    private static final List<SimpleEntity> SORTABLES        = Arrays.asList(SimpleEntity.builder().name("One 1").username("one-1").description("1").total(1).build(),
+                                                                             SimpleEntity.builder().name("One 2").username("one-2").description("1").total(2).build(),
+                                                                             SimpleEntity.builder().name("One 3").username("one-3").description("1").total(3).build(),
+                                                                             SimpleEntity.builder().name("Two 1").username("two-1").description("2").total(1).build(),
+                                                                             SimpleEntity.builder().name("Two 2").username("two-2").description("2").total(2).build(),
+                                                                             SimpleEntity.builder().name("Two 3").username("two-3").description("2").total(3).build(),
+                                                                             SimpleEntity.builder().name("Three 1").username("three-1").description("3").total(1).build(),
+                                                                             SimpleEntity.builder().name("Three 2").username("three-2").description("3").total(2).build(),
+                                                                             SimpleEntity.builder().name("Three 3").username("three-3").description("3").total(3).build());
 
     @Autowired
     private SimpleEntityService _service;

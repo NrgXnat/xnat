@@ -17,7 +17,9 @@ import org.nrg.framework.ajax.sql.StringFilter;
 import org.nrg.framework.ajax.sql.TimestampFilter;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Provides filtering for {@link HibernatePaginatedRequest Hibernate-based paginated requests}. This is the <i>only</i>
@@ -38,10 +40,27 @@ public class HibernateFilter extends Filter {
     private Object lo;
     private Object hi;
     private Operator operator;
+    private List<HibernateFilter> andFilters;
+    private List<HibernateFilter> orFilters;
 
     @JsonIgnore
     public Criterion makeCriterion(String property, ClassMetadata classMetadata) {
-        Criterion c;
+        Criterion c = null;
+        if (orFilters != null && !orFilters.isEmpty()) {
+            Criterion[] subCriteria = getSubCriteria(orFilters, property, classMetadata);
+            c = Restrictions.or(subCriteria);
+        }
+        if (andFilters != null && !andFilters.isEmpty()) {
+            Criterion[] subCriteria = getSubCriteria(andFilters, property, classMetadata);
+            if (c != null) {
+                c = Restrictions.and(Restrictions.and(subCriteria), c);
+            } else {
+                c = Restrictions.and(subCriteria);
+            }
+        }
+        if (c != null) {
+            return c;
+        }
         switch (operator) {
             case EQ:
             case NE:
@@ -90,15 +109,21 @@ public class HibernateFilter extends Filter {
             case BETWEEN:
                 c = Restrictions.between(property, lo, hi);
                 break;
-            case ILIKE:
+            case LIKE:
                 c = Restrictions.like(property, (String) value, MatchMode.ANYWHERE);
                 break;
-            case LIKE:
+            case ILIKE:
             default:
                 c = Restrictions.ilike(property, (String) value, MatchMode.ANYWHERE);
                 break;
         }
         return not ? Restrictions.not(c) : c;
+    }
+
+    private Criterion[] getSubCriteria(List<HibernateFilter> filters, String property, ClassMetadata classMetadata) {
+        return filters.stream()
+                .map(f -> f.makeCriterion(property, classMetadata))
+                .toArray(Criterion[]::new);
     }
 
     /**

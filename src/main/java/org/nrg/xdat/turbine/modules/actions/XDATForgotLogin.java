@@ -153,9 +153,9 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     body=body.replaceAll("USER_FIRSTNAME",user.getFirstname());
                     body=body.replaceAll("USER_LASTNAME",user.getLastname());
 
-                    String resetLink = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?token=" + null;
+                    String resetLink = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?a=" + token.getAlias() + "&s=" + token.getSecret();
 
-                    String resetUrl = "<a href=\"" + resetLink + "\">" + resetLink + "</a>";
+                    String resetUrl = "<a href=\"" + resetLink + "\">" + "Reset Password" + "</a>";
                     body=body.replaceAll("RESET_URL",resetUrl);
                     body=body.replaceAll("USER_USERNAME",user.getUsername());
                     _mailService.sendHtmlMessage(admin, to, subject, body);

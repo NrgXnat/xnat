@@ -113,7 +113,7 @@ public class AdminUtils {
 		if (user == null) {
 			throw new Exception("Unable to send verification email. Required User is null.");
 		}
-		sendNewUserVerificationEmail(user.getEmail(), user.getUsername(), user.getFirstname(), user.getLastname(), user.isEnabled());
+		sendNewUserVerificationEmail(user.getEmail(), user.getFirstname(), user.getLastname(), user.getLogin(), user.isEnabled());
 	}
 
 

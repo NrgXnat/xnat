@@ -113,12 +113,14 @@ public class PrearcSessionResourceCatalogFiles extends PrearcSessionResourceCata
 			boolean rewriteCatalog = false;
 			for (final FileWriterWrapperI fileWriter : writers) {
 				String relPath = fileWriter.getName();
-				fileWriter.write(catalogPath.resolve(relPath).toFile());
+				File file = catalogPath.resolve(relPath).toFile();
+				fileWriter.write(file);
 				if (!catalogMap.containsKey(relPath)) {
 					// if we already reference the file, copying it into place is all we need to do
 					CatEntryBean entry = new CatEntryBean();
 					entry.setId(relPath);
 					entry.setUri(relPath);
+					CatalogUtils.setMetaFieldByName(entry, CatalogUtils.SIZE, Long.toString(file.length()));
 					catalogData.catBean.addEntries_entry(entry);
 					rewriteCatalog = true;
 				}

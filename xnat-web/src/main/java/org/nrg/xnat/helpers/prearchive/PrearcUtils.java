@@ -64,6 +64,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 @Slf4j
@@ -833,10 +834,9 @@ public class PrearcUtils {
         final XnatProjectdata project       = session.getProjectData();
         final boolean         checksums     = getChecksumConfiguration(project);
 
-        session.getScans_scan()
-               .stream()
-               .map(XnatImagescandataI::getFile)
-               .flatMap(Collection::stream)
+        Stream.concat(session.getScans_scan()
+                .stream()
+                .map(XnatImagescandataI::getFile).flatMap(Collection::stream), session.getResources_resource().stream())
                .filter(XnatResourcecatalog.class::isInstance)
                .map(XnatResourcecatalog.class::cast)
                .forEach(catalog -> {

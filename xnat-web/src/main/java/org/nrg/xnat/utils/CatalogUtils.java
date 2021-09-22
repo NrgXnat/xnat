@@ -2558,7 +2558,9 @@ public class CatalogUtils {
         }
 
         for (CatEntryI entry : cat.getEntries_entry()) {
-            addAuditEntry(summary, entry.getCreatedeventid(), entry.getCreatedtime(), ChangeSummaryBuilderA.ADDED, 1);
+            if (entry.getCreatedeventid() != null) {
+                addAuditEntry(summary, entry.getCreatedeventid(), entry.getCreatedtime(), ChangeSummaryBuilderA.ADDED, 1);
+            }
 
             if (entry.getModifiedtime() != null) {
                 addAuditEntry(summary, entry.getModifiedeventid(), entry.getModifiedtime(), ChangeSummaryBuilderA.MODIFIED, 1);

@@ -31,6 +31,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.presentation.ChangeSummaryBuilderA;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.utils.CatalogUtils;
@@ -124,8 +125,8 @@ public class PrearcSessionResourceCatalogFiles extends PrearcSessionResourceCata
 			}
 
 			if (rewriteCatalog) {
-				// refresh catalog itself
-				CatalogUtils.writeCatalogToFile(catalogData);
+				// refresh catalog itself - checksums will be computed on archive if required
+				CatalogUtils.writeCatalogToFile(catalogData, false);
 			}
 
 			if (isNew) {

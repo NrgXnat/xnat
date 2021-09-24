@@ -84,6 +84,18 @@ public class SerializerService {
         return _objectMapper.readValue(json, type);
     }
 
+    public <T> T deserializeJson(final InputStream input, final Class<T> clazz) throws IOException {
+        return _objectMapper.readValue(input, clazz);
+    }
+
+    public <T> T deserializeJson(final InputStream input, final TypeReference<T> typeRef) throws IOException {
+        return _objectMapper.readValue(input, typeRef);
+    }
+
+    public <T> T deserializeJson(final InputStream input, final JavaType type) throws IOException {
+        return _objectMapper.readValue(input, type);
+    }
+
     public JsonNode deserializeJson(final InputStream input) throws IOException {
         return _objectMapper.readTree(input);
     }

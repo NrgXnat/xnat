@@ -936,7 +936,7 @@ public class NotificationsApi extends AbstractXapiRestController {
             @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
             @ApiResponse(code = 403, message = "Not authorized to get email message for verification of a new account email address."),
             @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"messages/emailchangeverfification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
+    @XapiRequestMapping(value = {"messages/emailchangeverification"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET}, restrictTo = Admin)
     public ResponseEntity<String> getEmailMessageEmailChangeVerification() {
         String resp = _notificationsPrefs.getEmailMessageVerifyEmailChangeRequest();
         return new ResponseEntity<>(resp, HttpStatus.OK);

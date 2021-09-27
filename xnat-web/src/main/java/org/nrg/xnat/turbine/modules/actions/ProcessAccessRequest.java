@@ -87,17 +87,9 @@ public class ProcessAccessRequest extends SecureAction {
 
 			if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
 				String body = XDAT.getNotificationsPreferences().getEmailMessageProjectAccessDenial();
+				body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
 				body = body.replaceAll("PROJECT_NAME", project.getName());
 
-				String userEmail = "<a href=\"" + user.getEmail() + "\">" + user.getEmail() + "</a>";
-
-				body = body.replaceAll("USER_EMAIL", userEmail);
-				body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
-				body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
-
-				String adminEmail = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "\">" + XDAT.getSiteConfigPreferences().getAdminEmail() + "</a>";
-
-				body = body.replaceAll("ADMIN_MAIL", adminEmail);
 				String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 				String subject = TurbineUtils.GetSystemName() + " Access Request for " + project.getName() + " Denied";
 
@@ -174,19 +166,15 @@ public class ProcessAccessRequest extends SecureAction {
             String[] projectOwnerEmails = ownerEmails.toArray(new String[ownerEmails.size()]);
 			if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
 				String body = XDAT.getNotificationsPreferences().getEmailMessageProjectAccessApproval();
+				body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, null);
 				body = body.replaceAll("PROJECT_NAME", project.getName());
 				body = body.replaceAll("RQ_ACCESS_LEVEL", access_level);
-				body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
 
 				final String respondAccessUrl = TurbineUtils.GetFullServerPath() +"/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/" + project.getId();
 
 				String accessUrl = "<a href=\"" + respondAccessUrl + "\">" + respondAccessUrl + "</a>";
 
 				body = body.replaceAll("ACCESS_URL", accessUrl);
-				body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
-
-				String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + "Assistance\">" + TurbineUtils.GetSystemName() + "Management </a>";
-				body = body.replaceAll("ADMIN_MAIL",adminEmailLink);
 
 				String subject = TurbineUtils.GetSystemName() + " Access Request for " + project.getName() + " Approved";
 

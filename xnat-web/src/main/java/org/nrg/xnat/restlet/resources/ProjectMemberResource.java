@@ -165,19 +165,15 @@ public class ProjectMemberResource extends SecureResource {
                             if (sendmail) {
                                 try {
                                     String body = XDAT.getNotificationsPreferences().getEmailMessageProjectAccessApproval();
+                                    body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, null);
                                     body = body.replaceAll("PROJECT_NAME", _project.getName());
                                     body = body.replaceAll("RQ_ACCESS_LEVEL", _group.getDisplayname());
-                                    body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
 
                                     final String respondAccessUrl = TurbineUtils.GetFullServerPath() +"/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/" + _project.getId();
 
                                     String accessUrl = "<a href=\"" + respondAccessUrl + "\">" + respondAccessUrl + "</a>";
 
                                     body = body.replaceAll("ACCESS_URL", accessUrl);
-                                    body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
-
-                                    String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + "Assistance\">" + TurbineUtils.GetSystemName() + " Management </a>";
-                                    body = body.replaceAll("ADMIN_MAIL",adminEmailLink);
 
                                     String subject = TurbineUtils.GetSystemName() + " Access Request for " + _project.getName();
 

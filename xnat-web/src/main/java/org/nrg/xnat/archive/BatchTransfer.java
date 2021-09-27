@@ -20,6 +20,7 @@ import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatMrsessiondata;
 import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -421,9 +422,8 @@ public class BatchTransfer extends Thread{
     public String getEmailCompletionMessage(final UserI user, final List<String> messages, final List<List<String>> errors, final String system, final String adminEmail) {
 
         String body = XDAT.getNotificationsPreferences().getEmailMessageBatchWorkflowComplete();
+        body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
 
-        body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
-        body = body.replaceAll("USER_LASTNAME", user.getLastname());
         body = body.replaceAll("PROCESS_NAME", "Transfer to the archive.");
         body = body.replaceAll("NUMBER_MESSAGES", ((Integer) messages.size()).toString());
         String messagesString = "";
@@ -438,15 +438,7 @@ public class BatchTransfer extends Thread{
         }
 
         body = body.replaceAll("ERRORS_LIST", errorString);
-
-        String siteUrl = "<a href=\"" + server + "\">the website</a>";
-
-        body = body.replaceAll("SITE_URL", siteUrl);
-        body = body.replaceAll("SITE_NAME", system);
-
-        String adminMail = "<a href=\"mailto:" + adminEmail + "\">" + adminEmail + "</a>";
-        body = body.replaceAll("ADMIN_MAIL", adminMail);
-
+        
         return body;
     }
     

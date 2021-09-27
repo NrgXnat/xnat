@@ -488,15 +488,9 @@ public class ProjectAccessRequest {
 
         if(XDAT.getNotificationsPreferences().getSmtpEnabled()) {
             String body = XDAT.getNotificationsPreferences().getEmailMessageInviteProjectAccess();
+            body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
 
             body = body.replaceAll("PROJECT_NAME", project.getName());
-            body = body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
-            body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
-            body = body.replaceAll("USER_LASTNAME", user.getLastname());
-            body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
-            String adminEmail = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "\">" + XDAT.getSiteConfigPreferences().getAdminEmail() + "</a>";
-
-            body = body.replaceAll("ADMIN_MAIL", adminEmail);
 
             String acceptURL = TurbineUtils.GetFullServerPath() + "/app/action/AcceptProjectAccess/par/" + request._guid + "?hash=" + request.getHashedEmail();
 

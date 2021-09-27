@@ -65,13 +65,7 @@ public class RequestAccess extends SecureAction {
 
             if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
                 String body = XDAT.getNotificationsPreferences().getEmailMessageProjectRequestAccess();
-                body = body.replaceAll("USER_USERNAME", user.getUsername());
-                body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
-                body = body.replaceAll("USER_LASTNAME", user.getLastname());
-                body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
-                body = body.replaceAll("SITE_URL",TurbineUtils.GetFullServerPath());
-                String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + "Assistance\">" + TurbineUtils.GetSystemName() + "Management </a>";
-                body = body.replaceAll("ADMIN_MAIL",adminEmailLink);
+                body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
                 body = body.replaceAll("USER_EMAIL", user.getEmail());
                 if (comments == null) {
                     body = body.replaceAll("RQA_COMMENTS", "");

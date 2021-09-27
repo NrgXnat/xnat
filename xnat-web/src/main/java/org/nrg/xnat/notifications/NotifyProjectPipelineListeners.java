@@ -91,9 +91,7 @@ public class NotifyProjectPipelineListeners extends NotifyProjectListeners {
             }
 
             if(email.size()>0){
-                _body = _body.replaceAll("USER_FIRSTNAME", _user.getFirstname());
-                _body = _body.replaceAll("USER_LASTNAME", _user.getLastname());
-                _body = _body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+                _body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(_body, _user);
                 _body = _body.replaceAll("PROJECT_NAME", _expt.getProject());
                 if (_params.containsKey("subject")) {
                     _body = _body.replaceAll("SUBJECT_NAME", _params.get("subject").toString());
@@ -112,7 +110,6 @@ public class NotifyProjectPipelineListeners extends NotifyProjectListeners {
 
                 String userEmail = "<a href=\"mailto:" + _user.getEmail()+ "\">" + _user.getUsername() + "</a>";
 
-                _body = _body.replaceAll("USER_USERNAME",_user.getUsername());
                 _body = _body.replaceAll("PIPELINE_STEP", _workflow.getCurrentStepId());
 
                 String contactEmail = "<a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "</a>";

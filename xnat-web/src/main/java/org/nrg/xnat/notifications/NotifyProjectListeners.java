@@ -82,10 +82,9 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 			if(email.size()>0){
 
 				String from = XDAT.getSiteConfigPreferences().getAdminEmail();
+				_body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(_body, _user);
 
-				_body = _body.replaceAll("USER_FIRSTNAME", _user.getFirstname());
-				_body = _body.replaceAll("USER_LASTNAME", _user.getLastname());
-				_body = _body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+
 				_body = _body.replaceAll("PROJECT_NAME", _expt.getProject());
 				if (_params.containsKey("subject")) {
 					_body = _body.replaceAll("SUBJECT_NAME", _params.get("subject").toString());
@@ -102,9 +101,6 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 
 				_body = _body.replaceAll("EXPERIMENT_NAME", _expt.getLabel());
 				String userEmail = "<a href=\"mailto:" + _user.getEmail()+ "\">" + _user.getUsername() + "</a>";
-
-				_body = _body.replaceAll("USER_EMAIL",userEmail);
-				_body = _body.replaceAll("USER_USERNAME",_user.getUsername());
 
 				String contactEmail = "<a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "</a>";
 				_body = _body.replaceAll("CONTACT_EMAIL", contactEmail);

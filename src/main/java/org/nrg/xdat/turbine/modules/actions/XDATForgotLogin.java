@@ -102,9 +102,8 @@ public class XDATForgotLogin extends VelocitySecureAction {
                         usernames = String.format("<br><br><ul><li>%s</li></ul>", auths.stream().map(XdatUserAuth::getAuthUser).collect(Collectors.joining("</li><li>")));
                     }
                     String body = _notifications.getEmailMessageForgotUsernameRequest();
-                    body = body.replaceAll("USER_USERNAME", user.getUsername());
-                    String siteLink = "<a href=\"" + TurbineUtils.GetFullServerPath() + "\">" + TurbineUtils.GetFullServerPath() + "</a>";
-                    body = body.replaceAll("SITE_URL", siteLink);
+                    body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
+                    body = XDAT.getNotificationsPreferences().replaceBackwardsCompatibleEmailInconsistencies(body);
                     _mailService.sendHtmlMessage(admin, email, subject, body);
                     if (_requestLog != null) {
                         _requestLog.logEmailRequest(email, new Date());
@@ -150,14 +149,14 @@ public class XDATForgotLogin extends VelocitySecureAction {
                 } else {
                     final AliasToken token   = _aliasTokenService.issueTokenForUser(user, true, null);
                     String body = XDAT.getNotificationsPreferences().getEmailMessageForgotPasswordReset();
-                    body=body.replaceAll("USER_FIRSTNAME",user.getFirstname());
-                    body=body.replaceAll("USER_LASTNAME",user.getLastname());
+                    body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
 
-                    String resetLink = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?a=" + token.getAlias() + "&s=" + token.getSecret();
+                    String resetUrl = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?a=" + token.getAlias() + "&s=" + token.getSecret();
 
-                    String resetUrl = "<a href=\"" + resetLink + "\">" + "Reset Password" + "</a>";
+                    String resetLink = "<a href=\"" + resetUrl + "\">" + "Reset Password" + "</a>";
                     body=body.replaceAll("RESET_URL",resetUrl);
-                    body=body.replaceAll("USER_USERNAME",user.getUsername());
+                    body = body.replaceAll("RESET_LINK", resetLink);
+                    body = XDAT.getNotificationsPreferences().replaceBackwardsCompatibleEmailInconsistencies(body);
                     _mailService.sendHtmlMessage(admin, to, subject, body);
                     if (_requestLog != null) {
                         _requestLog.logEmailRequest(to, new Date());

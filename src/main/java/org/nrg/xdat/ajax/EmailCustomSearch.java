@@ -111,16 +111,13 @@ public class EmailCustomSearch {
 		if (req.getParameter("htmlmessage") == null) {
             try {
                 String body = XDAT.getNotificationsPreferences().getEmailMessageDataAlertCustom();
-                body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+                body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
                 body = body.replaceAll("USER_LASTNAME", user.getLastname());
-                body = body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
                 String requestLink = TurbineUtils.GetFullServerPath() + "/app/action/DisplaySearchAction" + "/search_id/" + search_id;
                 String requestLinkFull = "<a href=\"" + requestLink + "\">this link</a>";
 
                 body = body.replaceAll("REQUEST_LINK", requestLinkFull);
                 body = body.replaceAll("SENDER_MESSAGE", msg);
-                String siteLink = "<a href=\"" + TurbineUtils.GetFullServerPath() + "\">" + TurbineUtils.GetSystemName() + "</a>";
-                body = body.replaceAll("SITE_URL", siteLink);
                 Date date = Calendar.getInstance().getTime();
                 String dateString = TurbineUtils.GetInstance().formatDateTime(date);
                 body = body.replaceAll("TIME_SENT", dateString);

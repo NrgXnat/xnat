@@ -25,6 +25,7 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +46,9 @@ import java.util.Properties;
 public class NotificationsPreferences extends EventTriggeringAbstractPreferenceBean {
     public static final String NOTIFICATIONS_TOOL_ID = "notifications";
 
-    private static final String USER_REG_EMAIL        = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p> <p>Welcome to the SITE_NAME Web Archive!</p> <p>You can now log on to the SITE_NAME at: SITE_URL</p><p>Your username is: USER_USERNAME</p> <p>For support, contact the ADMIN_EMAIL</p>";
-    private static final String FORGOT_USERNAME_EMAIL = "<p>You requested your username, which is: USER_USERNAME</p>\n <p>Please login to the site for additional user information SITE_URL.</p>\n";
-    private static final String FORGOT_PASSWORD_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n<p>Please click this link to reset your password: RESET_URL</p> \n<p>This link will expire in 24 hours.</p>";
+    private static final String USER_REG_EMAIL        = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p> <p>Welcome to the SITE_NAME Web Archive!</p> <p>You can now log on to the SITE_NAME at: SITE_LINK</p><p>Your username is: USER_USERNAME</p> <p>For support, contact the ADMIN_MAIL_LINK</p>";
+    private static final String FORGOT_USERNAME_EMAIL = "<p>You requested your username, which is: USER_USERNAME</p>\n <p>Please login to the site for additional user information SITE_LINK.</p>\n";
+    private static final String FORGOT_PASSWORD_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n<p>Please click this link to reset your password: RESET_LINK</p> \n<p>This link will expire in 24 hours.</p>";
     private static final String NEW_USER_VERIFICATION_EMAIL = "<p>USER_FIRSTNAME USER_LASTNAME, </p>\n<p>We received a request to register an account for you on XNAT. If you did not make this request, you can safely ignore this email. </p>\n" +
             "<p>If you would like to register, please confirm your email address by clicking this link within the next 24 hours: VERIFY_URL </p>\n" +
             "<p>After verifying your email address, you will be able to immediately log in and start using XNAT. </p>\n" +
@@ -55,23 +56,23 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     private static final String REQUEST_PROJECT_ACCESS_EMAIL = "<p>Hello,</p>\n" +
             "<p>We received a request to access the PROJECT_NAME project from a user on SITE_NAME as a(n) RQ_ACCESS_LEVEL. Granting this kind of access in this project will mean the user can LIST_PERMISSIONS</p>\n" +
             "<p>Login: USER_USERNAME<br>\nEmail: USER_EMAIL<br>\nFirstname: USER_FIRSTNAME<br>\nLastname: USER_LASTNAME<br>Comments: RQA_COMMENTS<br>\nTo approve or deny this project access request, please click the following link: ACCESS_URL</p>\n" +
-            "<p>The SITE_NAME team.<br>\nSITE_URL <br>\nADMIN_MAIL</p>";
+            "<p>The SITE_NAME team.<br>\nSITE_LINK <br>\nADMIN_MAIL_LINK</p>";
     private static final String PROJECT_ACCESS_APPROVAL_EMAIL = "<p>Hello,</p>\n" + "<p>You have been granted access to the PROJECT_NAME project as a member of the RQ_ACCESS_LEVEL group.</p>\n" +
-            "<p>To proceed to SITE_URL and begin working with this project, please click the following link: ACCESS_URL</p>\n" +
-            "<p>The SITE_NAME team.<br>\nSITE_URL <br>\nADMIN_MAIL </p>";
+            "<p>To proceed to SITE_LINK and begin working with this project, please click the following link: ACCESS_URL</p>\n" +
+            "<p>The SITE_NAME team.<br>\nSITE_LINK <br>\nADMIN_MAIL_LINK </p>";
     private static final String PROJECT_ACCESS_DENIAL_EMAIL = "<p>We regret to inform you that your request to access the PROJECT_NAME project has been denied.  Please consult the project manager for additional details at USER_EMAIL.</p>\n" +
-            "<p>The SITE_NAME team.<br>\nSITE_URL <br>\nADMIN_MAIL</p>";
+            "<p>The SITE_NAME team.<br>\nSITE_LINK <br>\nADMIN_MAIL_LINK</p>";
     private static final String INVITE_PROJECT_ACCESS_EMAIL = "<p>Hello,</p>\n" + "<p>You have been invited to join the PROJECT_NAME project on SITE_NAME by USER_FIRSTNAME USER_LASTNAME. If you were not expecting to receive this invitation, you can safely ignore this email.\n</p>" +
-            "<p>To accept this invitation and begin working in this project, please click the following link: ACCEPT_URL \n<br />\n<br /></p>" + "<p>The SITE_NAME team.\n<br />SITE_URL \n<br />ADMIN_MAIL</p>";
-    private static final String DISABLED_USER_VERIFICATION_EMAIL = "<p>Expired User Reverified</p>\n" + "<ul style=\"list-style-type:none;\"> <li>Date: DATE_INPUT</li> <li>Site: SITE_NAME</li> <li>Host: SITE_URL</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li></ul>"
+            "<p>To accept this invitation and begin working in this project, please click the following link: ACCEPT_URL \n<br />\n<br /></p>" + "<p>The SITE_NAME team.\n<br />SITE_LINK \n<br />ADMIN_MAIL_LINK</p>";
+    private static final String DISABLED_USER_VERIFICATION_EMAIL = "<p>Expired User Reverified</p>\n" + "<ul style=\"list-style-type:none;\"> <li>Date: DATE_INPUT</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li></ul>"
             + "<p>After being disabled due to inactivity, the owner of this account has completed the email verification process to show that they are still the proper account owner. This user account is now no longer disabled due to inactivity and they can access the site again.\n</p>" +
-            "<p> The LOGIN_URL verified user account USER_LOGIN has been enabled.</p>";
-    private static final String ERROR_EMAIL= "<p>Error Thrown:</p>\n <ul style=\"list-style-type:none;\"> <li>Host: SITE_URL</li> <li>User: USER_LOGIN (USER_USERNAME USER_LASTNAME)</li> <li>Time: ERROR_TIME</li> <li>Error: ERROR_MESSAGE</li> </ul>";
-    private static final String NEW_USER_NOTIFICATION_EMAIL = "<p>New User Created</p>\n" + "<ul style=\"list-style-type:none;\"> <li>Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_URL</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>" +
+            "<p> The LOGIN_LINK USER_LOGIN has been enabled.</p>";
+    private static final String ERROR_EMAIL= "<p>Error Thrown:</p>\n <ul style=\"list-style-type:none;\"> <li>Host: SITE_NAME</li> <li>User: USER_LOGIN (USER_USERNAME USER_LASTNAME)</li> <li>Time: ERROR_TIME</li> <li>Error: ERROR_MESSAGE</li> </ul>";
+    private static final String NEW_USER_NOTIFICATION_EMAIL = "<p>New User Created</p>\n" + "<ul style=\"list-style-type:none;\"> <li>Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>" +
             "<p>This account has been created and automatically enabled based on the current system configuration.</p>\n" + "<p>The account has open project access requests for the following projects: PROJECT_ACCESS_REQUESTS</p>\n" +
             "<p> REVIEW_LINK </p>\n" +
             "<p>User Comments: USER_COMMENTS</p>";
-    private static final String NEW_USER_REQUEST_EMAIL = "<p>New User Request</p>\n" + "<ul style=\"list-style-type:none;\"> <li> Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_URL<</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>" +
+    private static final String NEW_USER_REQUEST_EMAIL = "<p>New User Request</p>\n" + "<ul style=\"list-style-type:none;\"> <li> Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>" +
             "<p>This account has been created but will be disabled until you enable the account. You must log in before enabling the account.</p>\n" + "<p>The account has open project access requests for the following projects: PROJECT_ACCESS_REQUESTS</p>\n" +
             "<p> REVIEW_LINK </p>\n" +
             "<p>User Comments: USER_COMMENTS</p>";
@@ -82,17 +83,17 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
             "<p>The SITE_NAME technical team is aware of the issue and will notify you when it has been resolved.</p>\n <p>We appreciate your patience. Please contact CONTACT_EMAIL with questions or concerns.</p>\n +" +
             "<p>ATTACHMENTS_STATEMENT<br>\nSTDOUT<br>\nSTDERR</p>";
     private static final String BATCH_WORKFLOW_COMPLETE_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n <p>The following batch procedure has been completed: \n<br>PROCESS_NAME </p>\n" +
-            "<p>NUMBER_MESSAGES successful transfer(s).\n<br>MESSAGES_LIST \n<br>ERRORS_LIST \n<br>Details for this project are available at SITE_URL.</p>\n" +
-            "<p>The SITE_NAME team.<br>\nSITE_URL <br>\n ADMIN_MAIL </p>";
+            "<p>NUMBER_MESSAGES successful transfer(s).\n<br>MESSAGES_LIST \n<br>ERRORS_LIST \n<br>Details for this project are available at SITE_LINK.</p>\n" +
+            "<p>The SITE_NAME team.<br>\nSITE_LINK <br>\n ADMIN_MAIL_LINK </p>";
     private static final String UNAUTHORIZED_DATA_ATTEMPT_EMAIL = "<p>Unauthorized access TYPE USER_DETAILS prevented</p>";
-    private static final String EMAIL_CHANGE_REQUEST_EMAIL = "<p>A request was made to change the email address for the user with username USER_USERNAME to NEW_EMAIL. If you did not make this request, someone else may have gotten access to your account and you should contact the site administrator: ADMIN_EMAIL.</p>";
+    private static final String EMAIL_CHANGE_REQUEST_EMAIL = "<p>A request was made to change the email address for the user with username USER_USERNAME to NEW_EMAIL. If you did not make this request, someone else may have gotten access to your account and you should contact the site administrator: ADMIN_MAIL_LINK.</p>";
     private static final String VERIFY_EMAIL_CHANGE_REQUEST_EMAIL = "<p>A request was made to change the email address for the user with username USER_USERNAME to this address. If you did not make this request, you can ignore this email. If you made this request and wish to have this change take effect, please log into your account and click CHANGE_EMAIL_LINK.</p>";
     private static final String EMAIL_ADDRESS_CHANGED_EMAIL = "<p>Your email address was successfully changed to NEW_EMAIL.</p>";
     private static final String SYSTEM_PATH_ERROR = "<p>The following system path errors have been discovered:\n<br>ERRORS_LIST</p>";
     private static final String UPLOAD_BY_REFERENCE_SUCCESS = "<p>The upload by reference requested by USER_USERNAME has finished successfully.\n<br>DUPLICATES_LIST</p>";
     private static final String UPLOAD_BY_REFERENCE_ERROR = "<p>The upload by reference requested by USER_USERNAME has encountered an error.</p>\n <p>Please contact your IT staff or the application logs for more information.</p>";
     private static final String DATA_ALERT_CUSTOM_MESSAGE = "<p>Hello, </p> <p>USER_FIRSTNAME USER_LASTNAME thought you might be interested in a data set contained in the SITE_NAME. Please follow REQUEST_LINK to view the data.</p>\n" +
-            "<p>Message from sender:<br>\n" + "SENDER_MESSAGE<br>\n</p> <p>This email was sent by the SITE_URL data management system on TIME_SENT. If you have questions or concerns, please contact HELP_CONTACT</p>.";
+            "<p>Message from sender:<br>\n" + "SENDER_MESSAGE<br>\n</p> <p>This email was sent by the SITE_LINK data management system on TIME_SENT. If you have questions or concerns, please contact HELP_CONTACT</p>.";
 
     @Autowired
     public NotificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
@@ -341,6 +342,35 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'helpContactInfo': something is very wrong here.", e);
         }
+    }
+
+    public String replaceCommonAnchorTags(String body, UserI user) {
+        String siteURL = TurbineUtils.GetFullServerPath();
+        body = body.replaceAll("SITE_URL", siteURL);
+        String siteUrLink = "<a href=\"" + siteURL + "\">" + siteURL + "</a>";
+        body = body.replaceAll("SITE_LINK",siteUrLink);
+        body = body.replaceAll("SITE_NAME",TurbineUtils.GetSystemName());
+
+        body = body.replaceAll("ADMIN_EMAIL", XDAT.getSiteConfigPreferences().getAdminEmail());
+
+        String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + " Assistance\">" + TurbineUtils.GetSystemName() + "Management </a>";
+        body = body.replaceAll("ADMIN_MAIL_LINK",adminEmailLink);
+
+        if (user != null) {
+            body = body.replaceAll("USER_USERNAME", user.getUsername());
+            body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
+            body = body.replaceAll("USER_LASTNAME",user.getLastname());
+            body = body.replaceAll("USER_EMAIL", user.getEmail());
+        }
+        return body;
+    }
+
+    public String replaceBackwardsCompatibleEmailInconsistencies(String body) {
+        body = body.replaceAll("a href=\\\\", "a href=");
+        body = body.replaceAll("\\\\\">", "\">");
+        body = body.replaceAll("\\\\n", "");
+        body = body.replaceAll("\\\\r", "");
+        return body;
     }
 
     @NrgPreference(defaultValue = USER_REG_EMAIL)

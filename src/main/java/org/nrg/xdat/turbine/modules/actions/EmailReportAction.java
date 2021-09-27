@@ -112,17 +112,13 @@ public class EmailReportAction extends EmailAction {
                 UserI user = TurbineUtils.getUser(data);
 
                 String body = XDAT.getNotificationsPreferences().getEmailMessageDataAlertCustom();
-                body = body.replaceAll("USER_FIRSTNAME", user.getFirstname());
-                body = body.replaceAll("USER_LASTNAME", user.getLastname());
-                body = body.replaceAll("SITE_NAME", TurbineUtils.GetSystemName());
+                body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
                 String requestLink = TurbineUtils.GetFullServerPath() + "/app/action/DisplaySearchAction" + "/search_element/" + TurbineUtils.GetPassedParameter("search_element", data) +
                         "/search_field/" + TurbineUtils.GetPassedParameter("search_field",data) + "/search_value/" + TurbineUtils.GetPassedParameter("search_value", data);
                 String requestLinkFull = "<a href=\"" + requestLink + "\">this link</a>";
 
                 body = body.replaceAll("REQUEST_LINK", requestLinkFull);
                 body = body.replaceAll("SENDER_MESSAGE", (String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data));
-                String siteLink = "<a href=\"" + TurbineUtils.GetFullServerPath() + "\">" + TurbineUtils.GetSystemName() + "</a>";
-                body = body.replaceAll("SITE_URL", siteLink);
                 Date date = Calendar.getInstance().getTime();
                 String dateString = TurbineUtils.GetInstance().formatDateTime(date);
                 body = body.replaceAll("TIME_SENT", dateString);

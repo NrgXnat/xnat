@@ -115,9 +115,8 @@ public class ModifyEmail extends ModifyAction {
                 try {
                     if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
                         String body = XDAT.getNotificationsPreferences().getEmailMessageEmailAddressChangeRequest();
-                        body = body.replaceAll("USER_USERNAME", user.getUsername());
+                        body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
                         body = body.replaceAll("NEW_EMAIL", newEmail);
-                        body = body.replaceAll("ADMIN_EMAIL", preferences.getAdminEmail());
                         AdminUtils.sendUserHTMLEmail("Email Change Request Submitted",body, false, new String[]{existing.getEmail()});
                     }
                 } catch (MailException e) {
@@ -127,7 +126,7 @@ public class ModifyEmail extends ModifyAction {
                 try {
                     if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
                         String body = XDAT.getNotificationsPreferences().getEmailMessageVerifyEmailChangeRequest();
-                        body = body.replaceAll("USER_USERNAME", user.getUsername());
+                        body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
                         String link = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?confirmationToken=" + guid;
 
                         String changeEmailLink = "<a href=\"" + link + "\">this link</a>";

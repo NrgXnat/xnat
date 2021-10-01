@@ -1,13 +1,15 @@
 package org.nrg.framework.utilities;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for the {@link StreamUtils} utility methods.
@@ -56,6 +58,29 @@ public class StreamUtilsTest {
         assertThat(matching).isNotNull().isNotEmpty().contains("A", "B", "C");
     }
 
+    @Test
+    public void testCleanPartition() {
+        final List<String>       collection  = IntStream.range(0, 10000).boxed().map(index -> RandomStringUtils.randomAscii(10)).collect(Collectors.toList());
+        final List<List<String>> partitioned = StreamUtils.partition(collection, 1000);
+        assertThat(partitioned).isNotNull().isNotEmpty().hasSize(10);
+        final AtomicInteger index = new AtomicInteger();
+        for (final List<String> partition : partitioned) {
+            assertThat(partition).isNotNull().isNotEmpty().containsExactlyElementsOf(collection.subList(index.getAndAdd(1000), index.get()));
+        }
+    }
+
+    @Test
+    public void testOddPartition() {
+        final List<String>       collection  = IntStream.range(0, 9457).boxed().map(index -> RandomStringUtils.randomAscii(10)).collect(Collectors.toList());
+        final List<List<String>> partitioned = StreamUtils.partition(collection, 1000);
+        assertThat(partitioned).isNotNull().isNotEmpty().hasSize(10);
+        final AtomicInteger index = new AtomicInteger();
+        for (final List<String> partition : partitioned) {
+            assertThat(partition).isNotNull().isNotEmpty().containsExactlyElementsOf(collection.subList(index.getAndAdd(partition.size()), index.get()));
+        }
+    }
+
+    private static final Random              RANDOM             = new Random();
     private static final List<String>        STRING_LIST        = Arrays.asList("A", "B", "C", "D", "E");
     private static final Iterator<String>    STRING_ITERATOR    = STRING_LIST.iterator();
     private static final Enumeration<String> STRING_ENUMERATION = Collections.enumeration(STRING_LIST);

@@ -16,6 +16,7 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.framework.utilities.RepeatingString;
+import org.nrg.framework.utilities.StreamUtils;
 import org.springframework.core.env.*;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -24,9 +25,12 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.nrg.framework.beans.XnatDataModelBean.PLUGIN_DATA_MODEL_PREFIX;
 
 public class Beans {
     public static <T> T getInitializedBean(final Properties properties, final Class<? extends T> clazz) throws InstantiationException, IllegalAccessException, InvocationTargetException {
@@ -223,6 +227,22 @@ public class Beans {
         return getNamespacedPropertiesMap(properties, null, 1, true, true);
     }
 
+    public static List<XnatDataModelBean> getXnatDataModelBeansFromProperties(final Properties properties) {
+        final Map<String, Properties> collected = new HashMap<>();
+        properties.stringPropertyNames()
+                  .stream()
+                  .filter(DATA_MODEL_PROPERTY_PREDICATE)
+                  .forEach(property -> {
+                      final String[] atoms    = property.split("\\.", 4);
+                      final String   dataType = atoms[1] + ":" + atoms[2];
+                      if (!collected.containsKey(dataType)) {
+                          collected.put(dataType, new Properties());
+                      }
+                      collected.get(dataType).setProperty(atoms[3], properties.getProperty(property));
+                  });
+        return collected.keySet().stream().map(type -> new XnatDataModelBean(type, collected.get(type))).collect(Collectors.toList());
+    }
+
     private static Properties getMatchingProperties(final PropertySource<?> propertySource, final String regex) {
         return new Properties() {{
             if (propertySource instanceof CompositePropertySource) {
@@ -245,6 +265,7 @@ public class Beans {
         return String.format(EXTRACT_NAMESPACE_PATTERN, StringUtils.join(new RepeatingString(NAMESPACE_PATTERN, count), "\\."));
     }
 
-    private static final String EXTRACT_NAMESPACE_PATTERN = "^(?<namespace>%s)(\\.|=).*$";
-    private static final String NAMESPACE_PATTERN         = "[^.]+";
+    private static final Predicate<String> DATA_MODEL_PROPERTY_PREDICATE = StreamUtils.predicateFromPatterns(Collections.singletonList(Pattern.compile("^" + StringUtils.replace(PLUGIN_DATA_MODEL_PREFIX, ".", "\\.") + ".*$")));
+    private static final String            EXTRACT_NAMESPACE_PATTERN     = "^(?<namespace>%s)(\\.|=).*$";
+    private static final String            NAMESPACE_PATTERN             = "[^.]+";
 }

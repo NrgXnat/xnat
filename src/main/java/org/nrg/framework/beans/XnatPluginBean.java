@@ -9,9 +9,6 @@
 
 package org.nrg.framework.beans;
 
-import static org.nrg.framework.annotations.XnatPlugin.*;
-import static org.nrg.framework.beans.XnatDataModelBean.PLUGIN_DATA_MODEL_PREFIX;
-
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
@@ -22,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XnatDataModel;
 import org.nrg.framework.annotations.XnatPlugin;
-import org.nrg.framework.utilities.StreamUtils;
 
 import javax.annotation.Nonnull;
 import javax.lang.model.element.TypeElement;
@@ -30,9 +26,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.nrg.framework.annotations.XnatPlugin.*;
+import static org.nrg.framework.beans.Beans.getXnatDataModelBeansFromProperties;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 @Getter
@@ -83,17 +80,17 @@ public class XnatPluginBean {
     }
 
     public XnatPluginBean(final String pluginClass, final String id, final String namespace, final String name, final String version, final String description, final String beanName, final List<String> entityPackages, final String logConfigurationFile, final List<XnatDataModelBean> dataModelBeans) {
-        _id = id;
-        _name = name;
-        _version = version;
-        _pluginClass = pluginClass;
-        _namespace = StringUtils.defaultIfBlank(namespace, null);
-        _description = StringUtils.defaultIfBlank(description, null);
-        _beanName = StringUtils.defaultIfBlank(beanName, getBeanName(pluginClass));
-        _entityPackages = entityPackages != null ? ImmutableList.copyOf(entityPackages) : Collections.emptyList();
+        _id                   = id;
+        _name                 = name;
+        _version              = version;
+        _pluginClass          = pluginClass;
+        _namespace            = StringUtils.defaultIfBlank(namespace, null);
+        _description          = StringUtils.defaultIfBlank(description, null);
+        _beanName             = StringUtils.defaultIfBlank(beanName, getBeanName(pluginClass));
+        _entityPackages       = entityPackages != null ? ImmutableList.copyOf(entityPackages) : Collections.emptyList();
         _logConfigurationFile = StringUtils.defaultIfBlank(logConfigurationFile, null);
-        _dataModelBeans = ImmutableList.copyOf(dataModelBeans);
-        _extendedAttributes = ArrayListMultimap.create();
+        _dataModelBeans       = ImmutableList.copyOf(dataModelBeans);
+        _extendedAttributes   = ArrayListMultimap.create();
     }
 
     public static List<XnatDataModelBean> convertDataModelsToBeans(final XnatDataModel[] models) {
@@ -105,7 +102,7 @@ public class XnatPluginBean {
     }
 
     /**
-     * Gets all of the available extended attributes. Extended attributes aren't set by the plugin directly but can be
+     * Gets all the available extended attributes. Extended attributes aren't set by the plugin directly but can be
      * used by other applications to configure information about a plugin that might be relevant to consumers of the
      * plugin metadata.
      *
@@ -235,18 +232,6 @@ public class XnatPluginBean {
         }
         return Arrays.asList(entityPackages.split("\\s*,\\s*"));
     }
-
-    private static List<XnatDataModelBean> getXnatDataModelBeansFromProperties(final Properties properties) {
-        return properties.stringPropertyNames()
-                         .stream()
-                         .filter(DATA_MODEL_PROPERTY_PREDICATE)
-                         .map(property -> {
-                             final String[] atoms = property.split("\\.", 4);
-                             return new XnatDataModelBean(atoms[1] + ":" + atoms[2], properties);
-                         }).collect(Collectors.toList());
-    }
-
-    private static final Predicate<String> DATA_MODEL_PROPERTY_PREDICATE = StreamUtils.predicateFromPatterns(Collections.singletonList(Pattern.compile("^" + StringUtils.replace(PLUGIN_DATA_MODEL_PREFIX, ".", "\\.") + ".*$")));
 
     private final String                            _pluginClass;
     private final String                            _id;

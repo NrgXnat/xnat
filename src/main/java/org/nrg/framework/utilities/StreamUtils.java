@@ -3,6 +3,7 @@ package org.nrg.framework.utilities;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -153,6 +154,35 @@ public class StreamUtils {
     public static <K, V> Map<K, V> retainByPattern(final Map<K, V> map, final String... patterns) {
         final Predicate<String> predicate = predicateFromRegexes(Arrays.asList(patterns));
         return reduceMapByKey(map, entry -> predicate.test(entry.getKey().toString()));
+    }
+
+    /**
+     * Partitions the given list into lists with the indicated page size. If the size of the incoming list
+     * doesn't divide evenly by the page size, the last list contains whatever number is left over.
+     *
+     * @param list     The list to be partitioned
+     * @param pageSize The size of the page for each partition
+     * @param <T>      The type of the list to be partitioned
+     *
+     * @return A list of lists containing the partitioned items
+     */
+    public static <T> List<List<T>> partition(final List<T> list, final int pageSize) {
+        // TODO: This would be awesome to have as a Collector<T, ?, List<List<T>>>, but that's not straightforward.
+        if (pageSize >= list.size()) {
+            return Collections.singletonList(list);
+        }
+
+        final List<List<T>> partitioned = new ArrayList<>();
+        final int           remainder   = list.size() % pageSize;
+        final int           limit       = list.size() - remainder;
+        final AtomicInteger index       = new AtomicInteger();
+        while (index.get() < limit) {
+            partitioned.add(list.subList(index.getAndAdd(pageSize), index.get()));
+        }
+        if (remainder > 0) {
+            partitioned.add(list.subList(index.get(), list.size()));
+        }
+        return partitioned;
     }
 
     private static <K, V> Map<K, V> reduceMapByKey(final Map<K, V> map, final Predicate<Map.Entry<K, V>> predicate) {

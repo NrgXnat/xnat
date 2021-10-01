@@ -1,16 +1,16 @@
 package org.nrg.framework.beans;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.nrg.framework.beans.Beans.getXnatDataModelBeansFromProperties;
 
 public class TestBeansUtils {
     @Before
@@ -79,21 +79,29 @@ public class TestBeansUtils {
         _fullLog4jProperties.clear();
         _fullLog4jProperties.load(BasicXnatResourceLocator.getResource("classpath:/org/nrg/framework/beans/full-log4j.properties").getInputStream());
 
-        final Map<String, Properties> log4j = Beans.getNamespacedPropertiesMap(_fullLog4jProperties, "log4j");
-        final Properties loggers = log4j.get("category");
+        final Map<String, Properties> log4j   = Beans.getNamespacedPropertiesMap(_fullLog4jProperties, "log4j");
+        final Properties              loggers = log4j.get("category");
         loggers.putAll(log4j.get("logger"));
-        final Properties additivity = log4j.get("additivity");
-        final Map<String, Properties> appenders = Beans.getNamespacedPropertiesMap(log4j.get("appender"));
         assertThat(log4j).isNotNull().isNotEmpty();
     }
 
+    @Test
+    public void testXnatDataModelBeansFromProperties() {
+        final Properties properties = new Properties();
+        IntStream.range(1, 4).forEach(prefixIndex -> IntStream.range(1, 4).forEach(typeIndex -> {
+            final String prefix = "dataModel.prefix" + prefixIndex + ".dataType" + typeIndex + ".";
+            final String index = "" + prefixIndex + typeIndex;
+            properties.setProperty(prefix + "secured", "true");
+            properties.setProperty(prefix + "singular", "Type " + index);
+            properties.setProperty(prefix + "plural", "Type " + index + "s");
+            properties.setProperty(prefix + "code", "T" + index);
+        }));
+        final List<XnatDataModelBean> beans = getXnatDataModelBeansFromProperties(properties);
+        assertThat(beans).isNotNull().isNotEmpty().hasSize(9);
+    }
+
     private String[] prefixed(final String prefix, final String[] subkeys) {
-        return Lists.transform(Arrays.asList(subkeys), new Function<String, String>() {
-            @Override
-            public String apply(final String subkey) {
-                return prefix + "." + subkey;
-            }
-        }).toArray(new String[0]);
+        return Arrays.stream(subkeys).map(subkey -> prefix + "." + subkey).toArray(String[]::new);
     }
 
     private static final String[] SUBKEYS = new String[]{"one.first", "one.second", "one.third", "two.first", "two.second", "two.third", "three.first", "three.second", "three.third"};

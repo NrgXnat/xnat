@@ -748,6 +748,13 @@ notifications:
     method: POST
     contentType: json
     contents:
+        notificationsDocumentationNote:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    For help with system notifications, see <a href="https://wiki.xnat.org/documentation/xnat-administration/notifications-and-alerts-in-xnat">Notifications and Alerts in XNAT.</a>
         helpContactInfo:
             kind: panel.input.email
             label: "Help Contact Info"
@@ -762,280 +769,98 @@ notifications:
             kind: panel.textarea
             label: "User Registration"
             code: html
-            description: |
-                Text of message emailed to users upon registration. Link for email validation is auto-populated.
-                USER_FIRSTNAME- The first name of the user who will be sent the message.
-                USER_LASTNAME- The last name of the user who will be sent the message.
-                SITE_NAME- The name of the xnat site.
-                SITE_URL- The URL of the xnat site.
-                USER_USERNAME- The username of the new user.
-                ADMIN_EMAIL- The email for the xnat site admin.
         emailMessageForgotUsernameRequest:
             kind: panel.textarea
             label: "Forgot Username Request"
             code: html
-            description: |
-                Text of message emailed to users upon lost username request.
-                USER_USERNAME- the requested username
-                SITE_URL- The URL of the xnat site.
         emailMessageForgotPasswordReset:
             kind: panel.textarea
             label: "Password Reset"
             code: html
-            description: |
-                Text of message emailed to users upon lost password reset. Link for password reset is auto-populated.
-                USER_FIRSTNAME - the first name of the user receiving the password reset.
-                USER_LASTNAME - the last name of the user receiving the password reset.
-                RESET_URL - the URL used to reset the password
         emailMessageNewUserVerification:
             kind: panel.textarea
             label: "New User Verification"
             code: html
-            description: |
-                Text of the message emailed to users to verify a new user account.
-                USER_FIRSTNAME - The new user's first name.
-                USER_LASTNAME - The new user's last name.
-                VERIFY_URL - the URL used to verify the new account.
-                FORGOT_LOGIN_URL - the URL used if the user has forgotten their login information.
         emailMessageProjectRequestAccess:
             kind: panel.textarea
             label: "Project Access Request"
             code: html
-            description: |
-                Text of the message sent out when a user requests access to a project.
-                PROJECT_NAME - the name of the project the user is attempting to access.
-                SITE_NAME - the name of the xnat site.
-                RQ_ACCESS_LEVEL - the level of access (member, collaborator, etc.) that is being requested.
-                LIST_PERMISSIONS - the permissions associated with the level requested.
-                USER_USERNAME - the username of the requesting user.
-                USER_EMAIL - the email of the requesting user.
-                USER_FIRSTNAME - the first name of the requesting user.
-                USER_LASTNAME - the last name of the requesting user.
-                RQA_COMMENTS - the comments that the user attached to their request.
-                ACCESS_URL - the URL used to respond to the access request.
-                SITE_URL- The URL of the xnat site.
-                ADMIN_MAIL - the email address used to contact the site admin.
         emailMessageProjectAccessApproval:
             kind: panel.textarea
             label: "Project Access Approval"
             code: html
-            description: |
-                Text of the message sent out when a user's project access is approved.
-                PROJECT_NAME - the name of the project.
-                RQ_ACCESS_LEVEL - the level of access (member, collaborator, etc.) that is being granted.
-                ACCESS_URL - the URL used to access the project.
-                SITE_URL- The URL of the xnat site.
-                SITE_NAME - the name of the xnat site.
-                ADMIN_MAIL - the email address used to contact the site admin.
         emailMessageProjectAccessDenial:
             kind: panel.textarea
             label: "Project Access Denial"
             code: html
-            description: |
-                Text of the message sent out when a user's project access is denied.
-                PROJECT_NAME - the name of the project for which access was requested.
-                USER_EMAIL - the email of the project manager.
-                SITE_URL- The URL of the xnat site.
-                SITE_NAME - the name of the xnat site.
-                ADMIN_MAIL - the email address used to contact the site admin.
         emailMessageInviteProjectAccess:
             kind: panel.textarea
             label: "Project Access Invitation"
             code: html
-            description: |
-                Text of the email sent out when a user is invited to join a project.
-                PROJECT_NAME - the name of the project.
-                USER_FIRSTNAME - the first name of the user extending the invitation.
-                USER_LASTNAME - the last name of the user extending the invitation.
-                ACCEPT_URL - the URL to be used to accept the invitation to join the project.
-                SITE_URL- The URL of the xnat site.
-                SITE_NAME - the name of the xnat site.
-                ADMIN_MAIL - the email address used to contact the site admin.
         emailMessageDisabledUserVerification:
             kind: panel.textarea
             label: "Disabled User Verification"
             code: html
-            description: |
-                Text of the message sent out when a previously disabled user account is verified and reactivated.
-                DATE_INPUT - the date on which the user was re-verified.
-                SITE_NAME - the name of the xnat site.
-                SITE_URL- The URL of the xnat site.
-                USER_USERNAME - the username of the re-verified user.
-                USER_FIRSTNAME - the first name of the re-verified user.
-                USER_LASTNAME - the last name of the re-verified user.
-                LOGIN_URL - the login page for the XNAT site.
-                USER_LOGIN - the login data for the re-verified user.
         emailMessageErrorMessage:
             kind: panel.textarea
             label: "Error Occurred"
             code: html
-            description: |
-                Text of the message sent out when an error has occurred within the system.
-                SITE_URL- the URL of the xnat site.
-                USER_LOGIN - the login information for the user associated with the error.
-                USER_FIRSTNAME - the first name of the associated with the error.
-                USER_LASTNAME - the last name of the associated with the error.
-                ERROR_TIME - the time of the error.
-                ERROR_MESSAGE - the error message.
         emailMessageNewUserNotification:
             kind: panel.textarea
             label: "New User Notification"
             code: html
-            description: |
-                Text of the message sent out when a new user account registration has been created.
-                TIME - the time of user creation.
-                SITE_NAME - the name of the xnat site.
-                SITE_URL - the URL of the xnat site.
-                USER_USERNAME - the username of the new user.
-                USER_FIRSTNAME - the first name of the new user.
-                USER_LASTNAME - the last name of the new user.
-                USER_PHONE - the phone number of the new user.
-                LAB_NAME - the name of the lab the new user is under.
-                USER_EMAIL - the email address of the new user.
-                PROJECT_ACCESS_REQUESTS - the projects the new user has access requests for.
-                REVIEW_LINK - the link used to accept or deny the request.
-                USER_COMMENTS - the comments provided to the new user by the administrator.
         emailMessageNewUserRequest:
             kind: panel.textarea
             label: "New User Request"
             code: html
-            description: |
-                Text of the message sent out when a new user account is created but has not yet been enabled.
-                TIME - the time of user creation.
-                SITE_NAME - the name of the xnat site.
-                SITE_URL - the URL of the xnat site.
-                USER_USERNAME - the username of the new user.
-                USER_FIRSTNAME - the first name of the new user.
-                USER_LASTNAME - the last name of the new user.
-                USER_PHONE - the phone number of the new user.
-                LAB_NAME - the name of the lab the new user is under.
-                USER_EMAIL - the email address of the new user.
-                PROJECT_ACCESS_REQUESTS - the projects the new user has access requests for.
-                REVIEW_LINK - the link used to accept or deny the request.
-                USER_COMMENTS - the comments provided to the new user by the administrator.
         emailMessagePipelineDefaultSuccess:
             kind: panel.textarea
             label: "Pipeline Success"
             code: html
-            description: |
-                Text of the message sent out when an experiment pipeline has completed successfully without errors.
-                USER_FIRSTNAME - the first name of the contacted user.
-                USER_LASTNAME - the last name of the contacted user.
-                PIPELINE_NAME - the name of the pipeline.
-                EXPERIMENT_NAME - the name of the experiment on which the pipeline ran.
-                SUCCESS_URL - link for details on the pipeline run.
-                SITE_NAME - the name of the xnat site.
         emailMessagePipelineDefaultFailure:
             kind: panel.textarea
             label: "Pipeline Failure"
             code: html
-            description: |
-                Text of the message sent out when an experiment pipeline fails before completion due to error.
-                PIPELINE_NAME - the name of the pipeline.
-                PROJECT_NAME - the name of the project in which the pipeline failed.
-                EXPERIMENT_NAME - the name of the experiment on which the pipeline failed.
-                PIPELINE_STEP - the step at which the pipeline failed.
-                SITE_NAME - the name of the xnat site.
-                CONTACT_EMAIL - the email at which a user can contact the site team for help.
-                ATTACHMENTS_STATEMENT - other information about the pipeline failures if applicable.
-                STDOUT - the stdout of the pipeline error.
-                STDERR - the stderr of the pipeline error.
         emailMessagePipelineAutorunSuccess:
             kind: panel.textarea
             label: "Pipeline Autorun Success"
             code: html
-            description: |
-                Text of the message sent out when an automated pipeline is run successfully and a session is archived in the system.
-                USER_FIRSTNAME - the first name of the contacted user.
-                USER_LASTNAME - the last name of the contacted user.
-                SITE_NAME - the name of the xnat site.
-                PROJECT_NAME - the name of the project in which the pipeline ran.
-                SUBJECT_NAME - the name of the subject on which the pipeline ran.
-                EXPERIMENT_NAME - the name of the experiment on which the pipeline ran.
-                SUCCESS_URL - link for details on the pipeline run.
         emailMessageBatchWorkflowComplete:
             kind: panel.textarea
             label: "Batch Transfer Complete"
             code: html
-            description: |
-                Text of the message when a batch data transfer to the archive has been successfully completed.
-                USER_FIRSTNAME - the first name of the contacted user.
-                USER_LASTNAME - the last name of the contacted user.
-                PROCESS_NAME - the name of the process that has been completed.
-                NUMBER_MESSAGES - number of messages transfered.
-                MESSAGES_LIST - list of transfered messages.
-                ERRORS_LIST - list of any errors that occurred during the transfer.
-                SITE_URL- The URL of the xnat site.
-                SITE_NAME - the name of the xnat site.
-                ADMIN_MAIL - the email address used to contact the site admin.
         emailMessageUnauthorizedDataAttempt:
             kind: panel.textarea
             label: "Unauthorized Data Attempt"
             code: html
-            description: |
-                Text of the message sent when one of several types of unauthorized data or login access attempts are recognized by the system.
-                TYPE - the type of data attempt.
-                USER_DETAILS - the details on the user who attempted to access the data (if known and applicable)
         emailMessageEmailAddressChangeRequest:
             kind: panel.textarea
             label: "Email Change Request"
             code: html
-            description: |
-                Text of the message sent to alert a user that someone has requested to change the email for the account associated with that email address.
-                USER_USERNAME - the username of the account.
-                NEW_EMAIL - the new email for the account.
-                ADMIN_EMAIL - the email of the site admin.
         emailMessageVerifyEmailChangeRequest:
             kind: panel.textarea
             label: "Verify Email Change Request"
             code: html
-            description: |
-                Text of the message sent to a new email address for a user to verify the change made to the account's associated email.
-                USER_USERNAME - the username of the account.
-                CHANGE_EMAIL_LINK - the link to change the email address.
         emailMessageAddressChanged:
             kind: panel.textarea
             label: "Email Address Successfully Changed"
             code: html
-            description: |
-                Text of the message sent to both the former and new email address associated with an account to alert the user that the email has successfully been changed.
-                NEW_EMAIL - the new email address for the account.
         emailMessageSystemPathError:
             kind: panel.textarea
             label: "System Path Error"
             code: html
-            description: |
-                Text of the message sent when XNAT is unable to find the filesystem (e.g,, archive, build, prearchive directories).
-                ERRORS_LIST - a list of the errors that have been found.
         emailMessageUploadByReferenceSuccess:
             kind: panel.textarea
             label: "Upload By Reference Success"
             code: html
-            description: |
-                Text of the message sent when a user has uploaded a file or files to the system by reference.
-                USER_USERNAME - the user who requested the upload.
-                DUPLICATES_LIST - a list of the duplicate files (if applicable).
         emailMessageUploadByReferenceFailure:
             kind: panel.textarea
             label: "Upload By Reference Failure"
             code: html
-            description: |
-                Text of the message sent when a user has attempted to upload a file or files to the system by reference but the process failed.
-                USER_USERNAME - the user who requested the upload.
         emailMessageDataAlertCustom:
             kind: panel.textarea
             label: "Data Alert Custom Email"
             code: html
-            description: |
-                Text of the message sent out by from one user to another to alert them of possibly useful data.
-                USER_FIRSTNAME - the first name of the user who initated the message.
-                USER_LASTNAME- the last name of the user who initated the message.
-                SITE_NAME - the name of the xnat site.
-                REQUEST_LINK - the link the user can follow to view the data.
-                SENDER_MESSAGE - the message sent by the user alongside the data alert.
-                SITE_URL- the URL of the xnat site.
-                TIME_SENT - the time at which the information was sent.
-                HELP_CONTACT - email address at which help can be reached.
 
         #        notifyAdminSubhead:
         #            kind: panel.subhead

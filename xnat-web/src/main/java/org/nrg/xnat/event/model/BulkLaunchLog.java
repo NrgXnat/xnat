@@ -139,7 +139,7 @@ public class BulkLaunchLog {
     }
 
     @JsonInclude
-    private static class WorkflowLog {
+    public static class WorkflowLog {
         private Integer id;
         private String itemId;
         private String status;

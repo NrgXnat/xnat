@@ -149,7 +149,7 @@ dd.valMessage 	{	width:630px;	}
 		}
 		let trs = '';
 		for (let i = 0; i < resources.length; i++) {
-			trs += '<tr id="resourceTR"' + resources[i] + '>' +
+			trs += '<tr id="resourceTR' + resources[i] + '">' +
 				'<td>' + resources[i] + '</td>' +
 				'<td nowrap>' +
 					'<select class="resourceActionSelect" data-resource-id="' + resources[i]+ '">' +
@@ -162,11 +162,11 @@ dd.valMessage 	{	width:630px;	}
 			'</tr>';
 		}
 
-		const resTable = $('<br><hr><div class="edit_header1" style="margin-bottom:16px">Resources</div>' +
+		const resTable = $('<div class="resources-table"><br><hr><div class="edit_header1" style="margin-bottom:16px">Resources</div>' +
 			'<table>' +
 				'<tr><th>Label</th><th></th><th></th></tr>' +
 				trs +
-			'</table>');
+			'</table></div>');
 
 		$('#scan_tbody').parents('table').after(resTable);
 	});

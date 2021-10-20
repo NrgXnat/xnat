@@ -677,6 +677,8 @@ public abstract class SecureResource extends Resource {
             mt = MediaType.TEXT_HTML;
         } else if (fName.endsWith(".svg")) {
             mt = MediaType.IMAGE_SVG;
+        } else if (fName.endsWith(".pdf")) {
+            mt = MediaType.APPLICATION_PDF;
         } else {
             if ((mt != null && mt.equals(MediaType.TEXT_XML)) && !fName.endsWith(".xml")) {
                 mt = MediaType.ALL;

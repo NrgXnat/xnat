@@ -479,16 +479,22 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 c = workflow.buildEvent();
 
                 if (existing != null) {
+                    PersistentWorkflowUtils.save(workflow, workflow.buildEvent());
                     if (!StringUtils.equals(existing.getUid(), src.getUid())) {
                         workflow2 = PersistentWorkflowUtils.buildOpenWorkflow(user, existing.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getType((String) params.get(EventUtils.EVENT_TYPE), EventUtils.TYPE.WEB_SERVICE), MERGED_UID, justification, (String) params.get(EventUtils.EVENT_COMMENT)));
-                        assert workflow2 != null;
+                        if (workflow2 == null) {
+                            throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Unable to create workflow");
+                        }
                         workflow2.setStepDescription("Validating");
+                        PersistentWorkflowUtils.save(workflow2, workflow2.buildEvent());
                     }
                 }
             } catch (JustificationAbsent e2) {
                 throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, e2);
             } catch (EventRequirementAbsent e2) {
                 throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, e2);
+            } catch (Exception e2) {
+                throw new ServerException(Status.SERVER_ERROR_INTERNAL, e2);
             }
 
             try {

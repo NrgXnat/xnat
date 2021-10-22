@@ -12,32 +12,23 @@
  */
 package org.nrg.xnat.restlet.resources.prearchive;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.xdat.bean.XnatImagescandataBean;
-import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.model.XnatAbstractresourceI;
-import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.utils.FileUtils;
-import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
-import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.restlet.Context;
-import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
-import org.xml.sax.SAXException;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -85,33 +76,22 @@ public class PrearcSessionResourceCatalog extends PrearcSessionResourceA {
 
 			if (resource == null){
 				throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "Unknown resource " + resourceId, new Exception());
-			} else {
-				File resDir = new File(new File(info.sessionDIR,"RESOURCES"), resourceId);
-				if (!resDir.exists()){
-					throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "Unknown resource " + resourceId, new Exception());
-				} else {
-					try {
-						FileUtils.MoveToCache(resDir);
-					} catch (Exception e) {
-						logger.error("",e);
-						PrearcUtils.log(project,timestamp,session, e);
-						throw new ServerException(Status.SERVER_ERROR_INTERNAL,"Failed to delete files.",e);
-					}
-
-					info.session.setResources_resource((ArrayList) resources);
-
-					try (FileWriter fw = new FileWriter(info.sessionXML)) {
-						info.session.toXML(fw);
-
-						PrearcUtils.log(project, timestamp, session, new Exception("Deleted resource " + resourceId));
-						this.getResponse().setStatus(Status.SUCCESS_OK);
-					} catch (Exception e) {
-						logger.error("Failed to update session xml", e);
-						PrearcUtils.log(project, timestamp, session, e);
-						throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Failed to update session xml.", e);
-					}
-				}
 			}
+
+			File resDir = new File(new File(info.sessionDIR,"RESOURCES"), resourceId);
+			if (!resDir.exists()){
+				throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No resource " + resourceId, new Exception());
+			}
+
+			try {
+				FileUtils.deleteDirectory(resDir);
+			} catch (Exception e) {
+				logger.error("",e);
+				PrearcUtils.log(project,timestamp,session, e);
+				throw new ServerException(Status.SERVER_ERROR_INTERNAL,"Failed to delete files.",e);
+			}
+			saveSessionBean(info);
+			PrearcUtils.log(project, timestamp, session, new Exception("Deleted resource " + resourceId));
 		} catch (ActionException e) {
 			setResponseStatus(e);
 		}

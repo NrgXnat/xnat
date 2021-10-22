@@ -28,6 +28,7 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
 import java.io.File;
+import java.io.FileWriter;
 
 public abstract class PrearcSessionResourceA extends SecureResource {
 	static Logger logger = Logger.getLogger(PrearcSessionResourceA.class);
@@ -89,6 +90,17 @@ public abstract class PrearcSessionResourceA extends SecureResource {
 		} catch (Exception e) {
 			logger.error("",e);
 			throw new ServerException(e);
+		}
+	}
+
+	protected void saveSessionBean(PrearcInfo info) throws ServerException {
+		try (FileWriter fw = new FileWriter(info.sessionXML)) {
+			info.session.toXML(fw);
+			this.getResponse().setStatus(Status.SUCCESS_OK);
+		} catch (Exception e) {
+			logger.error("Failed to update session xml", e);
+			PrearcUtils.log(project, timestamp, session, e);
+			throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Failed to update session xml.", e);
 		}
 	}
 

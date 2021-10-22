@@ -14,25 +14,16 @@ package org.nrg.xnat.restlet.resources.prearchive;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.io.FileUtils;
 import org.nrg.action.ActionException;
+import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.dcm.Dcm2Jpg;
-import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.bean.XnatResourcecatalogBean;
-import org.nrg.xdat.model.CatCatalogI;
-import org.nrg.xdat.model.CatEntryI;
-import org.nrg.xdat.model.XnatImagescandataI;
-import org.nrg.xdat.model.XnatResourcecatalogI;
-import org.nrg.xdat.om.XnatResourcecatalog;
-import org.nrg.xft.XFTItem;
+import org.nrg.xdat.model.*;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
-import org.nrg.xnat.presentation.ChangeSummaryBuilderA;
-import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.Context;
@@ -40,15 +31,11 @@ import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.InputRepresentation;
 import org.restlet.resource.Representation;
-import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,6 +49,8 @@ import java.util.Map;
  *
  */
 public class PrearcSessionResourceCatalogFiles extends PrearcSessionResourceCatalog {
+	private static final Object catalogLock = new Object();
+
 	public PrearcSessionResourceCatalogFiles(Context context, Request request,
                                              Response response) {
 		super(context, request, response);
@@ -71,6 +60,10 @@ public class PrearcSessionResourceCatalogFiles extends PrearcSessionResourceCata
 
 	@Override
 	public boolean allowPut() {
+		return true;
+	}
+	@Override
+	public boolean allowDelete() {
 		return true;
 	}
 
@@ -204,10 +197,68 @@ public class PrearcSessionResourceCatalogFiles extends PrearcSessionResourceCata
 		}
         
 	}
+
+	@Override
+	public void handleDelete() {
+		try {
+			if (StringUtils.isEmpty(filepath)) {
+				throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "No filepath provided for DELETE");
+			}
+
+			final PrearcInfo info = retrieveSessionBean();
+			List<XnatAbstractresourceI> resources = info.session.getResources_resource();
+			XnatResourcecatalogI resource = null;
+			for (XnatAbstractresourceI r : resources){
+				if (StringUtils.equals(r.getLabel(), resourceId) && r instanceof XnatResourcecatalogI){
+					resource = (XnatResourcecatalogI) r;
+					break;
+				}
+			}
+
+			if (resource == null){
+				throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "Unknown resource " + resourceId);
+			}
+
+			// operate on catalog one at a time
+			synchronized (catalogLock) {
+				final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(info.session.getPrearchivepath(), resource, project);
+
+				List<CatEntryI> entries = catalogData.catBean.getEntries_entry();
+				if (entries.size() == 1) {
+					// delete entire resource
+					info.session.getResources_resource().remove(resource);
+					saveSessionBean(info);
+					FileUtils.deleteDirectory(new File(catalogData.catPath));
+					PrearcUtils.log(project, timestamp, session, new Exception("Deleted resource " + resourceId));
+				} else {
+					final CatEntryI entry = CatalogUtils.getEntryByURI(catalogData.catBean, filepath);
+					if (entry == null) {
+						throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No entry for file " + filepath);
+					}
+					File f = CatalogUtils.getFile(entry, catalogData.catPath, project);
+					if (f == null) {
+						throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "No file " + filepath);
+					}
+					Files.delete(f.toPath());
+					catalogData.catBean.getEntries_entry().remove(entry);
+					try {
+						CatalogUtils.writeCatalogToFile(catalogData, false);
+					} catch (Exception e) {
+						throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Unable save updated catalog " + resource.getUri(), e);
+					}
+					PrearcUtils.log(project, timestamp, session, new Exception("Deleted file " + filepath));
+				}
+			}
+		} catch (ActionException e) {
+			setResponseStatus(e);
+		} catch (Exception e) {
+			logger.error("Unable to delete file", e);
+			getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, e.getMessage());
+		}
+	}
 			
     private String constructURI(String resource) {
     	String requestPart = this.getHttpServletRequest().getServletPath() + this.getHttpServletRequest().getPathInfo();
     	return requestPart + "/" + resource;
-    	
     }
 }

@@ -1813,6 +1813,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiHideRegisterLink() {
+        return getBooleanValue("uiHideRegisterLink");
+    }
+
+    public void setUiHideRegisterLink(final boolean uiHideRegisterLink) {
+        try {
+            setBooleanValue(uiHideRegisterLink, "uiHideRegisterLink");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiHideRegisterLink': something is very wrong here.", e);
+        }
+    }
+
     public boolean isComplete() {
         return getMissingInitSettings().size() == 0;
     }

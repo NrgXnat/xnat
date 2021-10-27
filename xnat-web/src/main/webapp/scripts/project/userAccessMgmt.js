@@ -472,7 +472,7 @@ var XNAT = getObject(XNAT || {});
         }
 
         if (newUser && !isEmail) {
-            XNAT.ui.dialog.alert("This username was not found. To invite a new user, please input that user's email address.");
+            XNAT.ui.dialog.alert("This username was not found. " + (XNAT.projectAccess.securityNewUserRegistrationDisabled ? "" : " To invite a new user, please input that user's email address."));
             return false;
         }
 
@@ -497,13 +497,20 @@ var XNAT = getObject(XNAT || {});
             return true;
         }
 
-        if (newUser && isEmail) {
-            XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, hideNotification: true });
-            XNAT.ui.dialog.alert('An email invitation has been sent to <b>'+user+'</b> to register an account with ' + siteName + ' and join your project.');
-            $('#invite_user').val('');
-            XNAT.projectAccess.initPars('project');
-            return true;
-        }
+
+       if (newUser && isEmail) {
+          if(XNAT.projectAccess.securityNewUserRegistrationDisabled){
+              XNAT.ui.dialog.alert('Unable to invite ' + user + '. Inviting unregistered users is not allowed.');
+              return true;
+          }else{
+               XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true, hideNotification: true });
+               XNAT.ui.dialog.alert('An email invitation has been sent to <b>'+user+'</b> to register an account with ' + siteName + ' and join your project.');
+               $('#invite_user').val('');
+               XNAT.projectAccess.initPars('project');
+               return true;
+           }
+       }
+
 
         if (newUser === false) {
             XNAT.projectAccess.setUserAccess(user,group,{ sendEmail: true });

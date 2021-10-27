@@ -44,7 +44,6 @@ import org.restlet.data.*;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
-import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -125,27 +124,11 @@ public class ProjectMemberResource extends SecureResource {
 
     @Override
     public void handlePut() {
-        final HttpServletRequest request = ServletCall.getRequest(getRequest());
         try {
             final UserI user = getUser();
             if (Permissions.canDelete(user, _project)) {
-                if (_unknown.size() > 0) {
-                    //NEW USER
-                    try {
-                        for (String uID : _unknown) {
-                            //SEND email to user
-                            final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, _project.getId(), _project.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.INVITE_USER_TO_PROJECT + " (" + uID + ")"));
-                            try {
-                                ProjectAccessRequest.InviteUser(_project, uID, user, user.getFirstname() + " " + user.getLastname() + " has invited you to join the " + _project.getName() + " " + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase() + ".", _groupId);
-                                WorkflowUtils.complete(wrk, wrk.buildEvent());
-                            } catch (Exception e) {
-                                WorkflowUtils.fail(wrk, wrk.buildEvent());
-                                log.error("", e);
-                            }
-                        }
-                    } catch (Throwable e) {
-                        log.error("", e);
-                    }
+                if(!XDAT.getSiteConfigPreferences().getSecurityNewUserRegistrationDisabled()) {
+                    inviteUnknownUsers(user);
                 }
 
                 if (_users.size() > 0) {
@@ -231,6 +214,26 @@ public class ProjectMemberResource extends SecureResource {
             params.put("totalRecords", table.size());
         }
         return representTable(table, mt, params);
+    }
+
+    private void inviteUnknownUsers(UserI user){
+        if (_unknown.size() > 0) {
+            try {
+                for (String uID : _unknown) {
+                    //SEND email to user
+                    final PersistentWorkflowI wrk = PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, _project.getId(), _project.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.INVITE_USER_TO_PROJECT + " (" + uID + ")"));
+                    try {
+                        ProjectAccessRequest.InviteUser(_project, uID, user, user.getFirstname() + " " + user.getLastname() + " has invited you to join the " + _project.getName() + " " + DisplayManager.GetInstance().getSingularDisplayNameForProject().toLowerCase() + ".", _groupId);
+                        WorkflowUtils.complete(wrk, wrk.buildEvent());
+                    } catch (Exception e) {
+                        WorkflowUtils.fail(wrk, wrk.buildEvent());
+                        log.error("", e);
+                    }
+                }
+            } catch (Throwable e) {
+                log.error("", e);
+            }
+        }
     }
 
     private UserGroupI findGroup(final String projectId, final String groupId) {

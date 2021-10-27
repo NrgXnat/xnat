@@ -19,7 +19,11 @@
 
 <div id="access_controls_container" class="pad10v">
     <div class="inline-thirds" id="user_invite_div" >
-        <h4 id="add_invite_user_header" style="margin-bottom:3px">Add/Invite User</h4>
+        #if($siteConfig.getSecurityNewUserRegistrationDisabled)
+            <h4 id="add_invite_user_header" style="margin-bottom:3px">Add User</h4>
+        #else
+            <h4 id="add_invite_user_header" style="margin-bottom:3px">Add/Invite User</h4>
+        #end
         <p>Enter the username or email address of the user(s) to add. Separate multiple users by spaces or commas.</p>
         <p>
            <textarea name="email" ID="invite_user" style="margin-bottom:3px; height: 2em;"></textarea><br>
@@ -100,6 +104,7 @@
     <script>
         $(document).ready(function(){
             XNAT.projectAccess.initPars('project');
+            XNAT.projectAccess.securityNewUserRegistrationDisabled = ("$!siteConfig.securityNewUserRegistrationDisabled" == "true");
         });
     </script>
 </div>

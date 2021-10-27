@@ -16,6 +16,8 @@ import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
@@ -41,6 +43,13 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
 
     @Override
     public void doPerform(final RunData data, final Context context) throws Exception {
+        SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
+        if(siteConfig.getSecurityNewUserRegistrationDisabled()){
+            data.setMessage("New user registration is not allowed on " + siteConfig.getSiteId());
+            data.setScreenTemplate("Error.vm");
+            return;
+        }
+
         if (!validate(data, context)) {
             return;
         }

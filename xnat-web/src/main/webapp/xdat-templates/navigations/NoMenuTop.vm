@@ -15,7 +15,10 @@ $page.setBgColor($ui.bgcolor)
 	#end
 	#if($user)
         #if(!$siteConfig.requireLogin && $user.isGuest())
-            <span id="user_info">Logged in as: <span style="color:red;">Guest</span> <b>|</b> <a href="$link.setPage("Login.vm")">Login</a> <b>|</b> <a href="$link.setPage("Register.vm")">Register</a></span>
+            <span id="user_info">Logged in as: <span style="color:red;">Guest</span> <b>|</b> <a href="$link.setPage("Login.vm")">Login</a>
+            #if(!$siteConfig.securityNewUserRegistrationDisabled)
+                <b>|</b> <a href="$link.setPage("Register.vm")">Register</a></span>
+            #end
             <script>
                 if (window.isLoginPage) {
                     $('#user_info').hide();

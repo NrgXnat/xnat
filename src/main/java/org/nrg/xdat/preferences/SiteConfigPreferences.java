@@ -1814,15 +1814,15 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "false")
-    public boolean getUiHideRegisterLink() {
-        return getBooleanValue("uiHideRegisterLink");
+    public boolean getSecurityNewUserRegistrationDisabled() {
+        return getBooleanValue("securityNewUserRegistrationDisabled");
     }
 
-    public void setUiHideRegisterLink(final boolean uiHideRegisterLink) {
+    public void setSecurityNewUserRegistrationDisabled(final boolean securityNewUserRegistrationDisabled) {
         try {
-            setBooleanValue(uiHideRegisterLink, "uiHideRegisterLink");
+            setBooleanValue(securityNewUserRegistrationDisabled, "securityNewUserRegistrationDisabled");
         } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'uiHideRegisterLink': something is very wrong here.", e);
+            log.error("Invalid preference name 'securityNewUserRegistrationDisabled': something is very wrong here.", e);
         }
     }
 

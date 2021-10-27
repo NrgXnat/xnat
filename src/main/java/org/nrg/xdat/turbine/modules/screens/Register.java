@@ -13,8 +13,10 @@ import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
+import org.nrg.xft.security.UserI;
 
 public class Register extends VelocitySecureScreen {
 
@@ -28,6 +30,18 @@ public class Register extends VelocitySecureScreen {
 
 	@Override
 	protected void doBuildTemplate(RunData data, Context context) throws Exception {
+		SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
+		if(siteConfig.getSecurityNewUserRegistrationDisabled()){
+			data.setMessage("New user registration is not allowed on " + siteConfig.getSiteId());
+			UserI u = XDAT.getUserDetails();
+			if((u != null && !u.getUsername().equals("guest")) || !siteConfig.getRequireLogin()){
+				data.setScreenTemplate("Index.vm");
+				return;
+			}
+			data.setScreenTemplate("Login.vm");
+			return;
+		}
+
 		for(final Object param : data.getParameters().keySet()){
 			final String paramS= (String)param;
 			if ((!paramS.equalsIgnoreCase("template"))

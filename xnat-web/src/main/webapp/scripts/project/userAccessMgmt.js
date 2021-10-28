@@ -472,7 +472,7 @@ var XNAT = getObject(XNAT || {});
         }
 
         if (newUser && !isEmail) {
-            XNAT.ui.dialog.alert("This username was not found. " + (XNAT.projectAccess.securityNewUserRegistrationDisabled ? "" : " To invite a new user, please input that user's email address."));
+            XNAT.ui.dialog.alert("This username was not found. " + (XNAT.projectAccess.securityExternalUserParDisabled ? "" : " To invite a new user, please input that user's email address."));
             return false;
         }
 
@@ -499,7 +499,7 @@ var XNAT = getObject(XNAT || {});
 
 
        if (newUser && isEmail) {
-          if(XNAT.projectAccess.securityNewUserRegistrationDisabled){
+          if(XNAT.projectAccess.securityExternalUserParDisabled){
               XNAT.ui.dialog.alert('Unable to invite ' + user + '. Inviting unregistered users is not allowed.');
               return true;
           }else{

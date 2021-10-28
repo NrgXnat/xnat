@@ -127,7 +127,7 @@ public class ProjectMemberResource extends SecureResource {
         try {
             final UserI user = getUser();
             if (Permissions.canDelete(user, _project)) {
-                if(!XDAT.getSiteConfigPreferences().getSecurityNewUserRegistrationDisabled()) {
+                if(!XDAT.getSiteConfigPreferences().getSecurityExternalUserParDisabled()) {
                     inviteUnknownUsers(user);
                 }
 

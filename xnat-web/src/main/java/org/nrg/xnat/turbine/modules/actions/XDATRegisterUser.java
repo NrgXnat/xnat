@@ -44,7 +44,9 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
     @Override
     public void doPerform(final RunData data, final Context context) throws Exception {
         SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
-        if(siteConfig.getSecurityNewUserRegistrationDisabled()){
+        boolean isProjectAccessRequest = hasPAR(data);
+        if((isProjectAccessRequest && siteConfig.getSecurityExternalUserParDisabled()) ||
+                !isProjectAccessRequest && siteConfig.getSecurityNewUserRegistrationDisabled() ){
             data.setMessage("New user registration is not allowed on " + siteConfig.getSiteId());
             data.setScreenTemplate("Error.vm");
             return;

@@ -1826,6 +1826,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean getSecurityExternalUserParDisabled() {
+        return getBooleanValue("securityExternalUserParDisabled");
+    }
+
+    public void setSecurityExternalUserParDisabled(final boolean securityExternalUserParDisabled) {
+        try {
+            setBooleanValue(securityExternalUserParDisabled, "securityExternalUserParDisabled");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'securityExternalUserParDisabled': something is very wrong here.", e);
+        }
+    }
+
     public boolean isComplete() {
         return getMissingInitSettings().size() == 0;
     }

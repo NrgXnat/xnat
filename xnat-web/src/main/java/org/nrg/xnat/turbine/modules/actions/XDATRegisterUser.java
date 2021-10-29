@@ -45,11 +45,14 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
     public void doPerform(final RunData data, final Context context) throws Exception {
         SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
         boolean isProjectAccessRequest = hasPAR(data);
-        if((isProjectAccessRequest && siteConfig.getSecurityExternalUserParDisabled()) ||
-                !isProjectAccessRequest && siteConfig.getSecurityNewUserRegistrationDisabled() ){
-            data.setMessage("New user registration is not allowed on " + siteConfig.getSiteId());
-            data.setScreenTemplate("Error.vm");
-            return;
+
+        if( !(this instanceof RegisterExternalLogin) ){  // Don't block ldap account creation.
+            if((isProjectAccessRequest && siteConfig.getSecurityExternalUserParDisabled()) ||
+                    !isProjectAccessRequest && siteConfig.getSecurityNewUserRegistrationDisabled() ){
+                data.setMessage("New user registration is not allowed on " + siteConfig.getSiteId());
+                data.setScreenTemplate("Error.vm");
+                return;
+            }
         }
 
         if (!validate(data, context)) {

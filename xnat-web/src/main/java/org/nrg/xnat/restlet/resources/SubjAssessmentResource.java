@@ -19,6 +19,7 @@ import org.nrg.xdat.model.XnatExperimentdataShareI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
+import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTItem;
@@ -207,6 +208,10 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
                 if (filepath != null && !filepath.equals("")) {
                     if (filepath.startsWith("projects/")) {
+                        if(!Features.checkFeature(user, proj.getId(), "project_sharing")){
+                            this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+                            return;
+                        }
                         String newProjectS = filepath.substring(9);
                         XnatProjectdata newProject = XnatProjectdata.getXnatProjectdatasById(newProjectS, user, false);
                         String newLabel = this.getQueryVariable("label");

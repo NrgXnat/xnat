@@ -16,6 +16,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.XnatProjectparticipantI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
+import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
@@ -108,6 +109,12 @@ public class SubjectResource extends ItemResource {
 
                 if (filepath != null && !filepath.equals("")) {
                     if (filepath.startsWith("projects/")) {
+
+                        if(!Features.checkFeature(user, proj.getId(), "project_sharing")){
+                            this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+                            return;
+                        }
+
                         if (!Permissions.canRead(user,sub)) {
                             this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient privileges for subjects in this project.");
                             return;

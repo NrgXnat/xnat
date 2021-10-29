@@ -13,7 +13,9 @@
                 <DIV id="exptSummary" class="yui-navset">
                     <ul class="yui-nav" style="">
                         <li class="selected"><a href="#tab1"><em>Details<span class="spacer"></span></em></a></li>
-                        <li><a href="#tab2"><em>$displayManager.getPluralDisplayNameForProject()<span class="spacer"></span></em></a></li>
+                        #if($user.checkFeature($om,"project_sharing"))
+                            <li><a href="#tab2"><em>$displayManager.getPluralDisplayNameForProject()<span class="spacer"></span></em></a></li>
+                        #end
                     </ul>
                     <div class="yui-content">
                         <div id="tab1">
@@ -32,10 +34,11 @@
                                 </tr>
                             </table>
                         </div>
-
-                        <div id="tab2">
-                            #parse($turbineUtils.getTemplateName("sharing",$om.getXSIType(),$!project))
-                        </div>
+                        #if($user.checkFeature($om,"project_sharing"))
+                            <div id="tab2">
+                                #parse($turbineUtils.getTemplateName("sharing",$om.getXSIType(),$!project))
+                            </div>
+                        #end
                     </div>
                 </DIV>
             </div>

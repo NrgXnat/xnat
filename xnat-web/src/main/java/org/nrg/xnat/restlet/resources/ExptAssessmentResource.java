@@ -19,6 +19,7 @@ import org.nrg.xdat.om.XnatExperimentdataShare;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
+import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -136,6 +137,12 @@ public class ExptAssessmentResource extends ItemResource {
 
 				if(filepath!=null && !filepath.equals("")){
 					if(filepath.startsWith("projects/")){
+
+						if(!Features.checkFeature(user, proj.getId(), "project_sharing")){
+							this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+							return;
+						}
+
 						if(!Permissions.canRead(user,assessor)){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient privileges for experiments in this project.");
 							return;

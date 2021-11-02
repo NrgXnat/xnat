@@ -155,6 +155,7 @@ obj.categories.ids=[];
     #end
 
 obj.isImageSession=false;
+obj.allowDownload = ("$!user.checkFeature($om,'data_download')" == "true")
 window.viewer=new FileViewer(obj);
 
 function showFiles(){

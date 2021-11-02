@@ -29,6 +29,10 @@ function FileViewer(_obj){
         this.obj.categories["misc"].cats = [];
 	}
 
+	if(this.obj.allowDownload == undefined || this.obj.allowDownload == null){
+	    this.obj.allowDownload = true;
+	}
+
 	this.init=function(refreshCatalog){
 		if(this.loading==0){
 			this.loading=1;
@@ -526,21 +530,56 @@ function FileViewer(_obj){
                     oPushUpdateButton.subscribe("click", this.catalogRefresh, this, true);
 				}
 
-				var dType=document.createElement("select");
-				dType.id="download_type_select";
-				dType.options[0]=new Option("zip","zip",true,true);
-				dType.options[1]=new Option("tar","tar");
-				dType.options[2]=new Option("tar.gz","tar.gz");
-				dType.style.marginRight="10px";
-                dType.style.position="relative";
-                dType.style.top="-7px";
-				fTd2.appendChild(dType);
+                if(this.obj.allowDownload){
+                    var dType=document.createElement("select");
+                    dType.id="download_type_select";
+                    dType.options[0]=new Option("zip","zip",true,true);
+                    dType.options[1]=new Option("tar","tar");
+                    dType.options[2]=new Option("tar.gz","tar.gz");
+                    dType.style.marginRight="10px";
+                    dType.style.position="relative";
+                    dType.style.top="-7px";
+                    fTd2.appendChild(dType);
 
-				var dButton2=document.createElement("input");
-				dButton2.type="button";
-				dButton2.value="Download";
-				fTd2.appendChild(dButton2);
+                    var dButton2=document.createElement("input");
+                    dButton2.type="button";
+                    dButton2.value="Download";
+                    fTd2.appendChild(dButton2);
 
+                    var oPushButtonD2 = new YAHOO.widget.Button(dButton2);
+                    oPushButtonD2.subscribe("click",function(o){
+                        var dType=document.getElementById("download_type_select");
+                        var resources="";
+                        for(var ccC=0;ccC<this.catalogClickers.length;ccC++){
+                            // slightly ridiculous, but the only place to check to see if there are subfiles or not is the label,
+                            // which will fail to have the number of files listed
+                            if(this.catalogClickers[ccC].checked &&
+                                this.catalogClickers[ccC].label.indexOf('&nbsp;&nbsp; files') == -1 &&
+                                this.catalogClickers[ccC].label.indexOf('&nbsp;&nbsp;0 files') == -1) {
+
+                                if(resources!="")resources+=",";
+                                resources+=this.catalogClickers[ccC].xnat_abstractresource_id;
+                            }
+                        }
+                        if(resources==""){
+                            xmodal.message('File Viewer', "No files found.");
+                            return;
+                        }
+                        var destination=this.obj.uri + "/resources/"+resources + "/files?structure=improved&all=true&format="+ dType.options[dType.selectedIndex].value;
+
+                        this.panel.hide();
+                        mySimpleDialog = new YAHOO.widget.SimpleDialog("dlg", {
+                            width: "20em",
+                            fixedcenter:true,
+                            modal:true,
+                            visible:false,
+                            draggable:true });
+                        mySimpleDialog.setHeader("Preparing Download");
+                        mySimpleDialog.setBody("Your download should begin within 30 seconds.  If you encounter technical difficulties, you can restart the download using this <a href='" + destination +"'>link</a>.");
+
+                        window.location=destination;
+                    },this,true);
+                }
 
 				var dButton4=document.createElement("input");
 				dButton4.type="button";
@@ -553,40 +592,6 @@ function FileViewer(_obj){
                     if (window.viewer.requiresRefresh) {
                         window.location.reload();
                     }
-	  		    },this,true);
-
-				var oPushButtonD2 = new YAHOO.widget.Button(dButton2);
-	  		    oPushButtonD2.subscribe("click",function(o){
-	  		    	var dType=document.getElementById("download_type_select");
-	  		    	var resources="";
-	  		    	for(var ccC=0;ccC<this.catalogClickers.length;ccC++){
-                        // slightly ridiculous, but the only place to check to see if there are subfiles or not is the label,
-                        // which will fail to have the number of files listed
-	  		    		if(this.catalogClickers[ccC].checked &&
-                            this.catalogClickers[ccC].label.indexOf('&nbsp;&nbsp; files') == -1 &&
-                            this.catalogClickers[ccC].label.indexOf('&nbsp;&nbsp;0 files') == -1) {
-
-	  		    			if(resources!="")resources+=",";
-	  		    			resources+=this.catalogClickers[ccC].xnat_abstractresource_id;
-	  		    		}
-	  		    	}
-	  		    	if(resources==""){
-                        xmodal.message('File Viewer', "No files found.");
-	  		    		return;
-	  		    	}
-	  		    	var destination=this.obj.uri + "/resources/"+resources + "/files?structure=improved&all=true&format="+ dType.options[dType.selectedIndex].value;
-
-	  		    	this.panel.hide();
-	  		    	mySimpleDialog = new YAHOO.widget.SimpleDialog("dlg", {
-						width: "20em",
-						fixedcenter:true,
-						modal:true,
-	    				visible:false,
-						draggable:true });
-					mySimpleDialog.setHeader("Preparing Download");
-					mySimpleDialog.setBody("Your download should begin within 30 seconds.  If you encounter technical difficulties, you can restart the download using this <a href='" + destination +"'>link</a>.");
-
-	  		    	window.location=destination;
 	  		    },this,true);
 
 				this.panel.setFooter(foot);
@@ -1018,7 +1023,7 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
                     }
                     filename=filename.split(".").join(".&shy;");
                     filename=filename.split("_").join("_&shy;");
-                    var _html="<a target='_blank' onclick=\"location.href='" +serverRoot + file.URI + "';\">" + filename + "</a>";
+                    var _html = window.viewer.obj.allowDownload ? "<a target='_blank' onclick=\"location.href='" +serverRoot + file.URI + "';\">" + filename + "</a>" : filename;
                     if(this.cat.label=="DICOM"){
                         _html +="&nbsp; <a  onclick=\"window.open('" +serverRoot + file.URI + "?format=image/jpeg');return false;\">Image</a>";
 

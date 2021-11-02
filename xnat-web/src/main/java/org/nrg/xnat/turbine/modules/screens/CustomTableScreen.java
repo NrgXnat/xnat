@@ -25,6 +25,7 @@ public abstract class CustomTableScreen extends SecureScreen {
 	@Override
 	protected void doBuildTemplate(RunData data, Context context) throws Exception {
 		XFTTable t=null;
+		storeParameterIfPresent(data, context, "project");
 		
 		//this used to pass objects via the HTTP session, because the standard RunData can't have complex objects in its parameters.
 		//customized the REST based RunData builder to pass the object in a different way.

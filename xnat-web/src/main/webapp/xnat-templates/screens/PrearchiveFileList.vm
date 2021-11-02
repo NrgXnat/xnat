@@ -17,7 +17,11 @@
         #set($lastURL=$content.getURI("$!row.get(2)"))
         <tr class="file-details-row highlight-row">
             <td class="scan-image-link">
+            #if(!$project || $user.checkFeature($project,"data_download"))
                 <a class="image-download" href="$lastURL" style="text-decoration:underline" title="Download File: $!row.get(0)">$!row.get(0)</a>
+            #else
+                $!row.get(0)
+            #end
             </td>
             <td class="scan-image-size" align="center">$!row.get(1)</td>
             <td class="scan-image-buttons" align="right">
@@ -50,6 +54,7 @@
             width = params[2];
             height = params[3];
             imageModal.content =
+            #if(!$project || $user.checkFeature($project,"data_download"))
                 '<div style="text-align:center;background:#000;">' +
                 '<a class="image-download" href="' + url + '" title="Download File: ' + title + '" style="display:block;height:' + height + 'px;">' +
                 '<img src="' + url + '?format=image/jpeg" alt="preview">' +
@@ -61,6 +66,9 @@
                         'style="color:#c0c0c0;">(click to download original file)</a>' +
                 '</p>'+
                 '</div>';
+            #else
+                '<img src="' + url + '?format=image/jpeg" alt="preview">';
+            #end
             imageModal.title = 'Image: ' + title;
             imageModal.width = parseInt(width,10);
             imageModal.height = parseInt(height,10) + 72;

@@ -21,6 +21,7 @@
 
     obj.catalogs = {};
     obj.catalogs.ids = [];
+    obj.allowDownload = ("$!user.checkFeature($om,'data_download')" == "true")
     window.viewer = new FileViewer(obj);
 
     function showFiles() {

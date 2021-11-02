@@ -37,6 +37,7 @@
 
   obj.catalogs=new Object();
   obj.catalogs.ids=new Array();
+  obj.allowDownload = ("$!user.checkFeature($om,'data_download')" == "true")
   window.viewer=new FileViewer(obj);
     
   function showFiles(){

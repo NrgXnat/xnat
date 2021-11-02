@@ -13,6 +13,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimaps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
@@ -21,6 +22,7 @@ import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
@@ -34,6 +36,7 @@ import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -94,8 +97,22 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     throw new RuntimeException("No accessible projects found for the request by user " + user.getUsername() + " to download the requested session(s): " + Joiner.on(", ").join(sessionIds));
                 }
 
+                final ArrayListMultimap<String, String> invertedProjectSessionMap = Multimaps.invertFrom(projectSessionMap, ArrayListMultimap.create());
+                final Collection<String> sessionsUserCanDownload = sessionsUserCanAccess.stream()
+                        .filter(s -> Features.checkFeature(user, invertedProjectSessionMap.get(s),"data_download"))
+                        .collect(Collectors.toList());
+
+                if (sessionsUserCanDownload.isEmpty()) {
+                    context.put("msg","None of the requested data is available for download.");
+                    return;
+                }else if(sessionsUserCanDownload.size() != sessionsUserCanAccess.size()){
+                    context.put("msg","Some of the requested data is unavailable for download and has been excluded from the table below.");
+                }
+
                 final Set<String>           projectIds = projectSessionMap.keySet();
-                final MapSqlParameterSource parameters = new MapSqlParameterSource("sessionIds", sessionsUserCanAccess).addValue("projectIds", projectIds).addValue("userId", user.getUsername());
+                final MapSqlParameterSource parameters = new MapSqlParameterSource("sessionIds", sessionsUserCanDownload)
+                                                                                .addValue("projectIds", projectIds)
+                                                                                .addValue("userId", user.getUsername());
 
                 context.put("projectIds", projectIds);
                 context.put("sessionSummary", _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, parameters, SESSION_SUMMARY_ROW_MAPPER));

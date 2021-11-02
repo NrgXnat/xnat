@@ -183,7 +183,11 @@
 </script>
 
 <h2>Imaging Data Download</h2>
+#if($msg)
+<div class="alert">$!msg</div></br>
+#end
 
+#if($sessionSummary && !$sessionSummary.isEmpty())
 <form id="download-form" class="json noHide" method="post" content-type="application/json" action="/xapi/archive/downloadwithsize">
 
     #set($counter=0)
@@ -240,27 +244,22 @@
                             ##    <i class="type hidden">$_TYPE</i>
                             ##    <i class="subject hidden">$_SUBJECT</i>
 
-                                <script>
-                                    XNAT.app.projectDownload.items.sessions.list.push('$_ID');
-                                    XNAT.app.projectDownload.items.sessions.data.push({
-                                        id: '$_ID',
-                                        name: '$_NAME',
-                                        label: '$_LABEL',
-                                        value: '$_VALUE',
-                                        type: '$_TYPE',
-                                        subject: '$_SUBJECT',
-                                        project: '$_PROJECT'
-                                    });
-                                </script>
-
+                            <script>
+                                XNAT.app.projectDownload.items.sessions.list.push('$_ID');
+                                XNAT.app.projectDownload.items.sessions.data.push({
+                                    id: '$_ID',
+                                    name: '$_NAME',
+                                    label: '$_LABEL',
+                                    value: '$_VALUE',
+                                    type: '$_TYPE',
+                                    subject: '$_SUBJECT',
+                                    project: '$_PROJECT',
+                                });
+                            </script>
                             ##</li>
-
                         #end
-
                     ##</ul>
-
                 </div>
-
             </div>
         </div>
     </div>
@@ -511,6 +510,7 @@
     <div class="clear"></div>
 
 </form>
+#end
 
 <script src="${SITE_ROOT}/scripts/xnat/app/projectDownload.js"></script>
 

@@ -209,10 +209,10 @@ XNAT.app.prearchiveActions.downloadResFiles = function( url, resId ){
 	return false;
 }
 
-XNAT.app.prearchiveActions.reviewResFileDetails = function( url, resId ){
+XNAT.app.prearchiveActions.reviewResFileDetails = function( url, resId, project ){
 	var RESTurl = serverRoot +
 		'/data' + url + '/resources/' + resId +
-		'/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true';
+		'/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true' + (project ? '&project=' + project : '');
 	XNAT.app.fileDialog.loadScan(RESTurl, 'Resource ' + resId + ' files');
 }
 
@@ -227,10 +227,10 @@ XNAT.app.prearchiveActions.downloadFiles = function( url, scan_id ){
 	return false;
 };
 
-XNAT.app.prearchiveActions.reviewFileDetails = function( url, scan_id, label ){
+XNAT.app.prearchiveActions.reviewFileDetails = function( url, scan_id, label, project ){
 	var RESTurl = serverRoot +
 		'/data' + url + '/scans/' + scan_id + '/resources/' + label +
-		'/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true';
+		'/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true' + (project ? '&project=' + project : '');
 	XNAT.app.fileDialog.loadScan(RESTurl, 'Scan ' + scan_id + ' files');
 };
 

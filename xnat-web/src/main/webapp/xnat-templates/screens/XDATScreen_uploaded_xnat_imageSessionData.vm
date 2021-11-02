@@ -116,7 +116,9 @@ dd.valMessage 	{	width:630px;	}
 				var _html='<select class="scanActionSelect" data-scan-id="' + scanId + '">';
 					_html+='<option value="">Actions</option>';
 					_html+='<option value="files">Review File Details</option>';
-					_html+='<option value="download">Download Files</option>';
+					#if($user.checkFeature($project,"data_download"))
+				    	_html+='<option value="download">Download Files</option>';
+					#end
 					_html+='<option value="dicom">Review DICOM Tags</option>';
 					_html+='</select>';
 					_html+='&nbsp;&nbsp;&nbsp;<div id="scan' + scanId + 'Files" style="display:inline;"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load();return false;" style="text-decoration:underline">Show Counts</a></div>';
@@ -129,7 +131,7 @@ dd.valMessage 	{	width:630px;	}
 	$("select.scanActionSelect").change(function(){
 		var action= $(this).val();
 		if(action=="files"){
-			XNAT.app.prearchiveActions.reviewFileDetails('$url', $(this).attr("data-scan-id"), 'DICOM');
+			XNAT.app.prearchiveActions.reviewFileDetails('$url', $(this).attr("data-scan-id"), 'DICOM', '$!project');
 		}else if(action=="download"){
 			XNAT.app.prearchiveActions.downloadFiles('$url', $(this).attr("data-scan-id"));
 		}else if(action=="dicom"){
@@ -152,7 +154,7 @@ dd.valMessage 	{	width:630px;	}
 		if (action=="download"){
 			XNAT.app.prearchiveActions.downloadResFiles('$url', $(this).attr("data-resource-id"));
 		} else if(action=="review"){
-			XNAT.app.prearchiveActions.reviewResFileDetails('$url', $(this).attr("data-resource-id"));
+			XNAT.app.prearchiveActions.reviewResFileDetails('$url', $(this).attr("data-resource-id"), '$project');
 		}
 		$(this).val("");
 	});

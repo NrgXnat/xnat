@@ -22,12 +22,15 @@
             <span class="textlink-sm data-table-action">
                 Bulk Actions:
             </span>
-            <button class="btn btn-sm data-table-action do-scan-download disabled">
-                Download
-            </button>
+            #if($user.checkFeature($om,"data_download"))
+                <button class="btn btn-sm data-table-action do-scan-download disabled">
+                    Download
+                </button>
+            #end
             #addGlobalCustomScreens("xnat_imageScanData/scanActions")
         </div>
     </div>
+
     #set($scanAssessors =$!om.getScanAssessors())
     <script type="text/javascript">
         var XNAT                = getObject(XNAT || {});
@@ -106,9 +109,11 @@
                         <td class="scan-${scanID}-id" style="width: 120px;">
                             <span class="inline-actions">
                                 <i class="fa fa-list-alt view-scan-details" data-id="${scanID}" title="View Details"></i>
-                                <a href="#!download" data-id="${scanID}" data-xsitype="${om.getXSIType()}" data-expt="$!{om.getId()}" class="download-scan" title="Download: ${scanID}">
-                                    <i class="fa fa-download"></i>
-                                </a>
+                                #if($user.checkFeature($om,"data_download"))
+                                    <a href="#!download" data-id="${scanID}" data-xsitype="${om.getXSIType()}" data-expt="$!{om.getId()}" class="download-scan" title="Download: ${scanID}">
+                                        <i class="fa fa-download"></i>
+                                    </a>
+                                #end
                                 #if ($item.canEdit($user))
                                     <i class="fa fa-upload uploadLink" title="Upload Resource" data-type="xnat:imageScanData" data-props="$!scan.getType()" data-uri="$content.getURI("/data/experiments/$om.getId()/scans/$scan.getId()")"></i>
                                 #end

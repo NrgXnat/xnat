@@ -110,8 +110,8 @@ public class SubjectResource extends ItemResource {
                 if (filepath != null && !filepath.equals("")) {
                     if (filepath.startsWith("projects/")) {
 
-                        if(!Features.checkFeature(user, proj.getId(), "project_sharing")){
-                            this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+                        if(!Features.checkFeature(user, sub.getProject(), "project_sharing")){
+                            this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Sharing is not allowed in this project.");
                             return;
                         }
 

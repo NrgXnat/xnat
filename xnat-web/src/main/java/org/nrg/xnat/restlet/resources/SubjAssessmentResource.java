@@ -208,8 +208,8 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
                 if (filepath != null && !filepath.equals("")) {
                     if (filepath.startsWith("projects/")) {
-                        if(!Features.checkFeature(user, proj.getId(), "project_sharing")){
-                            this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+                        if(!Features.checkFeature(user, currentProjectId, "project_sharing")){
+                            this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Sharing is not allowed in this project.");
                             return;
                         }
                         String newProjectS = filepath.substring(9);

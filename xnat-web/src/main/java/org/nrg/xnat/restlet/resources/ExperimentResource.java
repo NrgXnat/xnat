@@ -161,8 +161,8 @@ public class ExperimentResource extends ItemResource {
             if (filepath != null && !filepath.equals("")) {
                 if (filepath.startsWith("projects/")) {
 
-                    if(!Features.checkFeature(user, _project.getId(), "project_sharing")){
-                        this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+                    if(!Features.checkFeature(user, _experiment.getProject(), "project_sharing")){
+                        this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Sharing is not allowed in this project.");
                         return;
                     }
 

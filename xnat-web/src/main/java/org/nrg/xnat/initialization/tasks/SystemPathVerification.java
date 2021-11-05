@@ -112,10 +112,10 @@ public class SystemPathVerification extends AbstractInitializingTask {
         final StringBuilder buffer = new StringBuilder();
         buffer.append("The following system path error").append(errors.size() > 1 ? "s have" : " has").append(" been discovered:");
 
-        int index = 1;
+        int indexMessage = 1;
         for (final String error : errors) {
             buffer.append("\n\t");
-            buffer.append(index++);
+            buffer.append(indexMessage++);
             buffer.append(". ");
             buffer.append(error);
         }
@@ -133,8 +133,9 @@ public class SystemPathVerification extends AbstractInitializingTask {
                 if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
                     String body = XDAT.getNotificationsPreferences().getEmailMessageSystemPathError();
                     String errorsList = "";
+                    int indexEmail = 1;
                     for (final String error : errors) {
-                        errorsList = errorsList + "<br>\n\t" + index++ + ". " +error;
+                        errorsList = errorsList + "<br>\n\t" + indexEmail++ + ". " +error;
                     }
                     body = body.replaceAll("ERRORS_LIST", errorsList);
                     _mailService.sendHtmlMessage(adminEmail, adminEmail, emailSubj, body);

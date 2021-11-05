@@ -7,8 +7,10 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xft.utils;
+
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.XFTInitException;
@@ -17,7 +19,29 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
+@Slf4j
 public class XftStringUtils {
+	public static final Pattern REGEX_VALID_ID                   = Pattern.compile("^[A-z0-9_-]+$");
+	public static final Pattern REGEX_REPLACE_WITH_UNDERSCORE    = Pattern.compile("[" + Pattern.quote(" .!#$%&'()*+-;<=>?\\\"\\\\^`{|}~") + "]");
+	public static final Pattern REGEX_REMOVE_CHARS               = Pattern.compile("[" + Pattern.quote("/@[]") + "]");
+	public static final int     POSTGRESQL_IDENTIFIER_SIZE_LIMIT = 63;
+
+	public static String cleanColumnName(final String rawColumnName) {
+		return RegExUtils.replaceAll(StringUtils.replace(StringUtils.replace(RegExUtils.removeAll(rawColumnName, REGEX_REMOVE_CHARS), ":", "_col_"), ",", "_com_"), REGEX_REPLACE_WITH_UNDERSCORE, "_");
+	}
+
+	public static String formatPostgreSQLIdentifier(final String identifier) {
+		final int length = StringUtils.length(identifier);
+		if (length <= POSTGRESQL_IDENTIFIER_SIZE_LIMIT) {
+			log.debug("I was asked for format a PostgreSQL identifier, but it's only {} characters, which is under the size limit: {}", length, identifier);
+			return identifier;
+		}
+
+		final String hashedIdentifier = StringUtils.truncate(identifier, 54) + "_" + Integer.toHexString(identifier.hashCode());
+		log.info("I was asked for format a PostgreSQL identifier that contains {} characters, which is over the size limit. Converted \"{}\" to \"{}\".", length, identifier, hashedIdentifier);
+		return hashedIdentifier;
+	}
 
 	public static String WhiteSpace(int i)
 	{
@@ -375,7 +399,7 @@ public class XftStringUtils {
 	{
 		if(s==null)return new ArrayList<String>();
 		if(s.trim().equals(""))return new ArrayList<String>();
-		
+
 		ArrayList<String> al = new ArrayList<String>();
 
 		while(s.indexOf(delimiter) != -1)
@@ -524,66 +548,23 @@ public class XftStringUtils {
 	    }
 	}
 
-	public static String Last30Chars(String s)
-	{
-	    if (s.length()>30)
-	    {
-	        int length = s.length();
-	        int index = length -30;
-	        return s.substring(index);
-	    }else{
-	        return s;
-	    }
+	public static String CreateAlias(final String tableName, final String columnName) {
+	    return formatPostgreSQLIdentifier(cleanColumnName(tableName) + "_" + cleanColumnName(columnName));
 	}
 
-	public static String CreateAlias(String tableName,String colName)
-	{
-	    String temp = tableName +"_" + colName;
-
-	    if (temp.length() > 62)
-		{
-			String table = tableName;
-			String keyName = colName;
-			if (keyName.length() > 30)
-			{
-				if (tableName.length()> 30)
-				{
-					table = table.substring(0,30);
-				}
-				if (keyName.length() > 30)
-				{
-					keyName = Last30Chars(keyName);
-				}
-
-				return table + "_" + keyName;
-			}else{
-				int colLength = keyName.length();
-
-				int tableLength = 62- colLength;
-				if (table.length()> tableLength)
-				{
-					table = table.substring(0,tableLength);
-				}
-
-				return table + "_" + keyName;
-			}
-		}else{
-			return temp;
-		}
-	}
-
-	public static int CountStringOccurrences(String fullString,String searchFor)
-	{
-	    int counter =0;
-	    String temp = fullString.toString();
-
-	    while (temp.indexOf(searchFor)!=-1)
-	    {
-	        counter++;
-	        temp = temp.substring(temp.indexOf(searchFor)+1);
-	    }
-
-	    return counter;
+	/**
+	 * Counts the number of times the specified string occurs in the full string.
+	 *
+	 * @param fullString The full string to be searched.
+	 * @param searchFor  The string to search for.
+	 *
+	 * @return The number of times the search string is found in the full string.
+	 *
+	 * @deprecated Use the Commons Lang3 methods StringUtils.countMatches() instead.
+	 */
+	@Deprecated
+	public static int CountStringOccurrences(final String fullString, final String searchFor) {
+		return StringUtils.countMatches(fullString, searchFor);
 	}
 
 
@@ -644,15 +625,12 @@ public class XftStringUtils {
 	public static boolean isValidId(String s) {
 		return !StringUtils.isBlank(s) && REGEX_VALID_ID.matcher(s).matches();
 	}
-	
+
 	public static boolean OccursBefore(String root,String f, String l) {
 		return !(root == null || f == null || l == null) && !(!root.contains(f) || !root.contains(l)) && root.indexOf(f) < root.indexOf(l);
 	}
-	
+
 	public static String intern(String s){
 		return (s!=null)?s.intern():s;
 	}
-
-	private static final Pattern REGEX_VALID_ID = Pattern.compile("^[A-z0-9_-]+$");
 }
-

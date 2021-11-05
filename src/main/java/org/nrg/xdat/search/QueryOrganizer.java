@@ -179,7 +179,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     int indexDot = s.indexOf(".");
                     String FIELDID = s.substring(0,indexDot);
                     String VALUE = s.substring(indexDot+1);
-                    String alias = FIELDID +"_" + DisplaySearch.cleanColumnName(VALUE);
+                    String alias = FIELDID + "_" + XftStringUtils.cleanColumnName(VALUE);
                     VALUE = StringUtils.replace(StringUtils.replace(VALUE, "_com_", ","), "_col_", ":");
 
 
@@ -1237,7 +1237,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     s = s.substring(14);
                 }
 
-                String temp = DisplaySearch.cleanColumnName(StringUtils.replace(s, ".", "_"));
+                String temp = XftStringUtils.cleanColumnName(StringUtils.replace(s, ".", "_"));
                 if (! selected.contains(temp.toLowerCase()))
                 {
                     selected.add(temp.toLowerCase());

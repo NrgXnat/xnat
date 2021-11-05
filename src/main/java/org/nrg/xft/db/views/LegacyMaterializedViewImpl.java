@@ -12,6 +12,7 @@ package org.nrg.xft.db.views;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFT;
@@ -39,7 +40,6 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 	private Date created;
 	private Date last_access;
 	private UserI user;
-
 	
 	public LegacyMaterializedViewImpl(Hashtable t,UserI u){
 		if(u==null){
@@ -264,10 +264,9 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 		
 		XFTTable t=XFTTable.Execute(query + ";", PoolDBUtils.getDefaultDBName(), user.getUsername());
 		
-		Thread thread = new MaterializedViewManager.DBMaterializedViewManager(this.table_name,PoolDBUtils.getDefaultDBName());
+		Thread thread = new MaterializedViewManager.DBMaterializedViewManager(XDAT.getNamedParameterJdbcTemplate(), table_name);
 		thread.start();
-		
-		
+
 		return t;
 	}
 	
@@ -375,14 +374,9 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 		if(user==null){
 			throw new NullPointerException();
 		}
-		
-		
-		
-		if(table_name==null){
-			if(search_id!=null)
-				table_name= "_" + DisplaySearch.cleanColumnName(search_id)+"_"+DisplaySearch.cleanColumnName(user.getUsername()) + "_" + Calendar.getInstance().getTimeInMillis();
-			else
-				table_name= "_" + DisplaySearch.cleanColumnName(user.getUsername()) + "_" + Calendar.getInstance().getTimeInMillis();
+
+		if (StringUtils.isBlank(table_name)) {
+			table_name = generateMaterializedViewName();
 		}
 		String select="SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('"+table_name+"');";
 		Object o=PoolDBUtils.ReturnStatisticQuery(select, "relname", PoolDBUtils.getDefaultDBName(), user.getUsername());

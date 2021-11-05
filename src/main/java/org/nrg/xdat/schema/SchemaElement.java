@@ -12,11 +12,11 @@ package org.nrg.xdat.schema;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldCollection;
 import org.nrg.xdat.display.*;
-import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.ViewManager;
@@ -259,7 +259,7 @@ public class SchemaElement implements SchemaElementI {
 		 		GenericWrapperField pk = foreign.getAllPrimaryKeys().get(0);
 		 		
 		 		DisplayField df = new DisplayField(this.getDisplay());
-				df.setId(DisplaySearch.cleanColumnName(s).toUpperCase());
+				df.setId(XftStringUtils.cleanColumnName(s).toUpperCase());
 				df.setHeader(pk.getName());
 				df.setVisible(true);
 				df.setSearchable(true);
@@ -276,7 +276,7 @@ public class SchemaElement implements SchemaElementI {
 		}else{
 			if(!GenericWrapperElement.IsMultipleReference(s)){
 				DisplayField df = new DisplayField(this.getDisplay());
-				df.setId(DisplaySearch.cleanColumnName(s).toUpperCase());
+				df.setId(XftStringUtils.cleanColumnName(s).toUpperCase());
 				df.setHeader(s.substring(s.lastIndexOf("/")+1));
 				df.setVisible(true);
 				df.setSearchable(true);
@@ -299,8 +299,7 @@ public class SchemaElement implements SchemaElementI {
 			ed.addDisplayFieldWException(df);
 			return true;
 		} catch (DisplayFieldCollection.DuplicateDisplayFieldException e) {
-logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
-			logger.error("",e);
+			logger.error(df.getParentDisplay().getElementName() + "." + df.getId(), e);
 		}
 		return false;
 	}
@@ -310,7 +309,7 @@ logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
 	 * @return The requested display field.
      * @throws Exception When an error occurs.
 	 */
-	public DisplayField getDisplayFieldForXMLPath(String xmlPath) throws Exception
+	public DisplayField getDisplayFieldForXMLPath(final String xmlPath) throws Exception
 	{
 		DisplayField temp = null;
 		ElementDisplay ed = this.getDisplay();
@@ -318,27 +317,24 @@ logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
 		if(f==null){
 			throw new FieldNotFoundException(xmlPath);
 		}
-		if (f.isReference())
-		{
-		 	if (! f.isMultiple())
-		 	{
-		 		GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-		 		GenericWrapperField pk = foreign.getAllPrimaryKeys().get(0);
-		 		xmlPath += XFT.PATH_SEPARATOR + pk.getName();
-		 	}
+		final String resolvedXmlPath;
+		if (f.isReference() && !f.isMultiple()) {
+			resolvedXmlPath = xmlPath + XFT.PATH_SEPARATOR + ((GenericWrapperElement) f.getReferenceElement()).getAllPrimaryKeys().get(0).getName();
+		} else {
+			resolvedXmlPath = xmlPath;
 		}
 		String localName=f.getXMLPathString(f.getParentElement().getFullXMLName());
 		Iterator dfs = ed.getDisplayFieldIterator();
 		while (dfs.hasNext())
 		{
 			DisplayField df = (DisplayField)dfs.next();
-			if(df.generatedFor.equalsIgnoreCase(xmlPath)){
+			if(df.generatedFor.equalsIgnoreCase(resolvedXmlPath)){
 				temp=df;
 				break;
 			}else if (df.getElements().size() == 1 && df.getContent().size()==0)
 			{
 				DisplayFieldElement dfe = df.getElements().get(0);
-				if (dfe.getSchemaElementName().equalsIgnoreCase(xmlPath)
+				if (dfe.getSchemaElementName().equalsIgnoreCase(resolvedXmlPath)
 						|| dfe.getSchemaElementName().equals(localName))
 				{
 					temp=df;
@@ -346,11 +342,14 @@ logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
 				}
 			}
 		}
-		
-		if(temp==null){
-			temp = this.createDisplayFieldForXMLPath(xmlPath);
-		}
-		return temp;
+
+		return ObjectUtils.getIfNull(temp, () -> {
+			try {
+				return createDisplayFieldForXMLPath(resolvedXmlPath);
+			} catch (Exception e) {
+				return null;
+			}
+		});
 	}
 
 	public static SchemaField GetSchemaField(String xmlPath)throws FieldNotFoundException
@@ -419,7 +418,7 @@ logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
 	    {
 			for (final Object anAl : al) {
 				String s     = (String) anAl;
-				int    count = XftStringUtils.CountStringOccurrences(s, String.valueOf(XFT.PATH_SEPARATOR));
+				int    count = StringUtils.countMatches(s, String.valueOf(XFT.PATH_SEPARATOR));
 				if (count == 0) {
 					return this.getFullXMLName() + "/" + s;
 				} else {

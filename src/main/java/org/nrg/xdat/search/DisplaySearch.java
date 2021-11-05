@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.search;
 
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.collections.DisplayFieldWrapperCollection;
@@ -52,8 +53,6 @@ public class DisplaySearch implements TableSearchI {
     private static final int QUERY_MODE_VAL_CRITERIA = 0;
     private static final int QUERY_MODE_VAL_BYID = 1;
     private static final int QUERY_MODE_VAL_NONE = 2;
-    public static final String REGEX_REPLACE_WITH_UNDERSCORE = "[" + Pattern.quote(".!#$%&'()*+-;<=>?\\\"\\\\^`{|}~") + "]";
-    public static final String REGEX_REMOVE_CHARS = "[" + Pattern.quote("/@[]") + "]";
     private SchemaElement rootElement = null;
     private String display = "default";
     private final List<String[]> additionalViews = new ArrayList<>();
@@ -730,11 +729,6 @@ public class DisplaySearch implements TableSearchI {
 
     public void addKeyColumn(boolean b) {
         addKey = b;
-    }
-
-
-    public static String cleanColumnName(final String rawColumnName) {
-        return StringUtils.replaceAll(StringUtils.replace(StringUtils.replace(StringUtils.removeAll(rawColumnName, REGEX_REMOVE_CHARS), ":", "_col_"), ",", "_com_"), REGEX_REPLACE_WITH_UNDERSCORE, "_");
     }
 
     /**

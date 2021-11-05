@@ -9,56 +9,50 @@
 
 package org.nrg.xft.db.views.service;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.db.MaterializedViewI;
 import org.nrg.xft.db.views.LegacyMaterializedViewImpl;
 import org.nrg.xft.security.UserI;
 
 import java.util.Hashtable;
 
+@Slf4j
 public class LegacyMaterializedViewServiceImpl implements MaterializedViewServiceI {
-	static org.apache.log4j.Logger logger = Logger.getLogger(LegacyMaterializedViewServiceImpl.class);
-
-	@Override
-	public void deleteViewsByUser(UserI user) throws Exception {
-		MaterializedViewManager manager=MaterializedViewManager.getMaterializedViewManager();
-		for(MaterializedViewI view: manager.getViewsByUser(user,this)){
-            ((LegacyMaterializedViewImpl)view).delete();
-		}
-		
-	}
-
-	@Override
-	public MaterializedViewI getViewByTablename(String tablename, UserI user) throws Exception{
-		MaterializedViewManager manager=MaterializedViewManager.getMaterializedViewManager();
-		return manager.getViewByTablename(tablename,user,this);
-	}
-
-	@Override
-	public MaterializedViewI getViewBySearchID(String search_id, UserI user) throws Exception{
-		MaterializedViewManager manager=MaterializedViewManager.getMaterializedViewManager();
-		return manager.getViewBySearchID(search_id,user,this);
-	}
-
-	@Override
-	public MaterializedViewI createView(UserI user) {
-		return new LegacyMaterializedViewImpl(user);
-	}
-
-	@Override
-	public MaterializedViewI populateView(Hashtable t, UserI u) {
-		return new LegacyMaterializedViewImpl(t, u);
-	}
-
     @Override
-    public void save(MaterializedViewI i) throws Exception{
-        ((LegacyMaterializedViewImpl)i).save();
+    public void deleteViewsByUser(final UserI user) throws Exception {
+        for (final MaterializedViewI view : MaterializedViewManager.getMaterializedViewManager().getViewsByUser(user, this)) {
+            view.delete();
+        }
     }
 
     @Override
-    public void delete(MaterializedViewI i) throws Exception {
-        ((LegacyMaterializedViewImpl)i).delete();
+    public MaterializedViewI getViewByTablename(final String tablename, final UserI user) throws Exception {
+        return MaterializedViewManager.getMaterializedViewManager().getViewByTablename(tablename, user, this);
     }
 
+    @Override
+    public MaterializedViewI getViewBySearchID(final String searchId, final UserI user) throws Exception {
+        return MaterializedViewManager.getMaterializedViewManager().getViewBySearchID(searchId, user, this);
+    }
 
+    @Override
+    public MaterializedViewI createView(final UserI user) {
+        return new LegacyMaterializedViewImpl(user);
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Override
+    public MaterializedViewI populateView(final Hashtable table, final UserI user) {
+        return new LegacyMaterializedViewImpl(table, user);
+    }
+
+    @Override
+    public void save(final MaterializedViewI view) throws Exception {
+        view.save();
+    }
+
+    @Override
+    public void delete(final MaterializedViewI view) throws Exception {
+        view.delete();
+    }
 }

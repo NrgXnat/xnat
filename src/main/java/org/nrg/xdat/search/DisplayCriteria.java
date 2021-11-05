@@ -57,67 +57,64 @@ public class DisplayCriteria implements SQLClause {
     }
 
     private String getSQLContent(DisplayField df, QueryOrganizerI qo) throws Exception {
-        if (this.getWhere_value() != null) {
-            if (!this.getElementName().equals(qo.getRootElement().getFullXMLName())) {
-                if (qo.translateStandardizedPath(this.getElementName() + ".SUBQUERYFIELD_" + this.field + "." + this.getWhere_value()) != null)
-                    return qo.translateStandardizedPath(this.getElementName() + ".SUBQUERYFIELD_" + this.field + "." + this.getWhere_value());
-                else
-                    return this.field + "_" + DisplaySearch.cleanColumnName(this.getWhere_value());
-            } else {
-                return this.field + "_" + DisplaySearch.cleanColumnName(this.getWhere_value());
-            }
-        } else {
+        if (StringUtils.isBlank(getWhere_value())) {
             return df.getSQLContent(qo);
         }
+        if (!StringUtils.equals(getElementName(), qo.getRootElement().getFullXMLName())) {
+            final String translated = qo.translateStandardizedPath(getElementName() + ".SUBQUERYFIELD_" + field + "." + getWhere_value());
+            if (StringUtils.isNotBlank(translated)) {
+                return translated;
+            }
+        }
+        return field + "_" + XftStringUtils.cleanColumnName(getWhere_value());
     }
 
     public String getSQLClause(QueryOrganizerI qo) throws Exception {
         if (qo == null) {
             return getSQLClause();
-        } else {
-            StringBuilder where = new StringBuilder(" (");
-            SchemaElement e = SchemaElement.GetElement(getElement());
-            DisplayField df = e.getDisplayField(getField());
-
-            String v = "";
-            if (getValue() != null) {
-                v = getValue().toString();
-            }
-            if (overrideDataFormatting) {
-                String tCT = getComparisonType().trim().toUpperCase();
-                String tV = (String) getValue();
-                if (tV != null) {
-                    tV = tV.trim().toUpperCase();
-                    if ((tCT.equals("IS NULL")) || (tCT.equals("IS") && tV.equals("NULL"))) {
-                        if (df.needsSQLEmptyQuotes()) {
-                            where.append(" (").append(this.getSQLContent(df, qo)).append(" IS NULL OR ").append(this.getSQLContent(df, qo)).append("='')");
-                        } else {
-                            where.append(" (").append(this.getSQLContent(df, qo)).append(" IS NULL)");
-                        }
-                    } else if ((tCT.equals("IS NOT NULL")) || (tCT.equals("IS NOT") && tV.equals("NULL")) || (tCT.equals("IS") && tV.equals("NOT NULL"))) {
-                        if (df.needsSQLEmptyQuotes()) {
-                            where.append(" NOT(").append(this.getSQLContent(df, qo)).append(" IS NULL OR ").append(this.getSQLContent(df, qo)).append("='')");
-                        } else {
-                            where.append(" NOT(").append(this.getSQLContent(df, qo)).append(" IS NULL)");
-                        }
-                    } else {
-                        where.append(this.getSQLContent(df, qo));
-                        where.append(getComparisonType());
-                        where.append(getValue().toString());
-                    }
-                }
-            } else {
-                if (!getComparisonType().contains("LIKE")) {
-                    where.append(handleValues(v, df, qo, df.needsSQLQuotes()));
-                } else {
-                    where.append("LOWER(").append(this.getSQLContent(df, qo)).append(")");
-                    where.append(getComparisonType());
-                    where.append("'").append(getValue().toString().toLowerCase()).append("'");
-                }
-            }
-            where.append(")");
-            return where.toString();
         }
+        StringBuilder where = new StringBuilder(" (");
+        SchemaElement e = SchemaElement.GetElement(getElement());
+        DisplayField df = e.getDisplayField(getField());
+
+        String v = "";
+        if (getValue() != null) {
+            v = getValue().toString();
+        }
+        if (overrideDataFormatting) {
+            String tCT = getComparisonType().trim().toUpperCase();
+            String tV = (String) getValue();
+            if (tV != null) {
+                tV = tV.trim().toUpperCase();
+                if ((tCT.equals("IS NULL")) || (tCT.equals("IS") && tV.equals("NULL"))) {
+                    if (df.needsSQLEmptyQuotes()) {
+                        where.append(" (").append(this.getSQLContent(df, qo)).append(" IS NULL OR ").append(this.getSQLContent(df, qo)).append("='')");
+                    } else {
+                        where.append(" (").append(this.getSQLContent(df, qo)).append(" IS NULL)");
+                    }
+                } else if ((tCT.equals("IS NOT NULL")) || (tCT.equals("IS NOT") && tV.equals("NULL")) || (tCT.equals("IS") && tV.equals("NOT NULL"))) {
+                    if (df.needsSQLEmptyQuotes()) {
+                        where.append(" NOT(").append(this.getSQLContent(df, qo)).append(" IS NULL OR ").append(this.getSQLContent(df, qo)).append("='')");
+                    } else {
+                        where.append(" NOT(").append(this.getSQLContent(df, qo)).append(" IS NULL)");
+                    }
+                } else {
+                    where.append(this.getSQLContent(df, qo));
+                    where.append(getComparisonType());
+                    where.append(getValue().toString());
+                }
+            }
+        } else {
+            if (!getComparisonType().contains("LIKE")) {
+                where.append(handleValues(v, df, qo, df.needsSQLQuotes()));
+            } else {
+                where.append("LOWER(").append(this.getSQLContent(df, qo)).append(")");
+                where.append(getComparisonType());
+                where.append("'").append(getValue().toString().toLowerCase()).append("'");
+            }
+        }
+        where.append(")");
+        return where.toString();
     }
 
     private String handleValues(String v, DisplayField df, QueryOrganizerI qo, boolean needsQuotes) throws Exception {
@@ -149,19 +146,19 @@ public class DisplayCriteria implements SQLClause {
         } else if (v.trim().equals("*")) {
             return " (" + this.getSQLContent(df, qo) + " IS NOT NULL)";
         } else if (getComparisonType().trim().equals("IN")) {
-            String values = "";
-            String[] tokens = v.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+            StringBuilder values = new StringBuilder();
+            String[]      tokens = v.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
             StringUtils.stripAll(tokens, "'\"");
             int c = 0;
             for (String t : tokens) {
                 if (c++ > 0) {
-                    values += ",";
+                    values.append(",");
                 }
                 if (!PoolDBUtils.HackCheck(t)) {
                     if (needsQuotes) {
-                        values += "'" + t + "'";
+                        values.append("'").append(t).append("'");
                     } else {
-                        values += t;
+                        values.append(t);
                     }
                 }
             }

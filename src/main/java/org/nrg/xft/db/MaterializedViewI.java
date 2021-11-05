@@ -9,11 +9,13 @@
 
 package org.nrg.xft.db;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.XftStringUtils;
 
-import java.sql.SQLException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +83,9 @@ public interface MaterializedViewI {
 
 	void save() throws Exception;
 
-	DisplaySearch getDisplaySearch(UserI user)
-			throws Exception;
+	DisplaySearch getDisplaySearch(UserI user) throws Exception;
 
+	default String generateMaterializedViewName() {
+		return XftStringUtils.formatPostgreSQLIdentifier((StringUtils.isNotBlank(getSearch_id()) ? "_" + XftStringUtils.cleanColumnName(getSearch_id()) : "") + "_" + XftStringUtils.cleanColumnName(getUser().getUsername()) + "_" + Calendar.getInstance().getTimeInMillis());
+	}
 }

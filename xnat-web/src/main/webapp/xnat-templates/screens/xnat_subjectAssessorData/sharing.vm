@@ -2,7 +2,7 @@
 #set($read_projects=$data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","read"))
 #set($projectMap = $data.getSession().getAttribute("userHelper").getCachedItemValuesHash("xnat:projectData",null,false,"xnat:projectData/ID","xnat:projectData/secondary_ID"))
 <div>
-  This experiment is owned by: <b>$!om.getProjectDisplayID()</b>.
+  This experiment is owned by: <b>#escapeCleanHTML($!om.getProjectDisplayID())</b>.
 </div>
 <div class="spacer">&nbsp;</div>
 <div style="margin-bottom:5px">
@@ -43,10 +43,10 @@ window.all_items=new Array();
 window.primary_project="$om.getProject()";
 
 #foreach($pp in $om.getSharing_share())
-XNAT.app.shared_projects.push({id:"$pp.getProperty("project")",
-     name:"$pp.getProjectDisplayID()",
-     label:"$!pp.getProperty("label")",
-     group:"$!pp.getProperty("group")",
+XNAT.app.shared_projects.push({id:"#escapeCleanHTML($pp.getProperty("project"))",
+     name:"#escapeCleanHTML($!pp.getProjectDisplayID())",
+     label:"#escapeCleanHTML($!pp.getProperty("label"))",
+     group:"#escapeCleanHTML($!pp.getProperty("group"))",
      expts:#if($om.getAssessmentCount($pp.getProperty("project")))
 $om.getAssessmentCount($pp.getProperty("project"))
 #else

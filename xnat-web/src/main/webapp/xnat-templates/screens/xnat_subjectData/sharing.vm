@@ -3,7 +3,7 @@
 #set($read_projects=$data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","read"))
 #set($projectMap = $data.getSession().getAttribute("userHelper").getCachedItemValuesHash("xnat:projectData",null,false,"xnat:projectData/ID","xnat:projectData/secondary_ID"))
 <div>
-  This $displayManager.getSingularDisplayNameForSubject().toLowerCase() is owned by: <b>$!om.getProjectDisplayID()</b>.
+  This $displayManager.getSingularDisplayNameForSubject().toLowerCase() is owned by: <b>#escapeCleanHTML($!om.getProjectDisplayID())</b>.
 </div>
 <div class="spacer">&nbsp;</div>
 <div style="margin-bottom:5px">
@@ -62,10 +62,10 @@ XNAT.app.subject.shared_projects=new Array();
 XNAT.app.subject.primary_project="$om.getProject()";
 
 #foreach($pp in $om.getSharing_share())
-XNAT.app.subject.shared_projects.push({id:"$pp.getProperty("project")",
-     name:"$pp.getProjectDisplayID()",
-     label:"$!pp.getProperty("label")",
-     group:"$!pp.getProperty("group")",
+XNAT.app.subject.shared_projects.push({id:"#escapeCleanHTML($pp.getProperty("project"))",
+     name:"#escapeCleanHTML($!pp.getProjectDisplayID())",
+     label:"#escapeCleanHTML($!pp.getProperty("label"))",
+     group:"#escapeCleanHTML($!pp.getProperty("group"))",
      expts:$om.getAssessmentCount($pp.getProperty("project")),
      canEdit:$edit_projects.contains($pp.getProperty("project"))});
 #end

@@ -126,7 +126,7 @@ function MinProjectsList(_div, _options){
 
 			row = document.createElement("div");
 			row.innerHTML =
-                "<b>" + XNAT.app.displayNames.singular.project + " ID: " + p.id +"</b>";
+                "<b>" + XNAT.app.displayNames.singular.project + " ID: " + escapeHtml(p.id) +"</b>";
 
             if ( p.pi != undefined && p.pi != ""){
 				row.innerHTML+="&nbsp;&nbsp;&nbsp;<b>PI: "+ escapeHtml(p.pi) +"</b>";

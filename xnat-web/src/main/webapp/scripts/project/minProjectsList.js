@@ -136,10 +136,10 @@ function MinProjectsList(_div, _options){
 
 			row = document.createElement("div");
 			if (p.description.length > 160){
-				row.innerHTML = p.description.substring(0,157) + "&nbsp;&hellip;";
+				row.innerHTML = escapeHtml(p.description.substring(0,157)) + "&nbsp;&hellip;";
 			}
             else {
-				row.innerHTML = p.description;
+				row.innerHTML = escapeHtml(p.description);
 			}
 			newDisplay.appendChild(row);
 

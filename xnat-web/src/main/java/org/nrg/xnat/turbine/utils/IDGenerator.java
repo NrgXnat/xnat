@@ -51,7 +51,7 @@ public class IDGenerator implements IDGeneratorI {
         }
         _template = template;
         _siteId = StringUtils.replaceChars(RegExUtils.removeAll(preferences.getSiteId(), "[ \"'^]"), '-', '_');
-        _hostNumber = StringUtils.defaultIfBlank(hostInfoService.getHostNumber(), "");
+        _hostNumber = appInfo.hasMultipleActiveNodes() ? StringUtils.defaultIfBlank(hostInfoService.getHostNumber(), "") : "";
         if (StringUtils.isBlank(_hostNumber) && appInfo.hasMultipleActiveNodes()) {
             try {
                 log.warn("The host number for this server isn't a number, but the application info indicates that this deployment has multiple active nodes. Check for an entry in xhbm_host_info where host_name is: {}", InetAddress.getLocalHost().getHostName());

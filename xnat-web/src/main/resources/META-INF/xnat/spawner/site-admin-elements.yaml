@@ -2,6 +2,7 @@ tabGroups:
     #    dashboard: Dashboard
     xnatSetup: Site Settings
     manageAccess: Manage Access
+    manageNotifications: Manage Notifications
     manageData: Manage Data
     processing: Processing
     projectCustomization: Project Customization
@@ -161,57 +162,6 @@ primaryAdminUsername:
     description: >
         The login name of an enabled and valid user with site administrator privileges. This field must be valid for proper system functioning.
 
-siteWideAlertInfo:
-    tag: div.message
-    element:
-        style:
-            marginBottom: 24px
-        html: >
-            <p>This panel can be used to create a notification banner that will be visible for all site visitors and logged-in users.
-            You can determine whether the banner is visible only on the login page, or on all site pages.</p>
-            <p>There are three stylistic treatments: </p>
-            <ul>
-                <li>"message" is informational</li>
-                <li>"alert" calls attention to critical info, such as scheduled maintenance downtime</li>
-                <li>"error" calls attention to severe info, such as a known bug or broken functionality</li>
-            </ul>
-
-siteWideAlertStatus:
-    kind: panel.select.single
-    name: siteWideAlertStatus
-    label: Enable Alert Message
-    options:
-        "0": "Off"
-        1: "On (Login Page Only)"
-        2: "On (Login and Site Header)"
-    element:
-        title: Enable Alert Message
-
-siteWideAlertMessage:
-    kind: panel.textarea
-    name: siteWideAlertMessage
-    label: Alert Message
-    code: html
-    description: Enter your message text here. You can use HTML to enter links or add emphasis as needed.
-
-siteWideAlertType:
-    kind: panel.select.single
-    name: siteWideAlertType
-    label: Alert Type
-    description: "Default: Alert"
-    options:
-        message:
-            label: Message
-            value: message
-        alert:
-            label: Alert
-            value: alert
-        error:
-            label: Error
-            value: error
-    element:
-        title: Select Alert Type
-
 siteInfo:
     kind: panel.form
     name: siteInfo
@@ -240,19 +190,6 @@ adminInfo:
     contents:
         ${adminEmail}
         ${primaryAdminUsername}
-
-siteWideAlerts:
-    kind: panel.form
-    name: siteWideAlerts
-    label: Site-wide Alerts
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        ${siteWideAlertInfo}
-        ${siteWideAlertStatus}
-        ${siteWideAlertMessage}
-        ${siteWideAlertType}
 
 
 ## SECURITY
@@ -738,130 +675,83 @@ emailServerSettings:
             label: Email Prefix
             placeholder: XNAT
 
-## NOTIFICATIONS
+## SITE-WIDE ALERTS
 
-notifications:
+siteWideAlerts:
     kind: panel.form
-    name: notifications
-    label: Notifications
-    url: /xapi/notifications
+    name: siteWideAlerts
+    label: Site-wide Alerts
     method: POST
     contentType: json
+    url: /xapi/siteConfig
     contents:
-        notificationsDocumentationNote:
+        siteWideAlertInfo:
             tag: div.message
             element:
                 style:
                     marginBottom: 24px
                 html: >
-                    For help with system notifications, see <a href="https://wiki.xnat.org/documentation/xnat-administration/notifications-and-alerts-in-xnat">Notifications and Alerts in XNAT.</a>
+                    <p>This panel can be used to create a notification banner that will be visible for all site visitors and logged-in users.
+                    You can determine whether the banner is visible only on the login page, or on all site pages.</p>
+                    <p>There are three stylistic treatments: </p>
+                    <ul>
+                        <li>"message" is informational</li>
+                        <li>"alert" calls attention to critical info, such as scheduled maintenance downtime</li>
+                        <li>"error" calls attention to severe info, such as a known bug or broken functionality</li>
+                    </ul>
+
+        siteWideAlertStatus:
+            kind: panel.select.single
+            name: siteWideAlertStatus
+            label: Enable Alert Message
+            options:
+                "0": "Off"
+                1: "On (Login Page Only)"
+                2: "On (Login and Site Header)"
+            element:
+                title: Enable Alert Message
+
+        siteWideAlertMessage:
+            kind: panel.textarea
+            name: siteWideAlertMessage
+            label: Alert Message
+            code: html
+            description: Enter your message text here. You can use HTML to enter links or add emphasis as needed.
+
+        siteWideAlertType:
+            kind: panel.select.single
+            name: siteWideAlertType
+            label: Alert Type
+            description: "Default: Alert"
+            options:
+                message:
+                    label: Message
+                    value: message
+                alert:
+                    label: Alert
+                    value: alert
+                error:
+                    label: Error
+                    value: error
+            element:
+                title: Select Alert Type
+
+## NOTIFICATIONS
+
+notifications:
+    kind: panel.form
+    name: notifications
+    label: Notification Options
+    url: /xapi/notifications
+    method: POST
+    contentType: json
+    contents:
         helpContactInfo:
             kind: panel.input.email
             label: "Help Contact Info"
             validation: allow-empty email onblur
             description: >
                 Email address used for general help contact information in outgoing emails and pipeline notifications
-        emailMessageSubhead:
-            kind: panel.subhead
-            label: Email Messages
-
-        emailMessageUserRegistration:
-            kind: panel.textarea
-            label: "User Registration"
-            code: html
-        emailMessageForgotUsernameRequest:
-            kind: panel.textarea
-            label: "Forgot Username Request"
-            code: html
-        emailMessageForgotPasswordReset:
-            kind: panel.textarea
-            label: "Password Reset"
-            code: html
-        emailMessageNewUserVerification:
-            kind: panel.textarea
-            label: "New User Verification"
-            code: html
-        emailMessageProjectRequestAccess:
-            kind: panel.textarea
-            label: "Project Access Request"
-            code: html
-        emailMessageProjectAccessApproval:
-            kind: panel.textarea
-            label: "Project Access Approval"
-            code: html
-        emailMessageProjectAccessDenial:
-            kind: panel.textarea
-            label: "Project Access Denial"
-            code: html
-        emailMessageInviteProjectAccess:
-            kind: panel.textarea
-            label: "Project Access Invitation"
-            code: html
-        emailMessageDisabledUserVerification:
-            kind: panel.textarea
-            label: "Disabled User Verification"
-            code: html
-        emailMessageErrorMessage:
-            kind: panel.textarea
-            label: "Error Occurred"
-            code: html
-        emailMessageNewUserNotification:
-            kind: panel.textarea
-            label: "New User Notification"
-            code: html
-        emailMessageNewUserRequest:
-            kind: panel.textarea
-            label: "New User Request"
-            code: html
-        emailMessagePipelineDefaultSuccess:
-            kind: panel.textarea
-            label: "Pipeline Success"
-            code: html
-        emailMessagePipelineDefaultFailure:
-            kind: panel.textarea
-            label: "Pipeline Failure"
-            code: html
-        emailMessagePipelineAutorunSuccess:
-            kind: panel.textarea
-            label: "Pipeline Autorun Success"
-            code: html
-        emailMessageBatchWorkflowComplete:
-            kind: panel.textarea
-            label: "Batch Transfer Complete"
-            code: html
-        emailMessageUnauthorizedDataAttempt:
-            kind: panel.textarea
-            label: "Unauthorized Data Attempt"
-            code: html
-        emailMessageEmailAddressChangeRequest:
-            kind: panel.textarea
-            label: "Email Change Request"
-            code: html
-        emailMessageVerifyEmailChangeRequest:
-            kind: panel.textarea
-            label: "Verify Email Change Request"
-            code: html
-        emailMessageAddressChanged:
-            kind: panel.textarea
-            label: "Email Address Successfully Changed"
-            code: html
-        emailMessageSystemPathError:
-            kind: panel.textarea
-            label: "System Path Error"
-            code: html
-        emailMessageUploadByReferenceSuccess:
-            kind: panel.textarea
-            label: "Upload By Reference Success"
-            code: html
-        emailMessageUploadByReferenceFailure:
-            kind: panel.textarea
-            label: "Upload By Reference Failure"
-            code: html
-        emailMessageDataAlertCustom:
-            kind: panel.textarea
-            label: "Data Alert Custom Email"
-            code: html
-
         #        notifyAdminSubhead:
         #            kind: panel.subhead
         #            label: "Notify Administrator on..."
@@ -891,9 +781,9 @@ notifications:
         #            label: "Session Transfer"
         #            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
 
-        emailRecipientSubhead:
-            kind: panel.subhead
-            label: "Notification Email Recipients"
+#        emailRecipientSubhead:
+#            kind: panel.subhead
+#            label: "Notification Email Recipients"
 
         emailAllowNonuserSubscribers:
             kind: panel.element
@@ -950,6 +840,336 @@ notifications:
             onText: Enabled
             offText: Disabled
             description: "If enabled, the primary administrator will receive a copy of error, issue, new user, and update notifications."
+
+notificationEmails:
+    kind: panel.form
+    name: notificationEmails
+    label: Notification Emails
+    url: /xapi/notifications
+    method: POST
+    contentType: json
+    contents:
+        notificationsDocumentationNote:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    Each of these system notifications are sent to users based on various actions. Each notification email has a set of usable shortcodes, such as "USER_USERNAME". For help with system notifications, see <a href="https://wiki.xnat.org/documentation/xnat-administration/notifications-and-alerts-in-xnat">Notifications and Alerts in XNAT.</a>
+        notificationEmailSelector:
+            kind: panel.select.single
+            name: notificationEmailSelector
+            id: notification-email-selector
+            label: Select Email Template
+            description: Toggle which email template appears in the panel below
+        notificationScript:
+            tag: script|src=/scripts/xnat/admin/notificationManagement.js
+        notificationEmailContainer:
+            tag: div
+            element:
+                id: notification-email-container
+            contents:
+                emailMessageUserRegistration:
+                    kind: panel.textarea
+                    label: "User Registration"
+                    code: html
+                    description: >
+                        Text of message emailed to users upon registration. Link for email validation is auto-populated. Available shortcodes:<br>
+                        USER_FIRSTNAME - The first name of the user who will be sent the message.<br>
+                        USER_LASTNAME - The last name of the user who will be sent the message.<br>
+                        SITE_NAME - The name of the xnat site.<br>
+                        SITE_URL - The URL of the xnat site.<br>
+                        USER_USERNAME - The username of the new user.<br>
+                        ADMIN_EMAIL - The email for the xnat site admin.
+
+                emailMessageForgotUsernameRequest:
+                    kind: panel.textarea
+                    label: "Forgot Username Request"
+                    code: html
+                    description: >
+                        Text of message emailed to users upon lost username request. Available shortcodes: <br>
+                        USER_USERNAME - the requested username <br>
+                        SITE_URL - The URL of the xnat site.
+
+                emailMessageForgotPasswordReset:
+                    kind: panel.textarea
+                    label: "Password Reset"
+                    code: html
+                    description: >
+                        Text of message emailed to users upon lost password reset. Link for password reset is auto-populated. Available shortcodes: <br>
+                        USER_FIRSTNAME - the first name of the user receiving the password reset. <br>
+                        USER_LASTNAME - the last name of the user receiving the password reset. <br>
+                        RESET_URL - the URL used to reset the password
+
+                emailMessageNewUserVerification:
+                    kind: panel.textarea
+                    label: "New User Verification"
+                    code: html
+                    description: >
+                        Text of the message emailed to users to verify a new user account. Available shortcodes: <br>
+                        USER_FIRSTNAME - The new user's first name. <br>
+                        USER_LASTNAME - The new user's last name. <br>
+                        VERIFY_URL - the URL used to verify the new account. <br>
+                        FORGOT_LOGIN_URL - the URL used if the user has forgotten their login information.
+
+                emailMessageProjectRequestAccess:
+                    kind: panel.textarea
+                    label: "Project Access Request"
+                    code: html
+                    description: >
+                        Text of the message sent out when a user requests access to a project. Available shortcodes: <br>
+                        PROJECT_NAME - the name of the project the user is attempting to access. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        RQ_ACCESS_LEVEL - the level of access (member, collaborator, etc.) that is being requested. <br>
+                        LIST_PERMISSIONS - the permissions associated with the level requested. <br>
+                        USER_USERNAME - the username of the requesting user. <br>
+                        USER_EMAIL - the email of the requesting user. <br>
+                        USER_FIRSTNAME - the first name of the requesting user. <br>
+                        USER_LASTNAME - the last name of the requesting user. <br>
+                        RQA_COMMENTS - the comments that the user attached to their request. <br>
+                        ACCESS_URL - the URL used to respond to the access request. <br>
+                        SITE_URL- The URL of the xnat site. <br>
+                        ADMIN_MAIL - the email address used to contact the site admin.
+
+                emailMessageProjectAccessApproval:
+                    kind: panel.textarea
+                    label: "Project Access Approval"
+                    code: html
+                    description: >
+                        Text of the message sent out when a user's project access is approved. Available shortcodes: <br>
+                        PROJECT_NAME - the name of the project. <br>
+                        RQ_ACCESS_LEVEL - the level of access (member, collaborator, etc.) that is being granted. <br>
+                        ACCESS_URL - the URL used to access the project. <br>
+                        SITE_URL- The URL of the xnat site. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        ADMIN_MAIL - the email address used to contact the site admin.
+
+                emailMessageProjectAccessDenial:
+                    kind: panel.textarea
+                    label: "Project Access Denial"
+                    code: html
+                    description: >
+                        Text of the message sent out when a user's project access is denied. Available shortcodes: <br>
+                        PROJECT_NAME - the name of the project for which access was requested. <br>
+                        USER_EMAIL - the email of the project manager. <br>
+                        SITE_URL- The URL of the xnat site. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        ADMIN_MAIL - the email address used to contact the site admin.
+
+                emailMessageInviteProjectAccess:
+                    kind: panel.textarea
+                    label: "Project Access Invitation"
+                    code: html
+                    description: >
+                        Text of the email sent out when a user is invited to join a project. Available shortcodes: <br>
+                        PROJECT_NAME - the name of the project. <br>
+                        USER_FIRSTNAME - the first name of the user extending the invitation. <br>
+                        USER_LASTNAME - the last name of the user extending the invitation. <br>
+                        ACCEPT_URL - the URL to be used to accept the invitation to join the project. <br>
+                        SITE_URL- The URL of the xnat site. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        ADMIN_MAIL - the email address used to contact the site admin.
+
+                emailMessageDisabledUserVerification:
+                    kind: panel.textarea
+                    label: "Disabled User Verification"
+                    code: html
+                    description: >
+                        Text of the message sent out when a previously disabled user account is verified and reactivated. Available shortcodes: <br>
+                        DATE_INPUT - the date on which the user was re-verified. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        SITE_URL- The URL of the xnat site. <br>
+                        USER_USERNAME - the username of the re-verified user. <br>
+                        USER_FIRSTNAME - the first name of the re-verified user. <br>
+                        USER_LASTNAME - the last name of the re-verified user. <br>
+                        LOGIN_URL - the login page for the XNAT site. <br>
+                        USER_LOGIN - the login data for the re-verified user.
+
+                emailMessageErrorMessage:
+                    kind: panel.textarea
+                    label: "Error Occurred"
+                    code: html
+                    description: >
+                        Text of the message sent out when an error has occurred within the system. Available shortcodes: <br>
+                        SITE_URL- the URL of the xnat site. <br>
+                        USER_LOGIN - the login information for the user associated with the error. <br>
+                        USER_FIRSTNAME - the first name of the associated with the error. <br>
+                        USER_LASTNAME - the last name of the associated with the error. <br>
+                        ERROR_TIME - the time of the error. <br>
+                        ERROR_MESSAGE - the error message.
+
+                emailMessageNewUserNotification:
+                    kind: panel.textarea
+                    label: "New User Notification"
+                    code: html
+                    description: >
+                        Text of the message sent out when a new user account registration has been created. Available shortcodes: <br>
+                        TIME - the time of user creation. <br>
+                        SITE_NAME - the name of the xnat site.  <br>
+                        SITE_URL - the URL of the xnat site. <br>
+                        USER_USERNAME - the username of the new user. <br>
+                        USER_FIRSTNAME - the first name of the new user. <br>
+                        USER_LASTNAME - the last name of the new user. <br>
+                        USER_PHONE - the phone number of the new user. <br>
+                        LAB_NAME - the name of the lab the new user is under. <br>
+                        USER_EMAIL - the email address of the new user. <br>
+                        PROJECT_ACCESS_REQUESTS - the projects the new user has access requests for. <br>
+                        REVIEW_LINK - the link used to accept or deny the request. <br>
+                        USER_COMMENTS - the comments provided to the new user by the administrator.
+
+                emailMessageNewUserRequest:
+                    kind: panel.textarea
+                    label: "New User Request"
+                    code: html
+                    description: >
+                        Text of the message sent out when a new user account is created but has not yet been enabled. Available shortcodes: <br>
+                        TIME - the time of user creation. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        SITE_URL - the URL of the xnat site. <br>
+                        USER_USERNAME - the username of the new user. <br>
+                        USER_FIRSTNAME - the first name of the new user. <br>
+                        USER_LASTNAME - the last name of the new user. <br>
+                        USER_PHONE - the phone number of the new user. <br>
+                        LAB_NAME - the name of the lab the new user is under. <br>
+                        USER_EMAIL - the email address of the new user. <br>
+                        PROJECT_ACCESS_REQUESTS - the projects the new user has access requests for. <br>
+                        REVIEW_LINK - the link used to accept or deny the request. <br>
+                        USER_COMMENTS - the comments provided to the new user by the administrator.
+
+                emailMessagePipelineDefaultSuccess:
+                    kind: panel.textarea
+                    label: "Pipeline Success"
+                    code: html
+                    description: >
+                        Text of the message sent out when an experiment pipeline has completed successfully without errors. Available shortcodes: <br>
+                        USER_FIRSTNAME - the first name of the contacted user. <br>
+                        USER_LASTNAME - the last name of the contacted user. <br>
+                        PIPELINE_NAME - the name of the pipeline. <br>
+                        EXPERIMENT_NAME - the name of the experiment on which the pipeline ran. <br>
+                        SUCCESS_URL - link for details on the pipeline run. <br>
+                        SITE_NAME - the name of the xnat site.
+
+                emailMessagePipelineDefaultFailure:
+                    kind: panel.textarea
+                    label: "Pipeline Failure"
+                    code: html
+                    description: >
+                        Text of the message sent out when an experiment pipeline fails before completion due to error. Available shortcodes: <br>
+                        PIPELINE_NAME - the name of the pipeline. <br>
+                        PROJECT_NAME - the name of the project in which the pipeline failed. <br>
+                        EXPERIMENT_NAME - the name of the experiment on which the pipeline failed. <br>
+                        PIPELINE_STEP - the step at which the pipeline failed. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        CONTACT_EMAIL - the email at which a user can contact the site team for help. <br>
+                        ATTACHMENTS_STATEMENT - other information about the pipeline failures if applicable. <br>
+                        STDOUT - the stdout of the pipeline error. <br>
+                        STDERR - the stderr of the pipeline error.
+
+                emailMessagePipelineAutorunSuccess:
+                    kind: panel.textarea
+                    label: "Pipeline Autorun Success"
+                    code: html
+                    description: >
+                        Text of the message sent out when an automated pipeline is run successfully and a session is archived in the system. Available shortcodes: <br>
+                        USER_FIRSTNAME - the first name of the contacted user. <br>
+                        USER_LASTNAME - the last name of the contacted user. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        PROJECT_NAME - the name of the project in which the pipeline ran. <br>
+                        SUBJECT_NAME - the name of the subject on which the pipeline ran. <br>
+                        EXPERIMENT_NAME - the name of the experiment on which the pipeline ran. <br>
+                        SUCCESS_URL - link for details on the pipeline run.
+
+                emailMessageBatchWorkflowComplete:
+                    kind: panel.textarea
+                    label: "Batch Transfer Complete"
+                    code: html
+                    description: >
+                        Text of the message when a batch data transfer to the archive has been successfully completed. Available shortcodes: <br>
+                        USER_FIRSTNAME - the first name of the contacted user. <br>
+                        USER_LASTNAME - the last name of the contacted user. <br>
+                        PROCESS_NAME - the name of the process that has been completed. <br>
+                        NUMBER_MESSAGES - number of messages transferred. <br>
+                        MESSAGES_LIST - list of transferred messages. <br>
+                        ERRORS_LIST - list of any errors that occurred during the transfer. <br>
+                        SITE_URL- The URL of the xnat site. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        ADMIN_MAIL - the email address used to contact the site admin.
+
+                emailMessageUnauthorizedDataAttempt:
+                    kind: panel.textarea
+                    label: "Unauthorized Data Attempt"
+                    code: html
+                    description: >
+                        Text of the message sent when one of several types of unauthorized data or login access attempts are recognized by the system. Available shortcodes: <br>
+                        TYPE - the type of data attempt. <br>
+                        USER_DETAILS - the details on the user who attempted to access the data (if known and applicable).
+
+                emailMessageEmailAddressChangeRequest:
+                    kind: panel.textarea
+                    label: "Email Change Request"
+                    code: html
+                    description: >
+                        Text of the message sent to alert a user that someone has requested to change the email for the account associated with that email address. Available shortcodes: <br>
+                        USER_USERNAME - the username of the account. <br>
+                        NEW_EMAIL - the new email for the account. <br>
+                        ADMIN_EMAIL - the email of the site admin.
+
+                emailMessageVerifyEmailChangeRequest:
+                    kind: panel.textarea
+                    label: "Verify Email Change Request"
+                    code: html
+                    description: >
+                        Text of the message sent to a new email address for a user to verify the change made to the account's associated email. Available shortcodes: <br>
+                        USER_USERNAME - the username of the account. <br>
+                        CHANGE_EMAIL_LINK - the link to change the email address.
+
+                emailMessageAddressChanged:
+                    kind: panel.textarea
+                    label: "Email Address Successfully Changed"
+                    code: html
+                    description: >
+                        Text of the message sent to both the former and new email address associated with an account to alert the user that the email has successfully been changed. <br>
+                        NEW_EMAIL - the new email address for the account.
+
+                emailMessageSystemPathError:
+                    kind: panel.textarea
+                    label: "System Path Error"
+                    code: html
+                    description: >
+                        Text of the message sent when XNAT is unable to find the filesystem (e.g,, archive, build, prearchive directories). Available shortcodes: <br>
+                        ERRORS_LIST - a list of the errors that have been found.
+
+                emailMessageUploadByReferenceSuccess:
+                    kind: panel.textarea
+                    label: "Upload By Reference Success"
+                    code: html
+                    description: >
+                        Text of the message sent when a user has uploaded a file or files to the system by reference. Available shortcodes: <br>
+                        USER_USERNAME - the user who requested the upload. <br>
+                        DUPLICATES_LIST - a list of the duplicate files (if applicable).
+
+                emailMessageUploadByReferenceFailure:
+                    kind: panel.textarea
+                    label: "Upload By Reference Failure"
+                    code: html
+                    description: >
+                        Text of the message sent when a user has attempted to upload a file or files to the system by reference but the process failed. Available shortcodes: <br>
+                        USER_USERNAME - the user who requested the upload.
+
+                emailMessageDataAlertCustom:
+                    kind: panel.textarea
+                    label: "Data Alert Custom Email"
+                    code: html
+                    description: >
+                        Text of the message sent out by from one user to another to alert them of possibly useful data. Available shortcodes: <br>
+                        USER_FIRSTNAME - the first name of the user who initiates the message. <br>
+                        USER_LASTNAME- the last name of the user who initiates the message. <br>
+                        SITE_NAME - the name of the xnat site. <br>
+                        REQUEST_LINK - the link the user can follow to view the data. <br>
+                        SENDER_MESSAGE - the message sent by the user alongside the data alert. <br>
+                        SITE_URL- the URL of the xnat site. <br>
+                        TIME_SENT - the time at which the information was sent. <br>
+                        HELP_CONTACT - email address at which help can be reached.
 
 ## THEMES
 
@@ -1983,7 +2203,6 @@ root:
             contents:
                 ${siteInfo}
                 ${adminInfo}
-                ${siteWideAlerts}
         security:
             kind: tab
             name: security
@@ -1999,16 +2218,30 @@ root:
             kind: tab
             name: emailServer
             label: Email Server
-            group: xnatSetup
+            group: manageNotifications
             contents:
                 ${emailServerSettings}
         notifications:
             kind: tab
             name: notifications
-            label: Notifications
-            group: xnatSetup
+            label: Notification Options
+            group: manageNotifications
             contents:
                 ${notifications}
+        notificationEmailsTab:
+            kind: tab
+            name: notificationEmailsTab
+            label: Notification Emails
+            group: manageNotifications
+            contents:
+                ${notificationEmails}
+        siteWideAlertsTab:
+            kind: tab
+            name: siteWideAlertsTab
+            label: Site-wide Alerts
+            group: manageNotifications
+            contents:
+                ${siteWideAlerts}
         manageThemes:
             kind: tab
             name: manageThemes

@@ -15,6 +15,7 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
+import org.nrg.framework.generics.GenericUtils;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.xdat.XDAT;
@@ -67,8 +68,18 @@ public class AdminUtils {
 
 			String url = TurbineUtils.GetFullServerPath() + "/app/action/DisplayItemAction/search_value/" + user.getLogin() + "/search_element/xdat:user/search_field/xdat:user.login";
 
-			String loginLink = "<a href=\"" + url + "\">verified user account</a>";
-			body = body.replaceAll("LOGIN_LINK", loginLink);
+			String loginLink = "<a href=\"" + url + "\">verified user account " + user.getLogin() + "</a>";
+
+			String enabledMessage;
+
+			if (user.isEnabled()) {
+				enabledMessage = "<p>After being disabled due to inactivity, the owner of this account has completed the email verification process to show that they are still the proper account owner. This user account is now no longer disabled due to inactivity and they can access the site again.\n</p>" +
+						"<p> The " + loginLink + " has been enabled.</p>";
+			} else {
+				enabledMessage = "<p>After being disabled due to inactivity, the owner of this account has completed the email verification process to show that they are still the proper account owner. This user account is now no longer disabled due to inactivity and they can access the site again. </p>" +
+						"<p>You can review and enable the " + loginLink + ".</p>";
+			}
+			body = body.replaceAll("ENABLED_MESSAGE", enabledMessage);
 
 			Map<String, Object> properties = new HashMap<>();
 			properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
@@ -118,6 +129,13 @@ public class AdminUtils {
 			final AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user.getLogin());
 			String body = XDAT.getNotificationsPreferences().getEmailMessageNewUserVerification();
 			body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
+			String enabledMessage;
+			if (isEnabled) {
+				enabledMessage = "After verifying your email address, you will be able to immediately log in and start using " + TurbineUtils.GetSystemName() + ".";
+			} else {
+				enabledMessage = "Note: After verifying your email address, you will need to wait for a " +  TurbineUtils.GetSystemName() + " administrator to enable your account before you can log in. ";
+			}
+			body = body.replaceAll("ENABLED_MESSAGE", enabledMessage);
 
 			final String verificationUrl = TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret();
 
@@ -363,7 +381,18 @@ public class AdminUtils {
 			body = body.replaceAll("USER_PHONE", phone);
 			body = body.replaceAll("LAB_NAME", lab);
 			body = body.replaceAll("USER_COMMENTS", comments);
-			body = body.replaceAll("PROJECT_ACCESS_REQUESTS", "");
+			String projectAccess = "";
+
+			if (context.containsKey("pars")) {
+				List<String> pars = GenericUtils.convertToTypedList((List<?>) context.get("pars"), String.class);
+				if (pars.size() > 0) {
+					projectAccess =  "<p>The account has open project access requests for the following projects: ";
+					projectAccess = projectAccess + "<ul><li>" + String.join("</li><li>", pars) + "</li></ul>";
+					projectAccess = projectAccess + "</p>\n";
+
+				}
+			}
+			body = body.replaceAll("PROJECT_ACCESS_REQUESTS", projectAccess);
 
 			String url = TurbineUtils.GetFullServerPath()+ "/app/action/DisplayItemAction/search_value/" + user.getUsername() + "/search_element/xdat:user/search_field/xdat:user.login";
 

@@ -51,7 +51,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     private static final String FORGOT_PASSWORD_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n<p>Please click this link to reset your password: RESET_LINK</p> \n<p>This link will expire in 24 hours.</p>";
     private static final String NEW_USER_VERIFICATION_EMAIL = "<p>USER_FIRSTNAME USER_LASTNAME, </p>\n<p>We received a request to register an account for you on XNAT. If you did not make this request, you can safely ignore this email. </p>\n" +
             "<p>If you would like to register, please confirm your email address by clicking this link within the next 24 hours: VERIFY_URL </p>\n" +
-            "<p>After verifying your email address, you will be able to immediately log in and start using XNAT. </p>\n" +
+            "<p>ENABLED_MESSAGE</p>\n" +
             "<p>To request a new email verification link, please click this link and select \"Resend email verification\": FORGOT_LOGIN_URL</p>";
     private static final String REQUEST_PROJECT_ACCESS_EMAIL = "<p>Hello,</p>\n" +
             "<p>We received a request to access the PROJECT_NAME project from a user on SITE_NAME as a(n) RQ_ACCESS_LEVEL. Granting this kind of access in this project will mean the user can LIST_PERMISSIONS</p>\n" +
@@ -65,11 +65,10 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     private static final String INVITE_PROJECT_ACCESS_EMAIL = "<p>Hello,</p>\n" + "<p>You have been invited to join the PROJECT_NAME project on SITE_NAME by USER_FIRSTNAME USER_LASTNAME. If you were not expecting to receive this invitation, you can safely ignore this email.\n</p>" +
             "<p>To accept this invitation and begin working in this project, please click the following link: ACCEPT_URL \n<br />\n<br /></p>" + "<p>The SITE_NAME team.\n<br />SITE_LINK \n<br />ADMIN_MAIL_LINK</p>";
     private static final String DISABLED_USER_VERIFICATION_EMAIL = "<p>Expired User Reverified</p>\n" + "<ul style=\"list-style-type:none;\"> <li>Date: DATE_INPUT</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li></ul>"
-            + "<p>After being disabled due to inactivity, the owner of this account has completed the email verification process to show that they are still the proper account owner. This user account is now no longer disabled due to inactivity and they can access the site again.\n</p>" +
-            "<p> The LOGIN_LINK USER_LOGIN has been enabled.</p>";
+            + "ENABLED_MESSAGE";
     private static final String ERROR_EMAIL= "<p>Error Thrown:</p>\n <ul style=\"list-style-type:none;\"> <li>Host: SITE_NAME</li> <li>User: USER_LOGIN (USER_USERNAME USER_LASTNAME)</li> <li>Time: ERROR_TIME</li> <li>Error: ERROR_MESSAGE</li> </ul>";
     private static final String NEW_USER_NOTIFICATION_EMAIL = "<p>New User Created</p>\n" + "<ul style=\"list-style-type:none;\"> <li>Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>" +
-            "<p>This account has been created and automatically enabled based on the current system configuration.</p>\n" + "<p>The account has open project access requests for the following projects: PROJECT_ACCESS_REQUESTS</p>\n" +
+            "<p>This account has been created and automatically enabled based on the current system configuration.</p>\n" + "PROJECT_ACCESS_REQUESTS" +
             "<p> REVIEW_LINK </p>\n" +
             "<p>User Comments: USER_COMMENTS</p>";
     private static final String NEW_USER_REQUEST_EMAIL = "<p>New User Request</p>\n" + "<ul style=\"list-style-type:none;\"> <li> Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>" +
@@ -80,8 +79,8 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
             "<p>Additional details for this session are available SUCCESS_URL.\n<br>SITE_NAME team</p>";
     private static final String PIPELINE_EMAIL_DEFAULT_SUCCESS = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n <p>PIPELINE_NAME has completed without errors for EXPERIMENT_NAME.</p>\n <p>Details are available at SUCCESS_URL. <br>\nSITE_NAME team</p>";
     private static final String PIPELINE_EMAIL_DEFAULT_FAILURE = "<p>The pipeline PIPELINE_NAME encountered an error.</p> <ul style=\"list-style-type:none;\"> <li>Project: PROJECT_NAME</li> <li>Experiment: EXPERIMENT_NAME</li> <li>Pipeline Step: PIPELINE_STEP </li> </ul>" +
-            "<p>The SITE_NAME technical team is aware of the issue and will notify you when it has been resolved.</p>\n <p>We appreciate your patience. Please contact CONTACT_EMAIL with questions or concerns.</p>\n +" +
-            "<p>ATTACHMENTS_STATEMENT<br>\nSTDOUT<br>\nSTDERR</p>";
+            "<p>The SITE_NAME technical team is aware of the issue and will notify you when it has been resolved.</p>\n <p>We appreciate your patience. Please contact CONTACT_EMAIL with questions or concerns.</p>\n" +
+            "<p>ATTACHMENTS_STATEMENT<br>\nPIPELINE_PARAMETERS<br>\nSTDOUT<br>\nSTDERR</p>";
     private static final String BATCH_WORKFLOW_COMPLETE_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n <p>The following batch procedure has been completed: \n<br>PROCESS_NAME </p>\n" +
             "<p>NUMBER_MESSAGES successful transfer(s).\n<br>MESSAGES_LIST \n<br>ERRORS_LIST \n<br>Details for this project are available at SITE_LINK.</p>\n" +
             "<p>The SITE_NAME team.<br>\nSITE_LINK <br>\n ADMIN_MAIL_LINK </p>";
@@ -353,7 +352,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
 
         body = body.replaceAll("ADMIN_EMAIL", XDAT.getSiteConfigPreferences().getAdminEmail());
 
-        String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + " Assistance\">" + TurbineUtils.GetSystemName() + "Management </a>";
+        String adminEmailLink = "<a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + " Assistance\">" + TurbineUtils.GetSystemName() + " Management </a>";
         body = body.replaceAll("ADMIN_MAIL_LINK",adminEmailLink);
 
         if (user != null) {
@@ -594,7 +593,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     }
 
     public void resetEmailMessagePipelineDefaultSuccess() {
-        setEmailMessagePipelineAutorunSuccess(PIPELINE_EMAIL_DEFAULT_SUCCESS);
+        setEmailMessagePipelineDefaultSuccess(PIPELINE_EMAIL_DEFAULT_SUCCESS);
     }
 
     @NrgPreference(defaultValue = PIPELINE_EMAIL_DEFAULT_FAILURE)
@@ -609,7 +608,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     }
 
     public void resetEmailMessagePipelineDefaultFailure() {
-        setEmailMessagePipelineAutorunSuccess(PIPELINE_EMAIL_DEFAULT_FAILURE);
+        setEmailMessagePipelineDefaultFailure(PIPELINE_EMAIL_DEFAULT_FAILURE);
     }
 
     @NrgPreference(defaultValue = BATCH_WORKFLOW_COMPLETE_EMAIL)

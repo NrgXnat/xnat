@@ -29,10 +29,7 @@ public class XnatDataModelBean {
         final String     prefix = getPrefix(type);
         final Properties init   = new Properties();
         for (final String property : properties.stringPropertyNames()) {
-            if (property.startsWith(prefix)) {
-                final String value = properties.getProperty(property);
-                init.setProperty(property.substring(prefix.length()), value);
-            }
+            init.setProperty(StringUtils.removeStart(property, prefix), properties.getProperty(property));
         }
         _type     = type;
         _secured  = Boolean.parseBoolean(init.getProperty(XnatDataModel.DATA_MODEL_SECURED));

@@ -72,7 +72,6 @@ public class XMLUpload extends SecureAction {
             XFTItem item = null;
             try {
                 item = getCatalogService().insertXmlObject(user, fileItem.getInputStream(), BooleanUtils.toBoolean(allowDeletion), TurbineUtils.GetTurbineParameters(data, context));
-
                 final DisplayItemAction displayItemAction = new DisplayItemAction();
                 displayItemAction.doPerform(TurbineUtils.SetSearchProperties(data, item), context);
             } catch (IOException e) {
@@ -102,7 +101,7 @@ public class XMLUpload extends SecureAction {
                 context.put("links", links);
                 log.error("", e);
             } catch (InvalidPermissionException e) {
-                log.error("The user {} tried to perform an illegal operation when uploading XML", user.getUsername(), e);
+                log.error("The user {} tried to perform an illegal operation when uploading XML: {}", user.getUsername(), e.getMessage());
                 handleInvalidPermissions(data, item, e.getMessage());
             } catch (Exception e) {
                 log.error("", e);

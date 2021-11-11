@@ -94,7 +94,7 @@ $page.setVlinkColor($ui.vlink)
     #xdatEditProps($item $edit_screen)
 
     <div class="submit-right">
-        <input class="btn1 pull-right" type="button" name="eventSubmit_doPerform" value="Create Project">
+        <input class="btn1 pull-right" type="button" name="eventSubmit_doPerform" value="Create Project" onclick="processProjectForm(event)">
         <div class="clear"></div>
     </div>
 

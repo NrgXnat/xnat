@@ -2344,6 +2344,11 @@ root:
             group: advanced
             contents:
                 ${fileSystem}
+        fileSystemBehaviorsTab:
+            kind: tab
+            label: File System Behavior
+            group: advanced
+            contents:
                 ${fileSystemBehaviors}
         asyncOperationsTab:
             kind: tab

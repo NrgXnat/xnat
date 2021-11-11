@@ -10,7 +10,7 @@ $page.setVlinkColor($ui.vlink)
 #if ($data.message)
 <div class="alert">$data.message</div>
 #end
-<form class="optOutOfXnatDefaultFormValidation" id="edit-project-form" name="form1" method="post" action="$link.setAction("ModifyProject")" onsubmit="return processProjectForm()">
+<form class="optOutOfXnatDefaultFormValidation" id="edit-project-form" name="form1" method="post" action="$link.setAction("ModifyProject")">
     #if($vr)
         <div class="error">Invalid parameters:<br>$vr.toHTML()</div>
         <hr>
@@ -101,7 +101,7 @@ $page.setVlinkColor($ui.vlink)
     </table>
 
     <div class="submit-right">
-        <input class="btn1" type="submit" name="eventSubmit_doPerform" value="Save Changes">
+        <input class="btn1 pull-right" type="button" name="eventSubmit_doPerform" value="Save Changes" onclick="processProjectForm(event)">
         <div class="clear"></div>
     </div>
 
@@ -109,10 +109,17 @@ $page.setVlinkColor($ui.vlink)
 
 <script>
 
-    function processProjectForm() {
+    var processProjectForm = function(e) {
+        e = e || window.event;
+        e.preventDefault(); // don't submit the form right away
+
+        XNAT.dialog.loading.open();
 
         var __form = $('#edit-project-form');
         __form.find('.invalid').removeClass('invalid');
+
+        // temporarily disable ability to resubmit
+        __form.find('input[type=submit]').prop('disabled','disabled').addClass('disabled');
 
         var i = 1;
 
@@ -136,42 +143,66 @@ $page.setVlinkColor($ui.vlink)
         var projRunningTitleVal = (__projRunningTitle.val()+'').trim();
 
         var invalid_count = 0;
-        if (projIDVal == '') {
-            xmodal.message('Validation', 'Please enter a ' + PROJECT + ' abbreviation (ID).');
-            __projID.addClass('invalid');
-            invalid_count++;
-        }
-        if (projRunningTitleVal == '') {
-            xmodal.message('Validation', 'Please enter a running title.');
-            __projRunningTitle.addClass('invalid');
-            invalid_count++;
-        }
-        if (projRunningTitleVal.length > 24) {
-            xmodal.message('Validation', 'Please enter a running title of 24 characters or less.');
-            __projRunningTitle.addClass('invalid');
-            invalid_count++;
-        }
+        var err_messages = [];
+
         if (projTitleVal == '') {
-            xmodal.message('Validation', 'Please enter a ' + PROJECT + ' title.');
+            // xmodal.message('Validation', 'Please enter a ' + PROJECT + ' title.');
+            err_messages.push('Please enter a ' + PROJECT + ' title.');
             __projTitle.addClass('invalid');
             invalid_count++;
         }
         if (projTitleVal.length > 199) {
-            xmodal.message('Validation', 'Please enter a ' + PROJECT + ' title of 199 characters or less.');
+            // xmodal.message('Validation', 'Please enter a ' + PROJECT + ' title of 199 characters or less.');
+            err_messages.push('Please enter a ' + PROJECT + ' title of 199 characters or less.');
             __projTitle.addClass('invalid');
             invalid_count++;
         }
+        if (projIDVal == '') {
+            // xmodal.message('Validation', 'Please enter a ' + PROJECT + ' abbreviation (ID).');
+            err_messages.push('Please enter a ' + PROJECT + ' abbreviation (ID).');
+            __projID.addClass('invalid');
+            invalid_count++;
+        }
+        if (projRunningTitleVal == '') {
+            // xmodal.message('Validation', 'Please enter a running title.');
+            err_messages.push('Please enter a running title.');
+            __projRunningTitle.addClass('invalid');
+            invalid_count++;
+        }
+        if (projRunningTitleVal.length > 24) {
+            // xmodal.message('Validation', 'Please enter a running title of 24 characters or less.');
+            err_messages.push('Please enter a running title of 24 characters or less.');
+            __projRunningTitle.addClass('invalid');
+            invalid_count++;
+        }
+
         if (invalid_count > 0) {
+            XNAT.dialog.loading.close();
+            // load a single form validation dialog. Focus the cursor on the OK button so multiple "enter" keypresses will not try to submit the underlying form again
+            XNAT.dialog.message({
+                title: 'Validation',
+                content: '<p>The following errors were found:</p><ul><li>' +
+                        err_messages.join('</li><li>') +
+                        '</li></ul>',
+                afterShow: function(obj){ obj.$dialog.find('button.default:first-child').focus() }
+            });
             __form.find('.invalid').first().focus();
+            __form.find('input[type=submit]').prop('disabled',false).removeClass('disabled');
             return false;
         }
         else {
             __projID.val(projIDVal);
             __projTitle.val(projTitleVal);
             __projRunningTitle.val(projRunningTitleVal);
-            return true;
+            // return true;
+
+            __form.submit();
         }
     }
+
+    $('input').on('keyup',function(e){
+        if (e.key === 'Enter' || e.keyCode === 13) processProjectForm(e);
+    })
 
 </script>
 <!-- END xnat-templates/screens/XDATScreen_edit_xnat_projectData.vm -->

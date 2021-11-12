@@ -12,9 +12,9 @@ package org.nrg.xnat.notifications;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.context.Context;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ServerException;
+import org.nrg.framework.generics.GenericUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.CatEntryI;
@@ -22,13 +22,13 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 
+import javax.mail.MessagingException;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -40,7 +40,7 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 	private static final String NOTIFICATIONS = "notifications";
 	private final XnatExperimentdata _expt;
 	private final String _subject,_action;
-	private String _body;
+	protected String _body;
 	private final UserI _user;
 	private final Map _params;
 	private final List<String> _emails;
@@ -80,59 +80,9 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 			}
 			
 			if(email.size()>0){
-
 				String from = XDAT.getSiteConfigPreferences().getAdminEmail();
-				_body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(_body, _user);
+				formEmailMessage();
 
-
-				_body = _body.replaceAll("PROJECT_NAME", _expt.getProject());
-				if (_params.containsKey("subject")) {
-					_body = _body.replaceAll("SUBJECT_NAME", _params.get("subject").toString());
-				}
-
-				String success_url = TurbineUtils.GetFullServerPath() + "/data/experiments/" + _expt.getId() + "?format=html";
-
-				String successUrlFinal = "<a href=\""+ success_url + "\">here</a>";
-
-				_body = _body.replaceAll("SUCCESS_URL", successUrlFinal);
-				if (_params.containsKey("pipelineName")) {
-					_body = _body.replaceAll("PIPELINE_NAME", _params.get("pipelineName").toString());
-				}
-
-				_body = _body.replaceAll("EXPERIMENT_NAME", _expt.getLabel());
-				String userEmail = "<a href=\"mailto:" + _user.getEmail()+ "\">" + _user.getUsername() + "</a>";
-
-				String contactEmail = "<a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "</a>";
-				_body = _body.replaceAll("CONTACT_EMAIL", contactEmail);
-
-				if (_params.containsKey("stdout") && _params.containsKey("stderr")) {
-					_body = _body.replaceAll("ATTACHMENTS_STATEMENT", "The stdout and stderr log files are attached.");
-				} else if (_params.containsKey("stdout")) {
-					_body.replaceAll("ATTACHMENTS_STATEMENT", "The stdout log file is attached.");
-				} else if (_params.containsKey("stderr")) {
-					_body.replaceAll("ATTACHMENTS_STATEMENT", "The stderr log file is attached.");
-				} else {
-					_body.replaceAll("ATTACHMENTS_STATEMENT", "");
-				}
-
-				if (_params.containsKey("stdout")) {
-					String stdoutString = "TAIL stdout<br>\n";
-					List<String> stdout= (List<String>) _params.get("stdout");
-					for (String outLine: stdout) {
-						stdoutString = stdoutString + outLine + "<br>\n";
-					}
-					_body = _body.replaceAll("STDOUT",stdoutString);
-				}
-
-				if (_params.containsKey("stderr")) {
-					String stderrString = "TAIL stderr<br>\n";
-					List<String> stderr= (List<String>) _params.get("stderr");
-					for (String errLine: stderr) {
-						stderrString = stderrString + errLine + "<br>\n";
-					}
-					_body = _body.replaceAll("STDERR",stderrString);
-				}
-				
 				XDAT.getMailService().sendHtmlMessage(from, email.toArray(new String[email.size()]), TurbineUtils.GetSystemName()+" update: " + _expt.getLabel() +" "+_subject, _body);
 				return true;
 			}else{
@@ -142,6 +92,74 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 			log.error("", e);
 			return false;
 		}
+	}
+
+	public void formEmailMessage() {
+		_body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(_body, _user);
+
+
+		_body = _body.replaceAll("PROJECT_NAME", _expt.getProject());
+		if (_params.containsKey("subject")) {
+			_body = _body.replaceAll("SUBJECT_NAME", _params.get("subject").toString());
+		}
+
+		String success_url = TurbineUtils.GetFullServerPath() + "/data/experiments/" + _expt.getId() + "?format=html";
+
+		String successUrlFinal = "<a href=\""+ success_url + "\">here</a>";
+
+		_body = _body.replaceAll("SUCCESS_URL", successUrlFinal);
+		if (_params.containsKey("pipelineName")) {
+			_body = _body.replaceAll("PIPELINE_NAME", _params.get("pipelineName").toString());
+		}
+
+		_body = _body.replaceAll("EXPERIMENT_NAME", _expt.getLabel());
+		String userEmail = "<a href=\"mailto:" + _user.getEmail()+ "\">" + _user.getUsername() + "</a>";
+
+		String contactEmail = "<a href=\"mailto:" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "\">" + XDAT.getNotificationsPreferences().getHelpContactInfo() + "</a>";
+		_body = _body.replaceAll("CONTACT_EMAIL", contactEmail);
+
+		if (_params.containsKey("stdout") && _params.containsKey("stderr")) {
+			_body = _body.replaceAll("ATTACHMENTS_STATEMENT", "The stdout and stderr log files are attached.");
+		} else if (_params.containsKey("stdout")) {
+			_body.replaceAll("ATTACHMENTS_STATEMENT", "The stdout log file is attached.");
+		} else if (_params.containsKey("stderr")) {
+			_body.replaceAll("ATTACHMENTS_STATEMENT", "The stderr log file is attached.");
+		} else {
+			_body.replaceAll("ATTACHMENTS_STATEMENT", "");
+		}
+
+		if (_params.containsKey("pipelineParamsMap")) {
+			String pipelineParamsString = "<p>\n <h3>PIPELINE PARAMETERS</h3>\n <table size=\"2\">\n";
+			Map<String, String> paramsMap = GenericUtils.convertToTypedMap((Map<?, ?>) _params.get("pipelineParamsMap"), String.class, String.class);
+			for (String key : paramsMap.keySet()) {
+				if (StringUtils.isNotBlank(paramsMap.get(key))) {
+					pipelineParamsString = pipelineParamsString + "<tr>\n <td>" + key + "</td><td>" + paramsMap.get(key) + "</td>\n </tr>";
+				}
+			}
+			pipelineParamsString = pipelineParamsString + "</table>\n </p>";
+			_body = _body.replaceAll("PIPELINE_PARAMETERS", pipelineParamsString);
+		} else {
+			_body = _body.replaceAll("PIPELINE_PARAMETERS", "");
+		}
+
+		if (_params.containsKey("stdout")) {
+			String stdoutString = "TAIL stdout<br>\n";
+			List<String> stdout= (List<String>) _params.get("stdout");
+			for (String outLine: stdout) {
+				stdoutString = stdoutString + outLine + "<br>\n";
+			}
+			_body = _body.replaceAll("STDOUT",stdoutString);
+		}
+
+		if (_params.containsKey("stderr")) {
+			String stderrString = "TAIL stderr<br>\n";
+			List<String> stderr= (List<String>) _params.get("stderr");
+			for (String errLine: stderr) {
+				stderrString = stderrString + errLine + "<br>\n";
+			}
+			_body = _body.replaceAll("STDERR",stderrString);
+		}
+
 	}
 	
 	public static class ResourceBasedProjectListeners implements ProjectListenersI{

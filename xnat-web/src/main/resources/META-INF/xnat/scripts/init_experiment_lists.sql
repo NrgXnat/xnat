@@ -197,7 +197,8 @@ CREATE OR REPLACE FUNCTION public.get_experiment_list(username VARCHAR(255), num
                 last_modified   TIMESTAMP,
                 workflow_date   TIMESTAMP,
                 pipeline_name   TEXT,
-                action_date     TIMESTAMP
+                action_date     TIMESTAMP,
+                scanner         VARCHAR(255)
             )
 AS
 $$
@@ -223,7 +224,8 @@ BEGIN
                  emd.last_modified,
                  W.workflow_date,
                  W.pipeline_name,
-                 COALESCE(W.workflow_date, emd.last_modified, emd.insert_date) AS action_date
+                 COALESCE(W.workflow_date, emd.last_modified, emd.insert_date) AS action_date,
+                 isd.scanner
              FROM
                  xnat_experimentData expt
                      LEFT JOIN  xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id

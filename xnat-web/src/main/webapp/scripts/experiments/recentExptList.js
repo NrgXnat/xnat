@@ -106,6 +106,25 @@ function MinExptList(_div, _options){
             td.innerHTML = expt.type_desc;
             tr.appendChild(td);
 
+            if(exptList.options.showExptScannerName && expt.scanner != ""){
+                scannerName = expt.scanner;
+                if (scannerName.length > 10) {
+                    scannerName = scannerName.substring(0,9) + '&hellip;';
+                }
+                td = document.createElement("td");
+                td.title = expt.scanner;
+                td.align = "left";
+                td.innerHTML = scannerName;
+                tr.appendChild(td);
+            }
+
+            if(exptList.options.showExptDate && expt.date != ""){
+                td = document.createElement("td");
+                td.align = "left";
+                td.innerHTML = expt.date;
+                tr.appendChild(td);
+            }
+
             td = document.createElement("td");
             td.align = "left";
 

@@ -1839,6 +1839,32 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiShowRecentExptListDate() {
+        return getBooleanValue("uiShowRecentExptListDate");
+    }
+
+    public void setUiShowRecentExptListDate(final boolean uiShowRecentExptListDate) {
+        try {
+            setBooleanValue(uiShowRecentExptListDate, "uiShowRecentExptListDate");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiShowRecentExptListDate': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getUiShowRecentExptListScannerName() {
+        return getBooleanValue("uiShowRecentExptListScannerName");
+    }
+
+    public void setUiShowRecentExptListScannerName(final boolean uiShowRecentExptListScannerName) {
+        try {
+            setBooleanValue(uiShowRecentExptListScannerName, "uiShowRecentExptListScannerName");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiShowRecentExptListScannerName': something is very wrong here.", e);
+        }
+    }
+
     public boolean isComplete() {
         return getMissingInitSettings().size() == 0;
     }

@@ -1383,7 +1383,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "true", aliases = "security.allow-HTML-resource-rendering")
+    @NrgPreference(defaultValue = "false", aliases = "security.allow-HTML-resource-rendering")
     public boolean getAllowHtmlResourceRendering() {
         return getBooleanValue("allowHtmlResourceRendering");
     }

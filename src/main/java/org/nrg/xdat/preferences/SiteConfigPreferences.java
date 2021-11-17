@@ -68,6 +68,8 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     public static final String INITIALIZED         = "initialized";
     public static final String SITE_URL            = "siteUrl";
 
+    private static final long serialVersionUID = -4126996694491112022L;
+
     @Autowired
     public SiteConfigPreferences(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {
         super(preferenceService, eventService, configPaths, initPrefs);
@@ -75,12 +77,12 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
 
     @NrgPreference(defaultValue = "false")
     public boolean isInitialized() {
-        return getBooleanValue("initialized");
+        return getBooleanValue(INITIALIZED);
     }
 
     public void setInitialized(final boolean initialized) {
         try {
-            setBooleanValue(initialized, "initialized");
+            setBooleanValue(initialized, INITIALIZED);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name initialized: something is very wrong here.", e);
         }
@@ -1018,6 +1020,58 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "HH:mm:ss", aliases = "UI.time-format")
+    public String getUiTimeFormat() {
+        return getValue("uiTimeFormat");
+    }
+
+    public void setUiTimeFormat(final String uiTimeFormat) {
+        try {
+            set(uiTimeFormat, "uiTimeFormat");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiTimeFormat': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "yyyy-MM-dd", aliases = "UI.date-format")
+    public String getUiDateFormat() {
+        return getValue("uiDateFormat");
+    }
+
+    public void setUiDateFormat(final String uiDateFormat) {
+        try {
+            set(uiDateFormat, "uiDateFormat");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiDateFormat': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "yyyy-MM-dd HH:mm:ss", aliases = "UI.date-time-format")
+    public String getUiDateTimeFormat() {
+        return getValue("uiDateTimeFormat");
+    }
+
+    public void setUiDateTimeFormat(final String uiDateTimeFormat) {
+        try {
+            set(uiDateTimeFormat, "uiDateTimeFormat");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiDateTimeFormat': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "MM/dd/yyyy HH:mm:ss.SSS", aliases = "UI.date-time-seconds-format")
+    public String getUiDateTimeSecondsFormat() {
+        return getValue("uiDateTimeSecondsFormat");
+    }
+
+    public void setUiDateTimeSecondsFormat(final String uiDateTimeSecondsFormat) {
+        try {
+            set(uiDateTimeSecondsFormat, "uiDateTimeSecondsFormat");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiDateTimeSecondsFormat': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "false")
     public boolean getUiDisplayScanModality() {
         return getBooleanValue("uiDisplayScanModality");
@@ -1213,14 +1267,14 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "true", aliases = "UI.show-left-bar-browse")
+    @NrgPreference(defaultValue = "true", aliases = {"UI.show-left-bar-browse", "UiShowLeftBarBrowse"})
     public boolean getUiShowLeftBarBrowse() {
         return getBooleanValue("uiShowLeftBarBrowse");
     }
 
     public void setUiShowLeftBarBrowse(final boolean uiShowLeftBarBrowse) {
         try {
-            setBooleanValue(uiShowLeftBarBrowse, "UiShowLeftBarBrowse");
+            setBooleanValue(uiShowLeftBarBrowse, "uiShowLeftBarBrowse");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'UiShowLeftBarBrowse': something is very wrong here.", e);
         }

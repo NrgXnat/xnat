@@ -9,10 +9,6 @@
 
 package org.nrg.xapi.rest.settings;
 
-import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
-import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
-import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
-
 import com.google.common.collect.ImmutableSet;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +16,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xdat.preferences.SiteConfigAccess;
 import org.nrg.xapi.authorization.SiteConfigPreferenceXapiAuthorization;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.NotFoundException;
@@ -29,20 +26,26 @@ import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
+import static org.springframework.http.MediaType.*;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @Api
 @XapiRestController
@@ -50,10 +53,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SiteConfigApi extends AbstractXapiRestController {
     @Autowired
-    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo, final NamedParameterJdbcTemplate template) {
+    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo, final SiteConfigAccess access, final NamedParameterJdbcTemplate template) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
+        _access = access;
         _template = template;
     }
 
@@ -63,9 +67,10 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     // TODO: This can be accessed by users if it's set to an open URL. This should be changed so that you can specify access levels for each property on a preference bean.
-    @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
+    @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = GET)
     public Map<String, Object> getSiteConfigProperties(final HttpServletRequest request) {
-        final String username = getSessionUser().getUsername();
+        final UserI  user     = getSessionUser();
+        final String username = user.getUsername();
         if (!_appInfo.isInitialized()) {
             log.info("The site is being initialized by user {}. Setting default values from context.", username);
             if (!_preferences.containsKey(SITE_URL) || StringUtils.isBlank(_preferences.getSiteUrl())) {
@@ -74,8 +79,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
         } else {
             log.debug("User {} requested the site configuration.", username);
         }
-
-        return _preferences;
+        return _preferences.entrySet().stream().filter(entry -> _access.canRead(user, entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     @ApiOperation(value = "Sets a map of site configuration properties.", notes = "Sets the site configuration properties specified in the map.")
@@ -83,7 +87,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST, restrictTo = Admin)
+    @XapiRequestMapping(consumes = {APPLICATION_FORM_URLENCODED_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = Admin)
     public void setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) {
         // Is this call initializing the system?
         final boolean isInitialized  = _appInfo.isInitialized();
@@ -153,7 +157,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "values/{preferences}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @XapiRequestMapping(value = "values/{preferences}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(SiteConfigPreferenceXapiAuthorization.class)
     public Map<String, Object> getSpecifiedSiteConfigProperties(@PathVariable final List<String> preferences) {
         log.debug("User {} requested the site configuration preferences {}", getSessionUser().getUsername(), StringUtils.join(preferences, ", "));
@@ -165,7 +169,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Authorizer)
+    @XapiRequestMapping(value = "{property}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(SiteConfigPreferenceXapiAuthorization.class)
     public Object getSpecifiedSiteConfigProperty(@ApiParam(value = "The site configuration property to retrieve.", required = true) @PathVariable final String property) throws NotFoundException {
         if (!_preferences.containsKey(property)) {
@@ -181,7 +185,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "{property}", consumes = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
+    @XapiRequestMapping(value = "{property}", consumes = {TEXT_PLAIN_VALUE, APPLICATION_JSON_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
     public void setSiteConfigProperty(@ApiParam(value = "The property to be set.", required = true) @PathVariable("property") final String property,
                                       @ApiParam("The value to be set for the property.") @RequestBody final String value) throws InitializationException {
         log.info("User '{}' set the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
@@ -197,11 +201,11 @@ public class SiteConfigApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns a map of application build properties.", notes = "This includes the implementation version, Git commit hash, and build number and number.", response = Properties.class)
+    @ApiOperation(value = "Returns a map of application build properties.", notes = "This includes the implementation version, Git commit hash, and build number and number.", response = String.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Application build properties successfully retrieved."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "buildInfo", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "buildInfo", produces = APPLICATION_JSON_VALUE, method = GET)
     public Map<String, String> getBuildInfo() {
         log.debug("User {} requested the application build information.", getSessionUser().getUsername());
         return _appInfo.getSystemProperties();
@@ -211,7 +215,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Extended build attributes successfully retrieved."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "buildInfo/attributes", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "buildInfo/attributes", produces = APPLICATION_JSON_VALUE, method = GET)
     public Map<String, Map<String, String>> getBuildAttributeInfo() {
         log.debug("User {} requested the extended application build attributes.", getSessionUser().getUsername());
         return _appInfo.getSystemAttributes();
@@ -221,7 +225,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Extended build attributes successfully retrieved."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "buildInfo/{property}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "buildInfo/{property}", produces = APPLICATION_JSON_VALUE, method = GET)
     public String getBuildProperty(@ApiParam("Indicates the specific property to be returned") @PathVariable final String property) {
         log.debug("User {} requested the build property {}.", getSessionUser().getUsername(), property);
         return _appInfo.getSystemProperty(property);
@@ -231,7 +235,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "System uptime successfully retrieved."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "uptime", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "uptime", produces = APPLICATION_JSON_VALUE, method = GET)
     public Map<String, String> getSystemUptime() {
         log.debug("User {} requested the system uptime map.", getSessionUser().getUsername());
         return _appInfo.getUptime();
@@ -241,7 +245,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "System uptime successfully retrieved."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "uptime/display", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+    @XapiRequestMapping(value = "uptime/display", produces = APPLICATION_JSON_VALUE, method = GET)
     public String getFormattedSystemUptime() {
         log.debug("User {} requested the formatted system uptime.", getSessionUser().getUsername());
         return _appInfo.getFormattedUptime();
@@ -275,5 +279,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
 
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;
+    private final SiteConfigAccess           _access;
     private final NamedParameterJdbcTemplate _template;
 }

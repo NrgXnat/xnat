@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet.resources;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +18,7 @@ import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -36,22 +37,21 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
+@Slf4j
 public class ConfigResource extends SecureResource {
-
     private static final String PROJECT_ID   = "PROJECT_ID";
     private static final String TOOL_NAME    = "TOOL_NAME";
     private static final String PATH_TO_FILE = "PATH_TO_FILE";
     private static final String REASON       = "REASON";
-
-    private static final Logger _log = LoggerFactory.getLogger(ConfigResource.class);
 
     private static final String[] configColumns = {"tool", "path", "project", "user", "create_date", "reason", "contents", "unversioned", "version", "status"};
     private static final String[] listColumns   = {"tool"};
@@ -109,13 +109,13 @@ public class ConfigResource extends SecureResource {
                 final XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
                 if (project == null) {
                     final String message = String.format("The requested project %s does not exist.", projectId);
-                    _log.info(message);
+                    log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
                     throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);
                 }
                 if (!Permissions.canRead(user, "xnat:subjectData/project", projectId)) {
                     final String message = String.format("User %s can not access project %s", user.getUsername(), projectId);
-                    _log.warn(message);
+                    log.warn(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                     throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, message);
                 }
@@ -195,7 +195,7 @@ public class ConfigResource extends SecureResource {
                         Configuration c = configurations.size() > 0 ? configurations.get(0) : null;
                         if (c == null || "disabled".equals(c.getStatus())) {
                             final String message = String.format("Config not found for user %s and project %s on tool [%s] path [%s]", user.getUsername(), projectId, toolName, path);
-                            _log.debug(message);
+                            log.debug(message);
                             if (acceptNotFound) {
                                 getResponse().setStatus(Status.SUCCESS_NO_CONTENT);
                             } else {
@@ -264,7 +264,7 @@ public class ConfigResource extends SecureResource {
             } else {
                 //if we fell through to here, nothing existed at the supplied URI
                 final String message = String.format("Couldn't find config for user %s and project %s on tool [%s] path [%s]", user.getUsername(), projectId, toolName, path);
-                _log.debug(message);
+                log.debug(message);
                 if (acceptNotFound) {
                     getResponse().setStatus(Status.SUCCESS_NO_CONTENT, message);
                     return representTable(table, mt, new Hashtable<>());
@@ -278,7 +278,7 @@ public class ConfigResource extends SecureResource {
                 throw (ResourceException) e;
             }
             final String message = String.format("An error occurred retrieving the config for user %s and project %s on tool [%s] path [%s]", user.getUsername(), projectId, toolName, path);
-            _log.debug(message, e);
+            log.debug(message, e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, message);
             throw new ResourceException(Status.SERVER_ERROR_INTERNAL, message);
         }
@@ -305,7 +305,7 @@ public class ConfigResource extends SecureResource {
         try {
             //check access, almost copy-paste code in the GET method.
             if (!((StringUtils.isNotBlank(projectId) && Permissions.canDelete(user, "xnat:subjectData/project", projectId)) || Roles.isSiteAdmin(user))) {
-                _log.warn("User {} can not modify config for project {}", user.getUsername(), projectId);
+                log.warn("User {} can not modify config for project {}", user.getUsername(), projectId);
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User does not have privileges to modify config for this project");
                 return;
             }
@@ -318,8 +318,7 @@ public class ConfigResource extends SecureResource {
             final Map<String, String> jsonParams;
             final String              status;
             if (entity != null && mediaType != null && mediaType.equals(MediaType.APPLICATION_JSON)) {
-                jsonParams = getSerializer().deserializeJson(entity.getText(), new TypeReference<HashMap<String, String>>() {
-                });
+                jsonParams = getSerializer().deserializeJson(entity.getText(), SerializerService.TYPE_REF_MAP_STRING_STRING);
                 status = jsonParams.get("status");
             } else {
                 jsonParams = null;
@@ -386,10 +385,10 @@ public class ConfigResource extends SecureResource {
             }
             getResponse().setStatus(response);
         } catch (ConfigServiceException e) {
-            _log.error("Configuration service error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
+            log.error("Configuration service error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
         } catch (Exception e) {
-            _log.error("Unknown error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
+            log.error("Unknown error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
         }
     }
@@ -402,7 +401,7 @@ public class ConfigResource extends SecureResource {
             if (StringUtils.isBlank(projectId)) {
                 if (!Roles.isSiteAdmin(user)) {
                     final String message = String.format("User %s is not an administrator and can't disable the configuration setting %s for the tool %s", user.getUsername(), path, toolName);
-                    _log.info(message);
+                    log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                     return;
                 }
@@ -410,14 +409,14 @@ public class ConfigResource extends SecureResource {
             } else {
                 if (!(Permissions.canDelete(user, "xnat:subjectData/project", projectId) || Roles.isSiteAdmin(user))) {  //Users should be able to delete project config if they have project edit permissions or are site admins but are otherwise forbidden.
                     final String message = String.format("User %s can not access project %s to modify configuration setting %s for the tool %s", user.getUsername(), projectId, path, toolName);
-                    _log.info(message);
+                    log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                     return;
                 }
                 configService.disable(user.getLogin(), "Disabling this setting", toolName, path, Scope.Project, projectId);
             }
         } catch (Exception e) {
-            _log.error("Unknown error deleting config for user {} and project {} on tool [{}] path [{}]: {}", user.getUsername(), projectId, toolName, path, e.getMessage());
+            log.error("Unknown error deleting config for user {} and project {} on tool [{}] path [{}]: {}", user.getUsername(), projectId, toolName, path, e.getMessage());
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
         }
 
@@ -430,13 +429,13 @@ public class ConfigResource extends SecureResource {
         } else {
             List<FileWriterWrapperI> fws = getFileWriters();
             if (fws.size() == 0) {
-                _log.warn("No body contents");
+                log.warn("No body contents");
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "No body contents.");
                 return null;
             }
 
             if (fws.size() > 1) {
-                _log.info("Config contents are limited to a single file");
+                log.info("Config contents are limited to a single file");
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Config contents are limited to a single file");
                 return null;
             }

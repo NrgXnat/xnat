@@ -9,25 +9,23 @@
 
 package org.nrg.xdat.configuration.mocks;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xft.exception.MetaDataException;
 import org.nrg.xft.security.UserI;
 import org.springframework.security.core.GrantedAuthority;
 
-import javax.annotation.Nullable;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 public class MockUser extends AbstractHibernateEntity implements UserI {
+    private static final long serialVersionUID = 651358928252294412L;
+
     private String       _username;
     private String       _firstname;
     private String       _lastname;
@@ -142,23 +140,11 @@ public class MockUser extends AbstractHibernateEntity implements UserI {
     @Transient
     @Override
     public List<? extends GrantedAuthority> getAuthorities() {
-        return Lists.transform(getPlainAuthorities(), new Function<String, GrantedAuthority>() {
-            @Nullable
-            @Override
-            public GrantedAuthority apply(final String authority) {
-                return Users.getGrantedAuthority(authority);
-            }
-        });
+        return getPlainAuthorities().stream().map(Users::getGrantedAuthority).collect(Collectors.toList());
     }
 
     public void setAuthorities(final List<? extends GrantedAuthority> authorities) {
-        setPlainAuthorities(Lists.transform(authorities, new Function<GrantedAuthority, String>() {
-            @Nullable
-            @Override
-            public String apply(final GrantedAuthority authority) {
-                return authority.getAuthority();
-            }
-        }));
+        setPlainAuthorities(authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
     }
 
     @ElementCollection(targetClass = String.class)
@@ -236,6 +222,7 @@ public class MockUser extends AbstractHibernateEntity implements UserI {
         return getTimestamp();
     }
 
+    @SuppressWarnings("JpaAttributeMemberSignatureInspection")
     @OneToOne(targetEntity = XdatUserAuth.class, cascade = CascadeType.ALL)
     @Override
     public UserAuthI getAuthorization() {

@@ -78,6 +78,9 @@ import javax.jms.Destination;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -382,7 +385,7 @@ public class XDAT {
 	 * @param location                    The location to search for XDAT configuration files.
 	 * @param allowDBAccess               Indicates whether XDAT should try to check for cached configurations in the
 	 *                                    database.
-	 * @param overrideConfigFilesLocation Indicates whether XDAT should used the cached configuration file location if
+	 * @param overrideConfigFilesLocation Indicates whether XDAT should use the cached configuration file location if
 	 *                                    available.
 	 *
 	 * @throws Exception When an error occurs initializing XDAT.
@@ -466,8 +469,8 @@ public class XDAT {
 	    }
 	    buffer.append("\n-- commit transaction\n");
 	    buffer.append("COMMIT;");
-		FileUtils.OutputToFile(buffer.toString(),file);
 
+		writeToFile(buffer, file);
 		log.info("File Created: {}", file);
 	}
 
@@ -491,8 +494,8 @@ public class XDAT {
 	    }
 	    buffer.append("\n-- commit transaction\n");
 	    buffer.append("COMMIT;");
-		FileUtils.OutputToFile(buffer.toString(),file);
 
+		writeToFile(buffer, file);
 		ViewManager.OutputFieldNames();
 		log.info("File Created: {}", file);
 	}
@@ -1096,12 +1099,19 @@ public class XDAT {
      * whether a particular stack trace line should be included or excluded from the output.
      *
      * @param stackTrace The stack trace to filter and format.
-     * @param predicate  The predicate to be applied to each element to determine whether or not it should be included in the output.
+     * @param predicate  The predicate to be applied to each element to determine whether it should be included in the output.
      *
      * @return A string containing the formatted stack trace elements that met the predicate criteria.
      */
 	public static String formatShortStackTrace(final StackTraceElement[] stackTrace, final Predicate<StackTraceElement> predicate) {
 		return Arrays.stream(stackTrace).filter(predicate).map(element -> "    at " + element.getClassName() + "." + element.getMethodName() + "():" + element.getLineNumber()).collect(Collectors.joining("\n"));
+	}
+
+	private static void writeToFile(final StringBuilder buffer, final String file) throws IOException {
+		try (final StringReader reader = new StringReader(buffer.toString());
+			 final FileWriter writer = new FileWriter(file)) {
+			IOUtils.copy(reader, writer);
+		}
 	}
 
     private static final List<String>      LOCALHOST_IPS  = Arrays.asList("127.0.0.1", "0:0:0:0:0:0:0:1");

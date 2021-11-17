@@ -978,7 +978,7 @@ public class TurbineUtils {
     public static SimpleDateFormat getDateFormatter() {
         if (default_date_format == null) {
             try {
-                default_date_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.date-format", "yyyy-MM-dd"));
+                default_date_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("uiDateFormat", "yyyy-MM-dd"));
             } catch (ConfigServiceException e) {
                 default_date_format = new SimpleDateFormat("yyyy-MM-dd");
             }
@@ -998,7 +998,7 @@ public class TurbineUtils {
     public static SimpleDateFormat getDateTimeFormatter() {
         if (default_date_time_format == null) {
             try {
-                default_date_time_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.date-time-format", "yyyy-MM-dd HH:mm:ss"));
+                default_date_time_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("uiDateTimeFormat", "yyyy-MM-dd HH:mm:ss"));
             } catch (ConfigServiceException e) {
                 default_date_time_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             }
@@ -1018,7 +1018,7 @@ public class TurbineUtils {
     public static SimpleDateFormat getDateTimeSecondsFormatter() {
         if (default_date_time_seconds_format == null) {
             try {
-                default_date_time_seconds_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.date-time-seconds-format", "MM/dd/yyyy HH:mm:ss.SSS"));
+                default_date_time_seconds_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("uiDateTimeSecondsFormat", "MM/dd/yyyy HH:mm:ss.SSS"));
             } catch (ConfigServiceException e) {
                 default_date_time_seconds_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
             }
@@ -1038,7 +1038,7 @@ public class TurbineUtils {
     public static SimpleDateFormat getTimeFormatter() {
         if (default_time_format == null) {
             try {
-                default_time_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.time-format", "HH:mm:ss"));
+                default_time_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("uiTimeFormat", "HH:mm:ss"));
             } catch (ConfigServiceException e) {
                 default_time_format = new SimpleDateFormat("HH:mm:ss");
             }

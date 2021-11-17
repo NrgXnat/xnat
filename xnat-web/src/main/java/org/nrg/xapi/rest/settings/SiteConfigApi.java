@@ -16,14 +16,15 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.xdat.preferences.SiteConfigAccess;
 import org.nrg.xapi.authorization.SiteConfigPreferenceXapiAuthorization;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.AuthDelegate;
 import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xdat.preferences.SiteConfigAccess;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -66,12 +67,15 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    // TODO: This can be accessed by users if it's set to an open URL. This should be changed so that you can specify access levels for each property on a preference bean.
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = GET)
     public Map<String, Object> getSiteConfigProperties(final HttpServletRequest request) {
         final UserI  user     = getSessionUser();
         final String username = user.getUsername();
         if (!_appInfo.isInitialized()) {
+            if (!Roles.isSiteAdmin(user)) {
+                log.error("User {} is trying to access the site configuration properties but the system hasn't been initialized yet!", user.getUsername());
+                return Collections.emptyMap();
+            }
             log.info("The site is being initialized by user {}. Setting default values from context.", username);
             if (!_preferences.containsKey(SITE_URL) || StringUtils.isBlank(_preferences.getSiteUrl())) {
                 _preferences.setSiteUrl(XnatHttpUtils.getServerRoot(request));

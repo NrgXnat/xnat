@@ -1171,6 +1171,77 @@ notificationEmails:
                         TIME_SENT - the time at which the information was sent. <br>
                         HELP_CONTACT - email address at which help can be reached.
 
+## DATE MANAGEMENT
+
+dateFormatting:
+    kind: panel.form
+    name: dateFormatting
+    id: admin-date-formatting-panel
+    label: Standard Date Formatting
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        dateFormatDescription:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    These preferred date formats are not necessarily followed in all parts of XNAT. Date formatting uses the <a href="https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html" target="_blank">Java SimpleDateFormat syntax</a>.
+                    <br><br>
+                    <strong>Updates in this panel require a Tomcat restart to be applied.</strong>
+#        dateFormatValidator:
+#            tag: div#date-format-validator.note
+#            element:
+#                html: >
+#                    Example date-time string: <span class="date-string">January 1, 2021 12:00 PM</span>
+#                    <a href="javascript:void()" class="reset-date-string">(Reset Date String)</a>
+#        dateFormatInputHidden:
+#            kind: panel.input.hidden
+#            name: uiDateFormat
+#        dateTimeFormatInputHidden:
+#            kind: panel.input.hidden
+#            name: uiDateTimeFormat
+#        dateTimeSecondsFormatInputHidden:
+#            kind: panel.input.hidden
+#            name: uiDateTimeSecondsFormat
+#        timeFormatInputHidden:
+#            kind: panel.input.hidden
+#            name: uiTimeFormat
+        dateFormatInput:
+            kind: panel.input.text
+            name: uiDateFormat
+            label: Date Format
+            placeholder: yyyy-MM-dd
+        timeFormatInput:
+            kind: panel.input.text
+            name: uiTimeFormat
+            label: Time Format
+            placeholder: HH:mm
+        datetimeFormatInput:
+            kind: panel.input.text
+            name: uiDateTimeFormat
+            label: Date/time Format
+            placeholder: yyyy-MM-dd HH:mm
+        dateTimeSecondsFormatInput:
+            kind: panel.input.text
+            name: uiDateTimeSecondsFormat
+            label: Date/time/seconds Format
+            placeholder: yyyy-MM-dd HH:mm ss.SSS
+#        dateTimeValidator:
+#            kind: panel.element
+#            name: dateTimeValidator
+#            contents:
+#                dateTimeValidatorBtn:
+#                    tag: button.btn#validate-datetime-format
+#                    element:
+#                        html: >
+#                            <i class="fa fa-spinner"></i> Preview Date-Time Format
+        dateFormatScript:
+            tag: script|src=/scripts/xnat/admin/datetimeManagement.js
+
+
 ## THEMES
 
 themeManagement:
@@ -2242,12 +2313,13 @@ root:
             group: manageNotifications
             contents:
                 ${siteWideAlerts}
-        manageThemes:
+        manageAppearance:
             kind: tab
-            name: manageThemes
-            label: Themes
+            name: manageAppearance
+            label: Appearance
             group: xnatSetup
             contents:
+                ${dateFormatting}
                 ${themeManagement}
         plugins:
             kind: tab

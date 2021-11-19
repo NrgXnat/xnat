@@ -61,6 +61,7 @@ XNAT.app.prearchiveActions={
 		for(var pC=0;pC<projectResults.ResultSet.Result.length;pC++){
 			this.projects.push(projectResults.ResultSet.Result[pC]);
 		}
+		this.projects = this.projects.sort(function(a,b){ return (a.ID.toLowerCase() < b.ID.toLowerCase()) ? -1 : 1 });
 
 		var options = $("#proj_move_select");
 		$.each(this.projects, function() {

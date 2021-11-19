@@ -281,7 +281,7 @@ generalSecuritySettings:
             description: >
                 Setting this to "Allow" will mean that HTML resources will be rendered as HTML pages in your web browser,
                 executing any code in that HTML. This setting should only be enabled if you trust all sources of HTML resources.
-                If set to "Do Not Allow", HTML resources will simply display as raw text / source code without being rendered.
+                If set to "Do Not Allow", HTML resources will be downloaded without being rendered in the page.
         ipsThatCanSendEmailsThroughRest:
             kind: panel.element
             label: Email-enabled IP Addresses

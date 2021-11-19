@@ -233,7 +233,28 @@ var XNAT = getObject(XNAT || {});
         }
         function displayProjects(projects){
             if (isArray(projects) && projects.length) {
-                return projects.join(', ');
+                if (projects.length > 4) {
+                    function showProjectModal(){
+                        XNAT.dialog.message.open({
+                            title: 'Subscribed Projects',
+                            content: '<ul><li>' + projects.join('</li><li>') + '</li></ul>',
+                        });
+                    }
+                    return spawn('span.show-subscribed-projects',{
+                        style: {
+                            'border-bottom': '1px #ccc dashed',
+                            'cursor': 'pointer'
+                        },
+                        data: { 'projects': projects.join(',') },
+                        title: 'Click to view projects'
+                    },
+                        projects.length+' Subscribed Projects'
+                    )
+                }
+
+                else {
+                    return projects.join(', ');
+                }
             }
             else {
                 return 'All Projects';
@@ -352,7 +373,7 @@ var XNAT = getObject(XNAT || {});
                 owner: {
                     label: 'Owner',
                     filter: true,
-                    td: { className: 'owner' },
+                    td: { className: 'owner align-top' },
                     apply: function(){
                         return this['subscription-owner']
                     }
@@ -1059,6 +1080,14 @@ var XNAT = getObject(XNAT || {});
     $(document).off('click','#create-new-subscription').on('click', '#create-new-subscription', function(e){
         // console.log(e);
         XNAT.admin.eventServicePanel.modifySubscription('Create');
+    });
+
+    $(document).off('click','.show-subscribed-projects').on('click','.show-subscribed-projects',function(){
+        var projectList = $(this).data('projects').split(',');
+        XNAT.dialog.message({
+            title: 'Subscribed Projects',
+            content: '<ul><li>' + projectList.join('</li><li>') +'</li></ul>'
+        });
     });
 
 

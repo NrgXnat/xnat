@@ -29,6 +29,8 @@ import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
+import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.MaterializedView;
@@ -508,6 +510,11 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             }
 
             try {
+                // TODO get rid of this check once XNAT-6889 is fixed
+                if (!Permissions.canCreate(user, src)) {
+                    Groups.getGroupsAndPermissionsCache().clearUserCache(user.getUsername());
+                }
+
                 try {
                     preArchive(user, src, params, existing);
                 } catch (RuntimeException e) {

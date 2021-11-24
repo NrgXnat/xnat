@@ -17,7 +17,9 @@ import org.nrg.xdat.om.*;
 import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -38,7 +40,6 @@ import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
-import org.nrg.xnat.services.cache.DefaultGroupsAndPermissionsCache;
 import org.nrg.xnat.services.messaging.archive.DirectArchiveRequest;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
@@ -77,12 +78,14 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                                            final Destination prearchiveOperationRequest,
                                            final JmsTemplate jmsTemplate,
                                            final XnatUserProvider receivedFileUserProvider,
-                                           final DefaultGroupsAndPermissionsCache groupsAndPermissionsCache) {
+                                           final GroupsAndPermissionsCache groupsAndPermissionsCache,
+                                           final PermissionsServiceI permissionsService) {
         this.directArchiveSessionHibernateService = directArchiveSessionHibernateService;
         this.jmsTemplate = jmsTemplate;
         this.prearchiveOperationDestination = prearchiveOperationRequest;
         this.receivedFileUserProvider = receivedFileUserProvider;
         this.groupsAndPermissionsCache = groupsAndPermissionsCache;
+        this.permissionsService = permissionsService;
     }
 
     @Override
@@ -181,6 +184,10 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                 }
             }
             setSessionId(session);
+            // TODO get rid of this check once XNAT-6889 is fixed
+            if (!permissionsService.canCreate(user, session)) {
+                groupsAndPermissionsCache.clearUserCache(user.getUsername());
+            }
             PrearcSessionArchiver.preArchive(user, session, EMPTY_MAP, null);
             workflow = createWorkflow(user, session);
             saveSubject(session, workflow.buildEvent());
@@ -460,7 +467,8 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     private final Destination prearchiveOperationDestination;
     private final XnatUserProvider receivedFileUserProvider;
     private final DirectArchiveSessionHibernateService directArchiveSessionHibernateService;
-    private final DefaultGroupsAndPermissionsCache groupsAndPermissionsCache;
+    private final GroupsAndPermissionsCache groupsAndPermissionsCache;
+    private final PermissionsServiceI permissionsService;
 
     private static final String PROJECT_KEY = "project";
 }

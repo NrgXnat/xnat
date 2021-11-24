@@ -1894,6 +1894,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "false")
+    public boolean getSecurityLocalDbParRegistrationDisabled() {
+        return getBooleanValue("securityLocalDbParRegistrationDisabled");
+    }
+
+    public void setSecurityLocalDbParRegistrationDisabled(final boolean securityLocalDbParRegistrationDisabled) {
+        try {
+            setBooleanValue(securityLocalDbParRegistrationDisabled, "securityLocalDbParRegistrationDisabled");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'securityLocalDbParRegistrationDisabled': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
     public boolean getUiShowRecentExptListDate() {
         return getBooleanValue("uiShowRecentExptListDate");
     }

@@ -86,16 +86,19 @@ $page.setTitle("$siteId - Please Login")
         #end
     </div>
 
-    <div id="register_box_container" class="login-box-container-fixed">
-        <h3><span>Register A New Account</span> <button class="btn btn-sm" onclick="showLogin()">Already Have an Account?</button></h3>
+    <div id="register_box_container" class="login-box-container-fixed #if($siteConfig.securityLocalDbParRegistrationDisabled) hidden #end">
+        <h3><span>Register A New Account</span>
+         <button class="btn btn-sm" onclick="showLogin()">Already Have an Account?</button></h3>
         <div class="clear"></div>
         <div id="register_box">
             #parse("/screens/register_box.vm")
         </div>
     </div>
 
-    <div id="login_box_container" class="hidden login-box-container-fixed">
-        <h3><span>Login</span> <button class="btn btn-sm" onclick="showRegistration()">Register?</button> </h3>
+    <div id="login_box_container" class="login-box-container-fixed #if(!$siteConfig.securityLocalDbParRegistrationDisabled) hidden #end">
+        #if(!$siteConfig.securityLocalDbParRegistrationDisabled)
+            <h3><span>Login</span> <button class="btn btn-sm" onclick="showRegistration()">Register?</button> </h3>
+        #end
         <div class="clear"></div>
         <div class="message">
             <strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account.

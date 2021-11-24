@@ -106,8 +106,8 @@ function MinExptList(_div, _options){
             td.innerHTML = expt.type_desc;
             tr.appendChild(td);
 
-            if(exptList.options.showExptScannerName && expt.scanner != ""){
-                scannerName = expt.scanner;
+            if(exptList.options.showExptScannerName){
+                scannerName = expt.scanner ? expt.scanner : '';
                 if (scannerName.length > 10) {
                     scannerName = scannerName.substring(0,9) + '&hellip;';
                 }
@@ -118,10 +118,10 @@ function MinExptList(_div, _options){
                 tr.appendChild(td);
             }
 
-            if(exptList.options.showExptDate && expt.date != ""){
+            if(exptList.options.showExptDate){
                 td = document.createElement("td");
                 td.align = "left";
-                td.innerHTML = expt.date;
+                td.innerHTML = expt.date ? expt.date : '';
                 tr.appendChild(td);
             }
 

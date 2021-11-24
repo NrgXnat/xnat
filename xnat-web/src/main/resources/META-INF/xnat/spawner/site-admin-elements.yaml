@@ -2200,6 +2200,26 @@ scanTableSettings:
             onText: Enabled
             offText: Disabled
 
+recentExptListSettings:
+    kind: panel.form
+    label: Recent Data Activity Table Settings
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiShowRecentExptListScannerName:
+            kind: panel.input.switchbox
+            label: Display Scanner Name
+            description: Display the scanner name in the recent data activity table
+            onText: Enabled
+            offText: Disabled
+        uiShowRecentExptListDate:
+            kind: panel.input.switchbox
+            label: Display Experiment Date
+            description: Display the experiment date in the recent data activity table
+            onText: Enabled
+            offText: Disabled
+
 setPreventCrossModalityMerge:
     kind: panel.form
     label: Prevent Cross-modality Session Merger
@@ -2457,6 +2477,7 @@ root:
             contents:
                 ${setScanTypeMapping}
                 ${scanTableSettings}
+                ${recentExptListSettings}
                 ${setPreventCrossModalityMerge}
                 ${manualQC}
                 ${developmentUtilities}

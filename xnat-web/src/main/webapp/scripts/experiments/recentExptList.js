@@ -121,7 +121,7 @@ function MinExptList(_div, _options){
             if(exptList.options.showExptDate){
                 td = document.createElement("td");
                 td.align = "left";
-                td.innerHTML = expt.date ? expt.date : '';
+                td.innerHTML = expt.date ? $.format.date(new Date(expt.date), XNAT.app.dateFormat) : '';
                 tr.appendChild(td);
             }
 

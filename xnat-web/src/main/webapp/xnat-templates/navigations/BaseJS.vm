@@ -99,6 +99,7 @@
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.hasClasses.${js}"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.${js}"></script>
     <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dateFormat.${minjs}"></script>
 
     <!-- other libraries -->
     <script src="${SITE_ROOT}/scripts/lib/spawn/spawn.${js}"></script>

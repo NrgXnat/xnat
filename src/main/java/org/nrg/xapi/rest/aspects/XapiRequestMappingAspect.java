@@ -1,6 +1,7 @@
 package org.nrg.xapi.rest.aspects;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -121,8 +122,8 @@ public class XapiRequestMappingAspect {
         // Is restrictTo configured?
         final AccessLevel accessLevel = xapiRequestMapping.restrictTo();
 
-        // We just let Null and open URLs go.
-        if (accessLevel == Null || isOpenUrl(path)) {
+        // We just let Null and GETs to open URLs go.
+        if (accessLevel == Null || (isOpenUrl(path) && StringUtils.equalsIgnoreCase("GET", request.getMethod()))) {
             AccessLogger.LogResourceAccess(username, request, requestUrl);
             return;
         }
@@ -171,12 +172,7 @@ public class XapiRequestMappingAspect {
     }
 
     private boolean checkUrl(final String path, final Collection<String> urls) {
-        for (final String url : urls) {
-            if (PATH_MATCHER.match(url, path)) {
-                return true;
-            }
-        }
-        return false;
+        return urls.stream().anyMatch(url -> PATH_MATCHER.match(url, path));
     }
 
     private static HttpServletRequest getRequest() {

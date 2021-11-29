@@ -135,10 +135,9 @@ public abstract class AbstractXapiRestController {
      */
     @Deprecated
     protected HttpStatus isPermitted(final HttpServletRequest request, final Collection<AntPathRequestMatcher> openUrls, final String... ids) {
-        for (final AntPathRequestMatcher matcher : openUrls) {
-            if (matcher.matches(request)) {
-                return null;
-            }
+        // TODO: Open URLs in XAPI are currently limited to GET calls.
+        if (StringUtils.equalsIgnoreCase(request.getMethod(), "GET") && openUrls.stream().anyMatch(matcher -> matcher.matches(request))) {
+            return null;
         }
         return isPermitted(ids);
     }

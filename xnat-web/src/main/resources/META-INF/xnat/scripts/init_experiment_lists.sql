@@ -7,6 +7,7 @@
 -- Released under the Simplified BSD.
 --
 
+DROP FUNCTION IF EXISTS public.get_experiment_list(username VARCHAR(255), numResults INTEGER, numDays INTEGER);
 DROP FUNCTION IF EXISTS public.get_experiment_list(username VARCHAR(255), limitResults BOOLEAN, numDays INTEGER);
 DROP FUNCTION IF EXISTS public.get_accessible_image_sessions(username VARCHAR(255));
 DROP FUNCTION IF EXISTS public.has_all_data_admin(username VARCHAR(255));

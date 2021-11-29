@@ -44,9 +44,10 @@ openUrls:
   - /style/
   - /themes/
   - /xapi/siteConfig/buildInfo
+  - /xapi/siteConfig/siteHome
+  - /xapi/siteConfig/siteId
   - /xapi/siteConfig/siteLogoPath
   - /xapi/siteConfig/siteUrl
-  - /xapi/siteConfig/siteWideAlert
 
 adminUrls:
   - /app/template/AdminSummary.vm

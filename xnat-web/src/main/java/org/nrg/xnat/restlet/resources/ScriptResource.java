@@ -9,12 +9,14 @@
 
 package org.nrg.xnat.restlet.resources;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptService;
+import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
@@ -36,8 +38,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Properties;
 
+@Slf4j
 public class ScriptResource extends AutomationResource {
-
     public ScriptResource(Context context, Request request, Response response) throws ResourceException {
         super(context, request, response);
 
@@ -59,7 +61,7 @@ public class ScriptResource extends AutomationResource {
             // You can't put or post or delete a script and you can't retrieve a specific script OTHER THAN the split
             // PET/MR script.
             if (!request.getMethod().equals(Method.GET) || (StringUtils.isNotBlank(_scriptId) && !_scriptId.equals(PrearcDatabase.SPLIT_PETMR_SESSION_ID))) {
-                _log.warn(getRequestContext("User " + user.getLogin() + " attempted to access forbidden script trigger template resources"));
+                log.warn(getRequestContext("User " + user.getLogin() + " attempted to access forbidden script trigger template resources"));
                 response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins can view or update script resources.");
                 throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins can view or update script resources.");
             }
@@ -70,8 +72,8 @@ public class ScriptResource extends AutomationResource {
             throw new ResourceException(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED, "You must specify a specific script ID to update or delete a script.");
         }
 
-        if (_log.isDebugEnabled()) {
-            _log.debug(getRequestContext("Servicing script request for user " + user.getLogin()));
+        if (log.isDebugEnabled()) {
+            log.debug(getRequestContext("Servicing script request for user " + user.getLogin()));
         }
     }
 
@@ -135,15 +137,15 @@ public class ScriptResource extends AutomationResource {
     @Override
     public void handlePut() {
         try {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Preparing to PUT script: " + _scriptId);
+            if (log.isDebugEnabled()) {
+                log.debug("Preparing to PUT script: " + _scriptId);
             }
             putScript();
         } catch (ClientException e) {
-            _log.error("Client error occurred trying to store a script resource: " + _scriptId, e);
+            log.error("Client error occurred trying to store a script resource: " + _scriptId, e);
             getResponse().setStatus(e.getStatus(), e.getMessage());
         } catch (ServerException e) {
-            _log.error("Server error occurred trying to store a script resource: " + _scriptId, e);
+            log.error("Server error occurred trying to store a script resource: " + _scriptId, e);
             getResponse().setStatus(e.getStatus(), e.getMessage());
         }
     }
@@ -151,13 +153,11 @@ public class ScriptResource extends AutomationResource {
     @Override
     public void handleDelete() {
         try {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Preparing to delete script: " + _scriptId + " and its associated triggers.");
-            }
+            log.debug("Preparing to delete script: {} and its associated triggers.", _scriptId);
             _runnerService.deleteScript(_scriptId);
-            recordAutomationEvent(_scriptId, SITE_SCOPE, "Delete", Script.class);
+            recordAutomationEvent(_scriptId, Scope.Site.code(), "Delete", Script.class);
         } catch (NrgServiceException e) {
-            _log.warn(e.getMessage());
+            log.warn(e.getMessage());
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "A service exception occurred trying to delete (disable) script");
         }
     }
@@ -211,37 +211,15 @@ public class ScriptResource extends AutomationResource {
         }
 
         final Properties properties = decodeProperties(entity, mediaType);
-
-        if (properties.containsKey("scriptId")) {
-            properties.remove("scriptId");
-        }
-//        int previousMaxVersion = 0;
-//        try{
-//            int version = Integer.parseInt(_scriptService.getByScriptId(_scriptId).getScriptVersion());
-//            if(version>0){
-//                previousMaxVersion=version;
-//            }
-//        }
-//        catch(Exception e){
-//            _log.error("",e);
-//        }
-//        if (properties.containsKey("scriptVersion") && !properties.getProperty("scriptVersion").isEmpty()) {
-//            //properties.setProperty("scriptVersion", ""+(Integer.parseInt(properties.getProperty("scriptVersion"))+1));
-//            properties.setProperty("scriptVersion", ""+(Integer.parseInt(properties.getProperty("scriptVersion"))));
-//        }
-//        else{
-            //properties.setProperty("scriptVersion", ""+(previousMaxVersion+1));
-//        }
+        properties.remove("scriptId");
 
         try {
             _runnerService.setScript(_scriptId, properties);
-            recordAutomationEvent(_scriptId, SITE_SCOPE, "Update", Script.class);
+            recordAutomationEvent(_scriptId, Scope.Site.code(), "Update", Script.class);
         } catch (NrgServiceException e) {
             getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e, "An error occurred saving the script " + _scriptId);
         }
     }
-
-    private static final Logger _log = LoggerFactory.getLogger(ScriptResource.class);
 
     private static final String SCRIPT_ID = "SCRIPT_ID";
     private static final String VERSION = "VERSION";

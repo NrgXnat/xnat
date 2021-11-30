@@ -33,25 +33,18 @@ import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @SuppressWarnings("WeakerAccess")
 @Slf4j
 public abstract class AutomationResource extends SecureResource {
-
-    static final         String  SITE_SCOPE      = Scope.encode(Scope.Site, "");
-    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-
     public AutomationResource(final Context context, final Request request, final Response response) throws ResourceException {
         super(context, request, response);
 
-        final String entityId = (String) getRequest().getAttributes().get(ENTITY_ID);
-        final String projectId = (String) getRequest().getAttributes().get(PROJECT_ID);
-        final boolean hasEntityId = StringUtils.isNotBlank(entityId);
+        final String  entityId     = (String) getRequest().getAttributes().get(ENTITY_ID);
+        final String  projectId    = (String) getRequest().getAttributes().get(PROJECT_ID);
+        final boolean hasEntityId  = StringUtils.isNotBlank(entityId);
         final boolean hasProjectId = StringUtils.isNotBlank(projectId);
 
         if (hasEntityId && hasProjectId) {
@@ -77,9 +70,9 @@ public abstract class AutomationResource extends SecureResource {
                 _scope = Scope.Project;
                 values = validateEntityId(projectId);
             }
-            // For now we presume entity ID is a project ID. This will change soon.
+            // For now, we presume entity ID is a project ID. This will change soon.
             if (values != null) {
-                _projectId = values.get(KEY_PROJECTID);
+                _projectId = values.get(KEY_PROJECT_ID);
                 _hasProjectId = true;
             } else {
                 _projectId = null;
@@ -98,11 +91,10 @@ public abstract class AutomationResource extends SecureResource {
         }
         try {
             if ((requiresWrite && !project.canEdit(user)) || !project.canRead(user)) {
-                final String message = "User " + user.getLogin() + " attempted to access project " + getProjectId() + " with insufficient privileges.";
-                log.warn(message);
-                throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, message);
+                log.warn("User {} attempted to access project {} with insufficient privileges.", user.getLogin(), getProjectId());
+                throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN);
             }
-        } catch(Exception e){
+        } catch (Exception e) {
             throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "Something went wrong accessing project info for " + getProjectId());
         }
     }
@@ -112,15 +104,17 @@ public abstract class AutomationResource extends SecureResource {
     protected abstract String getResourceId();
 
     protected Scope getScope() {
-        return _scope == null ? Scope.Site : _scope;
+        return Optional.ofNullable(_scope).orElse(Scope.Site);
     }
 
     protected boolean hasProjectId() {
         return _hasProjectId;
     }
+
     protected String getProjectId() {
         return _projectId;
     }
+
     protected void setProjectId(final String projectId) {
         _projectId = projectId;
         _hasProjectId = StringUtils.isNotBlank(_projectId);
@@ -132,6 +126,7 @@ public abstract class AutomationResource extends SecureResource {
         }
         return Scope.encode(getScope(), getProjectId());
     }
+
     protected void setAssociation(final String association) {
         final Map<String, String> atoms = Scope.decode(association);
         _scope = Scope.getScope(atoms.get("scope"));
@@ -140,8 +135,8 @@ public abstract class AutomationResource extends SecureResource {
 
     protected void recordAutomationEvent(final String automationId, final String containerId, final String operation, final Class<?> type) {
         try {
-            final EventDetails instance = EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, operation, "", operation + " " + type + " with ID " + automationId);
-            PersistentWorkflowI workflow = PersistentWorkflowUtils.buildOpenWorkflow(getUser(), type.getName(), automationId, containerId, instance);
+            final EventDetails  instance = EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, operation, "", operation + " " + type + " with ID " + automationId);
+            final PersistentWorkflowI workflow = PersistentWorkflowUtils.buildOpenWorkflow(getUser(), type.getName(), automationId, containerId, instance);
             assert workflow != null;
             workflow.setStatus(PersistentWorkflowUtils.COMPLETE);
             WorkflowUtils.save(workflow, workflow.buildEvent());
@@ -160,7 +155,7 @@ public abstract class AutomationResource extends SecureResource {
     protected String getRequestContext(final String header) {
         final StringBuilder buffer = new StringBuilder(header).append(":\n");
         if (_scope != null) {
-            buffer.append(" * Scope: ").append(_scope.toString());
+            buffer.append(" * Scope: ").append(_scope);
             if (_scope == Scope.Project) {
                 buffer.append("\n * Project ID: ").append(_projectId);
             }
@@ -178,9 +173,8 @@ public abstract class AutomationResource extends SecureResource {
         final Properties properties;
         if (mediaType.equals(MediaType.APPLICATION_WWW_FORM)) {
             try {
-                final List<NameValuePair> formMap = URLEncodedUtils.parse(entity.getText(), DEFAULT_CHARSET);
                 properties = new Properties();
-                for (final NameValuePair entry : formMap) {
+                for (final NameValuePair entry : URLEncodedUtils.parse(entity.getText(), StandardCharsets.UTF_8)) {
                     properties.setProperty(entry.getName(), entry.getValue());
                 }
             } catch (IOException e) {
@@ -188,8 +182,7 @@ public abstract class AutomationResource extends SecureResource {
             }
         } else {
             try {
-                final String text = entity.getText();
-                properties = getSerializer().deserializeJson(text, Properties.class);
+                properties = getSerializer().deserializeJson(entity.getText(), Properties.class);
             } catch (IOException e) {
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred processing the script properties", e);
             }
@@ -214,8 +207,8 @@ public abstract class AutomationResource extends SecureResource {
                 // Check to see if entityId is actually a project ID. If so, convert it to a Long.
                 final Long resolved = XnatProjectdata.getProjectInfoIdFromStringId(entityId);
                 if (resolved != null) {
-                    ids.put(KEY_PROJECTDATAINFO, resolved.toString());
-                    ids.put(KEY_PROJECTID, entityId);
+                    ids.put(KEY_PROJECT_DATA_INFO, resolved.toString());
+                    ids.put(KEY_PROJECT_ID, entityId);
                 } else {
                     if (!NumberUtils.isParsable(entityId)) {
                         throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "The specified entity ID " + entityId + " does not match an existing project ID, but is also not a parseable number, so is not project data ID.");
@@ -225,8 +218,8 @@ public abstract class AutomationResource extends SecureResource {
                         if (table.size() != 1) {
                             throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Couldn't find a project with the ID or alias of " + entityId);
                         }
-                        ids.put(KEY_PROJECTDATAINFO, entityId);
-                        ids.put(KEY_PROJECTID, (String) table.convertColumnToArrayList("id").get(0));
+                        ids.put(KEY_PROJECT_DATA_INFO, entityId);
+                        ids.put(KEY_PROJECT_ID, (String) table.convertColumnToArrayList("id").get(0));
                     } catch (Exception e) {
                         throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "An error occurred trying to access the database.", e);
                     }
@@ -238,10 +231,10 @@ public abstract class AutomationResource extends SecureResource {
         }
     }
 
-    private static final String ENTITY_ID           = "ENTITY_ID";
-    private static final String PROJECT_ID          = "PROJECT_ID";
-    private static final String KEY_PROJECTDATAINFO = "projectDataInfo";
-    private static final String KEY_PROJECTID       = "projectId";
+    private static final String ENTITY_ID             = "ENTITY_ID";
+    private static final String PROJECT_ID            = "PROJECT_ID";
+    private static final String KEY_PROJECT_DATA_INFO = "projectDataInfo";
+    private static final String KEY_PROJECT_ID        = "projectId";
 
     private final String  _path;
     private       Scope   _scope;

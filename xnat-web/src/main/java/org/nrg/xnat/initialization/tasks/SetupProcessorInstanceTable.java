@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.initialization.tasks;
 
+import org.nrg.framework.constants.Scope;
 import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
@@ -18,8 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collections;
 
 @Component
 public class SetupProcessorInstanceTable extends AbstractInitializingTask {
@@ -45,10 +45,10 @@ public class SetupProcessorInstanceTable extends AbstractInitializingTask {
             defaultSiteAnonProcessor.setLabel("Site Anonymization");
             defaultSiteAnonProcessor.setPriority(10);
             defaultSiteAnonProcessor.setProcessorClass(MizerArchiveProcessor.class.getCanonicalName());
-            defaultSiteAnonProcessor.setScope("site");
-            defaultSiteAnonProcessor.setParameters(new HashMap<>());
-            defaultSiteAnonProcessor.setScpBlacklist(new HashSet<>());
-            defaultSiteAnonProcessor.setScpWhitelist(new HashSet<>());
+            defaultSiteAnonProcessor.setScope(Scope.Site.code());
+            defaultSiteAnonProcessor.setParameters(Collections.emptyMap());
+            defaultSiteAnonProcessor.setScpBlacklist(Collections.emptySet());
+            defaultSiteAnonProcessor.setScpWhitelist(Collections.emptySet());
             _archiveProcessorInstanceService.create(defaultSiteAnonProcessor);
 
             final ArchiveProcessorInstance defaultRemappingProcessor = new ArchiveProcessorInstance();
@@ -56,10 +56,10 @@ public class SetupProcessorInstanceTable extends AbstractInitializingTask {
             defaultRemappingProcessor.setLabel("Remapping");
             defaultRemappingProcessor.setPriority(10);
             defaultRemappingProcessor.setProcessorClass(StudyRemappingArchiveProcessor.class.getCanonicalName());
-            defaultRemappingProcessor.setScope("site");
-            defaultRemappingProcessor.setParameters(new HashMap<>());
-            defaultRemappingProcessor.setScpBlacklist(new HashSet<>());
-            defaultRemappingProcessor.setScpWhitelist(new HashSet<>());
+            defaultRemappingProcessor.setScope(Scope.Site.code());
+            defaultSiteAnonProcessor.setParameters(Collections.emptyMap());
+            defaultSiteAnonProcessor.setScpBlacklist(Collections.emptySet());
+            defaultSiteAnonProcessor.setScpWhitelist(Collections.emptySet());
             _archiveProcessorInstanceService.create(defaultRemappingProcessor);
         }
     }

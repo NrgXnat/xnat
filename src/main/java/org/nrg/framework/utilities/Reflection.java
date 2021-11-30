@@ -1,7 +1,7 @@
 /*
  * framework: org.nrg.framework.utilities.Reflection
  * XNAT http://www.xnat.org
- * Copyright (c) 2018, Washington University School of Medicine
+ * Copyright (c) 2018-2021, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -83,6 +83,22 @@ public class Reflection {
     public static final Pattern                         PATTERN_PROPERTY          = Pattern.compile(REGEX_PROPERTY);
     public static       Map<String, List<Class<?>>>     CACHED_CLASSES_BY_PACKAGE = new HashMap<>();
 
+    /**
+     * Returns the class object for the specified class name by calling <b>Class.forName()</b>. Unlike that method, If the
+     * class name can't be found, this method returns <b>null</b> instead of throwing a <b>ClassNotFoundException</b>.
+     * 
+     * @param className The name of the class to find.
+     *                  
+     * @return The class object for the specified class name if found, otherwise <b>null</b>.
+     */
+    public static Class<?> getClass(final String className) {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
+    
     /**
      * Returns the hierarchy for the submitted class parameter. This includes only primary superclasses and terminates
      * at <b>Object</b>, which is not included in the returned hierarchy list.

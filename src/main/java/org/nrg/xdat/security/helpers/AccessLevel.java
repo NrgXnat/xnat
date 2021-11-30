@@ -1,7 +1,7 @@
 /*
  * core: org.nrg.xdat.security.helpers.AccessLevel
  * XNAT http://www.xnat.org
- * Copyright (c) 2017, Washington University School of Medicine
+ * Copyright (c) 2017-2021, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -14,9 +14,10 @@ import org.nrg.xapi.authorization.*;
 import org.nrg.xapi.rest.XapiRequestMapping;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Defines the access levels available for various XNAT resources. These can be used with the {@link
@@ -38,7 +39,7 @@ public enum AccessLevel {
      * Indicates that the user must belong to the collaborator group for the specified project.
      *
      * @deprecated Specify the level of access for a project or other data object through {@link #Read},
-     *         {@link #Edit}, or {@link #Delete} instead
+     * {@link #Edit}, or {@link #Delete} instead
      */
     @Deprecated
     Collaborator("collaborator", DataObjectXapiAuthorization.class),
@@ -46,7 +47,7 @@ public enum AccessLevel {
      * Indicates that the user must belong to the member group for the specified project.
      *
      * @deprecated Specify the level of access for a project or other data object through {@link #Read},
-     *         {@link #Edit}, or {@link #Delete} instead
+     * {@link #Edit}, or {@link #Delete} instead
      */
     @Deprecated
     Member("member", DataObjectXapiAuthorization.class),
@@ -54,7 +55,7 @@ public enum AccessLevel {
      * Indicates that the user must belong to the owner group for the specified project.
      *
      * @deprecated Specify the level of access for a project or other data object through {@link #Read},
-     *         {@link #Edit}, or {@link #Delete} instead
+     * {@link #Edit}, or {@link #Delete} instead
      */
     @Deprecated
     Owner("owner", DataObjectXapiAuthorization.class),
@@ -93,11 +94,7 @@ public enum AccessLevel {
         return _levels.keySet();
     }
 
-    private static final Map<String, AccessLevel> _levels = new HashMap<String, AccessLevel>() {{
-        for (final AccessLevel level : AccessLevel.values()) {
-            put(level.code(), level);
-        }
-    }};
+    private static final Map<String, AccessLevel> _levels = Arrays.stream(AccessLevel.values()).collect(Collectors.toMap(AccessLevel::code, Function.identity()));
 
     private final String                             _code;
     private final Class<? extends XapiAuthorization> _authClass;

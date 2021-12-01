@@ -357,6 +357,84 @@
                         #end
                     #end
 
+                #elseif($item.instanceOf("xnat:imageScanData"))
+                    // scan
+                    #if($om.getImageSessionData())
+                        #set($imageSession=$om.getImageSessionData())
+                    #end
+
+
+                    #if($subject)
+
+                    #else
+                        #if($imageSession.getSubjectData())
+                            #set($subject= $imageSession.getSubjectData())
+                            #set($subjectId= $subject.getId())
+                        #elseif($part)
+                            #set($subject=$part)
+                            #set($subjectId= $subject.getId())
+                        #end
+                    #end
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $projectId))
+                    #if($!displayId)
+                        // 380
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 390
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subjectId").addPathInfo("project","$projectId")',
+                            label: '#if($!subject.getIdentifier($projectId, true))$!subject.getIdentifier($projectId, true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($imageSession)
+                        // 400
+                        crumbs.push({
+                            id:    '$!imageSession.getId()',
+                            type:  '$displayManager.getSingularDisplayNameForImageSession().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$imageSession.getXSIType()").addPathInfo("search_field","${imageSession.getXSIType()}.ID").addPathInfo("search_value","$imageSession.getId()").addPathInfo("project","$projectId")',
+                            label: '#if($!imageSession.getIdentifier($projectId, true))$!imageSession.getIdentifier($projectId, true)#elseif($imageSession.getLabel())$!imageSession.getLabel()#else$!imageSession.getId()#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.getId())
+                            // 411
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$content.getURI("")/data/experiments/$!imageSession.getId()/scans/$om.getId()?format=html',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 419
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.getId())
+                            // 427
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$content.getURI("")/data/experiments/$!imageSession.getId()/scans/$om.getId()?format=html',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+
                 #elseif($item.getGenericSchemaElement().getPrimaryElements().indexOf("xnat:experimentData")!=-1)
                     //experimentData
                     #set($displayId = $turbineUtils.getProjectDisplayID($om, $projectId))

@@ -538,7 +538,6 @@ var XNAT = getObject(XNAT || {});
                 label: 'Event Payload Filter',
                 description: 'Optional. Enter filter in JSON path notation without enclosing brackets, e.g. <pre style="margin-top:0">(@.xsiType == "xnat:mrScanData")</pre>',
                 order: 50,
-                // onblur: XNAT.admin.eventServicePanel.validateJsonPath
             },
             subUserProxy: {
                 kind: 'panel.input.switchbox',
@@ -978,9 +977,9 @@ var XNAT = getObject(XNAT || {});
         })
     };
 
-    eventServicePanel.validateJsonPath = function(e){
-        e.preventDefault();
-        var element = $(e.target);
+    eventServicePanel.validateJsonPath = function(event){
+        event.preventDefault();
+        var element = $(event.target);
         if (element.val().length) {
             // validate the JSON Path Entry
             var jsonPathPredicate = element.val();
@@ -991,10 +990,20 @@ var XNAT = getObject(XNAT || {});
                 data: jsonPathPredicate.toString(),
                 contentType: 'application/json',
                 success: function(data){
-                    console.log('Validation returned: ',data)
+                    // Success should be silent. No data is returned to the user.
+                    // console.log('Validation returned: ',data)
                 },
-                fail: function(e){
-                    console.error('Could not validate JSON',e);
+                fail: function(err){
+                    if (err.status === 424) {
+                        element.addClass('invalid').focus();
+                        XNAT.ui.banner.top('5000','Error in JSON Path Notation: '+err.responseText, 'error');
+                    }
+                    else {
+                        errorHandler(err,'Could not validate JSON Path entry')
+                    }
+                    event.stopPropagation(); // stop propagation of current event and reinstantiate
+                    $(document).off('blur','#subscription-payload-filter')
+                        .on('blur','#subscription-payload-filter',XNAT.admin.eventServicePanel.validateJsonPath);
                 }
             })
         }
@@ -1114,8 +1123,8 @@ var XNAT = getObject(XNAT || {});
         });
     });
 
-    $(document).off('blur','#subscription-payload-filter')
-        .on('blur','#subscription-payload-filter',XNAT.admin.eventServicePanel.validateJsonPath);
+    // $(document).off('blur','#subscription-payload-filter')
+    //     .on('blur','#subscription-payload-filter',XNAT.admin.eventServicePanel.validateJsonPath);
 
 
     /* ------------------------- *

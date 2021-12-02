@@ -3,6 +3,8 @@ package org.nrg.xnat.eventservice.rest;
 import com.jayway.jsonpath.InvalidPathException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
@@ -123,6 +125,10 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return eventService.generateFilterRegEx(filterNodes);
     }
 
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Valid JsonPath Predicate."),
+            @ApiResponse(code = 424, message = "Invalid JsonPath Predicate."),
+            @ApiResponse(code = 500, message = "Unexpected error.")})
     @XapiRequestMapping(restrictTo = Authenticated, value = {"/events/subscription/filter/validate"}, method = POST)
     @ApiOperation(value = "Validate a JsonPath predicate for use in event service filter.")
     public ResponseEntity<Void> validateFilterJsonPathPredicate(final @RequestBody String jsonPathPredicate) throws InvalidPathException {
@@ -491,6 +497,12 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         return subscriptions.stream()
                      .map(s -> setSubscriptionDisplayEditFlag(s, projectIdAccess))
                      .collect(Collectors.toList());
+    }
+
+    @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
+    @ExceptionHandler(value = {InvalidPathException.class})
+    public String handleFailedJsonPathValidation(InvalidPathException e) {
+        return "JsonPath format failed to validate.\n" + e.getMessage();
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)

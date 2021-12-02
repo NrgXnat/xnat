@@ -8,27 +8,9 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.nrg.xdat.model.XnatAbstractprojectassetI;
-import org.nrg.xdat.model.XnatAbstractresourceI;
-import org.nrg.xdat.model.XnatImageassessordataI;
-import org.nrg.xdat.model.XnatImagescandataI;
-import org.nrg.xdat.model.XnatImagesessiondataI;
-import org.nrg.xdat.model.XnatProjectdataI;
-import org.nrg.xdat.model.XnatResourceI;
-import org.nrg.xdat.model.XnatResourcecatalogI;
-import org.nrg.xdat.model.XnatSubjectassessordataI;
-import org.nrg.xdat.model.XnatSubjectdataI;
+import org.nrg.xdat.model.*;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.XdatUsergroupI;
-import org.nrg.xdat.om.XnatAbstractprojectasset;
-import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatImageassessordata;
-import org.nrg.xdat.om.XnatImagescandata;
-import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatResource;
-import org.nrg.xdat.om.XnatResourcecatalog;
-import org.nrg.xdat.om.XnatSubjectassessordata;
-import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.ImageAssessorEvent;
@@ -90,19 +72,19 @@ public class EventServiceItemSaveAspect {
             } else if (isItemA(item, XnatType.WORKFLOW)){
                 //retVal = joinPoint.proceed();
 
-            }else if (isItemA(item, XnatType.NEW_PROJECT)) {
-                log.debug("New Project Data Save" + " : xsiType:" + item.getXSIType());
-                XnatProjectdataI project = item instanceof XnatProjectdataI ? (XnatProjectdataI) item : new XnatProjectdata(item);
-                triggerProjectCreate(project, user);
-                if(log.isDebugEnabled() && sw.isRunning()) {
-                    sw.stop();
-                    log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
+            }else if (isItemA(item, XnatType.PROJECT)) {
+                log.debug("Project Data Save" + " : xsiType:" + item.getXSIType());
+                Boolean alreadyStored = item instanceof ArcProjectI ? xnatObjectIntrospectionService.storedInDatabase((ArcProjectI) item) :
+                        xnatObjectIntrospectionService.storedInDatabase(new ArcProject(item));
+                if (!alreadyStored){
+                    log.debug("New Project Data Save" + " : xsiType:" + item.getXSIType());
+                    proceedingReturn = joinPoint.proceed();
+                    triggerProjectCreate(item instanceof XnatProjectdataI ? (XnatProjectdataI) item : new XnatProjectdata(item), user);
+                } else {
+                    log.debug("Existing Project Data Save" + " : xsiType:" + item.getXSIType());
+                    log.debug("ProjectEvent.Status.UPDATED detected - no-op");
                 }
-            } else if (isItemA(item, XnatType.PROJECT)) {
-                log.debug("Existing Project Data Save" + " : xsiType:" + item.getXSIType());
-                log.debug("ProjectEvent.Status.UPDATED detected - no-op");
-                //XnatProjectdataI project = item instanceof XnatProjectdataI ? (XnatProjectdataI) item : new XnatProjectdata(item);
-                if(log.isDebugEnabled() && sw.isRunning()) {
+                if (log.isDebugEnabled() && sw.isRunning()) {
                     sw.stop();
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
                 }
@@ -481,7 +463,6 @@ public class EventServiceItemSaveAspect {
         USER,
         USER_GROUP,
         WORKFLOW,
-        NEW_PROJECT,
         PROJECT,
         SUBJECT,
         SESSION,
@@ -499,10 +480,8 @@ public class EventServiceItemSaveAspect {
                 return (item instanceof XdatUsergroupI || StringUtils.contains(item.getXSIType(), "xdat:userGroup"));
             case WORKFLOW:
                 return StringUtils.contains(item.getXSIType(), "wrk:workflowData");
-            case NEW_PROJECT:
-                return StringUtils.equals(item.getXSIType(), "arc:project");
             case PROJECT:
-                return StringUtils.equals(item.getXSIType(), "xnat:projectData");
+                return StringUtils.equals(item.getXSIType(), "xnat:projectData") || StringUtils.equals(item.getXSIType(), "arc:project");
             case SUBJECT:
                 return (StringUtils.equals(item.getXSIType(), "xnat:subjectData") || item instanceof  XnatSubjectdataI);
             case SESSION:

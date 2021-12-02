@@ -1,13 +1,7 @@
 package org.nrg.xnat.eventservice.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.xdat.model.XnatAbstractprojectassetI;
-import org.nrg.xdat.model.XnatExperimentdataI;
-import org.nrg.xdat.model.XnatImageassessordataI;
-import org.nrg.xdat.model.XnatImagescandataI;
-import org.nrg.xdat.model.XnatProjectdataI;
-import org.nrg.xdat.model.XnatSubjectassessordataI;
-import org.nrg.xdat.model.XnatSubjectdataI;
+import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xnat.eventservice.services.XnatObjectIntrospectionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -150,6 +144,19 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
         return result > 0;
     }
 
+    @Override
+    public boolean storedInDatabase(XnatProjectdataI project) {
+        Integer result = jdbcTemplate.queryForObject(QUERY_COUNT_PROJECT_BY_ID,
+                new MapSqlParameterSource("projectId", project.getId()), Integer.class);
+        return result > 0;
+    }
+
+    @Override
+    public boolean storedInDatabase(ArcProjectI project) {
+        Integer result = jdbcTemplate.queryForObject(QUERY_COUNT_ARCPROJECT_BY_ID,
+                new MapSqlParameterSource("projectId", project.getId()), Integer.class);
+        return result > 0;
+    }
 
     @Override
     public Integer getResourceCount(XnatProjectdataI project) {
@@ -201,6 +208,10 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
     private static final String QUERY_COUNT_SUBJECTASESSORS_BY_ID = "SELECT COUNT(id) from xnat_subjectassessordata WHERE id = :subjectAssessorId";
 
     private static final String QUERY_COUNT_PROJECTASSET_BY_ID = "SELECT COUNT(id) from xnat_abstractprojectasset WHERE id = :projectAssetId";
+
+    private static final String QUERY_COUNT_PROJECT_BY_ID = "SELECT COUNT(id) from xnat_projectdata WHERE id = :projectId";
+
+    private static final String QUERY_COUNT_ARCPROJECT_BY_ID = "SELECT COUNT(id) from arc_project WHERE id = :projectId";
 
     private static final String QUERY_SCANDATAID = "SELECT id FROM xnat_imagescandata WHERE image_session_id = :experimentId";
 

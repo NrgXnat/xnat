@@ -25,6 +25,7 @@ public class ProjectAssetEvent extends AbstractEventServiceEvent<XnatAbstractpro
 
     public ProjectAssetEvent(final XnatAbstractprojectassetI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
+        payloadId = payload.getId();
     }
 
     @Override
@@ -39,7 +40,7 @@ public class ProjectAssetEvent extends AbstractEventServiceEvent<XnatAbstractpro
 
     @Override
     public XnatAbstractprojectassetI getObject(UserI user) {
-        return XnatAbstractprojectasset.getXnatAbstractprojectassetsById(projectId, user, false);
+        return XnatAbstractprojectasset.getXnatAbstractprojectassetsById(payloadId, user, false);
     }
 
     @Override

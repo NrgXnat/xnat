@@ -534,9 +534,11 @@ var XNAT = getObject(XNAT || {});
             subFilter: {
                 kind: 'panel.input.text',
                 name: 'payload-filter',
+                id: 'subscription-payload-filter',
                 label: 'Event Payload Filter',
                 description: 'Optional. Enter filter in JSON path notation without enclosing brackets, e.g. <pre style="margin-top:0">(@.xsiType == "xnat:mrScanData")</pre>',
-                order: 50
+                order: 50,
+                // onblur: XNAT.admin.eventServicePanel.validateJsonPath
             },
             subUserProxy: {
                 kind: 'panel.input.switchbox',
@@ -771,8 +773,8 @@ var XNAT = getObject(XNAT || {});
                         $form.find('#subscription-project-selector')
                             .append(spawn(
                                 'option',
-                                { value: project.ID },
-                                project['secondary_ID']
+                                { value: escapeHTML(project.ID) },
+                                escapeHTML(project['secondary_ID'])
                             ));
                     });
                 }
@@ -976,6 +978,28 @@ var XNAT = getObject(XNAT || {});
         })
     };
 
+    eventServicePanel.validateJsonPath = function(e){
+        e.preventDefault();
+        var element = $(e.target);
+        if (element.val().length) {
+            // validate the JSON Path Entry
+            var jsonPathPredicate = element.val();
+
+            XNAT.xhr.ajax({
+                method: 'POST',
+                url: restUrl('/xapi/events/subscription/filter/validate'),
+                data: jsonPathPredicate.toString(),
+                contentType: 'application/json',
+                success: function(data){
+                    console.log('Validation returned: ',data)
+                },
+                fail: function(e){
+                    console.error('Could not validate JSON',e);
+                }
+            })
+        }
+    };
+
     eventServicePanel.projectSubscriptionCheck = function(e){
         e.preventDefault();
         var element = $(e.target),
@@ -1089,6 +1113,9 @@ var XNAT = getObject(XNAT || {});
             content: '<ul><li>' + projectList.join('</li><li>') +'</li></ul>'
         });
     });
+
+    $(document).off('blur','#subscription-payload-filter')
+        .on('blur','#subscription-payload-filter',XNAT.admin.eventServicePanel.validateJsonPath);
 
 
     /* ------------------------- *

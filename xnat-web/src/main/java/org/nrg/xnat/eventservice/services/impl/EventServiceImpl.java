@@ -139,6 +139,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException, SubscriptionAccessException {
         throwIfDisabled();
+        subscriptionService.validate(subscription);
         final Subscription updated = subscriptionService.update(subscription);
         if (updated == null) {
             return null;

@@ -122,6 +122,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     }
 
     @Override
+    @Transient
     public Subscription validate(Subscription subscription) throws SubscriptionValidationException {
         UserI actionUser = null;
         try {
@@ -353,13 +354,10 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     }
 
     @Override
-    public Subscription update(final Subscription subscription) throws NotFoundException, SubscriptionValidationException{
-        SubscriptionEntity subscriptionEntity = retrieve(subscription.id());
-        subscriptionEntity = SubscriptionEntity.fromPojoWithTemplate(subscription, subscriptionEntity);
-        Subscription updatedSubscription = toPojo(subscriptionEntity);
-        validate(updatedSubscription);
+    public Subscription update(final Subscription subscription) throws NotFoundException {
+        SubscriptionEntity subscriptionEntity = SubscriptionEntity.fromPojoWithTemplate(subscription, retrieve(subscription.id()));
         super.update(subscriptionEntity);
-        return updatedSubscription;
+        return toPojo(subscriptionEntity);
     }
 
     @Override

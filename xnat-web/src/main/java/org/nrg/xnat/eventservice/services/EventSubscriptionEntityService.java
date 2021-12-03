@@ -31,7 +31,7 @@ public interface EventSubscriptionEntityService extends BaseHibernateService<Sub
 
     Subscription save(Subscription subscription);
 
-    Subscription update(Subscription subscription) throws NotFoundException, SubscriptionValidationException;
+    Subscription update(Subscription subscription) throws NotFoundException;
 
     void delete(Long subscriptionId) throws Exception;
 

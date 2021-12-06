@@ -572,14 +572,26 @@ var XNAT = getObject(XNAT || {});
     // populate the Action Select menu based on selected project and event (which provides xsitype)
     function findActions($element){
         var $form = $element.parents('form');
-        // var project = $form.find('select[name=project-id]').find('option:selected').val();
         var project, projectArray = [], projects = $form.find('select[name=project-id]').find('option:selected');
-        projects.each(function(selectedProject) {
-            projectArray.push($(this).val())
-        });
-        project = projectArray.join(',');
+
+        // Check for the use of a "ProjectEvent" event. These can only be applied site-wide.
         var xsiType = $form.find('select[name=event-selector]').find('option:selected').data('xsitype');
         var eventType = $form.find('select[name=event-selector]').find('option:selected').data('event-type');
+
+        if (eventType.indexOf('ProjectEvent') >= 0) {
+            project = [];
+            $form.find('select[name=project-id]').addClass('disabled').prop('disabled','disabled');
+            $form.find('#subscription-anyproject-selector').prop('checked','checked');
+            XNAT.ui.banner.top(3000,'Events that affect project objects directly cannot be assigned to individual projects.','info');
+        } else {
+            // var project = $form.find('select[name=project-id]').find('option:selected').val();
+            $form.find('select[name=project-id]').removeClass('disabled').prop('disabled',false);
+            projects.each(function(selectedProject) {
+                projectArray.push($(this).val())
+            });
+            project = projectArray.join(',');
+        }
+
         var inheritedAction = $form.find('input[name=inherited-action]').val(); // hack to stored value for edited subscription
         var actionSelector = $form.find('select[name=action-key]');
         var url;

@@ -185,17 +185,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public XnatExpiredPasswordFilter expiredPasswordFilter(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
-        return new XnatExpiredPasswordFilter(preferences, jdbcTemplate, aliasTokenService, dateValidation) {{
-            setChangePasswordPath("/app/template/XDATScreen_UpdateUser.vm");
-            setChangePasswordDestination("/app/action/ModifyPassword");
-            setLogoutDestination("/app/action/LogoutUser");
-            setLoginPath("/app/template/Login.vm");
-            setLoginDestination("/app/action/XDATLoginUser");
-            setInactiveAccountPath("/app/template/InactiveAccount.vm");
-            setInactiveAccountDestination("/app/action/XnatInactiveAccount");
-            setEmailVerificationPath("/app/template/VerifyEmail.vm");
-            setEmailVerificationDestination("/data/services/sendEmailVerification");
-        }};
+        XnatExpiredPasswordFilter filter =  new XnatExpiredPasswordFilter(preferences, jdbcTemplate, aliasTokenService, dateValidation);
+        filter.setChangePasswordPath("/app/template/XDATScreen_UpdateUser.vm");
+        filter.setChangePasswordDestination("/app/action/ModifyPassword");
+        filter.setLogoutDestination("/app/action/LogoutUser");
+        filter.setLoginPath("/app/template/Login.vm");
+        filter.setLoginDestination("/app/action/XDATLoginUser");
+        filter.setInactiveAccountPath("/app/template/InactiveAccount.vm");
+        filter.setInactiveAccountDestination("/app/action/XnatInactiveAccount");
+        filter.setEmailVerificationPath("/app/template/VerifyEmail.vm");
+        filter.setEmailVerificationDestination("/data/services/sendEmailVerification");
+        return filter;
     }
 
     @Bean

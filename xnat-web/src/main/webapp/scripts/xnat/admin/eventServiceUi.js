@@ -576,7 +576,7 @@ var XNAT = getObject(XNAT || {});
 
         // Check for the use of a "ProjectEvent" event. These can only be applied site-wide.
         var xsiType = $form.find('select[name=event-selector]').find('option:selected').data('xsitype');
-        var eventType = $form.find('select[name=event-selector]').find('option:selected').data('event-type');
+        var eventType = $form.find('select[name=event-selector]').find('option:selected').data('event-type') || '';
 
         if (eventType.indexOf('ProjectEvent') >= 0) {
             project = [];
@@ -586,7 +586,7 @@ var XNAT = getObject(XNAT || {});
         } else {
             // var project = $form.find('select[name=project-id]').find('option:selected').val();
             $form.find('select[name=project-id]').removeClass('disabled').prop('disabled',false);
-            projects.each(function(selectedProject) {
+            projects.each(function() {
                 projectArray.push($(this).val())
             });
             project = projectArray.join(',');
@@ -869,6 +869,7 @@ var XNAT = getObject(XNAT || {});
                             .parents('label').addClass('disabled');
                         $form.find('select[name=project-id]').find('option:selected').prop('selected',false);
                     }
+                    findActions($form.find('select[name=project-id]'));
                 });
 
                 // Create form-specific event handlers, enable them after setValues() has run

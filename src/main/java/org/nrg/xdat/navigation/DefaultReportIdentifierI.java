@@ -13,5 +13,5 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 
 public interface DefaultReportIdentifierI {
-    public String identifyReport(RunData data, Context context) throws Exception;
+    String identifyReport(RunData data, Context context) throws Exception;
 }

@@ -9,24 +9,28 @@
 
 package org.nrg.xdat.navigation;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.modules.actions.DisplayItemAction;
-import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.schema.design.SchemaElementI;
 
-public class DefaultReportIdentifier implements DefaultReportIdentifierI{
-    public DefaultReportIdentifier(){
+public class DefaultReportIdentifier implements DefaultReportIdentifierI {
+    public DefaultReportIdentifier() {
 
     }
-    public String identifyReport(RunData data, Context context) throws Exception{
-        SchemaElementI se = TurbineUtils.GetSchemaElementBySearch(data);
-        if (se != null)
-        {
-            String templateName = DisplayItemAction.GetReportScreen(se);
-            return templateName;
-        }else{
-            throw new Exception("No Element Found. ");
+
+    public String identifyReport(RunData data, Context context) throws Exception {
+        final SchemaElementI schemaElement = TurbineUtils.GetSchemaElementBySearch(data);
+        if (schemaElement == null) {
+            final String elementName = TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
+            if (StringUtils.isNotBlank(elementName)) {
+                throw new ElementNotFoundException(elementName);
+            }
+            throw new ElementNotFoundException("No element found.");
         }
+        return DisplayItemAction.GetReportScreen(schemaElement);
     }
 }

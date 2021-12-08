@@ -9,8 +9,10 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.turbine.util.RunData;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -21,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * @author Tim
  */
+@Slf4j
 public class XMLScreen extends XDATRawScreen {
     /**
      * Set the content type to Xml. (see RawScreen)
@@ -38,23 +41,35 @@ public class XMLScreen extends XDATRawScreen {
      */
     protected final void doOutput(final RunData data) throws Exception {
         try {
-            final ItemI item = ObjectUtils.defaultIfNull(TurbineUtils.getDataItem(data), TurbineUtils.GetItemBySearch(data));
-
+            final ItemI item = ObjectUtils.getIfNull(TurbineUtils.getDataItem(data), () -> getItemBySearch(data));
             if (item == null) {
                 data.setMessage("No Item found for XML display.");
                 data.setScreenTemplate("Index.vm");
-            } else {
-                if (item instanceof XFTItem && ((XFTItem) item).instanceOf("xdat:user")) {
-                    item.setProperty("primary_password", "");
-                    item.setProperty("salt", "");
-                }
-                final HttpServletResponse response = data.getResponse();
-                response.setContentType("text/xml");
-                writeToXml(item, response);
+                return;
             }
+            if (!TurbineUtils.isAccessibleItem(XDAT.getUserDetails(), item)) {
+                TurbineUtils.denyAccess(data);
+                return;
+            }
+            if (item instanceof XFTItem && ((XFTItem) item).instanceOf("xdat:user")) {
+                item.setProperty("primary_password", "");
+                item.setProperty("salt", "");
+            }
+            final HttpServletResponse response = data.getResponse();
+            response.setContentType("text/xml");
+            writeToXml(item, response);
         } catch (IllegalAccessException e) {
             final HttpServletResponse response = data.getResponse();
             response.setStatus(Status.CLIENT_ERROR_FORBIDDEN.getCode());
+        }
+    }
+
+    private static ItemI getItemBySearch(final RunData data) {
+        try {
+            return TurbineUtils.GetItemBySearch(data);
+        } catch (Exception e) {
+            log.warn("An error occurred trying to retrieve an item by search", e);
+            return null;
         }
     }
 }

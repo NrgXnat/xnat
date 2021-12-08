@@ -7,9 +7,9 @@
  * Released under the Simplified BSD.
  */
 
-
 package org.nrg.xdat.turbine.modules.actions;
-import org.apache.log4j.Logger;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
@@ -24,48 +24,33 @@ import org.nrg.xft.schema.design.SchemaElementI;
 
 /**
  * @author Tim
- *
  */
+@Slf4j
 public class DisplayItemAction extends SecureAction {
-	static Logger logger = Logger.getLogger(DisplayItemAction.class);
-	public void doPerform(RunData data, Context context) throws Exception
-	{
-        preserveVariables(data,context);
+    public void doPerform(final RunData data, final Context context) throws Exception {
+        preserveVariables(data, context);
+        final String defaultReportIdentifierClass = XDAT.getSiteConfigurationProperty("UI.defaultReportIdentifier", "org.nrg.xdat.navigation.DefaultReportIdentifier");
 
-        try{
-            String className = XDAT.getSiteConfigurationProperty("UI.defaultReportIdentifier","org.nrg.xdat.navigation.DefaultReportIdentifier");
-            Class clazz = Class.forName(className);
-            Object o = clazz.newInstance();
-            if(o instanceof DefaultReportIdentifierI){
-                String templateName = ((DefaultReportIdentifier)o).identifyReport(data, context);
-                data.setScreenTemplate(templateName);
+        try {
+            final Object object = Class.forName(defaultReportIdentifierClass).newInstance();
+            if (object instanceof DefaultReportIdentifierI) {
+                data.setScreenTemplate(((DefaultReportIdentifier) object).identifyReport(data, context));
             }
-        }catch (Throwable e){
-            logger.error("",e);
-            TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
+        } catch (Throwable e) {
+            log.error("An error occurred trying to retrieve the configured default report identifier class {}", defaultReportIdentifierClass, e);
+            TurbineUtils.OutputPassedParameters(data, context, this.getClass().getName());
             data.setMessage(e.getMessage());
             data.setScreenTemplate("Error.vm");
         }
+    }
 
-	}
-	
-	public static String GetReportScreen(SchemaElementI se)
-	{
-		String templateName = "/screens/XDATScreen_report_" + se.getSQLName() + ".vm";
-		if (Velocity.resourceExists(templateName))
-		{
-			templateName= "XDATScreen_report_" + se.getSQLName() + ".vm";
-		}else
-		{
-			templateName="DefaultReport.vm";
-		}
-		return templateName;
-	}
-	
-	public static String GetReportScreen(String elementName) throws XFTInitException, ElementNotFoundException
-	{
-		return GetReportScreen(SchemaElement.GetElement(elementName));
-	}
+    public static String GetReportScreen(final SchemaElementI se) {
+        final String templateName = "XDATScreen_report_" + se.getSQLName() + ".vm";
+        return Velocity.resourceExists("/screens/" + templateName) ? templateName : "DefaultReport.vm";
+    }
 
+    public static String GetReportScreen(final String elementName) throws XFTInitException, ElementNotFoundException {
+        return GetReportScreen(SchemaElement.GetElement(elementName));
+    }
 }
 

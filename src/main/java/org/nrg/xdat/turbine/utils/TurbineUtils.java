@@ -9,10 +9,10 @@
 
 package org.nrg.xdat.turbine.utils;
 
-import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
@@ -23,15 +23,17 @@ import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
-import org.nrg.config.entities.Configuration;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatSecurity;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
+import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
@@ -51,6 +53,7 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
+import org.restlet.data.Status;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.xml.sax.InputSource;
 
@@ -59,33 +62,28 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import static org.nrg.config.entities.Configuration.DISABLED_STRING;
 import static org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader.safeJoin;
 
 /**
  * @author Tim
  */
+@Slf4j
 public class TurbineUtils {
-    public static final String EDIT_ITEM = "edit_item";
-    private static final Logger logger = Logger.getLogger(TurbineUtils.class);
-    private XdatSecurity _security = null;
+    public static final  String       EDIT_ITEM = "edit_item";
+    private static final Logger       logger    = Logger.getLogger(TurbineUtils.class);
+    private              XdatSecurity _security = null;
 
     private static TurbineUtils INSTANCE = null;
 
@@ -249,42 +247,13 @@ public class TurbineUtils {
         return XDAT.getSiteConfigPreferences().getRequireLogin();
     }
 
-    public static ItemI GetItemBySearch(RunData data, boolean preLoad) throws Exception {
-        if (data == null) {
-            return null;
-        }
-
-        //TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-        final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
-        final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
-        if (searchField != null && searchValue != null) {
-            final ItemSearch search = new ItemSearch();
-            search.setUser(XDAT.getUserDetails());
-
-            final String elementName = XftStringUtils.GetRootElementName(searchField);
-
-            search.setElement(elementName);
-            search.addCriteria(searchField, searchValue);
-            search.setAllowMultiples(preLoad);
-
-            final ItemCollection items = search.exec();
-            if (items.size() > 0) {
-                return items.getFirst();
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
-    }
-
     public static SchemaElementI GetSchemaElementBySearch(RunData data) {
         if (data == null) {
             return null;
         }
 
         //TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-        final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+        final String searchField   = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
         final String searchElement = TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
         if (searchElement != null) {
             try {
@@ -308,36 +277,11 @@ public class TurbineUtils {
     }
 
     public static XFTItem GetItemBySearch(RunData data) throws Exception {
-        if (data == null) {
-            return null;
-        }
+        return (XFTItem) GetItemBySearch(data, null);
+    }
 
-        //TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-        final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
-        final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
-        if (searchField != null && searchValue != null) {
-            final ItemSearch search = new ItemSearch();
-            search.setUser(XDAT.getUserDetails());
-
-            final String elementName = XftStringUtils.GetRootElementName(searchField);
-
-            final SchemaElementI gwe = SchemaElement.GetElement(elementName);
-            search.setElement(elementName);
-            search.addCriteria(searchField, searchValue);
-
-            search.setAllowMultiples(gwe.isPreLoad());
-
-            final ItemCollection items = search.exec();
-            if (items.size() > 0) {
-                ItemI o = items.getFirst();
-                //o.extend();
-                return (XFTItem) o;
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
+    public static ItemI GetItemBySearch(RunData data, boolean preLoad) throws Exception {
+        return GetItemBySearch(data, Boolean.valueOf(preLoad));
     }
 
     public static ItemI GetItemBySearch(RunData data, Boolean preload) throws Exception {
@@ -345,33 +289,25 @@ public class TurbineUtils {
             return null;
         }
 
-        //TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
         final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
         final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
-        if (searchField != null && searchValue != null) {
-            final ItemSearch search = new ItemSearch();
-            search.setUser(XDAT.getUserDetails());
+        if (searchField == null || searchValue == null) {
+            return null;
+        }
 
-            final String elementName = XftStringUtils.GetRootElementName(searchField);
+        final ItemSearch search = new ItemSearch();
+        search.setUser(XDAT.getUserDetails());
 
-            final SchemaElementI gwe = SchemaElement.GetElement(elementName);
-            search.setElement(elementName);
-            search.addCriteria(searchField, searchValue);
+        final String elementName = XftStringUtils.GetRootElementName(searchField);
 
-            boolean b;
-            if (preload == null) {
-                b = gwe.isPreLoad();
-            } else {
-                b = preload;
-            }
-            search.setAllowMultiples(b);
+        search.setElement(elementName);
+        search.addCriteria(searchField, searchValue);
 
-            final ItemCollection items = search.exec();
-            if (items.size() > 0) {
-                return items.getFirst();
-            } else {
-                return null;
-            }
+        search.setAllowMultiples(ObjectUtils.getIfNull(preload, () -> isPreload(elementName)));
+
+        final ItemCollection items = search.exec();
+        if (items.size() > 0) {
+            return items.getFirst();
         } else {
             return null;
         }
@@ -455,15 +391,15 @@ public class TurbineUtils {
      */
     public static String GetFullServerPath() {
         String siteUrl = XDAT.getSiteConfigPreferences().getSiteUrl();
-        if(siteUrl.endsWith("/")){
-            siteUrl = siteUrl.substring(0,siteUrl.length()-1);
+        if (siteUrl.endsWith("/")) {
+            siteUrl = siteUrl.substring(0, siteUrl.length() - 1);
         }
         if (StringUtils.isNotBlank(siteUrl)) {
             return siteUrl;
         }
         String contextPath = Turbine.getContextPath();
-        if(contextPath.endsWith("/")){
-            contextPath = contextPath.substring(0,contextPath.length()-1);
+        if (contextPath.endsWith("/")) {
+            contextPath = contextPath.substring(0, contextPath.length() - 1);
         }
         return Turbine.getServerScheme() + "://" + Turbine.getServerName() + (!Turbine.getServerPort().equals("80") ? ":" + Turbine.getServerPort() : "") + contextPath;
     }
@@ -472,6 +408,7 @@ public class TurbineUtils {
      * Returns server and context as specified in user request object.
      *
      * @param data The run data for the context.
+     *
      * @return The relative server path.
      */
     public static String GetRelativeServerPath(RunData data) {
@@ -494,6 +431,7 @@ public class TurbineUtils {
      * Returns server and context as specified in user request object.
      *
      * @param req Servlet request
+     *
      * @return The full server path.
      */
     public static String GetFullServerPath(HttpServletRequest req) {
@@ -533,7 +471,9 @@ public class TurbineUtils {
 
     /**
      * Sets the user details.
-     * @param data    The request run data.
+     *
+     * @param data The request run data.
+     *
      * @deprecated Use {@link XDAT#getUserDetails()} instead.
      */
     @Deprecated
@@ -543,8 +483,10 @@ public class TurbineUtils {
 
     /**
      * Sets the user details.
-     * @param data    The request run data.
-     * @param user    The user object.
+     *
+     * @param data The request run data.
+     * @param user The user object.
+     *
      * @throws Exception When something goes wrong.
      * @deprecated Use {@link XDAT#setUserDetails(UserI)} instead.
      */
@@ -580,6 +522,7 @@ public class TurbineUtils {
 
     /**
      * @param data The run data for the context.
+     *
      * @return The display search found in the context.
      */
     public static DisplaySearch getSearch(RunData data) {
@@ -627,6 +570,7 @@ public class TurbineUtils {
      *
      * @param data   The run data for the context.
      * @param search The display search.
+     *
      * @deprecated We should get rid of this.
      */
     @Deprecated
@@ -651,12 +595,12 @@ public class TurbineUtils {
                     search_xml = URLDecoder.decode(search_xml, "UTF-8");
                     search_xml = StringUtils.replace(search_xml, ".close.", "/");
 
-                    final StringReader sr = new StringReader(search_xml);
-                    final InputSource is = new InputSource(sr);
-                    final SAXReader reader = new SAXReader(user);
-                    final XFTItem item = reader.parse(is);
+                    final StringReader     sr     = new StringReader(search_xml);
+                    final InputSource      is     = new InputSource(sr);
+                    final SAXReader        reader = new SAXReader(user);
+                    final XFTItem          item   = reader.parse(is);
                     final XdatStoredSearch search = new XdatStoredSearch(item);
-                    final DisplaySearch ds = search.getCSVDisplaySearch(user);
+                    final DisplaySearch    ds     = search.getCSVDisplaySearch(user);
                     data.getParameters().remove("search_xml");
                     return ds;
 
@@ -670,12 +614,12 @@ public class TurbineUtils {
                     final String search_xml = PoolDBUtils.RetrieveLoggedCustomSearch(user.getUsername(), user.getDBName(), search_id);
 
                     if (search_xml != null) {
-                        final StringReader sr = new StringReader(search_xml);
-                        final InputSource is = new InputSource(sr);
-                        final SAXReader reader = new SAXReader(user);
-                        final XFTItem item = reader.parse(is);
+                        final StringReader     sr     = new StringReader(search_xml);
+                        final InputSource      is     = new InputSource(sr);
+                        final SAXReader        reader = new SAXReader(user);
+                        final XFTItem          item   = reader.parse(is);
                         final XdatStoredSearch search = new XdatStoredSearch(item);
-                        final DisplaySearch ds = search.getDisplaySearch(user);
+                        final DisplaySearch    ds     = search.getDisplaySearch(user);
                         data.getParameters().remove("search_id");
                         return ds;
                     }
@@ -702,7 +646,7 @@ public class TurbineUtils {
         data.getParameters().setString("search_element", item.getXSIType());
         try {
             final SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
-            final SchemaField sf = (SchemaField) se.getAllPrimaryKeys().get(0);
+            final SchemaField    sf = (SchemaField) se.getAllPrimaryKeys().get(0);
             data.getParameters().setString("search_field", StringUtils.replace(StringUtils.replace(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
             final Object o = item.getProperty(sf.getId());
             data.getParameters().setString("search_value", o.toString());
@@ -716,13 +660,25 @@ public class TurbineUtils {
         context.put("search_element", item.getXSIType());
         try {
             final SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
-            final SchemaField sf = (SchemaField) se.getAllPrimaryKeys().get(0);
+            final SchemaField    sf = (SchemaField) se.getAllPrimaryKeys().get(0);
             context.put("search_field", StringUtils.replace(StringUtils.replace(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
             final Object o = item.getProperty(sf.getId());
             context.put("search_value", o.toString());
         } catch (Exception e) {
             logger.error("", e);
         }
+    }
+
+    public static boolean isAccessibleItem(final UserI user, final ItemI item) throws Exception {
+        return ElementSecurity.IsSecureElement(item.getXSIType()) && Permissions.canRead(user, item) || Groups.hasAllDataAccess(user);
+    }
+
+    public static void denyAccess(final RunData data) {
+        final HttpServletResponse response = data.getResponse();
+        response.setStatus(Status.CLIENT_ERROR_FORBIDDEN.getCode());
+        data.setStatusCode(Status.CLIENT_ERROR_FORBIDDEN.getCode());
+        data.setMessage("You don't have access to the requested item.");
+        data.setScreenTemplate("Index.vm");
     }
 
     public static ItemI getDataItem(RunData data) {
@@ -758,14 +714,15 @@ public class TurbineUtils {
     @SuppressWarnings({"deprecation", "unchecked"})
     public static Map<String, String> GetDataParameterHash(RunData data) {
         //TurbineUtils.OutputDataParameters(data);
-        final Map<String, String> hash = new Hashtable<>();
-        ParameterParser pp = data.getParameters();
-        Enumeration<Object> penum = pp.keys();
+        final Map<String, String> hash  = new Hashtable<>();
+        ParameterParser           pp    = data.getParameters();
+        Enumeration<Object>       penum = pp.keys();
         while (penum.hasMoreElements()) {
-            final String key = penum.nextElement().toString();
+            final String key   = penum.nextElement().toString();
             final Object value = TurbineUtils.escapeParam(data.getParameters().get(key));
-            if (value != null && !value.equals(""))
+            if (value != null && !value.equals("")) {
                 hash.put(TurbineUtils.escapeParam(key), value.toString());
+            }
         }
         return hash;
     }
@@ -799,7 +756,7 @@ public class TurbineUtils {
     /**
      * Debugging method used in actions to display all fields in an Intake Group.
      *
-     * @param group    The group to display.
+     * @param group The group to display.
      */
     @SuppressWarnings("unused")
     public static void OutputGroupFields(Group group) {
@@ -815,7 +772,7 @@ public class TurbineUtils {
     /**
      * Debugging method used in actions to display all parameters in the Context object
      *
-     * @param context    The context to display.
+     * @param context The context to display.
      */
     public static void OutputContextParameters(Context context) {
         if (context != null) {
@@ -832,7 +789,7 @@ public class TurbineUtils {
             final Enumeration<String> enumer = data.getSession().getAttributeNames();
             while (enumer.hasMoreElements()) {
                 final String key = enumer.nextElement();
-                final Object o = data.getSession().getAttribute(key);
+                final Object o   = data.getSession().getAttribute(key);
                 logger.debug("KEY: " + key + " VALUE: " + o.getClass());
             }
         }
@@ -890,8 +847,8 @@ public class TurbineUtils {
     }
 
     public static Collection<String> GetPassedStrings(String s, RunData data) {
-        final Collection<String> _ret = Lists.newArrayList();
-        final String[] v = data.getParameters().getStrings(s);
+        final Collection<String> _ret = new ArrayList<>();
+        final String[]           v    = data.getParameters().getStrings(s);
         if (v != null) {
             for (final String aV : v) {
                 if (StringUtils.isNotBlank(aV) && StringUtils.isNotBlank(TurbineUtils.escapeParam(aV))) {
@@ -1046,8 +1003,8 @@ public class TurbineUtils {
         return default_time_format;
     }
 
-    public boolean resourceExists(String screen){
-    	return Velocity.resourceExists(screen);
+    public boolean resourceExists(String screen) {
+        return Velocity.resourceExists(screen);
     }
 
     public String validateTemplate(String screen, String project) {
@@ -1066,6 +1023,7 @@ public class TurbineUtils {
      *
      * @param objectModel The object model.
      * @param projectId   The project ID.
+     *
      * @return The display ID if it can be determined.
      */
     public String getProjectDisplayID(final Object objectModel, final String projectId) {
@@ -1103,6 +1061,7 @@ public class TurbineUtils {
      *
      * @param objectModel The object model.
      * @param projectId   The project ID.
+     *
      * @return The display ID if it can be determined.
      */
     public String getProjectName(final Object objectModel, final String projectId) {
@@ -1151,41 +1110,41 @@ public class TurbineUtils {
         return XDAT.getConfigValue(project, toolName, path, inherit, defaultValue);
     }
 
-    public boolean getBooleanConfigValue(String project, String toolName, String path, boolean inherit, boolean _default){
-    	String config=this.getConfigValue(project, toolName, path, inherit, null);
+    public boolean getBooleanConfigValue(String project, String toolName, String path, boolean inherit, boolean _default) {
+        String config = this.getConfigValue(project, toolName, path, inherit, null);
 
-    	if(config==null){
-    		return _default;
-    	}else{
-    		if(config.endsWith("\n")){
-    			config=config.substring(0, config.length()-1);
-    		}
-    		return this.toBoolean(config);
-    	}
+        if (config == null) {
+            return _default;
+        } else {
+            if (config.endsWith("\n")) {
+                config = config.substring(0, config.length() - 1);
+            }
+            return this.toBoolean(config);
+        }
     }
 
-    public String getConfigValue(String project, String toolName, String path, boolean inherit,String key, String _default){
-		String thevalue=(String)TurbineUtils.GetInstance().getConfigValue(project, toolName, path, inherit, _default);
-		if (StringUtils.equals(_default,thevalue)){
-			return _default;
-		}
-		try{
-			JSONObject obj=new JSONObject(thevalue);
-			if(StringUtils.isEmpty(key)){
-				return thevalue;
-			}else{
+    public String getConfigValue(String project, String toolName, String path, boolean inherit, String key, String _default) {
+        String thevalue = TurbineUtils.GetInstance().getConfigValue(project, toolName, path, inherit, _default);
+        if (StringUtils.equals(_default, thevalue)) {
+            return _default;
+        }
+        try {
+            JSONObject obj = new JSONObject(thevalue);
+            if (StringUtils.isEmpty(key)) {
+                return thevalue;
+            } else {
 
-				return obj.getString(key);
-			}
-		}catch(JSONException ex){
-			return _default;
-		}
+                return obj.getString(key);
+            }
+        } catch (JSONException ex) {
+            return _default;
+        }
     }
 
     public String getTemplateName(String module, String dataType, String project) {
         try {
             final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
-            String temp = validateTemplate(safeJoin("/screens", root.getSQLName(), root.getSQLName() + module), project);
+            String                      temp = validateTemplate(safeJoin("/screens", root.getSQLName(), root.getSQLName() + module), project);
             if (temp != null) {
                 return temp;
             }
@@ -1220,12 +1179,13 @@ public class TurbineUtils {
      * Note: much of this was copied from SecureScreen.  This version looks at the other templates directories (not just templates).  We may want to merge the two impls.
      *
      * @param subFolder Like topBar/admin
+     *
      * @return The properties extracted from the template.
      */
     public List<Properties> getTemplates(String subFolder) {
         //first see if the props have been cached.
-        List<Properties> screens = cachedVMS.get(subFolder);
-        List<String> _defaultScreens = new ArrayList<>();
+        List<Properties> screens         = cachedVMS.get(subFolder);
+        List<String>     _defaultScreens = new ArrayList<>();
         if (screens == null) {
             synchronized (this) {
                 //synchronized so that two calls don't overwrite each other.  I only synchronized this chunk in hopes that when the screens list is cached, the block wouldn't occur.
@@ -1235,43 +1195,38 @@ public class TurbineUtils {
 
                 for (final String path : CustomClasspathResourceLoader.TEMPLATE_PATHS) {
                     String forwardSlashSubFolder = subFolder;
-                    if(forwardSlashSubFolder!=null){
+                    if (forwardSlashSubFolder != null) {
                         forwardSlashSubFolder = subFolder.replace("\\", "/");
                     }
                     List<URL> uris = CustomClasspathResourceLoader.findVMsByClasspathDirectory("screens" + "/" + forwardSlashSubFolder);
                     if (uris.size() > 0) {
-                    	for (final URL url : uris) {
-                    		final String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
-                    		final String resolved = safeJoin(forwardSlashSubFolder, fileName);
-                    		if (!exists.contains(resolved)) {
-                    			try {
-                    				// TODO: It looks like the critical test is whether the input stream is null.
-                    				SecureScreen.addProps(fileName, CustomClasspathResourceLoader.getInputStream("screens/" + resolved), screens, _defaultScreens, resolved);
-                    				exists.add(resolved);
-                    			} catch (FileNotFoundException e) {
-                    				//this shouldn't happen
-                    			} catch (ResourceNotFoundException e) {
-                    				logger.error("", e);
-                    			}
-                    		}
+                        for (final URL url : uris) {
+                            final String fileName = FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
+                            final String resolved = safeJoin(forwardSlashSubFolder, fileName);
+                            if (!exists.contains(resolved)) {
+                                try {
+                                    // TODO: It looks like the critical test is whether the input stream is null.
+                                    SecureScreen.addProps(fileName, CustomClasspathResourceLoader.getInputStream("screens/" + resolved), screens, _defaultScreens, resolved);
+                                    exists.add(resolved);
+                                } catch (FileNotFoundException e) {
+                                    //this shouldn't happen
+                                } catch (ResourceNotFoundException e) {
+                                    logger.error("", e);
+                                }
+                            }
                         }
                     }
                     final File screensFolder = XDAT.getScreenTemplateFolder(path);
                     if (screensFolder.exists()) {
                         File subFile = new File(screensFolder, subFolder);
                         if (subFile.exists()) {
-                            File[] files = subFile.listFiles(new FilenameFilter() {
-                                @Override
-                                public boolean accept(File folder, String name) {
-                                    return name.endsWith(".vm");
-                                }
-                            });
+                            final File[] files = subFile.listFiles((folder, name) -> name.endsWith(".vm"));
 
                             if (files != null) {
                                 for (File f : files) {
-                                    String subpath = Paths.get(subFolder, f.getName()).toString();
+                                    String subpath             = Paths.get(subFolder, f.getName()).toString();
                                     String forwardSlashSubPath = subpath;
-                                    if(forwardSlashSubPath!=null){
+                                    if (forwardSlashSubPath != null) {
                                         forwardSlashSubPath = subpath.replace("\\", "/");
                                     }
                                     if (!exists.contains(forwardSlashSubPath)) {  // ...so that it matches the resolved path string above and doesn't add duplicates
@@ -1288,7 +1243,7 @@ public class TurbineUtils {
                     }
                 }
 
-                Collections.sort(screens, PROPERTIES_COMPARATOR);
+                screens.sort(PROPERTIES_COMPARATOR);
                 cachedVMS.put(subFolder, screens);
             }
         }
@@ -1296,12 +1251,7 @@ public class TurbineUtils {
     }
 
     private boolean containsPropByProperty(final List<Properties> props, final Properties prop, final String property) {
-        return prop.containsKey(property) && (CollectionUtils.find(props, new Predicate() {
-            @Override
-            public boolean evaluate(Object arg0) {
-                return ((Properties) arg0).getProperty(property) != null && Objects.equals(prop.getProperty(property), ((Properties) arg0).getProperty(property));
-            }
-        }) != null);
+        return prop.containsKey(property) && (CollectionUtils.find(props, arg0 -> ((Properties) arg0).getProperty(property) != null && Objects.equals(prop.getProperty(property), ((Properties) arg0).getProperty(property))) != null);
     }
 
     private void mergePropsNoOverwrite(final List<Properties> props, final List<Properties> add, final String property) {
@@ -1316,18 +1266,19 @@ public class TurbineUtils {
      * Looks for templates in the give subFolder underneath the give dataType in the xdat-templates, xnat-templates, or templates.
      * dataType/subFolder
      *
-     * @param dataType     The data type for which to search.
-     * @param subFolder    The subfolder to search.
+     * @param dataType  The data type for which to search.
+     * @param subFolder The subfolder to search.
+     *
      * @return The properties for the templates.
      */
     @SuppressWarnings("unchecked")
     public List<Properties> getTemplates(String dataType, String subFolder) {
-        List<Properties> props = Lists.newArrayList();
+        List<Properties> props = new ArrayList<>();
         try {
             final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
 
-            final String subFolderPath = safeJoin(root.getSQLName(), subFolder);
-            final List<Properties> templates = getTemplates(subFolderPath);
+            final String           subFolderPath = safeJoin(root.getSQLName(), subFolder);
+            final List<Properties> templates     = getTemplates(subFolderPath);
             props.addAll(templates);
             mergePropsNoOverwrite(props, templates, "fileName");
 
@@ -1336,7 +1287,7 @@ public class TurbineUtils {
                 mergePropsNoOverwrite(props, getTemplates(safeJoin(p.getSQLName(), subFolder)), "fileName");
             }
 
-            Collections.sort(props, PROPERTIES_COMPARATOR);
+            props.sort(PROPERTIES_COMPARATOR);
         } catch (XFTInitException | ElementNotFoundException e) {
             logger.error("", e);
         }
@@ -1344,12 +1295,12 @@ public class TurbineUtils {
     }
 
     @SuppressWarnings("unused")
-    public boolean validateClasspathTemplate(String screen){
-        if(screen!=null){
-            final String modScreen = screen.replace("\\", "/");
-            final String templateFileName = screen.substring(modScreen.lastIndexOf('/')+1);
-            final String forwardSlashDir = modScreen.substring(0, modScreen.lastIndexOf('/'));
-            final List<URL> uris = CustomClasspathResourceLoader.findVMByClasspathDirectoryAndFileName(forwardSlashDir, templateFileName);
+    public boolean validateClasspathTemplate(String screen) {
+        if (screen != null) {
+            final String    modScreen        = screen.replace("\\", "/");
+            final String    templateFileName = screen.substring(modScreen.lastIndexOf('/') + 1);
+            final String    forwardSlashDir  = modScreen.substring(0, modScreen.lastIndexOf('/'));
+            final List<URL> uris             = CustomClasspathResourceLoader.findVMByClasspathDirectoryAndFileName(forwardSlashDir, templateFileName);
             return uris.size() > 0;
         }
         return false;
@@ -1359,7 +1310,7 @@ public class TurbineUtils {
     public String getTemplateName(String module, String dataType, String project, String subFolder) {
         try {
             final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
-            String temp = validateTemplate(safeJoin("/screens", root.getSQLName(), subFolder, root.getSQLName() + module), project);
+            String                      temp = validateTemplate(safeJoin("/screens", root.getSQLName(), subFolder, root.getSQLName() + module), project);
             if (temp != null) {
                 return temp;
             }
@@ -1423,10 +1374,11 @@ public class TurbineUtils {
     }
 
     public static Object escapeParam(Object o) {
-        if (o instanceof String)
+        if (o instanceof String) {
             return escapeParam((String) o);
-        else
+        } else {
             return o;
+        }
     }
 
     public static String unescapeParam(String o) {
@@ -1439,14 +1391,16 @@ public class TurbineUtils {
      * (e.g. "&quot;" will become "&amp;quot;").
      * This is not necessary for form fields populated via HTML, as the browser will automatically decode the entities.
      *
-     * @param param    The parameter to be unescaped.
+     * @param param The parameter to be unescaped.
+     *
      * @return The input string, with any XML entities decoded.
      */
     public static Object unescapeParam(Object param) {
-        if (param instanceof String)
+        if (param instanceof String) {
             return unescapeParam((String) param);
-        else
+        } else {
             return param;
+        }
     }
 
     public String escapeHTML(String o) {
@@ -1518,6 +1472,7 @@ public class TurbineUtils {
      *
      * @param filename     The filename for the header.
      * @param isAttachment Whether the content is an attachment or inline.
+     *
      * @return The value to be set for the content disposition header.
      */
     public static String createContentDispositionValue(final String filename, final boolean isAttachment) {
@@ -1551,28 +1506,35 @@ public class TurbineUtils {
         return StringUtils.equalsIgnoreCase(string1, string2);
     }
 
+    private static Boolean isPreload(final String elementName) {
+        try {
+            return SchemaElement.GetElement(elementName).isPreLoad();
+        } catch (XFTInitException e) {
+            logger.error(XDAT.XFT_INIT_EXCEPTION_MESSAGE, e);
+        } catch (ElementNotFoundException e) {
+            log.error(XDAT.ELEMENT_NOT_FOUND_MESSAGE, e.ELEMENT, e);
+        }
+        return false;
+    }
+
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
 
-    private static final Comparator<Properties> PROPERTIES_COMPARATOR = new Comparator<Properties>() {
-        @Override
-        public int compare(Properties arg0, Properties arg1) {
-            if (arg0.containsKey("Sequence") && arg1.containsKey("Sequence")) {
-                try {
-                    Integer sequence1 = Integer.parseInt(arg0.getProperty("Sequence"));
-                    Integer sequence2 = Integer.parseInt(arg1.getProperty("Sequence"));
-                    return sequence1.compareTo(sequence2);
-                } catch (NumberFormatException e) {
-                    logger.error("Illegal sequence format.", e);
-                    return 0;
-                }
-            } else if (arg0.containsKey("Sequence")) {
-                return -1;
-            } else if (arg1.containsKey("Sequence")) {
-                return 1;
-            } else {
+    private static final Comparator<Properties> PROPERTIES_COMPARATOR = (arg0, arg1) -> {
+        if (arg0.containsKey("Sequence") && arg1.containsKey("Sequence")) {
+            try {
+                return Integer.compare(Integer.parseInt(arg0.getProperty("Sequence")), Integer.parseInt(arg1.getProperty("Sequence")));
+            } catch (NumberFormatException e) {
+                logger.error("Illegal sequence format.", e);
                 return 0;
             }
         }
+        if (arg0.containsKey("Sequence")) {
+            return -1;
+        }
+        if (arg1.containsKey("Sequence")) {
+            return 1;
+        }
+        return 0;
     };
 
     private boolean isValidResourceKey(final String key) {

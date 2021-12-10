@@ -55,6 +55,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
         super(userManagementService, roleHolder);
         _service = service;
         _processorNames = processors.stream().map(ArchiveProcessor::getClass).map(Class::getName).collect(Collectors.toList());
+        log.info("Got {} archive processors: {}", _processorNames.size(), String.join(", ", _processorNames));
         _manager = manager;
     }
 
@@ -102,7 +103,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
             throw new DataFormatException("User " + getSessionUser().getUsername() + " tried to create processor based on project before project is set: " + e.getMessage());
         }
         if (updated) {
-            if (_processorNames.contains(processor.getProcessorClass())) {
+            if (!_processorNames.contains(processor.getProcessorClass())) {
                 throw new DataFormatException("The specified processor class " + processor.getProcessorClass() + " can't be found on this system.");
             }
             _service.update(existingProcessor);

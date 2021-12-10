@@ -1,10 +1,10 @@
 package org.nrg.xft.event;
 
+import com.google.common.collect.ImmutableMap;
 import org.nrg.framework.event.EventI;
 import org.nrg.xft.XFTItem;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,14 +41,7 @@ public interface XftItemEventI extends EventI {
      */
     String MOVE = "M";
 
-    Map<String, String> ACTIONS = new HashMap<String, String>() {{
-        put(CREATE, "create");
-        put(READ, "read");
-        put(UPDATE, "update");
-        put(DELETE, "delete");
-        put(SHARE, "share");
-        put(MOVE, "move");
-    }};
+    Map<String, String> ACTIONS = ImmutableMap.<String, String>builder().put(CREATE, "create").put(READ, "read").put(UPDATE, "update").put(DELETE, "delete").put(SHARE, "share").put(MOVE, "move").build();
 
     /**
      * Used to specify a specific action in the {@link #getProperties() event properties}.

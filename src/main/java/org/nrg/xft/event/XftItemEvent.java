@@ -9,12 +9,8 @@
 
 package org.nrg.xft.event;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +27,8 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
 
-import javax.annotation.Nullable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 
@@ -43,6 +39,7 @@ import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 @Accessors(prefix = "_")
 @Slf4j
 public class XftItemEvent implements XftItemEventI {
+    private static final long serialVersionUID = -9167640746375952254L;
 
     public static Builder builder() {
         return new Builder();
@@ -85,9 +82,7 @@ public class XftItemEvent implements XftItemEventI {
         }
 
         public Builder items(final List<XFTItem> items) {
-            for (final XFTItem item : items) {
-                item(item);
-            }
+            items.forEach(this::item);
             return this;
         }
 
@@ -102,7 +97,8 @@ public class XftItemEvent implements XftItemEventI {
         }
 
         public Builder elements(final List<BaseElement> elements) {
-            return items(Lists.newArrayList(Iterables.filter(Lists.transform(elements, BASEELEMENT_TO_XFTITEM_FUNCTION), Predicates.<XFTItem>notNull())));
+            elements.stream().map(element -> element == null ? null : element.getItem()).filter(Objects::nonNull).forEach(this::item);
+            return this;
         }
 
         public Builder property(final String property, final Object value) {
@@ -193,31 +189,27 @@ public class XftItemEvent implements XftItemEventI {
             throw new NrgServiceRuntimeException(ConfigurationError, "You must specify at least an XSI type and at least one object ID or an XFTItem or BaseElement object: an action must happen to something.");
         }
         _action = action;
-        _properties = ImmutableMap.copyOf(ObjectUtils.defaultIfNull(properties, Collections.<String, Object>emptyMap()));
-        _items = new ArrayList<>(ObjectUtils.defaultIfNull(items, Collections.<XFTItem>emptyList()));
+        _properties = ImmutableMap.copyOf(ObjectUtils.defaultIfNull(properties, Collections.emptyMap()));
+        _items = new ArrayList<>(ObjectUtils.defaultIfNull(items, Collections.emptyList()));
         if (hasXsiTypeAndId) {
             _xsiType = xsiType;
             _ids = ImmutableList.copyOf(ids);
         } else {
             _xsiType = _items.get(0).getXSIType();
-            _ids = Lists.newArrayList(Iterables.filter(Lists.transform(_items, new Function<XFTItem, String>() {
-                @Nullable
-                @Override
-                public String apply(final XFTItem item) {
-                    try {
-                        return item.getIDValue();
-                    } catch (XFTInitException | ElementNotFoundException e) {
-                        log.error("An error occurred trying to get the ID of an object of type {}", item.getXSIType(), e);
-                        return null;
-                    }
+            _ids = _items.stream().map(item -> {
+                try {
+                    return item.getIDValue();
+                } catch (XFTInitException | ElementNotFoundException e) {
+                    log.error("An error occurred trying to get the ID of an object of type {}", item.getXSIType(), e);
+                    return null;
                 }
-            }), Predicates.<String>notNull()));
+            }).filter(Objects::nonNull).collect(Collectors.toList());
         }
     }
 
     @Override
     public boolean isMultiItemEvent() {
-        return _ids.size() > 1;
+        return !_ids.isEmpty();
     }
 
     @Override
@@ -258,25 +250,9 @@ public class XftItemEvent implements XftItemEventI {
                 return "Action '" + getAction() + "' on " + String.format("%1$s/ID=%2$s", getXsiType(), getId());
 
             default:
-                return "Action '" + getAction() + "' on [" + StringUtils.join(Lists.transform(getIds(), new Function<String, String>() {
-                    @Override
-                    public String apply(final String id) {
-                        return String.format("%1$s/ID=%2$s", getXsiType(), id);
-                    }
-                }), ", ") + "]";
+                return "Action '" + getAction() + "' on [" + getIds().stream().map(id -> String.format("%1$s/ID=%2$s", getXsiType(), id)).collect(Collectors.joining(", ")) + "]";
         }
     }
-
-    private static final Function<BaseElement, XFTItem> BASEELEMENT_TO_XFTITEM_FUNCTION = new Function<BaseElement, XFTItem>() {
-        @Nullable
-        @Override
-        public XFTItem apply(@Nullable final BaseElement element) {
-            if (element == null) {
-                return null;
-            }
-            return element.getItem();
-        }
-    };
 
     private void checkSingleItemState() {
         if (StringUtils.isBlank(_xsiType) || _ids == null || _ids.isEmpty()) {

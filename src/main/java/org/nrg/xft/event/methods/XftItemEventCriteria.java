@@ -1,8 +1,5 @@
 package org.nrg.xft.event.methods;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Iterables;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -18,8 +15,10 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static lombok.AccessLevel.PRIVATE;
 
@@ -78,14 +77,14 @@ public class XftItemEventCriteria {
         return Builder.builder();
     }
 
-    public static final Predicate<XftItemEventI> IS_PROJECT_GROUP = new Predicate<XftItemEventI>() {
-        @Override
-        public boolean apply(@Nullable final XftItemEventI event) {
-            return event != null &&
-                   StringUtils.isNotBlank(event.getId()) &&
-                   StringUtils.equals(XdatUsergroup.SCHEMA_ELEMENT_NAME, event.getXsiType()) &&
-                   Groups.isProjectGroup(event.getId());
+    public static final Predicate<XftItemEventI> IS_PROJECT_GROUP = event -> {
+        if (event == null || !StringUtils.equals(XdatUsergroup.SCHEMA_ELEMENT_NAME, event.getXsiType())) {
+            return false;
         }
+        if (event.isMultiItemEvent()) {
+            return !CollectionUtils.isEmpty(event.getIds()) && event.getIds().stream().allMatch(Groups::isProjectGroup);
+        }
+        return StringUtils.isNotBlank(event.getId()) && Groups.isProjectGroup(event.getId());
     };
 
     /**
@@ -133,14 +132,14 @@ public class XftItemEventCriteria {
         final boolean matchesPredicates = matchesPredicates(event);
         final boolean matches           = matchesXsiTypes && matchesAction && matchesPredicates;
         if (log.isTraceEnabled()) {
-            log.trace("Event {}\nCriteria {}\nMatches: {} [XSI types: {}, actions: {}, predicates: {}]", event.toString(), toString(), matches, matchesXsiTypes, matchesAction, matchesPredicates);
+            log.trace("Event {}\nCriteria {}\nMatches: {} [XSI types: {}, actions: {}, predicates: {}]", event, this, matches, matchesXsiTypes, matchesAction, matchesPredicates);
         }
         return matches;
     }
 
     @Override
     public String toString() {
-        return "{" + StringUtils.join(Iterables.filter(Arrays.asList(representCriteria("XSI types", _xsiTypes), representCriteria("actions", _actions), representCriteria("predicates", _predicates)), Predicates.notNull()), ", ") + "}";
+        return "{" + Stream.of(representCriteria("XSI types", _xsiTypes), representCriteria("actions", _actions), representCriteria("predicates", _predicates)).filter(Objects::nonNull).collect(Collectors.joining(", ")) + "}";
     }
 
     /**
@@ -161,9 +160,9 @@ public class XftItemEventCriteria {
         }
 
         // If we have an empty list, that's a universal match.
-        _xsiTypes = hasXsiTypes ? initializeCaseInsensitiveSet(xsiTypes) : Collections.<String>emptySet();
-        _actions = hasActions ? initializeCaseInsensitiveSet(actions) : Collections.<String>emptySet();
-        _predicates = hasPredicates ? predicates : Collections.<Predicate<XftItemEventI>>emptyList();
+        _xsiTypes = hasXsiTypes ? initializeCaseInsensitiveSet(xsiTypes) : Collections.emptySet();
+        _actions = hasActions ? initializeCaseInsensitiveSet(actions) : Collections.emptySet();
+        _predicates = hasPredicates ? predicates : Collections.emptyList();
     }
 
     /**
@@ -204,15 +203,7 @@ public class XftItemEventCriteria {
     }
 
     private boolean matchesPredicates(final XftItemEventI event) {
-        if (_predicates.isEmpty()) {
-            return true;
-        }
-        for (final Predicate<XftItemEventI> predicate : _predicates) {
-            if (predicate.apply(event)) {
-                return true;
-            }
-        }
-        return false;
+        return _predicates.isEmpty() || _predicates.stream().anyMatch(predicate -> predicate.test(event));
     }
 
     private static String representCriteria(final String label, final Collection<?> items) {

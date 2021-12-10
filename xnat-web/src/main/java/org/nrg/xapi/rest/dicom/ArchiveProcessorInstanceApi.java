@@ -40,7 +40,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.nrg.xdat.security.helpers.AccessLevel.*;
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Authenticated;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -60,7 +61,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get list of processor classes.", notes = "The processor classes function returns a list of all processor classes in the XNAT system.", response = String.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of all of the processor classes."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @XapiRequestMapping(value = "classes", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = DataAccess)
+    @XapiRequestMapping(value = "classes", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public List<String> getProcessorClasses() {
         return _processorNames;
     }
@@ -70,7 +71,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient privileges to create the submitted site processor instance."),
                    @ApiResponse(code = 404, message = "The requested site processor instance wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @XapiRequestMapping(value = "site/create", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = DataAdmin)
+    @XapiRequestMapping(value = "site/create", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
     public ArchiveProcessorInstance createSiteProcessor(@RequestBody final ArchiveProcessorInstance processor) throws Exception {
         if (StringUtils.isBlank(processor.getProcessorClass())) {
             throw new DataFormatException("You must specify a processor class to create a site processor instance.");
@@ -88,7 +89,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient privileges to edit the requested site processor instance."),
                    @ApiResponse(code = 404, message = "The requested site processor instance wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @XapiRequestMapping(value = "site/id/{instanceId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = DataAdmin)
+    @XapiRequestMapping(value = "site/id/{instanceId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
     public ArchiveProcessorInstance updateSiteProcessor(@PathVariable("instanceId") final long instanceId, @RequestBody final ArchiveProcessorInstance processor) throws NotFoundException, DataFormatException, NotModifiedException {
         final ArchiveProcessorInstance existingProcessor = _service.findSiteProcessorById(instanceId);
         if (existingProcessor == null) {
@@ -116,7 +117,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient privileges to edit the requested site processor instance."),
                    @ApiResponse(code = 404, message = "The requested site processor instance wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @XapiRequestMapping(value = "site/id/{instanceId}", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = DataAdmin)
+    @XapiRequestMapping(value = "site/id/{instanceId}", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = Admin)
     public boolean deleteSiteProcessor(@PathVariable("instanceId") final long instanceId) throws NotFoundException {
         final ArchiveProcessorInstance processor = _service.findSiteProcessorById(instanceId);
         if (processor == null) {
@@ -134,7 +135,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get list of site processor instances.", notes = "The site processors function returns a list of all site processor instances configured in the XNAT system.", response = ArchiveProcessorInstance.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of all of the currently configured site processor instances."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @XapiRequestMapping(value = "site/list", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = DataAccess)
+    @XapiRequestMapping(value = "site/list", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public List<ArchiveProcessorInstance> getAllSiteProcessors() {
         return _service.getAllSiteProcessors();
     }
@@ -142,7 +143,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get list of enabled site processor instances.", notes = "The enabled site processors function returns a list of all enabled site processor instances configured in the XNAT system.", response = ArchiveProcessorInstance.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of all of the currently enabled site processor instances."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @XapiRequestMapping(value = "site/enabled", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = DataAccess)
+    @XapiRequestMapping(value = "site/enabled", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public List<ArchiveProcessorInstance> getAllEnabledSiteProcessors() {
         return _service.getAllEnabledSiteProcessors();
     }
@@ -158,7 +159,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get list of enabled site processor instances for specified SCP receiver.", notes = "The enabled site processors function returns a list of all enabled site processor instances configured in the XNAT system for this receiver. Receiver should be specified like aeTitle:port.", response = ArchiveProcessorInstance.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of all of the currently enabled site processor instances for this receiver."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @XapiRequestMapping(value = "site/enabled/receiver/{aeAndPort}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = DataAccess)
+    @XapiRequestMapping(value = "site/enabled/receiver/{aeAndPort}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsForAe(@PathVariable("aeAndPort") final String aeAndPort) {
         return _service.getAllEnabledSiteProcessorsForAe(aeAndPort);
     }
@@ -186,7 +187,7 @@ public class ArchiveProcessorInstanceApi extends AbstractXapiRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Returns the requested site processor instance."),
                    @ApiResponse(code = 404, message = "The requested site processor instance wasn't found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred.")})
-    @XapiRequestMapping(value = "site/id/{instanceId}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = DataAccess)
+    @XapiRequestMapping(value = "site/id/{instanceId}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public ArchiveProcessorInstance getSiteProcessor(@PathVariable("instanceId") final long instanceId) throws NotFoundException {
         return Optional.ofNullable(_service.findSiteProcessorById(instanceId)).orElseThrow(() -> new NotFoundException("archive processor", instanceId));
     }

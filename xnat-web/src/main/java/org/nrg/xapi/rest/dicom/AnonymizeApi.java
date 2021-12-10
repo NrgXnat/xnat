@@ -83,7 +83,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully stored the contents of the site-wide anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the site-wide anonymization script."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "site", consumes = TEXT_PLAIN_VALUE, method = PUT, restrictTo = DataAdmin)
+    @XapiRequestMapping(value = "site", consumes = TEXT_PLAIN_VALUE, method = PUT, restrictTo = Admin)
     public void setSiteWideAnonScript(@RequestBody final String script) {
         _preferences.setSitewideAnonymizationScript(script);
     }
@@ -101,7 +101,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully set the status of the site-wide anonymization script."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to modify the site-wide anonymization script settings."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "site/enabled", consumes = APPLICATION_JSON_VALUE, method = PUT, restrictTo = DataAdmin)
+    @XapiRequestMapping(value = "site/enabled", consumes = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
     public void setSiteWideAnonScriptEnabled(@ApiParam(value = "Whether the site-wide anonymization script should be enabled or disabled.", defaultValue = "true") @RequestParam(required = false, defaultValue = "true") final boolean enable) {
         _preferences.setEnableSitewideAnonymizationScript(enable);
     }

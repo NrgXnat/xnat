@@ -9,10 +9,8 @@
 
 package org.nrg.xnat.services.cache;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.*;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.CacheException;
 import net.sf.ehcache.Ehcache;
@@ -54,7 +52,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -63,12 +60,14 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.nrg.xdat.entities.UserRole.ROLE_ADMINISTRATOR;
 import static org.nrg.xdat.security.helpers.AccessLevel.*;
@@ -86,12 +85,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatInvestigatordata.SCHEMA_ELEMENT_NAME),
-              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(Predicates.or(XftItemEventCriteria.IS_PROJECT_GROUP, new Predicate<XftItemEventI>() {
-                  @Override
-                  public boolean apply(final XftItemEventI event) {
-                      return StringUtils.equalsAny(event.getId(), Groups.ALL_DATA_ADMIN_GROUP, Groups.ALL_DATA_ACCESS_GROUP);
-                  }
-              })).build(),
+              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP.or(event -> StringUtils.equalsAny(event.getId(), Groups.ALL_DATA_ADMIN_GROUP, Groups.ALL_DATA_ACCESS_GROUP))).build(),
               XftItemEventCriteria.builder().xsiType(XdatUser.SCHEMA_ELEMENT_NAME).action(UPDATE).predicate(PREDICATE_IS_ROLE_OPERATION).build());
         _cache = cache;
         _template = template;
@@ -116,14 +110,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     @Async
     @Override
     public Future<Boolean> initialize() {
-        _template.query(QUERY_GET_IDS_AND_ALIASES, new RowCallbackHandler() {
-            @Override
-            public void processRow(final ResultSet resultSet) throws SQLException {
-                final String projectId = resultSet.getString("project_id");
-                final String idOrAlias = resultSet.getString("id_or_alias");
-                _aliasMapping.put(idOrAlias, projectId);
-                _projectsAndAliases.put(projectId, idOrAlias);
-            }
+        _template.query(QUERY_GET_IDS_AND_ALIASES, resultSet -> {
+            final String projectId = resultSet.getString("project_id");
+            final String idOrAlias = resultSet.getString("id_or_alias");
+            _aliasMapping.put(idOrAlias, projectId);
+            _projectsAndAliases.put(projectId, idOrAlias);
         });
         _initialized.set(true);
         return new AsyncResult<>(true);
@@ -418,7 +409,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
 
         // When groups are created for projects, the groups are created *before* the project. We need to check whether the
-        // project is already cached so we don't try to refresh the cache before the project's actually in.
+        // project is already cached, so we don't try to refresh the cache before the project's actually in.
         if (!_aliasMapping.containsKey(projectId)) {
             return true;
         }
@@ -570,12 +561,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     private List<XnatProjectdata> getProjectsFromIds(final UserI user, final List<String> projectIds) {
         log.debug("User {} is converting a list of {} strings to projects: {}", user.getUsername(), projectIds.size(), projectIds);
-        return Lists.transform(projectIds, new Function<String, XnatProjectdata>() {
-            @Override
-            public XnatProjectdata apply(final String projectId) {
-                return get(user, projectId);
-            }
-        });
+        return projectIds.stream().map(projectId -> get(user, projectId)).collect(Collectors.toList());
     }
 
     /**
@@ -781,7 +767,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         // Create the project cache and user list.
         final ProjectCache projectCache = new ProjectCache(project);
 
-        // This caches all of the users from the standard user groups and their permissions ahead of time in the most efficient way possible.
+        // This caches all the users from the standard user groups and their permissions ahead of time in the most efficient way possible.
         for (final String accessLevel : USER_GROUP_SUFFIXES.keySet()) {
             final List<AccessLevel> accessLevelPermissions = USER_GROUP_SUFFIXES.get(accessLevel);
             for (final String userIdByAccess : _template.queryForList(QUERY_USERS_BY_GROUP, getProjectAccessParameterSource(projectId, accessLevel), String.class)) {
@@ -920,23 +906,21 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
 
         private final XnatProjectdata _project;
 
-        private final Multimap<String, AccessLevel> _userCache = ArrayListMultimap.create();
+        private final ArrayListMultimap<String, AccessLevel> _userCache = ArrayListMultimap.create();
     }
 
-    private static final Predicate<XftItemEventI> PREDICATE_IS_ROLE_OPERATION = new Predicate<XftItemEventI>() {
-        @Override
-        public boolean apply(final XftItemEventI event) {
-            final Map<String, ?> properties = event.getProperties();
-            return !properties.isEmpty() && StringUtils.equalsAny((String) properties.get(OPERATION), OPERATION_ADD_ROLE, OPERATION_DELETE_ROLE);
-        }
+    private static final Predicate<XftItemEventI> PREDICATE_IS_ROLE_OPERATION = event -> {
+        final Map<String, ?> properties = event.getProperties();
+        return !properties.isEmpty() && StringUtils.equalsAny((String) properties.get(OPERATION), OPERATION_ADD_ROLE, OPERATION_DELETE_ROLE);
     };
 
     private static final List<AccessLevel>                   DELETABLE_ACCESS                 = Arrays.asList(Owner, Delete, Admin);
     private static final List<AccessLevel>                   WRITABLE_ACCESS                  = Arrays.asList(Member, Edit, Admin, DataAdmin);
     private static final List<AccessLevel>                   READABLE_ACCESS                  = Arrays.asList(Collaborator, Read, Admin, DataAdmin, DataAccess);
-    private static final Map<AccessLevel, List<AccessLevel>> ACCESS_LEVELS                    = ImmutableMap.of(Delete, DELETABLE_ACCESS,
-                                                                                                                Edit, Lists.newArrayList(Iterables.concat(DELETABLE_ACCESS, WRITABLE_ACCESS)),
-                                                                                                                Read, Lists.newArrayList(Iterables.concat(DELETABLE_ACCESS, WRITABLE_ACCESS, READABLE_ACCESS)));
+    private static final Map<AccessLevel, List<AccessLevel>> ACCESS_LEVELS                    = ImmutableMap.<AccessLevel, List<AccessLevel>>builder()
+                                                                                                            .put(Delete, DELETABLE_ACCESS)
+                                                                                                            .put(Edit, Stream.of(DELETABLE_ACCESS, WRITABLE_ACCESS).flatMap(Collection::stream).collect(Collectors.toList()))
+                                                                                                            .put(Read, Stream.of(DELETABLE_ACCESS, WRITABLE_ACCESS, READABLE_ACCESS).flatMap(Collection::stream).collect(Collectors.toList())).build();
     private static final Map<String, List<AccessLevel>>      USER_GROUP_SUFFIXES              = ImmutableMap.of("owner", DELETABLE_ACCESS, "member", WRITABLE_ACCESS, "collaborator", READABLE_ACCESS);
     private static final String                              QUERY_KEY_PROJECT_ID             = "projectId";
     private static final String                              QUERY_KEY_ACCESS_LEVEL           = "accessLevel";

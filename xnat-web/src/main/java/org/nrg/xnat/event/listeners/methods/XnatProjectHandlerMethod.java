@@ -1,6 +1,5 @@
 package org.nrg.xnat.event.listeners.methods;
 
-import com.google.common.base.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.security.ElementSecurity;
@@ -16,8 +15,6 @@ import org.nrg.xft.security.UserI;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nullable;
-
 /**
  * Clears the XFT cache when an item is updated.
  */
@@ -27,12 +24,7 @@ public class XnatProjectHandlerMethod extends AbstractXftItemEventHandlerMethod 
     public XnatProjectHandlerMethod(final NamedParameterJdbcTemplate template) {
         // super(XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME));
         // For now this is a no-op criteria, because I don't think this handler actually does anything worthwhile.
-        super(XftItemEventCriteria.builder().predicate(new Predicate<XftItemEventI>() {
-            @Override
-            public boolean apply(@Nullable final XftItemEventI input) {
-                return false;
-            }
-        }).build());
+        super(XftItemEventCriteria.builder().predicate(input -> false).build());
         _template = template;
     }
 
@@ -48,7 +40,7 @@ public class XnatProjectHandlerMethod extends AbstractXftItemEventHandlerMethod 
             setGuestProjectAccess(guest, projectId, access);
         } catch (final UserInitException e) {
             // If this occurs, don't make a big fuss: it probably means that the system's starting up. If that's NOT
-            // what it means, plenty more parts of the system will be complaining so we don't need to add to it.
+            // what it means, plenty more parts of the system will be complaining, so we don't need to add to it.
             log.debug("Got a UserInitException while refreshing guest user. This probably just means that the system is still initializing: {}", e.getMessage());
         } catch (final Exception e) {
             log.error("An error occurred trying to refresh guest user.", e);

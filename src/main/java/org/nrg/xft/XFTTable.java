@@ -188,15 +188,14 @@ public class XFTTable implements XFTTableI {
     }
     
     /**
-     * Inserts row into table and increments row counter.
-     * @param row of Objects
+     * Inserts submitted rows into table.
+     * @param rows A collection of rows.
      */
-    public void insertRows(Collection<Object[]> rows)
-    {
-        for(Object[] row:rows){
-            insertRow(row);
-        }
+    public void insertRows(Collection<Object[]> rows) {
+        this.rows.addAll(rows);
+        numRows += rows.size();
     }
+
     /**
      * Inserts row into table and increments row counter.
      *

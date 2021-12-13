@@ -14,12 +14,12 @@ import com.google.common.collect.ImmutableMap;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -29,8 +29,6 @@ import org.nrg.xft.search.ItemSearch;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 
 /**
  * The Class XftItemEvent.
@@ -112,25 +110,6 @@ public class XftItemEvent implements XftItemEventI {
         }
 
         public XftItemEvent build() {
-            if (StringUtils.isBlank(_action)) {
-                throw new RuntimeException("You can't have an event without an action.");
-            }
-
-            final boolean hasXsiType = StringUtils.isNotBlank(_xsiType);
-            final boolean hasId      = !_ids.isEmpty();
-
-            if (!hasXsiType && !hasId) {
-                throw new RuntimeException("You can't have an event without it having affected something: you must specify at least one XSI type/ID, BaseElement, or XFTItem for an event..");
-            }
-
-            if (!hasXsiType) {
-                throw new RuntimeException("You must set the XSI type along with the ID(s) for an event.");
-            }
-
-            if (!hasId) {
-                throw new RuntimeException("You must set at least one instance ID along with the XSI type, or there's no way to tell which object was affected.");
-            }
-
             return new XftItemEvent(_xsiType, _ids, _action, _properties, _items);
         }
 
@@ -144,7 +123,8 @@ public class XftItemEvent implements XftItemEventI {
     /**
      * Instantiates a new XFTItem event.
      *
-     * @param item The {@link XFTItem}
+     * @param item   The {@link XFTItem item} affected by the event.
+     * @param action The action that triggered this event.
      */
     public XftItemEvent(final BaseElement item, final String action) throws ElementNotFoundException, FieldNotFoundException {
         this(item.getXSIType(), Collections.singletonList(item.getStringProperty("ID")), action, null, Collections.singletonList(item.getItem()));
@@ -153,23 +133,31 @@ public class XftItemEvent implements XftItemEventI {
     /**
      * Instantiates a new XFTItem event.
      *
-     * @param item The {@link XFTItem}
+     * @param item   The {@link XFTItem item} affected by the event.
+     * @param action The action that triggered this event.
      */
     public XftItemEvent(final XFTItem item, final String action) throws XFTInitException, ElementNotFoundException {
         this(item.getXSIType(), Collections.singletonList(item.getIDValue()), action, null, Collections.singletonList(item));
     }
 
     /**
-     * Instantiates a new XFTItem event.
+     * Instantiates a new event.
      *
-     * @param xsiType the xsi type
-     * @param id      the id
-     * @param action  the action
+     * @param xsiType The XSI type of the object or objects affected by the event.
+     * @param id      The ID of the object affected by the event.
+     * @param action  The action that triggered this event.
      */
     public XftItemEvent(final String xsiType, final String id, final String action) {
         this(xsiType, Collections.singletonList(id), action, null, null);
     }
 
+    /**
+     * Instantiates a new event.
+     *
+     * @param xsiType The XSI type of the object or objects affected by the event.
+     * @param ids     A list of one or more IDs of the object or objects affected by the event.
+     * @param action  The action that triggered this event.
+     */
     public XftItemEvent(final String xsiType, final List<String> ids, final String action) {
         this(xsiType, ids, action, null, null);
     }
@@ -182,20 +170,41 @@ public class XftItemEvent implements XftItemEventI {
         this(xsiType, ids, action, null, items);
     }
 
-    protected XftItemEvent(final String xsiType, List<String> ids, final String action, final Map<String, Object> properties, final List<XFTItem> items) {
-        final boolean hasXsiTypeAndId = StringUtils.isNotBlank(xsiType) && ids != null && !ids.isEmpty();
-        final boolean hasXftItems     = items != null && !items.isEmpty();
-        if (!hasXsiTypeAndId && !hasXftItems) {
-            throw new NrgServiceRuntimeException(ConfigurationError, "You must specify at least an XSI type and at least one object ID or an XFTItem or BaseElement object: an action must happen to something.");
+    protected XftItemEvent(final String xsiType, final List<String> ids, final String action, final Map<String, Object> properties, final List<XFTItem> items) {
+        if (StringUtils.isBlank(action)) {
+            throw new RuntimeException("You can't have an event without an action.");
         }
-        _action = action;
-        _properties = ImmutableMap.copyOf(ObjectUtils.defaultIfNull(properties, Collections.emptyMap()));
-        _items = new ArrayList<>(ObjectUtils.defaultIfNull(items, Collections.emptyList()));
-        if (hasXsiTypeAndId) {
-            _xsiType = xsiType;
-            _ids = ImmutableList.copyOf(ids);
+
+        final boolean hasXsiType  = StringUtils.isNotBlank(xsiType);
+        final boolean hasIds      = !CollectionUtils.isEmpty(ids);
+        final boolean hasXftItems = !CollectionUtils.isEmpty(items);
+
+        if (!hasXsiType && !hasIds && !hasXftItems) {
+            throw new RuntimeException("You can't have an event without it having affected something: you must specify at least one XSI type/ID, BaseElement, or XFTItem for an event..");
+        }
+
+        if (hasXftItems) {
+            if (hasXsiType || hasIds) {
+                throw new IllegalArgumentException("You must specify either one or more BaseElement or XFTItem instances (all of the same XSI type) OR one XSI type and one or more IDs. This class doesn't support mixing them.");
+            }
         } else {
-            _xsiType = _items.get(0).getXSIType();
+            if (!hasXsiType) {
+                throw new RuntimeException("You must set the XSI type along with the ID(s) for an event.");
+            }
+            if (!hasIds) {
+                throw new RuntimeException("You must set at least one instance ID along with the XSI type, or there's no way to tell which object was affected.");
+            }
+        }
+
+        _action = action;
+        _properties = ImmutableMap.copyOf(ObjectUtils.getIfNull(properties, Collections::emptyMap));
+        _items = new ArrayList<>(ObjectUtils.getIfNull(items, Collections::emptyList));
+        if (hasXftItems) {
+            final List<String> xsiTypes = _items.stream().map(XFTItem::getXSIType).distinct().collect(Collectors.toList());
+            if (xsiTypes.size() > 1) {
+                throw new IllegalArgumentException("You specified " + xsiTypes.size() + " items, which is fine, but there are multiple XSI types, which is not fine. XFT item events support multiple items but they must all be of the same type, while you specified items of type: " + String.join(", ", xsiTypes));
+            }
+            _xsiType = xsiTypes.get(0);
             _ids = _items.stream().map(item -> {
                 try {
                     return item.getIDValue();
@@ -204,14 +213,23 @@ public class XftItemEvent implements XftItemEventI {
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList());
+        } else {
+            _xsiType = xsiType;
+            _ids = ImmutableList.copyOf(ids);
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isMultiItemEvent() {
-        return !_ids.isEmpty();
+        return _ids.size() > 1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getId() {
         checkSingleItemState();
@@ -219,11 +237,7 @@ public class XftItemEvent implements XftItemEventI {
     }
 
     /**
-     * Gets the item. This method returns an Object rather than an XFTItem because the object may sometimes be
-     * the OM version rather than the generic XFTItem (e.g. {@link XdatUsergroup}), as when initialized with the
-     * {@link #XftItemEvent(XFTItem, String)} constructor.
-     *
-     * @return the item
+     * {@inheritDoc}
      */
     @Override
     public XFTItem getItem() {
@@ -255,7 +269,7 @@ public class XftItemEvent implements XftItemEventI {
     }
 
     private void checkSingleItemState() {
-        if (StringUtils.isBlank(_xsiType) || _ids == null || _ids.isEmpty()) {
+        if (StringUtils.isBlank(_xsiType) || _ids.isEmpty()) {
             throw new IllegalArgumentException("Can't get an item because there's no XSI type and ID specified.");
         }
         if (isMultiItemEvent()) {
@@ -263,34 +277,9 @@ public class XftItemEvent implements XftItemEventI {
         }
     }
 
-    /**
-     * Indicates the action for the event.
-     */
-    private final String _action;
-
-    /**
-     * Gets the XSI type associated with the event.
-     */
-    private final String _xsiType;
-
-    /**
-     * Gets the ID or IDs associated with the event.
-     */
-    private final List<String> _ids;
-
-    /**
-     * Gets the items. This method differs from the singular {@link XftItemEvent} in two ways: it returns a list of {@link XFTItem} objects rather than
-     * a generic Java object. Even objects inserted into the event that subclass {@link BaseElement} are converted upon insertion. It also differs in that,
-     * unlike the {@link XftItemEvent#getItem()} method, it does not create the item objects on demand if they were initially set through the XSI type and
-     * object ID.
-     *
-     * @return Returns the list of items for the event.
-     */
-    @SuppressWarnings("JavaDoc")
-    private final List<XFTItem> _items;
-
-    /**
-     * Contains the properties for event-specific data.
-     */
+    private final String              _action;
+    private final String              _xsiType;
+    private final List<String>        _ids;
+    private final List<XFTItem>       _items;
     private final Map<String, Object> _properties;
 }

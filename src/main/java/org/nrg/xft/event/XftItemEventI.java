@@ -2,6 +2,7 @@ package org.nrg.xft.event;
 
 import com.google.common.collect.ImmutableMap;
 import org.nrg.framework.event.EventI;
+import org.nrg.xdat.base.BaseElement;
 import org.nrg.xft.XFTItem;
 
 import javax.annotation.Nonnull;
@@ -94,10 +95,12 @@ public interface XftItemEventI extends EventI {
     XFTItem getItem();
 
     /**
-     * Gets a list of the associated {@link XFTItem}s for a {@link #isMultiItemEvent() multi-item event}. If the items were not
-     * passed in when the event was created, the instances are created on demand.
+     * Gets the items. This method differs from the singular {@link #getItem()} in two ways: it returns a list of {@link XFTItem} objects
+     * rather than a single item (even objects inserted into the event that subclass {@link BaseElement} are converted upon insertion). It also
+     * differs in that, unlike the {@link XftItemEventI#getItem()} method, it does not create the item objects on demand if they were initially
+     * set through the XSI type and object ID.
      *
-     * @return Returns the associated {@link XFTItem} objects.
+     * @return Returns the list of {@link XFTItem} instances for the event.
      */
     List<XFTItem> getItems();
 

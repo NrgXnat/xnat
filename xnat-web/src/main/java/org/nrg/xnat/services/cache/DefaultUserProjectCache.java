@@ -85,7 +85,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatInvestigatordata.SCHEMA_ELEMENT_NAME),
-              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP.or(event -> StringUtils.equalsAny(event.getId(), Groups.ALL_DATA_ADMIN_GROUP, Groups.ALL_DATA_ACCESS_GROUP))).build(),
+              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP.or(XftItemEventCriteria.IS_ALL_DATA_ADMIN_OR_ACCESS)).build(),
               XftItemEventCriteria.builder().xsiType(XdatUser.SCHEMA_ELEMENT_NAME).action(UPDATE).predicate(PREDICATE_IS_ROLE_OPERATION).build());
         _cache = cache;
         _template = template;

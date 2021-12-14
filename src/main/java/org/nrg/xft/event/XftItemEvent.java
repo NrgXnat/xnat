@@ -184,7 +184,7 @@ public class XftItemEvent implements XftItemEventI {
         }
 
         if (hasXftItems) {
-            if (hasXsiType || hasIds) {
+            if (items.size() != ids.size()) {
                 throw new IllegalArgumentException("You must specify either one or more BaseElement or XFTItem instances (all of the same XSI type) OR one XSI type and one or more IDs. This class doesn't support mixing them.");
             }
         } else {

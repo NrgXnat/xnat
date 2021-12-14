@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 import static org.apache.commons.lang3.StringUtils.*;
+import static org.springframework.http.HttpStatus.valueOf;
 import static org.springframework.http.HttpStatus.*;
 
 @ControllerAdvice(annotations = XapiRestController.class)
@@ -57,12 +58,12 @@ public class XapiRestControllerAdvice {
 
     @ExceptionHandler(DICOMReceiverWithDuplicateTitleAndPortException.class)
     public ResponseEntity<?> handleEnabledDICOMReceiverWithDuplicatePort(final HttpServletRequest request, final DICOMReceiverWithDuplicateTitleAndPortException exception) {
-        return getExceptionResponseEntity(request, BAD_REQUEST, exception, null);
+        return getExceptionResponseEntity(request, exception, BAD_REQUEST, null);
     }
 
     @ExceptionHandler({DataFormatException.class, HttpMessageNotReadableException.class, HttpMessageConversionException.class, HttpMessageNotWritableException.class})
     public ResponseEntity<?> handleDataFormatException(final HttpServletRequest request, final Exception exception) {
-        return getExceptionResponseEntity(request, BAD_REQUEST, exception, null);
+        return getExceptionResponseEntity(request, exception, BAD_REQUEST, null);
     }
 
     @ExceptionHandler(InsufficientPrivilegesException.class)
@@ -72,85 +73,95 @@ public class XapiRestControllerAdvice {
 
     @ExceptionHandler(NotAuthenticatedException.class)
     public ResponseEntity<?> handleNotAuthenticatedException(final HttpServletRequest request) {
-        return getExceptionResponseEntity(request, UNAUTHORIZED, null, null);
+        return getExceptionResponseEntity(request, null, UNAUTHORIZED, null);
     }
 
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     public ResponseEntity<?> handleDataFormatException(final HttpServletRequest request, final ResourceAlreadyExistsException exception) {
-        return getExceptionResponseEntity(request, CONFLICT, exception, null);
+        return getExceptionResponseEntity(request, exception, CONFLICT, null);
     }
 
     @ExceptionHandler(XFTInitException.class)
     public ResponseEntity<?> handleXFTInitException(final HttpServletRequest request, final XFTInitException exception) {
-        return getExceptionResponseEntity(request, INTERNAL_SERVER_ERROR, exception, "An XFT init exception occurred.");
+        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "An XFT init exception occurred.");
     }
 
     @ExceptionHandler(XftItemException.class)
     public ResponseEntity<?> handleXftItemException(final HttpServletRequest request, final XftItemException exception) {
-        return getExceptionResponseEntity(request, INTERNAL_SERVER_ERROR, exception, "An XFT item exception occurred.");
+        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "An XFT item exception occurred.");
     }
 
     @ExceptionHandler(NrgServiceException.class)
     public ResponseEntity<?> handleNrgServiceException(final HttpServletRequest request, final NrgServiceException exception) {
-        return getExceptionResponseEntity(request, INTERNAL_SERVER_ERROR, exception, "An NRG service error occurred.");
+        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "An NRG service error occurred.");
     }
 
     @ExceptionHandler(URISyntaxException.class)
     public ResponseEntity<?> handleUriSyntaxException(final HttpServletRequest request, final URISyntaxException exception) {
         final String message = "An error occurred at index " + exception.getIndex() + " when processing the URI " + exception.getInput() + ": " + exception.getMessage();
-        return getExceptionResponseEntity(request, BAD_REQUEST, null, message);
+        return getExceptionResponseEntity(request, null, BAD_REQUEST, message);
     }
 
     @ExceptionHandler(FileNotFoundException.class)
     public ResponseEntity<?> handleFileNotFoundException(final HttpServletRequest request, final FileNotFoundException exception) {
-        return getExceptionResponseEntity(request, NOT_FOUND, exception, "Unable to find requested file");
+        return getExceptionResponseEntity(request, exception, NOT_FOUND, "Unable to find requested file");
     }
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<?> handleNotFoundException(final HttpServletRequest request, final NotFoundException exception) {
-        return getExceptionResponseEntity(request, NOT_FOUND, exception, "Unable to find requested file or resource");
+        return getExceptionResponseEntity(request, exception, NOT_FOUND, "Unable to find requested file or resource");
+    }
+
+    @ExceptionHandler(ConflictedStateException.class)
+    public ResponseEntity<?> handleConflictedStateException(final HttpServletRequest request, final ConflictedStateException exception) {
+        return getExceptionResponseEntity(request, exception);
     }
 
     @ExceptionHandler(NoContentException.class)
     public ResponseEntity<?> handleNoContentException(final HttpServletRequest request, final NoContentException exception) {
-        return getExceptionResponseEntity(request, NO_CONTENT, exception, "Unable to find requested file or resource");
+        return getExceptionResponseEntity(request, exception, NO_CONTENT, "Unable to find requested file or resource");
     }
 
     @ExceptionHandler(ServletRequestBindingException.class)
     public ResponseEntity<?> handleServletRequestBindingException(final HttpServletRequest request, final ServletRequestBindingException exception) {
-        return getExceptionResponseEntity(request, BAD_REQUEST, exception, "There was an error in the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, BAD_REQUEST, "There was an error in the request: " + exception.getMessage());
     }
 
     @ExceptionHandler(ConfigServiceException.class)
     public ResponseEntity<?> handleConfigServiceException(final HttpServletRequest request, final ConfigServiceException exception) {
-        return getExceptionResponseEntity(request, INTERNAL_SERVER_ERROR, exception, "An error occurred when accessing the configuration service: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "An error occurred when accessing the configuration service: " + exception.getMessage());
     }
 
     @ExceptionHandler(ServerException.class)
     public ResponseEntity<?> handleServerException(final HttpServletRequest request, final ServerException exception) {
-        return getExceptionResponseEntity(request, valueOf(exception.getStatus().getCode()), exception, "An error occurred on the server during the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, valueOf(exception.getStatus().getCode()), "An error occurred on the server during the request: " + exception.getMessage());
     }
 
     @ExceptionHandler(ClientException.class)
     public ResponseEntity<?> handleClientException(final HttpServletRequest request, final ClientException exception) {
-        return getExceptionResponseEntity(request, valueOf(exception.getStatus().getCode()), exception, "There was an error in the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, valueOf(exception.getStatus().getCode()), "There was an error in the request: " + exception.getMessage());
     }
 
     @ExceptionHandler(IOException.class)
     public ResponseEntity<?> handleIOException(final HttpServletRequest request, final IOException exception) {
         if (contains(exception.getClass().getName(), "ClientAbortException")) {
-            return getExceptionResponseEntity(request, BAD_REQUEST, exception, "The client : " + exception.getMessage());
+            return getExceptionResponseEntity(request, exception, BAD_REQUEST, "The client : " + exception.getMessage());
         }
-        return getExceptionResponseEntity(request, INTERNAL_SERVER_ERROR, exception, "There was an error reading or writing the requested resource: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "There was an error reading or writing the requested resource: " + exception.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(final HttpServletRequest request, final Exception exception) {
-        return getExceptionResponseEntity(request, INTERNAL_SERVER_ERROR, exception, "There was an error in the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "There was an error in the request: " + exception.getMessage());
     }
 
     @NotNull
-    private ResponseEntity<?> getExceptionResponseEntity(@Nonnull final HttpServletRequest request, final HttpStatus status, final Exception exception, final String message) {
+    private ResponseEntity<?> getExceptionResponseEntity(@Nonnull final HttpServletRequest request, final Exception exception) {
+        return getExceptionResponseEntity(request, exception, null, null);
+    }
+
+    @NotNull
+    private ResponseEntity<?> getExceptionResponseEntity(@Nonnull final HttpServletRequest request, final Exception exception, final HttpStatus status, final String message) {
         final String resolvedMessage;
         if (message == null && exception == null) {
             resolvedMessage = null;
@@ -161,7 +172,7 @@ public class XapiRestControllerAdvice {
         } else {
             resolvedMessage = message + ": " + exception.getMessage();
         }
-        // If there's an explicit status, use that. Otherwise try to get it off of the exception and default to 500 if not available.
+        // If there's an explicit status, use that. Otherwise, try to get it off of the exception and default to 500 if not available.
         final HttpStatus resolvedStatus = status != null ? status : exception != null ? getExceptionResponseStatus(exception) : DEFAULT_ERROR_STATUS;
 
         // Log 500s as errors, other statuses can just be logged as info messages.

@@ -618,16 +618,15 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/roles/{role}", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.Admin)
     public void usersIdRemoveRole(@ApiParam(value = "ID of the user to delete a role from", required = true) @PathVariable @Username final String username,
-                                  @ApiParam(value = "The user role to delete.", required = true) @PathVariable String role) throws UserNotFoundException, UserInitException, InitializationException {
+                                  @ApiParam(value = "The user role to delete.", required = true) @PathVariable String role) throws UserNotFoundException, UserInitException, InitializationException, ConflictedStateException {
         final UserI user = getUserManagementService().getUser(username);
         try {
             getRoleHolder().deleteRole(getSessionUser(), user, role);
         } catch (IllegalArgumentException e) {
             if (StringUtils.equals(UserRole.ROLE_ADMINISTRATOR, role)) {
-                log.error(e.getMessage());
-            } else {
-                throw e;
+                throw new ConflictedStateException(e.getMessage());
             }
+            throw e;
         } catch (Exception e) {
             throw new InitializationException("Error occurred removing role " + role + " from user " + user.getLogin() + ".", e);
         }

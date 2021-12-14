@@ -22,6 +22,7 @@ import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.model.users.UserAuth;
 import org.nrg.xapi.model.users.UserFactory;
 import org.nrg.xapi.rest.*;
+import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Groups;
@@ -621,6 +622,12 @@ public class UsersApi extends AbstractXapiRestController {
         final UserI user = getUserManagementService().getUser(username);
         try {
             getRoleHolder().deleteRole(getSessionUser(), user, role);
+        } catch (IllegalArgumentException e) {
+            if (StringUtils.equals(UserRole.ROLE_ADMINISTRATOR, role)) {
+                log.error(e.getMessage());
+            } else {
+                throw e;
+            }
         } catch (Exception e) {
             throw new InitializationException("Error occurred removing role " + role + " from user " + user.getLogin() + ".", e);
         }

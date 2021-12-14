@@ -87,6 +87,15 @@ public class XftItemEventCriteria {
         return StringUtils.isNotBlank(event.getId()) && Groups.isProjectGroup(event.getId());
     };
 
+    public static final Predicate<XftItemEventI> IS_ALL_DATA_ADMIN_OR_ACCESS = event -> {
+        if (event == null || !StringUtils.equals(XdatUsergroup.SCHEMA_ELEMENT_NAME, event.getXsiType())) {
+            return false;
+        }
+        return event.isMultiItemEvent()
+               ? !CollectionUtils.isEmpty(event.getIds()) && event.getIds().stream().anyMatch(XftItemEventCriteria::isAllDataAdminOrAccess)
+               : isAllDataAdminOrAccess(event.getId());
+    };
+
     /**
      * Convenience method for creating a criteria instance that just filters on the {@link XFTItem#getXSIType() item's XSI type}.
      *
@@ -208,6 +217,10 @@ public class XftItemEventCriteria {
 
     private static String representCriteria(final String label, final Collection<?> items) {
         return items.isEmpty() ? null : label + ": [" + StringUtils.join(items, ", ") + "]";
+    }
+
+    private static boolean isAllDataAdminOrAccess(final String id) {
+        return StringUtils.isNotBlank(id) && StringUtils.equalsAny(id, Groups.ALL_DATA_ADMIN_GROUP, Groups.ALL_DATA_ACCESS_GROUP);
     }
 
     private final Set<String>                    _xsiTypes;

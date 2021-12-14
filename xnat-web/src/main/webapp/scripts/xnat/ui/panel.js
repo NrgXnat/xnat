@@ -1104,17 +1104,23 @@ var XNAT = getObject(XNAT || {});
 
             infoId = randomID('i', false);
 
-            infoIcon = spawn('img', {
-                src: XNAT.url.rootUrl('/style/icons/icon-qm-48.png'),
-                width: 16,
-                height: 16
+            // infoIcon = spawn('img', {
+            //     src: XNAT.url.rootUrl('/style/icons/icon-qm-48.png'),
+            //     width: 16,
+            //     height: 16
+            // });
+            infoIcon = spawn('i.fa.fa-question-circle', {
+                style: {
+                    'font-size': '16px',
+                    'color':'#1A75C2'
+                }
             });
 
             _info = spawn('a.infolink|href=#!', {
                 id: infoId,
                 style: {
                     position: 'relative',
-                    top: '3px',
+                    top: '0',
                     right: '8px'
                 }
             }, infoIcon);

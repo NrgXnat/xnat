@@ -85,7 +85,7 @@
 }
 .xnat-tab-content.side {
     width: 83%; min-height: 800px;
-    padding: 0 30px;
+    padding: 0 0 0 30px;
     margin-bottom: 30px;
     border-top: none;
 }

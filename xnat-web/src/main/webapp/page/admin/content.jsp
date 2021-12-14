@@ -25,6 +25,14 @@
 
             <div id="admin-page" class="settings-tabs">
                 <header id="content-header">
+                    <div class="pull-right xnat-wrapper">
+                        <i class="fa fa-info-circle" title="Find a setting in the Admin UI by its name, XNAT config key, or description"></i>
+                        &nbsp;
+                        <input id="feature-finder" list="feature-list" type="text" placeholder="Find Setting" tabindex="1" />
+                        <datalist id="feature-list">
+                        </datalist>
+                        <button class="btn btn-sm" id="feature-finder-submit" style="margin-left: 2px;" tabindex="2"><i class="fa fa-search"></i></button>
+                    </div>
                     <h2 class="pull-left">Site Administration</h2>
                     <div class="clearfix"></div>
                 </header>
@@ -62,6 +70,10 @@
                             notifications: {}
                         }, XNAT.data||{});
 
+                        var featureDataList = document.getElementById('feature-list'),
+                            featureFinder = document.getElementById('feature-finder'),
+                            featureFinderSubmit = document.getElementById('feature-finder-submit');
+
                         <%-- safety check --%>
                         <c:if test="${not empty siteConfig}">
                             XNAT.data.siteConfig = ${siteConfig};
@@ -69,6 +81,14 @@
                             delete XNAT.data.siteConfig.targetSource;
                             XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
                             XNAT.data['${SITE_ROOT}/xapi/siteConfig'] = XNAT.data.siteConfig;
+
+                            const configOptions = Object.keys(${siteConfig})
+                                .sort(function(a,b){ return a<b ? -1 : 1 });
+                            configOptions.forEach(function(configKey){
+                                var opt = document.createElement('option');
+                                opt.value=configKey;
+                                featureDataList.appendChild(opt);
+                            })
                         </c:if>
 
                         <%-- can't use empty/undefined object --%>
@@ -106,6 +126,49 @@
                         }
 
                         findAdminTabs(0);
+
+                        function searchAdminTabs(configKey){
+                            if (!configKey.length) return false;
+                            var match = $(document).find('div[data-name='+configKey+']');
+
+                            if (!match) {
+                                // if the user fat-fingers an entry
+                                XNAT.ui.dialog.message('Sorry, the <b>'+configKey+'</b> setting could not be found. PLease double-check your entry.');
+                                return false;
+                            }
+
+                            var matchingTab = match.parents('div.tab-pane').data('tab');
+                            console.log(configKey,matchingTab);
+
+                            if (!matchingTab) {
+                                // not every config setting has a UI element
+                                XNAT.ui.dialog.message('Sorry, the <b>'+configKey+'</b> setting does not have a UI element. This can be set via Swagger.');
+                                return false;
+                            }
+
+                            XNAT.ui.banner.top(2000,'Found ' + configKey + ' in the '+matchingTab+' tab.','info');
+                            XNAT.tab.activate(matchingTab);
+                            $(document).scrollTop(match.position()['top'] - 50);
+
+                            match.find('.element-label:first-child').css('background-color','#e4efff');
+                        }
+
+                        featureFinder.onkeyup = function(event){
+                            event.stopPropagation();
+                            
+                            if (event.keyCode === 13) {
+                                searchAdminTabs(featureFinder.value);
+                            }
+                            if (event.keyCode === 27) {
+                                featureFinder.value = '';
+                            }
+                        };
+                        featureFinderSubmit.onmouseup = function(event){
+                            event.preventDefault();
+                            var selectedVal = document.getElementById('feature-finder').value;
+                            if (selectedVal.length > 0) searchAdminTabs(selectedVal);
+                        };
+
 
                     })();
 

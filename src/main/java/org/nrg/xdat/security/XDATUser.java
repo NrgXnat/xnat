@@ -9,13 +9,14 @@
 
 package org.nrg.xdat.security;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.nrg.framework.generics.GenericUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.ElementDisplay;
@@ -45,12 +46,13 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.security.core.GrantedAuthority;
 
-import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.nrg.xdat.security.SecurityManager.*;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
@@ -80,13 +82,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             final ItemSearch search = new ItemSearch(null, schemaElement.getGenericXFTElement());
             search.addCriteria(SCHEMA_ELEMENT_NAME + XFT.PATH_SEPARATOR + "login", login);
             search.setLevel(ViewManager.ACTIVE);
-            final List found = search.exec(true).items();
+            final List<ItemI> found = search.exec(true).items();
 
             if (found.isEmpty()) {
                 throw new UserNotFoundException(login);
             }
 
-            setItem((ItemI) found.get(0));
+            setItem(found.get(0));
 
             if (!isExtended()) {
                 init();
@@ -407,6 +409,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         if (!((XDATUser) authenticatedUser).isSiteAdmin()) {
             throw new Exception("Invalid permissions for user modification.");
         }
+        if (StringUtils.equals(UserRole.ROLE_ADMINISTRATOR, role)) {
+            final Collection<String> admins = Objects.requireNonNull(getRoleService()).getUsers(UserRole.ROLE_ADMINISTRATOR);
+            admins.remove(getUsername());
+            if (XDAT.getNamedParameterJdbcTemplate().queryForObject(QUERY_ADMIN_COUNT, new MapSqlParameterSource(PARAM_ADMINS, admins), Integer.class) == 0) {
+                throw new IllegalArgumentException("Can't remove the administrator role from user " + getUsername() + ": there are no other enabled verified users as administrators!");
+            }
+        }
         if (deleteXftRole(authenticatedUser, role) || deleteUserRole(authenticatedUser, role)) {
             XDAT.triggerUserIEvent(getUsername(), XftItemEvent.UPDATE, ImmutableMap.<String, Object>of(OPERATION, OPERATION_DELETE_ROLE, ROLE, role));
             return true;
@@ -426,19 +435,18 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     private boolean deleteXftRole(final UserI authenticatedUser, final String role) throws Exception {
-        final List<Exception> exceptions = new ArrayList<>();
-        final List<ItemI> assignedRoles = Lists.newArrayList(Iterables.filter((List<ItemI>) getChildItems(XFT.PREFIX + ":user.assigned_roles.assigned_role"), new Predicate<ItemI>() {
-            @Override
-            public boolean apply(@Nullable final ItemI assignedRole) {
-                try {
-                    return assignedRole != null && StringUtils.equals(assignedRole.getStringProperty("role_name"), role);
-                } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
-                    log.error("An error occurred trying to access an assigned role for user {}", getUsername(), e);
-                    exceptions.add(e);
-                    return false;
+        final List<Exception> exceptions    = new ArrayList<>();
+        final List<ItemI>     assignedRoles = new ArrayList<>();
+        for (final ItemI assignedRole : GenericUtils.convertToTypedList(getChildItems(XFT.PREFIX + ":user.assigned_roles.assigned_role"), ItemI.class)) {
+            try {
+                if (StringUtils.equals(assignedRole.getStringProperty("role_name"), role)) {
+                    assignedRoles.add(assignedRole);
                 }
+            } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
+                log.error("An error occurred trying to access an assigned role for user {}", getUsername(), e);
+                exceptions.add(e);
             }
-        }));
+        }
         if (!exceptions.isEmpty()) {
             log.error("{} errors occurred trying to access the assigned roles XFT property for user {}. See the logs before this for more information.", exceptions.size(), getUsername());
         }
@@ -496,20 +504,18 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     private Set<String> loadRoleNames() {
-        final Set<String> roles = Sets.newHashSet();
+        final Set<String> roles = new HashSet<>();
 
         //load from the old role store
         try {
-            roles.addAll(Lists.transform((List<ItemI>) getChildItems(XFT.PREFIX + ":user.assigned_roles.assigned_role"), new Function<ItemI, String>() {
-                @Override
-                public String apply(final ItemI assignedRole) {
-                    try {
-                        return assignedRole.getStringProperty("role_name");
-                    } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
-                        return "";
-                    }
-                }
-            }));
+            roles.addAll(GenericUtils.convertToTypedList(getChildItems(XFT.PREFIX + ":user.assigned_roles.assigned_role"), ItemI.class).stream()
+                        .map(role -> {
+                            try {
+                                return role.getStringProperty("role_name");
+                            } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
+                                return "";
+                            }
+                        }).filter(Objects::nonNull).collect(Collectors.toSet()));
         } catch (Throwable e) {
             roles.add("");
         }
@@ -522,11 +528,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             //TODO: Fix it so that this is required in tomcat mode, but optional in command line mode.
             final UserRoleService roleService = getUserRoleService();
             if (roleService != null) {
-                final List<UserRole> userRoles = roleService.findRolesForUser(this.getLogin());
+                final List<UserRole> userRoles = roleService.findRolesForUser(getUsername());
                 if (userRoles != null) {
-                    for (final UserRole userRole : userRoles) {
-                        roles.add(userRole.getRole());
-                    }
+                    roles.addAll(userRoles.stream().map(UserRole::getRole).collect(Collectors.toList()));
                 }
                 rolesNotUpdatedFromService = false;
             } else {
@@ -581,23 +585,19 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected List<ElementDisplay> getBrowseableCreateableElementDisplays() {
+        final String username = getUsername();
         try {
-            final String username = getUsername();
-            final List<ElementDisplay> elementDisplays = Lists.newArrayList(Iterables.filter(getCreateableElementDisplays(), new Predicate<ElementDisplay>() {
-                @Override
-                public boolean apply(final ElementDisplay elementDisplay) {
-                    try {
-                        final String  elementName  = elementDisplay.getElementName();
-                        final boolean isBrowseable = ElementSecurity.IsBrowseableElement(elementName);
-                        log.trace("Element {} is creatable {} browseable for user {}", elementName, isBrowseable ? "and is" : "but is not", username);
-                        return isBrowseable;
-                    } catch (Exception e) {
-                        return false;
-                    }
-                }
-            }));
-            Collections.sort(elementDisplays, ElementDisplayComparator);
-            return elementDisplays;
+            return getCreateableElementDisplays().stream()
+                                                 .filter(elementDisplay -> {
+                                                     try {
+                                                         final String  elementName  = elementDisplay.getElementName();
+                                                         final boolean isBrowseable = ElementSecurity.IsBrowseableElement(elementName);
+                                                         log.trace("Element {} is creatable {} browseable for user {}", elementName, isBrowseable ? "and is" : "but is not", username);
+                                                         return isBrowseable;
+                                                     } catch (Exception e) {
+                                                         return false;
+                                                     }
+                                                 }).sorted(ElementDisplayComparator).collect(Collectors.toList());
         } catch (ElementNotFoundException e) {
             log.error("Element '{}' not found", e.ELEMENT, e);
         } catch (XFTInitException e) {
@@ -620,12 +620,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return getSearchableElementDisplays(PluralDescriptionComparator);
     }
 
-    protected List<ElementDisplay> getSearchableElementDisplays(final Comparator comparator) {
+    protected List<ElementDisplay> getSearchableElementDisplays(final Comparator<ElementDisplay> comparator) {
         try {
             log.info("Loading searchable elements for user: "+ this.getUsername());
             final List<ElementDisplay> searchables = getGroupsAndPermissionsCache().getSearchableElementDisplays(this);
             if (!searchables.isEmpty()) {
-                Collections.sort(searchables, comparator);
+                searchables.sort(comparator);
             }
             return searchables;
         } catch (ElementNotFoundException e) {
@@ -725,11 +725,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean isDataAdmin() {
-        return getGroups().keySet().contains(ALL_DATA_ADMIN_GROUP);
+        return getGroups().containsKey(ALL_DATA_ADMIN_GROUP);
     }
 
     public boolean isDataAccess() {
-        return getGroups().keySet().contains(ALL_DATA_ACCESS_GROUP);
+        return getGroups().containsKey(ALL_DATA_ACCESS_GROUP);
     }
 
     private UserGroupI getGroup(String id) {
@@ -1123,67 +1123,53 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return _userRoleService;
     }
 
-    private final static Comparator DescriptionComparator = new Comparator<ElementDisplay>() {
-        public int compare(final ElementDisplay mr1, final ElementDisplay mr2) throws ClassCastException {
-            try {
-                final String value1 = mr1.getSchemaElement().getSingularDescription();
-                final String value2 = mr2.getSchemaElement().getSingularDescription();
-                return StringUtils.compareIgnoreCase(value1, value2);
-            } catch (Exception ex) {
-                throw new ClassCastException("Error Comparing Sequence");
-            }
+    private final static Comparator<ElementDisplay> DescriptionComparator = (mr1, mr2) -> {
+        try {
+            return StringUtils.compareIgnoreCase(mr1.getSchemaElement().getSingularDescription(), mr2.getSchemaElement().getSingularDescription());
+        } catch (Exception ex) {
+            throw new ClassCastException("Error Comparing Sequence");
         }
     };
 
-    private final static Comparator PluralDescriptionComparator = new Comparator<ElementDisplay>() {
-        public int compare(final ElementDisplay mr1, final ElementDisplay mr2) throws ClassCastException {
-            try {
-                final String value1 = mr1.getSchemaElement().getPluralDescription();
-                final String value2 = mr2.getSchemaElement().getPluralDescription();
-                return StringUtils.compareIgnoreCase(value1, value2);
-            } catch (Exception ex) {
-                throw new ClassCastException("Error Comparing Sequence");
-            }
+    private final static Comparator<ElementDisplay> PluralDescriptionComparator = (mr1, mr2) -> {
+        try {
+            return StringUtils.compareIgnoreCase(mr1.getSchemaElement().getPluralDescription(), mr2.getSchemaElement().getPluralDescription());
+        } catch (Exception ex) {
+            throw new ClassCastException("Error Comparing Sequence");
         }
     };
 
-    private final static Comparator NameComparator = new Comparator<ElementDisplay>() {
-        public int compare(final ElementDisplay mr1, final ElementDisplay mr2) throws ClassCastException {
-            try {
-                final String value1 = mr1.getElementName();
-                final String value2 = mr2.getElementName();
-                return StringUtils.compareIgnoreCase(value1, value2);
-            } catch (Exception ex) {
-                throw new ClassCastException("Error Comparing Sequence");
-            }
+    private final static Comparator<ElementDisplay> NameComparator = (mr1, mr2) -> {
+        try {
+            return StringUtils.compareIgnoreCase(mr1.getElementName(), mr2.getElementName());
+        } catch (Exception ex) {
+            throw new ClassCastException("Error Comparing Sequence");
         }
     };
 
-    private static final Comparator<ElementDisplay> ElementDisplayComparator = new Comparator<ElementDisplay>() {
-        @Override
-        public int compare(final ElementDisplay first, final ElementDisplay second) {
-            return Integer.compare(getSequence(first), getSequence(second));
-        }
+    private static final Comparator<ElementDisplay> ElementDisplayComparator = Comparator.comparingInt(XDATUser::getSequence);
 
-        private int getSequence(final ElementDisplay elementDisplay) {
-            try {
-                return elementDisplay.getElementSecurity().getSequence();
-            } catch (Exception ignored) {
-                return 1000;
-            }
+    private static int getSequence(final ElementDisplay elementDisplay) {
+        try {
+            return elementDisplay.getElementSecurity().getSequence();
+        } catch (Exception ignored) {
+            return 1000;
         }
-    };
+    }
 
     private static final long serialVersionUID = -8144623503683531831L;
+
+    private static final String PARAM_ADMINS      = "admins";
+    private static final String QUERY_ADMIN_COUNT = "SELECT count(*) FROM xdat_user WHERE login IN (:" + PARAM_ADMINS + ") AND enabled = 1 AND verified = 1";
 
     private final Set<String>                   _roleNames        = new HashSet<>();
     private final List<XdatStoredSearch>        _storedSearches   = new ArrayList<>();
     private final Set<GrantedAuthority>         _authorities      = new HashSet<>();
     private final Map<String, ArrayList<ItemI>> _userSessionCache = new HashMap<>();
+    private final long                          startTime         = Calendar.getInstance().getTimeInMillis();
 
     private boolean                   extended                   = false;
     private boolean                   rolesNotUpdatedFromService = true;
-    private long                      startTime                  = Calendar.getInstance().getTimeInMillis();
     private UserAuthI                 _authorization             = null;
     private GroupsAndPermissionsCache _groupsAndPermissionsCache = null;
     private UserRoleService           _userRoleService           = null;

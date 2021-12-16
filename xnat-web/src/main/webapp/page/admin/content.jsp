@@ -88,7 +88,7 @@
                                 var opt = document.createElement('option');
                                 opt.value=configKey;
                                 featureDataList.appendChild(opt);
-                            })
+                            });
                         </c:if>
 
                         <%-- can't use empty/undefined object --%>
@@ -127,13 +127,66 @@
 
                         findAdminTabs(0);
 
-                        function searchAdminTabs(configKey){
+                        XNAT.tab.searchAdminTabs = function(configKey){
+                            // remove spaces
+                            configKey = configKey.replace(/\s+/g,'');
+
                             if (!configKey.length) return false;
+                            if (configKey.length && configKey.length < 3) {
+                                XNAT.ui.dialog.message({
+                                    content: 'Please enter at least three characters',
+                                    afterShow: function(obj){
+                                        obj.$dialog.find('button.default').focus();
+                                    }
+                                });
+                                return false;
+                            }
+
                             var match = $(document).find('div[data-name='+configKey+']');
 
-                            if (!match) {
-                                // if the user fat-fingers an entry
-                                XNAT.ui.dialog.message('Sorry, the <b>'+configKey+'</b> setting could not be found. PLease double-check your entry.');
+
+                            // attempt to find a partial match if no exact match is found
+                            if (match[0] === undefined && configOptions.filter(function(key){ return key === configKey}).length === 0) {
+                                var partialMatches = configOptions.filter(function(key){
+                                    return key.toLowerCase().indexOf(configKey.toLowerCase()) >= 0
+                                });
+                                console.log(partialMatches.join(', '));
+
+                                if (partialMatches.length) {
+                                    function partialMatchListing(partialMatch){
+                                        return spawn('li',[
+                                            spawn('a',{
+                                                href: '#!',
+                                                onclick: function(){
+                                                    XNAT.dialog.closeAll();
+                                                    XNAT.tab.searchAdminTabs(partialMatch);
+                                                },
+                                                html: partialMatch
+                                            })
+                                        ])
+                                    }
+                                    var partialMatchListItems = [];
+                                    partialMatches.forEach(function(match){ partialMatchListItems.push(partialMatchListing(match))});
+
+                                    XNAT.ui.dialog.message({
+                                        content: spawn('!',[
+                                            spawn('p','We could not find an exact match. Did you mean one of these? '),
+                                            spawn('ul',partialMatchListItems)
+                                        ]),
+                                        afterShow: function(obj){
+                                            obj.$dialog.find('button.default').focus();
+                                        }
+                                    });
+                                }
+                                else {
+                                    // if that fails...
+                                    XNAT.ui.dialog.message({
+                                        content: 'Sorry, the <b>' + configKey + '</b> setting could not be found. Please double-check your entry.',
+                                        afterShow: function(obj){
+                                            obj.$dialog.find('button.default').focus();
+                                        }
+                                    });
+                                }
                                 return false;
                             }
 
@@ -143,21 +196,25 @@
                             if (!matchingTab) {
                                 // not every config setting has a UI element
                                 XNAT.ui.dialog.message('Sorry, the <b>'+configKey+'</b> setting does not have a UI element. This can be set via Swagger.');
+                                featureFinder.value = '';
                                 return false;
                             }
 
                             XNAT.ui.banner.top(2000,'Found ' + configKey + ' in the '+matchingTab+' tab.','info');
                             XNAT.tab.activate(matchingTab);
-                            $(document).scrollTop(match.position()['top'] - 50);
+                            $(document).scrollTop(match.offset()['top'] - 60);
 
-                            match.find('.element-label:first-child').css('background-color','#e4efff');
-                        }
+                            $(document).find('.panel-element.highlighted').removeClass('highlighted');
+                            match.addClass('highlighted');
+
+                            featureFinder.value = '';
+                        };
 
                         featureFinder.onkeyup = function(event){
                             event.stopPropagation();
                             
                             if (event.keyCode === 13) {
-                                searchAdminTabs(featureFinder.value);
+                                XNAT.tab.searchAdminTabs(featureFinder.value);
                             }
                             if (event.keyCode === 27) {
                                 featureFinder.value = '';
@@ -166,7 +223,7 @@
                         featureFinderSubmit.onmouseup = function(event){
                             event.preventDefault();
                             var selectedVal = document.getElementById('feature-finder').value;
-                            if (selectedVal.length > 0) searchAdminTabs(selectedVal);
+                            if (selectedVal.length > 0) XNAT.tab.searchAdminTabs(selectedVal);
                         };
 
 

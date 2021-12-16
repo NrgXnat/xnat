@@ -21,7 +21,16 @@ var XNAT = getObject(XNAT);
     XNAT.admin.notificationManager = notifyMgr =
         getObject(XNAT.admin.notificationManager||{});
 
-    notifyMgr.templates = []
+    notifyMgr.templates = [];
+
+    XNAT.admin.notificationManager.showTemplate = function(templateName){
+        var emailTemplates = $(document).find('#notification-email-container').find('.panel-element').toArray();
+
+        emailTemplates.filter(function(template){ return $(template).css('display') !== 'none' })
+            .forEach(function(visibleTemplate){ $(visibleTemplate).hide() });
+        emailTemplates.filter(function(template){ return $(template).data('name') === templateName })
+            .forEach(function(selectedTemplate){ $(selectedTemplate).show(); });
+    };
 
     function populateNotificationSelector(){
         notifyMgr.templates.length=0;
@@ -52,12 +61,10 @@ var XNAT = getObject(XNAT);
 
         });
 
+        // refactor this to be a callable function
         selector.off('change').on('change',function(){
             var name = $(this).find('option:selected').val();
-            emailTemplates.filter(function(template){ return $(template).css('display') !== 'none' })
-                .forEach(function(visibleTemplate){ $(visibleTemplate).hide() });
-            emailTemplates.filter(function(template){ return $(template).data('name') === name })
-                .forEach(function(selectedTemplate){ $(selectedTemplate).show(); });
+            XNAT.admin.notificationManager.showTemplate(name);
         })
     }
 

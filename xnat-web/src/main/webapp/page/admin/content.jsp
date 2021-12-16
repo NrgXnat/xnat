@@ -82,7 +82,7 @@
                             XNAT.data['/xapi/siteConfig'] = XNAT.data.siteConfig;
                             XNAT.data['${SITE_ROOT}/xapi/siteConfig'] = XNAT.data.siteConfig;
 
-                            const configOptions = Object.keys(${siteConfig})
+                            const configOptions = [].concat(Object.keys(${siteConfig})).concat(Object.keys(${notifications}))
                                 .sort(function(a,b){ return a<b ? -1 : 1 });
                             configOptions.forEach(function(configKey){
                                 var opt = document.createElement('option');
@@ -190,6 +190,8 @@
                                 return false;
                             }
 
+                            // if exact match is found
+
                             var matchingTab = match.parents('div.tab-pane').data('tab');
                             console.log(configKey,matchingTab);
 
@@ -200,8 +202,15 @@
                                 return false;
                             }
 
+                            // if exact match is found and it has a form element in the UI
+
                             XNAT.ui.banner.top(2000,'Found ' + configKey + ' in the '+matchingTab+' tab.','info');
                             XNAT.tab.activate(matchingTab);
+
+                            if (matchingTab === 'notification-emails-tab') {
+                                XNAT.admin.notificationManager.showTemplate(configKey);
+                            }
+
                             $(document).scrollTop(match.offset()['top'] - 60);
 
                             $(document).find('.panel-element.highlighted').removeClass('highlighted');

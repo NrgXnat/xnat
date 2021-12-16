@@ -220,20 +220,6 @@ generalSecuritySettings:
                         https: https
                     after: >
                         <p class="description">Set the http/s protocol used to access your XNAT installation</p>
-        enabledProviders:
-            kind: panel.input.textList
-            label: Enabled Authentication Providers
-            description: >
-                Specifies the authentication providers that are currently enabled on the XNAT server.
-        requireLogin:
-            kind: panel.input.switchbox
-            name: requireLogin
-            label: Require User Login
-            onText: Required
-            offText: Not Required
-            description: >
-                If required, then only registered users will be able to access your site. If not required, anyone
-                visiting your site will automatically be logged in as 'guest' with access to public data.
         restrictUserListAccessToAdmins:
             kind: panel.input.switchbox
             name: restrictUserListAccessToAdmins
@@ -298,6 +284,54 @@ generalSecuritySettings:
                     element:
                         data:
                             message: Please do not include bounding "/" characters in your regex pattern.
+
+userAuthenticationSettings:
+    kind: panel.form
+    name: userAuthenticationSettings
+    label: User Authentication Settings
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        requireLogin:
+            kind: panel.input.switchbox
+            name: requireLogin
+            label: Require User Login
+            onText: Required
+            offText: Not Required
+            description: >
+                If required, then only registered users will be able to access your site. If not required, anyone
+                visiting your site will automatically be logged in as 'guest' with access to public data.
+        enabledProviders:
+            kind: panel.input.textList
+            label: Enabled Authentication Providers
+            description: >
+                Specifies the authentication providers that are currently enabled on the XNAT server. "localdb" refers to the default XNAT provider.
+        securityNewUserRegistrationDisabled:
+            kind: panel.input.switchbox
+            name: securityNewUserRegistrationDisabled
+            label: Hide User Registration Options
+            onText: Registration DISABLED on Home Page
+            offText: Registration Enabled on Home Page
+            description: >
+                If set to TRUE, user registration via localdb is hidden on the home page.
+        securityLocalDbParRegistrationDisabled:
+            kind: panel.input.switchbox
+            name: securityLocalDbParRegistrationDisabled
+            label: Disable Local DB Project Access Requests
+            onText: PARs DISABLED for localDB
+            offText: PARs Enabled for localDB
+            description: >
+                If set to TRUE, project access requests cannot be sent to create new accounts via XNAT's default localdb authentication provider
+        securityExternalUserParDisabled:
+            kind: panel.input.switchbox
+            name: securityExternalUserParDisabled
+            label: Disable External Project Access Requests
+            onText: PARs DISABLED for External Authentication Methods
+            offText: PARs Enabled for External Authentication Methods
+            description: >
+                If set to TRUE, project access requests cannot be sent to create new accounts via external authentication providers, i.e. LDAP.
+
 
 userLoginsSessionControls:
     kind: panel.form
@@ -2311,6 +2345,7 @@ root:
             group: xnatSetup
             contents:
                 ${generalSecuritySettings}
+                ${userAuthenticationSettings}
                 ${userLoginsSessionControls}
                 ${passwords}
                 ${csrf}

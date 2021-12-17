@@ -46,6 +46,7 @@ var XNAT = getObject(XNAT);
     // usersGroups.showAdvanced = true;
     usersGroups.showAdvanced = userAdminPage;
     usersGroups.adminControls = userAdminPage;
+    usersGroups.roles = ['Administrator','DataManager','SiteUser'];
 
     // return a url for doing a rest call
     function setUrl(part1, part2, part3){
@@ -372,6 +373,35 @@ var XNAT = getObject(XNAT);
             enter: false,
             title: 'User Properties for <b>' + data.username + '</b>',
             content: XNAT.spawner.spawn(userForm()).get(),
+            beforeShow: function(obj){
+                if (usersGroups.adminUsers.indexOf(data.username) >= 0 && usersGroups.adminUsers.length === 1){
+                    // special handling when editing the only active site administrator
+                    obj.$dialog.find('.user-account-info').prepend(
+                        spawn(
+                            'div.warning',{ style: {'margin-bottom':'1em'}},
+                            'You are editing the only active administrative user account. Certain features are restricted to ensure you do not leave this XNAT in an unmanaged state.'
+                            )
+                    );
+
+                    // obj.$dialog.find('div[data-name=verified]').addClass('disabled')
+                    //     .find('label.switchbox').addClass('disabled');
+                    //
+                    // obj.$dialog.find('div[data-name=enabled]').addClass('disabled')
+                    //     .find('label.switchbox').addClass('disabled');
+
+                    obj.$dialog.find('div[data-name=verified]').addClass('disabled').empty()
+                        .append(spawn('!',[
+                            spawn('div.element-label','Verified'),
+                            spawn('div.element-wrapper','<i class="fa fa-check-circle-o"></i>')
+                        ]));
+
+                    obj.$dialog.find('div[data-name=enabled]').empty()
+                        .append(spawn('!',[
+                            spawn('div.element-label','Enabled'),
+                            spawn('div.element-wrapper','<i class="fa fa-check-circle-o"></i>')
+                        ]));
+                }
+            },
             buttons: [
                 {
                     label: 'Save',
@@ -399,6 +429,7 @@ var XNAT = getObject(XNAT);
                 }
                 if (updated) {
                     updateUserData(data.username);
+                    updateUsersTable(true);
                     // renderUsersTable();
                 }
             }
@@ -438,7 +469,6 @@ var XNAT = getObject(XNAT);
         })
     }
 
-
     function showUsersTable(){
         // console.log('showUsersTable');
         // $$($table).removeClass('hidden');
@@ -449,19 +479,36 @@ var XNAT = getObject(XNAT);
 
     // render or update the users table
     function renderUsersTable(container, url){
-        // console.log('renderUsersTable');
+
         var $container = container ? $$(container) : $(userTableContainer);
         if ($container.length) {
             setTimeout(function(){
                 $container.html('loading...');
-                setTimeout(function(){
-                    XNAT.dialog.loadingBar.show();
-                    XNAT.spawner.spawn({
-                        usersTable: usersGroups.spawnUsersTable(url)
-                    }).render($container.empty(), function(){
-                        XNAT.dialog.loadingBar.hide();
-                    });
-                }, 10);
+
+                // begin by getting an updated user role map
+                XNAT.xhr.get({
+                    url: XNAT.url.restUrl('/xapi/users/rolemap'),
+                    success: function(data){
+                        XNAT.data['/xapi/users/rolemap'] = data;
+                        XNAT.usersGroups.roles = Object.keys(data);
+                        XNAT.usersGroups.adminUsers = data['Administrator'] || []; // Add special tracking for admin users
+
+                        // proceed with rendering the table
+                        setTimeout(function(){
+                            XNAT.dialog.loadingBar.show();
+                            XNAT.spawner.spawn({
+                                usersTable: usersGroups.spawnUsersTable(url)
+                            }).render($container.empty(), function(){
+                                XNAT.dialog.loadingBar.hide();
+                            });
+                        }, 10);
+
+                    },
+                    failure: function(e) {
+                        XNAT.dialog.message('Could not load user role map, which is required to display the user table');
+                        console.warn(e);
+                    }
+                });
             }, 1);
             // return _usersTable;
         }
@@ -1534,9 +1581,10 @@ var XNAT = getObject(XNAT);
 
             var styles = {
                 id: (60-24)+'px',
-                username: (160-24)+'px',
-                name: (280-24) + 'px',
-                email: (222-24) + 'px',
+                username: (120-24)+'px',
+                name: (240-24) + 'px',
+                email: (182-24) + 'px',
+                roles: (120-24) + 'px',
                 verified: (104-24) + 'px',
                 enabled: (96-24) +'px',
                 active: (92-24) + 'px',
@@ -1597,7 +1645,7 @@ var XNAT = getObject(XNAT);
                     addDataAttrs(tr, { filter: '0' });
                 },
                 sortable: 'username, fullName, email',
-                filter: 'fullName, email',
+                filter: 'fullName, email, roles',
                 items: {
                     // _id: '~data-id',
                     // _username: '~data-username',
@@ -1676,6 +1724,20 @@ var XNAT = getObject(XNAT);
                                 // html: _email
                                 html: escapeHtml(this.email)
                             })
+                        }
+                    },
+                    roles: {
+                        label: 'Roles',
+                        filter: true,
+                        apply: function(){
+                            if (XNAT.data['/xapi/users/rolemap'] === undefined) return false;
+
+                            var userRoles = [], username=this.username;
+                            XNAT.usersGroups.roles.forEach(function(role){
+                                if (role === 'SiteUser') return false; // ignore this bit of XNAT cruft
+                                if (XNAT.data['/xapi/users/rolemap'][role].indexOf(username) >= 0) userRoles.push(role);
+                            });
+                            return userRoles.length ? userRoles.join('<br>') : '';
                         }
                     },
                     verified: {
@@ -1883,14 +1945,31 @@ var XNAT = getObject(XNAT);
         var tabsConfig = setupTabs();
         var $container = $$(container || XNAT.tabs.container);
         $container.html('loading...');
-            setTimeout(function(){
-                XNAT.dialog.loadingBar.show();
-                usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
-                usersGroups.tabs.render($container.empty(), function(){
-                    XNAT.dialog.loadingBar.hide()
-                });
-            }, 1);
-        // usersGroups.tabs.done(usersGroups.showUsersTable);
+
+        // begin by initializing the rolemap
+        XNAT.xhr.get({
+            url: XNAT.url.restUrl('/xapi/users/rolemap'),
+            success: function (data) {
+                XNAT.data['/xapi/users/rolemap'] = data;
+                XNAT.usersGroups.roles = Object.keys(data);
+                XNAT.usersGroups.adminUsers = data['Administrator'] || []; // Add special tracking for admin users
+
+                // proceed with rendering the table
+
+                setTimeout(function () {
+                    XNAT.dialog.loadingBar.show();
+                    usersGroups.tabs = XNAT.spawner.spawn(tabsConfig);
+                    usersGroups.tabs.render($container.empty(), function () {
+                        XNAT.dialog.loadingBar.hide()
+                    });
+                }, 1);
+                // usersGroups.tabs.done(usersGroups.showUsersTable);
+            },
+            failure: function (e) {
+                XNAT.dialog.message('Could not load user role map, which is required to display the user table');
+                console.warn(e);
+            }
+        });
     };
 
     // only render tabs if XNAT.tabs.container is defined

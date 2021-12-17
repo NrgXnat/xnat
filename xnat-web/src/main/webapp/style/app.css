@@ -3878,6 +3878,21 @@ label.switchbox > input:checked ~ .switchbox-off {
     display: none;
 }
 
+label.switchbox.disabled > input + .switchbox-outer {
+    background: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+label.switchbox.disabled > input + .switchbox-outer > .switchbox-inner {
+    background: #ccc;
+    border: 1px solid #e0e0e0;
+    box-shadow: none;
+    cursor: not-allowed;
+    top: -1px;
+}
+
+
 /* friendlyForm styles. Taken from ConnectomeDB. To be refactored / replaced in XNAT 1.7, most likely */
 fieldset,
 .friendlyForm fieldset {

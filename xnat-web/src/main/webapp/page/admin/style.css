@@ -119,7 +119,7 @@ body.xnat div.xmodal .panel-body { padding: 0 ; }
 .panel-title { font-weight: normal; font-size: 18px; line-height: inherit; }
 
 /* PANEL ELEMENTS */
-.panel .panel-element { margin: 5px 0 10px; padding: 10px 5px 5px; clear: both; overflow: visible; }
+.panel .panel-element { margin: 5px 0 10px; padding: 10px 5px 0; clear: both; overflow: visible; }
 .panel .panel-element.highlighted { background-color: #e4efff; border: 1px solid #d4dfef; border-radius: 5px; }
 .panel .panel-element.stacked { margin: 0 0 30px;}
 .panel .panel-element:last-child { margin: 0; }
@@ -148,6 +148,10 @@ body.xnat div.xmodal .panel-body { padding: 0 ; }
 .panel .panel-element input[type="checkbox"],
 .panel .panel-element input[type="radio"] {
     margin-top: 0;
+}
+
+.panel .panel-element.disabled .element-label {
+    color: #a8a8a8;
 }
 /* */
 .panel .panel-element textarea {

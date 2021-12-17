@@ -72,7 +72,7 @@ public class EventServiceItemSaveAspect {
             } else if (isItemA(item, XnatType.WORKFLOW)){
                 //retVal = joinPoint.proceed();
 
-            }else if (isItemA(item, XnatType.PROJECT)) {
+            }else if (isItemA(item, XnatType.PROJECT) || isItemA(item, XnatType.ARC_PROJECT)) {
                 log.debug("Project Data Save" + " : xsiType:" + item.getXSIType());
                 Boolean alreadyStored = item instanceof ArcProjectI ? xnatObjectIntrospectionService.storedInDatabase((ArcProjectI) item) :
                         xnatObjectIntrospectionService.storedInDatabase(new ArcProject(item));
@@ -464,6 +464,7 @@ public class EventServiceItemSaveAspect {
         USER_GROUP,
         WORKFLOW,
         PROJECT,
+        ARC_PROJECT,
         SUBJECT,
         SESSION,
         SCAN,
@@ -481,7 +482,9 @@ public class EventServiceItemSaveAspect {
             case WORKFLOW:
                 return StringUtils.contains(item.getXSIType(), "wrk:workflowData");
             case PROJECT:
-                return StringUtils.equals(item.getXSIType(), "xnat:projectData") || StringUtils.equals(item.getXSIType(), "arc:project");
+                return StringUtils.equals(item.getXSIType(), "xnat:projectData");
+            case ARC_PROJECT:
+                return StringUtils.equals(item.getXSIType(), "arc:project");
             case SUBJECT:
                 return (StringUtils.equals(item.getXSIType(), "xnat:subjectData") || item instanceof  XnatSubjectdataI);
             case SESSION:

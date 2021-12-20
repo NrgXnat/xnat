@@ -76,7 +76,7 @@ public class AdminUtils {
 				enabledMessage = "<p>After being disabled due to inactivity, the owner of this account has completed the email verification process to show that they are still the proper account owner. This user account is now no longer disabled due to inactivity and they can access the site again.\n</p>" +
 						"<p> The " + loginLink + " has been enabled.</p>";
 			} else {
-				enabledMessage = "<p>After being disabled due to inactivity, the owner of this account has completed the email verification process to show that they are still the proper account owner. This user account is now no longer disabled due to inactivity and they can access the site again. </p>" +
+				enabledMessage = "<p>After being disabled due to inactivity, the owner of this account has completed the email verification process to show that they are still the proper account owner. This user account is now no longer disabled due to inactivity, but their account has not yet been manually enabled by a site administrator. You, or another admin, will need to do this before they can access the site. </p>" +
 						"<p>You can review and enable the " + loginLink + ".</p>";
 			}
 			body = body.replaceAll("ENABLED_MESSAGE", enabledMessage);

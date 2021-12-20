@@ -340,7 +340,18 @@ public class AdminUtils {
 			body = body.replaceAll("USER_PHONE", phone);
 			body = body.replaceAll("LAB_NAME", lab);
 			body = body.replaceAll("USER_COMMENTS", comments);
-			body = body.replaceAll("PROJECT_ACCESS_REQUESTS", "");
+
+			String projectAccess = "";
+			if (context.containsKey("pars")) {
+				List<String> pars = GenericUtils.convertToTypedList((List<?>) context.get("pars"), String.class);
+				if (pars.size() > 0) {
+					projectAccess =  "The account has open project access requests for the following projects: ";
+					projectAccess = projectAccess + "<ul><li>" + String.join("</li><li>", pars) + "</li></ul>";
+					projectAccess = projectAccess + "\n";
+
+				}
+			}
+			body = body.replaceAll("PROJECT_ACCESS_REQUESTS", projectAccess);
 
 			String url = TurbineUtils.GetFullServerPath()+ "/app/action/DisplayItemAction/search_value/" + user.getUsername() + "/search_element/xdat:user/search_field/xdat:user.login";
 

@@ -72,7 +72,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
             "<p> REVIEW_LINK </p>\n" +
             "<p>User Comments: USER_COMMENTS</p>";
     private static final String NEW_USER_REQUEST_EMAIL = "<p>New User Request</p>\n" + "<ul style=\"list-style-type:none;\"> <li> Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>" +
-            "<p>This account has been created but will be disabled until you enable the account. You must log in before enabling the account.</p>\n" + "<p>The account has open project access requests for the following projects: PROJECT_ACCESS_REQUESTS</p>\n" +
+            "<p>This account has been created but will be disabled until you enable the account. You must log in before enabling the account.</p>\n" + "<p>PROJECT_ACCESS_REQUESTS</p>\n" +
             "<p> REVIEW_LINK </p>\n" +
             "<p>User Comments: USER_COMMENTS</p>";
     private static final String PIPELINE_AUTORUN_SUCCESS_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n <p>The following session was archived in SITE_NAME <ul style=\"list-style-type:none;\"> <li> Project: PROJECT_NAME</li> <li>Subject: SUBJECT_NAME</li> <li>Session: EXPERIMENT_NAME</li> </ul>" +

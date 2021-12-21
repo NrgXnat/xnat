@@ -127,10 +127,20 @@ public class UsersApi extends AbstractXapiRestController {
     @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
     public User usersProfileGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws DataFormatException, NotFoundException {
-        if (!Users.isValidUsername(username)) {
-            throw new DataFormatException("Invalid username");
-        }
-        return User.getUser(_jdbcTemplate, username);
+        return getUserProfile(username);
+    }
+
+    @ApiOperation(value = "Get user profile.",
+            notes = "The user profile function returns the current user with brief information.",
+            response = User.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "A user profile."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user profile."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "profile", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
+    @ResponseBody
+    public User usersProfileGet() throws DataFormatException, NotFoundException {
+        return getUserProfile(getSessionUser().getUsername());
     }
 
     @ApiOperation(value = "Get user auth details.",
@@ -236,24 +246,9 @@ public class UsersApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
     public User getUser(@ApiParam(value = "Username of the user to fetch.", required = true) @PathVariable("username") @Username final String username) throws InitializationException {
-        return getUserByUsername(username);
-    }
-
-    @ApiOperation(value = "Gets current user.", notes = "Returns the serialized user object for the logged-in user.", response = User.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User successfully retrieved."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized to view this user."),
-            @ApiResponse(code = 404, message = "User not found."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "me", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
-    public User get() throws InitializationException {
-        return getUserByUsername(getSessionUser().getUsername());
-    }
-
-    private User getUserByUsername(String username) throws InitializationException {
         try {
             final UserI user = getUserManagementService().getUser(username);
-            return _factory.getUser(user, Roles.isSiteAdmin(getSessionUser()));
+            return _factory.getUser(user);
         } catch (UserInitException | UserNotFoundException e) {
             throw new InitializationException("An error occurred initializing the user " + username, e);
         }
@@ -302,7 +297,7 @@ public class UsersApi extends AbstractXapiRestController {
                     log.error("An error occurred trying to send email to the admin: new user '{}' created with email '{}'", user.getUsername(), user.getEmail(), e);
                 }
             }
-            return _factory.getUser(user, true);
+            return _factory.getUser(user);
         } catch (Exception e) {
             throw new UserInitException("Error occurred creating user " + user.getLogin(), e);
         }
@@ -433,7 +428,7 @@ public class UsersApi extends AbstractXapiRestController {
                             "Unable to send email for change request, please contact site admin");
                 }
             }
-            return _factory.getUser(user, adminUpdate);
+            return _factory.getUser(user);
         } catch (Exception e) {
             log.error("Error occurred modifying user '{}'", user.getUsername(), e);
             if (e instanceof PasswordComplexityException) {
@@ -893,6 +888,13 @@ public class UsersApi extends AbstractXapiRestController {
 
     private int getMaxLoginInterval() {
         return Integer.max(_siteConfig.getSecurityMaxLoginInterval(), 1);
+    }
+
+    private User getUserProfile(String username) throws DataFormatException, NotFoundException {
+        if (!Users.isValidUsername(username)) {
+            throw new DataFormatException("Invalid username");
+        }
+        return User.getUser(_jdbcTemplate, username);
     }
 
     private static class SessionInfoToIdFunction implements Function<SessionInformation, String> {

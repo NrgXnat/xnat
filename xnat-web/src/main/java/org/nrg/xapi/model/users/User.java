@@ -69,8 +69,10 @@ public class User {
                                                                                                  null,
                                                                                                  resultSet.getInt("enabled") == 1,
                                                                                                  resultSet.getInt("verified") == 1,
-                                                                                                 DateUtils.getDateForTimestamp(resultSet.getTimestamp("last_successful_login")));
-    private static final String          QUERY_USER_PROFILES    = "SELECT u.login AS username, u.xdat_user_id AS id, u.firstname, u.lastname, u.email, u.enabled, u.verified, m.last_modified, a.max_login AS last_successful_login FROM xdat_user u JOIN xdat_user_meta_data m ON u.user_info = m.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) a ON u.login = a.xdat_username";
+                                                                                                 DateUtils.getDateForTimestamp(resultSet.getTimestamp("last_successful_login")),
+                                                                                                 resultSet.getString("pendingEmail"),
+                                                                                                 null);
+    private static final String          QUERY_USER_PROFILES    = "SELECT u.login AS username, u.xdat_user_id AS id, u.firstname, u.lastname, u.email, u.enabled, u.verified, m.last_modified, a.max_login AS last_successful_login, new_value as pendingEmail FROM xdat_user u JOIN xdat_user_meta_data m ON u.user_info = m.meta_data_id JOIN (SELECT xdat_username, max(last_successful_login) max_login FROM xhbm_xdat_user_auth GROUP BY xdat_username) a ON u.login = a.xdat_username LEFT JOIN xhbm_user_change_request ucr ON u.login = ucr.username AND ucr.field_to_change='email' AND ucr.enabled='t' ";
     private static final String          QUERY_ORDER_BY         = "ORDER BY u.xdat_user_id";
     private static final String          QUERY_LIMIT_TO_CURRENT = "WHERE u.enabled = 1 OR ((a.max_login > CURRENT_DATE - (INTERVAL '1 year' * :maxLoginInterval) OR (a.max_login IS NULL AND (m.last_modified > CURRENT_DATE - (INTERVAL '1 year' * :lastModifiedInterval)))))";
     private static final String          QUERY_LIMIT_TO_USER    = "WHERE u.login=:username";
@@ -121,7 +123,8 @@ public class User {
                "  lastModified: " + _lastModified + "\n" +
                "  lastSuccessfulLogin: " + _lastSuccessfulLogin + "\n" +
                "  authorization: " + _authorization + "\n" +
-               "}\n";
+               "  pendingEmail: " + _pendingEmail + "\n" +
+                "}\n";
     }
 
     private <T> T getSecuredProperty(final T property) {
@@ -154,4 +157,8 @@ public class User {
     private Boolean   _verified;
     @ApiModelProperty("The date and time of the last successful login attempt for the most recently used authentication provider.")
     private Date      _lastSuccessfulLogin;
+    @ApiModelProperty("New email address, pending verification")
+    private String    _pendingEmail;
+    @ApiModelProperty("If changing password, include current one")
+    private String    _currentPassword;
 }

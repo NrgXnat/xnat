@@ -26,18 +26,22 @@ import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.services.UserChangeRequestService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.session.SessionInformation;
@@ -70,7 +74,8 @@ public class UsersApi extends AbstractXapiRestController {
                     final AliasTokenService aliasTokenService,
                     final PermissionsServiceI permissionsService,
                     final NamedParameterJdbcTemplate jdbcTemplate,
-                    final SiteConfigPreferences siteConfig) {
+                    final SiteConfigPreferences siteConfig,
+                    final UserChangeRequestService userChangeRequestService) {
         super(userManagementService, roleHolder);
         _sessionRegistry = sessionRegistry;
         _aliasTokenService = aliasTokenService;
@@ -78,6 +83,7 @@ public class UsersApi extends AbstractXapiRestController {
         _factory = factory;
         _jdbcTemplate = jdbcTemplate;
         _siteConfig = siteConfig;
+        _userChangeRequestService = userChangeRequestService;
     }
 
     @ApiOperation(value = "Get list of users.",
@@ -208,10 +214,10 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "active/{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
     @ResponseBody
-    public List<String> getUserActiveSessions(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws NotModifiedException, UserNotFoundException {
+    public List<String> getUserActiveSessions(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws NotModifiedException {
         final Object located = locatePrincipalByUsername(username);
         if (located == null) {
-            throw new UserNotFoundException(username);
+            throw new NotModifiedException("No sessions found for user " + username);
         }
         final List<SessionInformation> sessions = _sessionRegistry.getAllSessions(located, false);
         if (sessions.isEmpty()) {
@@ -224,16 +230,31 @@ public class UsersApi extends AbstractXapiRestController {
                   notes = "Returns the serialized user object with the specified user ID.",
                   response = User.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to view this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authorizer)
-    @AuthDelegate(UserResourceXapiAuthorization.class)
-    public User getUser(@ApiParam(value = "Username of the user to fetch.", required = true) @PathVariable @Username final String username) throws InitializationException, UserNotFoundException {
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to view this user."),
+            @ApiResponse(code = 404, message = "User not found."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
+    public User getUser(@ApiParam(value = "Username of the user to fetch.", required = true) @PathVariable("username") @Username final String username) throws InitializationException {
+        return getUserByUsername(username);
+    }
+
+    @ApiOperation(value = "Gets current user.", notes = "Returns the serialized user object for the logged-in user.", response = User.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "User successfully retrieved."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to view this user."),
+            @ApiResponse(code = 404, message = "User not found."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "me", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
+    public User get() throws InitializationException {
+        return getUserByUsername(getSessionUser().getUsername());
+    }
+
+    private User getUserByUsername(String username) throws InitializationException {
         try {
-            return _factory.getUser(getUserManagementService().getUser(username));
-        } catch (UserInitException e) {
+            final UserI user = getUserManagementService().getUser(username);
+            return _factory.getUser(user, Roles.isSiteAdmin(getSessionUser()));
+        } catch (UserInitException | UserNotFoundException e) {
             throw new InitializationException("An error occurred initializing the user " + username, e);
         }
     }
@@ -281,7 +302,7 @@ public class UsersApi extends AbstractXapiRestController {
                     log.error("An error occurred trying to send email to the admin: new user '{}' created with email '{}'", user.getUsername(), user.getEmail(), e);
                 }
             }
-            return _factory.getUser(user);
+            return _factory.getUser(user, true);
         } catch (Exception e) {
             throw new UserInitException("Error occurred creating user " + user.getLogin(), e);
         }
@@ -297,57 +318,107 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}", consumes = {APPLICATION_JSON_VALUE, MULTIPART_FORM_DATA_VALUE}, produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Admin)
-    public User updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable @Username final String username, @RequestBody final User model) throws UserNotFoundException, UserInitException, DataFormatException, NotModifiedException {
-        final UserI   user            = getUserManagementService().getUser(username);
-        final boolean oldEnabledFlag  = user.isEnabled();
-        final boolean oldVerifiedFlag = user.isVerified();
+    public User updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable @Username final String username, @RequestBody final User model) throws UserInitException, XapiException, UserNotFoundException {
+        return updateUser(username, model, true);
+    }
 
-        final AtomicBoolean isDirty = new AtomicBoolean();
+    @ApiOperation(value = "Update ones own user account.", response = User.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "User successfully updated."),
+            @ApiResponse(code = 304, message = "The user object was not modified because no attributes were changed."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to update this user."),
+            @ApiResponse(code = 404, message = "User not found."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "update", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Authenticated)
+    public User update(@RequestBody final User model) throws UserInitException, XapiException, UserNotFoundException {
+        UserI user = getSessionUser();
+        return updateUser(user.getUsername(), model, Roles.isSiteAdmin(user));
+    }
+
+    private User updateUser(String username, User model, boolean adminUpdate) throws XapiException, UserNotFoundException, UserInitException {
+        final UserI user        = getUserManagementService().getUser(username);
+        boolean oldEnabledFlag  = user.isEnabled();
+        boolean oldVerifiedFlag = user.isVerified();
+
         if ((StringUtils.isNotBlank(model.getUsername())) && (!StringUtils.equals(user.getUsername(), model.getUsername()))) {
             throw new DataFormatException("The username for the submitted user object must match the username for the API call");
         }
-        if ((StringUtils.isNotBlank(model.getFirstName())) && (!StringUtils.equals(user.getFirstname(), model.getFirstName()))) {
-            user.setFirstname(model.getFirstName());
-            isDirty.set(true);
-        }
-        if ((StringUtils.isNotBlank(model.getLastName())) && (!StringUtils.equals(user.getLastname(), model.getLastName()))) {
-            user.setLastname(model.getLastName());
-            isDirty.set(true);
-        }
+
+        AtomicBoolean isDirty = new AtomicBoolean(false);
+        String pendingNewEmail = null;
         if ((StringUtils.isNotBlank(model.getEmail())) && (!StringUtils.equals(user.getEmail(), model.getEmail()))) {
-            user.setEmail(model.getEmail());
-            isDirty.set(true);
+            if (!adminUpdate) {
+                // Only admins can set an email address that's already being used.
+                if (!Users.getUsersByEmail(model.getEmail()).isEmpty()) {
+                    throw new XapiException(HttpStatus.BAD_REQUEST,
+                            "The email address you've specified is already in use.");
+                }
+
+                if (!model.getEmail().contains("@")) {
+                    throw new XapiException(HttpStatus.BAD_REQUEST, "Please use a valid email.");
+                }
+            }
+            if (!adminUpdate && _siteConfig.getEmailVerification()) {
+                // Need to re-verify the new email, set pendingNewEmail to trigger this after saving the user
+                pendingNewEmail = model.getEmail();
+            } else {
+                user.setEmail(model.getEmail());
+                isDirty.set(true);
+            }
         }
+
         // Don't do password compare: we can't.
         if (StringUtils.isNotBlank(model.getPassword())) {
+            if (!adminUpdate && (StringUtils.isBlank(model.getCurrentPassword()) ||
+                    !Users.isPasswordValid(user.getPassword(), model.getCurrentPassword(), user.getSalt()))) {
+                throw new XapiException(HttpStatus.BAD_REQUEST, "Current password needed to update password");
+            }
             user.setPassword(model.getPassword());
             isDirty.set(true);
         }
-        if (model.getAuthorization() != null && !model.getAuthorization().equals(user.getAuthorization())) {
-            user.setAuthorization(model.getAuthorization());
-            isDirty.set(true);
-        }
-        final Boolean enabled = model.getEnabled();
-        if (enabled != null && enabled != user.isEnabled()) {
-            user.setEnabled(enabled);
-            if (!enabled) {
-                //When a user is disabled, deactivate all their AliasTokens
-                _aliasTokenService.deactivateAllTokensForUser(user.getLogin());
+
+        if (adminUpdate) {
+            if ((StringUtils.isNotBlank(model.getFirstName())) && (!StringUtils.equals(user.getFirstname(), model.getFirstName()))) {
+                user.setFirstname(model.getFirstName());
+                isDirty.set(true);
             }
-            isDirty.set(true);
-        }
-        final Boolean verified = model.getVerified();
-        if (verified != null && verified != user.isVerified()) {
-            user.setVerified(verified);
-            isDirty.set(true);
+            if ((StringUtils.isNotBlank(model.getLastName())) && (!StringUtils.equals(user.getLastname(), model.getLastName()))) {
+                user.setLastname(model.getLastName());
+                isDirty.set(true);
+            }
+            if (model.getAuthorization() != null && !model.getAuthorization().equals(user.getAuthorization())) {
+                user.setAuthorization(model.getAuthorization());
+                isDirty.set(true);
+            }
+            final Boolean enabled = model.getEnabled();
+            if (enabled != null && enabled != user.isEnabled()) {
+                user.setEnabled(enabled);
+                if (!enabled) {
+                    //When a user is disabled, deactivate all their AliasTokens
+                    try {
+                        _aliasTokenService.deactivateAllTokensForUser(user.getLogin());
+                    } catch (Exception e) {
+                        log.error("Unable to deactivate alias tokens for {}", user.getLogin(), e);
+                    }
+                }
+                isDirty.set(true);
+            }
+            final Boolean verified = model.getVerified();
+            if (verified != null && verified != user.isVerified()) {
+                user.setVerified(verified);
+                isDirty.set(true);
+            }
         }
 
-        if (!isDirty.get()) {
+        if (!isDirty.get() && pendingNewEmail == null) {
             throw new NotModifiedException("No attributes were changed for user " + username);
         }
 
         try {
-            getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Modified, "", ""));
+            // if the user only updated email and verification is on, no changes have yet been made
+            if (isDirty.get()) {
+                getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Modified, "", ""));
+            }
             if (BooleanUtils.toBooleanDefaultIfNull(model.getVerified(), false) && BooleanUtils.toBooleanDefaultIfNull(model.getEnabled(), false) && (!oldEnabledFlag || !oldVerifiedFlag)) {
                 //When a user is enabled and verified, send a new user email
                 try {
@@ -355,10 +426,21 @@ public class UsersApi extends AbstractXapiRestController {
                 } catch (Exception e) {
                     log.error("An error occurred trying to send email to the admin: user '{}' updated by {}", user.getUsername(), getSessionUser().getUsername(), e);
                 }
+            } else if (pendingNewEmail != null) {
+                // if we set pendingNewEmail, the user has updated email address and needs to verify before we execute the change
+                if (!AdminUtils.issueEmailChangeRequest(user, pendingNewEmail)) {
+                    throw new XapiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Unable to send email for change request, please contact site admin");
+                }
             }
-            return _factory.getUser(user);
+            return _factory.getUser(user, adminUpdate);
         } catch (Exception e) {
-            throw new UserInitException("Error occurred modifying user " + user.getUsername(), e);
+            log.error("Error occurred modifying user '{}'", user.getUsername(), e);
+            if (e instanceof PasswordComplexityException) {
+                throw new XapiException(HttpStatus.BAD_REQUEST, e.getMessage());
+            } else {
+                throw new UserInitException("Error occurred modifying user " + user.getUsername(), e);
+            }
         }
     }
 
@@ -755,6 +837,16 @@ public class UsersApi extends AbstractXapiRestController {
         return getSessionUser().getUsername();
     }
 
+    @ApiOperation(value = "Cancels a change request.")
+    @ApiResponses({@ApiResponse(code = 200, message = "Change request canceled."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "changeRequest/{type}", produces = APPLICATION_JSON_VALUE, method = DELETE)
+    public void cancelChangeRequest(@ApiParam(value = "Type of change request", required = true) @PathVariable("type") final String type) {
+        _userChangeRequestService.cancelRequest(getSessionUser().getUsername(), type);
+    }
+
     @SuppressWarnings("unused")
     public static class Event {
         public static String Added                 = "Added User";
@@ -828,4 +920,5 @@ public class UsersApi extends AbstractXapiRestController {
     private final UserFactory                _factory;
     private final NamedParameterJdbcTemplate _jdbcTemplate;
     private final SiteConfigPreferences      _siteConfig;
+    private final UserChangeRequestService   _userChangeRequestService;
 }

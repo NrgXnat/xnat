@@ -317,7 +317,7 @@ public class EventServiceEmailAction extends SingleActionProvider {
         final String  email     = resultSet.getString("email");
         final boolean enabled   = resultSet.getInt("enabled") == 1;
         final boolean verified  = resultSet.getInt("verified") == 1;
-        return new User(userId, username, firstName, lastName, email, null, null, true, null, null, enabled, verified, null);
+        return new User(userId, username, firstName, lastName, email, null, null, true, null, null, enabled, verified, null, null, null);
     };
 
 }

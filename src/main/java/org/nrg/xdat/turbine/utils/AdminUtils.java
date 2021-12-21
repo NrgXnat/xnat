@@ -20,13 +20,16 @@ import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.entities.UserChangeRequest;
 import org.nrg.xdat.entities.UserRegistrationData;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.services.UserChangeRequestService;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.security.UserI;
+import org.springframework.mail.MailException;
 
 import javax.mail.MessagingException;
 import java.io.StringWriter;
@@ -442,4 +445,50 @@ public class AdminUtils {
     }
 
     private static String loginFailureMessage = null;
+
+	public static boolean issueEmailChangeRequest(UserI user, String newEmail) {
+		if (!XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+			return false;
+		}
+
+		String guid = UUID.randomUUID().toString();
+		getUserChangeRequestService().create(new UserChangeRequest(user.getUsername(), "email", newEmail, guid));
+
+		boolean sent;
+		try {
+			String body = XDAT.getNotificationsPreferences().getEmailMessageEmailAddressChangeRequest();
+			body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
+			body = body.replaceAll("NEW_EMAIL", newEmail);
+			sent = AdminUtils.sendUserHTMLEmail("Email Change Request Submitted", body, false,
+					new String[]{user.getEmail()});
+
+			if (sent) {
+				body = XDAT.getNotificationsPreferences().getEmailMessageVerifyEmailChangeRequest();
+				body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
+				String link = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?confirmationToken=" + guid;
+				String changeEmailLink = "<a href=\"" + link + "\">this link</a>";
+				body = body.replaceAll("CHANGE_EMAIL_LINK", changeEmailLink);
+				AdminUtils.sendUserHTMLEmail("Verify Email Address Change Request", body, false,
+						new String[]{newEmail});
+			}
+		} catch (Exception e) {
+			log.error("Unable to send email change request verification for {} to {}", user.getEmail(), newEmail, e);
+			sent = false;
+		}
+
+		if (!sent) {
+			getUserChangeRequestService().cancelRequest(user.getUsername(), "email");
+		}
+
+		return sent;
+	}
+
+	public static UserChangeRequestService getUserChangeRequestService() {
+		if (userChangeRequestService == null) {
+			userChangeRequestService = XDAT.getContextService().getBean(UserChangeRequestService.class);
+		}
+		return userChangeRequestService;
+	}
+
+	private static UserChangeRequestService userChangeRequestService;
 }

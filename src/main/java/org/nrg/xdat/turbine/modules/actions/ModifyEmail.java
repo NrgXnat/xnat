@@ -13,7 +13,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.UserChangeRequest;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Roles;
@@ -31,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailException;
 
 import javax.annotation.Nonnull;
-import java.util.UUID;
 
 @SuppressWarnings("unused")
 public class ModifyEmail extends ModifyAction {
@@ -107,34 +105,11 @@ public class ModifyEmail extends ModifyAction {
             SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
             if(preferences.getEmailVerification() && !Roles.isSiteAdmin(XDAT.getUserDetails()) ) {
                 //User can only create an email change request. They must verify their email for it to take effect
-                String guid = UUID.randomUUID().toString();
-                userChangeRequestService.create(new UserChangeRequest(user.getUsername(), "email", newEmail, guid));
-
-                //email user
-
-                try {
-                    if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
-                        String body = XDAT.getNotificationsPreferences().getEmailMessageEmailAddressChangeRequest();
-                        body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
-                        body = body.replaceAll("NEW_EMAIL", newEmail);
-                        AdminUtils.sendUserHTMLEmail("Email Change Request Submitted",body, false, new String[]{existing.getEmail()});
-                    }
-                } catch (MailException e) {
-                    logger.error("An error occurred trying to send an email to the following addresses: " + existing.getEmail(), e);
-                }
-
-                try {
-                    if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
-                        String body = XDAT.getNotificationsPreferences().getEmailMessageVerifyEmailChangeRequest();
-                        body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);
-                        String link = TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?confirmationToken=" + guid;
-
-                        String changeEmailLink = "<a href=\"" + link + "\">this link</a>";
-                        body = body.replaceAll("CHANGE_EMAIL_LINK", changeEmailLink);
-                        AdminUtils.sendUserHTMLEmail("Verify Email Address Change Request", body, false, new String[]{newEmail});
-                    }
-                } catch (MailException e) {
-                    logger.error("An error occurred trying to send an email to the administrator and the following addresses: " + user.getEmail(), e);
+                boolean sent;
+                if (!AdminUtils.issueEmailChangeRequest(user, newEmail)) {
+                    logger.error("Unable to send email change verification");
+                    redirect(false, "Email address change request could not be submitted. Please coordinate with site admin.");
+                    return;
                 }
 
                 redirect(true, "Email address change request submitted. An email was sent to the new email you submitted. Once you have clicked the link from that email to verify that it is your account, your email will be changed.");

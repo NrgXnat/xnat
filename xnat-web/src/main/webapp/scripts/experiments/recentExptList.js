@@ -125,7 +125,7 @@ function MinExptList(_div, _options){
                     dateParts = expt.date.split('-');
                     td.innerHTML = $.format.date(new Date(dateParts[0],dateParts[1]-1,dateParts[2]), XNAT.app.dateFormat);
                 }else{
-                    td.innerHTML = ''
+                    td.innerHTML = '';
                 }
                 tr.appendChild(td);
             }

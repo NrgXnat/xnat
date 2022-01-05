@@ -1604,9 +1604,10 @@ var XNAT = getObject(XNAT);
                         tag: 'style|type=text/css',
                         content: '\n' +
                         '#user-profiles td.user-id { width: ' + styles.id + '; } \n' +
-                        '#user-profiles td.username .truncate { width: 120px; } \n' +
-                        '#user-profiles td.fullName .truncate { width: 180px; } \n' +
-                        '#user-profiles td.email .truncate { width: 220px; } \n' +
+                        '#user-profiles td.username .truncate { width: 100px; } \n' +
+                        '#user-profiles td.fullName .truncate { width: 160px; } \n' +
+                        '#user-profiles td.email .truncate { width: 180px; } \n' +
+                        '#user-profiles td.roles .truncate { width: 100px; } \n' +
                         '#user-profiles td.verified { width: ' + styles.verified + '; } \n' +
                         '#user-profiles td.enabled { width: ' + styles.enabled + '; } \n' +
                         '#user-profiles td.ACTIVE { width: ' + styles.active + '; } \n' +
@@ -1619,6 +1620,7 @@ var XNAT = getObject(XNAT);
                         '    #user-profiles td.username .truncate { width: 90px; } \n' +
                         '    #user-profiles td.fullName .truncate { width: 100px; } \n' +
                         '    #user-profiles td.email .truncate { width: 140px; } \n' +
+                        '    #user-profiles td.roles .truncate { width: 70px; } \n' +
                         '} \n' +
                         '#user-account-form, #user-account-form-panel { border: none; margin: 0; }'
                     }
@@ -1681,31 +1683,24 @@ var XNAT = getObject(XNAT);
                     username: {
                         label: 'Username',
                         filter: true, // add filter: true to individual items to add a filter
-                        // th: { style: { width: styles.username }},
-                        // td: { style: { width: styles.username }},
                         apply: function(){
                             // var _username = truncateText(username);
                             return spawn('a.username.link.truncate.edit-user', {
                                 href: '#!',
                                 title: this.username + ': details',
-                                // html: _username,
                                 html: escapeHtml(this.username)//,
-                                // style: { width: styles.username },
                                 // data: { username: username }
                             });
                         }
                     },
                     fullName: {
                         label: 'Name',
-                        // th: { style: { width: styles.name }},
-                        // td: { style: { width: styles.name }},
                         apply: function(){
                             // var _fullName = truncateText(this.lastName + ', ' + this.firstName);
                             return spawn('a.full-name.link.truncate.edit-user', {
                                 href: '#!',
                                 title: this.username + ': project and security settings',
                                 html: escapeHtml(this.lastName + ', ' + this.firstName)//,
-                                // style: { width: styles.name },
                                 // data: { username: this.username }
                             });
                             //return this.lastName + ', ' + this.firstName
@@ -1713,13 +1708,10 @@ var XNAT = getObject(XNAT);
                     },
                     email: {
                         label: 'Email',
-                        // th: { style: { width: styles.email }},
-                        // td: { style: { width: styles.email }},
                         apply: function(){
                             return spawn('a.send-email.link.truncate.edit-user', {
                                 href: '#!',
                                 title: this.email + ': send email',
-                                // style: { width: styles.email },
                                 // title: 'Send email to: ' + email,
                                 // html: _email
                                 html: escapeHtml(this.email)
@@ -1734,10 +1726,14 @@ var XNAT = getObject(XNAT);
 
                             var userRoles = [], username=this.username;
                             XNAT.usersGroups.roles.forEach(function(role){
-                                if (role === 'SiteUser') return false; // ignore this bit of XNAT cruft
+                                if (role === 'SiteUser' || role === 'DataManager') return false; // ignore this bit of XNAT cruft
                                 if (XNAT.data['/xapi/users/rolemap'][role].indexOf(username) >= 0) userRoles.push(role);
                             });
-                            return userRoles.length ? userRoles.join('<br>') : '';
+                            var userRoleTxt = userRoles.length ? userRoles.join('<br>') : '';
+                            return spawn('span.truncate',{
+                                style: { 'font-size':'82.5%', 'text-transform':'uppercase' },
+                                title: userRoleTxt
+                            }, userRoleTxt);
                         }
                     },
                     verified: {

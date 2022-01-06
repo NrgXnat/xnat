@@ -197,7 +197,8 @@
 
                             if (!matchingTab) {
                                 // not every config setting has a UI element
-                                XNAT.ui.dialog.message('Sorry, the <b>'+configKey+'</b> setting does not have a UI element. This can be set via Swagger.');
+                                const swaggerUrl = XNAT.url.rootUrl('/xapi/swagger-ui.html#/site-config-api');
+                                XNAT.ui.dialog.message('Sorry, the <b>'+configKey+'</b> setting does not have a UI element. This can be set <b><a href="'+swaggerUrl+'" target="_blank">via Swagger</a></b>.');
                                 featureFinder.value = '';
                                 return false;
                             }
@@ -217,6 +218,12 @@
                             match.addClass('highlighted');
 
                             featureFinder.value = '';
+                        };
+
+                        featureFinder.oninput = function(event){
+                            if (configOptions.indexOf(event.target.value) >= 0) {
+                                XNAT.tab.searchAdminTabs(featureFinder.value);
+                            }
                         };
 
                         featureFinder.onkeyup = function(event){

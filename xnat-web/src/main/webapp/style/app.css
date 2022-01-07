@@ -3433,6 +3433,9 @@ th.sort:hover {
 .xnat-table.data-table .filter > input:focus + .filter-submit {
     visibility: visible;
 }
+.xnat-table.data-table .filter > input.truncated:focus + .filter-submit {
+    opacity: 0.2;
+}
 
 .data-table-wrapper {
     box-sizing: border-box;

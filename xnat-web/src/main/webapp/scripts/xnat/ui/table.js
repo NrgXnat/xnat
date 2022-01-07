@@ -842,7 +842,7 @@ var XNAT = getObject(XNAT);
                                 type: 'text',
                                 title: 'Use the enter key to filter on ' + name,
                                 placeholder: 'Filter ' + (opts.items[name].label ? ('by ' + opts.items[name].label) : ''),
-                                style: 'width: 100%;'
+                                style: 'width: 100%;',
                             });
                             $filterSubmit = $.spawn(
                                 'div.filter-submit',
@@ -870,6 +870,13 @@ var XNAT = getObject(XNAT);
 
                                 $filterInput.on('keyup',function(e){
                                     var val = this.value;
+                                    if (val.length > inputWidth/8) {
+                                        $filterInput.addClass('truncated')
+                                    }
+                                    else {
+                                        $filterInput.removeClass('truncated')
+                                    }
+
                                     if (e.key === 'Enter' || e.keyCode === '13') {
                                         filterFn.call(newTable, name, val);
                                     }
@@ -883,6 +890,7 @@ var XNAT = getObject(XNAT);
                                 // });
                             }
                             else {
+
                                 $filterInput.on('focus', function(){
 
                                     $(this).select();
@@ -897,6 +905,22 @@ var XNAT = getObject(XNAT);
                                 $filterInput.on('keyup', function(e){
                                     var val = this.value;
                                     var key = e.which;
+                                    var inputWidth = $(this).width();
+
+                                    // // hide submit icon if long text is entered
+                                    // if (val.length > inputWidth/12) {
+                                    //     $filterInput.addClass('truncated')
+                                    // }
+                                    // else {
+                                    //     $filterInput.removeClass('truncated')
+                                    // }
+
+                                    // start hiding submit icon as user types
+                                    var $inputSubmit = $(this).next('.filter-submit');
+                                    var opacity = Math.max(0, (1.0 - (val.length / (inputWidth/12))));
+                                    $inputSubmit.css('opacity',opacity);
+
+
                                     // don't do anything on 'tab' keyup
                                     if (key == 9) return false;
                                     if (key == 27){ // key 27 = 'esc'

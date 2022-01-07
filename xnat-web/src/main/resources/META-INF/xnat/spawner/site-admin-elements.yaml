@@ -1059,7 +1059,7 @@ notificationEmails:
                         USER_EMAIL - The email address of the new user. <br>
                         PROJECT_ACCESS_REQUESTS - Projects for which the new user has access requests (blank if none). <br>
                         REVIEW_LINK - The link used to accept or deny the request. <br>
-                        USER_COMMENTS - The comments provided to the new user by the administrator.
+                        USER_COMMENTS - The comments provided to the administrator by the new user.
 
                 emailMessageNewUserRequest:
                     kind: panel.textarea
@@ -1078,7 +1078,7 @@ notificationEmails:
                         USER_EMAIL - The email address of the new user. <br>
                         PROJECT_ACCESS_REQUESTS - Projects for which the new user has access requests (blank if none) <br>
                         REVIEW_LINK - The link used to accept or deny the request. <br>
-                        USER_COMMENTS - The comments provided to the new user by the administrator.
+                        USER_COMMENTS - The comments provided to the administrator by the new user.
 
                 emailMessagePipelineDefaultSuccess:
                     kind: panel.textarea

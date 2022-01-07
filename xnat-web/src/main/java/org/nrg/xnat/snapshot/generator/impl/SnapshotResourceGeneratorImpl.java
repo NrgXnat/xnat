@@ -197,12 +197,26 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
         }
         final CatDcmcatalogBean catalog = (CatDcmcatalogBean) catalogBean;
         // Sort the list of files by instance number. The catalog is not presorted.
-        final List<String> files = CatalogUtils.getEntriesByFilter(catalog, CatDcmentryBean.class::isInstance)
+        List<String> files;
+
+        // If the DICOM objects have no Instance Number, the next statement will throw a Null Pointer exception.
+        // If that happens, then sort by UID
+        // It would be better to sort by spatial position, but that is not in the catalog.
+        try {
+            files = CatalogUtils.getEntriesByFilter(catalog, CatDcmentryBean.class::isInstance)
                                                .stream()
                                                .map(CatDcmentryBean.class::cast)
                                                .sorted(Comparator.comparing(CatDcmentryBean::getInstancenumber))
                                                .map(e -> (new File(dicomRootPath.toString(), e.getUri())).getAbsolutePath())
                                                .collect(Collectors.toList());
+        } catch (java.lang.NullPointerException nullPointerException) {
+            files = CatalogUtils.getEntriesByFilter(catalog, CatDcmentryBean.class::isInstance)
+                                               .stream()
+                                               .map(CatDcmentryBean.class::cast)
+                                               .sorted(Comparator.comparing(CatDcmentryBean::getUid))
+                                               .map(e -> (new File(dicomRootPath.toString(), e.getUri())).getAbsolutePath())
+                                               .collect(Collectors.toList());
+        }
 
         if (files.isEmpty() || catalog.getDimensions_z() == null) {
             log.info("The DICOM catalog for scan {} in session {} does not contain any number-of-frames info. This is above my pay grade. Get a smarter SnapshotResourceGenerator", scanId, sessionId);

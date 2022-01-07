@@ -30,6 +30,8 @@ import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.search.CriteriaCollection;
+import org.nrg.xdat.security.aspects.WithinWorkflow;
+import org.nrg.xdat.security.aspects.WithinWorkflowExternalIdFromGroupId;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
@@ -190,6 +192,10 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
+    @WithinWorkflowExternalIdFromGroupId(groupIdArg = "groupId",
+            withinWorkflow = @WithinWorkflow(executingUserArg = "currentUser", baseElementArg = "user",
+                    eventArg = "eventMeta", eventCategory = EventUtils.CATEGORY.PROJECT_ACCESS,
+                    eventType = EventUtils.TYPE.PROCESS, action = EventUtils.REMOVE_USER_FROM_PROJECT))
     public void removeUserFromGroup(final UserI user, final UserI currentUser, final String groupId, final EventMetaI eventMeta) {
         try {
             removeUserFromGroup((XDATUser) user, currentUser, groupId, eventMeta);
@@ -200,6 +206,11 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
+    @WithinWorkflowExternalIdFromGroupId(groupIdArg = "groupId",
+            withinWorkflow = @WithinWorkflow(executingUserArg = "currentUser", idArg = "groupId",
+                    eventArg = "eventMeta", userListArgForJustification = "users",
+                    xsiType = XdatUsergroup.SCHEMA_ELEMENT_NAME, eventCategory = EventUtils.CATEGORY.PROJECT_ACCESS,
+                    eventType = EventUtils.TYPE.PROCESS, action = EventUtils.REMOVE_USERS_FROM_PROJECT))
     public void removeUsersFromGroup(final String groupId, final UserI currentUser, final List<UserI> users, final EventMetaI eventMeta) {
         final List<String> failed = new ArrayList<>();
         final Set<String> usernames = users.stream().map(user -> {
@@ -392,13 +403,22 @@ public class UserGroupManager implements UserGroupServiceI {
     }
 
     @Override
-    public UserGroupI addUserToGroup(final String groupId, final UserI newUser, final UserI currentUser, final EventMetaI ci) throws Exception {
+    @WithinWorkflowExternalIdFromGroupId(groupIdArg = "groupId",
+            withinWorkflow = @WithinWorkflow(executingUserArg = "currentUser", baseElementArg = "newUser",
+                    eventArg = "eventMeta", eventCategory = EventUtils.CATEGORY.PROJECT_ACCESS,
+                    eventType = EventUtils.TYPE.PROCESS, action = EventUtils.ADD_USER_TO_PROJECT))
+    public UserGroupI addUserToGroup(final String groupId, final UserI newUser, final UserI currentUser, final EventMetaI eventMeta) throws Exception {
         final UserGroupI userGroup = getGroup(groupId);
-        addUserToGroup(userGroup, currentUser, newUser, ci, true);
+        addUserToGroup(userGroup, currentUser, newUser, eventMeta, true);
         return userGroup;
     }
 
     @Override
+    @WithinWorkflowExternalIdFromGroupId(groupIdArg = "groupId",
+            withinWorkflow = @WithinWorkflow(executingUserArg = "currentUser", idArg = "groupId",
+                    eventArg = "eventMeta", userListArgForJustification = "users",
+                    xsiType = XdatUsergroup.SCHEMA_ELEMENT_NAME, eventCategory = EventUtils.CATEGORY.PROJECT_ACCESS,
+                    eventType = EventUtils.TYPE.PROCESS, action = EventUtils.ADD_USERS_TO_PROJECT))
     public UserGroupI addUsersToGroup(final String groupId, final UserI currentUser, final List<UserI> users, final EventMetaI eventMeta) throws Exception {
         final UserGroupI userGroup = getGroup(groupId);
         for (final UserI user : users) {

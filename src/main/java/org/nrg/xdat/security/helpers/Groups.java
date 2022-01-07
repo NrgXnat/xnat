@@ -257,7 +257,9 @@ public class Groups {
      * @throws Exception When an error occurs.
      */
     public static void removeUserFromGroup(UserI user, UserI authenticatedUser, String groupId, EventMetaI ci) throws Exception {
-        getUserGroupService().removeUserFromGroup(user, authenticatedUser, groupId, ci);
+        if (isMember(user, groupId)) {
+            getUserGroupService().removeUserFromGroup(user, authenticatedUser, groupId, ci);
+        }
     }
 
     /**
@@ -436,7 +438,11 @@ public class Groups {
      * @throws Exception When an error occurs.
      */
     public static UserGroupI addUserToGroup(String groupId, UserI user, UserI authenticatedUser, EventMetaI ci) throws Exception {
-        return getUserGroupService().addUserToGroup(groupId, user, authenticatedUser, ci);
+        if (!isMember(user, groupId)) {
+            return getUserGroupService().addUserToGroup(groupId, user, authenticatedUser, ci);
+        } else {
+            return getGroup(groupId);
+        }
     }
 
     /**

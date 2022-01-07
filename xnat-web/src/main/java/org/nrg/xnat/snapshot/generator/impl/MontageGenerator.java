@@ -1,6 +1,7 @@
 package org.nrg.xnat.snapshot.generator.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dcm4che2.imageioimpl.plugins.dcm.DicomImageReader;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.xapi.exceptions.InitializationException;
 
@@ -89,7 +90,15 @@ public class MontageGenerator extends DicomImageRenderer {
                 Dimensions montageDimensions = new Dimensions(rows * srcDimensions.rows, cols * srcDimensions.cols);
                 // All of the images are assumed to be of the same type.
                 // TODO: Pick a lowest-common image type and convert image types if needed.
-                montageBufferedImage = new BufferedImage(montageDimensions.cols, montageDimensions.rows, bis.get(0).getType());
+                if(bis.get(0).getType() == BufferedImage.TYPE_CUSTOM) {
+                    // This was added to help with RGB Ultrasound data. This is likely to cause other problems in the future
+                    // if/when we encounter non RGB data
+                    // TODO: Redesign this entire process to account for different color models within one DICOM series.
+                    //       This will not happen very often (if ever), but it is worth a rewrite when time permits.
+                    montageBufferedImage = DicomImageReader.createRGBBufferedImage(montageDimensions.cols, montageDimensions.rows);
+                } else {
+                    montageBufferedImage = new BufferedImage(montageDimensions.cols, montageDimensions.rows, bis.get(0).getType());
+                }
 
                 // Write the individual images into the panels.
                 // TODO: This puts images smaller than the panel in the upper left corner of the panel instead of the more aesthetically pleasing center.

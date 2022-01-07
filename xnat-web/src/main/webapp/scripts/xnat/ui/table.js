@@ -870,12 +870,20 @@ var XNAT = getObject(XNAT);
 
                                 $filterInput.on('keyup',function(e){
                                     var val = this.value;
-                                    if (val.length > inputWidth/8) {
-                                        $filterInput.addClass('truncated')
-                                    }
-                                    else {
-                                        $filterInput.removeClass('truncated')
-                                    }
+                                    var inputWidth = $(this).width();
+
+                                    // // hide submit icon if long text is entered
+                                    // if (val.length > inputWidth/8) {
+                                    //     $filterInput.addClass('truncated')
+                                    // }
+                                    // else {
+                                    //     $filterInput.removeClass('truncated')
+                                    // }
+
+                                    // start hiding submit icon as user types
+                                    var $inputSubmit = $(this).next('.filter-submit');
+                                    var opacity = Math.max(0.2, (1.0 - (val.length / (inputWidth/12))));
+                                    $inputSubmit.css('opacity',opacity);
 
                                     if (e.key === 'Enter' || e.keyCode === '13') {
                                         filterFn.call(newTable, name, val);
@@ -917,7 +925,7 @@ var XNAT = getObject(XNAT);
 
                                     // start hiding submit icon as user types
                                     var $inputSubmit = $(this).next('.filter-submit');
-                                    var opacity = Math.max(0, (1.0 - (val.length / (inputWidth/12))));
+                                    var opacity = Math.max(0.2, (1.0 - (val.length / (inputWidth/12))));
                                     $inputSubmit.css('opacity',opacity);
 
 

@@ -742,7 +742,7 @@ public class UsersApi extends AbstractXapiRestController {
         final Collection<String> failed = new ArrayList<>();
         for (final String group : groups) {
             try {
-                Groups.addUserToGroup(group, user, getSessionUser(), EventUtils.ADMIN_EVENT(getSessionUser()));
+                Groups.addUserToGroup(group, user, getSessionUser(), null);
             } catch (Exception e) {
                 failed.add(group);
                 log.error("Error occurred adding user " + user.getLogin() + " to group " + group + ".", e);
@@ -769,7 +769,7 @@ public class UsersApi extends AbstractXapiRestController {
         final Collection<String> failed = new ArrayList<>();
         for (final String group : groups) {
             try {
-                Groups.removeUserFromGroup(user, getSessionUser(), group, EventUtils.ADMIN_EVENT(getSessionUser()));
+                Groups.removeUserFromGroup(user, getSessionUser(), group, null);
             } catch (Exception e) {
                 failed.add(group);
                 log.error("Error occurred removing group " + group + " from user " + user.getLogin() + ".", e);

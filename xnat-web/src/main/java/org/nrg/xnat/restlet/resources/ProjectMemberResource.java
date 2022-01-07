@@ -106,14 +106,15 @@ public class ProjectMemberResource extends SecureResource {
     public void handleDelete() {
         final UserI user = getUser();
         try {
-            final PersistentWorkflowI workflow  = WorkflowUtils.getOrCreateWorkflowData(getEventId(), user, XdatUsergroup.SCHEMA_ELEMENT_NAME, _groupId, _projectId, newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.REMOVE_USERS_FROM_PROJECT));
-            final EventMetaI          eventMeta = workflow.buildEvent();
             if (Permissions.canDelete(user, _project)) {
-                Groups.removeUsersFromGroup(_groupId, user, _users, eventMeta);
-                WorkflowUtils.complete(workflow, eventMeta);
+                if (_users.size() == 1) {
+                    // This provides a cleaner audit as workflow can be on user rather than group
+                    Groups.removeUserFromGroup(_users.get(0), user, _groupId,null);
+                } else {
+                    Groups.removeUsersFromGroup(_groupId, user, _users, null);
+                }
             } else {
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
-                WorkflowUtils.fail(workflow, eventMeta);
             }
         } catch (Exception e) {
             log.error("An error occurred deleting the group {}", _groupId, e);

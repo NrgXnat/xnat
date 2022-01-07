@@ -66,7 +66,7 @@ import java.util.concurrent.TimeUnit;
 
 @Configuration
 @ComponentScan({"org.nrg.dcm.xnat", "org.nrg.dicomtools.filters", "org.nrg.framework.datacache.impl.hibernate",
-                "org.nrg.framework.services.impl", "org.nrg.resources", "org.nrg.xdat.daos", "org.nrg.xdat.security.validators",
+                "org.nrg.framework.services.impl", "org.nrg.resources", "org.nrg.xdat.daos", "org.nrg.xdat.security.validators", "org.nrg.xdat.security.aspects",
                 "org.nrg.xdat.services.cache.impl", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xft.daos",
                 "org.nrg.xft.event.listeners", "org.nrg.xft.services", "org.nrg.xft.utils", "org.nrg.xnat.configuration",
                 "org.nrg.xnat.daos", "org.nrg.xnat.event.listeners", "org.nrg.xnat.event.services", "org.nrg.xnat.eventservice.actions",

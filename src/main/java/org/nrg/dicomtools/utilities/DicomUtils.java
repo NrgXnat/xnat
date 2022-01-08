@@ -9,14 +9,16 @@
 
 package org.nrg.dicomtools.utilities;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.*;
 import org.dcm4che2.io.DicomInputHandler;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.io.StopTagInputHandler;
 import org.dcm4che2.iod.module.macro.Code;
+import org.nrg.dcm.DicomAttributeIndex;
 import org.nrg.dcm.RequiredAttributeUnsetException;
 import org.nrg.dicomtools.exceptions.AttributeVRMismatchException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -27,10 +29,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
+@Slf4j
 public class DicomUtils {
     /**
      * The tag which contains the history of edit script application.
@@ -53,6 +58,12 @@ public class DicomUtils {
      * If they're both blank or both not blank, then you have balanced parentheses.
      */
     public static final Pattern DICOM_TAG = Pattern.compile("^(?<open>[(]?)(?<tag>(?<prefix>[\\p{Alnum}]{4}),(?<suffix>[\\p{Alnum}]{4}))(?<close>[)]?)$");
+
+    /**
+     * Converts a map with {@link DicomAttributeIndex} keys to one with string keys. This calls the {@link DicomAttributeIndex#getPath(DicomObject)} method
+     * and uses the first integer in the returned array. That is converted to the attribute tag name using the {@link #getDicomAttribute(int)} method.
+     */
+    public static final Function<Map<DicomAttributeIndex, String>, Map<String, String>> MAP_BY_ATTRIBUTE_TO_STRING_FUNCTION = map -> map.keySet().stream().collect(Collectors.toMap(DicomUtils::getDicomAttribute, map::get));
 
     /**
      * This tries to convert a DICOM header ID&mdash;either a DICOM tag or attribute&mdash;into an integer value that
@@ -114,6 +125,29 @@ public class DicomUtils {
             return null;
         }
         return DICOM_TAGS.get(tag);
+    }
+
+    /**
+     * Gets the DICOM attribute name&mdash;e.g. SeriesDescription, Modality, or StudyInstanceUID&mdash;for the indicated
+     * tag. This calls the {@link DicomAttributeIndex#getPath(DicomObject)} method to get the integer value of the tag.
+     * If the attribute is a nested tag, this method uses the last item in the path. This may work properly, but you may
+     * get unpredictable results.
+     *
+     * @param attribute The DICOM attribute for which you want to retrieve the name.
+     *
+     * @return The corresponding DICOM attribute name, if available.
+     */
+    public static String getDicomAttribute(final DicomAttributeIndex attribute) {
+        final Integer[] path = attribute.getPath(null);
+        if (ArrayUtils.isEmpty(path)) {
+            log.info("Tried to get the path for a \"{}\" attribute but it was empty", attribute.getColumnName());
+            return null;
+        }
+        final Integer lastTag = path[path.length - 1];
+        if (path.length > 1) {
+            log.warn("Got the path for a \"{}\" attribute but there were {} values. I'll use the last value, which is: {}", attribute.getColumnName(), path.length, lastTag);
+        }
+        return getDicomAttribute(lastTag);
     }
 
     /**
@@ -382,51 +416,34 @@ public class DicomUtils {
         return stripTrailingChars(new StringBuilder(s), toStrip).toString();
     }
 
-    private static StringBuffer join(final StringBuffer sb, final int[] array, final String separator) {
+    private static StringBuffer join(final StringBuffer sb, final int[] array) {
         if (array.length > 0) {
             sb.append(array[0]);
             for (int i = 1; i < array.length; i++) {
-                sb.append(separator);
+                sb.append("\\");
                 sb.append(array[i]);
             }
         }
         return sb;
     }
 
-    private static String join(final int[] array, final String separator) {
-        return join(new StringBuffer(), array, separator).toString();
+    private static String join(final int[] array) {
+        return join(new StringBuffer(), array).toString();
     }
 
     private interface Converter {
         String convert(DicomObject o, DicomElement e) throws AttributeVRMismatchException;
     }
 
-    private final static Map<VR,Converter> conversions =
-            ImmutableMap.of(VR.SQ, new Converter() {
-                                public String convert(final DicomObject o, final DicomElement e)
-                                        throws AttributeVRMismatchException {
-                                    throw new AttributeVRMismatchException(e.tag(), e.vr());
-                                }
+    private final static Map<VR, Converter> conversions =
+            ImmutableMap.of(VR.SQ, (dicomObject, dicomElement) -> {
+                                throw new AttributeVRMismatchException(dicomElement.tag(), dicomElement.vr());
                             },
-                            VR.UN, new Converter() {
-                        public String convert(final DicomObject o, final DicomElement e) {
-                            return e.getString(o.getSpecificCharacterSet(), false);
-                        }
-                    },
-                            VR.AT, new Converter() {
-                        public String convert(final DicomObject o, final DicomElement e) {
-                            return join(e.getInts(false), "\\");
-                        }
-                    },
-                            VR.OB, new Converter() {
-                        public String convert(final DicomObject o, final DicomElement e) {
-                            return VR.OB.toString(e.getBytes(), o.bigEndian(), o.getSpecificCharacterSet());
-                        }
-                    });
+                            VR.UN, (dicomObject, dicomElement) -> dicomElement.getString(dicomObject.getSpecificCharacterSet(), false),
+                            VR.AT, (dicomObject, dicomElement) -> join(dicomElement.getInts(false)),
+                            VR.OB, (dicomObject, dicomElement) -> VR.OB.toString(dicomElement.getBytes(), dicomObject.bigEndian(), dicomObject.getSpecificCharacterSet()));
 
-
-    public static String getString(final DicomObject o, final int tag)
-            throws AttributeVRMismatchException {
+    public static String getString(final DicomObject o, final int tag) throws AttributeVRMismatchException {
         final DicomElement de = o.get(tag);
         if (null == de) {
             return null;
@@ -436,7 +453,7 @@ public class DicomUtils {
             // all other data types can be treated as simple strings, maybe with
             // multiple values separated by backslashes.  Join these.
             try {
-                return Joiner.on("\\").join(de.getStrings(o.getSpecificCharacterSet(), false));
+                return String.join("\\", de.getStrings(o.getSpecificCharacterSet(), false));
             } catch (UnsupportedOperationException e) {
                 throw new AttributeVRMismatchException(tag, de.vr());
             }
@@ -447,8 +464,8 @@ public class DicomUtils {
 
 
     private final static Pattern VALID_UID_PATTERN = Pattern.compile("(0|([1-9][0-9]*))(\\.(0|([1-9][0-9]*)))*");
-    private final static int UID_MIN_LEN = 1;
-    private final static int UID_MAX_LEN = 64;
+    private final static int     UID_MIN_LEN       = 1;
+    private final static int     UID_MAX_LEN       = 64;
 
     public static boolean isValidUID(final CharSequence uid) {
         if (null == uid) {
@@ -464,9 +481,11 @@ public class DicomUtils {
      * Returns a new Date object that represents a date/time combination from the named
      * DA and TM attributes of the given DicomObject.  Assumes, but does not verify,
      * that attributes are of VR DA and TM, respectively.
-     * @param o DicomObject from which date/time should be extracted
+     *
+     * @param o       DicomObject from which date/time should be extracted
      * @param dateTag DA attribute
      * @param timeTag TM attribute
+     *
      * @return combined Date object
      */
     public static Date getDateTime(final DicomObject o, final int dateTag, final int timeTag) {
@@ -477,7 +496,7 @@ public class DicomUtils {
         } else if (null == time) {
             return date;
         } else {
-            if(TIME_ZONE.inDaylightTime(date)) {
+            if (TIME_ZONE.inDaylightTime(date)) {
                 Calendar localTime = Calendar.getInstance(TIME_ZONE);
                 localTime.setTime(date);
 

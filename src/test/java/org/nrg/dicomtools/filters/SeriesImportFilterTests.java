@@ -15,6 +15,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.dcm4che2.data.BasicDicomObject;
 import org.dcm4che2.data.DicomObject;
+import org.dcm4che2.data.Tag;
 import org.dcm4che2.data.VR;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,6 +28,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.*;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.dcm4che2.data.Tag.*;
 import static org.dcm4che2.data.VR.CS;
 import static org.dcm4che2.data.VR.LO;
@@ -36,7 +38,6 @@ import static org.nrg.dicomtools.filters.SeriesImportFilter.KEY_LIST;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = SeriesImportFilterTestsConfiguration.class)
 public class SeriesImportFilterTests {
-
     @Test
     public void testStandaloneFilterCreation() throws IOException {
         assertTrue(StringUtils.isNotBlank(_whitelistRegexFilter));
@@ -56,6 +57,18 @@ public class SeriesImportFilterTests {
         assertNotNull(blacklistRegexFilter);
         assertNotNull(blacklistWithTagNamesRegexFilter);
         assertNotNull(modalityMapFilter);
+
+        final List<Integer> whitelistRegexFilterTags             = whitelistRegexFilter.getFilterTags();
+        final List<Integer> whitelistWithTagNamesRegexFilterTags = whitelistWithTagNamesRegexFilter.getFilterTags();
+        final List<Integer> blacklistRegexFilterTags             = blacklistRegexFilter.getFilterTags();
+        final List<Integer> blacklistWithTagNamesRegexFilterTags = blacklistWithTagNamesRegexFilter.getFilterTags();
+        final List<Integer> modalityMapFilterTags                = modalityMapFilter.getFilterTags();
+
+        assertThat(whitelistRegexFilterTags).isNotNull().hasSize(1).containsExactly(Tag.SeriesDescription);
+        assertThat(whitelistWithTagNamesRegexFilterTags).isNotNull().hasSize(1).containsExactly(Tag.BurnedInAnnotation);
+        assertThat(blacklistRegexFilterTags).isNotNull().hasSize(1).containsExactly(Tag.SeriesDescription);
+        assertThat(blacklistWithTagNamesRegexFilterTags).isNotNull().hasSize(2).containsExactly(Tag.ImageType, Tag.BurnedInAnnotation);
+        assertThat(modalityMapFilterTags).isNotNull().hasSize(3).containsExactly(Tag.Modality, Tag.SeriesDescription, Tag.BurnedInAnnotation);
 
         assertTrue(whitelistRegexFilter.shouldIncludeDicomObject(_t1SpinEcho));
         assertTrue(whitelistRegexFilter.shouldIncludeDicomObject(_localizer1));
@@ -135,6 +148,20 @@ public class SeriesImportFilterTests {
         assertEquals(blacklistWithTagNamesRegexFilter, retrievedBlacklistWithTagNamesRegexFilter);
         assertEquals(whitelistWithTagNamesRegexFilter.toMap().get(KEY_LIST), retrievedWhitelistWithTagNamesRegexFilter.toMap().get(KEY_LIST));
         assertEquals(blacklistWithTagNamesRegexFilter.toMap().get(KEY_LIST), retrievedBlacklistWithTagNamesRegexFilter.toMap().get(KEY_LIST));
+
+        final List<Integer> retrievedWhitelistRegexFilterTags             = retrievedWhitelistRegexFilter.getFilterTags();
+        final List<Integer> retrievedBlacklistRegexFilterTags             = retrievedBlacklistRegexFilter.getFilterTags();
+        final List<Integer> retrievedModalityMapFilterTags                = retrievedModalityMapFilter.getFilterTags();
+        final List<Integer> retrievedHandRolledFilterTags                 = retrievedHandRolledFilter.getFilterTags();
+        final List<Integer> retrievedWhitelistWithTagNamesRegexFilterTags = retrievedWhitelistWithTagNamesRegexFilter.getFilterTags();
+        final List<Integer> retrievedBlacklistWithTagNamesRegexFilterTags = retrievedBlacklistWithTagNamesRegexFilter.getFilterTags();
+
+        assertThat(retrievedWhitelistRegexFilterTags).isNotNull().hasSize(1).containsExactly(Tag.SeriesDescription);
+        assertThat(retrievedBlacklistRegexFilterTags).isNotNull().hasSize(1).containsExactly(Tag.SeriesDescription);
+        assertThat(retrievedModalityMapFilterTags).isNotNull().hasSize(3).containsExactly(Tag.Modality, Tag.SeriesDescription, Tag.BurnedInAnnotation);
+        assertThat(retrievedHandRolledFilterTags).isNotNull().hasSize(3).containsExactly(Tag.Modality, Tag.SeriesDescription, Tag.BurnedInAnnotation);
+        assertThat(retrievedWhitelistWithTagNamesRegexFilterTags).isNotNull().hasSize(1).containsExactly(Tag.BurnedInAnnotation);
+        assertThat(retrievedBlacklistWithTagNamesRegexFilterTags).isNotNull().hasSize(2).containsExactly(Tag.ImageType, Tag.BurnedInAnnotation);
 
         final List<DicomObject> shouldIncludes = buildDicomObjects(SHOULD_INCLUDES);
         for (final DicomObject shouldInclude : shouldIncludes) {
@@ -229,47 +256,25 @@ public class SeriesImportFilterTests {
     @Value("${modalityMapFilter}")
     private String _modalityMapFilter;
 
-    private final Map<String, String> _t1SpinEcho                     = new HashMap<String, String>() {{
-        put("SeriesDescription", "T1 Spin Echo");
-    }};
-    private final Map<String, String> _localizer1                     = new HashMap<String, String>() {{
-        put("SeriesDescription", "LOCALIZER");
-    }};
-    private final Map<String, String> _localizer2                     = new HashMap<String, String>() {{
-        put("SeriesDescription", "SAG LOCALIZER And Then Some");
-    }};
-    private final Map<String, String> _petData                        = new HashMap<String, String>() {{
-        put("SeriesDescription", "PET Data");
-    }};
-    private final Map<String, String> _massivePhi                     = new HashMap<String, String>() {{
-        put("SeriesDescription", "This is PHI as all get out");
-    }};
-    private final Map<String, String> _burnedInAnnotation             = new HashMap<String, String>() {{
-        put("SeriesDescription", "T1 Spin Echo");
-        put("Modality", "MR");
-        put("BurnedInAnnotation", "YES");
-    }};
-    private final Map<String, String> _petScan                        = new HashMap<String, String>() {{
-        put("SeriesDescription", "PET WB");
-        put("Modality", "PT");
-        put("BurnedInAnnotation", "NO");
-    }};
-    private final Map<String, String> _mrScan                         = new HashMap<String, String>() {{
-        put("SeriesDescription", "T1 Spin Echo");
-        put("Modality", "MR");
-    }};
-    private final Map<String, String> _mrWithImageTypePatientDataScan = new HashMap<String, String>() {{
-        put("SeriesDescription", "T1 Spin Echo");
-        put("Modality", "MR");
-        put("ImageType", "Captured Patient Data");
-    }};
-    private final Map<String, String> _mrWithImageTypeDerivedScan     = new HashMap<String, String>() {{
-        put("SeriesDescription", "T1 Spin Echo");
-        put("Modality", "MR");
-        put("ImageType", "DERIVED");
-    }};
-    private final Map<String, String> _mrWithPetDataScan              = new HashMap<String, String>() {{
-        put("SeriesDescription", "PET Data");
-        put("Modality", "MR");
-    }};
+    private final Map<String, String> _t1SpinEcho                     = new HashMap<>(ImmutableMap.of("SeriesDescription", "T1 Spin Echo"));
+    private final Map<String, String> _localizer1                     = new HashMap<>(ImmutableMap.of("SeriesDescription", "LOCALIZER"));
+    private final Map<String, String> _localizer2                     = new HashMap<>(ImmutableMap.of("SeriesDescription", "SAG LOCALIZER And Then Some"));
+    private final Map<String, String> _petData                        = new HashMap<>(ImmutableMap.of("SeriesDescription", "PET Data"));
+    private final Map<String, String> _massivePhi                     = new HashMap<>(ImmutableMap.of("SeriesDescription", "This is PHI as all get out"));
+    private final Map<String, String> _burnedInAnnotation             = new HashMap<>(ImmutableMap.of("SeriesDescription", "T1 Spin Echo",
+                                                                                                      "Modality", "MR",
+                                                                                                      "BurnedInAnnotation", "YES"));
+    private final Map<String, String> _petScan                        = new HashMap<>(ImmutableMap.of("SeriesDescription", "PET WB",
+                                                                                                      "Modality", "PT",
+                                                                                                      "BurnedInAnnotation", "NO"));
+    private final Map<String, String> _mrScan                         = new HashMap<>(ImmutableMap.of("SeriesDescription", "T1 Spin Echo",
+                                                                                                      "Modality", "MR"));
+    private final Map<String, String> _mrWithImageTypePatientDataScan = new HashMap<>(ImmutableMap.of("SeriesDescription", "T1 Spin Echo",
+                                                                                                      "Modality", "MR",
+                                                                                                      "ImageType", "Captured Patient Data"));
+    private final Map<String, String> _mrWithImageTypeDerivedScan     = new HashMap<>(ImmutableMap.of("SeriesDescription", "T1 Spin Echo",
+                                                                                                      "Modality", "MR",
+                                                                                                      "ImageType", "DERIVED"));
+    private final Map<String, String> _mrWithPetDataScan              = new HashMap<>(ImmutableMap.of("SeriesDescription", "PET Data",
+                                                                                                      "Modality", "MR"));
 }

@@ -9,17 +9,19 @@
 
 package org.nrg.dicomtools.filters;
 
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
+@Slf4j
 public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
 
     public AbstractSeriesImportFilter(final String json) throws IOException {
@@ -28,7 +30,7 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
     }
 
     public AbstractSeriesImportFilter(final LinkedHashMap<String, String> values) {
-        setProjectId(values.containsKey(KEY_PROJECT_ID) ? values.get(KEY_PROJECT_ID) : "");
+        setProjectId(values.getOrDefault(KEY_PROJECT_ID, ""));
         setEnabled(!values.containsKey(KEY_ENABLED) || Boolean.parseBoolean(values.get(KEY_ENABLED)));
         if (values.containsKey(KEY_MODE)) {
             setMode(SeriesImportFilterMode.mode(values.get(KEY_MODE)));
@@ -39,10 +41,11 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
     /**
      * Constructor that subclasses can use to initialize filter metadata. This does not call the subclass's {@link #initialize(Map)}
      * method, so the implementation-specific operations must be done directly. Specifying a project ID creates a project-scoped filter
-     * instance. To create a site-wide filter, just pass an empty string or null in place of the project ID..
-     * @param projectId  The project ID for the filter.
-     * @param mode       The mode of the filter.
-     * @param enabled    Whether the filter is enabled.
+     * instance. To create a site-wide filter, just pass an empty string or null in place of the project ID.
+     *
+     * @param projectId The project ID for the filter.
+     * @param mode      The mode of the filter.
+     * @param enabled   Whether the filter is enabled.
      */
     protected AbstractSeriesImportFilter(final String projectId, final SeriesImportFilterMode mode, final boolean enabled) {
         setProjectId(projectId);
@@ -51,7 +54,7 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
     }
 
     public static List<String> parsePersistedFilters(final String list) {
-        return Arrays.asList(list.split((list.contains("\\n") ? "\\\\n" : "\\n"), -1));
+        return Arrays.stream(list.split((list.contains("\\n") ? "\\\\n" : "\\n"), -1)).map(String::trim).collect(Collectors.toList());
     }
 
     // TODO: Eventually this can be replaced with a lambda that tells the target methods how to get tags from maps and DicomObjects.
@@ -67,7 +70,7 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
                         values.put(parameter, value);
                     }
                 } else {
-                    _log.info("The specified DICOM header " + parameter + " specifies a sequence or embedded DICOM object, which isn't currently supported.");
+                    log.info("The specified DICOM header {} specifies a sequence or embedded DICOM object, which isn't currently supported.", parameter);
                 }
             }
         }
@@ -75,16 +78,33 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Integer> getFilterTags() {
+        return getFilterTagsImpl().stream().distinct().sorted().collect(Collectors.toList());
+    }
+
+    /**
      * Passes a map of values onto the concrete implementation to use as necessary.
-     * @param values    The initialization values.
+     *
+     * @param values The initialization values.
      */
     abstract protected void initialize(final Map<String, String> values);
 
     /**
-     * Gets all of the properties that are unique to each particular filter implementation.
+     * Gets all the properties that are unique to each particular filter implementation.
+     *
      * @return A map with the unique properties and values.
      */
     abstract protected Map<String, String> getImplementationProperties();
+
+    /**
+     * Gets all the properties that are unique to each particular filter implementation.
+     *
+     * @return A map with the unique properties and values.
+     */
+    abstract protected Collection<Integer> getFilterTagsImpl();
 
     @Override
     public String getProjectId() {
@@ -113,9 +133,7 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
 
     @Override
     public void setMode(final SeriesImportFilterMode mode) {
-        if (mode != _mode) {
-            _mode = mode;
-        }
+        _mode = mode;
     }
 
     @Override
@@ -130,7 +148,7 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
 
     @Override
     public LinkedHashMap<String, String> toMap() {
-        LinkedHashMap<String, String> map = new LinkedHashMap<>();
+        final LinkedHashMap<String, String> map = new LinkedHashMap<>();
         map.put(KEY_MODE, _mode.getValue());
         map.put(KEY_ENABLED, Boolean.toString(_enabled));
         if (StringUtils.isNotBlank(_projectId)) {
@@ -145,8 +163,9 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
         return toQualifiedMap("seriesImportFilter");
     }
 
+    @SuppressWarnings("SameParameterValue")
     protected LinkedHashMap<String, String> toQualifiedMap(final String prefix) {
-        LinkedHashMap<String, String> map = new LinkedHashMap<>();
+        final LinkedHashMap<String, String> map = new LinkedHashMap<>();
         map.put(prefix(prefix, KEY_MODE), _mode.getValue());
         map.put(prefix(prefix, KEY_ENABLED), Boolean.toString(_enabled));
         if (StringUtils.isNotBlank(_projectId)) {
@@ -163,53 +182,34 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
         return prefix + StringUtils.capitalize(key);
     }
 
-    private static class DicomTag {
-        private final String _tag;
-        private final int _value;
+    @Data
+    @RequiredArgsConstructor
+    private static class DicomTag implements Comparable<DicomTag> {
+        private final int    value;
+        private final String tag;
 
-        public DicomTag(int value, String tag) {
-            _value = value;
-            _tag = tag;
-        }
-    }
-
-    private static class DicomTagComparator implements Comparator<DicomTag> {
         @Override
-        public int compare(final DicomTag first, final DicomTag second) {
-            if (first._value < second._value) {
-                return -1;
-            }
-            if (first._value > second._value) {
-                return 1;
-            }
-            return 0;
+        public int compareTo(final AbstractSeriesImportFilter.DicomTag other) {
+            return Integer.compare(getValue(), other.getValue());
         }
     }
 
-    private static TreeSet<DicomTag> DICOM_TAGS = new TreeSet<DicomTag>(new DicomTagComparator()) {{
-        final Field[] fields = Tag.class.getFields();
-        for (final Field field : fields) {
-            try {
-                final int value = field.getInt(null);
-                if (value >= 0) {
-                    add(new DicomTag(value, field.getName()));
-                }
-            } catch (IllegalAccessException ignored) {
-                // Ignore this, if we're not allowed to see it, we don't care about it.
-            }
+    private static final TreeSet<DicomTag> DICOM_TAGS = Arrays.stream(Tag.class.getFields()).map(field -> {
+        try {
+            final int value = field.getInt(null);
+            return value >= 0
+                   ? new DicomTag(value, field.getName())
+                   : null;
+        } catch (IllegalAccessException e) {
+            // Ignore this, if we're not allowed to see it, we don't care about it.
+            return null;
         }
-    }};
+    }).filter(Objects::nonNull).collect(Collectors.toCollection(TreeSet::new));
 
-    private static List<String> DICOM_TAG_NAMES = new ArrayList<String>() {{
-        for (final DicomTag tag : DICOM_TAGS) {
-            add(tag._tag);
-        }
-    }};
+    private static final List<String> DICOM_TAG_NAMES = DICOM_TAGS.stream().map(DicomTag::getTag).collect(Collectors.toList());
 
-    private static final Logger _log = LoggerFactory.getLogger(AbstractSeriesImportFilter.class);
-
-    private String _projectId;
-    private boolean _enabled;
+    private String                 _projectId;
+    private boolean                _enabled;
     private SeriesImportFilterMode _mode;
-    private String _modality;
+    private String                 _modality;
 }

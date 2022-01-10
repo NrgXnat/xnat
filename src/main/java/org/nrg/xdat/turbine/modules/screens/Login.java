@@ -18,20 +18,13 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistryImpl;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class Login extends VelocitySecureScreen {
@@ -53,8 +46,6 @@ public class Login extends VelocitySecureScreen {
 	        }
 	        SecurityContextHolder.clearContext();
 		}
-
-		final String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
 
 		final Cookie[] cookies = data.getRequest().getCookies();
 		boolean sessionTimedOut = false;
@@ -87,8 +78,10 @@ public class Login extends VelocitySecureScreen {
 			}
         }
 
-		if(failed!=null && failed.equals("true")){
+		if (StringUtils.equalsIgnoreCase((String) TurbineUtils.GetPassedParameter("failed", data), "true")) {
 			data.setMessage(AdminUtils.GetLoginFailureMessage());
+		} else if (StringUtils.equalsIgnoreCase((String) TurbineUtils.GetPassedParameter("disabled", data), "true")) {
+			data.setMessage("Your account has been disabled. Please contact the system administrator for more information.");
 		}
 
 		final Context context = TurbineVelocity.getContext(data);

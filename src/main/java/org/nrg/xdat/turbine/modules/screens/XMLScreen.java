@@ -38,6 +38,7 @@ public class XMLScreen extends XDATRawScreen {
     private static final String USER_PASSWORD_PROPERTY       = "primary_password";
     private static final String USER_SALT_PROPERTY           = "salt";
     private static final String LOGIN_SESSION_ID_PROPERTY    = "session_id";
+    private static final String LOGIN_IP_ADDRESS_PROPERTY    = "ip_address";
     private static final String LOGIN_USER_PASSWORD_PROPERTY = "user/primary_password";
     private static final String LOGIN_USER_SALT_PROPERTY     = "user/salt";
 
@@ -108,7 +109,7 @@ public class XMLScreen extends XDATRawScreen {
                 break;
 
             case XdatUserLogin.SCHEMA_ELEMENT_NAME:
-                clearProperties(item, LOGIN_SESSION_ID_PROPERTY, LOGIN_USER_PASSWORD_PROPERTY, LOGIN_USER_SALT_PROPERTY);
+                clearProperties(item, LOGIN_SESSION_ID_PROPERTY, LOGIN_IP_ADDRESS_PROPERTY, LOGIN_USER_PASSWORD_PROPERTY, LOGIN_USER_SALT_PROPERTY);
                 break;
 
             default:

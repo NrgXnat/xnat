@@ -146,7 +146,13 @@ public class FileList extends XNATCatalogTemplate {
                 resource = getResources().get(0);
             }
 
-            filePath = URLDecoder.decode(StringUtils.substringBefore(StringUtils.removeStart(getRequest().getResourceRef().getRemainingPart(), "/"), "?"), Charset.defaultCharset().name());
+            filePath = StringUtils.substringBefore(StringUtils.removeStart(getRequest().getResourceRef().getRemainingPart(), "/"), "?");
+
+            if (StringUtils.countMatches(filePath,"%2B") > 0 || StringUtils.countMatches(filePath,"%20") >0 ) {
+                filePath = URLDecoder.decode(filePath, Charset.defaultCharset().name());
+            }
+
+//            filePath = URLDecoder.decode(StringUtils.substringBefore(StringUtils.removeStart(getRequest().getResourceRef().getRemainingPart(), "/"), "?"), Charset.defaultCharset().name());
 
             getVariants().addAll(VARIANTS);
         } catch (Exception e) {

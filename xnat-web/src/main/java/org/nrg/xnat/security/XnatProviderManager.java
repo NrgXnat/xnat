@@ -110,8 +110,11 @@ public class XnatProviderManager extends ProviderManager {
                     _eventPublisher.publishAuthenticationSuccess(authentication);
                     return result;
                 }
+            } catch (DisabledException exception) {
+                log.warn("User {} tried to log into the system but that account is disabled", converted.getName());
+                exceptionMap.put(provider, exception);
             } catch (AccountStatusException exception) {
-                log.warn("Error occurred authenticating login request with provider " + provider.getClass(), exception);
+                log.warn("Error occurred authenticating login request with provider {}", provider.getClass(), exception);
                 exceptionMap.put(provider, exception);
             } catch (NewAutoAccountNotAutoEnabledException exception) {
                 try {
@@ -121,7 +124,7 @@ public class XnatProviderManager extends ProviderManager {
                 }
                 exceptionMap.put(provider, exception);
             } catch (AuthenticationServiceException exception) {
-                log.error("Got a service exception for the provider " + provider.toString(), exception);
+                log.error("Got a service exception for the provider {}", provider, exception);
                 exceptionMap.put(provider, exception);
             } catch (AuthenticationException exception) {
                 exceptionMap.put(provider, exception);

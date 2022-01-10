@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xnat.security.exceptions.NewAutoAccountNotAutoEnabledException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 
@@ -25,8 +26,9 @@ import java.io.IOException;
 @Accessors(prefix = "_")
 @Slf4j
 public class XnatUrlAuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
-    public XnatUrlAuthenticationFailureHandler(final String defaultFailureUrl, final String newLdapAccountNotAutoEnabledFailureUrl) {
+    public XnatUrlAuthenticationFailureHandler(final String defaultFailureUrl, final String defaultDisabledAccountUrl, final String newLdapAccountNotAutoEnabledFailureUrl) {
         super(defaultFailureUrl);
+        _defaultDisabledAccountUrl              = defaultDisabledAccountUrl;
         _newLdapAccountNotAutoEnabledFailureUrl = newLdapAccountNotAutoEnabledFailureUrl;
     }
 
@@ -36,23 +38,25 @@ public class XnatUrlAuthenticationFailureHandler extends SimpleUrlAuthentication
     @Override
     public void onAuthenticationFailure(final HttpServletRequest request, final HttpServletResponse response, final AuthenticationException exception) throws IOException, ServletException {
         if (exception instanceof NewAutoAccountNotAutoEnabledException) {
-            onAuthenticationFailureNewLdapAccountNotAutoEnabled(request, response, exception);
+            onAuthenticationFailureCustomHandler(request, response, getNewLdapAccountNotAutoEnabledFailureUrl(), exception);
+        } else if (exception instanceof DisabledException) {
+            onAuthenticationFailureCustomHandler(request, response, getDefaultDisabledAccountUrl(), exception);
         } else {
             super.onAuthenticationFailure(request, response, exception);
         }
     }
 
-    private void onAuthenticationFailureNewLdapAccountNotAutoEnabled(final HttpServletRequest request, final HttpServletResponse response, final AuthenticationException exception) throws IOException, ServletException {
+    private void onAuthenticationFailureCustomHandler(final HttpServletRequest request, final HttpServletResponse response, final String handlerUrl, final AuthenticationException exception) throws IOException, ServletException {
         saveException(request, exception);
-
         if (isUseForward()) {
-            log.debug("Forwarding to {}", getNewLdapAccountNotAutoEnabledFailureUrl());
-            request.getRequestDispatcher(getNewLdapAccountNotAutoEnabledFailureUrl()).forward(request, response);
+            log.debug("Forwarding to {}", handlerUrl);
+            request.getRequestDispatcher(handlerUrl).forward(request, response);
         } else {
-            log.debug("Redirecting to {}", getNewLdapAccountNotAutoEnabledFailureUrl());
-            getRedirectStrategy().sendRedirect(request, response, getNewLdapAccountNotAutoEnabledFailureUrl());
+            log.debug("Redirecting to {}", handlerUrl);
+            getRedirectStrategy().sendRedirect(request, response, handlerUrl);
         }
     }
 
+    private final String _defaultDisabledAccountUrl;
     private final String _newLdapAccountNotAutoEnabledFailureUrl;
 }

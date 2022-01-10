@@ -143,7 +143,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public AuthenticationFailureHandler authFailure() {
-        return new XnatUrlAuthenticationFailureHandler("/app/template/Login.vm?failed=true", "/app/template/PostRegister.vm");
+        return new XnatUrlAuthenticationFailureHandler("/app/template/Login.vm?failed=true", "/app/template/Login.vm?disabled=true", "/app/template/PostRegister.vm");
     }
 
     @Bean
@@ -264,7 +264,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(final HttpSecurity http) throws Exception {
         // Set whether session cookie should be set to secure only based on the site URL. This can only be done during application start-up, so
         // changing to the site URL to use https won't change the secure setting until the application has been restarted. Cookies should ALWAYS
-        // be http-only so we can just set that now and be done with it.
+        // be http-only, so we can just set that now and be done with it.
         final String  siteUrl              = _template.queryForObject(QUERY_SITE_URL, EmptySqlParameterSource.INSTANCE, String.class);
         final boolean isSecure             = StringUtils.startsWithIgnoreCase(siteUrl, "https");
         final boolean allowInsecureCookies = _securityPreferences.getAllowInsecureCookies();

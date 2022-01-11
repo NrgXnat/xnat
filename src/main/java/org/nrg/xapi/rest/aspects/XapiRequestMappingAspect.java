@@ -9,6 +9,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.jetbrains.annotations.NotNull;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xapi.XapiUtils;
@@ -88,7 +89,7 @@ public class XapiRequestMappingAspect {
             } finally {
                 if (stopWatch != null) {
                     stopWatch.stop();
-                    log.debug("Request to {} took {} ms to execute", request.getServletPath() + request.getPathInfo(), NumberFormat.getInstance().format(stopWatch.getTime()));
+                    log.debug("Request to {} took {} ms to execute", getRequestPath(request), NumberFormat.getInstance().format(stopWatch.getTime()));
                 }
             }
         } catch (InsufficientPrivilegesException e) {
@@ -117,7 +118,7 @@ public class XapiRequestMappingAspect {
         }
 
         final String username = user.getUsername();
-        final String path     = request.getServletPath() + request.getPathInfo();
+        final String path     = getRequestPath(request);
 
         // Is restrictTo configured?
         final AccessLevel accessLevel = xapiRequestMapping.restrictTo();
@@ -157,6 +158,11 @@ public class XapiRequestMappingAspect {
 
         authorizer.check(accessLevel, joinPoint, user, request);
         AccessLogger.LogResourceAccess(username, request, requestUrl);
+    }
+
+    @NotNull
+    private String getRequestPath(final HttpServletRequest request) {
+        return request.getServletPath() + StringUtils.defaultIfBlank(request.getPathInfo(), "");
     }
 
     private boolean isOpenUrl(final String path) {

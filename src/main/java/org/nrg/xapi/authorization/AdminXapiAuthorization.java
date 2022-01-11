@@ -26,10 +26,6 @@ public class AdminXapiAuthorization extends AbstractXapiAuthorization {
     @Override
     protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) {
         switch (accessLevel) {
-            case Admin:
-                // Test whether the user is an administrator.
-                return Roles.isSiteAdmin(user);
-
             case DataAdmin:
                 // Test whether the user is an administrator or all data admin.
                 return Groups.hasAllDataAdmin(user);
@@ -39,7 +35,8 @@ public class AdminXapiAuthorization extends AbstractXapiAuthorization {
                 return Groups.hasAllDataAccess(user);
 
             default:
-                return false;
+                // Test whether the user is an administrator.
+                return Roles.isSiteAdmin(user);
         }
     }
 

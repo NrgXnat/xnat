@@ -9,7 +9,7 @@
 
 buildscript {
     ext {
-        vXnat = "1.8.4-SNAPSHOT"
+        vXnat = "1.8.4-RC-SNAPSHOT"
     }
 }
 

@@ -129,7 +129,7 @@ public abstract class SecureResource extends Resource {
 
     public static final String HANDLER = "handler";
 
-    public static Logger logger = Logger.getLogger(SecureResource.class);
+    public static final Logger logger = Logger.getLogger(SecureResource.class);
 
     public static List<Variant> STANDARD_VARIANTS = Arrays.asList(new Variant(MediaType.APPLICATION_JSON), new Variant(MediaType.TEXT_HTML), new Variant(MediaType.TEXT_XML));
 
@@ -635,19 +635,14 @@ public abstract class SecureResource extends Resource {
 
         if (mt.equals(MediaType.TEXT_HTML)) {
             try {
-                return new ItemHTMLRepresentation(item, MediaType.TEXT_HTML, getRequest(), getUser(), getQueryVariable("requested_screen"), new Hashtable<String, Object>());
+                return new ItemHTMLRepresentation(item, MediaType.TEXT_HTML, getRequest(), getUser(), getQueryVariable("requested_screen"), new Hashtable<>());
             } catch (Exception e) {
                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
                 return null;
             }
         } else if (mt.equals(MediaType.APPLICATION_JSON)) {
             try {
-                FlattenedItemA.HistoryConfigI history = (isQueryVariableTrue("includeHistory")) ? FlattenedItemA.GET_ALL : new FlattenedItemA.HistoryConfigI() {
-                    @Override
-                    public boolean getIncludeHistory() {
-                        return false;
-                    }
-                };
+                FlattenedItemA.HistoryConfigI history = (isQueryVariableTrue("includeHistory")) ? FlattenedItemA.GET_ALL : () -> false;
                 return new JSONObjectRepresentation(MediaType.APPLICATION_JSON, (new ItemJSONBuilder()).call(item, history, isQueryVariableTrue("includeHeaders")));
             } catch (Exception e) {
                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
@@ -1185,7 +1180,9 @@ public abstract class SecureResource extends Resource {
                 actions = Arrays.asList(actionA);
             }
 
-            if (actions == null) actions = new ArrayList<>();
+            if (actions == null) {
+                actions = new ArrayList<>();
+            }
         }
         return actions;
     }
@@ -1594,7 +1591,7 @@ public abstract class SecureResource extends Resource {
             table.rows().add(ArrayUtils.toArray(projects.get(key), key.getId(), key.getSecondaryId(), key.getName()));
         }
 
-        return representTable(table, mediaType, new Hashtable<String, Object>());
+        return representTable(table, mediaType, new Hashtable<>());
     }
 
     protected void changeExperimentPrimaryProject(final XnatExperimentdata experiment, final XnatProjectdata source, final XnatProjectdata destination, final String newLabel, final XnatExperimentdataShare share, final int index) throws Exception {
@@ -1727,21 +1724,19 @@ public abstract class SecureResource extends Resource {
     }
 
     protected XnatProjectdata getProjectFromFilePath(final XnatProjectdata project, final ArchivableItem item) throws NotFoundException {
-        if (filepath != null && !filepath.equals("")) {
-            if (filepath.startsWith("projects/")) {
-                final String          newProjectId = filepath.substring(9);
-                final XnatProjectdata newProject   = XnatProjectdata.getXnatProjectdatasById(newProjectId, getUser(), false);
-                if (newProject == null) {
-                    throw new NotFoundException(newProjectId);
-                }
-                return newProject;
-            } else {
+        final String projectId;
+        if (StringUtils.isNotBlank(filepath)) {
+            if (!StringUtils.startsWith(filepath, "projects/")) {
                 throw new IllegalArgumentException("Illegal file path '" + filepath + "' does not start with 'projects/'.");
             }
-        } else if (!item.getProject().equals(project.getId())) {
-            return project;
+            projectId = StringUtils.stripStart(filepath, "projects/");
+        } else {
+            projectId = item.getProject();
         }
-        return null;
+        if (StringUtils.isBlank(projectId) && project == null) {
+            throw new IllegalArgumentException("No valid project found for the submitted item with ID '" + item.getId());
+        }
+        return project != null && !StringUtils.equals(projectId, project.getId()) ? project : getProjectById(projectId);
     }
 
     protected boolean rename(final XnatProjectdata proj, final ArchivableItem existing, final String label, final UserI user) {
@@ -1948,6 +1943,7 @@ public abstract class SecureResource extends Resource {
         return true;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected boolean validateSubject(final XnatSubjectdata subject) throws Exception {
         if (StringUtils.isNotBlank(subject.getLabel()) && !XftStringUtils.isValidId(subject.getId())) {
             getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in subject label.");
@@ -1992,11 +1988,15 @@ public abstract class SecureResource extends Resource {
     }
 
     protected void storeStatusList(final String transaction_id, final StatusList sl) throws IllegalArgumentException {
-        this.retrieveSQManager().storeStatusQueue(transaction_id, sl);
+        retrieveSQManager().storeStatusQueue(transaction_id, sl);
     }
 
     protected PersistentStatusQueueManagerI retrieveSQManager() {
         return new HTTPSessionStatusManagerQueue(this.getHttpSession());
+    }
+
+    private XnatProjectdata getProjectById(final String projectId) throws NotFoundException {
+        return Optional.ofNullable(XnatProjectdata.getXnatProjectdatasById(projectId, getUser(), false)).orElseThrow(() -> new NotFoundException(projectId));
     }
 
     private static final Class<?>[] OBJECT_REPRESENTATION_CTOR_PARAM_TYPES = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};

@@ -1,7 +1,7 @@
 /*
  * core: org.nrg.xdat.security.UserGroupManager
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2022, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -9,18 +9,12 @@
 
 package org.nrg.xdat.security;
 
-import static lombok.AccessLevel.PRIVATE;
-import static org.nrg.framework.orm.DatabaseHelper.getFunctionParameterSource;
-import static org.nrg.xdat.security.helpers.Groups.*;
-import static org.nrg.xft.event.XftItemEventI.*;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -61,12 +55,14 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static lombok.AccessLevel.PRIVATE;
+import static org.nrg.framework.orm.DatabaseHelper.getFunctionParameterSource;
+import static org.nrg.xdat.security.helpers.Groups.*;
+import static org.nrg.xft.event.XftItemEventI.*;
 
 @Service
 @Getter(PRIVATE)
@@ -117,7 +113,7 @@ public class UserGroupManager implements UserGroupServiceI {
         try {
             return getGroupsForUser(user.getUsername());
         } catch (UserNotFoundException ignored) {
-            // We have the UserI object so we don't have to worry about user not found
+            // We have the UserI object, so we don't have to worry about user not found
             return Collections.emptyMap();
         }
     }
@@ -132,7 +128,7 @@ public class UserGroupManager implements UserGroupServiceI {
         try {
             return getGroupForUserAndTag(user.getUsername(), tag);
         } catch (UserNotFoundException e) {
-            // We have the UserI object so we don't have to worry about user not found
+            // We have the UserI object, so we don't have to worry about user not found
             return null;
         }
     }
@@ -147,7 +143,7 @@ public class UserGroupManager implements UserGroupServiceI {
         try {
             return getGroupIdsForUser(user.getUsername());
         } catch (UserNotFoundException e) {
-            // We have the UserI object so we don't have to worry about user not found
+            // We have the UserI object, so we don't have to worry about user not found
             return null;
         }
     }
@@ -226,7 +222,7 @@ public class UserGroupManager implements UserGroupServiceI {
         }).collect(Collectors.toList()).stream().filter(Objects::nonNull).collect(Collectors.toSet());
         if (!failed.isEmpty()) {
             log.error("Tried and failed to remove the following users from group '{}': {}", groupId, StringUtils.join(failed, ", "));
-            usernames.removeAll(failed);
+            failed.forEach(usernames::remove);
         }
         XDAT.triggerXftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, groupId, UPDATE, ImmutableMap.of(OPERATION, OPERATION_REMOVE_USERS, USERS, usernames));
     }
@@ -297,7 +293,7 @@ public class UserGroupManager implements UserGroupServiceI {
 
             return getGroup(groupId);
         } catch (Exception e) {
-            log.error("An error occurred while creating the group " + groupId, e);
+            log.error("An error occurred while creating the group {}", groupId, e);
             try {
                 PersistentWorkflowUtils.fail(workflow, event);
             } catch (Exception ignored) {
@@ -742,9 +738,8 @@ public class UserGroupManager implements UserGroupServiceI {
                 template.merge(context, writer);
 
                 final List<String> queries = XftStringUtils.DelimitedStringToArrayList(writer.toString(), ";");
-                final File         sql     = new File("/data/xnat/cache/group-perms-" + group.getId() + ".sql");
-                try (final FileWriter sqlOutput = new FileWriter(sql)) {
-                    IOUtils.copy(new StringReader(StringUtils.join(queries, "\n")), sqlOutput);
+                if (log.isTraceEnabled()) {
+                    log.trace("Initializing permissions for group {} with the following SQL:\n{}", group.getId(), queries.stream().map(query -> "    " + query).collect(Collectors.joining(";\n")));
                 }
                 PoolDBUtils.ExecuteBatch(queries, null, authenticatedUser.getUsername());
             }

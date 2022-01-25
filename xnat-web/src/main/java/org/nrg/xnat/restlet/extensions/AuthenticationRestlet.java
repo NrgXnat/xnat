@@ -21,6 +21,7 @@ import org.restlet.resource.Resource;
 import org.restlet.resource.Variant;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.UnsupportedEncodingException;
@@ -84,11 +85,15 @@ public class AuthenticationRestlet extends Resource {
             }
         }
 
-        final Authentication authentication = manager.authenticate(manager.buildUPTokenForAuthMethod(_authMethod, _username, _password));
-        if (authentication.isAuthenticated()) {
-            succeed(authentication);
-            getResponse().setEntity(ServletCall.getRequest(getRequest()).getSession().getId(), MediaType.TEXT_PLAIN);
-        } else {
+        try {
+            final Authentication authentication = manager.authenticate(manager.buildUPTokenForAuthMethod(_authMethod, _username, _password));
+            if (authentication.isAuthenticated()) {
+                succeed(authentication);
+                getResponse().setEntity(ServletCall.getRequest(getRequest()).getSession().getId(), MediaType.TEXT_PLAIN);
+            } else {
+                fail();
+            }
+        } catch (AuthenticationException e) {
             fail();
         }
     }

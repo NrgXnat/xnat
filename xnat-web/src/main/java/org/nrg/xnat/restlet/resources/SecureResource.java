@@ -13,9 +13,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.noelios.restlet.http.HttpConstants;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.fileupload.DefaultFileItemFactory;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -653,48 +655,44 @@ public abstract class SecureResource extends Resource {
         }
     }
 
-    public MediaType buildMediaType(MediaType mt, String fName) {
-        if (fName.endsWith(".txt")) {
-            mt = MediaType.TEXT_PLAIN;
-        } else if (fName.endsWith(".gif")) {
-            mt = MediaType.IMAGE_GIF;
-        } else if (fName.endsWith(".jpeg") || fName.endsWith(".jpg")) {
-            mt = MediaType.IMAGE_JPEG;
-        } else if (fName.endsWith(".xml")) {
-            mt = MediaType.TEXT_XML;
-        } else if (fName.endsWith(".png")) {
-            mt = MediaType.IMAGE_PNG;
-        } else if (fName.endsWith(".bmp")) {
-            mt = MediaType.IMAGE_BMP;
-        } else if (fName.endsWith(".tiff")) {
-            mt = MediaType.IMAGE_TIFF;
-        } else if (fName.endsWith(".html")) {
-            mt = MediaType.TEXT_HTML;
-        } else if (fName.endsWith(".svg")) {
-            mt = MediaType.IMAGE_SVG;
-        } else if (fName.endsWith(".pdf")) {
-            mt = MediaType.APPLICATION_PDF;
-        } else {
-            if ((mt != null && mt.equals(MediaType.TEXT_XML)) && !fName.endsWith(".xml")) {
-                mt = MediaType.ALL;
-            } else {
-                mt = MediaType.APPLICATION_OCTET_STREAM;
-            }
+    public MediaType buildMediaType(final MediaType mediaType, final String filename) {
+        final String extension = FilenameUtils.getExtension(filename);
+        switch (extension) {
+            case "bmp":
+                return MediaType.IMAGE_BMP;
+            case "gif":
+                return MediaType.IMAGE_GIF;
+            case "html":
+                return MediaType.TEXT_HTML;
+            case "jpg":
+            case "jpeg":
+                return MediaType.IMAGE_JPEG;
+            case "pdf":
+                return MediaType.APPLICATION_PDF;
+            case "png":
+                return MediaType.IMAGE_PNG;
+            case "svg":
+                return MediaType.IMAGE_SVG;
+            case "tiff":
+                return MediaType.IMAGE_TIFF;
+            case "txt":
+                return MediaType.TEXT_PLAIN;
+            case "xml":
+                return MediaType.TEXT_XML;
         }
-        return mt;
+        return mediaType != null && mediaType.equals(MediaType.TEXT_XML) ? MediaType.ALL : MediaType.APPLICATION_OCTET_STREAM;
     }
 
-    public FileRepresentation representFile(File f, MediaType mt) {
-        mt = buildMediaType(mt, f.getName());
+    public FileRepresentation representFile(final File file, final MediaType incoming) {
+        final MediaType mediaType = buildMediaType(incoming, file.getName());
 
-        if (mt.getName().startsWith("APPLICATION") || !XDAT.getSiteConfigPreferences().getAllowHtmlResourceRendering()) {
-            setContentDisposition(f.getName());
+        if (forceDownload(file, mediaType)) {
+            setContentDisposition(file.getName());
         }
 
-        FileRepresentation fr = new FileRepresentation(f, mt);
-        fr.setModificationDate(new Date(f.lastModified()));
-
-        return fr;
+        final FileRepresentation representation = new FileRepresentation(file, mediaType);
+        representation.setModificationDate(new Date(file.lastModified()));
+        return representation;
     }
 
     public boolean allowDataDeletion() {
@@ -1884,6 +1882,14 @@ public abstract class SecureResource extends Resource {
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, message + ": " + e.getMessage());
         }
         return false;
+    }
+
+    private boolean forceDownload(final File file, final MediaType mediaType) {
+        if (mediaType.getName().startsWith("APPLICATION") || !XDAT.getSiteConfigPreferences().getAllowHtmlResourceRendering()) {
+            return false;
+        }
+        final List<String> whitelist = XDAT.getSiteConfigPreferences().getHtmlResourceRenderingWhitelist();
+        return !(CollectionUtils.isEmpty(whitelist) || whitelist.size() == 1 && whitelist.contains("*") || whitelist.contains(FilenameUtils.getExtension(file.getName())));
     }
 
     private static final Map<String, List<FilteredResourceHandlerI>> handlers = Maps.newConcurrentMap();

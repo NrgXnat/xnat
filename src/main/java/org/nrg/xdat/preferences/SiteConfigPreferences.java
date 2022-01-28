@@ -1450,6 +1450,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "['avi', 'bmp', 'dcm', 'gif', 'icon', 'jpg', 'jpeg', 'mov', 'mp4', 'mpg', 'png', 'tiff', 'txt', 'video', 'wmv']")
+    public List<String> getHtmlResourceRenderingWhitelist() {
+        return getListValue("htmlResourceRenderingWhitelist");
+    }
+
+    public void setHtmlResourceRenderingWhitelist(final List<String> htmlResourceRenderingWhitelist) {
+        try {
+            setListValue("htmlResourceRenderingWhitelist", htmlResourceRenderingWhitelist);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'htmlResourceRenderingWhitelist': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "20")
     public int getMaxFailedLogins() {
         return getIntegerValue("maxFailedLogins");

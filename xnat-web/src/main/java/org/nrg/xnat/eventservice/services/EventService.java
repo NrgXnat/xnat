@@ -24,7 +24,6 @@ import java.util.Map;
 
 @EnableScheduling
 public interface EventService {
-    
     List<SimpleEvent> getEvents() throws Exception;
     List<SimpleEvent> getEvents(Boolean loadDetails) throws Exception;
     //SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception;

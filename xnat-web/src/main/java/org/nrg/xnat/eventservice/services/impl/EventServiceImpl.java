@@ -12,34 +12,22 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.node.XnatNode;
+import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.om.XnatSubjectassessordata;
+import org.nrg.xdat.om.base.BaseXnatProjectdata;
+import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
-import org.nrg.xnat.eventservice.events.EventServiceEvent;
+import org.nrg.xnat.eventservice.events.*;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionAccessException;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.model.Action;
-import org.nrg.xnat.eventservice.model.ActionProvider;
-import org.nrg.xnat.eventservice.model.EventPropertyNode;
-import org.nrg.xnat.eventservice.model.EventServicePrefs;
-import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
-import org.nrg.xnat.eventservice.model.SimpleEvent;
-import org.nrg.xnat.eventservice.model.Subscription;
-import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
-import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
+import org.nrg.xnat.eventservice.model.*;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
-import org.nrg.xnat.eventservice.services.ActionManager;
-import org.nrg.xnat.eventservice.services.EventPropertyService;
-import org.nrg.xnat.eventservice.services.EventService;
-import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
-import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
-import org.nrg.xnat.eventservice.services.EventServicePrefsBean;
-import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
-import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityPaginatedRequest;
-import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
+import org.nrg.xnat.eventservice.services.*;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -49,24 +37,10 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERED;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERING_FAULT;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZATION_FAULT;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZED;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.SUBSCRIPTION_DISABLED_HALT;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.SUBSCRIPTION_TRIGGERED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.*;
 
 @SuppressWarnings("UnstableApiUsage")
 @Slf4j
@@ -80,13 +54,16 @@ public class EventServiceImpl implements EventService {
     private final UserManagementServiceI              userManagementService;
     private final EventPropertyService                eventPropertyService;
     private final ObjectMapper                        mapper;
+    private final EventSchedulingService              schedulingService;
     private final Configuration                       jaywayConf     = Configuration.builder().build().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
     private final EventServicePrefsBean               prefs;
     private final XnatAppInfo                         xnatAppInfo;
 
 
     @Autowired
-    public EventServiceImpl(EventSubscriptionEntityService subscriptionService, EventBus eventBus,
+    public EventServiceImpl(EventSubscriptionEntityService subscriptionService,
+                            EventSchedulingService schedulingService,
+                            EventBus eventBus,
                             EventServiceComponentManager componentManager,
                             ActionManager actionManager,
                             SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
@@ -102,6 +79,7 @@ public class EventServiceImpl implements EventService {
         this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
         this.userManagementService = userManagementService;
         this.eventPropertyService = eventPropertyService;
+        this.schedulingService = schedulingService;
         this.mapper = mapper;
         this.prefs = prefsBean;
         this.xnatAppInfo = xnatAppInfo;
@@ -111,7 +89,10 @@ public class EventServiceImpl implements EventService {
     @Override
     public Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException, SubscriptionAccessException {
         throwIfDisabled();
-        return subscriptionService.createSubscription(subscription);
+        Subscription created = subscriptionService.createSubscription(subscription);
+
+        scheduleEventsForSubscription(created);
+        return created;
     }
 
     @Override
@@ -140,18 +121,31 @@ public class EventServiceImpl implements EventService {
     public Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException, SubscriptionAccessException {
         throwIfDisabled();
         subscriptionService.validate(subscription);
-        final Subscription updated = subscriptionService.update(subscription);
+        final Subscription original = subscriptionService.getSubscription(subscription.id());
+        final Subscription updated  = subscriptionService.update(subscription);
         if (updated == null) {
             return null;
         }
+
+        cancelEventsForSubscription(original);
+
         log.debug("Reactivating updated subscription: {}", subscription.id());
-        return ObjectUtils.defaultIfNull(updated.active(), false) ? subscriptionService.activate(updated) : subscriptionService.deactivate(updated);
+        if(ObjectUtils.defaultIfNull(updated.active(), false)){
+            Subscription activated = subscriptionService.activate(updated);
+            scheduleEventsForSubscription(activated);
+            return activated;
+        }else{
+            Subscription deactivated = subscriptionService.deactivate(updated);
+            return deactivated;
+        }
     }
 
     @Override
     public void deleteSubscription(Long id) throws Exception {
         throwIfDisabled();
+        Subscription toDelete = subscriptionService.getSubscription(id);
         subscriptionService.delete(id);
+        cancelEventsForSubscription(toDelete);
     }
 
     @Override
@@ -283,6 +277,7 @@ public class EventServiceImpl implements EventService {
                 log.debug("Reactivating subscription: " + Long.toString(subscription.id()));
                 try {
                     Subscription active = subscriptionService.activate(subscription);
+                    scheduleEventsForSubscription(active);
                     if (active == null || !active.active()) {
                         failedReactivations.add(subscription);
                     }
@@ -328,6 +323,7 @@ public class EventServiceImpl implements EventService {
             }
             return;
         }
+
 
         try {
             log.debug("Event noticed by EventService: " + event.getData().getClass().getSimpleName());
@@ -463,14 +459,113 @@ public class EventServiceImpl implements EventService {
     @Override
     public Subscription activateSubscription(long id) throws NotFoundException {
         Subscription subscription = subscriptionService.getSubscription(id);
-        return subscriptionService.activate(subscription);
+        Subscription activated =  subscriptionService.activate(subscription);
+        scheduleEventsForSubscription(activated);
+        return activated;
     }
 
 
     @Override
     public Subscription deactivateSubscription(long id) throws NotFoundException {
         Subscription subscription = subscriptionService.getSubscription(id);
-        return subscriptionService.deactivate(subscription);
+        Subscription deactivated = subscriptionService.deactivate(subscription);
+        cancelEventsForSubscription(deactivated);
+        return deactivated;
+    }
+
+    private void scheduleEventsForSubscription(Subscription subscription){
+        final String schedule = subscription.eventFilter().schedule();
+        final String status   = subscription.eventFilter().status();
+        if(!AbstractEventServiceEvent.Status.SCHEDULED.name().equals(status) || StringUtils.isEmpty(schedule)){
+            log.debug("Not scheduling events for subscription with id: {}. Either the event status is not scheduled or the schedule is empty.", subscription.id());
+            return;
+        }
+
+        schedulingService.scheduleEvent(subscription.id(), schedule,
+                () -> getScheduledEventsForSubscription(subscription).stream().forEach(this::triggerEvent));
+    }
+
+    private List<EventServiceEvent> getScheduledEventsForSubscription(Subscription subscription){
+        final List<EventServiceEvent> events = new ArrayList<>();
+        final UserI user;
+        final Class<?> eventType;
+
+        final String schedule = subscription.eventFilter().schedule();
+        final String status   = subscription.eventFilter().status();
+        if(!AbstractEventServiceEvent.Status.SCHEDULED.name().equals(status) || StringUtils.isEmpty(schedule)){
+            return Collections.EMPTY_LIST;
+        }
+
+        try{
+             user = userManagementService.getUser(subscription.subscriptionOwner());
+        }catch(UserInitException | UserNotFoundException e){
+            log.error("Unable to determine the subscription owner for subscription {}. ", subscription.id(), e);
+            return Collections.EMPTY_LIST;
+        }
+
+        try{
+            eventType = Class.forName(subscription.eventFilter().eventType());
+        } catch (ClassNotFoundException e) {
+            log.error("Subscription {}: Unknown event type: {}", subscription.id(), subscription.eventFilter().eventType(), e);
+            return Collections.EMPTY_LIST;
+        }
+
+        final List<String> projectIds =
+                (subscription.eventFilter().projectIds() != null && !subscription.eventFilter().projectIds().isEmpty())
+                        ? subscription.eventFilter().projectIds() :
+                        BaseXnatProjectdata.getAllXnatProjectdatas(user, false)
+                                .stream().map(AutoXnatProjectdata::getId).collect(Collectors.toList());
+
+        if(projectIds == null || projectIds.isEmpty()){
+            log.debug("Subscription {}: No projects found. Unable to build scheduled events.", subscription.id());
+            return Collections.EMPTY_LIST;
+        }
+
+        for(String project : projectIds){
+            final BaseXnatProjectdata projectdata = BaseXnatProjectdata.getProjectByIDorAlias(project, user, false);
+            if(projectdata == null){
+                log.error("Subscription {}: Unknown project {}", subscription.id(), project);
+            }
+
+            if(eventType.isAssignableFrom(ProjectEvent.class)) {
+                events.add(new ProjectEvent(projectdata, user.getUsername(), ProjectEvent.Status.SCHEDULED, subscription.id()));
+            } else if(eventType.isAssignableFrom(SubjectEvent.class)){
+                events.addAll(projectdata.getParticipants_participant().stream()
+                        .map(s -> new SubjectEvent(s, user.getUsername(), SubjectEvent.Status.SCHEDULED, project, subscription.id()))
+                        .collect(Collectors.toList()));
+            } else if(eventType.isAssignableFrom(SubjectAssessorEvent.class)) {
+                events.addAll(projectdata.getExperiments().stream()
+                        .filter(e -> e instanceof XnatSubjectassessordata)
+                        .map(e -> new SubjectAssessorEvent((XnatSubjectassessordata) e, user.getUsername(), SubjectAssessorEvent.Status.SCHEDULED, project, subscription.id()))
+                        .collect(Collectors.toList()));
+            } else if(eventType.isAssignableFrom(SessionEvent.class)) {
+                events.addAll(projectdata.getExperiments().stream()
+                         .filter(e -> e instanceof XnatImagesessiondataI)
+                         .map(e -> new SessionEvent((XnatImagesessiondataI) e, user.getUsername(), SessionEvent.Status.SCHEDULED, project, subscription.id()))
+                         .collect(Collectors.toList()));
+            } else if(eventType.isAssignableFrom(ScanEvent.class)) {
+                projectdata.getExperiments().stream()
+                        .filter(i -> i instanceof XnatImagesessiondataI)
+                        .forEach(session -> events.addAll(((XnatImagesessiondataI)session).getScans_scan().stream()
+                            .map(s -> new ScanEvent(s, user.getUsername(), ScanEvent.Status.SCHEDULED, project, subscription.id()))
+                            .collect(Collectors.toList())));
+
+            } else if(eventType.isAssignableFrom(ImageAssessorEvent.class)){
+                projectdata.getExperiments()
+                        .stream().filter(i -> i instanceof XnatImagesessiondataI)
+                        .forEach(session -> events.addAll(((XnatImagesessiondataI)session).getAssessors_assessor().stream()
+                            .map(s -> new ImageAssessorEvent(s, user.getUsername(), ImageAssessorEvent.Status.SCHEDULED, project, subscription.id()))
+                            .collect(Collectors.toList())));
+            } else {
+                log.error("Unhandled event type: {}", eventType.getCanonicalName());
+            }
+        }
+        return events;
+    }
+
+
+    private void cancelEventsForSubscription(Subscription subscription) {
+        schedulingService.cancelScheduledEvent(subscription.id());
     }
 
     @Override

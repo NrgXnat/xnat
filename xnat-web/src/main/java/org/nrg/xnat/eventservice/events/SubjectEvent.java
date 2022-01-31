@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="SubjectEvent")
 public class SubjectEvent extends AbstractEventServiceEvent<XnatSubjectdataI> {
 
-    public enum Status {CREATED, DELETED};
+    public enum Status {CREATED, DELETED, SCHEDULED};
 
     private final String displayName = "Subject";
     private final String description = "Subject created, updated, or deleted.";
@@ -22,6 +22,11 @@ public class SubjectEvent extends AbstractEventServiceEvent<XnatSubjectdataI> {
 
     public SubjectEvent(final XnatSubjectdataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
+        payloadId = payload.getId();
+    }
+
+    public SubjectEvent(final XnatSubjectdataI payload, final String eventUser, final Status status, final String projectId, Long subscriptionId) {
+        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null), subscriptionId);
         payloadId = payload.getId();
     }
 

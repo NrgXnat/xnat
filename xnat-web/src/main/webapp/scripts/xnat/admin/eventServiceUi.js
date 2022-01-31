@@ -262,6 +262,14 @@ var XNAT = getObject(XNAT || {});
         }
         function eventNiceName(subscription){
             var eventId = subscription['event-filter']['event-type'];
+
+            if(subscription['event-filter']['status'] == 'SCHEDULED'){
+                if(subscription['event-filter']['schedule-description']){
+                    return eventServicePanel.events[eventId]['display-name'] + ': ' + subscription['event-filter']['schedule-description'];
+                }else{
+                    return eventServicePanel.events[eventId]['display-name'] + ': ' + subscription['event-filter']['schedule'];
+                }
+            }
             if (eventServicePanel.events[eventId]) {
                 return eventServicePanel.events[eventId]['display-name'] + ': ' + titleCase(subscription['event-filter']['status']);
             }
@@ -443,6 +451,23 @@ var XNAT = getObject(XNAT || {});
                 element: emptyOptionObj,
                 order: 20
             },
+            subEventSchedule: {
+                kind: 'panel.input.text',
+                name: 'schedule',
+                label: 'Cron Trigger',
+                validation: 'required cron onblur',
+                id: 'subscription-event-schedule',
+                description: "How often to trigger this event (0 0 * * * * means it runs every hour). Uses basic " +
+                "<a target='_blank' href='http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html'>Cron notation</a> " +
+                "(Note: Wildcards, ranges, step values, and lists are not allowed in the second or minute field)."
+            },
+            subEventScheduleDescription: {
+                kind: 'panel.input.text',
+                name: 'schedule-description',
+                label: 'Cron Description',
+                validation: 'onblur',
+                description: 'A human readable description of the cron trigger. (e.g. 30min past the hour every hour)'
+            },
             subEventType: {
                 kind: 'panel.input.hidden',
                 name: 'event-type',
@@ -577,12 +602,13 @@ var XNAT = getObject(XNAT || {});
         // Check for the use of a "ProjectEvent" event. These can only be applied site-wide.
         var xsiType = $form.find('select[name=event-selector]').find('option:selected').data('xsitype');
         var eventType = $form.find('select[name=event-selector]').find('option:selected').data('event-type') || '';
+        var eventStatus = $form.find('select[name=event-selector]').val();
 
-        if (eventType.indexOf('ProjectEvent') >= 0) {
+        if (eventType.indexOf('ProjectEvent') >= 0 && eventStatus.indexOf('SCHEDULED') < 0) {
             project = [];
             $form.find('select[name=project-id]').addClass('disabled').prop('disabled','disabled');
             $form.find('#subscription-anyproject-selector').prop('checked','checked');
-            XNAT.ui.banner.top(3000,'Events that affect project objects directly cannot be assigned to individual projects.','info');
+            XNAT.ui.banner.top(3000,'Triggered events that affect project objects directly cannot be assigned to individual projects.','info');
         } else {
             // var project = $form.find('select[name=project-id]').find('option:selected').val();
             $form.find('select[name=project-id]').removeClass('disabled').prop('disabled',false);
@@ -827,9 +853,11 @@ var XNAT = getObject(XNAT || {});
                     // subscriptionData['project-id'] = subscription['event-filter']['project-ids'];
                     subscriptionData['event-type'] = subscription['event-filter']['event-type'];
                     subscriptionData['status'] = subscription['event-filter']['status'];
+                    subscriptionData['schedule'] = subscription['event-filter']['schedule'];
+                    subscriptionData['schedule-description'] = subscription['event-filter']['schedule-description'];
                     subscriptionData['event-selector'] = subscription['event-filter']['event-type'] + ':' + subscription['event-filter']['status'];
                     subscriptionData['payload-filter'] = subscription['event-filter']['payload-filter'];
-                    subscriptionData['inherited-action'] = subscription['action-key']; 
+                    subscriptionData['inherited-action'] = subscription['action-key'];
 
                     if (action.toLowerCase() === "clone") {
                         delete subscriptionData.name;
@@ -872,6 +900,16 @@ var XNAT = getObject(XNAT || {});
                     findActions($form.find('select[name=project-id]'));
                 });
 
+                if(subscription && subscription['event-filter']['status'] == 'SCHEDULED'){
+                    $('input[name=act-as-event-user]').prop('checked', false);
+                    $('div[data-name=act-as-event-user').hide();
+                    $('div[data-name=schedule]').show();
+                    $('div[data-name=schedule-description]').show();
+                }else{
+                    $('div[data-name=schedule]').hide();
+                    $('div[data-name=schedule-description]').hide();
+                }
+
                 // Create form-specific event handlers, enable them after setValues() has run
                 $form.off('change','select[name=project-id]').on('change','select[name=project-id]', function(e){
                     findActions($(this));
@@ -887,6 +925,23 @@ var XNAT = getObject(XNAT || {});
                 $form.off('click','#set-sub-action-attributes').on('click','#set-sub-action-attributes', function(e){
                     e.preventDefault();
                     setActionAttributes($(this));
+                });
+                $form.off('change','#subscription-event-selector').on('change','#subscription-event-selector', function(e){
+                    if($('#subscription-event-selector').val().includes('SCHEDULED')){
+                        $('input[name=act-as-event-user]').prop('checked', false);
+                        $('div[data-name=act-as-event-user').hide();
+                        $('div[data-name=schedule]').show();
+                        $('div[data-name=schedule-description]').show();
+                    }else{
+                        $('div[data-name=act-as-event-user').show();
+
+                        $('#subscription-event-schedule').val("");
+                        $('div[data-name=schedule]').hide();
+
+                        $('#schedule-description').val("");
+                        $('div[data-name=schedule-description]').hide();
+
+                    }
                 });
             },
             buttons: [
@@ -921,6 +976,12 @@ var XNAT = getObject(XNAT || {});
 
                         jsonFormData['event-filter']['event-type'] = jsonFormData['event-type'];
                         delete jsonFormData['event-type'];
+
+                        jsonFormData['event-filter']['schedule'] = jsonFormData['schedule'].trim();
+                        delete jsonFormData['schedule'];
+
+                        jsonFormData['event-filter']['schedule-description'] = jsonFormData['schedule-description'];
+                        delete jsonFormData['schedule-description'];
 
                         jsonFormData['event-filter']['status'] = jsonFormData['status'];
                         delete jsonFormData['status'];

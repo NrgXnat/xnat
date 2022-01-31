@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="ImageAssessorEvent")
 public class ImageAssessorEvent extends AbstractEventServiceEvent<XnatImageassessordataI> {
 
-    public enum Status {CREATED, UPDATED};
+    public enum Status {CREATED, UPDATED, SCHEDULED};
 
     private final String displayName = "Image Assessor";
     private final String description = "Image assessor created.";
@@ -22,6 +22,11 @@ public class ImageAssessorEvent extends AbstractEventServiceEvent<XnatImageasses
 
     public ImageAssessorEvent(final XnatImageassessordataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
+        payloadId = payload.getId();
+    }
+
+    public ImageAssessorEvent(final XnatImageassessordataI payload, final String eventUser, final Status status, final String projectId, final Long subscriptionId) {
+        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null), subscriptionId);
         payloadId = payload.getId();
     }
 

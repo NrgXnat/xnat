@@ -26,6 +26,7 @@ public abstract class Subscription {
     @Nullable @JsonProperty("subscription-owner") public abstract String subscriptionOwner();
     @Nullable @JsonProperty("valid") public abstract Boolean valid();
     @Nullable @JsonProperty("validation-message") public abstract String validationMessage();
+
     @JsonFormat(
             shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd HH:mm:ss z",

@@ -34,6 +34,8 @@ public class EventServiceFilterEntity implements Serializable {
     private String eventType;
     private List<String> projectIds;
     private String status;
+    private String schedule;
+    private String scheduleDescription;
     private String nodeFilterString;
     private String jsonPathFilter;
 
@@ -51,6 +53,8 @@ public class EventServiceFilterEntity implements Serializable {
                 ", eventType='" + eventType + '\'' +
                 ", projectIds=" + projectIds +
                 ", status='" + status + '\'' +
+                ", schedule='" + schedule + '\'' +
+                ", scheduleDescription= '" + scheduleDescription + '\'' +
                 ", nodeFilterString='" + nodeFilterString + '\'' +
                 ", jsonPathFilter='" + jsonPathFilter + '\'' +
                 '}';
@@ -66,22 +70,26 @@ public class EventServiceFilterEntity implements Serializable {
                 Objects.equal(eventType, that.eventType) &&
                 Objects.equal(projectIds, that.projectIds) &&
                 Objects.equal(status, that.status) &&
+                Objects.equal(schedule, that.schedule) &&
+                Objects.equal(scheduleDescription, that.scheduleDescription) &&
                 Objects.equal(nodeFilterString, that.nodeFilterString) &&
                 Objects.equal(jsonPathFilter, that.jsonPathFilter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id, name, eventType, projectIds, status, nodeFilterString, jsonPathFilter);
+        return Objects.hashCode(id, name, eventType, projectIds, status, schedule, scheduleDescription, nodeFilterString, jsonPathFilter);
     }
 
     public EventServiceFilterEntity(long id, String name, String eventType, List<String> projectIds, String status,
-                                    Map<String, JsonPathFilterNode> nodeFilters, String jsonPathFilter) {
+                                    String schedule, String scheduleDescription, Map<String, JsonPathFilterNode> nodeFilters, String jsonPathFilter) {
         this.id = id;
         this.name = name;
         this.eventType = eventType;
         this.projectIds = projectIds;
         this.status = status;
+        this.schedule = schedule;
+        this.scheduleDescription = scheduleDescription;
         this.jsonPathFilter = jsonPathFilter;
         try {
             this.nodeFilterString = nodeFilters!= null ? objectMapper.writeValueAsString(nodeFilters) : null;
@@ -91,12 +99,14 @@ public class EventServiceFilterEntity implements Serializable {
     }
 
     public EventServiceFilterEntity(long id, String name, String eventType, List<String> projectIds,
-                                    String status, String nodeFilterString, String jsonPathFilter) {
+                                    String status, String schedule, String scheduleDescription, String nodeFilterString, String jsonPathFilter) {
         this.id = id;
         this.name = name;
         this.eventType = eventType;
         this.projectIds = projectIds;
         this.status = status;
+        this.schedule = schedule;
+        this.scheduleDescription = scheduleDescription;
         this.nodeFilterString = nodeFilterString;
         this.jsonPathFilter = jsonPathFilter;
     }
@@ -142,6 +152,22 @@ public class EventServiceFilterEntity implements Serializable {
         this.status = status;
     }
 
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public void setSchedule(String schedule) {
+        this.schedule = schedule;
+    }
+
+    public String getScheduleDescription() {
+        return scheduleDescription;
+    }
+
+    public void setScheduleDescription(String scheduleDescription) {
+        this.scheduleDescription = scheduleDescription;
+    }
+
     public void setNodeFilterString(String nodeFilterString) {
         this.nodeFilterString = nodeFilterString;
     }
@@ -162,10 +188,11 @@ public class EventServiceFilterEntity implements Serializable {
                                              .eventType(this.eventType)
                                              .projectIds(this.projectIds != null ? new ArrayList<>(this.projectIds) : null)
                                              .status(this.status)
+                                             .schedule(this.schedule)
+                                             .scheduleDescription(this.scheduleDescription)
                                              .jsonPathFilter(this.jsonPathFilter)
-
-
                                              .build();
+
         if (!Strings.isNullOrEmpty(this.nodeFilterString)) {
             try {
                 Map<String, JsonPathFilterNode> nodeFilter = objectMapper.readValue(this.nodeFilterString, TYPE_REF_MAP_STRING_FILTER_NODE);
@@ -189,6 +216,8 @@ public class EventServiceFilterEntity implements Serializable {
         eventServiceFilterEntity.setEventType(eventServiceFilter.eventType());
         eventServiceFilterEntity.setProjectIds(eventServiceFilter.projectIds());
         eventServiceFilterEntity.setStatus(eventServiceFilter.status());
+        eventServiceFilterEntity.setSchedule(eventServiceFilter.schedule());
+        eventServiceFilterEntity.setScheduleDescription(eventServiceFilter.scheduleDescription());
         eventServiceFilterEntity.setJsonPathFilter(eventServiceFilter.jsonPathFilter());
         try {
             eventServiceFilterEntity.setNodeFilterString(eventServiceFilter.nodeFilters()!= null
@@ -209,6 +238,4 @@ public class EventServiceFilterEntity implements Serializable {
         }
         return eventServiceFilterEntity;
     }
-
-
 }

@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="ScanEvent")
 public class ScanEvent extends AbstractEventServiceEvent<XnatImagescandataI> {
 
-    public enum Status {CREATED};
+    public enum Status {CREATED, SCHEDULED};
 
     private final String displayName = "Scan";
     private final String description = "Scan Created.";
@@ -23,6 +23,11 @@ public class ScanEvent extends AbstractEventServiceEvent<XnatImagescandataI> {
 
     public ScanEvent(final XnatImagescandataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
+        payloadId = payload.getXnatImagescandataId();
+    }
+
+    public ScanEvent(final XnatImagescandataI payload, final String eventUser, final Status status, final String projectId, final Long subscriptionId) {
+        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null), subscriptionId);
         payloadId = payload.getXnatImagescandataId();
     }
 

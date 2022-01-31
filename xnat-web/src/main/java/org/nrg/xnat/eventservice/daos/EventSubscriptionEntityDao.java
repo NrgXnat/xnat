@@ -15,5 +15,4 @@ public class EventSubscriptionEntityDao extends AbstractHibernateDAO<Subscriptio
             throw new Exception("Exception trying to generate alternative to " + name + "." + "\n" + e.getMessage());
         }
     }
-
 }

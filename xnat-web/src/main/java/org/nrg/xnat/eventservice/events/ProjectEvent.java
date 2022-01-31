@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="ProjectEvent")
 public class ProjectEvent extends AbstractEventServiceEvent<XnatProjectdataI> {
 
-    public enum Status {CREATED, DELETED};
+    public enum Status {CREATED, DELETED, SCHEDULED};
 
     private final String displayName = "Project";
     private final String description = "Project created or deleted.";
@@ -22,6 +22,11 @@ public class ProjectEvent extends AbstractEventServiceEvent<XnatProjectdataI> {
 
     public ProjectEvent(final XnatProjectdataI payload, final String eventUser, final Status status) {
         super(payload, eventUser, status, payload.getId(), (payload != null ? payload.getXSIType() : null));
+        payloadId = payload.getId();
+    }
+
+    public ProjectEvent(final XnatProjectdataI payload, final String eventUser, final Status status, final Long subscriptionId) {
+        super(payload, eventUser, status, payload.getId(), (payload != null ? payload.getXSIType() : null), subscriptionId);
         payloadId = payload.getId();
     }
 

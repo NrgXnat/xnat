@@ -74,7 +74,8 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public EventService eventService(EventSubscriptionEntityService subscriptionService, EventBus eventBus,
+    public EventService eventService(EventSubscriptionEntityService subscriptionService, EventSchedulingService schedulingService,
+                                     EventBus eventBus,
                                      EventServiceComponentManager componentManager,
                                      ActionManager actionManager,
                                      SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
@@ -83,12 +84,14 @@ public class EventServiceTestConfig {
                                      ObjectMapper mapper,
                                      EventServicePrefsBean mockEventServicePrefsBean,
                                      final XnatAppInfo xnatAppInfo) {
-        return new EventServiceImpl(subscriptionService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService,
+        return new EventServiceImpl(subscriptionService, schedulingService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService,
                                     userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean, xnatAppInfo);
     }
 
     @Bean
-    public EventService mockEventService(EventSubscriptionEntityService subscriptionService, EventBus eventBus,
+    public EventService mockEventService(EventSubscriptionEntityService subscriptionService,
+                                         EventSchedulingService schedulingService,
+                                         EventBus eventBus,
                                          EventServiceComponentManager componentManager,
                                          ActionManager actionManager,
                                          SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService,
@@ -97,7 +100,7 @@ public class EventServiceTestConfig {
                                          ObjectMapper mapper,
                                          EventServicePrefsBean mockEventServicePrefsBean,
                                          final XnatAppInfo xnatAppInfo) {
-        return new EventServiceImpl(subscriptionService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean, xnatAppInfo);
+        return new EventServiceImpl(subscriptionService, schedulingService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean, xnatAppInfo);
     }
 
     @Bean
@@ -108,8 +111,9 @@ public class EventServiceTestConfig {
                                                                    final ActionManager actionManager,
                                                                    final EventServiceComponentManager componentManager,
                                                                    final UserManagementServiceI userManagementService,
-                                                                   final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {
-        return new EventSubscriptionEntityServiceImpl(eventBus, contextService, actionManager, componentManager, eventService, objectMapper, userManagementService, subscriptionDeliveryEntityService);
+                                                                   final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
+                                                                   final EventSchedulingService eventSchedulingService) {
+        return new EventSubscriptionEntityServiceImpl(eventBus, contextService, actionManager, componentManager, eventService, objectMapper, userManagementService, subscriptionDeliveryEntityService, eventSchedulingService);
     }
 
     @Bean

@@ -1894,7 +1894,7 @@ public abstract class SecureResource extends Resource {
             return false;
         }
         final List<String> whitelist = XDAT.getSiteConfigPreferences().getHtmlResourceRenderingWhitelist();
-        return !(CollectionUtils.isEmpty(whitelist) || whitelist.size() == 1 && whitelist.contains("*") || whitelist.contains(FilenameUtils.getExtension(file.getName())));
+        return CollectionUtils.isEmpty(whitelist) || !(whitelist.size() == 1 && whitelist.contains("*") || whitelist.contains(FilenameUtils.getExtension(file.getName())));
     }
 
     private static final Map<String, List<FilteredResourceHandlerI>> handlers = Maps.newConcurrentMap();

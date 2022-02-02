@@ -271,13 +271,19 @@ generalSecuritySettings:
         renderHtmlResourceTypePanel:
             tag: div#html-resource-options
             contents:
-                getHtmlResourceRenderingWhitelist:
-                    kind: panel.textarea
-                    name: getHtmlResourceRenderingWhitelist
+                htmlResourceRenderingWhitelist:
+                    kind: panel.element
                     label: HTML Resource Rendering Whitelist
-                    description: >
-                        List all allowed resource file extensions, separated by commas (ex: "png, jpg, gif").
-                        The default "*" allows all file extensions.
+                    contents:
+                        htmlResourceRenderingWhitelistInput:
+                            kind: textarea.list
+                            name: htmlResourceRenderingWhitelist
+                            delim: ','
+                            after: >
+                                <p class="description">
+                                List all allowed resource file extensions, separated by commas (ex: "png, jpg, gif").
+                                The default "*" allows all file extensions.</p>
+
                 securitySettingsScript:
                     tag: script|src=/scripts/xnat/admin/securitySettings.js
 

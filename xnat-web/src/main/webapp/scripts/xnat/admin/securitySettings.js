@@ -30,8 +30,8 @@ console.log('securitySettings.js');
         toggleHtmlPanelVisibility($(this).val())
     });
 
-    $(document).on('blur','textarea[name=getHtmlResourceRenderingWhitelist]', function(){
-        let whitelist = $(this).val().trim();
+    $(document).on('blur','textarea[name=htmlResourceRenderingWhitelist]', function(){
+        let whitelist = $(this).val().trim().toLowerCase();
         if (whitelist.length === 0){
             XNAT.ui.dialog.open({
                 title: 'Validation error',
@@ -43,7 +43,7 @@ console.log('securitySettings.js');
                         isDefault: true,
                         close: true,
                         action: function (obj) {
-                            $(document).find('textarea[name=getHtmlResourceRenderingWhitelist]').val('*');
+                            $(document).find('textarea[name=htmlResourceRenderingWhitelist]').val('*');
                         }
                     },
                     {
@@ -55,8 +55,6 @@ console.log('securitySettings.js');
             })
         }
 
-
-
         // convert whitespace to commas if no other separators exist
         if (whitelist.match(/\s/) && !whitelist.match(/[\r?\n?,]+/)) whitelist = whitelist.replace(/\s/g,',');
 
@@ -67,7 +65,15 @@ console.log('securitySettings.js');
         if (whitelist.match(/\*\./)) whitelist = whitelist.replace(/\*\./g,'');
         if (whitelist.match(/\./)) whitelist = whitelist.replace(/\./g,'');
 
-        $(document).find('textarea[name=getHtmlResourceRenderingWhitelist]').val(whitelist);
+        // if the user intends to use the allow-all "*" character, remove the list processing action on the textarea
+        if (whitelist === "*") {
+            $(document).find('textarea[name=htmlResourceRenderingWhitelist]').removeClass('array-list')
+        }
+        else {
+            $(document).find('textarea[name=htmlResourceRenderingWhitelist]').addClass('array-list');
+        }
+
+        $(document).find('textarea[name=htmlResourceRenderingWhitelist]').val(whitelist);
 
     });
 

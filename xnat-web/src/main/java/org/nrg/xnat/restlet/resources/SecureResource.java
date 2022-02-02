@@ -117,6 +117,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xft.event.XftItemEventI.DELETE;
@@ -1890,11 +1891,10 @@ public abstract class SecureResource extends Resource {
     }
 
     private boolean forceDownload(final File file, final MediaType mediaType) {
-        if (mediaType.getName().startsWith("APPLICATION") || !XDAT.getSiteConfigPreferences().getAllowHtmlResourceRendering()) {
-            return false;
-        }
-        final List<String> whitelist = XDAT.getSiteConfigPreferences().getHtmlResourceRenderingWhitelist();
-        return CollectionUtils.isEmpty(whitelist) || !(whitelist.size() == 1 && whitelist.contains("*") || whitelist.contains(FilenameUtils.getExtension(file.getName())));
+        return StringUtils.startsWith(mediaType.getName(), "APPLICATION") ||
+               !XDAT.getSiteConfigPreferences().getAllowHtmlResourceRendering() ||
+               !CollectionUtils.containsAny(XDAT.getSiteConfigPreferences().getHtmlResourceRenderingWhitelist().stream().map(String::toLowerCase).collect(Collectors.toList()),
+                                            Arrays.asList("*", StringUtils.lowerCase(FilenameUtils.getExtension(file.getName()))));
     }
 
     private static final Map<String, List<FilteredResourceHandlerI>> handlers = Maps.newConcurrentMap();

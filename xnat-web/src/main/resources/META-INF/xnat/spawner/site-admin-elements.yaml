@@ -265,9 +265,22 @@ generalSecuritySettings:
             onText: Allow
             offText: Do Not Allow
             description: >
-                Setting this to "Allow" will mean that HTML resources will be rendered as HTML pages in your web browser,
+                Setting this to "Allow" will mean that HTML resources specified in the whitelist below will be rendered as HTML pages in your web browser,
                 executing any code in that HTML. This setting should only be enabled if you trust all sources of HTML resources.
                 If set to "Do Not Allow", HTML resources will be downloaded without being rendered in the page.
+        renderHtmlResourceTypePanel:
+            tag: div#html-resource-options
+            contents:
+                getHtmlResourceRenderingWhitelist:
+                    kind: panel.textarea
+                    name: getHtmlResourceRenderingWhitelist
+                    label: HTML Resource Rendering Whitelist
+                    description: >
+                        List all allowed resource file extensions, separated by commas or new lines (ex: ".png, .jpg, .gif").
+                        The default "*" allows all file extensions.
+                securitySettingsScript:
+                    tag: script|src=/scripts/xnat/admin/securitySettings.js
+
         ipsThatCanSendEmailsThroughRest:
             kind: panel.element
             label: Email-enabled IP Addresses

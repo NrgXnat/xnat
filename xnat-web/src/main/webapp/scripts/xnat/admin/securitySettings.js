@@ -31,8 +31,8 @@ console.log('securitySettings.js');
     });
 
     $(document).on('blur','textarea[name=getHtmlResourceRenderingWhitelist]', function(){
-        var whitelist = $(this);
-        if (whitelist.val().trim().length === 0){
+        let whitelist = $(this).val().trim();
+        if (whitelist.length === 0){
             XNAT.ui.dialog.open({
                 title: 'Validation error',
                 width: 480,
@@ -43,7 +43,7 @@ console.log('securitySettings.js');
                         isDefault: true,
                         close: true,
                         action: function (obj) {
-                            whitelist.val('*');
+                            $(document).find('textarea[name=getHtmlResourceRenderingWhitelist]').val('*');
                         }
                     },
                     {
@@ -54,6 +54,21 @@ console.log('securitySettings.js');
                 ]
             })
         }
+
+
+
+        // convert whitespace to commas if no other separators exist
+        if (whitelist.match(/\s/) && !whitelist.match(/[\r?\n?,]+/)) whitelist = whitelist.replace(/\s/g,',');
+
+        // convert newlines to commas
+        if (whitelist.match(/[\r?\n]+/)) whitelist = whitelist.split(/\r?\n/).join(',');
+
+        // strip out "*." or "." from file extensions
+        if (whitelist.match(/\*\./)) whitelist = whitelist.replace(/\*\./g,'');
+        if (whitelist.match(/\./)) whitelist = whitelist.replace(/\./g,'');
+
+        $(document).find('textarea[name=getHtmlResourceRenderingWhitelist]').val(whitelist);
+
     });
 
     $(document).ready(function(){

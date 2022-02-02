@@ -276,7 +276,7 @@ generalSecuritySettings:
                     name: getHtmlResourceRenderingWhitelist
                     label: HTML Resource Rendering Whitelist
                     description: >
-                        List all allowed resource file extensions, separated by commas or new lines (ex: ".png, .jpg, .gif").
+                        List all allowed resource file extensions, separated by commas (ex: "png, jpg, gif").
                         The default "*" allows all file extensions.
                 securitySettingsScript:
                     tag: script|src=/scripts/xnat/admin/securitySettings.js

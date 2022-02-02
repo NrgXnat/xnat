@@ -64,15 +64,7 @@ console.log('securitySettings.js');
         // strip out "*." or "." from file extensions
         if (whitelist.match(/\*\./)) whitelist = whitelist.replace(/\*\./g,'');
         if (whitelist.match(/\./)) whitelist = whitelist.replace(/\./g,'');
-
-        // if the user intends to use the allow-all "*" character, remove the list processing action on the textarea
-        if (whitelist === "*") {
-            $(document).find('textarea[name=htmlResourceRenderingWhitelist]').removeClass('array-list')
-        }
-        else {
-            $(document).find('textarea[name=htmlResourceRenderingWhitelist]').addClass('array-list');
-        }
-
+        
         $(document).find('textarea[name=htmlResourceRenderingWhitelist]').val(whitelist);
 
     });

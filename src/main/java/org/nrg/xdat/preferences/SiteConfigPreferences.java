@@ -1450,7 +1450,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "['avi', 'bmp', 'dcm', 'gif', 'icon', 'jpg', 'jpeg', 'mov', 'mp4', 'mpg', 'png', 'tiff', 'txt', 'video', 'wmv']")
+    @NrgPreference(defaultValue = "['bmp', 'gif', 'jpeg', 'jpg', 'png', 'tiff', 'txt', 'xml']")
     public List<String> getHtmlResourceRenderingWhitelist() {
         return getListValue("htmlResourceRenderingWhitelist");
     }

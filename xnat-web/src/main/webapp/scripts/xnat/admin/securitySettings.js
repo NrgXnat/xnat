@@ -72,6 +72,32 @@ console.log('securitySettings.js');
     $(document).ready(function(){
         var enablePanel = $(document).find('input[name=allowHtmlResourceRendering]').val();
         toggleHtmlPanelVisibility(enablePanel);
+
+        // hack in an info link since panel switchbox entries don't support them
+        function showResourceInfo(){
+            var infoMessage = spawn('!',[
+                spawn('p','Setting this to "Allow" will mean that resources specified in the whitelist below will be rendered by your web browser. Rendering includes execution of any code that might be present. For example, that might include javascript within an html file. This setting should only be enabled if you trust all sources of the resources you include in the whitelist below. If set to "Do Not Allow", resources will be downloaded without being rendered in the page.'),
+                spawn('p','For a more complete description, please read the article <a href="https://wiki.xnat.org/documentation/xnat-administration/how-to-restrict-rendering-of-xnat-resources" target="_new">How To Restrict Rendering of XNAT Resources</a>. This article also includes a list of all supported mime types.</p>')
+            ]);
+
+            XNAT.dialog.open({
+                title: 'Resource Rendering',
+                width: '400px',
+                content: infoMessage,
+                footer: false,
+                buttons: []
+            });
+        }
+
+        var infoLink = spawn('a.infoLink#render-resources-info', {
+            style: {position: 'relative', top: '0px', right: '8px'},
+            href: '#!',
+            html: '<i class="fa fa-question-circle" style="font-size: 16px; color: rgb(26, 117, 194);"></i>',
+            onclick: showResourceInfo
+        });
+
+        $(document).find('div[data-name=allowHtmlResourceRendering]').find('.element-label').prepend(infoLink);
+
     });
 
 })();

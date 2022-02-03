@@ -260,20 +260,19 @@ generalSecuritySettings:
                 When set to <b>Never</b>, the host name is not displayed.
         renderHtmlResources:
             kind: panel.input.switchbox
+            label: Resource Rendering
             name: allowHtmlResourceRendering
-            label: HTML Resource Rendering
             onText: Allow
             offText: Do Not Allow
             description: >
-                Setting this to "Allow" will mean that HTML resources specified in the whitelist below will be rendered as HTML pages in your web browser,
-                executing any code in that HTML. This setting should only be enabled if you trust all sources of HTML resources.
-                If set to "Do Not Allow", HTML resources will be downloaded without being rendered in the page.
+                Setting this to "Allow" will mean that resources specified in the whitelist below
+                will be rendered by your web browser. Rendering includes execution of any code that might be present. See note for details.
         renderHtmlResourceTypePanel:
             tag: div#html-resource-options
             contents:
                 htmlResourceRenderingWhitelist:
                     kind: panel.element
-                    label: HTML Resource Rendering Whitelist
+                    label: Resource Rendering Whitelist
                     contents:
                         htmlResourceRenderingWhitelistInput:
                             kind: textarea.list
@@ -282,7 +281,9 @@ generalSecuritySettings:
                             after: >
                                 <p class="description">
                                 List all allowed resource file extensions, separated by commas (ex: "png, jpg, gif").
-                                The wildcard <code>"*"</code> allows all file extensions.</p>
+                                You can use a single <code>*</code> item to allow all file extensions. Supported mime types are listed in the article listed above:
+                                <a href="https://wiki.xnat.org/documentation/xnat-administration/how-to-restrict-rendering-of-xnat-resources" target="_new">How To Restrict Rendering of XNAT Resources</a>.
+                                </p>
 
                 securitySettingsScript:
                     tag: script|src=/scripts/xnat/admin/securitySettings.js

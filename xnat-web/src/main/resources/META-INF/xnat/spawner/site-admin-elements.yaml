@@ -282,7 +282,7 @@ generalSecuritySettings:
                             after: >
                                 <p class="description">
                                 List all allowed resource file extensions, separated by commas (ex: "png, jpg, gif").
-                                The default "*" allows all file extensions.</p>
+                                The wildcard <code>"*"</code> allows all file extensions.</p>
 
                 securitySettingsScript:
                     tag: script|src=/scripts/xnat/admin/securitySettings.js

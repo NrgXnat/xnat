@@ -146,6 +146,17 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
         XDAT.replaceSubscriberList(emailRecipientIssueReports, NotificationType.Issue, getEmailAllowNonuserSubscribers());
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean getUserEmailForReportProblem() { return getBooleanValue("userEmailForReportProblem"); }
+
+    public void setUserEmailForReportProblem(final boolean userEmailForReportProblem) {
+        try {
+            setBooleanValue(userEmailForReportProblem, "userEmailForReportProblem");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'userEmailForReportProblem': something is very wrong here.", e);
+        }
+    }
+
     public String getEmailRecipientNewUserAlert() {
         return XDAT.getSubscriberEmailsListAsString(NotificationType.NewUser);
     }

@@ -881,6 +881,13 @@ notifications:
             size: 50
             validation: allow-empty emails onblur
         #            value: "!? XNAT.data.notifications['emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
+        userEmailForReportProblem:
+            kind: panel.input.switchbox
+            name: userEmailForReportProblem
+            label: "Issue Reports Sender"
+            onText: Reporter
+            offText: Admin
+            description: "If reporter, issue report emails will be sent from the email of the reporting user as opposed to the admin email (default)."
         emailRecipientNewUserAlert:
             kind: panel.input.email
             label: "New User Alert"

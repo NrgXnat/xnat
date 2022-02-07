@@ -52,19 +52,29 @@ public class ReportIssue extends SecureAction {
         final ParameterParser parameters = data.getParameters();
 
         final Map<String, Object> properties = new HashMap<>();
-        properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
-        properties.put(MailMessage.PROP_SUBJECT, getSubject(user));
-        properties.put(MailMessage.PROP_HTML, emailBody(user, parameters, data, context, true));
-        properties.put(MailMessage.PROP_TEXT, emailBody(user, parameters, data, context, false));
+
+        String from;
+
+        if (XDAT.getNotificationsPreferences().getUserEmailForReportProblem()) {
+            from = user.getEmail();
+        } else {
+            from = XDAT.getSiteConfigPreferences().getAdminEmail();
+        }
+        String[] to = XDAT.getNotificationsPreferences().getEmailRecipientIssueReports().split(",");
+        String subject = getSubject(user);
+        String textBody = emailBody(user, parameters, data, context, true);
+        String htmlBody = emailBody(user, parameters, data, context, false);
 
         // TODO: Need to figure out how to handle attachments in notifications.
         final Map<String, File> attachments = getAttachmentMap(data.getSession().getId(), parameters);
+
+
         if (!attachments.isEmpty()) {
-            properties.put(MailMessage.PROP_ATTACHMENTS, attachments);
+            XDAT.getMailService().sendHtmlMessage(from, to, null, null, subject, htmlBody, textBody, attachments);
+        } else {
+            XDAT.getMailService().sendHtmlMessage(from, to, null, null, subject, htmlBody, textBody, null);
         }
 
-        XDAT.verifyNotificationType(NotificationType.Issue);
-        XDAT.getNotificationService().createNotification(NotificationType.Issue.toString(), properties);
         TurbineUtils.setBannerMessage(data, "Thanks for your feedback. The administrator(s) have been notified and will contact you when the issue is resolved or if more information is required.");
     }
 

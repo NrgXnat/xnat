@@ -14,6 +14,7 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.services.ContextService;
@@ -23,8 +24,8 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.daos.EventSubscriptionEntityDao;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
-import org.nrg.xnat.eventservice.events.AbstractEventServiceEvent;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
+import org.nrg.xnat.eventservice.events.ScheduledEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.EventFilter;
@@ -35,7 +36,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.bus.registry.Registration;
@@ -193,8 +193,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
             try{
                 final String schedule = subscription.eventFilter().schedule();
                 final String status   = subscription.eventFilter().status();
-
-                if(StringUtils.hasLength(schedule) && AbstractEventServiceEvent.Status.SCHEDULED.name().equals(status)){
+                if(!StringUtils.isEmpty(schedule) && ScheduledEvent.Status.CRON.name().equals(status)) {
                     log.debug("Validating cron expression {} for subscription {}", schedule, subscription.id());
                     validateCronExpression(schedule);
                 }
@@ -387,6 +386,10 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
         return toPojo(subscriptionEntity);
     }
 
+    public List<Subscription> findActiveSubscriptionsBySchedule(String schedule){
+        return this.getDao().findActiveSubscriptionsBySchedule(schedule).stream().map(e -> toPojo(e)).collect(Collectors.toList());
+    }
+
     @Override
     public List<Subscription> getSubscriptions(String projectId) {
         List<Subscription> subscriptions = new ArrayList<>();
@@ -550,14 +553,16 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                     return false;
                 }
                 // Check for exclusion based on project id
-                if (filter.projectIds() != null && !filter.projectIds().isEmpty() &&
+                if (event.getProjectId() != null && filter.projectIds() != null && !filter.projectIds().isEmpty() &&
                         filter.projectIds().stream().noneMatch(pid -> pid.contentEquals(event.getProjectId() != null ? event.getProjectId() : ""))){
                     return false;
                 }
 
-                if(AbstractEventServiceEvent.Status.SCHEDULED.name().equals(filter.status()) &&
-                        !java.util.Objects.equals(subscription.id(), event.getSubscriptionId())){
-                    return false;
+                if(event instanceof ScheduledEvent && event.getCurrentStatus() == ScheduledEvent.Status.CRON){
+                    String eventSchedule = ((ScheduledEvent)event).getSchedule();
+                    if(StringUtils.isNotEmpty(eventSchedule) && StringUtils.isNotEmpty(filter.schedule()) && !eventSchedule.equals(filter.schedule())){
+                        return false;
+                    }
                 }
 
                 // Check for exclusion based on payload filter (if available)

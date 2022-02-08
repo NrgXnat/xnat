@@ -14,27 +14,26 @@ import java.util.concurrent.ScheduledFuture;
 public class EventSchedulingServiceImpl implements EventSchedulingService {
 
     final private ThreadPoolTaskScheduler scheduler;
-    final private Map<Long, ScheduledFuture> tasks = new HashMap<>();
+    final private Map<String, ScheduledFuture> tasks = new HashMap<>();
 
     public EventSchedulingServiceImpl(final ThreadPoolTaskScheduler scheduler){
         this.scheduler = scheduler;
     }
 
-    public void scheduleEvent(Long id, String trigger, Runnable task){
-        if(null == task || null == id || !StringUtils.hasLength(trigger)){
-            throw new IllegalArgumentException("Trigger, task, and id must not be null.");
+    public void scheduleEvent(Runnable task, String trigger){
+        if(null == task || !StringUtils.hasLength(trigger)){
+            throw new IllegalArgumentException("Trigger and task must not be null.");
         }
 
-        // Remove anything that was added previously
-        cancelScheduledEvent(id);
-
-        ScheduledFuture<?> future = scheduler.schedule(task, new CronTrigger(trigger));
-        tasks.put(id, future);
+        if(!tasks.containsKey(trigger)){
+            ScheduledFuture<?> future = scheduler.schedule(task, new CronTrigger(trigger));
+            tasks.put(trigger, future);
+        }
     }
 
-    public void cancelScheduledEvent(Long id){
-        if(tasks.containsKey(id)) {
-            tasks.remove(id).cancel(false);
+    public void cancelScheduledEvent(String trigger){
+        if(tasks.containsKey(trigger)) {
+            tasks.remove(trigger).cancel(false);
         }
     }
 }

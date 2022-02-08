@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="SessionEvent")
 public class SessionEvent extends AbstractEventServiceEvent<XnatImagesessiondataI> {
 
-    public enum Status {CREATED, DELETED, SCHEDULED};
+    public enum Status {CREATED, DELETED};
 
     private final String displayName = "Session";
     private final String description = "Session created or deleted.";
@@ -25,11 +25,6 @@ public class SessionEvent extends AbstractEventServiceEvent<XnatImagesessiondata
 
     public SessionEvent(final XnatImagesessiondataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
-        payloadId = payload.getId();
-    }
-
-    public SessionEvent(final XnatImagesessiondataI payload, final String eventUser, final Status status, final String projectId, final Long subscriptionId) {
-        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null), subscriptionId);
         payloadId = payload.getId();
     }
 

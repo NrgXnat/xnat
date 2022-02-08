@@ -263,7 +263,7 @@ var XNAT = getObject(XNAT || {});
         function eventNiceName(subscription){
             var eventId = subscription['event-filter']['event-type'];
 
-            if(subscription['event-filter']['status'] == 'SCHEDULED'){
+            if(subscription['event-filter']['status'] == 'CRON'){
                 if(subscription['event-filter']['schedule-description']){
                     return eventServicePanel.events[eventId]['display-name'] + ': ' + subscription['event-filter']['schedule-description'];
                 }else{
@@ -900,7 +900,7 @@ var XNAT = getObject(XNAT || {});
                     findActions($form.find('select[name=project-id]'));
                 });
 
-                if(subscription && subscription['event-filter']['status'] == 'SCHEDULED'){
+                if(subscription && subscription['event-filter']['status'] == 'CRON'){
                     $('input[name=act-as-event-user]').prop('checked', false);
                     $('div[data-name=act-as-event-user').hide();
                     $('div[data-name=schedule]').show();
@@ -927,7 +927,8 @@ var XNAT = getObject(XNAT || {});
                     setActionAttributes($(this));
                 });
                 $form.off('change','#subscription-event-selector').on('change','#subscription-event-selector', function(e){
-                    if($('#subscription-event-selector').val().includes('SCHEDULED')){
+
+                    if($('#subscription-event-selector').val().includes('CRON')){
                         $('input[name=act-as-event-user]').prop('checked', false);
                         $('div[data-name=act-as-event-user').hide();
                         $('div[data-name=schedule]').show();
@@ -940,7 +941,6 @@ var XNAT = getObject(XNAT || {});
 
                         $('#schedule-description').val("");
                         $('div[data-name=schedule-description]').hide();
-
                     }
                 });
             },

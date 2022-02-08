@@ -159,7 +159,8 @@ XNAT.admin = getObject(XNAT.admin || {});
                     apply: function () {
                         var message = '';
                         if (isObject(this['trigger']) && this['trigger']) {
-                            message = message + '<br>Trigger: ' + this['trigger']['label'];
+                            message = message + '<br>Trigger: ' + ((this['trigger']['event-name'] && this['trigger']['event-name'] == "Scheduled Event")
+                                        ? this['trigger']['event-name'] : this['trigger']['label']);
                         }
 
                         return spawn('!',[
@@ -179,7 +180,7 @@ XNAT.admin = getObject(XNAT.admin || {});
                     td: { className: 'eventtype word-wrapped' },
                     label: labelMap.eventtype['label'],
                     apply: function(){
-                        return titleCase(this['event-type'])
+                        return eventNiceName(this)
                     }
                 },
                 user: {
@@ -201,11 +202,33 @@ XNAT.admin = getObject(XNAT.admin || {});
                     th: {className: 'project'},
                     label: labelMap.project['label'],
                     apply: function(){
-                        return this['project'];
+                        return this['project'] ? this['project'] : getProjectFromSubscription(this);
                     }
                 }
             }
         }
+    }
+
+    function getProjectFromSubscription(event){
+        var projectIds = event['subscription']['event-filter']['project-ids'];
+        if(undefined == projectIds || projectIds.length < 1){
+            return "All Projects";
+        }else if(projectIds.length == 1){
+            return projectIds[0];
+        }else if(projectIds.length > 1){
+            return projectIds.join(',');
+        }
+    }
+
+    function eventNiceName(event){
+        var eventFilter = event['subscription']['event-filter'];
+        var eventName = titleCase(event['event-type']);
+        if(eventFilter['status'] == 'CRON'){
+            var eventName   = event['trigger']['event-name'];
+            return eventFilter['schedule-description'] ?
+                        eventName + ": " + eventFilter['schedule-description'] : eventName + ": " + eventFilter['schedule'];
+        }
+        return eventName;
     }
 
     historyTable.$loadAllBtn = false;

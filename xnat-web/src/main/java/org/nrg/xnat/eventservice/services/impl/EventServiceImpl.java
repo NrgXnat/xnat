@@ -12,22 +12,20 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.node.XnatNode;
-import org.nrg.xdat.model.XnatImagesessiondataI;
-import org.nrg.xdat.om.XnatSubjectassessordata;
-import org.nrg.xdat.om.base.BaseXnatProjectdata;
-import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
-import org.nrg.xnat.eventservice.events.*;
+import org.nrg.xnat.eventservice.events.EventServiceEvent;
+import org.nrg.xnat.eventservice.events.ScheduledEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionAccessException;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.*;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
 import org.nrg.xnat.eventservice.services.*;
+import org.nrg.xnat.eventservice.sort.SimpleEventComparator;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -90,7 +88,6 @@ public class EventServiceImpl implements EventService {
     public Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException, SubscriptionAccessException {
         throwIfDisabled();
         Subscription created = subscriptionService.createSubscription(subscription);
-
         scheduleEventsForSubscription(created);
         return created;
     }
@@ -243,6 +240,7 @@ public class EventServiceImpl implements EventService {
             // TODO: This is a stupid way to get all the events
             events.add(getEvent(e.getType(), loadDetails));
         }
+        events.sort(new SimpleEventComparator());
         return events;
     }
 
@@ -475,97 +473,23 @@ public class EventServiceImpl implements EventService {
 
     private void scheduleEventsForSubscription(Subscription subscription){
         final String schedule = subscription.eventFilter().schedule();
-        final String status   = subscription.eventFilter().status();
-        if(!AbstractEventServiceEvent.Status.SCHEDULED.name().equals(status) || StringUtils.isEmpty(schedule)){
-            log.debug("Not scheduling events for subscription with id: {}. Either the event status is not scheduled or the schedule is empty.", subscription.id());
-            return;
+        final String status = subscription.eventFilter().status();
+        if(ScheduledEvent.Status.CRON.name().equals(status) && StringUtils.isNotEmpty(schedule)){
+            schedulingService.scheduleEvent(() -> this.triggerEvent(new ScheduledEvent(schedule)), schedule);
         }
-
-        schedulingService.scheduleEvent(subscription.id(), schedule,
-                () -> getScheduledEventsForSubscription(subscription).stream().forEach(this::triggerEvent));
     }
 
-    private List<EventServiceEvent> getScheduledEventsForSubscription(Subscription subscription){
-        final List<EventServiceEvent> events = new ArrayList<>();
-        final UserI user;
-        final Class<?> eventType;
-
+    private void cancelEventsForSubscription(Subscription subscription){
         final String schedule = subscription.eventFilter().schedule();
-        final String status   = subscription.eventFilter().status();
-        if(!AbstractEventServiceEvent.Status.SCHEDULED.name().equals(status) || StringUtils.isEmpty(schedule)){
-            return Collections.EMPTY_LIST;
-        }
+        final String status = subscription.eventFilter().status();
 
-        try{
-             user = userManagementService.getUser(subscription.subscriptionOwner());
-        }catch(UserInitException | UserNotFoundException e){
-            log.error("Unable to determine the subscription owner for subscription {}. ", subscription.id(), e);
-            return Collections.EMPTY_LIST;
-        }
-
-        try{
-            eventType = Class.forName(subscription.eventFilter().eventType());
-        } catch (ClassNotFoundException e) {
-            log.error("Subscription {}: Unknown event type: {}", subscription.id(), subscription.eventFilter().eventType(), e);
-            return Collections.EMPTY_LIST;
-        }
-
-        final List<String> projectIds =
-                (subscription.eventFilter().projectIds() != null && !subscription.eventFilter().projectIds().isEmpty())
-                        ? subscription.eventFilter().projectIds() :
-                        BaseXnatProjectdata.getAllXnatProjectdatas(user, false)
-                                .stream().map(AutoXnatProjectdata::getId).collect(Collectors.toList());
-
-        if(projectIds == null || projectIds.isEmpty()){
-            log.debug("Subscription {}: No projects found. Unable to build scheduled events.", subscription.id());
-            return Collections.EMPTY_LIST;
-        }
-
-        for(String project : projectIds){
-            final BaseXnatProjectdata projectdata = BaseXnatProjectdata.getProjectByIDorAlias(project, user, false);
-            if(projectdata == null){
-                log.error("Subscription {}: Unknown project {}", subscription.id(), project);
-            }
-
-            if(eventType.isAssignableFrom(ProjectEvent.class)) {
-                events.add(new ProjectEvent(projectdata, user.getUsername(), ProjectEvent.Status.SCHEDULED, subscription.id()));
-            } else if(eventType.isAssignableFrom(SubjectEvent.class)){
-                events.addAll(projectdata.getParticipants_participant().stream()
-                        .map(s -> new SubjectEvent(s, user.getUsername(), SubjectEvent.Status.SCHEDULED, project, subscription.id()))
-                        .collect(Collectors.toList()));
-            } else if(eventType.isAssignableFrom(SubjectAssessorEvent.class)) {
-                events.addAll(projectdata.getExperiments().stream()
-                        .filter(e -> e instanceof XnatSubjectassessordata)
-                        .map(e -> new SubjectAssessorEvent((XnatSubjectassessordata) e, user.getUsername(), SubjectAssessorEvent.Status.SCHEDULED, project, subscription.id()))
-                        .collect(Collectors.toList()));
-            } else if(eventType.isAssignableFrom(SessionEvent.class)) {
-                events.addAll(projectdata.getExperiments().stream()
-                         .filter(e -> e instanceof XnatImagesessiondataI)
-                         .map(e -> new SessionEvent((XnatImagesessiondataI) e, user.getUsername(), SessionEvent.Status.SCHEDULED, project, subscription.id()))
-                         .collect(Collectors.toList()));
-            } else if(eventType.isAssignableFrom(ScanEvent.class)) {
-                projectdata.getExperiments().stream()
-                        .filter(i -> i instanceof XnatImagesessiondataI)
-                        .forEach(session -> events.addAll(((XnatImagesessiondataI)session).getScans_scan().stream()
-                            .map(s -> new ScanEvent(s, user.getUsername(), ScanEvent.Status.SCHEDULED, project, subscription.id()))
-                            .collect(Collectors.toList())));
-
-            } else if(eventType.isAssignableFrom(ImageAssessorEvent.class)){
-                projectdata.getExperiments()
-                        .stream().filter(i -> i instanceof XnatImagesessiondataI)
-                        .forEach(session -> events.addAll(((XnatImagesessiondataI)session).getAssessors_assessor().stream()
-                            .map(s -> new ImageAssessorEvent(s, user.getUsername(), ImageAssessorEvent.Status.SCHEDULED, project, subscription.id()))
-                            .collect(Collectors.toList())));
-            } else {
-                log.error("Unhandled event type: {}", eventType.getCanonicalName());
+        if(ScheduledEvent.Status.CRON.name().equals(status) && StringUtils.isNotEmpty(schedule)){
+            final List<Subscription> subscriptions = subscriptionService.findActiveSubscriptionsBySchedule(schedule);
+            if(subscriptions.isEmpty()){
+                // If there are no active subscriptions using this cron trigger, cancel the event.
+                schedulingService.cancelScheduledEvent(schedule);
             }
         }
-        return events;
-    }
-
-
-    private void cancelEventsForSubscription(Subscription subscription) {
-        schedulingService.cancelScheduledEvent(subscription.id());
     }
 
     @Override

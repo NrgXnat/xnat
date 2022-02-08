@@ -41,6 +41,8 @@ public interface EventSubscriptionEntityService extends BaseHibernateService<Sub
 
     Subscription getSubscription(Long id) throws NotFoundException;
 
+    List<Subscription> findActiveSubscriptionsBySchedule(String schedule);
+
     @Transient
     List<Subscription> getSubscriptionsByListenerId(UUID listenerId) throws NotFoundException;
 

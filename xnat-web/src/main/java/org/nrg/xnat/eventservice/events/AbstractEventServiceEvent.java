@@ -23,8 +23,6 @@ import java.util.UUID;
 public abstract class AbstractEventServiceEvent<EventObjectT>
         implements EventServiceEvent<EventObjectT> {
 
-    public enum Status { SCHEDULED };
-
     protected String eventUser;
     protected Class objectClass;
     protected UUID eventUUID = UUID.randomUUID();
@@ -32,7 +30,6 @@ public abstract class AbstractEventServiceEvent<EventObjectT>
     protected Enum status = null;
     protected String projectId = null;
     protected String xsiType = null;
-    protected Long subscriptionId = null;
 
     public AbstractEventServiceEvent() {}
 
@@ -51,16 +48,6 @@ public abstract class AbstractEventServiceEvent<EventObjectT>
         this.status = status;
         this.projectId = projectId;
         this.xsiType = xsiType;
-    }
-
-    public AbstractEventServiceEvent(final EventObjectT object, final String eventUser, final Enum status, final String projectId, final String xsiType, final Long subscriptionId) {
-        this.objectClass = object != null ? object.getClass() : null;
-        this.eventUser = eventUser;
-        this.eventCreatedTimestamp = Date.from(Instant.now()).getTime();
-        this.status = status;
-        this.projectId = projectId;
-        this.xsiType = xsiType;
-        this.subscriptionId = subscriptionId;
     }
 
     @Override
@@ -110,11 +97,6 @@ public abstract class AbstractEventServiceEvent<EventObjectT>
     }
 
     @Override
-    public Long getSubscriptionId(){
-        return subscriptionId;
-    }
-
-    @Override
     public Boolean filterablePayload() { return false;}
 
     @Override
@@ -133,7 +115,6 @@ public abstract class AbstractEventServiceEvent<EventObjectT>
                 .add("eventUUID=" + eventUUID)
                 .add("eventCreatedTimestamp=" + eventCreatedTimestamp)
                 .add("status=" + status)
-                .add("subscriptionId=" + subscriptionId)
                 .add("projectId='" + projectId + "'")
                 .add("xsiType='" + xsiType + "'")
                 .toString();
@@ -149,7 +130,6 @@ public abstract class AbstractEventServiceEvent<EventObjectT>
                 Objects.equals(eventUUID, that.eventUUID) &&
                 Objects.equals(eventCreatedTimestamp, that.eventCreatedTimestamp) &&
                 Objects.equals(status, that.status) &&
-                Objects.equals(subscriptionId, that.subscriptionId) &&
                 Objects.equals(projectId, that.projectId) &&
                 Objects.equals(xsiType, that.xsiType);
     }

@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @XnatEventServiceEvent(name="SubjectAssessorEvent")
 public class SubjectAssessorEvent extends AbstractEventServiceEvent<XnatSubjectassessordataI> {
 
-    public enum Status {CREATED, DELETED, SCHEDULED};
+    public enum Status {CREATED, DELETED};
 
     private final String displayName = "Subject Assessor";
     private final String description = "Subject Assessor created or deleted.";
@@ -26,11 +26,6 @@ public class SubjectAssessorEvent extends AbstractEventServiceEvent<XnatSubjecta
 
     public SubjectAssessorEvent(final XnatSubjectassessordataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
-        payloadId = payload.getId();
-    }
-
-    public SubjectAssessorEvent(final XnatSubjectassessordataI payload, final String eventUser, final Status status, final String projectId, final Long subscriptionId) {
-        super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null), subscriptionId);
         payloadId = payload.getId();
     }
 

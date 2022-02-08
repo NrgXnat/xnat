@@ -9,7 +9,8 @@
 
 package org.nrg.framework.services;
 
-import com.google.common.base.Joiner;
+import org.apache.commons.lang3.ArrayUtils;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -20,19 +21,22 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.ServletContextAware;
 
-import javax.servlet.ServletContext;
-import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.Supplier;
+import javax.servlet.ServletContext;
 
 @Service
 public class ContextService implements NrgService, ApplicationContextAware, ServletContextAware {
+    private static ApplicationContext _applicationContext;
+
+    private ServletContext _servletContext;
+
     /**
      * Returns the existing instance of the ContextService.
      *
@@ -82,10 +86,7 @@ public class ContextService implements NrgService, ApplicationContextAware, Serv
      * @throws NoSuchBeanDefinitionException When a bean of the indicated type can't be found.
      */
     public Object getBean(final String name) throws NoSuchBeanDefinitionException {
-        if (_applicationContext == null) {
-            return null;
-        }
-        return _applicationContext.getBean(name);
+        return _applicationContext == null ? null : _applicationContext.getBean(name);
     }
 
     /**
@@ -100,29 +101,7 @@ public class ContextService implements NrgService, ApplicationContextAware, Serv
      * @throws NoSuchBeanDefinitionException When a bean of the indicated type can't be found.
      */
     public <T> T getBean(final Class<T> type) throws NoSuchBeanDefinitionException {
-        if (_applicationContext == null) {
-            return null;
-        }
-        return _applicationContext.getBean(type);
-    }
-
-    /**
-     * Gets a bean of the indicated type. If no bean of that type is found, null is returned.
-     *
-     * @param <T>  The type of the bean to be retrieved.
-     * @param type The class of the bean to be retrieved.
-     *
-     * @return An object of the type.
-     */
-    @SuppressWarnings("unused")
-    public <T> T getBeanSafely(final Class<T> type) {
-        try {
-            return getBean(type);
-        } catch (NoSuchBeanDefinitionException ignored) {
-            // This is OK, just means the bean doesn't exist in the current context. Carry on.
-        }
-        // If we didn't find a valid bean of the type, return null.
-        return null;
+        return _applicationContext == null ? null : _applicationContext.getBean(type);
     }
 
     /**
@@ -137,10 +116,48 @@ public class ContextService implements NrgService, ApplicationContextAware, Serv
      * @throws NoSuchBeanDefinitionException When a bean of the indicated type can't be found.
      */
     public <T> T getBean(final String name, final Class<T> type) throws NoSuchBeanDefinitionException {
-        if (_applicationContext == null) {
-            return null;
+        return _applicationContext == null ? null : _applicationContext.getBean(name, type);
+    }
+
+    /**
+     * Gets a bean of the indicated type. If no bean of that type is found, null is returned.
+     *
+     * @param <T>  The type of the bean to be retrieved.
+     * @param type The class of the bean to be retrieved.
+     *
+     * @return An object of the type.
+     */
+    public <T> T getBeanSafely(final Class<T> type) {
+        try {
+            return getBean(type);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            // This is OK, just means the bean doesn't exist in the current context. Carry on.
         }
-        return _applicationContext.getBean(name, type);
+        // If we didn't find a valid bean of the type, return null.
+        return null;
+    }
+
+    /**
+     * Gets a bean of the indicated type. If no bean of that type is found and no suppliers
+     * are specified, null is returned. If one or more suppliers are specified, this method
+     * calls each supplier in turn until one returns a non-null value or there are no more
+     * suppliers. If no supplier returns a non-null value, this method then returns null.
+     *
+     * @param <T>       The type of the bean to be retrieved.
+     * @param type      The class of the bean to be retrieved.
+     * @param suppliers One or more suppliers to be called if the initial attempt fails.
+     *
+     * @return A bean with the specified type or null if none can be found.
+     */
+    @SafeVarargs
+    public final <T> T getBeanSafely(final Class<T> type, final Supplier<T> first, final Supplier<T>... suppliers) {
+        try {
+            return getBean(type);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            // This is OK, just means the bean doesn't exist in the current context. Carry on.
+        }
+        // If we didn't find a valid bean of the type, call the supplier or return null.
+        return callSuppliers(first, suppliers);
     }
 
     /**
@@ -152,7 +169,6 @@ public class ContextService implements NrgService, ApplicationContextAware, Serv
      *
      * @return An object of the type.
      */
-    @SuppressWarnings("unused")
     public <T> T getBeanSafely(final String name, final Class<T> type) {
         try {
             return getBean(name, type);
@@ -164,6 +180,31 @@ public class ContextService implements NrgService, ApplicationContextAware, Serv
     }
 
     /**
+     * Gets a bean with the indicated name and type. If no bean with that name and type is
+     * found and no suppliers are specified, null is returned. If one or more suppliers are
+     * specified, this method calls each supplier in turn until one returns a non-null value
+     * or there are no more suppliers. If no supplier returns a non-null value, this method
+     * then returns null.
+     *
+     * @param <T>       The type of the bean to be retrieved.
+     * @param name      The name of the bean to be retrieved.
+     * @param type      The class of the bean to be retrieved.
+     * @param suppliers One or more suppliers to be called if the initial attempt fails.
+     *
+     * @return A bean with the specified name and type or null if none can be found.
+     */
+    @SafeVarargs
+    public final <T> T getBeanSafely(final String name, final Class<T> type, final Supplier<T> first, final Supplier<T>... suppliers) {
+        try {
+            return getBean(name, type);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            // This is OK, just means the bean doesn't exist in the current context. Carry on.
+        }
+        // If we didn't find a valid bean of the type, call the supplier or return null.
+        return callSuppliers(first, suppliers);
+    }
+
+    /**
      * Gets all beans with the indicated type.
      *
      * @param type The class of the bean to be retrieved.
@@ -171,41 +212,31 @@ public class ContextService implements NrgService, ApplicationContextAware, Serv
      *
      * @return An object of the type.
      */
-    @SuppressWarnings("unused")
     public <T> Map<String, T> getBeansOfType(final Class<T> type) {
         if (_applicationContext == null) {
             return null;
         }
-        BeanFactory beanFactory = _applicationContext.getParentBeanFactory();
-        if(ListableBeanFactory.class.isAssignableFrom(beanFactory.getClass())){
-            final Map<String, T> candidate = ((ListableBeanFactory)beanFactory).getBeansOfType(type);
-            if (candidate.size() > 0) {
-                return candidate;
-            }
-        }
-        else{
-            final Map<String, T> candidate = _applicationContext.getBeansOfType(type);
-            if (candidate.size() > 0) {
-                return candidate;
-            }
-        }
-
-        return new HashMap<>();
+        final BeanFactory beanFactory = _applicationContext.getParentBeanFactory();
+        final Map<String, T> candidate = beanFactory != null && ListableBeanFactory.class.isAssignableFrom(beanFactory.getClass()) ? ((ListableBeanFactory) beanFactory).getBeansOfType(type) : _applicationContext.getBeansOfType(type);
+        return !candidate.isEmpty() ? candidate : new HashMap<>();
     }
 
-    @SuppressWarnings("unused")
-    public URI getConfigurationLocation(final String configuration) {
+    public URI getConfigurationLocation(final String configuration) throws NotFoundException {
         return getAppRelativeLocation("WEB-INF", "conf", configuration);
     }
 
-    @SuppressWarnings("unused")
     public InputStream getConfigurationStream(final String configuration) {
         return getAppRelativeStream("WEB-INF", "conf", configuration);
     }
 
-    public URI getAppRelativeLocation(final String... relativePaths) {
+    public URI getAppRelativeLocation(final String... relativePaths) throws NotFoundException {
         try {
-            return _servletContext.getResource(joinPaths(relativePaths)).toURI();
+            final String path     = joinPaths(relativePaths);
+            final URL    resource = _servletContext.getResource(path);
+            if (resource == null) {
+                throw new NotFoundException("Couldn't find resource at path " + path);
+            }
+            return resource.toURI();
         } catch (URISyntaxException | MalformedURLException e) {
             return null;
         }
@@ -215,54 +246,21 @@ public class ContextService implements NrgService, ApplicationContextAware, Serv
         return _servletContext.getResourceAsStream(joinPaths(relativePaths));
     }
 
-    private Set<String> getAppRelativeLocationContents(final String... relativePaths) {
-        return getAppRelativeLocationContents(null, relativePaths);
-    }
-
-    private Set<String> getAppRelativeLocationContents(final FilenameFilter filter, final String... relativePaths) {
-        final Set<String> paths = _servletContext.getResourcePaths(joinPaths(relativePaths));
-        if (filter == null) {
-            return paths;
-        }
-        final Set<String> accepted = new HashSet<>();
-        for (final String path : paths) {
-            if (filter.accept(null, getFileName(path))) {
-                accepted.add(path);
-            }
-        }
-        return accepted;
-    }
-
-    private Set<String> getAppRelativeLocationChildren(final String... relativePaths) {
-        return getAppRelativeLocationChildren(null, relativePaths);
-    }
-
-    private Set<String> getAppRelativeLocationChildren(final FilenameFilter filter, final String... relativePaths) {
-        final Set<String> found = getAppRelativeLocationContents(relativePaths);
-        final Set<String> children = new HashSet<>();
-        for (final String current : found) {
-            if (!current.endsWith("/")) {
-                if ((filter == null) || (filter.accept(null, getFileName(current)))) {
-                    children.add(current);
-                }
-            } else {
-                children.addAll(getAppRelativeLocationChildren(current));
-            }
-        }
-        return children;
-    }
-
     private static String joinPaths(final String... elements) {
-        return Joiner.on("/").join(elements);
+        return String.join("/", elements);
     }
 
-    private static String getFileName(final String path) {
-        if (path.contains("/")) {
-            return path.substring(path.lastIndexOf("/") + 1);
+    @SafeVarargs
+    private static <T> T callSuppliers(final Supplier<T> first, final Supplier<T>... suppliers) {
+        final Supplier<T>[] aggregated = ArrayUtils.addFirst(suppliers, first);
+        if (aggregated.length > 0) {
+            for (final Supplier<T> supplier : aggregated) {
+                final T bean = supplier.get();
+                if (bean != null) {
+                    return bean;
+                }
+            }
         }
-        return path;
+        return null;
     }
-
-    private static ApplicationContext _applicationContext;
-    private        ServletContext     _servletContext;
 }

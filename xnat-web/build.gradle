@@ -302,6 +302,7 @@ dependencies {
     runtimeOnly "axis:axis-ant"
     runtimeOnly "axis:axis-schema"
     runtimeOnly "cglib:cglib"
+    runtimeOnly "com.zaxxer:HikariCP"
     runtimeOnly "org.hsqldb:hsqldb"
     runtimeOnly "com.sun.media:jai_imageio"
     runtimeOnly "net.bull.javamelody:javamelody-core"

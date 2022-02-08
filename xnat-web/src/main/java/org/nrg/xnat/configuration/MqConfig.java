@@ -1,7 +1,7 @@
 /*
  * web: org.nrg.xnat.configuration.MqConfig
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2022, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -37,6 +37,8 @@ import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.Session;
 
+import static org.nrg.xdat.XDAT.DEFAULT_REQUEST_QUEUE;
+
 @Configuration
 @EnableJms
 @ComponentScan({"org.nrg.framework.messaging", "org.nrg.xnat.services.messaging"})
@@ -66,8 +68,8 @@ public class MqConfig {
 
     @Bean
     @Primary
-    public Destination defaultRequest() {
-        return new ActiveMQQueue("defaultRequest");
+    public Destination defaultRequestQueue() {
+        return new ActiveMQQueue(DEFAULT_REQUEST_QUEUE);
     }
 
     @Bean
@@ -112,7 +114,7 @@ public class MqConfig {
         defaultEntry.setMaximumRedeliveries(4);
         defaultEntry.setInitialRedeliveryDelay(300000);
         defaultEntry.setBackOffMultiplier(3);
-        defaultEntry.setDestination((ActiveMQDestination) defaultRequest());
+        defaultEntry.setDestination((ActiveMQDestination) defaultRequestQueue());
         final RedeliveryPolicyMap redeliveryPolicyMap = new RedeliveryPolicyMap();
         redeliveryPolicyMap.setDefaultEntry(defaultEntry);
         return redeliveryPolicyMap;

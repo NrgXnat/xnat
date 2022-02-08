@@ -10,23 +10,6 @@
 package org.nrg.xnat.services.messaging.archive;
 
 import com.google.common.collect.ImmutableSet;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.FileVisitOption;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
@@ -54,6 +37,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
+
 @Component
 @Slf4j
 public final class DicomInboxImportRequestListener implements JmsRequestListener<DicomInboxImportRequest> {
@@ -61,9 +51,9 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
     public DicomInboxImportRequestListener(final DicomInboxImportRequestService service,
                                            final Map<String, DicomObjectIdentifier<XnatProjectdata>> identifiers,
                                            final Map<String, DicomFileNamer> namers) {
-        _service = service;
+        _service     = service;
         _identifiers = identifiers;
-        _namers = namers;
+        _namers      = namers;
     }
 
     /**
@@ -160,9 +150,9 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
         DicomInboxImportRequestImporter(final UserI user, final DicomInboxImportRequestService service, final DicomInboxImportRequest request, final DicomObjectIdentifier<XnatProjectdata> identifier, final DicomFileNamer namer) throws FileNotFoundException {
             super(null, user);
             _dicomFiles = 0;
-            _service = service;
-            _request = request;
-            _user = user;
+            _service    = service;
+            _request    = request;
+            _user       = user;
             _parameters = request.getObjectParametersMap();
 
             setIdentifier(identifier);
@@ -179,10 +169,10 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
         }
 
         /**
-         * Processes the folder specified by the session or path parameter, importing all of the files located in the
+         * Processes the folder specified by the session or path parameter, importing all the files located in the
          * folder and its subfolders.
          *
-         * @return A list of all of the files that were imported into XNAT.
+         * @return A list of all the files that were imported into XNAT.
          */
         @Override
         public List<String> call() {
@@ -246,7 +236,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                 _fileUris.addAll(importer.call());
                 _dicomFiles++;
             } catch (ClientException | ServerException e) {
-                log.warn("An error occurred importing the file {} while processing the inbox session located at {}", file.toString(), _sessionPath.getAbsolutePath(), e);
+                log.warn("An error occurred importing the file {} while processing the inbox session located at {}", file, _sessionPath.getAbsolutePath(), e);
             }
             return FileVisitResult.CONTINUE;
         }

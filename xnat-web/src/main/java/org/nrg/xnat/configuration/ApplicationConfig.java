@@ -20,7 +20,6 @@ import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.NotificationsPreferences;
-import org.nrg.xdat.preferences.PreferenceAccess;
 import org.nrg.xdat.preferences.SiteConfigAccess;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.XDATUserMgmtServiceImpl;

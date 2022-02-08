@@ -74,9 +74,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.jms.Destination;
-import javax.servlet.http.HttpServletRequest;
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -89,6 +86,9 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.jms.Destination;
+import javax.servlet.http.HttpServletRequest;
+import javax.sql.DataSource;
 
 import static org.nrg.config.entities.Configuration.DISABLED_STRING;
 import static org.nrg.xdat.security.helpers.Users.*;
@@ -100,14 +100,15 @@ import static org.nrg.xdat.security.helpers.Users.*;
 @SuppressWarnings({"unused", "WeakerAccess"})
 @Slf4j
 public class XDAT {
-	public static final String   IP_WHITELIST_TOOL               = "ipWhitelist";
-	public static final String   IP_WHITELIST_PATH               = "/system/ipWhitelist";
-	public static final String   ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
-	public static final String   ELEMENT_NOT_FOUND_MESSAGE       = "Element not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
-	public static final String   FIELD_NOT_FOUND_MESSAGE         = "Field not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
-	public static final String   XFT_INIT_EXCEPTION_MESSAGE      = "An error occurred trying initialize or access XFT.";
+    public static final String IP_WHITELIST_TOOL               = "ipWhitelist";
+    public static final String IP_WHITELIST_PATH               = "/system/ipWhitelist";
+    public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
+    public static final String ELEMENT_NOT_FOUND_MESSAGE       = "Element not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
+    public static final String FIELD_NOT_FOUND_MESSAGE         = "Field not found: {}. The data type may not be configured or may be missing. Check the xdat_element_security table for invalid entries or data types that should be installed or re-installed.";
+    public static final String XFT_INIT_EXCEPTION_MESSAGE      = "An error occurred trying initialize or access XFT.";
+    public static final String DEFAULT_REQUEST_QUEUE           = "defaultRequestQueue";
 
-	private static final CharSequence[] STANDALONE_APP_KEYS = {"APP_NAME_", "JAVA_MAIN_CLASS_", "JOB_NAME", "BUILD_DISPLAY_NAME", "BUILD_ID", "BUILD_NUMBER", "BUILD_TAG", "BUILD_URL"};
+    private static final CharSequence[] STANDALONE_APP_KEYS = {"APP_NAME_", "JAVA_MAIN_CLASS_", "JOB_NAME", "BUILD_DISPLAY_NAME", "BUILD_ID", "BUILD_NUMBER", "BUILD_TAG", "BUILD_URL"};
 
 	private static ContextService             _contextService;
 	private static DataSource                 _dataSource;
@@ -162,7 +163,7 @@ public class XDAT {
 	}
 
 	public static String getConfigValue(final String toolName, final String path, final String defaultValue) {
-		return getConfigValue(Optional.ofNullable(getConfigService().getConfig(toolName, path)).orElse(null), defaultValue);
+		return getConfigValue(getConfigService().getConfig(toolName, path), defaultValue);
 	}
 
 	public static String getConfigValue(final String project, final String toolName, final String path, final boolean inherit) {
@@ -994,11 +995,13 @@ public class XDAT {
 	}
 
     public static void sendJmsRequest(final JmsTemplate jmsTemplate, final Object request) {
-        final String simpleName = request.getClass().getSimpleName();
-        final String queue = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
-        final Destination destination = XDAT.getContextService().getBean(queue, Destination.class);
-        jmsTemplate.convertAndSend(destination, request);
-	}
+        final String      taskId      = StringUtils.uncapitalize(request.getClass().getSimpleName());
+        final Destination destination = XDAT.getContextService().getBeanSafely(taskId, Destination.class, () -> XDAT.getContextService().getBeanSafely(DEFAULT_REQUEST_QUEUE, Destination.class));
+        jmsTemplate.convertAndSend(destination, request, processor -> {
+            processor.setStringProperty("taskId", taskId.endsWith("Request") ? taskId : "defaultRequest");
+            return processor;
+        });
+    }
 
 	private static boolean hasUsers() {
 		try {

@@ -68,12 +68,11 @@ public class ReportIssue extends SecureAction {
         // TODO: Need to figure out how to handle attachments in notifications.
         final Map<String, File> attachments = getAttachmentMap(data.getSession().getId(), parameters);
 
+        String[] adminArray = new String[]{XDAT.getSiteConfigPreferences().getAdminEmail()};
 
-        if (!attachments.isEmpty()) {
-            XDAT.getMailService().sendHtmlMessage(from, to, null, null, subject, htmlBody, textBody, attachments);
-        } else {
-            XDAT.getMailService().sendHtmlMessage(from, to, null, null, subject, htmlBody, textBody, null);
-        }
+        boolean hasRecipients = !to[0].isEmpty()|| to.length > 1;
+
+        XDAT.getMailService().sendHtmlMessage(from, hasRecipients ? to : adminArray, null, null, subject, htmlBody, textBody, !attachments.isEmpty() ? attachments : null);
 
         TurbineUtils.setBannerMessage(data, "Thanks for your feedback. The administrator(s) have been notified and will contact you when the issue is resolved or if more information is required.");
     }

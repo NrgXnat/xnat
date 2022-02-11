@@ -234,7 +234,7 @@
         <wiremock.version>2.21.0</wiremock.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
-        <org.postgresql.version>42.2.11</org.postgresql.version>
+        <org.postgresql.version>42.2.10</org.postgresql.version>
         <datasource-proxy.version>1.6</datasource-proxy.version>
         <log4jdbc.version>0.2.0</log4jdbc.version>
         <quartz.version>2.2.1</quartz.version>

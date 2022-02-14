@@ -68,7 +68,7 @@ public class MqConfig {
 
     @Bean
     @Primary
-    public Destination defaultRequestQueue() {
+    public Destination defaultRequest() {
         return new ActiveMQQueue(DEFAULT_REQUEST_QUEUE);
     }
 
@@ -107,20 +107,20 @@ public class MqConfig {
         return new ActiveMQQueue("processingOperationRequest");
     }
 
-    @Bean
+    @Bean({"redeliveryPolicyMap", "activeMQRedeliveryPolicyMap"})
     public RedeliveryPolicyMap redeliveryPolicyMap() {
         final RedeliveryPolicy defaultEntry = new RedeliveryPolicy();
         defaultEntry.setUseExponentialBackOff(true);
         defaultEntry.setMaximumRedeliveries(4);
         defaultEntry.setInitialRedeliveryDelay(300000);
         defaultEntry.setBackOffMultiplier(3);
-        defaultEntry.setDestination((ActiveMQDestination) defaultRequestQueue());
+        defaultEntry.setDestination((ActiveMQDestination) defaultRequest());
         final RedeliveryPolicyMap redeliveryPolicyMap = new RedeliveryPolicyMap();
         redeliveryPolicyMap.setDefaultEntry(defaultEntry);
         return redeliveryPolicyMap;
     }
 
-    @Bean
+    @Bean({"brokerService", "activeMQBroker"})
     public BrokerService brokerService() {
         final TempUsage tempUsage = new TempUsage();
         tempUsage.setLimit(_tempUsage > 0 ? _tempUsage : TEMP_USAGE);
@@ -143,13 +143,18 @@ public class MqConfig {
     }
 
     @Bean
-    public ConnectionFactory connectionFactory() {
+    public ActiveMQConnectionFactory activeMQConnectionFactory() {
         final ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory();
         factory.setBrokerURL(_brokerUrl);
         factory.setUserName(_username);
         factory.setPassword(_password);
         factory.setTrustAllPackages(true);
-        return new CachingConnectionFactory(factory);
+        return factory;
+    }
+
+    @Bean({"connectionFactory", "springConnectionFactory"})
+    public ConnectionFactory connectionFactory() {
+        return new CachingConnectionFactory(activeMQConnectionFactory());
     }
 
     @Bean

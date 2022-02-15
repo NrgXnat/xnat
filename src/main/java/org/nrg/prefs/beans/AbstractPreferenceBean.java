@@ -9,9 +9,6 @@
 
 package org.nrg.prefs.beans;
 
-import static org.nrg.framework.utilities.Reflection.findAnnotationInClassHierarchy;
-import static org.nrg.framework.utilities.Reflection.getGetter;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -51,9 +48,6 @@ import org.reflections.ReflectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
@@ -63,6 +57,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
+
+import static org.nrg.framework.utilities.Reflection.findAnnotationInClassHierarchy;
+import static org.nrg.framework.utilities.Reflection.getGetter;
 
 @Slf4j
 public abstract class AbstractPreferenceBean extends HashMap<String, Object> implements PreferenceBean {
@@ -106,7 +106,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     protected AbstractPreferenceBean(final NrgPreferenceService preferenceService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
         _preferenceService = preferenceService;
         _configFolderPaths = configFolderPaths == null ? new ConfigPaths() : configFolderPaths;
-        _initPrefs = initPrefs == null ? new OrderedProperties() : initPrefs;
+        _initPrefs         = initPrefs == null ? new OrderedProperties() : initPrefs;
         _preferences.putAll(PreferenceBeanHelper.getPreferenceInfoMap(getClass()));
         PreferenceBeanHelper.getAliases(_preferences.values(), _aliases, _aliasedPreferences);
     }
@@ -1281,7 +1281,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             }
         }
         // This initializes the preference bean map to allow using that rather than reflected proxied calls to the
-        // bean methods later, which is time consuming.
+        // bean methods later, which is time-consuming.
         for (final String preferenceId : preferenceIds) {
             getProperty(preferenceId);
         }
@@ -1453,7 +1453,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         if (containsKey(preference)) {
             final Object value = getFromCache(preference);
             if (value != null) {
-                log.debug("Found cached value for preference {}, returning that: {}", preference, value.toString());
+                log.debug("Found cached value for preference {}, returning that: {}", preference, value);
                 return value;
             }
             log.debug("Found entry for preference {}, but value was null, trying to retrieve via getter method", preference);
@@ -1462,15 +1462,15 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             return _methods.get(preference);
         }
         final Object resolver = getPreferenceValueResolver(preference, defaultValue);
-        if (resolver != null) {
-            if (resolver instanceof Method) {
-                _methods.put(preference, (Method) resolver);
-            } else {
-                storeToCache(preference, resolver);
-            }
-            return resolver;
+        if (resolver == null) {
+            return null;
         }
-        return null;
+        if (resolver instanceof Method) {
+            _methods.put(preference, (Method) resolver);
+        } else {
+            storeToCache(preference, resolver);
+        }
+        return resolver;
     }
 
     private Object getPreferenceValueResolver(final String preference, final Object defaultValue) {
@@ -1483,7 +1483,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             case 0:
                 final Tool tool = _preferenceService.getTool(getToolId());
                 if (tool.isStrict()) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "No such property on this preference object: " + preference);
+                    log.error("No such property for {} preferences: {}", tool.getToolId(), preference);
+                    return null;
                 }
                 final String returnValue = getValue(preference);
                 return StringUtils.isNotBlank(returnValue) ? returnValue : defaultValue;

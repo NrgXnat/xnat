@@ -33,6 +33,8 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,7 +52,7 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
     @Autowired
     public UpdateSecurityFilterHandlerMethod(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final XnatLogoutSuccessHandler logoutSuccessHandler) {
         super(SECURITY_CHANNEL, REQUIRE_LOGIN);
-        _openUrls = appInfo.getOpenUrls();
+        _openUrls = new ArrayList<>(appInfo.getOpenUrls());
         _adminUrls = appInfo.getAdminUrls();
         _logoutSuccessHandler = logoutSuccessHandler;
         _requireLogin = preferences.getRequireLogin();
@@ -118,6 +120,12 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
         return bean;
     }
 
+    public void updateOpenUrls(@Nonnull List<String> removed, @Nonnull List<String> added) {
+        _openUrls.removeAll(removed);
+        _openUrls.addAll(added);
+        updateSecurityFilter();
+    }
+
     private void updateSecurityFilter() {
         if (_interceptor != null) {
             log.info("Building a security metadata map from the system configuration and settings.");
@@ -132,7 +140,7 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
                 }
             }
 
-            if (_openUrls.isEmpty()) {
+            if (_adminUrls.isEmpty()) {
                 log.warn("No admin URLs found in configuration. This may be OK, but isn't normal.");
             } else {
                 log.info(" * Found {} admin URLs to configure, setting to '{}': {}", _adminUrls.size(), ADMIN_EXPRESSION, StringUtils.join(_adminUrls, ", "));

@@ -41,6 +41,7 @@ public class PGSQLMapping extends TypeMappingA {
 		mapping.put("LONGVARCHAR","TEXT");
         mapping.put("anyURI","TEXT");
         mapping.put("bigserial","bigserial");
+		mapping.put("jsonb", "jsonb");
 		this.setName("SQL");
 	}
 }

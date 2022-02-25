@@ -14,7 +14,11 @@
  */
 package org.nrg.xdat.bean.base;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.text.StringEscapeUtils;
+import org.nrg.xdat.XDAT;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -32,6 +36,15 @@ public abstract class BaseElement{
     public final static String field_LONG_DATA="LONG_DATA";
     public final static String field_NO_CHILD="NO_CHILD";
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public JsonNode formatJSON(String s) {
+        try {
+            return objectMapper.readTree(s);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
     public Date formatDate(String s) {
         try {
             return parseDate(s);

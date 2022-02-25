@@ -41,6 +41,7 @@ public class JavaMapping extends TypeMappingA {
 		mapping.put("dateTime", "java.util.Date");
 		mapping.put("gYear", "java.lang.Integer");
 		mapping.put("LONGVARCHAR", "java.lang.String");
+		mapping.put("jsonb", "com.fasterxml.jackson.databind.JsonNode");
 		this.setName("JAVA");
 	}
 }

@@ -39,6 +39,7 @@ public class SQLMapping extends TypeMappingA {
 		mapping.put("dateTime","TIMESTAMP");
 		mapping.put("gYear","INTEGER");
 		mapping.put("LONGVARCHAR","MEDIUMTEXT");
+		mapping.put("jsonb","JSON");
 		this.setName("SQL");
 	}
 

@@ -10,6 +10,8 @@
 
 package org.nrg.xdat.base;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -49,8 +51,11 @@ import java.util.*;
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseElement extends ItemWrapper implements ItemI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(BaseElement.class);
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
 	private SchemaElement schemaElement=null;
 	private Hashtable displayFields = null;
+
     public BaseElement(ItemI i)
 	{
         if (i instanceof XFTItem)
@@ -100,6 +105,23 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
             }
         }
         return schemaElement;
+    }
+
+    public void setJSONProperty(String xmlPath, String value) throws Exception {
+        try{
+            final JsonNode validatedJson = objectMapper.readTree(value);
+        }catch(Exception e){
+            throw new IllegalArgumentException("Invalid json string.", e);
+        }
+        getItem().setProperty(xmlPath, value);
+    }
+
+    public void setJSONProperty(String xmlPath, JsonNode value) throws Exception {
+        getItem().setProperty(xmlPath, value.asText());
+    }
+
+    public JsonNode getJSONProperty(String xmlPath) throws Exception {
+        return objectMapper.readTree(getItem().getStringProperty(xmlPath));
     }
 
 	public void setBooleanProperty(String xmlPath,boolean value) throws Exception

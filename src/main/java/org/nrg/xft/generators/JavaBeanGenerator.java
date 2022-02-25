@@ -66,6 +66,7 @@ public class JavaBeanGenerator {
         sb.append("\nimport org.apache.log4j.Logger;");
         sb.append("\nimport org.nrg.xdat.bean.base.BaseElement;");
         sb.append("\n\nimport java.util.*;");
+        sb.append("\n\nimport com.fasterxml.jackson.databind.JsonNode;");
         sb.append("\n\n/**\n * @author XDAT\n *\n */");
         
         //CLASS
@@ -288,6 +289,39 @@ public class JavaBeanGenerator {
                                     sb.append("\n\t").append("public void set").append(reformatted).append("(String v){");
                                     sb.append("\n\t\t_").append(reformatted +"=v;");
                                     sb.append("\n\t}");
+                                }else if (type.equalsIgnoreCase("jsonb"))
+                                {
+                                    String reformatted = formatted + "_" +formatFieldName(temp);
+                                    sb.append("\n\n\t").append("//FIELD");
+                                    sb.append("\n\n\t").append("private JsonNode _").append(reformatted);
+                                    sb.append("=null;");
+
+                                    //STANDARD GET METHOD
+                                    sb.append("\n\n");
+                                    sb.append("\t/**\n\t * @return Returns the ").append(e.getXSIType() + "/" + temp).append(".\n\t */");
+                                    sb.append("\n\t").append("public JsonNode get").append(reformatted).append("(){");
+                                    sb.append("\n\t\treturn _" + reformatted +";");
+                                    sb.append("\n\t}");
+
+                                    //STANDARD SET METHOD
+                                    sb.append("\n\n");
+                                    sb.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + temp).append(".\n\t * @param v Value to Set.\n\t */");
+                                    sb.append("\n\t").append("public void set").append(reformatted).append("(JsonNode v){");
+                                    sb.append("\n\t\t_").append(reformatted +"=v;");
+                                    sb.append("\n\t}");
+
+                                    sb.append("\n\n");
+                                    sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                                    sb.append("\n\t").append("public void set").append(formatted).append("(Object v){");
+                                    sb.append("\n\t\tthrow new IllegalArgumentException();");
+                                    sb.append("\n\t}");
+
+                                    sb.append("\n\n");
+                                    sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                                    sb.append("\n\t").append("public void set").append(formatted).append("(String v){");
+                                    sb.append("\n\t\t_").append(formatted +"=formatJSON(v);");
+                                    sb.append("\n\t}");
+
                                 }else if (type.equalsIgnoreCase("date") || type.equalsIgnoreCase("dateTime") ||type.equalsIgnoreCase("timestamp"))
                                 {
                                     String reformatted = formatted + "_" +formatFieldName(temp);
@@ -527,6 +561,35 @@ public class JavaBeanGenerator {
                             sb.append("\n\t\t_").append(formatted +"=formatDateTime(v);");
                             sb.append("\n\t}");
                         }
+                    }else if(type.equalsIgnoreCase("jsonb")){
+                        sb.append("\n\n\t").append("//FIELD");
+                        sb.append("\n\n\t").append("private JsonNode _").append(formatted);
+                        sb.append("=null;");
+
+                        sb.append("\n\n");
+                        sb.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+                        sb.append("\n\t").append("public JsonNode get").append(formatted).append("(){");
+                        sb.append("\n\t\treturn _" + formatted +";");
+                        sb.append("\n\t}");
+
+                        //STANDARD SET METHOD
+                        sb.append("\n\n");
+                        sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(JsonNode v){");
+                        sb.append("\n\t\t_").append(formatted +"=v;");
+                        sb.append("\n\t}");
+
+                        sb.append("\n\n");
+                        sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(Object v){");
+                        sb.append("\n\t\tthrow new IllegalArgumentException();");
+                        sb.append("\n\t}");
+
+                        sb.append("\n\n");
+                        sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(String v){");
+                        sb.append("\n\t\t_").append(formatted +"=formatJSON(v);");
+                        sb.append("\n\t}");
                     }else{
                         sb.append("\n\n\t").append("//FIELD");
                         sb.append("\n\n\t").append("private Object _").append(formatted);
@@ -1617,6 +1680,8 @@ public class JavaBeanGenerator {
         sb.append("\n").append("import java.text.DateFormat;");
         sb.append("\n").append("import java.text.ParseException;");
         sb.append("\n").append("import java.text.SimpleDateFormat;");
+        sb.append("\n").append("import com.fasterxml.jackson.databind.JsonNode;");
+        sb.append("\n").append("import com.fasterxml.jackson.databind.ObjectMapper;");
         sb.append("\n").append("import java.util.*;");
         sb.append("\n\n\n").append("public abstract class BaseElement{");
         sb.append("\n").append("    public final static String field_data=\"DATA\";");
@@ -1625,6 +1690,13 @@ public class JavaBeanGenerator {
         sb.append("\n").append("public final static String field_inline_repeater=\"INLINE\";");
         sb.append("\n").append("public final static String field_LONG_DATA=\"LONG_DATA\";");
         sb.append("\n").append("public final static String field_NO_CHILD=\"NO_CHILD\";");
+        sb.append("\n").append("    public JsonNode formatJSON(String s) {");
+        sb.append("\n").append("        try {");
+        sb.append("\n").append("            return new ObjectMapper.readTree(v);");
+        sb.append("\n").append("        } catch (ParseException e) {");
+        sb.append("\n").append("            throw new IllegalArgumentException(e);");
+        sb.append("\n").append("        }");
+        sb.append("\n").append("    }");
         sb.append("\n").append("    public Date formatDate(String s) {");
         sb.append("\n").append("        try {");
         sb.append("\n").append("            return parseDate(s);");
@@ -1871,6 +1943,7 @@ public class JavaBeanGenerator {
         sbI.append("\npackage " + INTERFACE_PACKAGE + ";");
         //IMPORTS
         sbI.append("\n\nimport java.util.List;");
+        sbI.append("\n\nimport com.fasterxml.jackson.databind.JsonNode;");
         sbI.append("\n\n/**\n * @author XDAT\n *\n */");
         
         //INTERFACE
@@ -2054,6 +2127,25 @@ public class JavaBeanGenerator {
                         sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
                         sbI.append("\n\t").append("public void set").append(formatted).append("(Object v);");
 
+                    }else if (type.equalsIgnoreCase("jsonb")){
+                        //STANDARD GET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+                        sbI.append("\n\t").append("public JsonNode get").append(formatted).append("();");
+
+                        //STANDARD SET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sbI.append("\n\t").append("public void set").append(formatted).append("(JsonNode v);");
+
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sbI.append("\n\t").append("public void set").append(formatted).append("(String v);");
+
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sbI.append("\n\t").append("public void set").append(formatted).append("(Object v);");
+
                     }else{
                         //STANDARD GET METHOD
                         sbI.append("\n\n");
@@ -2064,7 +2156,6 @@ public class JavaBeanGenerator {
                         sbI.append("\n\n");
                         sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
                         sbI.append("\n\t").append("public void set").append(formatted).append("(Object v);");
-                        
                     }
                 }
             }

@@ -79,6 +79,7 @@ public class JavaFileGenerator {
         sb.append("\nimport org.nrg.xft.utils.ResourceFile;");
         sb.append("\nimport org.nrg.xft.exception.*;");
         sb.append("\n\nimport java.util.*;");
+        sb.append("\n\nimport com.fasterxml.jackson.databind.JsonNode;");
         sb.append("\n\n/**\n * @author XDAT\n *\n */");
         
         sb.append("/*\n ******************************** \n * DO NOT MODIFY THIS FILE\n *\n ********************************/");
@@ -312,6 +313,53 @@ public class JavaFileGenerator {
                                     sb.append("\n\t}");
                                     
 
+                                }else if (type.equalsIgnoreCase("jsonb"))
+                                {
+                                    String reformatted = formatted + "_" +formatFieldName(temp);
+                                    sb.append("\n\n\t").append("//FIELD");
+                                    sb.append("\n\n\t").append("private JsonNode _").append(reformatted);
+                                    sb.append("=null;");
+
+                                    //STANDARD GET METHOD
+                                    sb.append("\n\n");
+                                    sb.append("\t/**\n\t * @return Returns the ").append(e.getXSIType() + "/" + temp).append(".\n\t */");
+                                    sb.append("\n\t").append("public JsonNode get").append(reformatted).append("(){");
+                                    sb.append("\n\t\t").append("try{");
+                                    sb.append("\n\t\t\t").append("if (_" + reformatted + "==null){");
+                                    sb.append("\n\t\t\t\t_").append(reformatted + "=getJSONProperty(\"").append(e.getXSIType() + "/" + temp).append("\");");
+                                    sb.append("\n\t\t\t\t").append("return _" + reformatted +";");
+                                    sb.append("\n\t\t\t").append("}else {");
+                                    sb.append("\n\t\t\t\t").append("return _" + reformatted +";");
+                                    sb.append("\n\t\t\t").append("}");
+                                    sb.append("\n\t\t").append("} catch (Exception e1) {logger.error(e1);return null;}");
+                                    sb.append("\n\t}");
+
+                                    //STANDARD SET METHOD
+                                    sb.append("\n\n");
+                                    sb.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + temp).append(".\n\t * @param v Value to Set.\n\t */");
+                                    sb.append("\n\t").append("public void set").append(reformatted).append("(JsonNode v){");
+                                    sb.append("\n\t\t").append("try{");
+                                    sb.append("\n\t\t").append("setJSONProperty(SCHEMA_ELEMENT_NAME + \"/").append(e.getXSIType() + "/" + temp).append("\",v);");
+                                    sb.append("\n\t\t_").append(reformatted +"=null;");
+                                    sb.append("\n\t\t").append("} catch (Exception e1) {}");
+                                    sb.append("\n\t}");
+
+                                    sb.append("\n\n");
+                                    sb.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + temp).append(".\n\t * @param v Value to Set.\n\t */");
+                                    sb.append("\n\t").append("public void set").append(reformatted).append("(String v){");
+                                    sb.append("\n\t\t").append("try{");
+                                    sb.append("\n\t\t").append("setJSONProperty(SCHEMA_ELEMENT_NAME + \"/").append(e.getXSIType() + "/" + temp).append("\"jsonb,v);");
+                                    sb.append("\n\t\t_").append(reformatted +"=null;");
+                                    sb.append("\n\t\t").append("} catch (Exception e1) {}");
+                                    sb.append("\n\t}");
+
+                                    sb.append("\n\n");
+                                    sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                                    sb.append("\n\t").append("public void set").append(formatted).append("(Object v){");
+                                    sb.append("\n\t\tthrow new IllegalArgumentException();");
+                                    sb.append("\n\t}");
+
+
                                 }else{
                                     String reformatted = formatted + "_" +formatFieldName(temp);
                                     sb.append("\n\n\t").append("//FIELD");
@@ -479,6 +527,52 @@ public class JavaFileGenerator {
                         sb.append("\n\t\t_").append(formatted +"=null;");
                         sb.append("\n\t\t").append("} catch (Exception e1) {logger.error(e1);}");
                         sb.append("\n\t}");
+                    }else if (type.equalsIgnoreCase("jsonb"))
+                    {
+                        sb.append("\n\n\t").append("//FIELD");
+                        sb.append("\n\n\t").append("private JsonNode _").append(formatted);
+                        sb.append("=null;");
+
+                        //STANDARD GET METHOD
+                        sb.append("\n\n");
+                        sb.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+                        sb.append("\n\t").append("public JsonNode get").append(formatted).append("(){");
+                        sb.append("\n\t\t").append("try{");
+                        sb.append("\n\t\t\t").append("if (_" + formatted + "==null){");
+                        sb.append("\n\t\t\t\t_").append(formatted + "=getJSONProperty(\"").append(e.getXSIType() + "/" + xmlPath).append("\");");
+                        sb.append("\n\t\t\t\t").append("return _" + formatted +";");
+                        sb.append("\n\t\t\t").append("}else {");
+                        sb.append("\n\t\t\t\t").append("return _" + formatted +";");
+                        sb.append("\n\t\t\t").append("}");
+                        sb.append("\n\t\t").append("} catch (Exception e1) {logger.error(e1);return null;}");
+                        sb.append("\n\t}");
+
+                        //STANDARD SET METHOD
+                        sb.append("\n\n");
+                        sb.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(JsonNode v){");
+                        sb.append("\n\t\t").append("try{");
+                        sb.append("\n\t\t").append("setJSONProperty(SCHEMA_ELEMENT_NAME + \"/").append(e.getXSIType() + "/" + xmlPath).append("\",v);");
+                        sb.append("\n\t\t_").append(formatted +"=null;");
+                        sb.append("\n\t\t").append("} catch (Exception e1) {}");
+                        sb.append("\n\t}");
+
+                        sb.append("\n\n");
+                        sb.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(String v){");
+                        sb.append("\n\t\t").append("try{");
+                        sb.append("\n\t\t").append("setJSONProperty(SCHEMA_ELEMENT_NAME + \"/").append(e.getXSIType() + "/" + xmlPath).append("\",v);");
+                        sb.append("\n\t\t_").append(formatted +"=null;");
+                        sb.append("\n\t\t").append("} catch (Exception e1) {}");
+                        sb.append("\n\t}");
+
+                        sb.append("\n\n");
+                        sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(Object v){");
+                        sb.append("\n\t\tthrow new IllegalArgumentException();");
+                        sb.append("\n\t}");
+
+
                     }else{
                         sb.append("\n\n\t").append("//FIELD");
                         sb.append("\n\n\t").append("private Object _").append(formatted);

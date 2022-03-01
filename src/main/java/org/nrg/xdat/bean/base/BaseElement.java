@@ -304,8 +304,9 @@ public abstract class BaseElement{
     		}
 
     		return StringEscapeUtils.escapeXml10(input.toString());
-            }else if (type.equalsIgnoreCase("boolean"))
-            {
+            }else if(type.equalsIgnoreCase("jsonb")) {
+                return StringEscapeUtils.escapeXml10(o.toString());
+            } else if (type.equalsIgnoreCase("boolean")){
                 if (o.toString().equalsIgnoreCase("true")|| o.toString().equalsIgnoreCase("1"))
                 {
                     return "1";

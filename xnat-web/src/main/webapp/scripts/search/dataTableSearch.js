@@ -131,7 +131,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
         }
 
         // Use a cookie that is unique to this user and this particular search
-        this.cookie_name = 'u' + XNAT.sub64.dlxEnc(window.username).encoded + this.obj.URL;
+        this.cookie_name = 'u' + XNAT.sub64.dlxEnc(window.username).encoded + Date.now();
 
         this.onInit = new YAHOO.util.CustomEvent("init", this);
         this.onTableInit = new YAHOO.util.CustomEvent("table-init", this);

@@ -49,8 +49,8 @@ public class MaterializedViewManager {
     public static final String QUERY_DROP_TABLE                = "DROP TABLE " + PoolDBUtils.search_schema_name + ".%s";
     public static final String QUERY_DELETE_MATERIALIZED_VIEW  = "DELETE FROM " + QUALIFIED_MATERIALIZED_VIEWS + " WHERE table_name = :" + PARAM_TABLE_NAME;
     public static final String QUERY_GET_USER_VIEWS            = "SELECT * FROM " + QUALIFIED_MATERIALIZED_VIEWS + " WHERE username = '%s'";
-    public static final String QUERY_GET_USER_VIEWS_BY_ID      = "SELECT * FROM " + QUALIFIED_MATERIALIZED_VIEWS + " WHERE search_id = '%s' AND username='%s'";
-    public static final String QUERY_GET_MATERIALIZED_VIEW     = "SELECT * FROM " + QUALIFIED_MATERIALIZED_VIEWS + " WHERE table_name = '%s'";
+    public static final String QUERY_GET_USER_VIEWS_BY_ID      = "SELECT * FROM " + QUALIFIED_MATERIALIZED_VIEWS + " WHERE search_id = '%s' AND username='%s' ORDER BY last_access DESC";
+    public static final String QUERY_GET_MATERIALIZED_VIEW     = "SELECT * FROM " + QUALIFIED_MATERIALIZED_VIEWS + " WHERE table_name = '%s' ORDER BY last_access DESC";
     public static final String QUERY_INSERT_MATERIALIZED_VIEW  = "INSERT INTO " + QUALIFIED_MATERIALIZED_VIEWS + " (table_name, created, last_access, username, search_id, tag, search_sql, search_xml) VALUES " +
                                                                  "    (:" + PARAM_TABLE_NAME + ", now(), now(), :" + PARAM_USERNAME + ", :" + PARAM_SEARCH_ID + ", :" + PARAM_TAG + ", :" + PARAM_SEARCH_SQL + ", :" + PARAM_SEARCH_XML + ")";
 

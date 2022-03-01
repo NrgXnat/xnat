@@ -110,11 +110,12 @@ public class EventServiceTestConfig {
                                                                    final ContextService contextService,
                                                                    final ActionManager actionManager,
                                                                    final EventServiceComponentManager componentManager,
-                                                                   final UserManagementServiceI userManagementService,
-                                                                   final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
-                                                                   final EventSchedulingService eventSchedulingService) {
-        return new EventSubscriptionEntityServiceImpl(eventBus, contextService, actionManager, componentManager, eventService, objectMapper, userManagementService, subscriptionDeliveryEntityService, eventSchedulingService);
+                                                                   final UserManagementServiceI userManagementService) {
+        return new EventSubscriptionEntityServiceImpl(eventBus, contextService, actionManager, componentManager, eventService, objectMapper, userManagementService);
     }
+
+    @Bean
+    public EventSchedulingService mockEventSchedulingService() { return Mockito.mock(EventSchedulingService.class);}
 
     @Bean
     public EventServicePrefsBean mockEventServicePrefsBean() {

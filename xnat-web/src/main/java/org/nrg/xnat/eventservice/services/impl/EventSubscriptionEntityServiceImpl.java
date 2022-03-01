@@ -62,8 +62,6 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     private EventService eventService;
     private ObjectMapper mapper;
     private UserManagementServiceI userManagementService;
-    private SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;
-    private EventSchedulingService eventSchedulingService;
     private Map<Long, ActiveRegistration> activeRegistrations = new HashMap<>();
 
 
@@ -74,9 +72,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                                               final EventServiceComponentManager componentManager,
                                               @Lazy final EventService eventService,
                                               final ObjectMapper mapper,
-                                              final UserManagementServiceI userManagementService,
-                                              final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
-                                              final EventSchedulingService eventSchedulingService) {
+                                              final UserManagementServiceI userManagementService) {
         this.eventBus = eventBus;
         this.contextService = contextService;
         this.actionManager = actionManager;
@@ -84,8 +80,6 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
         this.eventService = eventService;
         this.mapper = mapper;
         this.userManagementService = userManagementService;
-        this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
-        this.eventSchedulingService = eventSchedulingService;
         log.debug("EventSubscriptionService started normally.");
 
         configureJsonPath();
@@ -553,7 +547,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                     return false;
                 }
                 // Check for exclusion based on project id
-                if (event.getProjectId() != null && filter.projectIds() != null && !filter.projectIds().isEmpty() &&
+                if (!(event instanceof ScheduledEvent) && filter.projectIds() != null && !filter.projectIds().isEmpty() &&
                         filter.projectIds().stream().noneMatch(pid -> pid.contentEquals(event.getProjectId() != null ? event.getProjectId() : ""))){
                     return false;
                 }

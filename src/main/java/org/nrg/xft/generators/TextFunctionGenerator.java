@@ -387,7 +387,7 @@ public class TextFunctionGenerator {
                         sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append("::TEXT,''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
                     } else if (type.startsWith("TEXT")) {
                         sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
-                        sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append("::TEXT,''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
+                        sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append(",''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
                     } else {
                         sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
                         sb.append(":string)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");

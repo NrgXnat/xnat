@@ -9,6 +9,7 @@
 
 package org.nrg.xft;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -6878,7 +6879,12 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                 o = StringUtils.replace(StringUtils.replace(((String)o), "(", SPECIAL_CHAR1), ")", SPECIAL_CHAR2);
 
                s+= o + ")";
-            }else{
+            }else if (o instanceof JsonNode){
+				s+="(" +key + ":string)=(";
+				o = StringUtils.replace(StringUtils.replace((o.toString()), "(", SPECIAL_CHAR1), ")", SPECIAL_CHAR2);
+
+				s+= o + ")";
+			} else{
                 if (o instanceof Integer)
                 {
                     s+="(" +key + ":string)=(";

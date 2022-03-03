@@ -382,9 +382,12 @@ public class TextFunctionGenerator {
                     } else if (type.startsWith("VARCHAR")) {
                         sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
                         sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append(",''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
+                    } else if (type.startsWith("jsonb")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append("::TEXT,''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
                     } else if (type.startsWith("TEXT")) {
                         sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
-                        sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append(",''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
+                        sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append("::TEXT,''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
                     } else {
                         sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
                         sb.append(":string)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");

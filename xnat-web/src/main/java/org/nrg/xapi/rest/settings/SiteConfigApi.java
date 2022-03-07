@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableSet;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -83,7 +84,10 @@ public class SiteConfigApi extends AbstractXapiRestController {
         } else {
             log.debug("User {} requested the site configuration.", username);
         }
-        return _preferences.entrySet().stream().filter(entry -> _access.canRead(user, entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return _preferences.entrySet().stream()
+                .filter(entry -> _access.canRead(user, entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> ObjectUtils.defaultIfNull(entry.getValue(), "")));
     }
 
     @ApiOperation(value = "Sets a map of site configuration properties.", notes = "Sets the site configuration properties specified in the map.")

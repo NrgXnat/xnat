@@ -43,6 +43,10 @@ public class DisplayFieldCollection extends XFTCollection {
 			this.addStoredItem(df);
 	}
 
+	public void removeDisplayField(String displayFieldId){
+		this.removeItemById(displayFieldId);
+	}
+
 	public DisplayField getDisplayFieldWException(String id) throws DisplayFieldNotFoundException
 	{
 		try {

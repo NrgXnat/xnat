@@ -44,6 +44,12 @@ public abstract class XFTCollection {
         }
     }
 
+    protected void removeItemById(String id) {
+        if (coll.containsKey(id)) {
+            coll.remove(id);
+        }
+    }
+
     protected Object getStoredItemWException(String id) throws ItemNotFoundException {
         Object o = coll.get(id);
         if (o == null && allowItemNotFoundError) {

@@ -30,6 +30,7 @@ import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.XftStringUtils;
 
+import javax.xml.bind.Element;
 import java.util.*;
 
 /**
@@ -113,6 +114,10 @@ public class SchemaElement implements SchemaElementI {
 		} catch (DisplayFieldCollection.DisplayFieldNotFoundException e) {
 			return false;
 		}
+	}
+
+	public void setElementDisplay(ElementDisplay elementDisplay) {
+		this.display = elementDisplay;
 	}
 
 	public String getFullXMLName()

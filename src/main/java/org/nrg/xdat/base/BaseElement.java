@@ -117,7 +117,7 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
     }
 
     public void setJSONProperty(String xmlPath, JsonNode value) throws Exception {
-        getItem().setProperty(xmlPath, value.asText());
+        getItem().setProperty(xmlPath, objectMapper.writeValueAsString(value));
     }
 
     public JsonNode getJSONProperty(String xmlPath) throws Exception {

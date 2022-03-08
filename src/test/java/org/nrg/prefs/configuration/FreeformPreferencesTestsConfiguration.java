@@ -39,8 +39,8 @@ import javax.sql.DataSource;
 @Configuration
 @EnableTransactionManagement
 @Import({DefaultResolverConfiguration.class, FrameworkConfig.class})
-@ComponentScan("org.nrg.prefs.tools.alias")
-public class AliasMigrationTestsConfiguration {
+@ComponentScan("org.nrg.prefs.tools.freeform")
+public class FreeformPreferencesTestsConfiguration {
     @Bean
     public DataSource dataSource() {
         return TestBeans.getInMemoryTestDataSource();
@@ -57,7 +57,7 @@ public class AliasMigrationTestsConfiguration {
 
         // These lines are why this requires a separate ORM configuration. Set to create and then specify the import files.
         properties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
-        properties.setProperty("hibernate.hbm2ddl.import_files", "/org/nrg/prefs/tests/init-aliased-prefs.sql");
+        properties.setProperty("hibernate.hbm2ddl.import_files", "/org/nrg/prefs/tests/init-freeform-prefs.sql");
         properties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
         properties.setProperty("hibernate.show_sql", "true");
         properties.setProperty("hibernate.cache.use_second_level_cache", "true");
@@ -89,7 +89,7 @@ public class AliasMigrationTestsConfiguration {
     }
 
     @Bean
-    public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) {
+    public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) throws Exception {
         return new HibernateTransactionManager(sessionFactory);
     }
 

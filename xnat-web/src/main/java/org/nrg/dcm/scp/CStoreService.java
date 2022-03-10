@@ -284,15 +284,12 @@ public class CStoreService extends DicomService implements CStoreSCP {
                 boolean doCustomProcessing   = false;
                 boolean directArchive        = false;
                 boolean anonymizationEnabled = true;
-                try {
-                    DicomSCPInstance instance = _manager.getDicomSCPInstance(as.getLocalAET(),as.getConnector().getPort());
-                    doCustomProcessing   = instance.isCustomProcessing();
-                    directArchive        = instance.isDirectArchive();
-                    anonymizationEnabled = instance.isAnonymizationEnabled();
-                }
-                catch(Throwable t){
-                    log.error("Failed to get whether the SCP receiver is set up to do custom processing", t);
-                }
+
+                String aeTitle = as.getLocalAET();
+                int port = as.getConnector().getPort();
+                doCustomProcessing   = _manager.isCustomProcessing( aeTitle, port);
+                directArchive        = _manager.isDirectArchive( aeTitle, port);
+                anonymizationEnabled = _manager.isAnonymizationEnabled( aeTitle, port);
 
                 final ImmutableMap<String, Object> parameters = ImmutableMap.<String, Object>builder()
                         .put(GradualDicomImporter.SENDER_ID_PARAM, identifySender(as))
@@ -306,7 +303,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
                         .build();
                 final GradualDicomImporter importer = new GradualDicomImporter(this,
                         userProvider.get(), fw, parameters);
-                importer.setIdentifier(identifier);
+                importer.setIdentifier( _manager.getDicomObjectIdentifier( aeTitle, port));
                 if (null != namer) {
                     importer.setNamer(namer);
                 }
@@ -366,7 +363,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
         private final DicomObjectIdentifier<XnatProjectdata> identifier;
         private final DicomFileNamer namer;
         private final DicomSCPManager manager;
-        
+
         public Specifier(final String aeTitle,
                 final Provider<UserI> userProvider,
                 final DicomObjectIdentifier<XnatProjectdata> identifier,
@@ -396,9 +393,9 @@ public class CStoreService extends DicomService implements CStoreSCP {
         public String getAETitle() { return aeTitle; }
         
         public Provider<UserI> getUserProvider() { return userProvider; }
-        
+
         public DicomObjectIdentifier<XnatProjectdata> getIdentifier() { return identifier; }
-        
+
         public DicomFileNamer getNamer() { return namer; }
     }
 }

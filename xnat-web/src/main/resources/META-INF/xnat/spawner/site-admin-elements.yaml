@@ -1842,6 +1842,54 @@ dicomScpEditor:
             class: ignore
             label: Whitelist
             description: Enter a list of AE-titles and/or IP addresses that this DICOM receiver can interact with.  Any association requested by an AE-title or IP address not in this list will be rejected.  Entries can be AE-titles, IP addresses with an optional CIDR subnet mask, or both (e.g. ae_title@ip_address/mask). Entries should be separated by a new line.
+        routingExpressionsEnabled:
+            kind: panel.input.switchbox
+            label: Enable Routing Expressions
+            id: routingExpressions-enabled
+            name: routingExpressionsEnabled
+            onText: "Routing Expressions: <b>Enabled</b>"
+            offText: "Routing Expressions: <b>Disabled</b>"
+            description: Enable or disable custom routing expressions for this DICOM Receiver.
+        projectRoutingExpression:
+            kind: panel.textarea
+            class: ignore
+            name: projectRoutingExpression
+            label: Project Routing Expression
+            description: >
+                Routing expression to extract Project label.
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+        subjectRoutingExpression:
+            kind: panel.textarea
+            class: ignore
+            name: subjectRoutingExpression
+            label: Subject Routing Expression
+            description: >
+                Routing expression to extract Subject label.
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+        sessionRoutingExpression:
+            kind: panel.textarea
+            class: ignore
+            name: sessionRoutingExpression
+            label: Session Routing Expression
+            description: >
+                Routing expression to extract Session label.
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+
+dicomScpReceiversGlobal:
+    kind: panel.form
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    name: dicomScpReceiversGlobal
+    label: Manage DICOM SCP Receivers Globally
+    contents:
+        enableDicomReceiver:
+            kind: panel.input.switchbox
+            name: enableDicomReceiver
+            label: Global Permission
+            onText: "DICOM Receivers: <b>Allowed</b>"
+            offText: "DICOM Receivers: <b>Not Allowed</b>"
+            description: Globally Allow or Disallow DICOM Receivers
 
 dicomScpReceivers:
     kind: panel
@@ -2528,6 +2576,7 @@ root:
             label: DICOM SCP Receivers
             group: advanced
             contents:
+                ${dicomScpReceiversGlobal}
                 ${dicomScpReceivers}
         fileSystemTab:
             kind: tab

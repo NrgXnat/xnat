@@ -11,6 +11,7 @@ package org.nrg.dcm.id;
 
 import lombok.extern.slf4j.Slf4j;
 import org.dcm4che2.data.Tag;
+import org.nrg.config.services.ConfigService;
 import org.nrg.dcm.ContainedAssignmentExtractor;
 import org.nrg.dcm.Extractor;
 import org.nrg.dcm.TextExtractor;
@@ -29,8 +30,11 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
-    public Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache) {
+    private final ExtractorProvider _extractorProvider;
+
+    public Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache, ConfigService configService) {
         super(userProjectCache);
+        _extractorProvider = new ExtractorFromConfigProvider( configService);
     }
 
     @Override
@@ -46,10 +50,10 @@ public class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
 
     @Override
     protected List<Extractor> getDynamicExtractors() {
-        return XnatDefaultDicomObjectIdentifier.getExtractorsFromConfig(CompositeDicomObjectIdentifier.ExtractorType.PROJECT);
+        return _extractorProvider.provide( CompositeDicomObjectIdentifier.ExtractorType.PROJECT);
     }
 
-    private static void loadFrom15Config(final Collection<Extractor> identifiers) {
+    private void loadFrom15Config(final Collection<Extractor> identifiers) {
         final ConfigPaths   paths         = XDAT.getContextService().getBeanSafely(ConfigPaths.class);
         final Path          confDir       = Paths.get(XFT.GetConfDir());
         if (!paths.contains(confDir)) {
@@ -64,7 +68,7 @@ public class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
             log.warn("Multiple project identifier config files found {}, using {}", configs, cfgFile);
         }
         try {
-            List<Extractor> extractorsFromFile = XnatDefaultDicomObjectIdentifier.parseAsExtractors(new FileReader(cfgFile));
+            List<Extractor> extractorsFromFile = _extractorProvider.parseAsExtractors(new FileReader(cfgFile));
             identifiers.addAll(extractorsFromFile);
         } catch (IOException e) {
             log.error("An error occurred trying to parse the {} configuration", cfgFile, e);

@@ -207,6 +207,10 @@ var XNAT = getObject(XNAT || {});
                     $form.find('[name="anonymizationEnabled"]').prop('checked', item.anonymizationEnabled).val(item.anonymizationEnabled);
                     $form.find('[name="whitelistEnabled"]').prop('checked', item.whitelistEnabled).val(item.whitelistEnabled);
                     $form.find('[name="whitelistText"]').val(item.whitelist.join('\r\n'));
+                    $form.find('[name="routingExpressionsEnabled"]').prop('checked', item.routingExpressionsEnabled).val(item.routingExpressionsEnabled);
+                    $form.find('[name="projectRoutingExpression"]').val(item.projectRoutingExpression);
+                    $form.find('[name="subjectRoutingExpression"]').val(item.subjectRoutingExpression);
+                    $form.find('[name="sessionRoutingExpression"]').val(item.sessionRoutingExpression);
                 }else{
                     // Set default value for anonymization to true if this is a new receiver
                     $form.find('[name="anonymizationEnabled"]').prop('checked', true).val(true);
@@ -234,6 +238,30 @@ var XNAT = getObject(XNAT || {});
                             }
 
                         });
+
+                        var $routingExpressionsEnabled = obj.dialog$.find('[name="routingExpressionsEnabled"]');
+                        if($routingExpressionsEnabled[0].checked){
+                            obj.dialog$.find('[data-name="projectRoutingExpression"]').show();
+                            obj.dialog$.find('[data-name="subjectRoutingExpression"]').show();
+                            obj.dialog$.find('[data-name="sessionRoutingExpression"]').show();
+                        }else{
+                            obj.dialog$.find('[data-name="projectRoutingExpression"]').hide();
+                            obj.dialog$.find('[data-name="subjectRoutingExpression"]').hide();
+                            obj.dialog$.find('[data-name="sessionRoutingExpression"]').hide();
+                        }
+
+                        $routingExpressionsEnabled.on('change', function(){
+                            if(this.checked){
+                                obj.dialog$.find('[data-name="projectRoutingExpression"]').show();
+                                obj.dialog$.find('[data-name="subjectRoutingExpression"]').show();
+                                obj.dialog$.find('[data-name="sessionRoutingExpression"]').show();
+                            }else{
+                                obj.dialog$.find('[data-name="projectRoutingExpression"]').hide();
+                                obj.dialog$.find('[data-name="subjectRoutingExpression"]').hide();
+                                obj.dialog$.find('[data-name="sessionRoutingExpression"]').hide();
+                            }
+
+                        });
                     },
                     // height: modalDimensions.height,
                     scroll: false,
@@ -255,6 +283,7 @@ var XNAT = getObject(XNAT || {});
                                 dicomScpManager.setCheckBoxVal("directArchive");
                                 dicomScpManager.setCheckBoxVal("anonymizationEnabled");
                                 dicomScpManager.setCheckBoxVal("whitelistEnabled");
+                                dicomScpManager.setCheckBoxVal("routingExpressionsEnabled");
 
                                 // set the value for 'whitelist' on-the-fly
                                 var whitelistText$ = $formPanel.find('[name="whitelistText"]');
@@ -513,6 +542,7 @@ var XNAT = getObject(XNAT || {});
             var archiveBehavior = (item.directArchive) ? 'Direct Archive Behavior Enabled' : 'Uses Standard Prearchive Behavior';
             var customRemapping = (item.customProcessing) ? 'Custom Remapping Enabled' : 'Uses Standard Anonymization';
             var whitelist = (item.whitelistEnabled) ? 'AE-Title Whitelist Enabled' : 'AE-Title Whitelist Disabled';
+            var routingExpressionsEnabled = (item.routingExpressionsEnabled) ? 'Custom Routing Enabled' : 'Custom Routing Disabled';
             var anonymizationEnabled = (item.anonymizationEnabled) ? 'Anonymization Enabled' : 'Anonymization Disabled';
             var projectRouting = (item.identifier === 'dicomObjectIdentifier') ? 'Uses Standard Project Routing' :
                 (item.identifier.slice(0,3) === 'dqr') ? 'DQR Routing Enabled' : 'Uses Custom Project Routing';
@@ -523,7 +553,8 @@ var XNAT = getObject(XNAT || {});
                 [ 'li', customRemapping ],
                 [ 'li', projectRouting ],
                 [ 'li', whitelist ],
-                [ 'li', anonymizationEnabled ]
+                [ 'li', anonymizationEnabled ],
+                [ 'li', routingExpressionsEnabled ]
             ]);
         }
 

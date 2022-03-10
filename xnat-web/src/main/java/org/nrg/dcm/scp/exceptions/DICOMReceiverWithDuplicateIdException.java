@@ -32,7 +32,7 @@ public class DICOMReceiverWithDuplicateIdException extends DICOMReceiverWithDupl
 
     @SuppressWarnings("unused")
     public DICOMReceiverWithDuplicateIdException(@Nonnull final DicomSCPInstance instance) {
-        this(instance.getId());
+        this( (int) instance.getId());
     }
 
     @SuppressWarnings("unused")

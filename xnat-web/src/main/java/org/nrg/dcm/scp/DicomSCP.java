@@ -221,6 +221,7 @@ public class DicomSCP {
         }
 
         final String aeTitle = instance.getAeTitle();
+        final int port = getPort();
         if (StringUtils.isBlank(aeTitle)) {
             throw new IllegalArgumentException("Can only add service to named AE");
         }
@@ -228,19 +229,19 @@ public class DicomSCP {
             throw new RuntimeException("There's already a DICOM SCP receiver running at " + instance.toString());
         }
 
-        final String identifier = instance.getIdentifier();
         final String fileNamer  = instance.getFileNamer();
+        final String identifier = instance.getIdentifier();
         log.debug("Adding application entity \"{}\" with identifier \"{}\" and file namer \"{}\" to DICOM SCP on port {}", aeTitle, identifier, fileNamer, getPort());
 
         final NetworkApplicationEntity applicationEntity = createApplicationEntity(aeTitle, instance);
 
         getApplicationEntities().put(aeTitle, applicationEntity);
-        getDicomServicesByApplicationEntity().put(applicationEntity,
-                                                  new CStoreService.Specifier(aeTitle,
-                                                                              _manager.getUserProvider(),
-                                                                              _manager.getDicomObjectIdentifier(identifier),
-                                                                              _manager.getDicomFileNamer(fileNamer), _manager)
-                                                          .build());
+        getDicomServicesByApplicationEntity().put( applicationEntity,
+                new CStoreService.Specifier( aeTitle,
+                        _manager.getUserProvider(),
+                        _manager.getDicomObjectIdentifier( aeTitle, port),
+                        _manager)
+                        .build());
     }
 
     @Nonnull

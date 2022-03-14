@@ -40,7 +40,7 @@ $(function(){
                     message: {
                         tag: "div.message.bold",
                         content: "NOTE:  Open URLs defined in plugins must be enabled by an administrator before they are available in the" +
-                        " application.  A Tomcat restart is required for changes in the open URL configuration to take effect."
+                        " application."
                     }
                 }
             }

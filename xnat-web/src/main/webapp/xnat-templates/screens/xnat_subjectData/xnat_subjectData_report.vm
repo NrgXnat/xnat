@@ -6,27 +6,27 @@
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 <!-- BEGIN xnat-templates/screens/xnat_subjectData/xnat_subjectData_report.vm -->
 #set ( $exptHeadings = ["Date", "Type", "ID", "Investigator" ] )
-		<style>
-DIV.container{
-	border: 1px solid #AAAAAA;
-    width:250px;
-}
-DIV.containerTitle{
-			    border: 1px solid #AAAAAA;
-    padding:3px;
-    font-weight:500;
-	font-family:verdana,geneva,helvetica;
-}
-DIV.containerBody{
-    width:99%;
-    overflow:auto;
-    font-size:13px;
-    line-height:15px;
-    padding:3px;
-
-		</style>
+<style>
+    DIV.container{
+        border: 1px solid #AAAAAA;
+        width:250px;
+    }
+    DIV.containerTitle{
+                    border: 1px solid #AAAAAA;
+        padding:3px;
+        font-weight:500;
+        font-family:verdana,geneva,helvetica;
+    }
+    DIV.containerBody{
+        width:99%;
+        overflow:auto;
+        font-size:13px;
+        line-height:15px;
+        padding:3px;
+    }
+</style>
 <script type="text/javascript">
-if(XNAT.app.subject==undefined)XNAT.app.subject=new Object();
+    if (XNAT.app.subject==undefined) XNAT.app.subject=new Object();
 </script>
 <DIV class="edit_title">$displayManager.getSingularDisplayNameForSubject() Details: #if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end</DIV>
 <TABLE width="100%">
@@ -35,78 +35,91 @@ if(XNAT.app.subject==undefined)XNAT.app.subject=new Object();
 			<TABLE width="100%">
 				<TR>
 					<TD valign="top">
-		<!--BEGIN SUBJECT SUMMARY TABS -->
-<STYLE>
-span.spacer{
-height:12px;
-width:1px;
-}
-</STYLE>
+		                <!--BEGIN SUBJECT SUMMARY TABS -->
+                        <STYLE>
+                            span.spacer{
+                                height:12px;
+                                width:1px;
+                            }
+                        </STYLE>
 
-#addCustomScreens($om.getXSIType() "report/preDetails")
+                        #addCustomScreens($om.getXSIType() "report/preDetails")
 
-<div ID="subject_summary_module" style="display:none">
- <DIV id="subjectSummary" class="yui-navset">
-  <ul class="yui-nav" style="">
-      <li class="selected"><a href="#tab1"><em>Details<span class="spacer"></span></em></a></li>
-      #if($user.checkFeature($om,"project_sharing"))
-        <li><a href="#tab2"><em>$displayManager.getPluralDisplayNameForProject()<span class="spacer"></span></em></a></li>
-      #end
-  </ul>
- <div class="yui-content">
-  <div id="tab1">
- <table>
-#parse($turbineUtils.getTemplateName("_keyFields","xnat:subjectData",$!project))
- </table>
-</div>
+                        <div ID="subject_summary_module" style="display:none">
+                             <DIV id="subjectSummary" class="yui-navset">
+                                  <ul class="yui-nav" style="">
+                                      <li class="selected"><a href="#tab1"><em>Details<span class="spacer"></span></em></a></li>
+                                      #if($user.checkFeature($om,"project_sharing"))
+                                        <li><a href="#tab2"><em>$displayManager.getPluralDisplayNameForProject()<span class="spacer"></span></em></a></li>
+                                      #end
 
-  #if($user.checkFeature($om,"project_sharing"))
-      <div id="tab2">
-          #parse($turbineUtils.getTemplateName("sharing","xnat:subjectData",$!project))
-      </div>
-  #end
-  </div>
- </DIV>
+                                      #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
+                                         <li><a href="#$tab.getProperty("divName")"><em>$tab.getProperty("title")<span class="spacer"></span></em></a></li>
+                                      #end
+                                  </ul>
+                                 <div class="yui-content">
+                                   <div id="tab1">
+                                     <table>
+                                        #parse($turbineUtils.getTemplateName("_keyFields","xnat:subjectData",$!project))
+                                     </table>
+                                   </div>
+
+                                  #if($user.checkFeature($om,"project_sharing"))
+                                      <div id="tab2">
+                                          #parse($turbineUtils.getTemplateName("sharing","xnat:subjectData",$!project))
+                                      </div>
+                                  #end
+
+                                 #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
+                                        <div id="$tab.getProperty("divName")">
+                                            #set($path = "screens/${tab.getProperty('path')}")
+                                            #parse($path)
+                                        </div>
+                                 #end
+                             </div>
+                        </DIV>
+
 </div>
 <script type="text/javascript">
-function summaryIndexChanged(){
-   YAHOO.util.Cookie.set("${project}.summary.index", this.get("activeIndex"));
-}
+    function summaryIndexChanged(){
+       YAHOO.util.Cookie.set("${project}.summary.index", this.get("activeIndex"));
+    }
 
-function summaryTabManagerInit(){
-    window.summaryTabView = new YAHOO.widget.TabView('subjectSummary');
-    window.subject_summary_module = new YAHOO.widget.Module("subject_summary_module",{visible:false,zIndex:5});
+    function summaryTabManagerInit(){
+        window.summaryTabView = new YAHOO.widget.TabView('subjectSummary');
+        window.subject_summary_module = new YAHOO.widget.Module("subject_summary_module",{visible:false,zIndex:5});
 
-#addCustomScreenJS($om.getXSIType() "report/tabs_js")
+        #addCustomScreenJS($om.getXSIType() "report/tabs_js")
 
-    window.subject_summary_module.show();
+        window.subject_summary_module.show();
 
-#if($canReadSubjects)
-    var tabIndex=YAHOO.util.Cookie.get("${om.getId()}.summary.index");
-    window.summaryTabView.set('activeIndex',tabIndex||0);
+        #if($canReadSubjects)
+            var tabIndex=YAHOO.util.Cookie.get("${om.getId()}.summary.index");
+            window.summaryTabView.set('activeIndex',tabIndex||0);
 
-    window.summaryTabView.subscribe("activeTabChange",summaryIndexChanged);
-#end
-					}
-					summaryTabManagerInit();
+            window.summaryTabView.subscribe("activeTabChange",summaryIndexChanged);
+        #end
+    }
+	summaryTabManagerInit();
 </script>
+
 <!--END SUBJECT SUMMARY TABS -->
-					</TD>
-					<TD valign="top" align="right" rowspan="2">
-#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
-					</TD>
+				    </TD>
+                    <TD valign="top" align="right" rowspan="2">
+                        #parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+                    </TD>
 				</TR>
-	<TR><TD colspan="3"><BR>
-			#parse("/screens/ReportProjectSpecificFields.vm")
-	</TD></TR>
+                <TR><TD colspan="3"><BR>
+                        #parse("/screens/ReportProjectSpecificFields.vm")
+                </TD></TR>
 			</TABLE>
 		</TD>
 	</TR>
-<tr>
-	<td>
-		#addCustomScreens($om.getXSIType() "report/preAssessors")
-	</td>
-</tr>
+    <tr>
+        <td>
+            #addCustomScreens($om.getXSIType() "report/preAssessors")
+        </td>
+    </tr>
 	<TR>
 		<TD>
 			#if($turbineUtils.getTemplates($om.getXSIType(),"report/assessor_tabs").size() == 0)
@@ -117,11 +130,11 @@ function summaryTabManagerInit(){
             #end
 		</TD>
 	</TR>
-<tr>
-	<td>
-		#addCustomScreens($om.getXSIType() "report/postAssessors")
-	</td>
-</tr>
-			#parse($turbineUtils.getTemplateName("_resources","xnat:subjectData",$project))
+    <tr>
+        <td>
+            #addCustomScreens($om.getXSIType() "report/postAssessors")
+        </td>
+    </tr>
+    #parse($turbineUtils.getTemplateName("_resources","xnat:subjectData",$project))
 </TABLE>
 <!-- END xnat-templates/screens/xnat_subjectData/xnat_subjectData_report.vm -->

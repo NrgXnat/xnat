@@ -15,7 +15,9 @@ import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 // XNAT-6115: The @Builder, @JsonDeserialize, and @JsonPOJOBuilder annotations force Jackson to use the Lombok-generated
@@ -55,6 +57,9 @@ public class DicomSCPInstance {
         map.put("enabled", _enabled);
         map.put("customProcessing", _customProcessing);
         map.put("directArchive", _directArchive);
+        map.put("anonymizationEnabled", _anonymizationEnabled);
+        map.put("whitelistEnabled", _whitelistEnabled);
+        map.put("whitelist", _whitelist.toArray());
         return map;
     }
 
@@ -69,4 +74,10 @@ public class DicomSCPInstance {
     private boolean _customProcessing = false;
     @Builder.Default
     private boolean _directArchive    = false;
+    @Builder.Default
+    private boolean _anonymizationEnabled  = true;
+    @Builder.Default
+    private boolean _whitelistEnabled = false;
+    @Builder.Default
+    private List<String> _whitelist = new ArrayList<>();
 }

@@ -133,10 +133,7 @@ var XNAT = getObject(XNAT || {});
         var doWhat = !item ? 'New' : 'Edit';
         var oldPort = item && item.port ? item.port : null;
         var oldTitle = item && item.aeTitle ? item.aeTitle : null;
-        var modalDimensions =
-                Object.keys(dicomScpManager.identifiers).length > 1
-                    ? { height: '320px', width: '600px' }
-                    : { height: '250px', width: '500px' };
+        var modalDimensions = { height: '320px', width: '650px' }
 
         isNew = firstDefined(isNew, doWhat === 'New');
 
@@ -207,6 +204,9 @@ var XNAT = getObject(XNAT || {});
                     $form.find('[name="enabled"]').val(item.enabled);
                     $form.find('[name="customProcessing"]').prop('checked', item.customProcessing).val(item.customProcessing);
                     $form.find('[name="directArchive"]').prop('checked', item.directArchive).val(item.directArchive);
+                    $form.find('[name="anonymizationEnabled"]').prop('checked', item.anonymizationEnabled).val(item.anonymizationEnabled);
+                    $form.find('[name="whitelistEnabled"]').prop('checked', item.whitelistEnabled).val(item.whitelistEnabled);
+                    $form.find('[name="whitelistText"]').val(item.whitelist.join('\r\n'));
                 }
 
                 spawneri.render($container);
@@ -215,6 +215,23 @@ var XNAT = getObject(XNAT || {});
                     title: doWhat + ' DICOM SCP Receiver',
                     content: $container,
                     width: modalDimensions.width,
+                    beforeShow: function(obj){
+                        var $whitelistEnabled = obj.dialog$.find('[name="whitelistEnabled"]');
+                        if($whitelistEnabled[0].checked){
+                            obj.dialog$.find('[data-name="whitelistText"]').show();
+                        }else{
+                            obj.dialog$.find('[data-name="whitelistText"]').hide();
+                        }
+
+                        $whitelistEnabled.on('change', function(){
+                            if(this.checked){
+                                obj.dialog$.find('[data-name="whitelistText"]').show();
+                            }else{
+                                obj.dialog$.find('[data-name="whitelistText"]').hide();
+                            }
+
+                        });
+                    },
                     // height: modalDimensions.height,
                     scroll: false,
                     padding: 0,
@@ -231,16 +248,19 @@ var XNAT = getObject(XNAT || {});
                                 var $aeTitle = $formPanel.find('[name="aeTitle"]');
                                 var $port = $formPanel.find('[name="port"]');
 
-                                // set the value for 'customProcessing' on-the-fly
-                                var customProcessing$ = $formPanel.find('[name="customProcessing"]');
-                                if (customProcessing$.length) {
-                                    customProcessing$[0].value = customProcessing$[0].checked + '';
-                                }
+                                dicomScpManager.setCheckBoxVal("customProcessing");
+                                dicomScpManager.setCheckBoxVal("directArchive");
+                                dicomScpManager.setCheckBoxVal("anonymizationEnabled");
+                                dicomScpManager.setCheckBoxVal("whitelistEnabled");
 
-                                // set the value for 'directArchive' on-the-fly
-                                var directArchive$ = $formPanel.find('[name="directArchive"]');
-                                if (directArchive$.length) {
-                                    directArchive$[0].value = directArchive$[0].checked + '';
+                                // set the value for 'whitelist' on-the-fly
+                                var whitelistText$ = $formPanel.find('[name="whitelistText"]');
+                                if (whitelistText$.length) {
+                                    new Set(whitelistText$[0].value.split(/\r?\n/).map(i => i.trim()).filter(i => i)).forEach(i => {
+                                        var input$ = spawn('input|type=text', { name: "whitelist[]", className: 'hidden' });
+                                        input$.value = i;
+                                        $formPanel.append(input$);
+                                    });
                                 }
 
                                 console.log(item.id);
@@ -281,8 +301,15 @@ var XNAT = getObject(XNAT || {});
                                         var newPort = portVal;
                                         console.log(newPort);
 
-                                        var newTitle = $aeTitle.val();
+                                        var newTitle = $aeTitle.val().trim();
+                                        $aeTitle.val(newTitle);
                                         console.log(newTitle);
+
+                                        if(!XNAT.validation.regex.aeTitle.test(newTitle)){
+                                            errors++;
+                                            errorMsg += "<li>Invalid AE-title: " + (newTitle == "" ? "EMPTY" : newTitle) + "</li>";
+                                            $aeTitle.addClass('invalid');
+                                        }
 
                                         var newAeTitleAndPort = formatAeTitleAndPort(newTitle, newPort);
 
@@ -298,10 +325,36 @@ var XNAT = getObject(XNAT || {});
                                             });
                                         }
 
+                                         var whitelistErr = 0;
+                                         $formPanel.find('[name="whitelist[]"]').each(function(){
+                                              var splitElement = this.value.split("@");
+                                              if(splitElement.length == 2) {
+                                                  if(!XNAT.validation.regex.aeTitle.test(splitElement[0]) || !XNAT.validation.regex.cidr.test(splitElement[1])){
+                                                     whitelistErr++;
+                                                     errorMsg += "<li>Invalid whitelist element: " + this.value + "</li>";
+                                                  }
+                                              } else if(splitElement.length == 1) {
+                                                  if(!XNAT.validation.regex.aeTitle.test(splitElement[0]) && !XNAT.validation.regex.cidr.test(splitElement[0])){
+                                                     whitelistErr++;
+                                                     errorMsg += "<li>Invalid whitelist element: " + this.value + "</li>";
+                                                  }
+                                              } else{
+                                                  whitelistErr++;
+                                                  errorMsg += "<li>Invalid whitelist element: " + this.value + "</li>";
+                                              }
+                                          });
+
                                         errorMsg += '</ul>';
+
+                                         if(whitelistErr > 0){
+                                            $formPanel.find('[name="whitelistText"]').addClass('invalid');
+                                            errors += whitelistErr;
+                                            errorMsg += "Note: AE-titles must be no more than 16 characters and must not contain backslash or control characters.  IP Addresses must be a valid IP and can end with an optional CIDR subnet mask suffix. "
+                                         }
 
                                         if (errors > 0) {
                                             XNAT.dialog.message('Errors Found', errorMsg);
+                                            $formPanel.find('[name="whitelist[]"]').each(function(){ this.remove(); });
                                         }
 
                                         return errors === 0;
@@ -310,7 +363,11 @@ var XNAT = getObject(XNAT || {});
                                     success: function(){
                                         refreshTable();
                                         scpEditorDialog.close();
-                                        XNAT.ui.banner.top(2000, 'Saved.', 'success')
+                                        XNAT.ui.banner.top(2000, 'Saved.', 'success');
+                                    },
+                                    fail: function(o){
+                                        XNAT.dialog.message('Failed to Save DICOM Receiver. ', o.responseText);
+                                        $formPanel.find('[name="whitelist[]"]').each(function(){ this.remove(); });
                                     }
                                 });
                             }
@@ -325,6 +382,14 @@ var XNAT = getObject(XNAT || {});
             });
 
     };
+
+    dicomScpManager.setCheckBoxVal = function(name){
+        var $formPanel = jq('form[name="dicomScpEditor"]');
+        var $container = $formPanel.find('[name="' + name + '"]');
+        if ($container.length) {
+            $container[0].value = $container[0].checked + '';
+        }
+    }
 
     // create table for DICOM SCP receivers
     dicomScpManager.table = function(container, callback){
@@ -444,14 +509,18 @@ var XNAT = getObject(XNAT || {});
             item.identifier = item.identifier || 'dicomObjectIdentifier';
             var archiveBehavior = (item.directArchive) ? 'Direct Archive Behavior Enabled' : 'Uses Standard Prearchive Behavior';
             var customRemapping = (item.customProcessing) ? 'Custom Remapping Enabled' : 'Uses Standard Anonymization';
+            var whitelist = (item.whitelistEnabled) ? 'AE-Title Whitelist Enabled' : 'AE-Title Whitelist Disabled';
+            var anonymizationEnabled = (item.anonymizationEnabled) ? 'Anonymization Enabled' : 'Anonymization Disabled';
             var projectRouting = (item.identifier === 'dicomObjectIdentifier') ? 'Uses Standard Project Routing' :
                 (item.identifier.slice(0,3) === 'dqr') ? 'DQR Routing Enabled' : 'Uses Custom Project Routing';
             return spawn('ul', {
                 style: { 'margin': '0', 'padding-left': '1.5em' }
             },[
-                [ 'li',archiveBehavior ],
-                [ 'li',customRemapping ],
-                [ 'li',projectRouting ]
+                [ 'li', archiveBehavior ],
+                [ 'li', customRemapping ],
+                [ 'li', projectRouting ],
+                [ 'li', whitelist ],
+                [ 'li', anonymizationEnabled ]
             ]);
         }
 

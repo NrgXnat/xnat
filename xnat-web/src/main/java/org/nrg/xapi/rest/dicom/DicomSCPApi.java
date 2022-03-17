@@ -25,9 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.nrg.dcm.scp.DicomSCPInstance;
 import org.nrg.dcm.scp.DicomSCPManager;
-import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicatePropertiesException;
-import org.nrg.dcm.scp.exceptions.DicomNetworkException;
-import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
+import org.nrg.dcm.scp.exceptions.*;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -156,7 +154,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                         produces = MediaType.APPLICATION_JSON_VALUE,
                         restrictTo = Admin)
     @ResponseBody
-    public DicomSCPInstance createDicomSCPInstance(@RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException {
+    public DicomSCPInstance createDicomSCPInstance(@RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException {
         return _manager.saveDicomSCPInstance(instance);
     }
 
@@ -179,7 +177,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                                                            value = "{\"aeTitle\": \"TITLE\", \"port\": 8104, \"enabled\": true}"
                                                        )
                                                    }))
-                                                   @RequestBody final DicomSCPInstance instance) throws NotFoundException, DICOMReceiverWithDuplicatePropertiesException, UnknownDicomHelperInstanceException, DicomNetworkException {
+                                                   @RequestBody final DicomSCPInstance instance) throws NotFoundException, DICOMReceiverWithDuplicatePropertiesException, UnknownDicomHelperInstanceException, DicomNetworkException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException {
         // Set the ID to the value specified in the REST call. If ID not specified on PUT, value will be zero, so we
         // need to make sure it's set to the proper value. If they submit it under the wrong ID well...
         instance.setId(id);

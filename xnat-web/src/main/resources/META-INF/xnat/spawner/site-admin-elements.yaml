@@ -1751,12 +1751,15 @@ dicomScpEditor:
     load: false
     action: "#!"
     method: null
-    #contentType: json
+    class: json
     element:
         style:
             border: none
             marginBottom: 0
     contents:
+        validation:
+            ## Need access to regex for custom form validation
+            tag: script|src="~/scripts/xnat/validate.js"
         scpId:
             kind: panel.input.hidden
             id: scp-id
@@ -1769,6 +1772,7 @@ dicomScpEditor:
             label: AE Title
             #description: AE Title for DICOM Receiver
             validation: not-empty
+            description: Can be up to 16 characters long. Backslashes and control characters are not allowed.
         port:
             kind: panel.input.number
             id: scp-port
@@ -1816,6 +1820,28 @@ dicomScpEditor:
 #                kind: panel.input.text
 #                name: identifier
 #                label: Identifier
+        anonymizationEnabled:
+            kind: panel.input.switchbox
+            label: Anonymization
+            id: anonymization-enabled
+            name: anonymizationEnabled
+            onText:  "Anonymization: <b>Enabled</b>"
+            offText: "Anonymization: <b>Disabled</b>"
+            description: Enable or disable all site-wide and project-level anonymization for this DICOM Receiver.
+        whitelistEnabled:
+            kind: panel.input.switchbox
+            label: Enable Whitelist
+            id: whitelist-enabled
+            name: whitelistEnabled
+            onText: "Whitelist: <b>Enabled</b>"
+            offText: "Whitelist: <b>Disabled</b>"
+            description: Enable or disable the whitelist for this DICOM Receiver.
+        whitelistText:
+            kind: panel.textarea
+            name: whitelistText
+            class: ignore
+            label: Whitelist
+            description: Enter a list of AE-titles and/or IP addresses that this DICOM receiver can interact with.  Any association requested by an AE-title or IP address not in this list will be rejected.  Entries can be AE-titles, IP addresses with an optional CIDR subnet mask, or both (e.g. ae_title@ip_address/mask). Entries should be separated by whitespace.
 
 dicomScpReceivers:
     kind: panel

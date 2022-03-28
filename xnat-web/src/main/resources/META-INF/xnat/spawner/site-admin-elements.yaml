@@ -1841,7 +1841,7 @@ dicomScpEditor:
             name: whitelistText
             class: ignore
             label: Whitelist
-            description: Enter a list of AE-titles and/or IP addresses that this DICOM receiver can interact with.  Any association requested by an AE-title or IP address not in this list will be rejected.  Entries can be AE-titles, IP addresses with an optional CIDR subnet mask, or both (e.g. ae_title@ip_address/mask). Entries should be separated by whitespace.
+            description: Enter a list of AE-titles and/or IP addresses that this DICOM receiver can interact with.  Any association requested by an AE-title or IP address not in this list will be rejected.  Entries can be AE-titles, IP addresses with an optional CIDR subnet mask, or both (e.g. ae_title@ip_address/mask). Entries should be separated by a new line.
 
 dicomScpReceivers:
     kind: panel

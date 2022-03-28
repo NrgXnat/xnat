@@ -75,7 +75,7 @@ public class DirectArchiveSessionHibernateServiceImpl
                 initialize.getTimestamp(), initialize.getFolderName(), initialize.getTag(), initialize.getVisit(),
                 initialize.getProtocol(), initialize.getTimeZone(), location, initialize.getSource(),
                 initialize.getUploadDate(), initialize.getLastBuiltDate(), initialize.getStatus(),
-                initialize.getScan_date(), initialize.getScan_time())).toSessionData();
+                initialize.getScan_date(), initialize.getScan_time(), initialize.getPreventAnon())).toSessionData();
     }
 
     @Override

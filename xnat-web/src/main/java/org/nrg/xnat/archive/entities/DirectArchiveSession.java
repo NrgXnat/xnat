@@ -18,11 +18,12 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
     private PrearcUtils.PrearcStatus status;
     private Date scanDate;
     private String scanTime;
+    private Boolean preventAnon;
 
     public DirectArchiveSession(String project, String subject, String name, String timestampUid, String folderName,
                                 String tag, String visit, String protocol, String timeZone, String location,
                                 String source, Date uploadDate, Date lastBuiltDate, PrearcUtils.PrearcStatus status,
-                                Date scanDate, String scanTime) {
+                                Date scanDate, String scanTime, Boolean preventAnon) {
         this.project = project;
         this.subject = subject;
         this.name = name;
@@ -39,6 +40,7 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
         this.status = status;
         this.scanDate = scanDate;
         this.scanTime = scanTime;
+        this.preventAnon = preventAnon;
     }
 
     public DirectArchiveSession() {}
@@ -180,6 +182,14 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
         this.message = message;
     }
 
+    public void setPreventAnon(Boolean preventAnon) {
+        this.preventAnon = preventAnon;
+    }
+
+    public Boolean getPreventAnon() {
+        return this.preventAnon;
+    }
+
     public SessionData toSessionData() {
         SessionData s = new SessionData();
         s.setProject(project);
@@ -198,7 +208,7 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
         s.setSource(source);
         s.setVisit(visit);
         s.setProtocol(protocol);
-        s.setPreventAnon(false);
+        s.setPreventAnon(preventAnon);
         s.setPreventAutoCommit(false);
         s.setId(getId());
         return s;

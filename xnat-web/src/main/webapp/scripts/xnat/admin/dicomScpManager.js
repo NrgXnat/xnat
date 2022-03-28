@@ -207,6 +207,9 @@ var XNAT = getObject(XNAT || {});
                     $form.find('[name="anonymizationEnabled"]').prop('checked', item.anonymizationEnabled).val(item.anonymizationEnabled);
                     $form.find('[name="whitelistEnabled"]').prop('checked', item.whitelistEnabled).val(item.whitelistEnabled);
                     $form.find('[name="whitelistText"]').val(item.whitelist.join('\r\n'));
+                }else{
+                    // Set default value for anonymization to true if this is a new receiver
+                    $form.find('[name="anonymizationEnabled"]').prop('checked', true).val(true);
                 }
 
                 spawneri.render($container);

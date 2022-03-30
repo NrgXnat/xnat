@@ -16,8 +16,6 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.xnat.restlet.actions.importer.*;
-import org.nrg.xnat.status.StatusList;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -27,9 +25,14 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.UriParserUtils.UriParser;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
+import org.nrg.xnat.restlet.actions.importer.ImporterNotFoundException;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.status.StatusList;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.resource.Representation;
@@ -63,8 +66,7 @@ public class Importer extends SecureResource {
     private static final List<String> HANDLERS_PREFERRING_PARTIAL_URI_WRAP = Lists.newArrayList();
 
     static {
-        final ImporterHandlerPackages packages = XDAT.getContextService().getBean("importerHandlerPackages", ImporterHandlerPackages.class);
-        for (final String pkg : packages) {
+        XDAT.getContextService().getBeansOfType(ImporterHandlerPackages.class).values().stream().flatMap(Collection::stream).forEach(pkg -> {
             try {
                 final List<Class<?>> classesForPackage = Reflection.getClassesForPackage(pkg);
                 for (final Class<?> clazz : classesForPackage) {
@@ -84,7 +86,7 @@ public class Importer extends SecureResource {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }
+        });
     }
 
     @Override

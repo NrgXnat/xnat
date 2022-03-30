@@ -9,15 +9,24 @@
 
 package org.nrg.xnat.restlet.actions.importer;
 
-import java.util.HashSet;
-import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+
+@Slf4j
 public class ImporterHandlerPackages extends HashSet<String> {
-    public ImporterHandlerPackages(Set<String> packages) {
-    	super();
-        this.setPackages(packages);
+    public ImporterHandlerPackages(final Collection<String> packages) {
+        super();
+        setPackages(packages);
     }
-    public void setPackages(Set<String> packages) {
+
+    public ImporterHandlerPackages(final String... packages) {
+        this(Arrays.asList(packages));
+    }
+
+    public void setPackages(final Collection<String> packages) {
         clear();
         addAll(packages);
     }

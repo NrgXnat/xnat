@@ -17,7 +17,6 @@ import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.xnat.SOPHashDicomFileNamer;
 import org.nrg.framework.services.ContextService;
-import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -29,6 +28,7 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,8 +89,7 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
             logger.error("", e);
         }
         //Second, find importers by annotation
-        final ImporterHandlerPackages packages = XDAT.getContextService().getBean("importerHandlerPackages", ImporterHandlerPackages.class);
-        for (final String pkg : packages) {
+        XDAT.getContextService().getBeansOfType(ImporterHandlerPackages.class).values().stream().flatMap(Collection::stream).forEach(pkg -> {
             try {
                 final List<Class<?>> classesForPackage = Reflection.getClassesForPackage(pkg);
                 for (final Class<?> clazz : classesForPackage) {
@@ -110,7 +109,7 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }
+        });
     }
 
     public static ImporterHandlerA buildImporter(String format, final Object uID, final UserI u, final FileWriterWrapperI fi, Map<String, Object> params) throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException, SecurityException, NoSuchMethodException, ImporterNotFoundException {

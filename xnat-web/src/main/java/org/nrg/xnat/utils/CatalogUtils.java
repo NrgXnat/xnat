@@ -2212,6 +2212,8 @@ public class CatalogUtils {
         if (CatalogUtils.maintainFileHistory()) {
             final File newFile = FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
             addCatHistoryEntry(catFile, project, newFile.getAbsolutePath(), entry, ci);
+        } else {
+            Files.delete(f.toPath());
         }
     }
 

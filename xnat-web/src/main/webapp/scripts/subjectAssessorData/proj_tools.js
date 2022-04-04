@@ -196,7 +196,7 @@ function renderProjects(selectBox, list, defaultValue) {
         selectBox.remove(0);
     }
 
-    selectBox.options[0] = new Option("Select Project", "");
+    selectBox.options[0] = new Option("Select " + XNAT.app.displayNames.singular.project, "");
 
     for (var pC = 0; pC < list.length; pC++) {
         var defaultSelected = (list[pC].id == defaultValue) ? true : false;

@@ -53,10 +53,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.xml.sax.SAXParseException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -221,11 +224,12 @@ public class CatalogApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZip(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         validateCatalogRequest(user, catalogId);
         return ResponseEntity.ok()
                              .header(HttpHeaders.CONTENT_TYPE, AbstractZipStreamingResponseBody.MEDIA_TYPE)
                              .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "zip"))
-                             .body(new CatalogZipStreamingResponseBody(user, _service.getCachedCatalog(user, catalogId), _preferences.getArchivePath()));
+                             .body(new CatalogZipStreamingResponseBody(user, _service.getCachedCatalog(user, catalogId), _preferences.getArchivePath(), request));
     }
 
     @ApiOperation(value = "Downloads the specified catalog as a zip archive, using a small empty file for each entry.",
@@ -241,6 +245,7 @@ public class CatalogApi extends AbstractXapiRestController {
     public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZipTest(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
         final UserI user = getSessionUser();
         validateCatalogRequest(user, catalogId);
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 
         final CatCatalogI catalog = _service.getCachedCatalog(user, catalogId);
         if (catalog == null) {
@@ -250,7 +255,7 @@ public class CatalogApi extends AbstractXapiRestController {
         return ResponseEntity.ok()
                              .header(HttpHeaders.CONTENT_TYPE, AbstractZipStreamingResponseBody.MEDIA_TYPE)
                              .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "zip"))
-                             .body(new CatalogZipStreamingResponseBody(user, catalog, _preferences.getArchivePath(), true));
+                             .body(new CatalogZipStreamingResponseBody(user, catalog, _preferences.getArchivePath(), true, request));
     }
 
     @ApiOperation(value = "Accepts the XML payload and attempts to create or update an XNAT data object as appropriate.", response = String.class)

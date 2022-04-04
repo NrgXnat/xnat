@@ -22,6 +22,8 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.XnatImageresource;
 import org.nrg.xdat.om.XnatResource;
+import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ResourceURII;
@@ -32,6 +34,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -51,9 +54,11 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 public class CatalogPathResourceMap implements PathResourceMap<String, Resource> {
-    public CatalogPathResourceMap(final CatCatalogI catalog, final String archiveRoot, final boolean testMode) {
+    public CatalogPathResourceMap(final CatCatalogI catalog, final String archiveRoot, final boolean testMode, UserI user, HttpServletRequest request) {
         _archiveRoot = archiveRoot;
         _catalogId = catalog.getId();
+        _user = user;
+        _request = request;
 
         final String description = StringUtils.defaultIfBlank(catalog.getDescription(), "(no description)");
         log.debug("{}: Added catalog: {}", _catalogId, description);
@@ -116,6 +121,7 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         if (hasNext()) {
             final Mapping<String, Resource> mapping = _resources.pop();
             log.debug("{}: Just popped resource with path {}, resource location: {}", _catalogId, mapping.getPath(), ((CatalogPathResourceMapping) mapping).getFile().getAbsolutePath());
+            AccessLogger.LogResourceAccess(_user.getUsername(), _request, ((CatalogPathResourceMapping) mapping).getFile().getAbsolutePath(), "");
             return mapping;
         }
 
@@ -309,4 +315,6 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
     private final boolean _projectIncludedInPath;
     private final boolean _subjectIncludedInPath;
     private final File    _testFile;
+    private UserI _user;
+    private HttpServletRequest _request;
 }

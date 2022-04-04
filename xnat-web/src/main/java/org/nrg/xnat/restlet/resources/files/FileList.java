@@ -33,6 +33,7 @@ import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -923,6 +924,7 @@ public class FileList extends XNATCatalogTemplate {
             final File   child = (File) row[fileIndex];
 
             if (child != null && child.exists()) {
+                AccessLogger.LogResourceAccess(getUser().getUsername(), getRequest(), child.getAbsolutePath(), "");
                 final String pathForZip;
                 if (structure.equalsIgnoreCase("improved")) {
                     pathForZip = getImprovedPath(uri, row[cat_IDIndex], mediaType);
@@ -1135,6 +1137,7 @@ public class FileList extends XNATCatalogTemplate {
     }
 
     private FileRepresentation setFileRepresentation(File f, MediaType mt) {
+        AccessLogger.LogResourceAccess(getUser().getUsername(), getRequest(), f.getAbsolutePath(), "");
         setResponseHeader("Cache-Control", "must-revalidate");
         return representFile(f, mt);
     }

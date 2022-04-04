@@ -38,6 +38,7 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -254,6 +255,20 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             set(inboxPath, "inboxPath");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'inboxPath': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference
+    public String getTriagePath() {
+        return StringUtils.defaultIfBlank(getValue("triagePath"),
+                Paths.get(getCachePath(), "TRIAGE").toString());
+    }
+
+    public void setTriagePath(final String triagePath) {
+        try {
+            set(triagePath, "triagePath");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'triagePath': something is very wrong here.", e);
         }
     }
 

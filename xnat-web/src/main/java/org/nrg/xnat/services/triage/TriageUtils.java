@@ -34,7 +34,7 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 public class TriageUtils {
 	public static String getTriageUploadsPath() {
-		return StringUtils.appendIfMissing(StringUtils.defaultIfBlank(getConfiguredTriageUploadsPath(), ArcSpecManager.GetInstance().getGlobalCachePath() + "TRIAGE"), File.separator);
+		return StringUtils.appendIfMissing(getConfiguredTriageUploadsPath(), File.separator);
 	}
 
 	public static String getTriageProjectPath(final String project) {

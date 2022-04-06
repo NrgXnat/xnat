@@ -23,7 +23,7 @@ import java.util.*;
 /**
  * Created by flavin on 2/27/15.
  */
-public class NotifyProjectPipelineListeners extends NotifyProjectListeners {
+public class NotifyProjectPipelineListeners extends ConfigurableNotifyProjectListeners {
     static Logger logger = Logger.getLogger(NotifyProjectPipelineListeners.class);
     private final XnatExperimentdata _expt;
     private final String _subject, _action;

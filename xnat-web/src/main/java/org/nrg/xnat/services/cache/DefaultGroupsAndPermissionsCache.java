@@ -1077,6 +1077,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private UserGroupI initGroupImpl(final String groupId, final UserGroupI group) {
         log.info("Initializing cache entry for group '{}'", groupId);
         cacheObject(groupId, group);
+        String tag = group.getTag();
+        if (StringUtils.isNotBlank(tag)) {
+            initTag(getCacheIdForTag(tag), tag);
+        }
         log.debug("Retrieved and cached the group for the ID {}", groupId);
         return group;
     }

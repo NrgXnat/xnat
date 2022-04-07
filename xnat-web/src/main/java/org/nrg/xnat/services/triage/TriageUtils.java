@@ -109,12 +109,6 @@ public class TriageUtils {
 	}
 
 	private static String getConfiguredTriageUploadsPath() {
-		try {
-			return XDAT.getSiteConfigurationProperty(TRIAGE_PATH);
-		} catch (ConfigServiceException sex) {
-			return ArcSpecManager.GetInstance().getGlobalCachePath() + "TRIAGE";
-		}
+		return XDAT.getSiteConfigPreferences().getTriagePath();
 	}
-
-	private final static String TRIAGE_PATH = "triagePath";
 }

@@ -209,7 +209,7 @@ public class AccessLogger {
         return TRACKING_SESSIONS != null && TRACKING_SESSIONS;
     }
 
-    private static String getUserAgentHeader(final HttpServletRequest request) {
+    protected static String getUserAgentHeader(final HttpServletRequest request) {
         return request == null ? "<null request>" : request.getHeader(USER_AGENT);
     }
 

@@ -35,6 +35,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xdat.turbine.utils.FileAccessLogger;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
@@ -1145,7 +1146,7 @@ private void deleteTriageResource(XnatProjectdata proj ,String projectPath,Strin
 				ArrayList<File> fileList = new ArrayList<File>();
 				fileList.addAll(FileUtils.listFiles(dir,null,true));
 				for (File file : fileList) {
-					AccessLogger.LogResourceAccess(this.userName, getRequest(), file.getAbsolutePath(), "");
+					FileAccessLogger.LogFileResourceAccess(this.userName, getRequest(), file.getAbsolutePath(), "");
 				}
 				sendZippedFiles(projectPath,pXNAME,pXNAME,fileList);
 			} else {

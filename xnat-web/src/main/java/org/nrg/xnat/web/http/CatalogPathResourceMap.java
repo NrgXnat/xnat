@@ -23,6 +23,7 @@ import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.XnatImageresource;
 import org.nrg.xdat.om.XnatResource;
 import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xdat.turbine.utils.FileAccessLogger;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -121,7 +122,7 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         if (hasNext()) {
             final Mapping<String, Resource> mapping = _resources.pop();
             log.debug("{}: Just popped resource with path {}, resource location: {}", _catalogId, mapping.getPath(), ((CatalogPathResourceMapping) mapping).getFile().getAbsolutePath());
-            AccessLogger.LogResourceAccess(_user.getUsername(), _request, ((CatalogPathResourceMapping) mapping).getFile().getAbsolutePath(), "");
+            FileAccessLogger.LogFileResourceAccess(_user.getUsername(), _request, ((CatalogPathResourceMapping) mapping).getFile().getAbsolutePath(), "");
             return mapping;
         }
 

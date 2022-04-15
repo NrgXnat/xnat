@@ -17,6 +17,7 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xdat.services.cache.UserDataCache;
+import org.nrg.xdat.turbine.utils.FileAccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
@@ -179,6 +180,9 @@ public class DIRResource extends SecureResource {
 
 						for (final FileSet fileSet : dest) {
 							rep.addAll(fileSet.getMatches());
+							for (File f: fileSet.getMatches()) {
+								FileAccessLogger.LogFileResourceAccess(getUser().getUsername(), getRequest(), f.getAbsolutePath(), "");
+							}
 						}
 			
 						setContentDisposition(rep.getDownloadName());

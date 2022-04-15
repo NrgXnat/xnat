@@ -1735,7 +1735,7 @@ public abstract class SecureResource extends Resource {
         if (StringUtils.isBlank(projectId) && project == null) {
             throw new IllegalArgumentException("No valid project found for the submitted item with ID '" + item.getId());
         }
-        return project != null && !StringUtils.equals(projectId, project.getId()) ? project : getProjectById(projectId);
+        return project != null && StringUtils.equals(projectId, project.getId()) ? project : getProjectById(projectId);
     }
 
     protected boolean rename(final XnatProjectdata proj, final ArchivableItem existing, final String label, final UserI user) {

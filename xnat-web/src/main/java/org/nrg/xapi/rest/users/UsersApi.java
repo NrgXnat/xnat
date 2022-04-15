@@ -386,8 +386,16 @@ public class UsersApi extends AbstractXapiRestController {
                 isDirty.set(true);
             }
             final Boolean enabled = model.getEnabled();
+            final Boolean verified = model.getVerified();
             if (enabled != null && enabled != user.isEnabled()) {
                 user.setEnabled(enabled);
+                if (user.isEnabled() && (user.isVerified() || Boolean.TRUE.equals(verified))) {
+                    try {
+                        AdminUtils.sendNewUserEmailMessage(username, user.getEmail());
+                    } catch (Exception e) {
+                        log.error("An error occurred trying to send email to the admin: user '{}' enabled with email '{}'", user.getUsername(), user.getEmail(), e);
+                    }
+                }
                 if (!enabled) {
                     //When a user is disabled, deactivate all their AliasTokens
                     try {
@@ -398,7 +406,6 @@ public class UsersApi extends AbstractXapiRestController {
                 }
                 isDirty.set(true);
             }
-            final Boolean verified = model.getVerified();
             if (verified != null && verified != user.isVerified()) {
                 user.setVerified(verified);
                 isDirty.set(true);

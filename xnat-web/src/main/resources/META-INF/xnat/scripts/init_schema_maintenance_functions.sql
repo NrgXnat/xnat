@@ -30,6 +30,7 @@
 --   (1 row)
 --   
 
+DROP FUNCTION IF EXISTS public.dependencies_clear_cache_entries(NAME, NAME, NAME);
 DROP FUNCTION IF EXISTS public.dependencies_restore(NAME, NAME);
 DROP FUNCTION IF EXISTS public.dependencies_save_and_drop(NAME, NAME);
 DROP FUNCTION IF EXISTS public.dependencies_identify(NAME, NAME);
@@ -247,3 +248,17 @@ $_$
     LANGUAGE plpgsql
     VOLATILE
     COST 100;
+
+CREATE OR REPLACE FUNCTION public.dependencies_clear_cache_entries(pElementName NAME, pColumn NAME, pDataType NAME)
+    RETURNS INTEGER
+AS
+$_$
+DECLARE
+    affected INTEGER;
+BEGIN
+    EXECUTE format('DELETE FROM xs_item_cache WHERE elementname = ''%s'' AND contents ~ ''^.*\(%s:%s\).*$''', pElementName, pColumn, pDataType);
+    GET DIAGNOSTICS affected = ROW_COUNT;
+    RETURN affected;
+END;
+$_$
+    LANGUAGE plpgsql;

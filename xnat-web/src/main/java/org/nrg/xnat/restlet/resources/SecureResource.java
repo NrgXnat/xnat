@@ -1723,17 +1723,14 @@ public abstract class SecureResource extends Resource {
     }
 
     protected XnatProjectdata getProjectFromFilePath(final XnatProjectdata project, final ArchivableItem item) throws NotFoundException {
-        String projectId = null;
         if (StringUtils.isNotBlank(filepath)) {
             if (!StringUtils.startsWith(filepath, "projects/")) {
                 throw new IllegalArgumentException("Illegal file path '" + filepath + "' does not start with 'projects/'.");
             }
-            projectId = StringUtils.stripStart(filepath, "projects/");
+            final String projectId = StringUtils.stripStart(filepath, "projects/");
+            return getProjectById(projectId);
         }
-        if (StringUtils.isBlank(projectId) && project == null) {
-            throw new IllegalArgumentException("No valid project found for the submitted item with ID '" + item.getId());
-        }
-        return projectId == null ? project : getProjectById(projectId);
+        return project != null ? project : getProjectById(item.getProject());
     }
 
     protected boolean rename(final XnatProjectdata proj, final ArchivableItem existing, final String label, final UserI user) {

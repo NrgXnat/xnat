@@ -53,6 +53,12 @@
             <td align="left">#escapeProperty("note")</td>
         </tr>
     #end
+    #foreach($addP in $scan.getParameters_addparam())
+        <tr>
+            <th>$!addP.getName()</th>
+            <td align="left">#escapeCleanHTML($!addP.getAddfield())</td>
+        </tr>
+    #end
 
 	#if($scan.getUid())
     <tr>

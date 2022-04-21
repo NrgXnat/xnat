@@ -17,7 +17,7 @@
         #set($lastURL=$content.getURI("$!row.get(2)"))
         <tr class="file-details-row highlight-row">
             <td class="scan-image-link">
-            #if(!$project || $user.checkFeature($project,"data_download"))
+            #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
                 <a class="image-download" href="$lastURL" style="text-decoration:underline" title="Download File: $!row.get(0)">$!row.get(0)</a>
             #else
                 $!row.get(0)
@@ -54,7 +54,7 @@
             width = params[2];
             height = params[3];
             imageModal.content =
-            #if(!$project || $user.checkFeature($project,"data_download"))
+            #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
                 '<div style="text-align:center;background:#000;">' +
                 '<a class="image-download" href="' + url + '" title="Download File: ' + title + '" style="display:block;height:' + height + 'px;">' +
                 '<img src="' + url + '?format=image/jpeg" alt="preview">' +

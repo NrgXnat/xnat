@@ -116,7 +116,7 @@ dd.valMessage 	{	width:630px;	}
 				var _html='<select class="scanActionSelect" data-scan-id="' + scanId + '">';
 					_html+='<option value="">Actions</option>';
 					_html+='<option value="files">Review File Details</option>';
-					#if($user.checkFeature($project,"data_download"))
+					#if($user.checkRestrictedFeature("$!project","data_download"))
 				    	_html+='<option value="download">Download Files</option>';
 					#end
 					_html+='<option value="dicom">Review DICOM Tags</option>';

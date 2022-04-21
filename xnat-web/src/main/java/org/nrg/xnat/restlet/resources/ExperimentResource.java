@@ -15,12 +15,7 @@ import org.nrg.transaction.TransactionException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
-import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatExperimentdataShare;
-import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatSubjectassessordata;
-import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Features;
@@ -161,8 +156,7 @@ public class ExperimentResource extends ItemResource {
             if (filepath != null && !filepath.equals("")) {
                 if (filepath.startsWith("projects/")) {
 
-                    if(!Features.checkFeature(user, _experiment.getProject(), "project_sharing")){
-                        this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Sharing is not allowed in this project.");
+                    if(!isSharingAllowed(user, _experiment.getProject())){
                         return;
                     }
 

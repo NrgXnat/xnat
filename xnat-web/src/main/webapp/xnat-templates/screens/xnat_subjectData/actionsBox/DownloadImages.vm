@@ -4,7 +4,7 @@
 #* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
 <!-- Sequence: 20 -->
 <!-- allowGuest: true -->
-#if($user.checkFeature($project, "data_download"))
+#if($user.checkRestrictedFeature("$!om.getProject()","data_download"))
    <li class="yuimenuitem">
     <a class="yuimenuitemlabel" data-wait="Preparing data for download..." href="$link.setAction("SubjectDownloadAction").addPathInfo("project", $project).addPathInfo("subject", $!om.getIdentifier($project))">Download Images</A>
    </li>

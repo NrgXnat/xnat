@@ -14,6 +14,11 @@
 #end
    _a.push({"label": window.available_elements_getByName("$om.getXSIType()").singular +" $!om.getLabel() ($!om.getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectId()/experiments/$om.getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:window.available_elements_getByName("$om.getXSIType()").singular,date:"$!om.getDate()",primary_label:"$!om.getIdentifier($project)"});
    													_a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getSubjectData().getIdentifier($project) ($!om.getSubjectData().getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectData().getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:"Subject",date:"",primary_label:"$!om.getSubjectData().getIdentifier($project)",allowDelete:false});
-					
+
+    $(document).ready(function(){
+        #if(!$user.checkRestrictedFeature("$!om.getProject()", "data_download"))
+            $("li a[data-name='XDATScreen_download_sessions']").parent("li").hide();
+        #end
+    });
 				</script>
 <!-- END xnat-templates/screens/xnat_imageSessionData/actions.vm -->

@@ -16,10 +16,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.html.Base;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Features;
@@ -99,7 +101,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
 
                 final ArrayListMultimap<String, String> invertedProjectSessionMap = Multimaps.invertFrom(projectSessionMap, ArrayListMultimap.create());
                 final Collection<String> sessionsUserCanDownload = sessionsUserCanAccess.stream()
-                        .filter(s -> Features.checkFeature(user, invertedProjectSessionMap.get(s),"data_download"))
+                        .filter(s -> Features.checkRestrictedFeature(user, hasProjectId ? getPrimaryProject(user, s) : invertedProjectSessionMap.get(s).get(0),"data_download"))
                         .collect(Collectors.toList());
 
                 if (sessionsUserCanDownload.isEmpty()) {
@@ -126,6 +128,11 @@ public class XDATScreen_download_sessions extends SecureScreen {
             data.setMessage(e.getMessage());
             data.setScreenTemplate("Error.vm");
         }
+    }
+
+    private String getPrimaryProject(final UserI user, final String experimentId) {
+        BaseXnatExperimentdata experimentdata = BaseXnatExperimentdata.getXnatExperimentdatasById(experimentId, user, false);
+        return (experimentdata != null) ? experimentdata.getProject() :  null;
     }
 
     /**

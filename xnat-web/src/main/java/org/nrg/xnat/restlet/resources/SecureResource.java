@@ -43,6 +43,7 @@ import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatImagescandata;
+import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -1475,6 +1476,14 @@ public abstract class SecureResource extends Resource {
 
     public boolean update(final ArchivableItem item, boolean overwriteSecurity, boolean allowDataDeletion, final PersistentWorkflowI workflow, final EventMetaI meta) throws Exception {
         return createOrUpdateImpl(false, item, overwriteSecurity, allowDataDeletion, workflow, meta);
+    }
+
+    public boolean isSharingAllowed(final UserI user, final String projectId) {
+        if (!Features.checkRestrictedFeature(user, projectId, Features.PROJECT_SHARING_FEATURE)) {
+            this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Sharing is not allowed.");
+            return false;
+        }
+        return true;
     }
 
     protected static Representation returnStatus(ItemI i, MediaType mt) {

@@ -22,7 +22,7 @@
             <span class="textlink-sm data-table-action">
                 Bulk Actions:
             </span>
-            #if($user.checkFeature($om,"data_download"))
+            #if($user.checkRestrictedFeature("$!om.getProject()","data_download"))
                 <button class="btn btn-sm data-table-action do-scan-download disabled">
                     Download
                 </button>
@@ -109,7 +109,7 @@
                         <td class="scan-${scanID}-id" style="width: 120px;">
                             <span class="inline-actions">
                                 <i class="fa fa-list-alt view-scan-details" data-id="${scanID}" title="View Details"></i>
-                                #if($user.checkFeature($om,"data_download"))
+                                #if($user.checkRestrictedFeature("$!om.getProject()","data_download"))
                                     <a href="#!download" data-id="${scanID}" data-xsitype="${om.getXSIType()}" data-expt="$!{om.getId()}" class="download-scan" title="Download: ${scanID}">
                                         <i class="fa fa-download"></i>
                                     </a>

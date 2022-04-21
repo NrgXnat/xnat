@@ -1050,7 +1050,46 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     @SuppressWarnings("unused")
     public boolean checkFeatureForAnyTag(String feature) {
         return !Features.isBanned(feature) && (checkFeatureBySiteRoles(feature) || Features.checkFeatureForAnyTag(this, feature));
+    }
 
+    /**
+     *  Returns true if the feature is not a restricted feature or if the user is a member
+     *  of a group with the matching tag and feature
+     *
+     *  For some features, we want to take different action depending on whether the site or project-in-question
+     *  places any restrictions on the feature. If not, then we fallback to XNAT’s default handling.
+     *  If so, then we want to restrict the action to only those with explicit approval to use the feature.
+     *
+     * @param tag       - The tag for the feature to match.
+     * @param feature   - The feature name we are checking.
+     *
+     * @return  <b>true</b> if the feature is not a restricted feature, or if the user is a member
+     * of a group with the matching tag and feature, <b>false</b> otherwise.
+     */
+    public boolean checkRestrictedFeature(final String tag, final String feature) {
+        if (StringUtils.isEmpty(tag) || StringUtils.isEmpty(feature)) {
+            return false;
+        }
+
+        try {
+            // Feature is restricted if any of the following are true:
+            // 1) is feature banned?
+            // 2) is feature off by default at site level?
+            // 3) is feature off for any group associated with the tag.
+            final boolean restrictedFeature = Features.isBanned(feature) || !Features.isOnByDefault(feature) ||
+                    Groups.getGroupsByTag(tag).stream().anyMatch(userGroup -> !Features.checkFeature(userGroup, feature));
+
+            if(!restrictedFeature){
+                return true;
+            }
+
+            // Does the user have any membership in project? If so, can they use the feature?
+            final UserGroupI userGroup = Groups.getGroupForUserAndTag(this, tag);
+            return null != userGroup && Features.checkFeature(userGroup, feature);
+        } catch(Exception e) {
+            log.error(e.getMessage(), e);
+            return false;
+        }
     }
 
     protected boolean hasAccessTo(final String projectId) {

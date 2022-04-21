@@ -177,6 +177,11 @@ public class FeatureServiceImpl implements FeatureServiceI {
     }
 
     @Override
+    public boolean checkRestrictedFeature(UserI user, String tag, String feature) {
+        return ((XDATUser) user).checkRestrictedFeature(tag, feature);
+    }
+
+    @Override
     public boolean checkFeatureForAnyTag(UserI user, String feature) {
         try {
             final Map<String, UserGroupI> groups = getCache().getGroupsForUser(user.getUsername());

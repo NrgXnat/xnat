@@ -91,6 +91,24 @@ public interface FeatureServiceI {
 	 */
 	boolean checkFeature(UserI user, Collection<String> tags, String feature);
 
+
+	/**
+	 *  Returns true if the feature is not a restricted feature or if the user is a member
+	 *  of a group with the matching tag and feature
+	 *
+	 *  For some features, we want to take different action depending on whether the site or project-in-question
+	 *  places any restrictions on the feature. If not, then we fallback to XNAT’s default handling.
+	 *  If so, then we want to restrict the action to only those with explicit approval to use the feature.
+	 *
+	 * @param user    The user to check.
+	 * @param tag     The tag to search for.
+	 * @param feature The feature to check for.
+	 *
+	 * @return  <b>true</b> if the feature is not a restricted feature, or if the user is a member
+	 * of a group with the matching tag and feature, <b>false</b> otherwise.
+	 */
+	boolean checkRestrictedFeature(UserI user, String tag, String feature);
+
 	/**
 	 * returns default setting for this feature for a given tag
 	 * @param feature    The feature to test.

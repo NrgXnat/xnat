@@ -293,20 +293,18 @@ public abstract class BaseElement{
             }
             return baos.toString();
         }
-            if (type.equalsIgnoreCase("string"))
-            {
-    		StringBuilder input = new StringBuilder((String) o);
+        if (type.equalsIgnoreCase("string")
+                || type.equalsIgnoreCase("LONGVARCHAR") || type.equalsIgnoreCase("jsonb")) {
 
-    		for (int i = 0;i < input.length(); i++) {
-    			if (input.charAt(i) == Byte.decode("0x00")){
-    				input.setCharAt(i, ' ');
-    			}
-    		}
-
-    		return StringEscapeUtils.escapeXml10(input.toString());
-            }else if(type.equalsIgnoreCase("jsonb")) {
-                return StringEscapeUtils.escapeXml10(o.toString());
-            } else if (type.equalsIgnoreCase("boolean")){
+            StringBuilder input = new StringBuilder((String) o);
+            for (int i = 0; i < input.length(); i++) {
+                if (input.charAt(i) == Byte.decode("0x00")) {
+                    input.setCharAt(i, ' ');
+                }
+            }
+            return StringEscapeUtils.escapeXml10(input.toString());
+        }
+        else if (type.equalsIgnoreCase("boolean")) {
                 if (o.toString().equalsIgnoreCase("true")|| o.toString().equalsIgnoreCase("1"))
                 {
                     return "1";

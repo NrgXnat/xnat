@@ -60,6 +60,7 @@ public interface EventService {
 
 
     void processEvent(EventServiceListener listener, Event event);
+    List<String> performJsonFilter(Subscription subscription, String jsonItem);
 
     Subscription activateSubscription(long id) throws NotFoundException;
     Subscription deactivateSubscription(long id) throws NotFoundException;

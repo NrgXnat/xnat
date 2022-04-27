@@ -38,6 +38,7 @@ public class Features {
     public static final String REMOVE_ALL_FEATURES = "removeAllFeatures";
 
     public static final String PROJECT_SHARING_FEATURE = "project_sharing";
+    public static final String DATA_DOWNLOAD_FEATURE = "data_download";
 
     /**
      * Returns the currently configured features service. You can change the default implementation returned via the

@@ -261,8 +261,12 @@ public class DisplayCriteria implements SQLClause {
                 throw new Exception("Invalid search value (" + temp + ")");
             }
 
-            if (temp.contains("'")) {
+            if(!comparisonType.contains("LIKE")){
                 value = XftStringUtils.CleanForSQLValue(temp);
+            } else {
+                // Backslash is used as an escape character for both the LIKE clause and for sql strings in general,
+                // so we need to double escape them here.
+                value = StringUtils.replace(XftStringUtils.CleanForSQLValue(temp), "\\\\", "\\\\\\\\");
             }
         }
         o = value;

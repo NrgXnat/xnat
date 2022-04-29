@@ -215,7 +215,7 @@ public class ApplicationConfig {
 
     @Bean
     public ImporterHandlerPackages importerHandlerPackages() {
-        return new ImporterHandlerPackages(new HashSet<>(Arrays.asList("org.nrg.xnat.restlet.actions", "org.nrg.xnat.archive")));
+        return new ImporterHandlerPackages("org.nrg.xnat.restlet.actions", "org.nrg.xnat.archive");
     }
 
     @Bean

@@ -3120,6 +3120,10 @@ td.quality-unusable {
     border-bottom: 1px solid #d0d0d0;
 }
 
+.scan-details-table td {
+    max-width: 590px;
+}
+
 img.scan-snapshot {
     width: 100%;
 }

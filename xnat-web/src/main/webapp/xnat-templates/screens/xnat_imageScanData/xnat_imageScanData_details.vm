@@ -53,7 +53,7 @@
             <td align="left"><span>#escapeProperty("note")</span></td>
         </tr>
     #end
-    #foreach($addP in $scan.getParameters_addparam())
+    #foreach($addP in $turbineUtils.sortByName($scan.getParameters_addparam()))
         <tr>
             <th>$!addP.getName()</th>
             <td align="left"><span class="truncate">#escapeCleanHTML($!addP.getAddfield())</span></td>

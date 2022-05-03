@@ -146,7 +146,7 @@
         </tr>
     #end
 
-    #foreach($addP in $scan.getParameters_addparam())
+    #foreach($addP in $turbineUtils.sortByName($scan.getParameters_addparam()))
         <tr>
             <th>$!addP.getName()</th>
             <td align="left"><span class="truncate">#escapeCleanHTML($!addP.getAddfield())</span></td>
@@ -162,10 +162,13 @@
             #set($url=$link.setAction('DisplayItemAction').addPathInfo('search_element',$scanType).addPathInfo('search_field',$scanField).addPathInfo('search_value',$scanId).addPathInfo('popup',$popup).addPathInfo('project',$project))
             #if($scanById)
                 <tr>
-                    <th><a href="$url" title="$scanAssessor.getIdentifier($project)">#escapeCleanHTML($!scanAssessor.getHeader()):</a>
+                    <th>
+                        <a href="$url" title="$scanAssessor.getIdentifier($project)">#escapeCleanHTML($!scanAssessor.getHeader()):</a>
                     </th>
                     <td border=0 style="font-weight:bold; text-align:left;" NOWRAP>
-                        $!scanAssessor.getScanById($scanID).getSummary()
+                        <span>
+                            $!scanAssessor.getScanById($scanID).getSummary()
+                        </span>
                     </td>
                 </tr>
             #end

@@ -73,6 +73,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader.safeJoin;
 
@@ -1504,6 +1505,24 @@ public class TurbineUtils {
 
     public boolean equalsIgnoreCase(final String string1, final String string2) {
         return StringUtils.equalsIgnoreCase(string1, string2);
+    }
+
+    public List<Object> sortByName(final List<Object> items) {
+        if (null == items) {
+            return Collections.emptyList();
+        }
+        try {
+            return items.stream().sorted(Comparator.comparing(o -> {
+                try {
+                    return o.getClass().getMethod("getName").invoke(o).toString();
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+            })).collect(Collectors.toList());
+        } catch (RuntimeException e) {
+            log.error(e.getMessage(), e);
+            return items; // return unsorted list if something happens.
+        }
     }
 
     private static Boolean isPreload(final String elementName) {

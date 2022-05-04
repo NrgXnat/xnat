@@ -1130,14 +1130,13 @@ xdat_stored_search.prototype.appendField=function(newField){
 	this.addSearchField(newField);
 }
 
-xdat_stored_search.prototype.getFieldHeader=function(str){
-	for(var sfC=0;sfC<this.SearchField.length;sfC++){
-		var sf=this.SearchField[sfC];
-		if(str.startsWith(sf.ElementName) && str.toLowerCase().indexOf(sf.FieldId.toLowerCase())>0){
-			return (sf.Header=='')?sf.FieldId:sf.Header;
+xdat_stored_search.prototype.getFieldHeader=function(str) {
+	for (var sfC = 0; sfC < this.SearchField.length; sfC++) {
+		var sf = this.SearchField[sfC];
+		if (str.toLowerCase() == (sf.ElementName.toLowerCase() + "." + sf.FieldId.toLowerCase())) {
+			return (sf.Header == '') ? sf.FieldId : sf.Header;
 		}
 	}
-
 	return removeElementName(str,this.RootElementName);
 }
 

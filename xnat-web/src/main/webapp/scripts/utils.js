@@ -772,8 +772,8 @@ function sortTableToo($tbody, col, reverse){
             bValue = getDataAttrValue(b, 'index');
         }
         else {
-            aValue = a.cells[col].textContent;
-            bValue = b.cells[col].textContent;
+            aValue = a.cells[col].textContent.toLowerCase();
+            bValue = b.cells[col].textContent.toLowerCase();
         }
         return (+reverse || -1) * (aValue < bValue ? -1 : (aValue > bValue ? 1 : 0));
         // return (+reverse || -1) * (aValue.localeCompare(bValue));

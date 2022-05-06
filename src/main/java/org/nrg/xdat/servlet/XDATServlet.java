@@ -11,6 +11,7 @@ package org.nrg.xdat.servlet;
 
 import com.google.common.io.CharStreams;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -43,10 +44,9 @@ import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import java.io.*;
+import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -58,6 +58,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 
 /**
  * @author Tim
@@ -127,9 +130,11 @@ public class XDATServlet extends HttpServlet {
 
         //this should use the config service.. but I couldn't get it to work because of servlet init issues.
         final Properties prop = new Properties();
-        final File       f    = Paths.get(conf, "properties", "database.properties").toFile();
-        if (f.exists()) {
-            prop.load(new FileInputStream(f));
+        final File       file = Paths.get(conf, "properties", "database.properties").toFile();
+        if (file.exists()) {
+            try (final InputStream input = Files.newInputStream(file.toPath())) {
+                prop.load(input);
+            }
         }
 
         //currently defaults to true, if the file isn't there.
@@ -231,7 +236,7 @@ public class XDATServlet extends HttpServlet {
                         //commenting this out because it is very slow.... they certainly don't need to be run every startup.  But, we need some way of getting them updated when it is needed.
                         //du.addStatements(sql);
                         //du.start();// start in a separate thread
-                        _shouldUpdateViews = true;
+                        _shouldUpdateViews                   = true;
                         _isDatabasePopulateOrUpdateCompleted = true;
                         (new DelayedSequenceChecker()).start();//this isn't necessary if we did the du.start();
                         return false;
@@ -257,7 +262,7 @@ public class XDATServlet extends HttpServlet {
                     return true;
                 }
             } else {
-                _shouldUpdateViews = true;
+                _shouldUpdateViews                   = true;
                 _isDatabasePopulateOrUpdateCompleted = true;
                 (new DelayedSequenceChecker()).start();
                 return false;
@@ -287,8 +292,8 @@ public class XDATServlet extends HttpServlet {
          * @param generatedSqlLogPath The path to a file where SQL statements are logged. If null, no logging occurs.
          */
         public DatabaseUpdater(final String conf, final Path generatedSqlLogPath, final String... generatedSqlLogHeaders) {
-            _conf = conf;
-            _generatedSqlLogPath = validateGeneratedSqlLogPath(generatedSqlLogPath);
+            _conf                   = conf;
+            _generatedSqlLogPath    = validateGeneratedSqlLogPath(generatedSqlLogPath);
             _generatedSqlLogHeaders = generatedSqlLogHeaders;
         }
 
@@ -455,21 +460,28 @@ public class XDATServlet extends HttpServlet {
         final OrderedProperties properties  = XDAT.getContextService().getBeanSafely("initPrefs", OrderedProperties.class);
         final StringSubstitutor substitutor = new StringSubstitutor(new OrderedPropertiesLookup(properties), "${", "}", '\\');
 
-        final List<String> statements = new ArrayList<>();
+        final List<String>   statements = new ArrayList<>();
+        final List<Resource> resources;
         try {
-            final List<Resource> resources = filterAndSortInitSqlResources(BasicXnatResourceLocator.getResources(INIT_SQL_PATTERN), filter, comparator);
-            log.debug("Found {} resources that match the pattern {} and filter {}", resources.size(), INIT_SQL_PATTERN, filter.pattern());
-            for (final Resource resource : resources) {
-                log.debug("Now processing the resource {}", resource.getFilename());
-                try (final Stream<String> stream = Files.lines(resource.getFile().toPath());
+            resources = BasicXnatResourceLocator.getResources(INIT_SQL_PATTERN);
+        } catch (IOException e) {
+            throw new RuntimeException("An error occurred trying to locate SQL init scripts with the pattern " + INIT_SQL_PATTERN, e);
+        }
+        final List<Resource> filtered = filterAndSortInitSqlResources(resources, filter, comparator);
+        log.debug("Found {} resources that match the pattern {} and filter {}", filtered.size(), INIT_SQL_PATTERN, filter.pattern());
+        for (final Resource resource : filtered) {
+            log.debug("Now processing the resource {}", resource.getFilename());
+            try {
+                final URI uri = resource.getURI();
+                try (final Stream<String> stream = IOUtils.readLines(uri.toURL().openStream(), Charset.defaultCharset()).stream();
                      final StringWriter stringWriter = new StringWriter();
                      final PrintWriter writer = new PrintWriter(stringWriter)) {
                     stream.map(substitutor::replace).forEach(writer::println);
                     statements.add(stringWriter.toString());
                 }
+            } catch (IOException e) {
+                log.error("An error occurred trying to load the SQL init resource {}", resource, e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("An error occurred trying to locate XNAT module definitions.");
         }
         return statements;
     }
@@ -595,34 +607,34 @@ public class XDATServlet extends HttpServlet {
         }
     }
 
-    private static final Pattern OID_FUNCTIONS_PATTERN      = Pattern.compile("^(?<function>[^,]+),?(<param1>[^,]+),?(<param2>[^,]+)$");
-    private static final Pattern DATA_TYPE_PATTERN          = Pattern.compile("^update_ls_(ext_)?(?<table>.*)$");
-    private static final String  QUERY_FIND_OID_FUNCTIONS   = "SELECT count(*) FROM information_schema.routines WHERE routine_name LIKE 'update_ls_%' AND routine_definition LIKE '%SELECT oid FROM xs_item_cache%'";
-    private static final String  QUERY_DROP_OID_FUNCTIONS   = "WITH " +
-                                                              "    fns_and_params AS ( " +
-                                                              "        SELECT " +
-                                                              "            r.routine_name, " +
-                                                              "            p.ordinal_position, " +
-                                                              "            p.parameter_name, " +
-                                                              "            p.data_type " +
-                                                              "        FROM " +
-                                                              "            information_schema.parameters p " +
-                                                              "                LEFT JOIN information_schema.routines r ON p.specific_name = r.specific_name " +
-                                                              "        WHERE " +
-                                                              "            p.parameter_mode = 'IN' AND " +
-                                                              "            r.routine_schema = 'public' AND " +
-                                                              "            r.routine_name LIKE 'update_ls_%' " +
-                                                              "        ORDER BY " +
-                                                              "            r.routine_name, " +
-                                                              "            p.ordinal_position) " +
-                                                              "SELECT " +
-                                                              "    routine_name || ',' || array_to_string(array_agg(data_type::TEXT), ',')" +
-                                                              "FROM " +
-                                                              "    fns_and_params " +
-                                                              "GROUP BY " +
-                                                              "    routine_name";
-    private static final String  QUERY_FIND_DATA_TYPE       = "SELECT element_name FROM xdat_meta_element WHERE element_name ~* ('^' || replace(:tableName, '_', '.') || '$');";
-    private static final Pattern CANNOT_DROP_MESSAGE        = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
+    private static final Pattern OID_FUNCTIONS_PATTERN    = Pattern.compile("^(?<function>[^,]+),?(<param1>[^,]+),?(<param2>[^,]+)$");
+    private static final Pattern DATA_TYPE_PATTERN        = Pattern.compile("^update_ls_(ext_)?(?<table>.*)$");
+    private static final String  QUERY_FIND_OID_FUNCTIONS = "SELECT count(*) FROM information_schema.routines WHERE routine_name LIKE 'update_ls_%' AND routine_definition LIKE '%SELECT oid FROM xs_item_cache%'";
+    private static final String  QUERY_DROP_OID_FUNCTIONS = "WITH " +
+                                                            "    fns_and_params AS ( " +
+                                                            "        SELECT " +
+                                                            "            r.routine_name, " +
+                                                            "            p.ordinal_position, " +
+                                                            "            p.parameter_name, " +
+                                                            "            p.data_type " +
+                                                            "        FROM " +
+                                                            "            information_schema.parameters p " +
+                                                            "                LEFT JOIN information_schema.routines r ON p.specific_name = r.specific_name " +
+                                                            "        WHERE " +
+                                                            "            p.parameter_mode = 'IN' AND " +
+                                                            "            r.routine_schema = 'public' AND " +
+                                                            "            r.routine_name LIKE 'update_ls_%' " +
+                                                            "        ORDER BY " +
+                                                            "            r.routine_name, " +
+                                                            "            p.ordinal_position) " +
+                                                            "SELECT " +
+                                                            "    routine_name || ',' || array_to_string(array_agg(data_type::TEXT), ',')" +
+                                                            "FROM " +
+                                                            "    fns_and_params " +
+                                                            "GROUP BY " +
+                                                            "    routine_name";
+    private static final String  QUERY_FIND_DATA_TYPE     = "SELECT element_name FROM xdat_meta_element WHERE element_name ~* ('^' || replace(:tableName, '_', '.') || '$');";
+    private static final Pattern CANNOT_DROP_MESSAGE      = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
 
     private static Boolean _shouldUpdateViews;
     private static Boolean _isDatabasePopulateOrUpdateCompleted = false;

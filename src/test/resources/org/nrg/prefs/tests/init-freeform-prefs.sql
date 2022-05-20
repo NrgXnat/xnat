@@ -6,7 +6,7 @@
 --     created timestamp without time zone NOT NULL,
 --     disabled timestamp without time zone NOT NULL,
 --     enabled boolean DEFAULT true,
---     "timestamp" timestamp without time zone NOT NULL,
+--     timestamp timestamp without time zone NOT NULL,
 --     resolver character varying(255),
 --     strict boolean NOT NULL,
 --     tool_description character varying(255),
@@ -19,7 +19,7 @@
 --     created timestamp without time zone NOT NULL,
 --     disabled timestamp without time zone NOT NULL,
 --     enabled boolean DEFAULT true,
---     "timestamp" timestamp without time zone NOT NULL,
+--     timestamp timestamp without time zone NOT NULL,
 --     entity_id character varying(255),
 --     name character varying(255) NOT NULL,
 --     scope integer,
@@ -28,55 +28,52 @@
 --     UNIQUE (tool, name, scope, entity_id)
 -- );
 
-INSERT INTO xhbm_tool (created, disabled, "timestamp", enabled, resolver, strict, tool_description, tool_id, tool_name) VALUES
-    (now(), '1969-12-31 18:00:00', now(), 't', '\N', 'f', 'Manages site configurations and settings for the XNAT system.', 'siteConfig', 'XNAT Site Preferences');
-
-INSERT INTO xhbm_preference (created, disabled, "timestamp", enabled, tool, scope, entity_id, name, value) VALUES
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'adminEmail', 'xnatselenium@gmail.com'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'aliasTokenTimeout', '2 days'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'aliasTokenTimeoutSchedule', '0 0 * * * *'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'allowDataAdmins', 'true'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'allowHtmlResourceRendering', 'false'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'allowNonAdminsToClaimUnassignedSessions', 'true'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'archivePath', '/data/xnat/archive'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'buildPath', '/data/xnat/build'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'cachePath', '/data/xnat/cache'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'checksums', 'true'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'dataPaths', '["/xapi/**", "/data/**", "/REST/**", "/fs/**"]'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'enableCsrfToken', 'true'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'enableDicomReceiver', 'true'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'enableDicomReceiverPropertyChangedListener', 'org.nrg.dcm.DicomSCPSiteConfigurationListener'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'enableSitewideAnonymizationScript', 'false'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'enableSitewideSeriesImportFilter', 'false'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'enabledProviders', '["localdb"]'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'ftpPath', '/data/xnat/ftp'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'inactivityBeforeLockout', '1 year'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'inactivityBeforeLockoutSchedule', '0 0 1 * * ?'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'inboxPath', '/data/xnat/inbox'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'initialized', 'true'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'interactiveAgentIds', '[".*MSIE.*", ".*Mozilla.*", ".*AppleWebKit.*", ".*Opera.*"]'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'maxFailedLogins', '20'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'maxFailedLoginsLockoutDuration', '1 hour'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'passwordComplexity', '^.*$'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'passwordComplexityMessage', 'Password is not sufficiently complex.'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'passwordExpirationDate', ''),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'passwordExpirationInterval', '1 year'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'passwordExpirationType', 'Interval'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'passwordHistoryDuration', '1 year'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'passwordReuseRestriction', 'None'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'pipelinePath', '/data/xnat/pipeline'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'prearchivePath', '/data/xnat/prearchive'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'primaryAdminUsername', 'admin'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'processingUrl', ''),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'requireChangeJustification', 'false'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'requireEventName', 'false'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'requireImageAssessorLabels', 'false'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'requireLogin', 'true'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'requireSaltedPasswords', 'false'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'sessionTimeout', '60 minutes'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'sessionTimeoutMessage', 'Session timed out at TIMEOUT_TIME.'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'siteId', 'XNAT'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'siteLogoPath', '/images/logo.png'),
-    (now(), '1969-12-31 18:00:00', now(), 't', 1, 0, NULL, 'siteUrl', 'http://localhost:8080'),
-    (now(), '1970-01-01 00:00:00', now(), 't', 1, 0, '\N', 'triagePath1', ''),
-    (now(), '1970-01-01 00:00:00', now(), 't', 1, 0, NULL, 'triagePath2', '');
+INSERT INTO xhbm_tool (id, created, disabled, timestamp, enabled, strict, tool_description, tool_id, tool_name) VALUES (1000, now(), TIMESTAMP '1969-12-31 18:00:00', now(), 't', 'f', 'Manages site configurations and settings for the XNAT system.', 'siteConfig', 'XNAT Site Preferences');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'adminEmail', 'xnatselenium@gmail.com');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'aliasTokenTimeout', '2 days');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'aliasTokenTimeoutSchedule', '0 0 * * * *');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'allowDataAdmins', 'true');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'allowHtmlResourceRendering', 'false');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'allowNonAdminsToClaimUnassignedSessions', 'true');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'archivePath', '/data/xnat/archive');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'buildPath', '/data/xnat/build');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'cachePath', '/data/xnat/cache');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'checksums', 'true');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'dataPaths', '["/xapi/**", "/data/**", "/REST/**", "/fs/**"]');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'enableCsrfToken', 'true');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'enableDicomReceiver', 'true');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'enableDicomReceiverPropertyChangedListener', 'org.nrg.dcm.DicomSCPSiteConfigurationListener');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'enableSitewideAnonymizationScript', 'false');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'enableSitewideSeriesImportFilter', 'false');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'enabledProviders', '["localdb"]');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'ftpPath', '/data/xnat/ftp');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'inactivityBeforeLockout', '1 year');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'inactivityBeforeLockoutSchedule', '0 0 1 * * ?');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'inboxPath', '/data/xnat/inbox');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'initialized', 'true');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'interactiveAgentIds', '[".*MSIE.*", ".*Mozilla.*", ".*AppleWebKit.*", ".*Opera.*"]');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'maxFailedLogins', '20');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'maxFailedLoginsLockoutDuration', '1 hour');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'passwordComplexity', '^.*$');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'passwordComplexityMessage', 'Password is not sufficiently complex.');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'passwordExpirationDate', '');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'passwordExpirationInterval', '1 year');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'passwordExpirationType', 'Interval');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'passwordHistoryDuration', '1 year');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'passwordReuseRestriction', 'None');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'pipelinePath', '/data/xnat/pipeline');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'prearchivePath', '/data/xnat/prearchive');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'primaryAdminUsername', 'admin');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'processingUrl', '');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'requireChangeJustification', 'false');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'requireEventName', 'false');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'requireImageAssessorLabels', 'false');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'requireLogin', 'true');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'requireSaltedPasswords', 'false');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'sessionTimeout', '60 minutes');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'sessionTimeoutMessage', 'Session timed out at TIMEOUT_TIME.');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'siteId', 'XNAT');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'siteLogoPath', '/images/logo.png');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1969-12-31 18:00:00', now(), 't', 1000, 0, NULL, 'siteUrl', 'http://localhost:8080');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1970-01-01 00:00:00', now(), 't', 1000, 0, '\N', 'triagePath1', '');
+INSERT INTO xhbm_preference (created, disabled, timestamp, enabled, tool, scope, entity_id, name, value) VALUES (now(), '1970-01-01 00:00:00', now(), 't', 1000, 0, NULL, 'triagePath2', '');

@@ -27,9 +27,10 @@ public class FreeformPreferencesTests {
         _preferences = preferences;
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test(expected = NullPointerException.class)
     public void testMapFailure() {
-        final Map<String, Object> preferences = _preferences.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        _preferences.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         failBecauseExceptionWasNotThrown(NullPointerException.class);
     }
 }

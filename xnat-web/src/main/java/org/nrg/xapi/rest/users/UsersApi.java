@@ -342,6 +342,11 @@ public class UsersApi extends AbstractXapiRestController {
         AtomicBoolean isDirty = new AtomicBoolean(false);
         String pendingNewEmail = null;
         if ((StringUtils.isNotBlank(model.getEmail())) && (!StringUtils.equals(user.getEmail(), model.getEmail()))) {
+
+            if(!Users.isValidEmail(model.getEmail())) {
+                throw new DataFormatException("Invalid email format");
+            }
+
             if (!adminUpdate) {
                 // Only admins can set an email address that's already being used.
                 if (!Users.getUsersByEmail(model.getEmail()).isEmpty()) {

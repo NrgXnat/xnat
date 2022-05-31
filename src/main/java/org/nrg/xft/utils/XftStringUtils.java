@@ -12,6 +12,7 @@ package org.nrg.xft.utils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.utilities.Patterns;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -22,7 +23,8 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class XftStringUtils {
-	public static final Pattern REGEX_VALID_ID                   = Pattern.compile("^[A-z0-9_-]+$");
+
+	public static final Pattern REGEX_VALID_ID                   = Pattern.compile("^[" + Patterns.ALPHANUMERIC_AND_DASHES + "]+$");
 	public static final Pattern REGEX_REPLACE_WITH_UNDERSCORE    = Pattern.compile("[" + Pattern.quote(" .!#$%&'()*+-;<=>?\\\"\\\\^`{|}~") + "]");
 	public static final Pattern REGEX_REMOVE_CHARS               = Pattern.compile("[" + Pattern.quote("/@[]") + "]");
 	public static final int     POSTGRESQL_IDENTIFIER_SIZE_LIMIT = 63;

@@ -50,7 +50,7 @@ public class AuditRestlet extends SecureResource {
 			return;
 		}
 
-		if(key!=null && !key.matches("[a-zA-z0-9_\\.]*")){
+		if(key!=null && !key.matches("[a-zA-z0-9_\\.-]*")){
 			respondToException(new Exception("Invalid value"),Status.CLIENT_ERROR_BAD_REQUEST);
 			return;
 		}

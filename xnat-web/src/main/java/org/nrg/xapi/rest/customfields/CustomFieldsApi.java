@@ -32,7 +32,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @Api("Custom Fields API")
 @XapiRestController
-@RequestMapping(value = "/custom_fields")
+@RequestMapping(value = "/custom-fields")
 @Slf4j
 public class CustomFieldsApi extends AbstractXapiRestController {
     private final CustomFieldService customFieldService;

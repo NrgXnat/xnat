@@ -1,10 +1,7 @@
 package org.nrg.xapi.rest.customfields;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
@@ -23,7 +20,6 @@ import org.nrg.xnat.services.customfields.CustomFieldService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -62,11 +58,15 @@ public class CustomFieldsApi extends AbstractXapiRestController {
             "/experiments/{experiment}/fields",
             "/experiments/{experiment}/assessors/{assessor}/fields",
             "/experiments/{experiment}/scans/{scan}/fields"})
-    public JsonNode getFields(@PathVariable final Map<String, String> pathVariables,
-                              @RequestParam(required = false) final List<String> keys) throws NotFoundException {
+    public JsonNode getFields(@ApiParam("The project") @PathVariable(required = false) String project,
+                              @ApiParam("The subject") @PathVariable(required = false) String subject,
+                              @ApiParam("The experiment") @PathVariable(required = false) String experiment,
+                              @ApiParam("The scan") @PathVariable(required = false) String scan,
+                              @ApiParam("The assessor") @PathVariable(required = false) String assessor,
+                              @RequestParam(required = false) final List<String> fieldNames) throws NotFoundException {
         final UserI user = XDAT.getUserDetails();
-        final ItemI item = getItem(user, pathVariables);
-        return customFieldService.getFields(item, keys);
+        final ItemI item = getItem(user, project, subject, experiment, scan, assessor);
+        return customFieldService.getFields(item, fieldNames);
     }
 
     @ResponseBody
@@ -76,23 +76,27 @@ public class CustomFieldsApi extends AbstractXapiRestController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 404, message = "Item not found.")})
     @XapiRequestMapping(produces = TEXT_PLAIN_VALUE, method = GET, value = {
-            "/projects/{project}/fields/{key}",
-            "/projects/{project}/experiments/{experiment}/fields/{key}",
-            "/projects/{project}/experiments/{experiment}/scans/{scan}/fields/{key}",
-            "/projects/{project}/experiments/{experiment}/assessors/{assessor}/fields/{key}",
-            "/projects/{project}/subjects/{subject}/fields/{key}",
-            "/projects/{project}/subjects/{subject}/experiments/{experiment}/fields/{key}",
-            "/projects/{project}/subjects/{subject}/experiments/{experiment}/scans/{scan}/fields/{key}",
-            "/projects/{project}/subjects/{subject}/experiments/{experiment}/assessors/{assessor}/fields/{key}",
-            "/subjects/{subject}/fields/{key}",
-            "/experiments/{experiment}/fields/{key}",
-            "/experiments/{experiment}/assessors/{assessor}/fields/{key}",
-            "/experiments/{experiment}/scans/{scan}/fields/{key}"})
-    public String getFieldValue(@PathVariable final Map<String, String> pathVariables,
-                                @PathVariable final String key) throws NotFoundException {
+            "/projects/{project}/fields/{fieldName}",
+            "/projects/{project}/experiments/{experiment}/fields/{fieldName}",
+            "/projects/{project}/experiments/{experiment}/scans/{scan}/fields/{fieldName}",
+            "/projects/{project}/experiments/{experiment}/assessors/{assessor}/fields/{fieldName}",
+            "/projects/{project}/subjects/{subject}/fields/{fieldName}",
+            "/projects/{project}/subjects/{subject}/experiments/{experiment}/fields/{fieldName}",
+            "/projects/{project}/subjects/{subject}/experiments/{experiment}/scans/{scan}/fields/{fieldName}",
+            "/projects/{project}/subjects/{subject}/experiments/{experiment}/assessors/{assessor}/fields/{fieldName}",
+            "/subjects/{subject}/fields/{fieldName}",
+            "/experiments/{experiment}/fields/{fieldName}",
+            "/experiments/{experiment}/assessors/{assessor}/fields/{fieldName}",
+            "/experiments/{experiment}/scans/{scan}/fields/{fieldName}"})
+    public String getFieldValue(@ApiParam("The project") @PathVariable(required = false) String project,
+                                @ApiParam("The subject") @PathVariable(required = false) String subject,
+                                @ApiParam("The experiment") @PathVariable(required = false) String experiment,
+                                @ApiParam("The scan") @PathVariable(required = false) String scan,
+                                @ApiParam("The assessor") @PathVariable(required = false) String assessor,
+                                @PathVariable final String fieldName) throws NotFoundException {
         final UserI user = XDAT.getUserDetails();
-        final ItemI item = getItem(user, pathVariables);
-        final JsonNode field = customFieldService.getFieldValue(item, key);
+        final ItemI item = getItem(user, project, subject, experiment, scan, assessor);
+        final JsonNode field = customFieldService.getFieldValue(item, fieldName);
         return field.isTextual() ? field.textValue() : field.toString();
     }
 
@@ -104,24 +108,28 @@ public class CustomFieldsApi extends AbstractXapiRestController {
             @ApiResponse(code = 403, message = "Not allowed."),
             @ApiResponse(code = 404, message = "Item not found.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = DELETE, value = {
-            "/projects/{project}/fields/{key}",
-            "/projects/{project}/experiments/{experiment}/fields/{key}",
-            "/projects/{project}/experiments/{experiment}/scans/{scan}/fields/{key}",
-            "/projects/{project}/experiments/{experiment}/assessors/{assessor}/fields/{key}",
-            "/projects/{project}/subjects/{subject}/fields/{key}",
-            "/projects/{project}/subjects/{subject}/experiments/{experiment}/fields/{key}",
-            "/projects/{project}/subjects/{subject}/experiments/{experiment}/scans/{scan}/fields/{key}",
-            "/projects/{project}/subjects/{subject}/experiments/{experiment}/assessors/{assessor}/fields/{key}",
-            "/subjects/{subject}/fields/{key}",
-            "/experiments/{experiment}/fields/{key}",
-            "/experiments/{experiment}/assessors/{assessor}/fields/{key}",
-            "/experiments/{experiment}/scans/{scan}/fields/{key}"})
-    public JsonNode deleteField(@PathVariable final Map<String, String> pathVariables,
-                                @PathVariable final String key)
+            "/projects/{project}/fields/{fieldName}",
+            "/projects/{project}/experiments/{experiment}/fields/{fieldName}",
+            "/projects/{project}/experiments/{experiment}/scans/{scan}/fields/{fieldName}",
+            "/projects/{project}/experiments/{experiment}/assessors/{assessor}/fields/{fieldName}",
+            "/projects/{project}/subjects/{subject}/fields/{fieldName}",
+            "/projects/{project}/subjects/{subject}/experiments/{experiment}/fields/{fieldName}",
+            "/projects/{project}/subjects/{subject}/experiments/{experiment}/scans/{scan}/fields/{fieldName}",
+            "/projects/{project}/subjects/{subject}/experiments/{experiment}/assessors/{assessor}/fields/{fieldName}",
+            "/subjects/{subject}/fields/{fieldName}",
+            "/experiments/{experiment}/fields/{fieldName}",
+            "/experiments/{experiment}/assessors/{assessor}/fields/{fieldName}",
+            "/experiments/{experiment}/scans/{scan}/fields/{fieldName}"})
+    public JsonNode deleteField(@ApiParam("The project") @PathVariable(required = false) String project,
+                                @ApiParam("The subject") @PathVariable(required = false) String subject,
+                                @ApiParam("The experiment") @PathVariable(required = false) String experiment,
+                                @ApiParam("The scan") @PathVariable(required = false) String scan,
+                                @ApiParam("The assessor") @PathVariable(required = false) String assessor,
+                                @PathVariable final String fieldName)
             throws NotFoundException, InsufficientPrivilegesException, NrgServiceException {
         final UserI user = XDAT.getUserDetails();
-        final ItemI item = getItem(user, pathVariables);
-        return customFieldService.removeField(XDAT.getUserDetails(), item, key);
+        final ItemI item = getItem(user, project, subject, experiment, scan, assessor);
+        return customFieldService.removeField(XDAT.getUserDetails(), item, fieldName);
     }
 
     @ResponseBody
@@ -144,11 +152,15 @@ public class CustomFieldsApi extends AbstractXapiRestController {
             "/experiments/{experiment}/fields",
             "/experiments/{experiment}/assessors/{assessor}/fields",
             "/experiments/{experiment}/scans/{scan}/fields"})
-    public JsonNode updateFields(@PathVariable final Map<String, String> pathVariables,
+    public JsonNode updateFields(@ApiParam("The project") @PathVariable(required = false) String project,
+                                 @ApiParam("The subject") @PathVariable(required = false) String subject,
+                                 @ApiParam("The experiment") @PathVariable(required = false) String experiment,
+                                 @ApiParam("The scan") @PathVariable(required = false) String scan,
+                                 @ApiParam("The assessor") @PathVariable(required = false) String assessor,
                                  @RequestBody final JsonNode newFields)
             throws NotFoundException, InsufficientPrivilegesException, NrgServiceException {
         final UserI user = XDAT.getUserDetails();
-        final ItemI item = getItem(user, pathVariables);
+        final ItemI item = getItem(user, project, subject, experiment, scan, assessor);
         return customFieldService.setFields(user, item, newFields);
     }
 
@@ -164,16 +176,16 @@ public class CustomFieldsApi extends AbstractXapiRestController {
      * Helper method that tries to figure out which item the user is trying to modify based on the supplied parameters
      *
      * @param user       - The user doing the action
-     * @param parameters - The map of parameters
+     * @param project    - The project
+     * @param subject    - The subject
+     * @param experiment - The experiment
+     * @param scan       - The scan
+     * @param assessor   - The assessor
      * @return
      * @throws NotFoundException if we can't find an item that matches.
      */
-    private ItemI getItem(final UserI user, final Map<String, String> parameters) throws NotFoundException {
-        final String project = parameters.get("project");
-        final String subject = parameters.get("subject");
-        final String experiment = parameters.get("experiment");
-        final String assessor = parameters.get("assessor");
-        final String scan = parameters.get("scan");
+    private ItemI getItem(final UserI user, final String project, final String subject,
+                          final String experiment, final String scan, final String assessor) throws NotFoundException {
 
         if (!StringUtils.isEmpty(experiment)) {
             final XnatExperimentdata experimentData = getExperiment(user, project, subject, experiment);

@@ -48,13 +48,15 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
+
 /**
  * DicomSCPManager
  *
  */
 @Service()
 @Slf4j
-@NrgPreferenceBean(toolId = "DicomScpManager", toolName = "DICOM SCP Manager", description = "Manages configuration of the various DICOM SCP endpoints on the XNAT system.")
+@NrgPreferenceBean(toolId = TOOL_ID, toolName = "DICOM SCP Manager", description = "Manages configuration of the various DICOM SCP endpoints on the XNAT system.")
 public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean implements PreferenceHandlerMethod {
     private final XnatUserProvider              _provider;
     private final ApplicationContext            _context;
@@ -66,6 +68,7 @@ public class DicomSCPManager extends EventTriggeringAbstractPreferenceBean imple
     private       boolean                             _isEnableDicomReceiver;
 
     private static final Pattern AE_TITLE_PATTERN = Pattern.compile("(?=[^\\\\]*[^\\s\\\\]+$)(?=^[^\\s\\\\]+[^\\\\]*)[ -~]{1,16}");
+    public static final String TOOL_ID = "dicomScpManager";
 
     @Autowired
     public DicomSCPManager(final ExecutorService executorService,

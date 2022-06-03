@@ -13,8 +13,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.dcm.scp.DicomSCPInstance;
 import org.nrg.dcm.scp.DicomSCPManager;
-import org.nrg.dcm.scp.exceptions.DicomNetworkException;
-import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.services.ToolService;
@@ -25,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Properties;
+import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
 
 /**
  * MigrateDicomSCPInstanceConfiguration: Initializing task to move DicomSCP configuration from Preferences to their own Entity.
@@ -37,7 +36,6 @@ public class MigrateDicomSCPInstanceConfiguration extends AbstractInitializingTa
     private final DicomSCPManager         _dicomSCPManager;
     private final ObjectMapper            _mapper;
 
-    private static final String TOOL_ID      = "dicomScpManager";
     private static final String PREF_ID      = "dicomSCPInstances";
 
     @Autowired

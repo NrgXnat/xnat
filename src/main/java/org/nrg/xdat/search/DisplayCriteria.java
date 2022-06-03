@@ -30,21 +30,21 @@ import java.util.List;
  */
 public class DisplayCriteria implements SQLClause {
 
-    private String element = null;
-    private String field = null;
-    private Object o = null;
+    private String element        = null;
+    private String field          = null;
+    private Object o              = null;
     private String comparisonType = "=";
-    private String where_value = null;
+    private String where_value    = null;
 
     private boolean overrideDataFormatting = false;
 
     public String getSQLClause() throws Exception {
         StringBuilder where = new StringBuilder(" (");
-        SchemaElement e = SchemaElement.GetElement(getElement());
-        DisplayField df = e.getDisplayField(getField());
+        SchemaElement e     = SchemaElement.GetElement(getElement());
+        DisplayField  df    = e.getDisplayField(getField());
 
         where.append(DisplayManager.DISPLAY_FIELDS_VIEW).append(e.getSQLName());
-        where.append(".").append(df.getId()).append(getComparisonType());
+        where.append(".").append(df.getId()).append(" ").append(getComparisonType()).append(" ");
         if (overrideDataFormatting) {
             where.append(getValue().toString());
         } else if (df.needsSQLQuotes()) {
@@ -74,8 +74,8 @@ public class DisplayCriteria implements SQLClause {
             return getSQLClause();
         }
         StringBuilder where = new StringBuilder(" (");
-        SchemaElement e = SchemaElement.GetElement(getElement());
-        DisplayField df = e.getDisplayField(getField());
+        SchemaElement e     = SchemaElement.GetElement(getElement());
+        DisplayField  df    = e.getDisplayField(getField());
 
         String v = "";
         if (getValue() != null) {
@@ -83,32 +83,30 @@ public class DisplayCriteria implements SQLClause {
         }
         if (overrideDataFormatting) {
             String tCT = getComparisonType().trim().toUpperCase();
-            String tV = (String) getValue();
+            String tV  = (String) getValue();
             if (tV != null) {
                 tV = tV.trim().toUpperCase();
                 if ((tCT.equals("IS NULL")) || (tCT.equals("IS") && tV.equals("NULL"))) {
                     if (df.needsSQLEmptyQuotes()) {
-                        where.append(" (").append(this.getSQLContent(df, qo)).append(" IS NULL OR ").append(this.getSQLContent(df, qo)).append("='')");
+                        where.append(" (").append(getSQLContent(df, qo)).append(" IS NULL OR ").append(getSQLContent(df, qo)).append("='')");
                     } else {
-                        where.append(" (").append(this.getSQLContent(df, qo)).append(" IS NULL)");
+                        where.append(" (").append(getSQLContent(df, qo)).append(" IS NULL)");
                     }
                 } else if ((tCT.equals("IS NOT NULL")) || (tCT.equals("IS NOT") && tV.equals("NULL")) || (tCT.equals("IS") && tV.equals("NOT NULL"))) {
                     if (df.needsSQLEmptyQuotes()) {
-                        where.append(" NOT(").append(this.getSQLContent(df, qo)).append(" IS NULL OR ").append(this.getSQLContent(df, qo)).append("='')");
+                        where.append(" NOT(").append(getSQLContent(df, qo)).append(" IS NULL OR ").append(getSQLContent(df, qo)).append("='')");
                     } else {
-                        where.append(" NOT(").append(this.getSQLContent(df, qo)).append(" IS NULL)");
+                        where.append(" NOT(").append(getSQLContent(df, qo)).append(" IS NULL)");
                     }
                 } else {
-                    where.append(this.getSQLContent(df, qo));
-                    where.append(getComparisonType());
-                    where.append(getValue().toString());
+                    where.append(getSQLContent(df, qo)).append(" ").append(getComparisonType()).append(" ").append(getValue().toString());
                 }
             }
         } else {
             if (!getComparisonType().contains("LIKE")) {
                 where.append(handleValues(v, df, qo, df.needsSQLQuotes()));
             } else {
-                where.append("LOWER(").append(this.getSQLContent(df, qo)).append(")");
+                where.append("LOWER(").append(getSQLContent(df, qo)).append(")");
                 where.append(getComparisonType());
                 where.append("'").append(getValue().toString().toLowerCase()).append("'");
             }
@@ -117,37 +115,34 @@ public class DisplayCriteria implements SQLClause {
         return where.toString();
     }
 
-    private String handleValues(String v, DisplayField df, QueryOrganizerI qo, boolean needsQuotes) throws Exception {
-        if (v.trim().equals("") && getComparisonType().trim().equals("=")) {
-            StringBuilder where = new StringBuilder();
-            where.append(this.getSQLContent(df, qo));
-            where.append(" IS NULL");
-            if (df.needsSQLEmptyQuotes()) {
-                where.append(" OR ");
-                where.append(this.getSQLContent(df, qo));
-                where.append(getComparisonType());
-                where.append("''");
-            }
-            return where.toString();
-        } else if (getComparisonType().trim().equals("!=")) {
+    private String handleValues(final String value, final DisplayField displayField, final QueryOrganizerI organizer, final boolean needsQuotes) throws Exception {
+        final String comparisonType = getComparisonType().trim();
+        final String sqlContent     = getSQLContent(displayField, organizer);
+        if (StringUtils.isBlank(value) && StringUtils.equals(comparisonType, "=")) {
+            final String where = sqlContent + " IS NULL";
+            return displayField.needsSQLEmptyQuotes()
+                   ? String.join(" ", where, "OR", sqlContent, comparisonType + "''")
+                   : where;
+        }
+        if (comparisonType.equals("!=")) {
             StringBuilder where = new StringBuilder();
             where.append("(");
-            where.append(this.getSQLContent(df, qo));
+            where.append(sqlContent);
             where.append(getComparisonType());
             if (needsQuotes) {
-                where.append("'").append(v).append("'");
+                where.append("'").append(value).append("'");
             } else {
-                where.append(v);
+                where.append(value);
             }
             where.append(" OR ");
-            where.append(this.getSQLContent(df, qo));
+            where.append(sqlContent);
             where.append(" IS NULL)");
             return where.toString();
-        } else if (v.trim().equals("*")) {
-            return " (" + this.getSQLContent(df, qo) + " IS NOT NULL)";
-        } else if (getComparisonType().trim().equals("IN")) {
+        } else if (value.trim().equals("*")) {
+            return " (" + sqlContent + " IS NOT NULL)";
+        } else if (comparisonType.equals("IN")) {
             StringBuilder values = new StringBuilder();
-            String[]      tokens = v.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+            String[]      tokens = value.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
             StringUtils.stripAll(tokens, "'\"");
             int c = 0;
             for (String t : tokens) {
@@ -162,41 +157,25 @@ public class DisplayCriteria implements SQLClause {
                     }
                 }
             }
-
-            return " (" + this.getSQLContent(df, qo) + " IN (" + values + "))";
-        } else if (getComparisonType().trim().equals("BETWEEN")) {
-            int and = v.toUpperCase().indexOf(" AND ");
+            return " (" + sqlContent + " IN (" + values + "))";
+        } else if (comparisonType.equals("BETWEEN")) {
+            int and = value.toUpperCase().indexOf(" AND ");
             if (and == -1) {
                 throw new InvalidValueException("BETWEEN clauses require an AND to separate values");
             }
 
-            String v1 = v.substring(0, and);
-            String v2 = v.substring(and + 5);
+            final String v1 = StringUtils.strip(value.substring(0, and), "'\"");
+            final String v2 = StringUtils.strip(value.substring(and + 5), "'\"");
 
-            //remove any user quotes from beginning and end
-            StringUtils.strip(v1, "'\"");
-            StringUtils.strip(v2, "'\"");
-
-            if (!PoolDBUtils.HackCheck(v1) && !PoolDBUtils.HackCheck(v2)) {
-                return " (" + this.getSQLContent(df, qo) + " BETWEEN '" + v1 + "' AND '" + v2 + "')";//it appears to be OK to use quotes here even with numeric data
-            } else {
+            if (PoolDBUtils.HackCheck(v1) || PoolDBUtils.HackCheck(v2)) {
                 throw new InvalidValueException("Invalid BETWEEN values");
             }
-
+            return " (" + sqlContent + " BETWEEN '" + v1 + "' AND '" + v2 + "')"; //it appears to be OK to use quotes here even with numeric data
         } else {
-            if (PoolDBUtils.HackCheck(v)) {
+            if (PoolDBUtils.HackCheck(value)) {
                 throw new InvalidValueException("Invalid BETWEEN values");
             }
-
-            StringBuilder where = new StringBuilder();
-            where.append(this.getSQLContent(df, qo));
-            where.append(getComparisonType());
-            if (needsQuotes) {
-                where.append("'").append(v).append("'");
-            } else {
-                where.append(v);
-            }
-            return where.toString();
+            return String.join(" ", sqlContent, getComparisonType(), needsQuotes ? "'" + value + "'" : value);
         }
     }
 
@@ -205,8 +184,8 @@ public class DisplayCriteria implements SQLClause {
     @SuppressWarnings("unchecked")
     public ArrayList getSchemaFields() throws Exception {
         if (schemaFields == null) {
-            SchemaElement e = SchemaElement.GetElement(getElement());
-            DisplayField df = e.getDisplayField(getField());
+            SchemaElement e  = SchemaElement.GetElement(getElement());
+            DisplayField  df = e.getDisplayField(getField());
 
             schemaFields = df.getSchemaFields();
         }
@@ -215,7 +194,7 @@ public class DisplayCriteria implements SQLClause {
 
     public ArrayList<DisplayCriteria> getSubQueries() throws Exception {
         ArrayList<DisplayCriteria> al = new ArrayList<>();
-        if (this.getWhere_value() != null) {
+        if (getWhere_value() != null) {
             al.add(this);
         }
         return al;
@@ -235,7 +214,7 @@ public class DisplayCriteria implements SQLClause {
     }
 
     public void setSearchFieldByDisplayField(String elementName, String fieldId) {
-        field = fieldId;
+        field   = fieldId;
         element = elementName;
     }
 
@@ -244,6 +223,7 @@ public class DisplayCriteria implements SQLClause {
      *
      * @param value     The value to set.
      * @param hackCheck Whether the value should be run through the {@link PoolDBUtils#HackCheck(String)} test.
+     *
      * @throws Exception When an error occurs.
      */
     public void setValue(Object value, boolean hackCheck) throws Exception {
@@ -261,7 +241,7 @@ public class DisplayCriteria implements SQLClause {
                 throw new Exception("Invalid search value (" + temp + ")");
             }
 
-            if(!comparisonType.contains("LIKE")){
+            if (!comparisonType.contains("LIKE")) {
                 value = XftStringUtils.CleanForSQLValue(temp);
             } else {
                 // Backslash is used as an escape character for both the LIKE clause and for sql strings in general,

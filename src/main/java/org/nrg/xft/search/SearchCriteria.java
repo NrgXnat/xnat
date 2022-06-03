@@ -14,13 +14,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.PermissionCriteriaI;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -31,6 +28,8 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SearchCriteria implements SQLClause {
     static  org.apache.log4j.Logger logger             = Logger.getLogger(SearchCriteria.class);
@@ -58,72 +57,49 @@ public class SearchCriteria implements SQLClause {
     }
 
     public String getSQLClause() throws Exception {
-        if (overrideFormatting) {
-            return " (" + getField_name() + getComparison_type() + getValue() + ")";
-        } else {
-            return " (" + getField_name() + getComparison_type() + valueToDB() + ")";
-        }
+        return " (" + Stream.of(getField_name(), getComparison_type(), overrideFormatting ? (String) getValue() : valueToDB()).map(String::trim).collect(Collectors.joining(" ")) + ")";
     }
 
     public String getSQLClause(QueryOrganizerI qo) throws Exception {
         if (qo == null) {
             return getSQLClause();
         } else {
+            final String translatedXMLPath = qo.translateXMLPath(getXMLPath()).trim();
             if (overrideFormatting) {
                 if (!getComparison_type().toLowerCase().contains("like")) {
-                    String tCT = getComparison_type().trim().toUpperCase();
-                    String tV  = (String) getValue();
-                    if (tV != null) {
-                        tV = tV.trim().toUpperCase();
-                    }
-                    assert tV != null;
+                    assert getValue() != null;
+                    final String tCT = getComparison_type().trim().toUpperCase();
+                    final String tV  = StringUtils.trim((String) getValue()).toUpperCase();
                     if ((tCT.equals("IS NULL")) || (tCT.equals("IS") && tV.equals("NULL"))) {
-                        if (this.getCleanedType() != null && this.getCleanedType().equals("string")) {
-                            return " (" + qo.translateXMLPath(this.getXMLPath()) + " IS NULL OR " + qo.translateXMLPath(this.getXMLPath()) + "='')";
-                        } else {
-                            return " (" + qo.translateXMLPath(this.getXMLPath()) + " IS NULL) ";
-                        }
-                    } else if ((tCT.equals("IS NOT NULL")) || (tCT.equals("IS NOT") && tV.equals("NULL")) || (tCT.equals("IS") && tV.equals("NOT NULL"))) {
-                        if (this.getCleanedType() != null && this.getCleanedType().equals("string")) {
-                            return " NOT(" + qo.translateXMLPath(this.getXMLPath()) + " IS NULL OR " + qo.translateXMLPath(this.getXMLPath()) + "='')";
-                        } else {
-                            return " NOT(" + qo.translateXMLPath(this.getXMLPath()) + " IS NULL) ";
-                        }
-                    } else {
-                        return " (" + qo.translateXMLPath(this.getXMLPath()) + getComparison_type() + getValue() + ")";
+                        return StringUtils.equals("string", getCleanedType())
+                               ? " (" + translatedXMLPath + " IS NULL OR " + translatedXMLPath + "='')"
+                               : " (" + translatedXMLPath + " IS NULL) ";
                     }
-                } else {
-
-                    return " (" + qo.translateXMLPath(this.getXMLPath()) + " " + getComparison_type() + " " + getValue() + ")";
+                    if (tCT.equals("IS NOT NULL") || tCT.equals("IS NOT") && tV.equals("NULL") || tCT.equals("IS") && tV.equals("NOT NULL")) {
+                        return StringUtils.equals("string", getCleanedType())
+                               ? " NOT(" + translatedXMLPath + " IS NULL OR " + translatedXMLPath + "='')"
+                               : " NOT(" + translatedXMLPath + " IS NULL) ";
+                    }
                 }
+                return " (" + Stream.of(translatedXMLPath, getComparison_type(), getValue().toString()).map(String::trim).collect(Collectors.joining(" ")) + ")";
             } else {
                 if (!getComparison_type().toLowerCase().contains("like")) {
-                    String v = valueToDB();
+                    final String v = valueToDB();
                     if (v == null && getComparison_type().trim().equals("=")) {
-                        return "" + qo.translateXMLPath(this.getXMLPath()) +
+                        return "" + translatedXMLPath +
                                " IS NULL" +
                                " OR " +
-                               qo.translateXMLPath(this.getXMLPath()) +
+                               translatedXMLPath + " " +
                                getComparison_type() +
                                "''";
-                    } else if (v != null && v.trim().equals("*")) {
-                        return " (" + qo.translateXMLPath(this.getXMLPath()) + " IS NOT NULL)";
-                    } else {
-                        return " (" + qo.translateXMLPath(this.getXMLPath()) + getComparison_type() + v + ")";
                     }
-                } else {
-                    String v = valueToDB();
-                    if (v.contains("*")) {
-                        v = StringUtils.replace(v, "*", "%");
+                    if (v != null && v.trim().equals("*")) {
+                        return " (" + translatedXMLPath + " IS NOT NULL)";
                     }
-                    if (!v.contains("%")) {
-                        //remove single quotes
-                        v = v.substring(1, v.length() - 1);
-
-                        v = "'%" + v + "%'";
-                    }
-                    return " (LOWER(" + qo.translateXMLPath(this.getXMLPath()) + ") " + getComparison_type() + " " + v.toLowerCase() + ")";
+                    return " (" + translatedXMLPath + " " + getComparison_type().trim() + " " + (v == null ? "null" : v.trim()) + ")";
                 }
+                final String value = "'%" + StringUtils.stripEnd(StringUtils.stripStart(StringUtils.replace(valueToDB(), "*", "%"), "'%"), "'%") + "%'";
+                return " (LOWER(" + translatedXMLPath + ") " + getComparison_type() + " " + value.toLowerCase() + ")";
             }
         }
     }
@@ -138,10 +114,10 @@ public class SearchCriteria implements SQLClause {
      * @param v The search value to set.
      */
     public SearchCriteria(GenericWrapperField f, Object v) throws Exception {
-        field = f;
+        field   = f;
         xmlPath = f.getXMLPathString(f.getParentElement().getFullXMLName());
-        this.setValue(v);
-        field_name = f.getSQLName();
+        setValue(v);
+        field_name  = f.getSQLName();
         cleanedType = f.getXMLType().getLocalType();
     }
 
@@ -232,28 +208,18 @@ public class SearchCriteria implements SQLClause {
      * value to search for.
      *
      * @param value The value to set for searching.
+     *
      * @throws Exception When an error occurs.
      */
     public void setValue(Object value) throws Exception {
+        final String temp;
         if (value instanceof String) {
-            String temp = (String) value;
-
-            if (PoolDBUtils.HackCheck(temp)) {
-                if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
-                    String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
-                    String typeMessage = "VALUE:" + temp;
-                    body = body.replaceAll("TYPE", typeMessage);
-                    body = body.replaceAll("USER_DETAILS", "");
-                    AdminUtils.sendAdminEmail("Possible SQL Injection Attempt", body);
-                }
-                throw new Exception("Invalid search value (" + temp + ")");
-            }
-
-            if (temp.contains("'")) {
-                value = XftStringUtils.CleanForSQLValue(temp);
-            }
+            temp = (String) value;
+        } else {
+            temp = value.toString();
         }
-        this.value = value;
+        hackCheck(temp);
+        this.value = temp.contains("'") ? XftStringUtils.CleanForSQLValue(temp) : temp;
     }
 
     /**
@@ -283,6 +249,7 @@ public class SearchCriteria implements SQLClause {
      * (i.e. MrSession.Experiment.ExptDate)
      *
      * @param field The field to set for searching.
+     *
      * @throws XFTInitException         When an error occurs in XFT.
      * @throws ElementNotFoundException When a specified element isn't found on the object.
      * @throws FieldNotFoundException   When a specified field isn't found on the object.
@@ -291,23 +258,22 @@ public class SearchCriteria implements SQLClause {
         xmlPath = XftStringUtils.StandardizeXMLPath(field);
         String                rootElement = XftStringUtils.GetRootElementName(field);
         GenericWrapperElement root        = GenericWrapperElement.GetElement(rootElement);
-        this.setElementName(root.getFullXMLName());
+        setElementName(root.getFullXMLName());
         field = root.getFullXMLName() + xmlPath.substring(xmlPath.indexOf(XFT.PATH_SEPARATOR));
         GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(field);
 
         String temp = ViewManager.GetViewColumnName(root, field);
 
-        this.setField_name(temp);
+        setField_name(temp);
         assert f != null;
         if (f.isReference()) {
             GenericWrapperElement gwe = ((GenericWrapperElement) f.getReferenceElement());
-            //noinspection LoopStatementThatDoesntLoop
-            for (final Object gwf : gwe.getAllPrimaryKeys()) {
-                this.setCleanedType(((GenericWrapperField) gwf).getXMLType().getLocalType());
+            for (final GenericWrapperField gwf : gwe.getAllPrimaryKeys()) {
+                setCleanedType(gwf.getXMLType().getLocalType());
                 break;
             }
         } else {
-            this.setCleanedType(f.getXMLType().getLocalType());
+            setCleanedType(f.getXMLType().getLocalType());
         }
 
     }
@@ -340,7 +306,7 @@ public class SearchCriteria implements SQLClause {
     @Override
     public String toString() {
         try {
-            return this.getSQLClause();
+            return getSQLClause();
         } catch (Exception e) {
             return "error";
         }
@@ -384,16 +350,18 @@ public class SearchCriteria implements SQLClause {
                 .toHashCode();
     }
 
+    @SuppressWarnings("rawtypes")
     public ArrayList getSchemaFields() {
         ArrayList al = new ArrayList();
         Object[]  o  = new Object[2];
-        o[0] = this.getXMLPath();
-        o[1] = this.getField();
+        o[0] = getXMLPath();
+        o[1] = getField();
         //noinspection unchecked
         al.add(o);
         return al;
     }
 
+    @SuppressWarnings("RedundantThrows")
     public ArrayList<DisplayCriteria> getSubQueries() throws Exception {
         return new ArrayList<>();
     }

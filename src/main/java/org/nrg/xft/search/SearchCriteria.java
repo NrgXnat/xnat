@@ -10,10 +10,11 @@
 
 package org.nrg.xft.search;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.log4j.Logger;
+import org.nrg.xdat.exceptions.InvalidSearchException;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xft.XFT;
@@ -28,19 +29,23 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.ArrayList;
+import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Slf4j
 public class SearchCriteria implements SQLClause {
-    static  org.apache.log4j.Logger logger             = Logger.getLogger(SearchCriteria.class);
-    private String                  elementName        = "";
-    private String                  xmlPath            = "";
-    private String                  field_name         = "";
-    private Object                  value              = "";
-    private String                  comparison_type    = "=";
-    private GenericWrapperField     field              = null;
-    private String                  cleanedType        = "";
-    private boolean                 overrideFormatting = false;
+    private static final Supplier<InvalidSearchException> NO_VALUE_SET_EXCEPTION_SUPPLIER = () -> new InvalidSearchException("You must specify a value before getting the SQL for this search, but value is currently null");
+
+    private String              elementName        = "";
+    private String              xmlPath            = "";
+    private String              field_name         = "";
+    private Object              value              = "";
+    private String              comparison_type    = "=";
+    private GenericWrapperField field              = null;
+    private String              cleanedType        = "";
+    private boolean             overrideFormatting = false;
 
     /**
      * @return Returns the overrideFormatting.
@@ -63,45 +68,42 @@ public class SearchCriteria implements SQLClause {
     public String getSQLClause(QueryOrganizerI qo) throws Exception {
         if (qo == null) {
             return getSQLClause();
-        } else {
-            final String translatedXMLPath = qo.translateXMLPath(getXMLPath()).trim();
-            if (overrideFormatting) {
-                if (!getComparison_type().toLowerCase().contains("like")) {
-                    assert getValue() != null;
-                    final String tCT = getComparison_type().trim().toUpperCase();
-                    final String tV  = StringUtils.trim((String) getValue()).toUpperCase();
-                    if ((tCT.equals("IS NULL")) || (tCT.equals("IS") && tV.equals("NULL"))) {
-                        return StringUtils.equals("string", getCleanedType())
-                               ? " (" + translatedXMLPath + " IS NULL OR " + translatedXMLPath + "='')"
-                               : " (" + translatedXMLPath + " IS NULL) ";
-                    }
-                    if (tCT.equals("IS NOT NULL") || tCT.equals("IS NOT") && tV.equals("NULL") || tCT.equals("IS") && tV.equals("NOT NULL")) {
-                        return StringUtils.equals("string", getCleanedType())
-                               ? " NOT(" + translatedXMLPath + " IS NULL OR " + translatedXMLPath + "='')"
-                               : " NOT(" + translatedXMLPath + " IS NULL) ";
-                    }
-                }
-                return " (" + Stream.of(translatedXMLPath, getComparison_type(), getValue().toString()).map(String::trim).collect(Collectors.joining(" ")) + ")";
-            } else {
-                if (!getComparison_type().toLowerCase().contains("like")) {
-                    final String v = valueToDB();
-                    if (v == null && getComparison_type().trim().equals("=")) {
-                        return "" + translatedXMLPath +
-                               " IS NULL" +
-                               " OR " +
-                               translatedXMLPath + " " +
-                               getComparison_type() +
-                               "''";
-                    }
-                    if (v != null && v.trim().equals("*")) {
-                        return " (" + translatedXMLPath + " IS NOT NULL)";
-                    }
-                    return " (" + translatedXMLPath + " " + getComparison_type().trim() + " " + (v == null ? "null" : v.trim()) + ")";
-                }
-                final String value = "'%" + StringUtils.stripEnd(StringUtils.stripStart(StringUtils.replace(valueToDB(), "*", "%"), "'%"), "'%") + "%'";
-                return " (LOWER(" + translatedXMLPath + ") " + getComparison_type() + " " + value.toLowerCase() + ")";
-            }
         }
+        final String  translatedXMLPath      = qo.translateXMLPath(getXMLPath()).trim();
+        final String  comparisonType         = getComparison_type().trim();
+        final boolean comparisonContainsLike = StringUtils.containsIgnoreCase(comparisonType, "like");
+        if (overrideFormatting) {
+            final String value = Optional.ofNullable(getValue()).orElseThrow(NO_VALUE_SET_EXCEPTION_SUPPLIER).toString().trim();
+            if (comparisonContainsLike) {
+                return " (" + Stream.of(translatedXMLPath, comparisonType, value).map(String::trim).collect(Collectors.joining(" ")) + ")";
+            }
+            if (StringUtils.equalsIgnoreCase(comparisonType, "IS NULL") ||
+                StringUtils.equalsIgnoreCase(comparisonType, "IS") && StringUtils.equalsIgnoreCase(value, "NULL")) {
+                return StringUtils.equalsIgnoreCase("string", getCleanedType())
+                       ? " (" + translatedXMLPath + " IS NULL OR " + translatedXMLPath + "='')"
+                       : " (" + translatedXMLPath + " IS NULL) ";
+            }
+            if (StringUtils.equalsIgnoreCase(comparisonType, "IS NOT NULL") ||
+                StringUtils.equalsIgnoreCase(comparisonType, "IS NOT") && StringUtils.equalsIgnoreCase(value, "NULL") ||
+                StringUtils.equalsIgnoreCase(comparisonType, "IS") && StringUtils.equalsIgnoreCase(value, "NOT NULL")) {
+                return StringUtils.equalsIgnoreCase("string", getCleanedType())
+                       ? " NOT(" + translatedXMLPath + " IS NULL OR " + translatedXMLPath + "='')"
+                       : " NOT(" + translatedXMLPath + " IS NULL) ";
+            }
+            return " (" + String.join(" ", translatedXMLPath, comparisonType, value) + ")";
+        }
+        final String value = valueToDB().trim();
+        if (comparisonContainsLike) {
+            final String comparisonValue = StringUtils.lowerCase("'%" + StringUtils.stripEnd(StringUtils.stripStart(StringUtils.replace(valueToDB(), "*", "%"), "'%"), "'%") + "%'");
+            return " (LOWER(" + translatedXMLPath + ") " + comparisonType + " " + comparisonValue + ")";
+        }
+        if (StringUtils.isBlank(value) && comparisonType.equals("=")) {
+            return translatedXMLPath + " IS NULL OR " + translatedXMLPath + " " + comparisonType + "''";
+        }
+        if (StringUtils.equals(value, "*")) {
+            return " (" + translatedXMLPath + " IS NOT NULL)";
+        }
+        return " (" + translatedXMLPath + " " + comparisonType.trim() + " " + value + ")";
     }
 
     public SearchCriteria() {
@@ -230,17 +232,14 @@ public class SearchCriteria implements SQLClause {
     public String valueToDB() {
         if (getValue() == null) {
             return null;
-        } else {
-            try {
-                if (field != null && field.getWrapped().getRule().getBaseType().equals("xs:anyURI")) {
-                    return DBAction.ValueParser(getValue(), "anyURI", true);
-                } else {
-                    return DBAction.ValueParser(getValue(), getCleanedType(), true);
-                }
-            } catch (InvalidValueException e) {
-                logger.error("", e);
-                return null;
-            }
+        }
+        try {
+            return field != null && StringUtils.equalsIgnoreCase(field.getWrapped().getRule().getBaseType(), "xs:anyURI")
+                   ? DBAction.ValueParser(getValue(), "anyURI", true)
+                   : DBAction.ValueParser(getValue(), getCleanedType(), true);
+        } catch (InvalidValueException e) {
+            log.error("An invalid value was specified", e);
+            return null;
         }
     }
 
@@ -372,7 +371,7 @@ public class SearchCriteria implements SQLClause {
             newC.setFieldWXMLPath(c.getField());
             newC.setValue(c.getFieldValue());
         } catch (Exception e) {
-            logger.error("", e);
+            log.error("", e);
         }
 
         return newC;

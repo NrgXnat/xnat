@@ -62,7 +62,8 @@ public class XFT {
         XFTMetaManager.clean();
         XFTReferenceManager.clean();
         XFTPseudonymManager.clean();
-
+        GenericWrapperElement.ClearElementCache();
+        
         XFTManager.init(location);
 
         try {

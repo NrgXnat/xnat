@@ -283,7 +283,7 @@ var XNAT = getObject(XNAT);
 
             }
             else {
-                return spawn('p', 'No stored searches to display');
+                container.empty().append(spawn('div.message', 'No stored searches to display'));
             }
         });
 

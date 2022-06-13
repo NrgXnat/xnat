@@ -1,7 +1,7 @@
 package org.nrg.dcm.scp.daos;
 
 import org.nrg.dcm.id.ExtractorFromRuleProvider;
-import org.nrg.dcm.id.RoutingExpressionFromStringProvider;
+import org.nrg.dcm.id.RoutingExpressionFromMultilineStringProvider;
 import org.nrg.dcm.scp.DicomSCPInstance;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.stereotype.Service;
@@ -63,9 +63,9 @@ public class DicomSCPInstanceService extends AbstractHibernateEntityService<Dico
 
     public String validate( DicomSCPInstance instance) {
         List<String> expressions = Arrays.asList( instance.getProjectRoutingExpression(),
-                                                  instance.getSubjectRoutingExpression(),
-                                                  instance.getSessionRoutingExpression());
-        RoutingExpressionFromStringProvider expressionProvider = new RoutingExpressionFromStringProvider( expressions);
+                instance.getSubjectRoutingExpression(),
+                instance.getSessionRoutingExpression());
+        RoutingExpressionFromMultilineStringProvider expressionProvider = new RoutingExpressionFromMultilineStringProvider( expressions);
         ExtractorFromRuleProvider extratorProvider = new ExtractorFromRuleProvider( expressionProvider);
         return extratorProvider.validate().stream().collect(Collectors.joining(":"));
     }

@@ -32,6 +32,10 @@ import java.util.regex.Pattern;
 public class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
     private final ExtractorProvider _extractorProvider;
 
+    public Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache) {
+        this(userProjectCache, XDAT.getContextService().getBean( ConfigService.class));
+    }
+
     public Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache, ConfigService configService) {
         super(userProjectCache);
         _extractorProvider = new ExtractorFromConfigProvider( configService);

@@ -10,7 +10,6 @@
 package org.nrg.dcm.id;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.config.services.ConfigService;
 import org.nrg.dcm.Extractor;
 import org.nrg.dcm.id.CompositeDicomObjectIdentifier.ExtractorType;
 import org.nrg.dcm.scp.daos.DicomSCPInstanceService;
@@ -27,8 +26,8 @@ import java.util.List;
 public class Xnat15PerReceiverDicomProjectIdentifier extends Xnat15DicomProjectIdentifier implements AeTitleAndPortAware {
     private final ExtractorFromInstanceProvider _extractorFromInstanceProvider;
 
-    public Xnat15PerReceiverDicomProjectIdentifier(final UserProjectCache userProjectCache, ConfigService configService, DicomSCPInstanceService dicomSCPInstanceService) {
-        super(userProjectCache, configService);
+    public Xnat15PerReceiverDicomProjectIdentifier(final UserProjectCache userProjectCache, DicomSCPInstanceService dicomSCPInstanceService) {
+        super(userProjectCache);
         _extractorFromInstanceProvider = new ExtractorFromInstanceProvider( new RoutingExpressionFromInstanceProvider( dicomSCPInstanceService));
     }
 

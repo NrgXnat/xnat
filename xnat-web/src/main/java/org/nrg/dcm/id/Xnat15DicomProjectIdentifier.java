@@ -11,7 +11,6 @@ package org.nrg.dcm.id;
 
 import lombok.extern.slf4j.Slf4j;
 import org.dcm4che2.data.Tag;
-import org.nrg.config.services.ConfigService;
 import org.nrg.dcm.ContainedAssignmentExtractor;
 import org.nrg.dcm.Extractor;
 import org.nrg.dcm.TextExtractor;
@@ -33,12 +32,8 @@ public class Xnat15DicomProjectIdentifier extends DbBackedProjectIdentifier {
     private final ExtractorProvider _extractorProvider;
 
     public Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache) {
-        this(userProjectCache, XDAT.getContextService().getBean( ConfigService.class));
-    }
-
-    public Xnat15DicomProjectIdentifier(final UserProjectCache userProjectCache, ConfigService configService) {
         super(userProjectCache);
-        _extractorProvider = new ExtractorFromConfigProvider( configService);
+        _extractorProvider = new ExtractorFromConfigProvider();
     }
 
     @Override

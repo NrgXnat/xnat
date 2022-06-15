@@ -1,6 +1,5 @@
 package org.nrg.dcm.id;
 
-import org.nrg.config.services.ConfigService;
 import org.nrg.dcm.Extractor;
 import org.nrg.dcm.scp.daos.DicomSCPInstanceService;
 import org.nrg.xdat.security.user.XnatUserProvider;
@@ -18,9 +17,8 @@ public class XnatDefaultPerReceiverDicomObjectIdentifier extends XnatDefaultDico
     public XnatDefaultPerReceiverDicomObjectIdentifier(String name,
                                                        XnatUserProvider userProvider,
                                                        DicomProjectIdentifier identifier,
-                                                       ConfigService configService,
                                                        DicomSCPInstanceService dicomSCPInstanceService) {
-        super(name, userProvider, configService, identifier);
+        super(name, userProvider, identifier);
         _extractorFromInstanceProvider = new ExtractorFromInstanceProvider( new RoutingExpressionFromInstanceProvider( dicomSCPInstanceService));
     }
 

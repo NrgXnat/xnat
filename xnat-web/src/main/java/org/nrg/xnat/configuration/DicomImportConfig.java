@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.configuration;
 
-import org.nrg.config.services.ConfigService;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.id.ClassicDicomObjectIdentifier;
 import org.nrg.dcm.id.TemplatizedDicomFileNamer;
@@ -38,10 +37,9 @@ public class DicomImportConfig {
     public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final MessageSource messageSource,
                                                                         final XnatUserProvider receivedFileUserProvider,
                                                                         final UserProjectCache userProjectCache,
-                                                                        final ConfigService configService,
                                                                         final DicomSCPInstanceService dicomSCPInstanceService) {
         final String name = messageSource.getMessage("dicomConfig.defaultObjectIdentifier", new Object[]{ClassicDicomObjectIdentifier.class.getSimpleName()}, "Default DICOM object identifier ({0})", Locale.getDefault());
-        return new ClassicDicomObjectIdentifier(name, receivedFileUserProvider, userProjectCache, configService, dicomSCPInstanceService);
+        return new ClassicDicomObjectIdentifier(name, receivedFileUserProvider, userProjectCache, dicomSCPInstanceService);
     }
 
     @Bean

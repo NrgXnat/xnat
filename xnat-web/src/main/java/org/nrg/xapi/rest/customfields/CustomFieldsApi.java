@@ -237,31 +237,54 @@ public class CustomFieldsApi extends AbstractXapiRestController {
     }
 
     private XnatExperimentdata getExperiment(final UserI user, final String project, final String subject, final String experiment) throws NotFoundException {
-        final XnatExperimentdata experimentData = StringUtils.isEmpty(project) ?
-                XnatExperimentdata.getXnatExperimentdatasById(experiment, user, false) :
-                XnatExperimentdata.GetExptByProjectIdentifier(project, experiment, user, false);
-
-        if (null != experimentData) {
-            if (!StringUtils.isEmpty(subject)) {
-                // Verify the experiment belongs to the subject specified by the user.
-                if (!subject.equals(((XnatSubjectassessordata) experimentData).getSubjectData().getLabel())) {
-                    throw new NotFoundException("Unable to identify experiment: " + experiment);
-                }
+        XnatExperimentdata experimentData;
+        if (StringUtils.isEmpty(project)) {
+            // If the project wasn't specified, try to get the experiment by id
+            experimentData = XnatExperimentdata.getXnatExperimentdatasById(experiment, user, false);
+        } else {
+            // If the project was specified, try to get the experiment by project id + experiment label
+            experimentData = XnatExperimentdata.GetExptByProjectIdentifier(project, experiment, user, false);
+            if (null == experimentData) {
+                // If we couldn't find it, try to find the experiment by id.
+                experimentData = XnatExperimentdata.getXnatExperimentdatasById(experiment, user, false);
             }
-            return experimentData;
         }
-        throw new NotFoundException("Unable to identify experiment: " + experiment);
+
+        // If we found an experiment, verify the project actually matches since we could have found the experiment by id.
+        if (null == experimentData || (!StringUtils.isEmpty(project) && !project.equals(experimentData.getProject()))) {
+            throw new NotFoundException("Unable to identify experiment: " + experiment);
+        }
+
+        if (!StringUtils.isEmpty(subject)) {
+            // If the user specified a subject, we need to verify that the subject matches
+            // either the experiment's subject id or subject label. 
+            if (!subject.equals(((XnatSubjectassessordata) experimentData).getSubjectData().getLabel()) &&
+                    !subject.equals(((XnatSubjectassessordata) experimentData).getSubjectId())) {
+                throw new NotFoundException("Unable to identify experiment: " + experiment);
+            }
+        }
+        return experimentData;
     }
 
     private XnatSubjectdata getSubject(final UserI user, final String project, final String subject) throws NotFoundException {
-        final XnatSubjectdata subjectData = StringUtils.isEmpty(project) ?
-                XnatSubjectdata.getXnatSubjectdatasById(subject, user, false) :
-                XnatSubjectdata.GetSubjectByProjectIdentifier(project, subject, user, false);
-
-        if (null != subjectData) {
-            return subjectData;
+        XnatSubjectdata subjectData;
+        if (StringUtils.isEmpty(project)) {
+            // If the project wasn't specified, try to get the subject by id
+            subjectData = XnatSubjectdata.getXnatSubjectdatasById(subject, user, false);
+        } else {
+            // If the project was specified, try to get the subject by project id + subject label
+            subjectData = XnatSubjectdata.GetSubjectByProjectIdentifier(project, subject, user, false);
+            if (null == subjectData) {
+                // If we couldn't find it, try to find the subject by id.
+                subjectData = XnatSubjectdata.getXnatSubjectdatasById(subject, user, false);
+            }
         }
-        throw new NotFoundException("Unable to identify subject: " + subject);
+
+        // If we found a subject, verify the project actually matches since we could have found the subject by id.
+        if (null == subjectData || (!StringUtils.isEmpty(project) && !project.equals(subjectData.getProject()))) {
+            throw new NotFoundException("Unable to identify experiment: " + subject);
+        }
+        return subjectData;
     }
 
     private XnatProjectdata getProject(final UserI user, final String project) throws NotFoundException {

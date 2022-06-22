@@ -108,28 +108,9 @@ public class DatabaseConfig {
             log.info("No value set for the XNAT datasource class, using the default setting {}", DEFAULT_DATASOURCE_CLASS);
             properties.setProperty("class", DEFAULT_DATASOURCE_CLASS);
         }
-        // If the BasicDataSource class is specified, then set some default database connection pooling parameters.
-        if (StringUtils.equals(properties.getProperty("class"), DEFAULT_DATASOURCE_CLASS)) {
-            if (!properties.containsKey("initialSize")) {
-                log.info("No value set for the XNAT datasource initial connection pool size, using default setting {}", DEFAULT_DATASOURCE_INITIAL_SIZE);
-                properties.setProperty("initialSize", DEFAULT_DATASOURCE_INITIAL_SIZE);
-            }
-            if (!properties.containsKey("maxTotal")) {
-                log.info("No value set for the XNAT datasource maximum connection pool size, using default setting {}", DEFAULT_DATASOURCE_MAX_TOTAL);
-                properties.setProperty("maxTotal", DEFAULT_DATASOURCE_MAX_TOTAL);
-            }
-            if (!properties.containsKey("maxIdle")) {
-                log.info("No value set for the XNAT datasource connection pool idle size, using default setting {}", DEFAULT_DATASOURCE_MAX_IDLE);
-                properties.setProperty("maxIdle", DEFAULT_DATASOURCE_MAX_IDLE);
-            }
-        }
         if (!properties.containsKey("driver")) {
             log.info("No value set for the XNAT datasource driver, using default setting {}", DEFAULT_DATASOURCE_DRIVER);
             properties.setProperty("driver", DEFAULT_DATASOURCE_DRIVER);
-        }
-        if (!properties.containsKey("url")) {
-            log.info("No value set for the XNAT datasource URL, using default setting {}", DEFAULT_DATASOURCE_URL);
-            properties.setProperty("url", DEFAULT_DATASOURCE_URL);
         }
         if (!properties.containsKey("username")) {
             log.info("No value set for the XNAT datasource username, using default setting {}. Note that you can set the username to an empty value if you really need an empty string.", DEFAULT_DATASOURCE_USERNAME);
@@ -139,6 +120,45 @@ public class DatabaseConfig {
             log.info("No value set for the XNAT datasource password, using default setting. Note that you can set the password to an empty value if you really need an empty string.");
             properties.setProperty("password", DEFAULT_DATASOURCE_PASSWORD);
         }
+
+        final String dataSourceClass = properties.getProperty("class");
+
+        if (StringUtils.equals(dataSourceClass, HIKARI_DATASOURCE_CLASS)) {
+            // If the HikariDataSource class is specified, then set some default database connection pooling parameters.
+            convertDataSourceConfigProperty(properties, "jdbcUrl", "url", DEFAULT_DATASOURCE_URL);
+            convertDataSourceConfigProperty(properties, "minimumIdle", "initialSize", DEFAULT_DATASOURCE_INITIAL_SIZE);
+            convertDataSourceConfigProperty(properties, "maximumPoolSize", "maxTotal", DEFAULT_DATASOURCE_MAX_TOTAL);
+        } else {
+            if (!StringUtils.equals(dataSourceClass, DEFAULT_DATASOURCE_CLASS)) {
+                log.warn("Unrecognized data source class {}, setting default values corresponding to DBCP2's settings", dataSourceClass);
+            }
+            // If HikariDataSource is NOT specified, then set some default database connection pooling parameters for DBCP2.
+            convertDataSourceConfigProperty(properties, "url", "jdbcUrl", DEFAULT_DATASOURCE_URL);
+            convertDataSourceConfigProperty(properties, "initialSize", "minimumIdle", DEFAULT_DATASOURCE_INITIAL_SIZE);
+            convertDataSourceConfigProperty(properties, "maxTotal", "maximumPoolSize", DEFAULT_DATASOURCE_MAX_TOTAL);
+            // There's no directly correspondence for DBCP2's maxIdle in HikariCP
+            setDataSourceConfigProperty(properties, "maxIdle", DEFAULT_DATASOURCE_MAX_IDLE);
+        }
+    }
+
+    private static void setDataSourceConfigProperty(final Properties properties, final String property, final String defaultValue) {
+        if (!properties.containsKey(property)) {
+            log.info("No value set for datasource.{}, using default setting {}", property, defaultValue);
+            properties.setProperty(property, defaultValue);
+        }
+    }
+
+    private static void convertDataSourceConfigProperty(final Properties properties, final String property, final String alias, final String defaultValue) {
+        if (properties.containsKey(property)) {
+            return;
+        }
+        if (!properties.containsKey(alias)) {
+            setDataSourceConfigProperty(properties, property, defaultValue);
+            return;
+        }
+        final String aliasValue = properties.getProperty(alias);
+        log.info("No value set for datasource.{}, but found datasource.{} {}, converting that", property, alias, aliasValue);
+        properties.setProperty(property, aliasValue);
     }
 
     private static class PrettyQueryEntryCreator extends DefaultQueryLogEntryCreator {
@@ -158,4 +178,5 @@ public class DatabaseConfig {
     private static final String DEFAULT_DATASOURCE_INITIAL_SIZE = "20";
     private static final String DEFAULT_DATASOURCE_MAX_TOTAL    = "40";
     private static final String DEFAULT_DATASOURCE_MAX_IDLE     = "10";
+    private static final String HIKARI_DATASOURCE_CLASS         = "com.zaxxer.hikari.HikariDataSource";
 }

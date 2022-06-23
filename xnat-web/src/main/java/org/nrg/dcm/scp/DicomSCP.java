@@ -217,7 +217,7 @@ public class DicomSCP {
 
     private void addApplicationEntity(final DicomSCPInstance instance) throws UnknownDicomHelperInstanceException {
         if (instance.getPort() != getPort()) {
-            throw new RuntimeException("Port for instance " + instance.toString() + " doesn't match port for DicomSCP instance: " + getPort());
+            throw new RuntimeException("Port for instance " + instance.getLabel() + " doesn't match port for DicomSCP instance: " + getPort());
         }
 
         final String aeTitle = instance.getAeTitle();
@@ -226,7 +226,7 @@ public class DicomSCP {
             throw new IllegalArgumentException("Can only add service to named AE");
         }
         if (getApplicationEntities().containsKey(aeTitle)) {
-            throw new RuntimeException("There's already a DICOM SCP receiver running at " + instance.toString());
+            throw new RuntimeException("There's already a DICOM SCP receiver running at " + instance.getLabel());
         }
 
         final String fileNamer  = instance.getFileNamer();

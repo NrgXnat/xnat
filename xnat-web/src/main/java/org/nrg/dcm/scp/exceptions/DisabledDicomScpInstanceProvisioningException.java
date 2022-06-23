@@ -28,7 +28,7 @@ public class DisabledDicomScpInstanceProvisioningException extends NrgServiceExc
 
     @Override
     public String toString() {
-        return "Tried to provision DICOM SCP receiver ID " + _disabled.getId() + " [" + _disabled.toString() + "], but that instance is disabled.";
+        return "Tried to provision DICOM SCP receiver ID " + _disabled.getId() + " [" + _disabled.getLabel() + "], but that instance is disabled.";
     }
     
     private final DicomSCPInstance _disabled;

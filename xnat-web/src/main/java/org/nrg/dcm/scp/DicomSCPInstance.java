@@ -93,8 +93,8 @@ public class DicomSCPInstance extends AbstractHibernateEntity {
         _sessionRoutingExpression = sessionRoutingExpression;
     }
 
-    @Override
-    public String toString() {
+    @Transient
+    public String getLabel() {
         return formatDicomSCPInstanceKey(_aeTitle, _port);
     }
 
@@ -156,4 +156,23 @@ public class DicomSCPInstance extends AbstractHibernateEntity {
         return instance;
     }
 
+    @Override
+    public String toString() {
+        return "DicomSCPInstance{id='" + getId() + "', "
+                + "aeTitle='" + _aeTitle + "', "
+                + "port=" + _port + "', "
+                + "identifier='" + _identifier + "', "
+                + "fileNamer='" + _fileNamer + "', "
+                + "enabled=" + _enabled + ", "
+                + "customProcessing=" + _customProcessing + ", "
+                + "directArchive=" + _directArchive + ", "
+                + "anonymizationEnabled=" + _anonymizationEnabled + ", "
+                + "whitelistEnabled=" + _whitelistEnabled + ", "
+                + "whitelist=" + _whitelist + ", "
+                + "routingExpressionsEnabled=" + _routingExpressionsEnabled + ", "
+                + "projectRoutingExpression='" + _projectRoutingExpression + "', "
+                + "subjectRoutingExpression='" + _subjectRoutingExpression + "', "
+                + "sessionRoutingExpression='" + _sessionRoutingExpression + "'"
+                + "}";
+    }
 }

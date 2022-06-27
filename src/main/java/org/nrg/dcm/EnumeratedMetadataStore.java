@@ -41,6 +41,9 @@ import static org.nrg.dcm.Attributes.*;
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  */
 public final class EnumeratedMetadataStore implements DicomMetadataStore, Closeable {
+    private static final int COLUMN_SIZE = 1024;
+    private static final String ELLIPSES = "\u2026";
+    
     /**
      * A hook into adding a DICOM file addition to the database.
      *
@@ -299,11 +302,11 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         createTable.append(" ( uri VARCHAR(4096) PRIMARY KEY");
         if (null != addCols) {
             for (final String columnName : addCols) {
-                createTable.append(", ").append(columnName).append(" VARCHAR(1024)");
+                createTable.append(", ").append(columnName).append(" VARCHAR(").append(COLUMN_SIZE).append(")");
             }
         }
         for (final DicomAttributeIndex i : columns.keySet()) {
-            createTable.append(", ").append(i.getColumnName()).append(" VARCHAR(1024)");
+            createTable.append(", ").append(i.getColumnName()).append(" VARCHAR(").append(COLUMN_SIZE).append(")");
         }
         createTable.append(" );");
         logger.trace("SQL command: {}", createTable);
@@ -497,7 +500,12 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         sb.append(") VALUES(");
         sb.append("'").append(resource.toString()).append("'");
         for (final Map.Entry<String, String> me : assignments.entrySet()) {
-            sb.append(", '").append(me.getValue().replaceAll("'", "''")).append("'");
+            String value = me.getValue();
+            if (value.length() > COLUMN_SIZE) {
+                // truncate and add ellipses as indicator
+                value = value.substring(0, COLUMN_SIZE - 1) + ELLIPSES;
+            }
+            sb.append(", '").append(value.replaceAll("'", "''")).append("'");
         }
         sb.append(");");
         return sb.toString();

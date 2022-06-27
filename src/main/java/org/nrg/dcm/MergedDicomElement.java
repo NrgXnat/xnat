@@ -138,7 +138,7 @@ public final class MergedDicomElement implements DicomElement {
 						this.bytes = null;
 					}
 					unmerged.add(newBytes);
-					logger.debug("{} elements unmerged: {}", unmerged.size(), unmerged);
+					logger.trace("{} elements unmerged: {}", unmerged.size(), unmerged);
 				}
 			}
 		}

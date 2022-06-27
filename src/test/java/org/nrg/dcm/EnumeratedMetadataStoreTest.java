@@ -9,14 +9,14 @@
 
 package org.nrg.dcm;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.SetMultimap;
+import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.taskdefs.Delete;
+import org.assertj.core.data.MapEntry;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.net.TransferCapability;
@@ -35,6 +35,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -81,7 +82,11 @@ public class EnumeratedMetadataStoreTest {
     }
 
     private URI toURI(final String name) throws URISyntaxException {
-        final URL url = getClass().getClassLoader().getResource("dicom/" + name);
+        return toURI(name, "dicom");
+    }
+
+    private URI toURI(final String name, String subdir) throws URISyntaxException {
+        final URL url = getClass().getClassLoader().getResource(subdir + "/" + name);
         assertNotNull(url);
         return url.toURI();
     }
@@ -107,24 +112,20 @@ public class EnumeratedMetadataStoreTest {
             copy.execute();
         }
 
-        resources = Lists.transform(Arrays.asList(fileNames), new Function<String, URI>() {
-            public URI apply(final String name) {
-                try {
-                    return toURI(temp, name);
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
+        resources = Arrays.stream(fileNames).map(name -> {
+            try {
+                return toURI(temp, name);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
             }
-        });
-        otherResources = Lists.transform(Arrays.asList(otherFileNames), new Function<String, URI>() {
-            public URI apply(final String name) {
-                try {
-                    return toURI(name);
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
+        }).collect(Collectors.toList());
+        otherResources = Arrays.stream(otherFileNames).map(name -> {
+            try {
+                return toURI(name);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
             }
-        });
+        }).collect(Collectors.toList());
 
         assert null == tempDir;
         tempDir = temp;
@@ -351,5 +352,53 @@ public class EnumeratedMetadataStoreTest {
         }
         assertEquals(1, seriesUIDs.size());
         assertEquals(fileNamesSeries5.length, instanceNumbers.size());
+    }
+
+    @Test
+    public void testLongValueTruncation()
+            throws IOException, SQLException, URISyntaxException, ConversionFailureException {
+
+        // See dicom-xnat DicomAttributes#chain
+        final DicomAttributeIndex rescaleSlope = new ChainedDicomAttributeIndex("RescaleSlope",
+                new Integer[]{Tag.RescaleSlope},
+                new Integer[]{Tag.SharedFunctionalGroupsSequence, null, Tag.PixelValueTransformationSequence, null, Tag.RescaleSlope},
+                new Integer[]{Tag.PerFrameFunctionalGroupsSequence, null, Tag.PixelValueTransformationSequence, null, Tag.RescaleSlope});
+
+        Map<String, DicomAttributeIndex> fileAttrMap = new HashMap<>();
+        fileAttrMap.put("testtoenhanceddynamicpet.dcm", rescaleSlope);
+        fileAttrMap.put("1.MR.head_DHead.4.23.20061214.091206.156000.8215318065.comment.dcm",
+                new FixedDicomAttributeIndex(Tag.PatientComments));
+
+        for (Map.Entry<String, DicomAttributeIndex> entry : fileAttrMap.entrySet()) {
+            testLongValueStore(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void testLongValueStore(String fileName, DicomAttributeIndex dicomAttribute)
+            throws IOException, SQLException, URISyntaxException, ConversionFailureException {
+        int h2ColumnSize = 1024;
+        char ellipses = '\u2026';
+
+        // copy our long-value file into tempDir
+        FileUtils.cleanDirectory(tempDir);
+        final Copy copy = new Copy();
+        copy.setProject(project);
+        copy.setTodir(tempDir);
+        copy.setFile(new File(toURI(fileName, "longValues")));
+        copy.execute();
+
+        // create store
+        final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(Collections.singletonList(dicomAttribute),
+                FileURIOpener.getInstance());
+        assertEquals(0, store.getSize());
+        store.add(Collections.singletonList(toURI(tempDir)));
+        assertEquals(1, store.getSize());
+        Set<String> values = store.getUniqueValues(dicomAttribute);
+        assertNotNull(values);
+        assertEquals(1, values.size());
+        String value = values.stream().findFirst().orElse(null);
+        assertNotNull(value);
+        assertEquals(h2ColumnSize, value.length());
+        assertEquals(ellipses, value.charAt(h2ColumnSize - 1));
     }
 }

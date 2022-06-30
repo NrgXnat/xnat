@@ -948,7 +948,7 @@ var XNAT = getObject(XNAT);
             if (doEdit) {
                 form.contents.authId = {
                     kind: 'panel.element',
-                    label: 'Authorization',
+                    label: 'Authentication',
                     contents: {
                         link: {
                             tag: 'a.view-auth-details.link',
@@ -1028,7 +1028,7 @@ var XNAT = getObject(XNAT);
                                                     }
                                                 };
                                                 XNAT.ui.dialog.open({
-                                                    title: 'Authorization details for ' + data.username,
+                                                    title: 'Authentication details for ' + data.username,
                                                     width: 850,
                                                     header: true,
                                                     maxBtn: true,
@@ -1049,7 +1049,7 @@ var XNAT = getObject(XNAT);
                                     }
                                 }
                             },
-                            content: 'View Authorization Details'
+                            content: 'View Authentication Details'
                         }
                     }
                 };

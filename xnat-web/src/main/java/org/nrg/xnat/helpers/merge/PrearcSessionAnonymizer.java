@@ -124,7 +124,7 @@ public class PrearcSessionAnonymizer extends AnonymizerA {
             for (final XnatAbstractresourceI res : scan.getFile()) {
                 if (res instanceof XnatResource) {
                     final XnatResource abs = (XnatResource) res;
-                    if (abs.getFormat().equals("DICOM")) {
+                    if ("DICOM".equals(abs.getFormat())) {
                         for (final File file : abs.getCorrespondingFiles(_sessionPrearcPath.toString())) {
                             if (needsAnonymization(file)) {
                                 logger.debug("Adding file {} to the list of files requiring reanonymization.", file.getPath());

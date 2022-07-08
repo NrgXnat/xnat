@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import static org.nrg.dcm.scp.DicomSCPManager.TOOL_ID;
 
 /**
  * MigrateDicomSCPInstanceConfiguration: Initializing task to move DicomSCP configuration from Preferences to their own Entity.
@@ -40,6 +39,7 @@ public class MigrateDicomSCPInstanceConfiguration extends AbstractInitializingTa
 
     private static final String PREF_ID      = "dicomSCPInstances";
     private static final String DEFAULT_DOI_LABEL = "dicomObjectIdentifier";
+    private static final String TOOL_ID = "dicomScpManager";
 
     @Autowired
     public MigrateDicomSCPInstanceConfiguration(final NrgPreferenceService preferenceService, final ToolService toolService, final DicomSCPManager dicomSCPManager) {

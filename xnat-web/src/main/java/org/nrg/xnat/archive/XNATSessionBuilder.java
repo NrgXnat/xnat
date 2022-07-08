@@ -352,7 +352,11 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         if (!configurations.containsKey(ECAT)) {
             configurations.put(ECAT, ECAT_BUILDER);
         }
-        return configurations.values();
+
+        return configurations.values()
+                             .stream()
+                             .sorted(BuilderConfig::compareTo)
+                             .collect(Collectors.toList());
     }
 
     @Value

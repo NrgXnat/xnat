@@ -92,7 +92,7 @@ public class SearchCriteria implements SQLClause {
             }
             return " (" + String.join(" ", translatedXMLPath, comparisonType, value) + ")";
         }
-        final String value = valueToDB().trim();
+        final String value = StringUtils.trim(valueToDB());
         if (comparisonContainsLike) {
             final String comparisonValue = StringUtils.lowerCase("'%" + StringUtils.stripEnd(StringUtils.stripStart(StringUtils.replace(valueToDB(), "*", "%"), "'%"), "'%") + "%'");
             return " (LOWER(" + translatedXMLPath + ") " + comparisonType + " " + comparisonValue + ")";
@@ -213,15 +213,15 @@ public class SearchCriteria implements SQLClause {
      *
      * @throws Exception When an error occurs.
      */
-    public void setValue(Object value) throws Exception {
+    public void setValue(final Object value) throws Exception {
         final String temp;
-        if (value instanceof String) {
-            temp = (String) value;
+        if (value == null) {
+            this.value = null;
         } else {
-            temp = value.toString();
+            temp = value instanceof String ? (String) value : value.toString();
+            hackCheck(temp);
+            this.value = temp.contains("'") ? XftStringUtils.CleanForSQLValue(temp) : temp;
         }
-        hackCheck(temp);
-        this.value = temp.contains("'") ? XftStringUtils.CleanForSQLValue(temp) : temp;
     }
 
     /**

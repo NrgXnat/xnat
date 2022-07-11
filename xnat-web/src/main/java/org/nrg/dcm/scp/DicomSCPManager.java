@@ -151,9 +151,16 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      *                                                         and port.
      */
     @Transactional
-    public DicomSCPInstance saveDicomSCPInstance(final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException, DicomScpInvalidRoutingExpressionException {
+    public DicomSCPInstance saveDicomSCPInstance(final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException, DicomScpInvalidRoutingExpressionException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException {
         final long instanceId = instance.getId();
         log.debug("Saving DicomScpInstance {}: {}", instanceId, instance);
+
+        if( ! hasKnownDicomObjectIdentifier(instance)) {
+            throw new DicomScpUnknownDOIException(instance);
+        }
+        if( isCustomRoutingRequestedButPrevented(instance)) {
+            throw new DicomScpUnsupportedRoutingExpressionException(instance);
+        }
 
         final boolean isNewInstance = !_dicomSCPInstanceService.exists("id", instance.getId());
 
@@ -226,6 +233,22 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         }
 
         return instance;
+    }
+
+    private boolean hasKnownDicomObjectIdentifier(DicomSCPInstance instance) {
+        DicomObjectIdentifier doi = _dicomObjectIdentifierMap.get( instance.getIdentifier());
+        return doi != null;
+    }
+
+    /**
+     * Don't allow routing expressions to be enabled on a DOI that does not support them.
+     * True if custom routing expressions are not supported by the instance but custom routing expressions are enabled.
+     * @param instance
+     * @return true if custom routing configuration should be prevented.
+     */
+    private boolean isCustomRoutingRequestedButPrevented(DicomSCPInstance instance) {
+        DicomObjectIdentifier doi = _dicomObjectIdentifierMap.get( instance.getIdentifier());
+        return instance.isRoutingExpressionsEnabled() && !doi.isCustomRoutingSupported();
     }
 
     @Transactional

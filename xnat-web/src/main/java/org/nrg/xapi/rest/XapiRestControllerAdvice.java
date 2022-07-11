@@ -173,7 +173,7 @@ public class XapiRestControllerAdvice {
             resolvedMessage = message + ": " + exception.getMessage();
         }
         // If there's an explicit status, use that. Otherwise, try to get it off of the exception and default to 500 if not available.
-        final HttpStatus resolvedStatus = status != null ? status : exception != null ? getExceptionResponseStatus(exception) : DEFAULT_ERROR_STATUS;
+        final HttpStatus resolvedStatus = exception != null ? getExceptionResponseStatus(exception) : status != null ? status : DEFAULT_ERROR_STATUS;
 
         // Log 500s as errors, other statuses can just be logged as info messages.
         final UserI  userDetails = XDAT.getUserDetails();

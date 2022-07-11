@@ -157,7 +157,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                         produces = MediaType.APPLICATION_JSON_VALUE,
                         restrictTo = Admin)
     @ResponseBody
-    public DicomSCPInstance createDicomSCPInstance(@RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException, DicomScpInvalidRoutingExpressionException {
+    public DicomSCPInstance createDicomSCPInstance(@RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException, DicomScpInvalidRoutingExpressionException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException {
         return _manager.saveDicomSCPInstance(instance);
     }
 
@@ -180,7 +180,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                                                            value = "{\"aeTitle\": \"TITLE\", \"port\": 8104, \"enabled\": true}"
                                                        )
                                                    }))
-                                                   @RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomScpInvalidAeTitleException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidRoutingExpressionException, DicomNetworkException, UnknownDicomHelperInstanceException {
+                                                   @RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomScpInvalidAeTitleException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidRoutingExpressionException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException {
         // Set the ID to the value specified in the REST call. If ID not specified on PUT, value will be zero, so we
         // need to make sure it's set to the proper value. If they submit it under the wrong ID well...
         instance.setId(id);

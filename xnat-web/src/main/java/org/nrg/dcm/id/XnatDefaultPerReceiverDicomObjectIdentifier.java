@@ -54,7 +54,13 @@ public class XnatDefaultPerReceiverDicomObjectIdentifier extends XnatDefaultDico
     }
 
     @Override
+    public boolean isCustomRoutingSupported() {
+        return true;
+    }
+
+    @Override
     public int getPort() {
         return _extractorFromInstanceProvider.getPort();
     }
+
 }

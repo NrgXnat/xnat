@@ -598,7 +598,7 @@ var XNAT = getObject(XNAT || {});
             var archiveBehavior = (item.directArchive) ? 'Direct Archive Behavior Enabled' : 'Uses Standard Prearchive Behavior';
             var customRemapping = (item.customProcessing) ? 'Custom Remapping Enabled' : 'Uses Standard Anonymization';
             var whitelist = (item.whitelistEnabled) ? 'AE-Title Whitelist Enabled' : 'AE-Title Whitelist Disabled';
-            var routingExpressionsEnabled = (item.routingExpressionsEnabled) ? 'Custom Routing Enabled' : 'Custom Routing Disabled';
+            var routingExpressionsEnabled = (item.routingExpressionsEnabled) ? 'Receiver-Specific Routing Enabled' : 'Receiver-Specific Routing Disabled';
             var anonymizationEnabled = (item.anonymizationEnabled) ? 'Anonymization Enabled' : 'Anonymization Disabled';
             var projectRouting = (item.identifier === DICOM_OBJECT_IDENTIFIER) ? 'Uses Standard Project Routing' :
                 (item.identifier.slice(0,3) === 'dqr') ? 'DQR Routing Enabled' : 'Uses Custom Project Routing';

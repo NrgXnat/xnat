@@ -32,6 +32,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.security.services.ScanSecurityService;
 import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.ItemI;
@@ -42,7 +43,6 @@ import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
-import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
@@ -64,9 +64,12 @@ import javax.annotation.Nullable;
 @Slf4j
 public class PermissionsServiceImpl implements PermissionsServiceI {
     @Autowired
-    public PermissionsServiceImpl(final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template) {
+    public PermissionsServiceImpl(final DataTypeAwareEventService eventService,
+                                  final NamedParameterJdbcTemplate template,
+                                  final ScanSecurityService scanSecurityCheckService) {
         _eventService = eventService;
         _template = template;
+        _scanSecurityService = scanSecurityCheckService;
     }
 
     @Autowired
@@ -243,6 +246,13 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             return false;
         }
         final String xsiType = item.getXSIType();
+
+        // XNAT-6573 until we fully support scan security (XXX-187), check action against session regardless of scan element security
+        ItemI scanParentSession = _scanSecurityService.determineSession(item);
+        if (scanParentSession != null) {
+            return can(user, scanParentSession, action);
+        }
+
         if (!ElementSecurity.HasDefinedElementSecurity(xsiType)) {
             return true;
         } else if (ElementSecurity.IsInSecureElement(xsiType)) {
@@ -254,19 +264,6 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         } else {
             final ElementSecurity elementSecurity = ElementSecurity.GetElementSecurity(xsiType);
             if (elementSecurity.isSecure(action)) {
-                if (item.getItem().instanceOf("xnat:imageScanData")) {
-                    ItemI session = item.getParent();
-                    if (session == null) {
-                        String sessionId = item.getStringProperty("image_session_id");
-                        session = ItemSearch.GetItem("xnat:imageSessionData/ID", sessionId, user, false);
-                    }
-                    // Use the session's security until scan security is figured out; See XNAT-6573
-                    if (session != null) {
-                        return can(user, session, action);
-                    } else {
-                        throw new Exception("Cannot determine parent session of scan to check perms: " + item);
-                    }
-                }
                 final SchemaElement       schemaElement  = SchemaElement.GetElement(xsiType);
                 final SecurityValues      securityValues = item.getItem().getSecurityValues();
                 final Map<String, String> hash           = securityValues.getHash();
@@ -992,6 +989,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     private final DataTypeAwareEventService  _eventService;
     private final NamedParameterJdbcTemplate _template;
+    private final ScanSecurityService _scanSecurityService;
 
     private GroupsAndPermissionsCache _cache;
     private UserI                     _guest;

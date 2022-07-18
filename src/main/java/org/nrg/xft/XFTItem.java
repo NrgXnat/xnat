@@ -2737,7 +2737,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 				Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
 				if (o instanceof XFTItem)
 				{
-				    ((XFTItem)o).setChild(xmlPath,value,replace);
+					((XFTItem) o).setChild(xmlPath,value,replace);
 				    return;
 				}else{
 
@@ -3015,7 +3015,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @return Returns the extending item, f this item is extended, otherwise it returns this item
 	 * @throws ElementNotFoundException
 	 */
-	private XFTItem getExtenderItem() throws ElementNotFoundException
+	public XFTItem getExtenderItem() throws ElementNotFoundException
 	{
 		if (getParent() != null)
 		{
@@ -7013,6 +7013,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	        		child = XFTItem.NewItem(childName,user);
 	                child.populateFromFlatString(value);
 	                this.setField(field,child);
+					child.setParent(this);
 	            }else{
 		            String value = s.substring(0,s.indexOf(")"));
 		            s = s.substring(s.indexOf(")")+1);

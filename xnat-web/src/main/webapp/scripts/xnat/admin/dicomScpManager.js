@@ -250,23 +250,25 @@ var XNAT = getObject(XNAT || {});
                             }
 
                         });
-                        let description = obj.dialog$.find('[data-name="identifier"]').find('[class="description"]')[0];
                         let identifier = item['identifier'];
 
-                        dicomScpManager.setIdentifierDescription(identifier, description);
+                        dicomScpManager.setIdentifierDescription(identifier, obj.dialog$);
                         dicomScpManager.setCustomRoutingVisibility(identifier, obj.dialog$);
 
+                        let $customRoutingSwitch = obj.dialog$.find(`[name="${ROUTING_EXPRESSIONS_ENABLED}"]`);
                         if( $identifierSelect !== null) {
-                            $identifierSelect.on('change', function () {
-                                let selectedIdentity = obj.dialog$.find('#scp-identifier')[0].value;
-                                let description = obj.dialog$.find('[data-name="identifier"]').find('[class="description"]')[0];
 
-                                dicomScpManager.setIdentifierDescription(selectedIdentity, description);
-                                dicomScpManager.setCustomRoutingVisibility(selectedIdentity, obj.dialog$);
+                            let previousIdentifier;
+                            $identifierSelect.on('focus', function (){
+                                previousIdentifier = this.value
+                            });
+                            $identifierSelect.on('change', function (){
+                                dicomScpManager.confirmIdentifierChange( this, previousIdentifier, $customRoutingSwitch[0], obj.dialog$);
+
+                                previousIdentifier = $identifierSelect[0].value
                             });
                         }
 
-                        let $customRoutingSwitch = obj.dialog$.find(`[name="${ROUTING_EXPRESSIONS_ENABLED}"]`);
                         $customRoutingSwitch.on('change', function(){
                             if(this.checked){
                                 obj.dialog$.find(`[data-name="${PROJECT_ROUTING_EXPRESSION}"]`).show();
@@ -431,7 +433,8 @@ var XNAT = getObject(XNAT || {});
 
     };
 
-    dicomScpManager.setIdentifierDescription = function( identifier, description) {
+    dicomScpManager.setIdentifierDescription = function( identifier, $mainDialog) {
+        let description = $mainDialog.find('[data-name="identifier"]').find('[class="description"]')[0];
         let isCapable = dicomScpManager.isCustomRoutingCapable( identifier);
         let $span = $(description).find(`#${CUSTOM_ROUTING_WARNING_ID}`);
         if( $span.length > 0) {
@@ -448,12 +451,57 @@ var XNAT = getObject(XNAT || {});
         }
     }
 
+    dicomScpManager.confirmIdentifierChange = function( identifierSelect, previousIdentifier, isRoutingEnabledSwitch, $mainDialog) {
+        let isConflict = isRoutingEnabledSwitch.value && !dicomScpManager.isCustomRoutingCapable( identifierSelect.value);
+        if( isConflict) {
+            XNAT.dialog.open({
+                title: 'Unsupported Per-Receiver Routing.',
+                content: ` <p>
+                          The selected identifier '${identifierSelect.value}' does not support per-receiver routing but per-receiver routing is enabled. 
+                          Select OK to disable per-receiver routing or Cancel to restore previously selected identifier.
+                       </p>`,
+                beforeShow: function (obj) {
+                },
+                scroll: false,
+                mask: true,
+                buttons: [
+                    {
+                        label: 'OK',
+                        default: true,
+                        close: true,
+                        action: function( obj) {
+                            isRoutingEnabledSwitch.checked = false;
+
+                            dicomScpManager.setIdentifierDescription(identifierSelect.value, $mainDialog);
+                            dicomScpManager.setCustomRoutingVisibility(identifierSelect.value, $mainDialog);
+                        }
+                    },
+                    {
+                        label: 'Cancel',
+                        close: true,
+                        action: function( obj) {
+                            identifierSelect.value = previousIdentifier;
+                            isRoutingEnabledSwitch.checked = true;
+
+                            dicomScpManager.setIdentifierDescription(previousIdentifier, $mainDialog);
+                            dicomScpManager.setCustomRoutingVisibility(previousIdentifier, $mainDialog);
+                        }
+                    }
+                ]
+            });
+        } else {
+
+            dicomScpManager.setIdentifierDescription(identifierSelect.value, $mainDialog);
+            dicomScpManager.setCustomRoutingVisibility(identifierSelect.value, $mainDialog);
+        }
+    }
+
     dicomScpManager.setCustomRoutingVisibility = function( identifier, $dialog) {
         let isCapable = dicomScpManager.isCustomRoutingCapable( identifier);
-        let $swtch = $dialog.find(`[name="${ROUTING_EXPRESSIONS_ENABLED}"]`);
+        let isRoutingEnabledSwitch = $dialog.find(`[name="${ROUTING_EXPRESSIONS_ENABLED}"]`)[0];
         let $swtchPanel = $dialog.find(`[data-name="${ROUTING_EXPRESSIONS_ENABLED}"]`).filter('.panel-switchbox');
 
-        const shouldShow = isCapable && $swtch[0].checked;
+        const shouldShow = isCapable && isRoutingEnabledSwitch.checked;
 
         if( isCapable) {
             $swtchPanel.show();

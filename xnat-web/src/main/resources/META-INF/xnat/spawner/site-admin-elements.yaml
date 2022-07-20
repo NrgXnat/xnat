@@ -1985,8 +1985,19 @@ zipExtensions:
     name: zipExtensions
     label: Zip Extensions
     description: >
-        Determines which filetypes should be handled by the ZipUtils class and ZIP CompressionMethod in the XNAT file system.
+        Determines which filetypes should be handled by the ZipUtils class.
         (.tar and .gz are handled separately)
+zipCompressionMethod:
+    kind: panel.select.single
+    name: zipCompressionMethod
+    label: Zip Compression Method
+    options:
+        0: "Uncompressed"
+        8: "Compressed"
+    description: >
+        Default zip compression method used for XNAT Restlet API calls and turbine actions. <br/>
+        Uncompressed - Files are written to the zip with no compression (STORED).<br/>
+        Compressed - Files in the zip are compressed using the DEFLATE algorithm (DEFLATED).<br/>
 checksums:
     kind: panel.input.switchbox
     name: checksums
@@ -2060,6 +2071,7 @@ fileSystemBehaviors:
     url: /xapi/siteConfig
     contents:
         ${zipExtensions}
+        ${zipCompressionMethod}
         ${checksums}
         ${backupDeletedToCache}
         ${maintainFileHistory}

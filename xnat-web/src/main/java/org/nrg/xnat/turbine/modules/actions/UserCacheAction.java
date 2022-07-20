@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
@@ -76,7 +77,7 @@ public class UserCacheAction extends SecureAction {
 	    						ZipI zip = null;
 		    					try {
 		    						 zip = new ZipUtils();
-		    						zip.setOutputStream(outStream,ZipUtils.DEFAULT_COMPRESSION);
+		    						zip.setOutputStream(outStream, XDAT.getSiteConfigPreferences().getZipCompressionMethod());
 				                	if (!folderFile.isDirectory())
 				                		zip.write(folderFile.getName(),folderFile);
 				                	else 

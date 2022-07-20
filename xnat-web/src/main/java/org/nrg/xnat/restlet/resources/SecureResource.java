@@ -75,7 +75,6 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
-import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.FileWriterWrapper;
@@ -1338,7 +1337,7 @@ public abstract class SecureResource extends Resource {
         if (defaultCompression != null) {
             return defaultCompression;
         } else {
-            return ZipUtils.DEFAULT_COMPRESSION;
+            return XDAT.getSiteConfigPreferences().getZipCompressionMethod();
         }
     }
 

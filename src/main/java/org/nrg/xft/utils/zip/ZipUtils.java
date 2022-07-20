@@ -41,7 +41,6 @@ import java.util.zip.*;
 @SuppressWarnings("unused")
 @Slf4j
 public class ZipUtils implements ZipI {
-    public final static int DEFAULT_COMPRESSION = ZipOutputStream.STORED;
 
     public static boolean isCompressedFile(final String filename, final String... extras) {
         return Format.getFormat(filename) != Format.UNKNOWN || StringUtils.endsWithAny(filename.toLowerCase(), extras);

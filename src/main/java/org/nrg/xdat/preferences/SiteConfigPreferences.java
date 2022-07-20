@@ -806,6 +806,20 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    // The default value is ZipOutputStream.STORED
+    @NrgPreference(defaultValue = "0")
+    public int getZipCompressionMethod() {
+        return getIntegerValue("zipCompressionMethod");
+    }
+
+    public void setZipCompressionMethod(final int zipCompressionMethod) {
+        try {
+            setIntegerValue(zipCompressionMethod, "zipCompressionMethod");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'zipCompressionMethod': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "/images/logo.png")
     public String getSiteLogoPath() {
         return getValue("siteLogoPath");

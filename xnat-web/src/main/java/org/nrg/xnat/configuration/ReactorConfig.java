@@ -14,6 +14,8 @@ import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xft.event.listeners.XftItemEventHandler;
 import org.nrg.xnat.event.XnatEventService;
 import org.nrg.xnat.event.util.UncaughtExceptionHandler;
+import org.nrg.xnat.preferences.AsyncOperationsPreferences;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +31,14 @@ import reactor.core.dispatch.WorkQueueDispatcher;
 @ComponentScan("org.nrg.xft.event.methods")
 @Slf4j
 public class ReactorConfig {
+    private final AsyncOperationsPreferences preferences;
+    public static final String REACTOR_DISPATCHER_THREAD_FACTORY = "reactorDispatcher";
+
+    @Autowired
+    public ReactorConfig(AsyncOperationsPreferences preferences) {
+        this.preferences = preferences;
+    }
+
     @Bean
     public DataTypeAwareEventService eventService(final EventBus eventBus) {
         return new XnatEventService(eventBus);
@@ -63,6 +73,10 @@ public class ReactorConfig {
 
     @Bean
     public Dispatcher reactorDispatcher() {
-        return new WorkQueueDispatcher("multThreadedQueueDispatcher", 20, 2048, new UncaughtExceptionHandler());
+        Double ringBufferSize = Math.pow(2, preferences.getReactorWorkQueueDispatcherRingBufferSizePower());
+        return new WorkQueueDispatcher(REACTOR_DISPATCHER_THREAD_FACTORY,
+                preferences.getReactorWorkQueueDispatcherPoolSize(),
+                ringBufferSize.intValue(),
+                new UncaughtExceptionHandler());
     }
 }

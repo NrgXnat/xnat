@@ -2090,14 +2090,19 @@ asyncOperationsSettingsWarning:
             style:
                 fontWeight: bold
 defaultTimeout:
-    kind: panel.input.text
-    name: defaultTimeout
+    kind: panel.element
     label: Default Timeout
-    validation: required onblur
-    description: "Sets the timeout for asynchronous request handling."
     info: >
         <p>This sets the timeout for asynchronous request handling and defines the maximum lifespan of an asynchronous process.
         Generally speaking, this should stay set to -1.</p>
+    contents:
+        defaultTimeoutInput:
+            kind: input.text
+            name: defaultTimeout
+            validation: required onblur
+            after: > 
+                <p class="description">Sets the timeout for asynchronous request handling.</p>
+
 corePoolSize:
     kind: panel.input.text
     name: corePoolSize
@@ -2117,15 +2122,47 @@ keepAliveSeconds:
     validation: required onblur
     description: "Sets the time (as a number of seconds) that idle threads above the core pool size should be kept alive before disposal."
 allowCoreThreadTimeOut:
-    kind: panel.input.switchbox
-    name: allowCoreThreadTimeOut
-    label: Allow Core Thread Time-Out
-    onText: Enabled
-    offText: Disabled
-    description: "Indicates whether core threads are allowed to time out."
+    kind: panel.element
+    label: Allow Core Thread Time Out
     info: >
         Allowing core threads to time out enables dynamic growing and shrinking even in combination with a non-zero queue
         (since the max pool size will only grow once the queue is full).
+    contents:
+        defaultallowCoreThreadTimeOutInput:
+            kind: input.switchbox
+            name: allowCoreThreadTimeOut
+            onText: Allow core thread time out
+            offText: Disallow core thread time out
+
+reactorWorkQueueDispatcherPoolSize:
+    kind: panel.element
+    label: Event Thread Pool Size
+    info: >
+        This controls the size of the Reactor Dispatcher thread pool. If you are seeing issues with event throughput, 
+        you might increase this value. You would likely want to do so in concert with increasing the event buffer size, 
+        and with consideration for the resources available on your system.
+    contents:
+        reactorWorkQueueDispatcherPoolSizeInput:
+            kind: input.text
+            name: reactorWorkQueueDispatcherPoolSize
+            validation: required onblur integer gte:5
+            after: >
+                <p class="description">Sets the number of threads dedicated to consuming and processing events.</p>
+reactorWorkQueueDispatcherRingBufferSizePower:
+    kind: panel.element
+    label: Event Buffer Size
+    info: >
+        This controls the size of the Reactor Dispatcher RingBuffer, which will be 2 raised to the power of this value 
+        (i.e., if you set the event buffer size to 13, the Reactor Dispatcher RingBuffer's bufferSize will be 
+        2^13 = 8192). If you are seeing CPU pressure during high bursts of events (e.g., large-scale bulk ingestion, 
+        container launch, etc.), you might increase this value.
+    contents:
+        reactorWorkQueueDispatcherRingBufferSizePowerInput:
+            kind: input.text
+            name: reactorWorkQueueDispatcherRingBufferSizePower
+            validation: required onblur integer gte:10 lte:31
+            after: >
+                <p class="description">Sets the size of the event buffer.</p>
 
 ## EVENT SERVICE
 
@@ -2280,6 +2317,8 @@ asyncOperations:
         ${allowCoreThreadTimeOut}
         ${maxPoolSize}
         ${keepAliveSeconds}
+        ${reactorWorkQueueDispatcherPoolSize}
+        ${reactorWorkQueueDispatcherRingBufferSizePower}
 
 #automationSettings:
 #    kind: panel.form

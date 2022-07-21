@@ -89,4 +89,32 @@ public class AsyncOperationsPreferences extends AbstractPreferenceBean {
             log.error("Invalid preference name keepAliveSeconds: something is very wrong here.", e);
         }
     }
+
+    @NrgPreference(defaultValue = "20")
+    public int getReactorWorkQueueDispatcherPoolSize() {
+        return getIntegerValue("reactorWorkQueueDispatcherPoolSize");
+    }
+
+    @SuppressWarnings("unused")
+    public void setReactorWorkQueueDispatcherPoolSize(final int reactorWorkQueueDispatcherPoolSize) {
+        try {
+            setIntegerValue(reactorWorkQueueDispatcherPoolSize, "reactorWorkQueueDispatcherPoolSize");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name reactorWorkQueueDispatcherPoolSize: something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "13")
+    public int getReactorWorkQueueDispatcherRingBufferSizePower() {
+        return getIntegerValue("reactorWorkQueueDispatcherRingBufferSizePower");
+    }
+
+    @SuppressWarnings("unused")
+    public void setReactorWorkQueueDispatcherRingBufferSizePower(final int reactorWorkQueueDispatcherRingBufferSizePower) {
+        try {
+            setIntegerValue(reactorWorkQueueDispatcherRingBufferSizePower, "reactorWorkQueueDispatcherRingBufferSizePower");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name reactorWorkQueueDispatcherRingBufferSizePower: something is very wrong here.", e);
+        }
+    }
 }

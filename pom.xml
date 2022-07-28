@@ -83,13 +83,13 @@
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.2.2-SNAPSHOT</nrg.mizer.version>
+        <nrg.mizer.version>1.2.3-SNAPSHOT</nrg.mizer.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
         <nrg.dicom-edit4.version>1.1.0</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>6.3.2-SNAPSHOT</nrg.dicom-edit6.version>
+        <nrg.dicom-edit6.version>6.3.3-SNAPSHOT</nrg.dicom-edit6.version>
         <nrg.dicom.pixeleditor.version>1.3.0</nrg.dicom.pixeleditor.version>
-        <nrg.dicomdb.version>5.3.0</nrg.dicomdb.version>
+        <nrg.dicomdb.version>5.2</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
         <nrg.ecat.version>1.1.0</nrg.ecat.version>

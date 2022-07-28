@@ -2,6 +2,8 @@
 #* @vtlvariable name="feature" type="org.nrg.xdat.security.helpers.FeatureDefinitionI" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 <!-- Title: Features -->
+<h1 class="edit_title">Advanced Site-wide Feature Management</h1>
+<p>Toggle feature access for site-wide user roles and project groups</p>
 <table id="group-type-features" class="xnat-table features" style="display:none;">
     <thead class="header">
     <tr>

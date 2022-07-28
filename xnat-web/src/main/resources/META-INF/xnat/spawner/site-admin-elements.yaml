@@ -1361,6 +1361,25 @@ themeManagement:
         themeScript:
             tag: script|src=/scripts/xnat/admin/themeManagement.js
 
+adminControls:
+    kind: panel.form
+    label: Admin UI Controls
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        enableSitewideFeatures:
+            kind: panel.input.switchbox
+            label: Enable Site-wide Feature Management
+            name: uiShowAdminManageSiteFeatures
+            onText: Enabled
+            offText: Disabled
+            description: >
+                When Site-wide Feature Management is enabled, a new menu item will appear in the Administer menu in the top navigation.
+                This page will allow site admins to set default appearance of defined features in the UI.
+                <a href="https://wiki.xnat.org/documentation/xnat-administration/enabling-features-at-the-site-wide-level" target="_blank">See documentation</a>
+
+
 ## PLUGINS
 
 # create a container for the plugin table to be spawned into
@@ -2539,6 +2558,7 @@ root:
             contents:
                 ${dateFormatting}
                 ${themeManagement}
+                ${adminControls}
         plugins:
             kind: tab
             name: plugins

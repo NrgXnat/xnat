@@ -10,10 +10,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.net.Device;
-import org.dcm4che2.net.NetworkApplicationEntity;
-import org.dcm4che2.net.NetworkConnection;
-import org.dcm4che2.net.TransferCapability;
+import org.dcm4che2.net.*;
 import org.dcm4che2.net.service.DicomService;
 import org.dcm4che2.net.service.VerificationService;
 import org.nrg.dcm.scp.exceptions.DicomNetworkException;
@@ -220,37 +217,41 @@ public class DicomSCP {
 
     private void addApplicationEntity(final DicomSCPInstance instance) throws UnknownDicomHelperInstanceException {
         if (instance.getPort() != getPort()) {
-            throw new RuntimeException("Port for instance " + instance.toString() + " doesn't match port for DicomSCP instance: " + getPort());
+            throw new RuntimeException("Port for instance " + instance.getLabel() + " doesn't match port for DicomSCP instance: " + getPort());
         }
 
         final String aeTitle = instance.getAeTitle();
+        final int port = getPort();
         if (StringUtils.isBlank(aeTitle)) {
             throw new IllegalArgumentException("Can only add service to named AE");
         }
         if (getApplicationEntities().containsKey(aeTitle)) {
-            throw new RuntimeException("There's already a DICOM SCP receiver running at " + instance.toString());
+            throw new RuntimeException("There's already a DICOM SCP receiver running at " + instance.getLabel());
         }
 
-        final String identifier = instance.getIdentifier();
         final String fileNamer  = instance.getFileNamer();
+        final String identifier = instance.getIdentifier();
         log.debug("Adding application entity \"{}\" with identifier \"{}\" and file namer \"{}\" to DICOM SCP on port {}", aeTitle, identifier, fileNamer, getPort());
 
-        final NetworkApplicationEntity applicationEntity = createApplicationEntity(aeTitle);
+        final NetworkApplicationEntity applicationEntity = createApplicationEntity(aeTitle, instance);
+
         getApplicationEntities().put(aeTitle, applicationEntity);
-        getDicomServicesByApplicationEntity().put(applicationEntity,
-                                                  new CStoreService.Specifier(aeTitle,
-                                                                              _manager.getUserProvider(),
-                                                                              _manager.getDicomObjectIdentifier(identifier),
-                                                                              _manager.getDicomFileNamer(fileNamer), _manager)
-                                                          .build());
+        getDicomServicesByApplicationEntity().put( applicationEntity,
+                new CStoreService.Specifier( aeTitle,
+                        _manager.getUserProvider(),
+                        _manager.getDicomObjectIdentifier( aeTitle, port),
+                        _manager)
+                        .build());
     }
 
     @Nonnull
-    private NetworkApplicationEntity createApplicationEntity(final String aeTitle) {
-        final NetworkApplicationEntity applicationEntity = new NetworkApplicationEntity();
+    private NetworkApplicationEntity createApplicationEntity(final String aeTitle, final DicomSCPInstance instance) {
+        final XnatApplicationEntity applicationEntity = new XnatApplicationEntity();
         applicationEntity.setNetworkConnection(getDevice().getNetworkConnection());
         applicationEntity.setAssociationAcceptor(true);
         applicationEntity.setAETitle(aeTitle);
+        applicationEntity.setWhitelist(instance.getWhitelist());
+        applicationEntity.setWhitelistEnabled(instance.isWhitelistEnabled());
         return applicationEntity;
     }
 

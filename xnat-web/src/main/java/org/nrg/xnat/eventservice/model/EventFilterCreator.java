@@ -13,9 +13,11 @@ public abstract class EventFilterCreator {
     @Nullable @JsonProperty("name") public abstract String name();
 
     // ** Reactor bus filter components ** //
-    @JsonProperty("event-type")             public abstract String eventType();
-    @Nullable @JsonProperty("project-ids")  public abstract List<String> projectIds();
-    @Nullable @JsonProperty("status")       public abstract String status();
+    @JsonProperty("event-type")                      public abstract String eventType();
+    @Nullable @JsonProperty("project-ids")           public abstract List<String> projectIds();
+    @Nullable @JsonProperty("status")                public abstract String status();
+    @Nullable @JsonProperty("schedule")              public abstract String schedule();
+    @Nullable @JsonProperty("schedule-description")  public abstract String scheduleDescription();
 
     // ** Post-detection filter components ** //
     @Nullable @JsonProperty("payload-filter") public abstract String jsonPathFilter();
@@ -27,17 +29,21 @@ public abstract class EventFilterCreator {
 
     @JsonCreator
     public static EventFilterCreator create(
-            @Nullable @JsonProperty("name")        String name,
-            @JsonProperty("event-type")            String eventType,
-            @Nullable @JsonProperty("project-ids") List<String> projectIds,
-            @Nullable @JsonProperty("status")      String status,
-            @Nullable @JsonProperty("payload-filter") String jsonPathFilter,
-            @Nullable @JsonProperty("filter-nodes")     Map<String, JsonPathFilterNode> nodeFilters) {
+            @Nullable @JsonProperty("name")                 String name,
+            @JsonProperty("event-type")                     String eventType,
+            @Nullable @JsonProperty("project-ids")          List<String> projectIds,
+            @Nullable @JsonProperty("status")               String status,
+            @Nullable @JsonProperty("schedule")             String schedule,
+            @Nullable @JsonProperty("schedule-description") String scheduleDescription,
+            @Nullable @JsonProperty("payload-filter")       String jsonPathFilter,
+            @Nullable @JsonProperty("filter-nodes")         Map<String, JsonPathFilterNode> nodeFilters) {
         return builder()
                 .name(name)
                 .eventType(eventType)
                 .projectIds(projectIds)
                 .status(status)
+                .schedule(schedule)
+                .scheduleDescription(scheduleDescription)
                 .jsonPathFilter(jsonPathFilter)
                 .nodeFilters(nodeFilters)
                 .build();
@@ -57,6 +63,10 @@ public abstract class EventFilterCreator {
         public abstract Builder projectIds(List<String> projectIds);
 
         public abstract Builder status(String status);
+
+        public abstract Builder schedule(String schedule);
+
+        public abstract Builder scheduleDescription(String scheduleDescription);
 
         public abstract Builder jsonPathFilter(String jsonPathFilter);
 

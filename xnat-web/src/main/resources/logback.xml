@@ -142,6 +142,16 @@
             <fileNamePattern>${xnat.home}/logs/access.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
+    <appender name="file_access" class = "ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${xnat.home}/logs/file_access.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/file_access.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
     <appender name="launch" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${xnat.home}/logs/launch.log</File>
         <encoder>
@@ -403,6 +413,9 @@
     </logger>
     <logger name="org.nrg.xdat.turbine.utils.AccessLogger" additivity="false" level="INFO">
         <appender-ref ref="access"/>
+    </logger>
+    <logger name="org.nrg.xdat.turbine.utils.FileAccessLogger" additivity="false" level="INFO">
+        <appender-ref ref="file_access"/>
     </logger>
     <logger name="org.springframework.http" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>

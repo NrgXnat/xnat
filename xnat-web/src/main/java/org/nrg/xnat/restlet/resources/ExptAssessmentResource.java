@@ -138,8 +138,7 @@ public class ExptAssessmentResource extends ItemResource {
 				if(filepath!=null && !filepath.equals("")){
 					if(filepath.startsWith("projects/")){
 
-						if(!Features.checkFeature(user, assessor.getProject(), "project_sharing")){
-							this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Sharing is not allowed in this project.");
+						if(!isSharingAllowed(user, assessor.getProject())){
 							return;
 						}
 

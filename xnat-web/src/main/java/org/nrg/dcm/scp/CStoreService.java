@@ -9,12 +9,7 @@
 
 package org.nrg.dcm.scp;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-
-import javax.inject.Provider;
-
+import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
@@ -33,9 +28,13 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.GradualDicomImporter;
+import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
-import com.google.common.collect.ImmutableMap;
+import javax.inject.Provider;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 @Slf4j
 public class CStoreService extends DicomService implements CStoreSCP {
@@ -282,16 +281,15 @@ public class CStoreService extends DicomService implements CStoreSCP {
         final FileWriterWrapperI fw = new StreamWrapper(dataStream);
         try {
             try {
-                boolean doCustomProcessing = false;
-                boolean directArchive = false;
-                try {
-                    DicomSCPInstance instance = _manager.getDicomSCPInstance(as.getLocalAET(),as.getConnector().getPort());
-                    doCustomProcessing = instance.isCustomProcessing();
-                    directArchive = instance.isDirectArchive();
-                }
-                catch(Throwable t){
-                    log.error("Failed to get whether the SCP receiver is set up to do custom processing", t);
-                }
+                boolean doCustomProcessing   = false;
+                boolean directArchive        = false;
+                boolean anonymizationEnabled = true;
+
+                String aeTitle = as.getLocalAET();
+                int port = as.getConnector().getPort();
+                doCustomProcessing   = _manager.isCustomProcessing( aeTitle, port);
+                directArchive        = _manager.isDirectArchive( aeTitle, port);
+                anonymizationEnabled = _manager.isAnonymizationEnabled( aeTitle, port);
 
                 final ImmutableMap<String, Object> parameters = ImmutableMap.<String, Object>builder()
                         .put(GradualDicomImporter.SENDER_ID_PARAM, identifySender(as))
@@ -301,10 +299,11 @@ public class CStoreService extends DicomService implements CStoreSCP {
                         .put(GradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnector().getPort())
                         .put(GradualDicomImporter.CUSTOM_PROC_PARAM, doCustomProcessing)
                         .put(GradualDicomImporter.DIRECT_ARCHIVE_PARAM, directArchive)
+                        .put(URIManager.PREVENT_ANON, String.valueOf(!anonymizationEnabled))
                         .build();
                 final GradualDicomImporter importer = new GradualDicomImporter(this,
                         userProvider.get(), fw, parameters);
-                importer.setIdentifier(identifier);
+                importer.setIdentifier( _manager.getDicomObjectIdentifier( aeTitle, port));
                 if (null != namer) {
                     importer.setNamer(namer);
                 }
@@ -364,7 +363,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
         private final DicomObjectIdentifier<XnatProjectdata> identifier;
         private final DicomFileNamer namer;
         private final DicomSCPManager manager;
-        
+
         public Specifier(final String aeTitle,
                 final Provider<UserI> userProvider,
                 final DicomObjectIdentifier<XnatProjectdata> identifier,
@@ -394,9 +393,9 @@ public class CStoreService extends DicomService implements CStoreSCP {
         public String getAETitle() { return aeTitle; }
         
         public Provider<UserI> getUserProvider() { return userProvider; }
-        
+
         public DicomObjectIdentifier<XnatProjectdata> getIdentifier() { return identifier; }
-        
+
         public DicomFileNamer getNamer() { return namer; }
     }
 }

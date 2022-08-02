@@ -34,17 +34,17 @@ import static lombok.AccessLevel.PROTECTED;
 public class AliasTokenPreferenceHandlerMethod extends AbstractScheduledXnatPreferenceHandlerMethod {
     @Autowired
     public AliasTokenPreferenceHandlerMethod(final AliasTokenService service, final SiteConfigPreferences preferences, final ThreadPoolTaskScheduler scheduler) {
-        super(scheduler, TIMEOUT, SCHEDULE);
+        super(scheduler, SCHEDULE);
 
         _service = service;
+        _siteConfigPreferences = preferences;
 
-        setAliasTokenTimeout(preferences.getAliasTokenTimeout());
         setAliasTokenTimeoutSchedule(preferences.getAliasTokenTimeoutSchedule());
     }
 
     @Override
     protected AbstractXnatRunnable getTask() {
-        return new ClearExpiredAliasTokens(getService(), getAliasTokenTimeout());
+        return new ClearExpiredAliasTokens(getService(), getSiteConfigPreferences());
     }
 
     @Override
@@ -61,22 +61,15 @@ public class AliasTokenPreferenceHandlerMethod extends AbstractScheduledXnatPref
     @Override
     protected void handlePreferenceImpl(final String preference, final String value) {
         log.debug("Found preference {} that this handler can handle, setting value to {}", preference, value);
-        switch (preference) {
-            case TIMEOUT:
-                setAliasTokenTimeout(value);
-                break;
-
-            case SCHEDULE:
-                setAliasTokenTimeoutSchedule(value);
-                break;
+        if (!SCHEDULE.equals(preference)) {
+            return;
         }
+        setAliasTokenTimeoutSchedule(value);
     }
 
-    public static final String TIMEOUT  = "aliasTokenTimeout";
     public static final String SCHEDULE = "aliasTokenTimeoutSchedule";
 
     private final AliasTokenService _service;
-
-    private String _aliasTokenTimeout;
+    private final SiteConfigPreferences _siteConfigPreferences;
     private String _aliasTokenTimeoutSchedule;
 }

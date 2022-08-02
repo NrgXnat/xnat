@@ -81,7 +81,7 @@ public class QuickSearchAction extends SecureAction {
                 return;
             }
             try {
-            	String projectQ="SELECT DISTINCT id FROM xnat_projectData prj LEFT JOIN xnat_projectdata_alias ali ON prj.id=ali.aliases_alias_xnat_projectdata_id WHERE lower(id)='" + searchValue +"' OR  lower(secondary_id)='" + searchValue +"' OR  lower(name)='" + searchValue +"' OR  lower(alias)='" + searchValue +"' OR lower(keywords) LIKE '%" + searchValue +"%'";
+            	String projectQ="SELECT DISTINCT id FROM xnat_projectData prj LEFT JOIN xnat_projectdata_alias ali ON prj.id=ali.aliases_alias_xnat_projectdata_id WHERE lower(id) LIKE '%" + searchValue +"%' OR  lower(secondary_id) LIKE '%" + searchValue +"%' OR  lower(name) LIKE '%" + searchValue +"%' OR  lower(alias) LIKE '%" + searchValue +"%' OR lower(keywords) LIKE '%" + searchValue +"%'";
                 logger.info("Preparing to run quick search query for projects: {}", projectQ);
             	XFTTable table =TableSearch.Execute(projectQ, user.getDBName(), user.getLogin());
                 secureTable(user, table, new String[]{"id"}, "xnat:projectData/ID");
@@ -101,10 +101,10 @@ public class QuickSearchAction extends SecureAction {
             			search.setDisplay("listing");
             			search.setRootElement("xnat:projectData");
             			CriteriaCollection cc = new CriteriaCollection("OR");
-            			cc.addClause("xnat:projectData/ID", "=", searchValue);
-            			cc.addClause("xnat:projectData/name", "=", searchValue);
-            			cc.addClause("xnat:projectData/secondary_id", "=", searchValue);
-            			cc.addClause("xnat:projectData/aliases/alias/alias", "=", searchValue);
+            			cc.addClause("xnat:projectData/ID", "LIKE", searchValue);
+            			cc.addClause("xnat:projectData/name", "LIKE", searchValue);
+            			cc.addClause("xnat:projectData/secondary_id", "LIKE", searchValue);
+            			cc.addClause("xnat:projectData/aliases/alias/alias", "LIKE", searchValue);
             			cc.addClause("xnat:projectData/keywords", "LIKE", searchValue);
             			search.addCriteria(cc);
             			

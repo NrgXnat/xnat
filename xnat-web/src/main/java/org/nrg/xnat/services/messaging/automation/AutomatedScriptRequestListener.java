@@ -9,9 +9,6 @@
 
 package org.nrg.xnat.services.messaging.automation;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -35,6 +32,10 @@ import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The listener interface for receiving automatedScriptRequest events.
@@ -89,9 +90,7 @@ public class AutomatedScriptRequestListener implements JmsRequestListener<Automa
         } else if (srcEventClass.contains("WrkWorkflowdata")) {
             parameters.put("srcWorkflowId", request.getArgumentMap().get("wrkWorkflowId"));
         }
-        if (parameters.get("srcWorkflowId") == null) {
-            parameters.put("srcWorkflowId", null);
-        }
+        parameters.putIfAbsent("srcWorkflowId", null);
         parameters.put("scriptWorkflowId", request.getScriptWorkflowId());
         parameters.put("dataType", request.getDataType());
         parameters.put("dataId", request.getDataId());

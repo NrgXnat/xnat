@@ -14,10 +14,12 @@ import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 
-import static org.nrg.dcm.scp.DicomSCPInstance.formatDicomSCPInstanceKey;
-
 @Slf4j
 public class DicomSCPStore {
+    private final Map<Integer, DicomSCP> _dicomSCPs = new HashMap<>();
+    private final ExecutorService _executorService;
+    private final DicomSCPManager _manager;
+
     public DicomSCPStore(final ExecutorService executorService, final DicomSCPManager manager) {
         _executorService = executorService;
         _manager = manager;
@@ -128,12 +130,7 @@ public class DicomSCPStore {
     private static final Function<Triple<String, Integer, Boolean>, String> AE_TRIPLE_TO_AE_PORT = new Function<Triple<String, Integer, Boolean>, String>() {
         @Override
         public String apply(final Triple<String, Integer, Boolean> entity) {
-            return formatDicomSCPInstanceKey(entity.getLeft(), entity.getMiddle());
+            return DicomSCPInstance.formatDicomSCPInstanceKey(entity.getLeft(), entity.getMiddle());
         }
     };
-
-    private final Map<Integer, DicomSCP> _dicomSCPs = new HashMap<>();
-
-    private final ExecutorService _executorService;
-    private final DicomSCPManager _manager;
 }

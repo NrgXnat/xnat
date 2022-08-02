@@ -1,6 +1,6 @@
 <!-- Sequence: 20 -->
 <!-- allowGuest: true -->
-#if($user.checkFeature($om,"data_download"))
+#if($user.checkRestrictedFeature("$!om.getProject()","data_download"))
    <li class="yuimenuitem">
     <a class="yuimenuitemlabel" data-wait="Preparing data for download..." href="$link.setAction("ProjectDownloadAction").addPathInfo('project',$project.getId())">Download Images</A>
    </li>

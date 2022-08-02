@@ -13,6 +13,7 @@ import edu.sdsc.grid.io.GeneralFile;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatCatalogMetafieldBean;
@@ -74,7 +75,7 @@ public class DownloadImages extends SecureAction {
             String contentType = "application/zip";
             
             boolean tar = false;
-            int COMPRESSION = ZipUtils.DEFAULT_COMPRESSION;
+            int COMPRESSION = XDAT.getSiteConfigPreferences().getZipCompressionMethod();
             boolean cat = false;
             
             if (TurbineUtils.HasPassedParameter("download_type",data))

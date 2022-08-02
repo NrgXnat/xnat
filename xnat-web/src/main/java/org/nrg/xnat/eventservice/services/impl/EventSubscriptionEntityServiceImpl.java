@@ -14,6 +14,7 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.services.ContextService;
@@ -24,16 +25,12 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.daos.EventSubscriptionEntityDao;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
+import org.nrg.xnat.eventservice.events.ScheduledEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
 import org.nrg.xnat.eventservice.model.EventFilter;
 import org.nrg.xnat.eventservice.model.Subscription;
-import org.nrg.xnat.eventservice.services.ActionManager;
-import org.nrg.xnat.eventservice.services.EventService;
-import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
-import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
-import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
-import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
+import org.nrg.xnat.eventservice.services.*;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -51,13 +48,7 @@ import reactor.fn.Predicate;
 import javax.annotation.Nonnull;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.Transient;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -71,7 +62,6 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     private EventService eventService;
     private ObjectMapper mapper;
     private UserManagementServiceI userManagementService;
-    private SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;
     private Map<Long, ActiveRegistration> activeRegistrations = new HashMap<>();
 
 
@@ -82,8 +72,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                                               final EventServiceComponentManager componentManager,
                                               @Lazy final EventService eventService,
                                               final ObjectMapper mapper,
-                                              final UserManagementServiceI userManagementService,
-                                              final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {
+                                              final UserManagementServiceI userManagementService) {
         this.eventBus = eventBus;
         this.contextService = contextService;
         this.actionManager = actionManager;
@@ -91,7 +80,6 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
         this.eventService = eventService;
         this.mapper = mapper;
         this.userManagementService = userManagementService;
-        this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
         log.debug("EventSubscriptionService started normally.");
 
         configureJsonPath();
@@ -196,6 +184,17 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                 throw new SubscriptionValidationException("Could not compile jsonPath filter. " +  e.getMessage());
             }
 
+            try{
+                final String schedule = subscription.eventFilter().schedule();
+                final String status   = subscription.eventFilter().status();
+                if(!StringUtils.isEmpty(schedule) && ScheduledEvent.Status.CRON.name().equals(status)) {
+                    log.debug("Validating cron expression {} for subscription {}", schedule, subscription.id());
+                    validateCronExpression(schedule);
+                }
+            }catch(Throwable t){
+                log.error("Invalid Cron Expression. " + t.getMessage());
+                throw new SubscriptionValidationException("Invalid Cron Expression. " +  t.getMessage());
+            }
         }
 
         try {
@@ -214,6 +213,27 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
             throw new SubscriptionValidationException("Could not validate Action: " + subscription.actionKey() + "\n" + e.getMessage());
         }
         return subscription;
+    }
+
+    private void validateCronExpression(String cronTrigger) throws SubscriptionValidationException{
+            if(!org.springframework.util.StringUtils.hasLength(cronTrigger)){
+                throw new SubscriptionValidationException("Cron trigger must not be null or empty.");
+            }
+
+            final List<String> cronExpression = Arrays.asList(cronTrigger.split(" "));
+            if(cronExpression.size() != 6){
+                throw new SubscriptionValidationException("Invalid cron expression. Expected 6 fields but found: " + cronExpression.size());
+            }
+
+            final String secondField = cronExpression.get(0);
+            if(secondField.contains("*") || secondField.contains("/") || secondField.contains("-") || secondField.contains(",")){
+                throw new SubscriptionValidationException("Cron expression must not have a wildcard(*), range(-), step value(/), or list(,) in second field.");
+            }
+
+            final String minuteField = cronExpression.get(1);
+            if(minuteField.contains("*") || minuteField.contains("/") || minuteField.contains("-") || minuteField.contains(",")){
+                throw new SubscriptionValidationException("Cron expression must not have a wildcard(*), range(-), step value(/), or list(,) in the minute field.");
+            }
     }
 
     @Override
@@ -358,6 +378,10 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
         SubscriptionEntity subscriptionEntity = SubscriptionEntity.fromPojoWithTemplate(subscription, retrieve(subscription.id()));
         super.update(subscriptionEntity);
         return toPojo(subscriptionEntity);
+    }
+
+    public List<Subscription> findActiveSubscriptionsBySchedule(String schedule){
+        return this.getDao().findActiveSubscriptionsBySchedule(schedule).stream().map(e -> toPojo(e)).collect(Collectors.toList());
     }
 
     @Override
@@ -523,10 +547,18 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
                     return false;
                 }
                 // Check for exclusion based on project id
-                if (filter.projectIds() != null && !filter.projectIds().isEmpty() &&
+                if (!(event instanceof ScheduledEvent) && filter.projectIds() != null && !filter.projectIds().isEmpty() &&
                         filter.projectIds().stream().noneMatch(pid -> pid.contentEquals(event.getProjectId() != null ? event.getProjectId() : ""))){
                     return false;
                 }
+
+                if(event instanceof ScheduledEvent && event.getCurrentStatus() == ScheduledEvent.Status.CRON){
+                    String eventSchedule = ((ScheduledEvent)event).getSchedule();
+                    if(StringUtils.isNotEmpty(eventSchedule) && StringUtils.isNotEmpty(filter.schedule()) && !eventSchedule.equals(filter.schedule())){
+                        return false;
+                    }
+                }
+
                 // Check for exclusion based on payload filter (if available)
                 if(!Strings.isNullOrEmpty(filter.jsonPathFilter()) && event.filterablePayload()) {
                     try {

@@ -18,16 +18,16 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
-import org.nrg.dcm.scp.DicomSCPInstance;
 import org.nrg.dcm.scp.DicomSCPManager;
-import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicatePropertiesException;
-import org.nrg.dcm.scp.exceptions.DicomNetworkException;
-import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
+import org.nrg.dcm.scp.DicomSCPInstance;
+import org.nrg.dcm.scp.exceptions.*;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -126,6 +126,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "DICOM SCP receiver definition not found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
+    @ResponseBody
     public DicomSCPInstance getDicomSCPInstance(@ApiParam(value = "ID of the DICOM SCP receiver definition to fetch", required = true) @PathVariable("id") final int id) throws NotFoundException {
         return _manager.getDicomSCPInstance(id);
     }
@@ -156,7 +157,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                         produces = MediaType.APPLICATION_JSON_VALUE,
                         restrictTo = Admin)
     @ResponseBody
-    public DicomSCPInstance createDicomSCPInstance(@RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException {
+    public DicomSCPInstance createDicomSCPInstance(@RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException, DicomScpInvalidRoutingExpressionException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException {
         return _manager.saveDicomSCPInstance(instance);
     }
 
@@ -179,11 +180,12 @@ public class DicomSCPApi extends AbstractXapiRestController {
                                                            value = "{\"aeTitle\": \"TITLE\", \"port\": 8104, \"enabled\": true}"
                                                        )
                                                    }))
-                                                   @RequestBody final DicomSCPInstance instance) throws NotFoundException, DICOMReceiverWithDuplicatePropertiesException, UnknownDicomHelperInstanceException, DicomNetworkException {
+                                                   @RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomScpInvalidAeTitleException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidRoutingExpressionException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException {
         // Set the ID to the value specified in the REST call. If ID not specified on PUT, value will be zero, so we
         // need to make sure it's set to the proper value. If they submit it under the wrong ID well...
         instance.setId(id);
-        return _manager.updateDicomSCPInstance(instance);
+//        return _manager.updateDicomSCPInstance(instance);
+        return _manager.saveDicomSCPInstance(instance);
     }
 
     @ApiOperation(value = "Deletes the DICOM SCP receiver definition object with the specified ID.", notes = "This call will stop the receiver if it's currently running.")
@@ -219,7 +221,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{id}/enabled/{flag}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
     public DicomSCPInstance enableDicomSCPInstance(@ApiParam(value = "ID of the DICOM SCP receiver definition to modify", required = true) @PathVariable("id") final int id,
-                                                   @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable("flag") final Boolean flag) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException {
+                                                   @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable("flag") final Boolean flag) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException, IOException {
         return flag ? _manager.enableDicomSCPInstance(id) : _manager.disableDicomSCPInstance(id);
     }
 

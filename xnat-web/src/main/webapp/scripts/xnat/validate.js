@@ -119,6 +119,8 @@ var XNAT = getObject(XNAT);
         idSafe: /^([a-z][a-z0-9_\-]*)$/i,      // safe to use as an ID - alphasafe and must start with a letter
         idStrict: /^([a-z][a-z0-9_]*)$/i,      // 'idSafe' without hyphens
         ip: /^(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2}))$/i,
+        cidr: /^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$/, // ex: 192.168.0.1 or 192.168.0.1/32
+        aeTitle: /(?=[^\\]*[^\s\\]+$)(?=^[^\s\\]+[^\\]*)[ -~]{1,16}/,  // up to 16 characters, no backslashes, and no leading or trailing whitespace
         base64: /^([^a-zA-Z0-9\/+=])+$/i,
         numericDash: /^[\d\-\s]+$/,
         //fqdn: /^([a-z0-9]*(\.(?![.-]))*(-(?!\.))*([a-z0-9](?![^a-z0-9]))*){1,252}$/i,

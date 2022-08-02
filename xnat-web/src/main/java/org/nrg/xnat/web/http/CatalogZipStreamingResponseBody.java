@@ -7,6 +7,8 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.services.archive.PathResourceMap;
 import org.springframework.core.io.Resource;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * Writes out a map of resources to a zip stream. This can be set as the response body for Spring controller and REST
  * API methods:
@@ -34,8 +36,8 @@ public final class CatalogZipStreamingResponseBody extends AbstractZipStreamingR
      * @param archiveRoot The root archive folder.
      */
     @SuppressWarnings("unused")
-    public CatalogZipStreamingResponseBody(final UserI user, final CatCatalogI catalog, final String archiveRoot) {
-        this(user, catalog, archiveRoot, false);
+    public CatalogZipStreamingResponseBody(final UserI user, final CatCatalogI catalog, final String archiveRoot, HttpServletRequest request) {
+        this(user, catalog, archiveRoot, false, request);
     }
 
     /**
@@ -48,9 +50,9 @@ public final class CatalogZipStreamingResponseBody extends AbstractZipStreamingR
      * @param testMode    Whether the zip should be run in test mode.
      */
     public CatalogZipStreamingResponseBody(final UserI user, final CatCatalogI catalog, final String archiveRoot,
-                                           final boolean testMode) {
+                                           final boolean testMode, HttpServletRequest request) {
         super(archiveRoot, Users.getUserCacheFile(user, "catalogs", catalog.getId() + ".csv"));
-        _mapper = new CatalogPathResourceMap(catalog, archiveRoot, testMode);
+        _mapper = new CatalogPathResourceMap(catalog, archiveRoot, testMode, user, request);
     }
 
     @Override

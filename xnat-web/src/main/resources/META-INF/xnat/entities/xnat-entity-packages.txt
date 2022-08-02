@@ -18,3 +18,4 @@ org.nrg.xnat.spawner.entities
 org.nrg.xnat.task.entities
 org.nrg.xnat.tracking.entities
 org.nrg.xnat.archive.entities
+org.nrg.dcm.scp

@@ -27,9 +27,17 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
 
-    var dicomScpManager, undefined, undef,
-        rootUrl = XNAT.url.rootUrl,
-        restUrl = XNAT.url.restUrl;
+    // Element identifiers.
+    const CUSTOM_ROUTING_WARNING_ID   = 'customRoutingWarningID';
+    const DICOM_OBJECT_IDENTIFIER     = 'dicomObjectIdentifier';
+    const PROJECT_ROUTING_EXPRESSION  = 'projectRoutingExpression';
+    const ROUTING_EXPRESSIONS_ENABLED = 'routingExpressionsEnabled';
+    const SESSION_ROUTING_EXPRESSION  = 'sessionRoutingExpression';
+    const SUBJECT_ROUTING_EXPRESSION  = 'subjectRoutingExpression';
+    const EXPRESSIONS                 = [PROJECT_ROUTING_EXPRESSION, SUBJECT_ROUTING_EXPRESSION, SESSION_ROUTING_EXPRESSION];
+
+    let dicomScpManager;
+    restUrl = XNAT.url.restUrl;
 
     XNAT.admin =
         getObject(XNAT.admin || {});
@@ -127,16 +135,17 @@ var XNAT = getObject(XNAT || {});
         return dicomScpManager.getOne(id);
     };
 
+    dicomScpManager.isCustomRoutingCapable = function( identityString) {
+        return DICOM_OBJECT_IDENTIFIER === identityString;
+    }
+
     // dialog to create/edit receivers
     dicomScpManager.dialog = function(item, isNew){
 
         var doWhat = !item ? 'New' : 'Edit';
         var oldPort = item && item.port ? item.port : null;
         var oldTitle = item && item.aeTitle ? item.aeTitle : null;
-        var modalDimensions =
-                Object.keys(dicomScpManager.identifiers).length > 1
-                    ? { height: '320px', width: '600px' }
-                    : { height: '250px', width: '500px' };
+        var modalDimensions = { height: '320px', width: '650px' }
 
         isNew = firstDefined(isNew, doWhat === 'New');
 
@@ -144,8 +153,7 @@ var XNAT = getObject(XNAT || {});
 
         item = getObject(item);
 
-        if (item['identifier'] === undefined) item['identifier'] = 'dicomObjectIdentifier';
-
+        if (item['identifier'] === undefined) item['identifier'] = DICOM_OBJECT_IDENTIFIER;
 
         var $container = spawn('div.dicom-scp-editor-container');
 
@@ -164,7 +172,7 @@ var XNAT = getObject(XNAT || {});
                 var options = [];
 
                 Object.keys(identifiers).forEach(function(identifier){
-                    var label = (identifier === 'dicomObjectIdentifier') ? identifier+ ' (Default)' : identifier;
+                    var label = (identifier === DICOM_OBJECT_IDENTIFIER) ? identifier+ ' (Default)' : identifier;
                     var option = spawn('option', {
                         value: identifier,
                         html: label
@@ -176,23 +184,24 @@ var XNAT = getObject(XNAT || {});
                     options.push(option)
                 });
 
+                let $identifierSelect = null;
                 if (Object.keys(identifiers).length > 1) {
 
-                    var identifierSelect = $form.find('#scp-identifier');
+                    $identifierSelect = $form.find('#scp-identifier');
 
                     // un-hide the menu
-                    identifierSelect.append(options)
+                    $identifierSelect.append(options)
                                     .disabled(false)
                                     .hidden(false);
 
                     // un-hide the menu element container
-                    identifierSelect.closest('.panel-element')
+                    $identifierSelect.closest('.panel-element')
                                     .hidden(false)
 
                 } else {
                     // explicitly store the default XNAT identifier value with the SCP receiver     definition
                     $form.find('#scp-identifier').parents('.panel-element').empty().append(
-                        '<input type="hidden" name="identifier" value="dicomObjectIdentifier" />'
+                        `<input type="hidden" name="identifier" value="${DICOM_OBJECT_IDENTIFIER}" />`
                     );
                 }
 
@@ -207,6 +216,16 @@ var XNAT = getObject(XNAT || {});
                     $form.find('[name="enabled"]').val(item.enabled);
                     $form.find('[name="customProcessing"]').prop('checked', item.customProcessing).val(item.customProcessing);
                     $form.find('[name="directArchive"]').prop('checked', item.directArchive).val(item.directArchive);
+                    $form.find('[name="anonymizationEnabled"]').prop('checked', item.anonymizationEnabled).val(item.anonymizationEnabled);
+                    $form.find('[name="whitelistEnabled"]').prop('checked', item.whitelistEnabled).val(item.whitelistEnabled);
+                    $form.find('[name="whitelistText"]').val(item.whitelist.join('\r\n'));
+                    $form.find(`[name="${ROUTING_EXPRESSIONS_ENABLED}"]`).prop('checked', item.routingExpressionsEnabled).val(item.routingExpressionsEnabled);
+                    $form.find(`[name="${PROJECT_ROUTING_EXPRESSION}"]`).val(item.projectRoutingExpression);
+                    $form.find(`[name="${SUBJECT_ROUTING_EXPRESSION}"]`).val(item.subjectRoutingExpression);
+                    $form.find(`[name="${SESSION_ROUTING_EXPRESSION}"]`).val(item.sessionRoutingExpression);
+                }else{
+                    // Set default value for anonymization to true if this is a new receiver
+                    $form.find('[name="anonymizationEnabled"]').prop('checked', true).val(true);
                 }
 
                 spawneri.render($container);
@@ -215,6 +234,53 @@ var XNAT = getObject(XNAT || {});
                     title: doWhat + ' DICOM SCP Receiver',
                     content: $container,
                     width: modalDimensions.width,
+                    beforeShow: function(obj){
+                        var $whitelistEnabled = obj.dialog$.find('[name="whitelistEnabled"]');
+                        if($whitelistEnabled[0].checked){
+                            obj.dialog$.find('[data-name="whitelistText"]').show();
+                        }else{
+                            obj.dialog$.find('[data-name="whitelistText"]').hide();
+                        }
+
+                        $whitelistEnabled.on('change', function(){
+                            if(this.checked){
+                                obj.dialog$.find('[data-name="whitelistText"]').show();
+                            }else{
+                                obj.dialog$.find('[data-name="whitelistText"]').hide();
+                            }
+
+                        });
+                        let identifier = item['identifier'];
+
+                        dicomScpManager.setIdentifierDescription(identifier, obj.dialog$);
+                        dicomScpManager.setCustomRoutingVisibility(identifier, obj.dialog$);
+
+                        let $customRoutingSwitch = obj.dialog$.find(`[name="${ROUTING_EXPRESSIONS_ENABLED}"]`);
+                        if( $identifierSelect !== null) {
+
+                            let previousIdentifier;
+                            $identifierSelect.on('focus', function (){
+                                previousIdentifier = this.value
+                            });
+                            $identifierSelect.on('change', function (){
+                                dicomScpManager.confirmIdentifierChange( this, previousIdentifier, $customRoutingSwitch[0], obj.dialog$);
+
+                                previousIdentifier = $identifierSelect[0].value
+                            });
+                        }
+
+                        $customRoutingSwitch.on('change', function(){
+                            if(this.checked){
+                                obj.dialog$.find(`[data-name="${PROJECT_ROUTING_EXPRESSION}"]`).show();
+                                obj.dialog$.find(`[data-name="${SUBJECT_ROUTING_EXPRESSION}"]`).show();
+                                obj.dialog$.find(`[data-name="${SESSION_ROUTING_EXPRESSION}"]`).show();
+                            }else{
+                                obj.dialog$.find(`[data-name="${PROJECT_ROUTING_EXPRESSION}"]`).hide();
+                                obj.dialog$.find(`[data-name="${SUBJECT_ROUTING_EXPRESSION}"]`).hide();
+                                obj.dialog$.find(`[data-name="${SESSION_ROUTING_EXPRESSION}"]`).hide();
+                            }
+                        });
+                    },
                     // height: modalDimensions.height,
                     scroll: false,
                     padding: 0,
@@ -231,16 +297,20 @@ var XNAT = getObject(XNAT || {});
                                 var $aeTitle = $formPanel.find('[name="aeTitle"]');
                                 var $port = $formPanel.find('[name="port"]');
 
-                                // set the value for 'customProcessing' on-the-fly
-                                var customProcessing$ = $formPanel.find('[name="customProcessing"]');
-                                if (customProcessing$.length) {
-                                    customProcessing$[0].value = customProcessing$[0].checked + '';
-                                }
+                                dicomScpManager.setCheckBoxVal("customProcessing");
+                                dicomScpManager.setCheckBoxVal("directArchive");
+                                dicomScpManager.setCheckBoxVal("anonymizationEnabled");
+                                dicomScpManager.setCheckBoxVal("whitelistEnabled");
+                                dicomScpManager.setCheckBoxVal(ROUTING_EXPRESSIONS_ENABLED);
 
-                                // set the value for 'directArchive' on-the-fly
-                                var directArchive$ = $formPanel.find('[name="directArchive"]');
-                                if (directArchive$.length) {
-                                    directArchive$[0].value = directArchive$[0].checked + '';
+                                // set the value for 'whitelist' on-the-fly
+                                var whitelistText$ = $formPanel.find('[name="whitelistText"]');
+                                if (whitelistText$.length) {
+                                    new Set(whitelistText$[0].value.split(/\r?\n/).map(i => i.trim()).filter(i => i)).forEach(i => {
+                                        var input$ = spawn('input|type=text', { name: "whitelist[]", className: 'hidden' });
+                                        input$.value = i;
+                                        $formPanel.append(input$);
+                                    });
                                 }
 
                                 console.log(item.id);
@@ -281,8 +351,15 @@ var XNAT = getObject(XNAT || {});
                                         var newPort = portVal;
                                         console.log(newPort);
 
-                                        var newTitle = $aeTitle.val();
+                                        var newTitle = $aeTitle.val().trim();
+                                        $aeTitle.val(newTitle);
                                         console.log(newTitle);
+
+                                        if(!XNAT.validation.regex.aeTitle.test(newTitle)){
+                                            errors++;
+                                            errorMsg += "<li>Invalid AE-title: " + (newTitle == "" ? "EMPTY" : newTitle) + "</li>";
+                                            $aeTitle.addClass('invalid');
+                                        }
 
                                         var newAeTitleAndPort = formatAeTitleAndPort(newTitle, newPort);
 
@@ -298,10 +375,36 @@ var XNAT = getObject(XNAT || {});
                                             });
                                         }
 
+                                         var whitelistErr = 0;
+                                         $formPanel.find('[name="whitelist[]"]').each(function(){
+                                              var splitElement = this.value.split("@");
+                                              if(splitElement.length == 2) {
+                                                  if(!XNAT.validation.regex.aeTitle.test(splitElement[0]) || !XNAT.validation.regex.cidr.test(splitElement[1])){
+                                                     whitelistErr++;
+                                                     errorMsg += "<li>Invalid whitelist element: " + this.value + "</li>";
+                                                  }
+                                              } else if(splitElement.length == 1) {
+                                                  if(!XNAT.validation.regex.aeTitle.test(splitElement[0]) && !XNAT.validation.regex.cidr.test(splitElement[0])){
+                                                     whitelistErr++;
+                                                     errorMsg += "<li>Invalid whitelist element: " + this.value + "</li>";
+                                                  }
+                                              } else{
+                                                  whitelistErr++;
+                                                  errorMsg += "<li>Invalid whitelist element: " + this.value + "</li>";
+                                              }
+                                          });
+
                                         errorMsg += '</ul>';
+
+                                         if(whitelistErr > 0){
+                                            $formPanel.find('[name="whitelistText"]').addClass('invalid');
+                                            errors += whitelistErr;
+                                            errorMsg += "Note: AE-titles must be no more than 16 characters and must not contain backslash or control characters.  IP Addresses must be a valid IP and can end with an optional CIDR subnet mask suffix. "
+                                         }
 
                                         if (errors > 0) {
                                             XNAT.dialog.message('Errors Found', errorMsg);
+                                            $formPanel.find('[name="whitelist[]"]').each(function(){ this.remove(); });
                                         }
 
                                         return errors === 0;
@@ -310,7 +413,11 @@ var XNAT = getObject(XNAT || {});
                                     success: function(){
                                         refreshTable();
                                         scpEditorDialog.close();
-                                        XNAT.ui.banner.top(2000, 'Saved.', 'success')
+                                        XNAT.ui.banner.top(2000, 'Saved.', 'success');
+                                    },
+                                    fail: function(o){
+                                        XNAT.dialog.message('Failed to Save DICOM Receiver. ', o.responseText);
+                                        $formPanel.find('[name="whitelist[]"]').each(function(){ this.remove(); });
                                     }
                                 });
                             }
@@ -325,6 +432,100 @@ var XNAT = getObject(XNAT || {});
             });
 
     };
+
+    dicomScpManager.setIdentifierDescription = function( identifier, $mainDialog) {
+        let description = $mainDialog.find('[data-name="identifier"]').find('[class="description"]')[0];
+        let isCapable = dicomScpManager.isCustomRoutingCapable( identifier);
+        let $span = $(description).find(`#${CUSTOM_ROUTING_WARNING_ID}`);
+        if( $span.length > 0) {
+            if( $span[0].parentNode) {
+                $span[0].parentNode.removeChild( $span[0]);
+            }
+        }
+
+        const span = document.createElement("span");
+        span.setAttribute("id",`${CUSTOM_ROUTING_WARNING_ID}`);
+        if( ! isCapable) {
+            span.innerHTML = "<br>The selected identifier does not support custom routing.";
+            description.appendChild( span);
+        }
+    }
+
+    dicomScpManager.confirmIdentifierChange = function( identifierSelect, previousIdentifier, isRoutingEnabledSwitch, $mainDialog) {
+        let isConflict = isRoutingEnabledSwitch.value && !dicomScpManager.isCustomRoutingCapable( identifierSelect.value);
+        if( isConflict) {
+            XNAT.dialog.open({
+                title: 'Unsupported Per-Receiver Routing.',
+                content: ` <p>
+                          The selected identifier '${identifierSelect.value}' does not support per-receiver routing but per-receiver routing is enabled. 
+                          Select OK to disable per-receiver routing or Cancel to restore previously selected identifier.
+                       </p>`,
+                beforeShow: function (obj) {
+                },
+                scroll: false,
+                mask: true,
+                buttons: [
+                    {
+                        label: 'OK',
+                        default: true,
+                        close: true,
+                        action: function( obj) {
+                            isRoutingEnabledSwitch.checked = false;
+
+                            dicomScpManager.setIdentifierDescription(identifierSelect.value, $mainDialog);
+                            dicomScpManager.setCustomRoutingVisibility(identifierSelect.value, $mainDialog);
+                        }
+                    },
+                    {
+                        label: 'Cancel',
+                        close: true,
+                        action: function( obj) {
+                            identifierSelect.value = previousIdentifier;
+                            isRoutingEnabledSwitch.checked = true;
+
+                            dicomScpManager.setIdentifierDescription(previousIdentifier, $mainDialog);
+                            dicomScpManager.setCustomRoutingVisibility(previousIdentifier, $mainDialog);
+                        }
+                    }
+                ]
+            });
+        } else {
+
+            dicomScpManager.setIdentifierDescription(identifierSelect.value, $mainDialog);
+            dicomScpManager.setCustomRoutingVisibility(identifierSelect.value, $mainDialog);
+        }
+    }
+
+    dicomScpManager.setCustomRoutingVisibility = function( identifier, $dialog) {
+        let isCapable = dicomScpManager.isCustomRoutingCapable( identifier);
+        let isRoutingEnabledSwitch = $dialog.find(`[name="${ROUTING_EXPRESSIONS_ENABLED}"]`)[0];
+        let $swtchPanel = $dialog.find(`[data-name="${ROUTING_EXPRESSIONS_ENABLED}"]`).filter('.panel-switchbox');
+
+        const shouldShow = isCapable && isRoutingEnabledSwitch.checked;
+
+        if( isCapable) {
+            $swtchPanel.show();
+        } else {
+            $swtchPanel.hide();
+        }
+
+        EXPRESSIONS.forEach(expression => {
+            const locator = $dialog.find(`[data-name="${expression}"]`)
+            if (shouldShow) {
+                locator.show()
+            } else {
+                locator.hide()
+            }
+        })
+    }
+
+    dicomScpManager.setCheckBoxVal = function(name){
+        let $formPanel = jq('form[name="dicomScpEditor"]');
+        let $container = $formPanel.find('[name="' + name + '"]');
+        if ($container.length) {
+            $container[0].value = $container[0].checked + '';
+        }
+    }
 
     // create table for DICOM SCP receivers
     dicomScpManager.table = function(container, callback){
@@ -441,25 +642,30 @@ var XNAT = getObject(XNAT || {});
         }
 
         function displayBehavior(item){
-            item.identifier = item.identifier || 'dicomObjectIdentifier';
+            item.identifier = item.identifier || DICOM_OBJECT_IDENTIFIER;
             var archiveBehavior = (item.directArchive) ? 'Direct Archive Behavior Enabled' : 'Uses Standard Prearchive Behavior';
             var customRemapping = (item.customProcessing) ? 'Custom Remapping Enabled' : 'Uses Standard Anonymization';
-            var projectRouting = (item.identifier === 'dicomObjectIdentifier') ? 'Uses Standard Project Routing' :
+            var whitelist = (item.whitelistEnabled) ? 'AE-Title Whitelist Enabled' : 'AE-Title Whitelist Disabled';
+            var routingExpressionsEnabled = (item.routingExpressionsEnabled) ? 'Receiver-Specific Routing Enabled' : 'Receiver-Specific Routing Disabled';
+            var anonymizationEnabled = (item.anonymizationEnabled) ? 'Anonymization Enabled' : 'Anonymization Disabled';
+            var projectRouting = (item.identifier === DICOM_OBJECT_IDENTIFIER) ? 'Uses Standard Project Routing' :
                 (item.identifier.slice(0,3) === 'dqr') ? 'DQR Routing Enabled' : 'Uses Custom Project Routing';
             return spawn('ul', {
                 style: { 'margin': '0', 'padding-left': '1.5em' }
             },[
-                [ 'li',archiveBehavior ],
-                [ 'li',customRemapping ],
-                [ 'li',projectRouting ]
+                [ 'li', archiveBehavior ],
+                [ 'li', customRemapping ],
+                [ 'li', projectRouting ],
+                [ 'li', whitelist ],
+                [ 'li', anonymizationEnabled ],
+                [ 'li', routingExpressionsEnabled ]
             ]);
         }
 
         dicomScpManager.getAll().done(function(data){
             data.forEach(function(item){
-                // var identifierLabel = dicomScpManager.identifiers[item.identifier] || dicomScpManager.identifiers['dicomObjectIdentifier'];
-                var identifierLabel = item.identifier || 'dicomObjectIdentifier';
-                identifierLabel += (identifierLabel === 'dicomObjectIdentifier') ? ' (Default)' : '';
+                var identifierLabel = item.identifier || DICOM_OBJECT_IDENTIFIER;
+                identifierLabel += (identifierLabel === DICOM_OBJECT_IDENTIFIER) ? ' (Default)' : '';
                 scpTable.tr({ title: item.aeTitle, data: { id: item.id, port: item.port } })
                         .td({ style: 'max-width: 180px' },[editLink(item, item.aeTitle)]).addClass('aeTitle word-wrapped')
                         .td([['div.mono.center', item.port]]).addClass('port')

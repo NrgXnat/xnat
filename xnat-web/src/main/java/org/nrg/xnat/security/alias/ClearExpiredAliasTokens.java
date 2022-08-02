@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.task.AbstractXnatRunnable;
 
@@ -23,10 +24,9 @@ import static lombok.AccessLevel.PRIVATE;
 @Setter(PRIVATE)
 @Accessors(prefix = "_")
 public class ClearExpiredAliasTokens extends AbstractXnatRunnable {
-    public ClearExpiredAliasTokens(final AliasTokenService aliasTokenService, final String aliasTokenTimeout) {
+    public ClearExpiredAliasTokens(final AliasTokenService aliasTokenService, final SiteConfigPreferences preferences) {
         _service = aliasTokenService;
-        _aliasTokenTimeout = aliasTokenTimeout;
-        log.debug("Initializing the alias token sweeper job with alias token timeout set to {}", getAliasTokenTimeout());
+        _preferences = preferences;
     }
 
     /**
@@ -34,10 +34,11 @@ public class ClearExpiredAliasTokens extends AbstractXnatRunnable {
      */
     @Override
     protected void runTask() {
-        log.debug("Executing alias token sweep function with timeout value {}", getAliasTokenTimeout());
-        getService().invalidateExpiredTokens(getAliasTokenTimeout());
+        String timeout = getPreferences().getAliasTokenTimeout();
+        log.debug("Executing alias token sweep function with timeout value {}", timeout);
+        getService().invalidateExpiredTokens(timeout);
     }
 
     private final AliasTokenService _service;
-    private final String            _aliasTokenTimeout;
+    private final SiteConfigPreferences _preferences;
 }

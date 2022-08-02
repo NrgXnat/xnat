@@ -34,6 +34,8 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.helpers.Features;
+import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xdat.turbine.utils.FileAccessLogger;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
@@ -1143,6 +1145,9 @@ private void deleteTriageResource(XnatProjectdata proj ,String projectPath,Strin
 			if (dir.exists() && dir.isDirectory()) {
 				ArrayList<File> fileList = new ArrayList<File>();
 				fileList.addAll(FileUtils.listFiles(dir,null,true));
+				for (File file : fileList) {
+					FileAccessLogger.LogFileResourceAccess(this.userName, getRequest(), file.getAbsolutePath(), "");
+				}
 				sendZippedFiles(projectPath,pXNAME,pXNAME,fileList);
 			} else {
 				this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Quarantine directory not found or is not a directory.");

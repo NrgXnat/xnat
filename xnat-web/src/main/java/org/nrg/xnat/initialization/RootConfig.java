@@ -9,25 +9,11 @@
 
 package org.nrg.xnat.initialization;
 
-import static lombok.AccessLevel.PRIVATE;
-
 import com.fasterxml.jackson.core.PrettyPrinter;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import java.io.IOException;
-import java.nio.file.Path;
-import javax.servlet.ServletContext;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
@@ -56,8 +42,18 @@ import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import javax.servlet.ServletContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
+
+import static lombok.AccessLevel.PRIVATE;
+
 /**
- * Configuration for the XNAT root application context. This contains all of the F infrastructure for initializing
+ * Configuration for the XNAT root application context. This contains all the infrastructure for initializing
  * and bootstrapping the site, including data source configuration, transaction and session management, and site
  * configuration preferences.
  * <p>
@@ -112,11 +108,11 @@ public class RootConfig {
 
     @Bean
     public PrettyPrinter prettyPrinter() {
-        return new DefaultPrettyPrinter() {{
-            final DefaultIndenter indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
-            indentObjectsWith(indenter);
-            indentArraysWith(indenter);
-        }};
+        final DefaultIndenter      indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
+        final DefaultPrettyPrinter printer  = new DefaultPrettyPrinter();
+        printer.indentObjectsWith(indenter);
+        printer.indentArraysWith(indenter);
+        return printer;
     }
 
     @Bean

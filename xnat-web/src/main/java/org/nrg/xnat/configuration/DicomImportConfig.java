@@ -12,6 +12,7 @@ package org.nrg.xnat.configuration;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.id.ClassicDicomObjectIdentifier;
 import org.nrg.dcm.id.TemplatizedDicomFileNamer;
+import org.nrg.dcm.scp.daos.DicomSCPInstanceService;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -24,22 +25,21 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-
-import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
-import static org.nrg.xnat.helpers.prearchive.PrearcUtils.*;
 
 @Configuration
 @ComponentScan({"org.nrg.dcm.scp", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl", "org.nrg.xnat.services.messaging.archive"})
 public class DicomImportConfig {
     @Bean
     @Primary
-    public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final MessageSource messageSource, final XnatUserProvider receivedFileUserProvider, final UserProjectCache userProjectCache) {
+    public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final MessageSource messageSource,
+                                                                        final XnatUserProvider receivedFileUserProvider,
+                                                                        final UserProjectCache userProjectCache,
+                                                                        final DicomSCPInstanceService dicomSCPInstanceService) {
         final String name = messageSource.getMessage("dicomConfig.defaultObjectIdentifier", new Object[]{ClassicDicomObjectIdentifier.class.getSimpleName()}, "Default DICOM object identifier ({0})", Locale.getDefault());
-        return new ClassicDicomObjectIdentifier(name, receivedFileUserProvider, userProjectCache);
+        return new ClassicDicomObjectIdentifier(name, receivedFileUserProvider, userProjectCache, dicomSCPInstanceService);
     }
 
     @Bean

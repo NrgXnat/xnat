@@ -34,7 +34,7 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 public class TriageUtils {
 	public static String getTriageUploadsPath() {
-		return StringUtils.appendIfMissing(StringUtils.defaultIfBlank(getConfiguredTriageUploadsPath(), ArcSpecManager.GetInstance().getGlobalCachePath() + "TRIAGE"), File.separator);
+		return StringUtils.appendIfMissing(getConfiguredTriageUploadsPath(), File.separator);
 	}
 
 	public static String getTriageProjectPath(final String project) {
@@ -109,12 +109,6 @@ public class TriageUtils {
 	}
 
 	private static String getConfiguredTriageUploadsPath() {
-		try {
-			return XDAT.getSiteConfigurationProperty(TRIAGE_PATH);
-		} catch (ConfigServiceException sex) {
-			return ArcSpecManager.GetInstance().getGlobalCachePath() + "TRIAGE";
-		}
+		return XDAT.getSiteConfigPreferences().getTriagePath();
 	}
-
-	private final static String TRIAGE_PATH = "triagePath";
 }

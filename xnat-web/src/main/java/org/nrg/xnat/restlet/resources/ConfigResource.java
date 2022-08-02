@@ -141,7 +141,7 @@ public class ConfigResource extends SecureResource {
             } else if (StringUtils.isBlank(path)) {
                 //  /REST/projects/{PROJECT_ID}/config/{TOOL_NAME}  or    /REST/config/{TOOL_NAME}
                 final List<Configuration> l = StringUtils.isBlank(projectId)
-                                              ? configService.getConfigsByTool(toolName)
+                                              ? configService.getConfigsByTool(toolName, Scope.Site, null)
                                               : configService.getConfigsByTool(toolName, Scope.Project, projectId);
                 if (l != null) {
                     configurations.addAll(l);  //addAll is not null safe.
@@ -153,7 +153,7 @@ public class ConfigResource extends SecureResource {
                 if (getHistory) {
                     //   /REST/config/{TOOL_NAME}/{PATH_TO_FILE}&action=getHistory  or  /REST/projects/{PROJECT_ID}/config/{TOOL_NAME}/{PATH_TO_FILE}&action=getHistory
                     final List<Configuration> foundConfigs = isSiteWide
-                                                             ? configService.getHistory(toolName, path)
+                                                             ? configService.getHistory(toolName, path, Scope.Site, null)
                                                              : configService.getHistory(toolName, path, Scope.Project, projectId);
                     if (foundConfigs != null) {
                         configurations.addAll(foundConfigs);  //addAll is not null safe.
@@ -163,7 +163,7 @@ public class ConfigResource extends SecureResource {
                         Configuration configuration = null;
                         //   /REST/config/{TOOL_NAME}/{PATH_TO_FILE}  or  /REST/projects/{PROJECT_ID}/config/{TOOL_NAME}/{PATH_TO_FILE}
                         if (isSiteWide) {
-                            configuration = configService.getConfig(toolName, path);
+                            configuration = configService.getConfig(toolName, path, Scope.Site, null);
                         } else {
                             try {
                                 configuration = configService.getConfig(toolName, path, Scope.Project, projectId);
@@ -184,7 +184,7 @@ public class ConfigResource extends SecureResource {
                         }
                     } else {
                         //   /REST/config/{TOOL_NAME}/{PATH_TO_FILE}&version={version}  or  /REST/projects/{PROJECT_ID}/config/{TOOL_NAME}/{PATH_TO_FILE}&version={version}
-                        configurations.add(isSiteWide ? configService.getConfigByVersion(toolName, path, version) : configService.getConfigByVersion(toolName, path, version, Scope.Project, projectId));
+                        configurations.add(isSiteWide ? configService.getConfigByVersion(toolName, path, version, Scope.Site, null) : configService.getConfigByVersion(toolName, path, version, Scope.Project, projectId));
                     }
                     // we now react to the meta and contents parameters. if we're here, there is zero or 1 configuration added to the array.
                     // if contents=true, just send the contents as a string.

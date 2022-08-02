@@ -124,35 +124,35 @@ public class XapiRestControllerAdvice {
 
     @ExceptionHandler(ServletRequestBindingException.class)
     public ResponseEntity<?> handleServletRequestBindingException(final HttpServletRequest request, final ServletRequestBindingException exception) {
-        return getExceptionResponseEntity(request, exception, BAD_REQUEST, "There was an error in the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, BAD_REQUEST, "There was an error in the request");
     }
 
     @ExceptionHandler(ConfigServiceException.class)
     public ResponseEntity<?> handleConfigServiceException(final HttpServletRequest request, final ConfigServiceException exception) {
-        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "An error occurred when accessing the configuration service: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "An error occurred when accessing the configuration service");
     }
 
     @ExceptionHandler(ServerException.class)
     public ResponseEntity<?> handleServerException(final HttpServletRequest request, final ServerException exception) {
-        return getExceptionResponseEntity(request, exception, valueOf(exception.getStatus().getCode()), "An error occurred on the server during the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, valueOf(exception.getStatus().getCode()), "An error occurred on the server during the request");
     }
 
     @ExceptionHandler(ClientException.class)
     public ResponseEntity<?> handleClientException(final HttpServletRequest request, final ClientException exception) {
-        return getExceptionResponseEntity(request, exception, valueOf(exception.getStatus().getCode()), "There was an error in the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, valueOf(exception.getStatus().getCode()), "There was an error in the request");
     }
 
     @ExceptionHandler(IOException.class)
     public ResponseEntity<?> handleIOException(final HttpServletRequest request, final IOException exception) {
         if (contains(exception.getClass().getName(), "ClientAbortException")) {
-            return getExceptionResponseEntity(request, exception, BAD_REQUEST, "The client : " + exception.getMessage());
+            return getExceptionResponseEntity(request, exception, BAD_REQUEST, "The client ");
         }
-        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "There was an error reading or writing the requested resource: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "There was an error reading or writing the requested resource");
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(final HttpServletRequest request, final Exception exception) {
-        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "There was an error in the request: " + exception.getMessage());
+        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "There was an error in the request ");
     }
 
     @NotNull
@@ -173,7 +173,7 @@ public class XapiRestControllerAdvice {
             resolvedMessage = message + ": " + exception.getMessage();
         }
         // If there's an explicit status, use that. Otherwise, try to get it off of the exception and default to 500 if not available.
-        final HttpStatus resolvedStatus = status != null ? status : exception != null ? getExceptionResponseStatus(exception) : DEFAULT_ERROR_STATUS;
+        final HttpStatus resolvedStatus = exception != null ? getExceptionResponseStatus(exception) : status != null ? status : DEFAULT_ERROR_STATUS;
 
         // Log 500s as errors, other statuses can just be logged as info messages.
         final UserI  userDetails = XDAT.getUserDetails();

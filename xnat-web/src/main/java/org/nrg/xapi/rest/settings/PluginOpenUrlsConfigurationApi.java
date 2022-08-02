@@ -20,6 +20,7 @@ import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xnat.event.listeners.methods.UpdateSecurityFilterHandlerMethod;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,9 +54,13 @@ public class PluginOpenUrlsConfigurationApi extends AbstractXapiRestController {
 	 * @param openUrlsPreference the open urls preference
 	 */
 	@Autowired
-    public PluginOpenUrlsConfigurationApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final PluginOpenUrlsPreference openUrlsPreference) {
+    public PluginOpenUrlsConfigurationApi(final UserManagementServiceI userManagementService,
+										  final RoleHolder roleHolder,
+										  final PluginOpenUrlsPreference openUrlsPreference,
+										  final UpdateSecurityFilterHandlerMethod updateSecurityFilterHandlerMethod) {
         super(userManagementService, roleHolder);
         _openUrlsPreference = openUrlsPreference;
+		_updateSecurityFilterHandlerMethod = updateSecurityFilterHandlerMethod;
     }
 
     /**
@@ -84,26 +90,41 @@ public class PluginOpenUrlsConfigurationApi extends AbstractXapiRestController {
      */
     @ApiOperation(value = "Sets the plugin open URL configuration.", notes = "Sets plugin open URL configuration for this installation.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "OK"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/pluginOpenUrls/settings"}, consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    @XapiRequestMapping(value = {"/pluginOpenUrls/settings"}, consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<Void> setPluginOpenUrlsConfiguration(@RequestBody final Map<String, Boolean> config) {
-    	if (!Roles.isSiteAdmin(getSessionUser())) {
-    		return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-    	}
     	final List<String> authList = Lists.newArrayList();
     	for (final Entry<String, Boolean> entry : config.entrySet()) {
     		if (entry.getValue()) {
     			authList.add(entry.getKey());
     		}
     	}
+		updateSecurityFilter(authList);
     	_openUrlsPreference.setAllowedPluginOpenUrls(authList);
     	// Commenting this call out.  Changes to the changes to the openUrlList still require Tomcat restart.
        	return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    //private static final Logger _logger = LoggerFactory.getLogger(PluginOpenUrlsConfigurationApi.class);
-    
-    /** The _open urls preference. */
+	/**
+	 * Update the security filter so these changes take effect without a tomcat restart. I hate to put this in the API,
+	 * but the OpenUrlsPreference class cannot have a circular dependency on UpdateSecurityFilterHandlerMethod, and
+	 * we can't track the preference change via UpdateSecurityFilterHandlerMethod's handlePreference because we need to
+	 * add AND REMOVE urls - for which we need to know the previous preference value in addition to the new one.
+	 * @param allowedUrls the allowed URLs
+	 */
+	private void updateSecurityFilter(List<String> allowedUrls) {
+		List<String> previousAllowed = _openUrlsPreference.getAllowedPluginOpenUrls();
+		List<String> removed = new ArrayList<>(previousAllowed);
+		removed.removeAll(allowedUrls);
+		List<String> added = new ArrayList<>(allowedUrls);
+		added.removeAll(previousAllowed);
+		if (!(added.isEmpty() && removed.isEmpty())) {
+			_updateSecurityFilterHandlerMethod.updateOpenUrls(removed, added);
+		}
+	}
+
+
+	/** The _open urls preference. */
     private final PluginOpenUrlsPreference _openUrlsPreference;
-    
+	private final UpdateSecurityFilterHandlerMethod _updateSecurityFilterHandlerMethod;
 }

@@ -100,7 +100,7 @@
 			<td>#escapeCleanHTML("$!scan.getSeriesDescription()")</td>
 			<td nowrap><div id="scan$!{scanId}Files" class="fileCountAndSize"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
 			<td nowrap>
-			    #if(!$project || $user.checkFeature($project,"data_download"))
+			    #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
 				    &nbsp;&nbsp;<button id="scanB1$$!{scanId}" onclick="XNAT.app.prearchiveActions.downloadFiles('$url', '$!{scanId}')">Download Files</button>
 				#end
 				#foreach($res in $scan.getFile())
@@ -124,7 +124,7 @@
                     <td>#escapeCleanHTML("$!resLabel")</td>
                     <td nowrap><div id="res$!{resLabel}Files"  class="fileCountAndSize"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
                     <td nowrap>
-                        #if(!$project || $user.checkFeature($project,"data_download"))
+                        #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
                             &nbsp;&nbsp;<button id="res1$!{resLabel}" onclick="XNAT.app.prearchiveActions.downloadResFiles('$url', '$!{resLabel}')">Download Files</button>
                         #end
                         &nbsp;&nbsp;<button id="res2$!{resLabel}" onclick="XNAT.app.prearchiveActions.reviewResFileDetails('$url', '$!{resLabel}', '$!project')">Review File Details</button>
@@ -137,7 +137,7 @@
 
     ## move this out of the table
     <p id="prearchiveSessionTotals"></p>
-    #if(!$project || $user.checkFeature($project,"data_download"))
+    #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
          <button id="dAscans" style="float:right;margin-top:20px;" onclick="XNAT.app.prearchiveActions.downloadAllFiles('$url')">Download All Files</button>
     #end
 </div>

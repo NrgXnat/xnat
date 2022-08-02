@@ -20,7 +20,6 @@ import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.NotificationsPreferences;
-import org.nrg.xdat.preferences.PreferenceAccess;
 import org.nrg.xdat.preferences.SiteConfigAccess;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.XDATUserMgmtServiceImpl;
@@ -74,7 +73,7 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnat.helpers.merge", "org.nrg.xnat.helpers.processing", "org.nrg.xnat.helpers.resolvers",
                 "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.node", "org.nrg.xnat.preferences", "org.nrg.xnat.processor.dao",
                 "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processors",
-                "org.nrg.xnat.task", "org.nrg.xnat.tracking", "org.nrg.xnat.archive"})
+                "org.nrg.xnat.task", "org.nrg.xnat.tracking", "org.nrg.xnat.archive", "org.nrg.xnat.services.customfields.impl"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @EnableCaching
 @Getter
@@ -216,7 +215,7 @@ public class ApplicationConfig {
 
     @Bean
     public ImporterHandlerPackages importerHandlerPackages() {
-        return new ImporterHandlerPackages(new HashSet<>(Arrays.asList("org.nrg.xnat.restlet.actions", "org.nrg.xnat.archive")));
+        return new ImporterHandlerPackages("org.nrg.xnat.restlet.actions", "org.nrg.xnat.archive");
     }
 
     @Bean

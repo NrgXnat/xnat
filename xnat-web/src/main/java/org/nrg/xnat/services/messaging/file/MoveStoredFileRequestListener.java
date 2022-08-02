@@ -26,9 +26,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
-import javax.mail.MessagingException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.mail.MessagingException;
 
 import static lombok.AccessLevel.PRIVATE;
 
@@ -49,7 +49,7 @@ public class MoveStoredFileRequestListener implements JmsRequestListener<MoveSto
     @JmsListener(id = "moveStoredFileRequest", destination = "moveStoredFileRequest")
     public void onRequest(final MoveStoredFileRequest request) {
         log.info("Now handling request: {}", request);
-        boolean success = true;
+        boolean            success    = true;
         final List<String> duplicates = new ArrayList<>();
 
         final PersistentWorkflowI wrk = WorkflowUtils.getUniqueWorkflow(request.getUser(), request.getWorkflowId());
@@ -68,7 +68,7 @@ public class MoveStoredFileRequestListener implements JmsRequestListener<MoveSto
             success = false;
         }
 
-        if (success)
+        if (success) {
             try {
                 final String projectId = request.getProject();
                 if (StringUtils.isNotBlank(projectId)) {
@@ -80,46 +80,32 @@ public class MoveStoredFileRequestListener implements JmsRequestListener<MoveSto
                 log.error("Could not mark workflow " + wrk.getWorkflowId() + " complete.", e);
                 success = false;
             }
+        }
 
-        if (success && request.isDelete())
+        if (success && request.isDelete()) {
             for (FileWriterWrapperI file : request.getWriters()) {
                 file.delete();
             }
+        }
 
         if (request.getNotifyList().length > 0) {
-            final StringBuilder message = new StringBuilder();
-            String body = "";
+            final String body;
             final String subject;
             if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
                 if (success) {
                     subject = "Upload by reference complete";
-
-                    body = XDAT.getNotificationsPreferences().getEmailMessageUploadByReferenceSuccess();
-                    body = body.replaceAll("USER_USERNAME", wrk.getUsername());
-                    if (!duplicates.isEmpty()){
-                        String duplicatesList = "The following files were not uploaded because they already exist on the server:<br>\n";
-                        for (final String duplicate : duplicates) {
-                            duplicatesList = duplicatesList + duplicate + "<br>\n";
-                        }
-                        body = body.replaceAll("DUPLICATES_LIST", duplicatesList);
+                    final String duplicatesList;
+                    if (!duplicates.isEmpty()) {
+                        duplicatesList = "The following files were not uploaded because they already exist on the server:<br>\n" + String.join("<br>\n", duplicates);
+                    } else {
+                        duplicatesList = "";
                     }
-                    else {
-                        body = body.replaceAll("DUPLICATES_LIST", "");
-                    }
-                }
-//                message.append("<p>The upload by reference requested by ").append(wrk.getUsername()).append(" has finished successfully.</p>");
-//                if (!duplicates.isEmpty()) {
-//                    message.append("<p>The following files were not uploaded because they already exist on the server:<br><ul>");
-//                    for (final String duplicate : duplicates) {
-//                        message.append("<li>").append(duplicate).append("</li>");
-//                    }
-//                    message.append("</ul></p>");
-//                }
-                else {
-                    body = XDAT.getNotificationsPreferences().getEmailMessageUploadByReferenceFailure();
-                    body = body.replaceAll("USER_USERNAME", wrk.getUsername());
+                    body = XDAT.getNotificationsPreferences().getEmailMessageUploadByReferenceSuccess()
+                               .replaceAll("USER_USERNAME", wrk.getUsername())
+                               .replaceAll("DUPLICATES_LIST", duplicatesList);
+                } else {
                     subject = "Upload by reference error";
-//                    message.append("<p>The upload by reference requested by ").append(request.getUser().getUsername()).append(" has encountered an error.</p>").append("<p>Please contact your IT staff or the application logs for more information.</p>");
+                    body    = XDAT.getNotificationsPreferences().getEmailMessageUploadByReferenceFailure().replaceAll("USER_USERNAME", wrk.getUsername());
                 }
 
                 try {

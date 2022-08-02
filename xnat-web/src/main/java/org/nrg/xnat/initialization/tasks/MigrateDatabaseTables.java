@@ -1,7 +1,7 @@
 /*
  * web: org.nrg.xnat.initialization.tasks.MigrateDatabaseTables
  * XNAT http://www.xnat.org
- * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * Copyright (c) 2005-2022, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.initialization.tasks;
 
+import com.google.common.collect.HashBiMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -63,8 +65,34 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
                         transform(table, column, value.replaceAll("transform:", ""));
                     } else {
                         try {
-                            log.info("Preparing to migrate the column {}.{} to {}", table, column, value);
+                            final MapSqlParameterSource parameters  = new MapSqlParameterSource("table", table).addValue("column", column);
+                            final String                currentType = _db.getParameterizedTemplate().queryForObject(QUERY_GET_COLUMN_TYPE, parameters, String.class);
+                            if (StringUtils.equalsIgnoreCase(currentType, value)) {
+                                log.debug("Asked to migrate the column {}.{} to {}, but that's already the type. Skipping.", table, column, value);
+                                continue;
+                            }
+
+                            log.info("Preparing to migrate the column {}.{} from {} to {}", table, column, currentType, value);
+                            parameters.addValue("currentType", currentType);
+
+                            final long dependencyCount = _db.getParameterizedTemplate().queryForObject(String.format(QUERY_DEPENDENCY_COUNT, table), EmptySqlParameterSource.INSTANCE, Long.class);
+                            if (dependencyCount > 0) {
+                                log.debug("To migrate the column {}.{} from {} to {} I have to save and drop {} views that are dependent on the table", table, column, currentType, value, dependencyCount);
+                                final long count = _db.getParameterizedTemplate().queryForObject(String.format(QUERY_SAVE_AND_DROP_DEPENDENCIES, table), EmptySqlParameterSource.INSTANCE, Long.class);
+                                log.debug("Saved and dropped {} dependencies on table {}", count, table);
+                            }
                             _db.setColumnDatatype(table, column, value);
+                            if (dependencyCount > 0) {
+                                log.debug("Now preparing to restore {} views to finish migrating the column {}.{} from {} to {}", dependencyCount, table, column, currentType, value);
+                                final long count = _db.getParameterizedTemplate().queryForObject(String.format(QUERY_RESTORE_DEPENDENCIES, table), EmptySqlParameterSource.INSTANCE, Long.class);
+                                log.debug("Restored {} dependencies on table {}", count, table);
+                            }
+
+                            getTypeForTable(table).ifPresent(elementName -> {
+                                parameters.addValue("elementName", elementName);
+                                final long cleared = _db.getParameterizedTemplate().queryForObject(QUERY_CLEAR_CACHE_ENTRIES, parameters, Long.class);
+                                log.debug("Cleared {} cache entries that referenced the old column type {}:{} for the type {}", cleared, column, currentType, elementName);
+                            });
                         } catch (SQLWarning e) {
                             final String message = e.getMessage();
                             if (message.startsWith(SQL_WARNING_TABLE)) {
@@ -283,46 +311,86 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
         }
     }
 
-    private static final String  SQL_WARNING_TABLE       = "The requested table";
-    private static final Pattern COMPOUND_KEY            = Pattern.compile("^(?<prefix>[^:]+)\\.\\.(?<payload>[^:]+)$");
-    private static final Pattern COLUMNS_KEY             = Pattern.compile("^columns-(?<columns>[a-z0-9_-]+)$");
-    private static final String  QUERY_CONSTRAINT_EXISTS = "SELECT EXISTS(SELECT constraint_name FROM information_schema.table_constraints WHERE table_name = :table AND constraint_name = :constraint AND constraint_type = 'UNIQUE')";
-    private static final String  QUERY_ADD_CONSTRAINT    = "ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s)";
-    private static final String  QUERY_DROP_CONSTRAINT   = "ALTER TABLE %s DROP CONSTRAINT %s";
-    private static final String  QUERY_MODIFY_CONSTRAINT = "ALTER TABLE %1$s DROP CONSTRAINT %2$s, ADD CONSTRAINT %2$s UNIQUE (%3$s)";
-    private static final String  QUERY_CONSTRAINT_ID     = "WITH " +
-                                                           "    unique_constraints AS ( " +
-                                                           "        SELECT " +
-                                                           "            t.table_name, " +
-                                                           "            t.constraint_name, " +
-                                                           "            ARRAY_AGG(u.column_name::TEXT) AS columns " +
-                                                           "        FROM " +
-                                                           "            information_schema.table_constraints t " +
-                                                           "                LEFT JOIN information_schema.constraint_column_usage u ON t.table_name = u.table_name AND t.constraint_name = u.constraint_name " +
-                                                           "        WHERE " +
-                                                           "            constraint_type = 'UNIQUE' " +
-                                                           "        GROUP BY " +
-                                                           "            t.table_name, " +
-                                                           "            t.constraint_name) " +
-                                                           "SELECT " +
-                                                           "    constraint_name " +
-                                                           "FROM " +
-                                                           "    unique_constraints " +
-                                                           "WHERE " +
-                                                           "    table_name = '%1$s' AND " +
-                                                           "    columns <@ ARRAY ['%2$s'] AND " +
-                                                           "    columns @> ARRAY ['%2$s']";
+    private Optional<String> getTypeForTable(final String table) {
+        return Optional.ofNullable(getTablesAndTypesMap().get(table));
+    }
+
+    private HashBiMap<String, String> getTablesAndTypesMap() {
+        if (_tablesAndTypes.isEmpty()) {
+            _db.getParameterizedTemplate().query(GET_TYPES_AND_TABLES, results -> {
+                _tablesAndTypes.put(results.getString("table_name"), results.getString("element_name"));
+            });
+        }
+        return _tablesAndTypes;
+    }
+
+    private static final String  SQL_WARNING_TABLE                = "The requested table";
+    private static final Pattern COMPOUND_KEY                     = Pattern.compile("^(?<prefix>[^:]+)\\.\\.(?<payload>[^:]+)$");
+    private static final Pattern COLUMNS_KEY                      = Pattern.compile("^columns-(?<columns>[a-z\\d_-]+)$");
+    private static final String  QUERY_GET_COLUMN_TYPE            = "SELECT "
+                                                                    + "    CASE "
+                                                                    + "        WHEN data_type = 'bigint' THEN 'long' "
+                                                                    + "        WHEN data_type = 'character varying' THEN 'string' "
+                                                                    + "        WHEN data_type = 'double precision' THEN 'float' "
+                                                                    + "        WHEN data_type = 'text' THEN 'string' "
+                                                                    + "        WHEN data_type = 'time without time zone' THEN 'time' "
+                                                                    + "        WHEN data_type = 'timestamp without time zone' THEN 'dateTime' "
+                                                                    + "        ELSE data_type "
+                                                                    + "        END "
+                                                                    + "FROM "
+                                                                    + "    information_schema.columns "
+                                                                    + "WHERE "
+                                                                    + "    table_name = :table AND "
+                                                                    + "    column_name = :column";
+    private static final String  GET_TYPES_AND_TABLES             = "SELECT "
+                                                                    + "    lower(regexp_replace(element_name, ':', '_')) AS table_name,"
+                                                                    + "    element_name "
+                                                                    + "FROM "
+                                                                    + "    xdat_meta_element "
+                                                                    + "WHERE "
+                                                                    + "    element_name !~ '^.*_(history|meta_data)$'";
+    private static final String  QUERY_DEPENDENCY_COUNT           = "SELECT count(*) FROM dependencies_identify('%s')";
+    private static final String  QUERY_SAVE_AND_DROP_DEPENDENCIES = "SELECT dependencies_save_and_drop('%s')";
+    private static final String  QUERY_RESTORE_DEPENDENCIES       = "SELECT dependencies_restore('%s')";
+    private static final String  QUERY_CLEAR_CACHE_ENTRIES        = "SELECT dependencies_clear_cache_entries(:elementName, :column, :currentType)";
+    private static final String  QUERY_CONSTRAINT_EXISTS          = "SELECT EXISTS(SELECT constraint_name FROM information_schema.table_constraints WHERE table_name = :table AND constraint_name = :constraint AND constraint_type = 'UNIQUE')";
+    private static final String  QUERY_ADD_CONSTRAINT             = "ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s)";
+    private static final String  QUERY_DROP_CONSTRAINT            = "ALTER TABLE %s DROP CONSTRAINT %s";
+    private static final String  QUERY_MODIFY_CONSTRAINT          = "ALTER TABLE %1$s DROP CONSTRAINT %2$s, ADD CONSTRAINT %2$s UNIQUE (%3$s)";
+    private static final String  QUERY_CONSTRAINT_ID              = "WITH " +
+                                                                    "    unique_constraints AS ( " +
+                                                                    "        SELECT " +
+                                                                    "            t.table_name, " +
+                                                                    "            t.constraint_name, " +
+                                                                    "            ARRAY_AGG(u.column_name::TEXT) AS columns " +
+                                                                    "        FROM " +
+                                                                    "            information_schema.table_constraints t " +
+                                                                    "                LEFT JOIN information_schema.constraint_column_usage u ON t.table_name = u.table_name AND t.constraint_name = u.constraint_name " +
+                                                                    "        WHERE " +
+                                                                    "            constraint_type = 'UNIQUE' " +
+                                                                    "        GROUP BY " +
+                                                                    "            t.table_name, " +
+                                                                    "            t.constraint_name) " +
+                                                                    "SELECT " +
+                                                                    "    constraint_name " +
+                                                                    "FROM " +
+                                                                    "    unique_constraints " +
+                                                                    "WHERE " +
+                                                                    "    table_name = '%1$s' AND " +
+                                                                    "    columns <@ ARRAY ['%2$s'] AND " +
+                                                                    "    columns @> ARRAY ['%2$s']";
     /*
     I wrote the query above to work with the parameterized template like so:
                                                            "    table_name = :table AND " +
                                                            "    columns <@ ARRAY [:columns] AND " +
                                                            "    columns @> ARRAY [:columns]";
-    This failed with an error saying "No value supplied for the SQL parameter 'columns]': No value registered for key 'columns]'.
+    This failed with an error saying "No value supplied for the SQL parameter 'columns]': No value registered for key 'columns]'".
     This seems like a bug in Spring JDBC, so I ended up doing the cheap fix with String.format().
     */
 
     private final DatabaseHelper                                       _db;
-    private final Map<String, Constructor<? extends Callable<String>>> _transforms  = new HashMap<>();
-    private final Map<String, Map<String, String>>                     _columns     = new HashMap<>();
-    private final Map<String, Map<String, List<String>>>               _constraints = new HashMap<>();
+    private final Map<String, Constructor<? extends Callable<String>>> _transforms     = new HashMap<>();
+    private final Map<String, Map<String, String>>                     _columns        = new HashMap<>();
+    private final Map<String, Map<String, List<String>>>               _constraints    = new HashMap<>();
+    private final HashBiMap<String, String>                            _tablesAndTypes = HashBiMap.create();
 }

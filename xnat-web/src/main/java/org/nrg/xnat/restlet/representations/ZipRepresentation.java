@@ -216,7 +216,7 @@ public class ZipRepresentation extends OutputRepresentation {
     }
 
     private int deriveCompression(final Integer compression) {
-        return ObjectUtils.defaultIfNull(compression, ZipUtils.DEFAULT_COMPRESSION);
+        return ObjectUtils.defaultIfNull(compression, XDAT.getSiteConfigPreferences().getZipCompressionMethod());
     }
 
     private String getTokenName() {

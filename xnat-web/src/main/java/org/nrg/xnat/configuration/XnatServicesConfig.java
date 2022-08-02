@@ -15,6 +15,7 @@ import org.nrg.xdat.security.PermissionsServiceImpl;
 import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.security.services.ScanSecurityService;
 import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.identifier.IDGeneratorI;
@@ -36,11 +37,14 @@ import static org.nrg.xft.identifier.IDGeneratorFactory.*;
 @ComponentScan({"org.nrg.xft.identifier", "org.nrg.xnat.eventservice", "org.nrg.xnat.services.archive.impl",
                 "org.nrg.xnat.services.cache", "org.nrg.xnat.services.investigators.impl.xft",
                 "org.nrg.xnat.services.system.impl.hibernate", "org.nrg.xnat.services.triage",
-                "org.nrg.xnat.services.validation", "org.nrg.xnat.snapshot.generator.impl", "org.nrg.xnat.snapshot.services.impl"})
+                "org.nrg.xnat.services.validation", "org.nrg.xnat.snapshot.generator.impl",
+                "org.nrg.xnat.snapshot.services.impl", "org.nrg.xnat.services.security",})
 public class XnatServicesConfig {
     @Bean
-    public PermissionsServiceI permissionsService(final DataTypeAwareEventService eventService, final NamedParameterJdbcTemplate template) {
-        return new PermissionsServiceImpl(eventService, template);
+    public PermissionsServiceI permissionsService(final DataTypeAwareEventService eventService,
+                                                  final NamedParameterJdbcTemplate template,
+                                                  final ScanSecurityService scanSecurityService) {
+        return new PermissionsServiceImpl(eventService, template, scanSecurityService);
     }
 
     @Bean

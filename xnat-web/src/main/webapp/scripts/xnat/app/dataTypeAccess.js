@@ -65,21 +65,21 @@ var XNAT = getObject(XNAT);
     // add the 'modified' value to the XNAT.app.dataTypeAccess object
     dataTypeAccess.modified = XNAT['cacheLastModified'] = XNAT['cacheLastModified'] || window['cacheLastModified'];
 
-    // by default, don't update the datatypes
-    dataTypeAccess.needsUpdate = false;
 
     // use the existing default 'userData' storage instance
     var userData = XNAT.storage.userData;
 
     // retrieve the *stored* value for last modified for comparison
     var modifiedValue = userData.data['accessDisplaysModified'];
+    
+    var getFreshData = false; 
 
     // if there's no currently stored 'modified' value...
     // ...or if the stored value is different than the current value...
     // ...update the 'modified' value in the data store
     if (!modifiedValue || modifiedValue !== dataTypeAccess.modified) {
         modifiedValue = dataTypeAccess.modified;
-        dataTypeAccess.needsUpdate = true;
+        getFreshData = true;
     }
     //
 
@@ -112,7 +112,11 @@ var XNAT = getObject(XNAT);
     }
 
     // force an update by adding ?updateAccess=true to the URL query string
-    dataTypeAccess.needsUpdate = /true|all/i.test(getQueryStringValue('updateAccess')) || dataTypeAccess.needsUpdate;
+    var updateAccess = getQueryStringValue('updateAccess');
+    if ((typeof updateAccess !== undefined) && (updateAccess !== null) ) {
+      getFreshData = /true|all/i.test(updateAccess) || getFreshData;
+    }
+
 
     // list of display types (this doesn't change)
     dataTypeAccess.displays = [
@@ -130,7 +134,7 @@ var XNAT = getObject(XNAT);
     // save existing values or an empty object to 'accessDisplays'
     userData.setValue('accessDisplays', userData.data.accessDisplays || {});
 
-    var getFreshData = dataTypeAccess.needsUpdate || false;
+    
 
     // initialize the 'loading' dialog...
     var cacheLoadingMessage = XNAT.dialog.init({

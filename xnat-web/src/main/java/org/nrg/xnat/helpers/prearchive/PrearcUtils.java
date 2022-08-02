@@ -818,7 +818,6 @@ public class PrearcUtils {
 
     public static void setupScans(final XnatImagesessiondata session, final String root) {
         final String fixedRootPath = fixRootPath(root);
-        //refactor, this is copied from MergePrearcToArchiveSession#finalize
         for (XnatImagescandataI scan : session.getScans_scan()) {
             for (final XnatAbstractresourceI resource : scan.getFile()) {
                 updateResourceWithArchivePathAndPopulateStats((XnatAbstractresource) resource, fixedRootPath, true);

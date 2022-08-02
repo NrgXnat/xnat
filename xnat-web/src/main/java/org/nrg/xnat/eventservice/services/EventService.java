@@ -24,7 +24,6 @@ import java.util.Map;
 
 @EnableScheduling
 public interface EventService {
-    
     List<SimpleEvent> getEvents() throws Exception;
     List<SimpleEvent> getEvents(Boolean loadDetails) throws Exception;
     //SimpleEvent getEvent(UUID uuid, Boolean loadDetails) throws Exception;
@@ -61,6 +60,7 @@ public interface EventService {
 
 
     void processEvent(EventServiceListener listener, Event event);
+    List<String> performJsonFilter(Subscription subscription, String jsonItem);
 
     Subscription activateSubscription(long id) throws NotFoundException;
     Subscription deactivateSubscription(long id) throws NotFoundException;

@@ -881,6 +881,13 @@ notifications:
             size: 50
             validation: allow-empty emails onblur
         #            value: "!? XNAT.data.notifications['emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
+        userEmailForReportProblem:
+            kind: panel.input.switchbox
+            name: userEmailForReportProblem
+            label: "Issue Reports Sender"
+            onText: Reporter
+            offText: Admin
+            description: "If reporter, issue report emails will be sent from the email of the reporting user as opposed to the admin email (default)."
         emailRecipientNewUserAlert:
             kind: panel.input.email
             label: "New User Alert"
@@ -1354,6 +1361,25 @@ themeManagement:
         themeScript:
             tag: script|src=/scripts/xnat/admin/themeManagement.js
 
+adminControls:
+    kind: panel.form
+    label: Admin UI Controls
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        enableSitewideFeatures:
+            kind: panel.input.switchbox
+            label: Enable Site-wide Feature Management
+            name: uiShowAdminManageSiteFeatures
+            onText: Enabled
+            offText: Disabled
+            description: >
+                When Site-wide Feature Management is enabled, a new menu item will appear in the Administer menu in the top navigation.
+                This page will allow site admins to set default appearance of defined features in the UI.
+                <a href="https://wiki.xnat.org/documentation/xnat-administration/enabling-features-at-the-site-wide-level" target="_blank">See documentation</a>
+
+
 ## PLUGINS
 
 # create a container for the plugin table to be spawned into
@@ -1744,12 +1770,15 @@ dicomScpEditor:
     load: false
     action: "#!"
     method: null
-    #contentType: json
+    class: json
     element:
         style:
             border: none
             marginBottom: 0
     contents:
+        validation:
+            ## Need access to regex for custom form validation
+            tag: script|src="~/scripts/xnat/validate.js"
         scpId:
             kind: panel.input.hidden
             id: scp-id
@@ -1762,6 +1791,7 @@ dicomScpEditor:
             label: AE Title
             #description: AE Title for DICOM Receiver
             validation: not-empty
+            description: Can be up to 16 characters long. Backslashes and control characters are not allowed.
         port:
             kind: panel.input.number
             id: scp-port
@@ -1809,6 +1839,76 @@ dicomScpEditor:
 #                kind: panel.input.text
 #                name: identifier
 #                label: Identifier
+        anonymizationEnabled:
+            kind: panel.input.switchbox
+            label: Anonymization
+            id: anonymization-enabled
+            name: anonymizationEnabled
+            onText:  "Anonymization: <b>Enabled</b>"
+            offText: "Anonymization: <b>Disabled</b>"
+            description: Enable or disable all site-wide and project-level anonymization for this DICOM Receiver.
+        whitelistEnabled:
+            kind: panel.input.switchbox
+            label: Enable Whitelist
+            id: whitelist-enabled
+            name: whitelistEnabled
+            onText: "Whitelist: <b>Enabled</b>"
+            offText: "Whitelist: <b>Disabled</b>"
+            description: Enable or disable the whitelist for this DICOM Receiver.
+        whitelistText:
+            kind: panel.textarea
+            name: whitelistText
+            class: ignore
+            label: Whitelist
+            description: Enter a list of AE-titles and/or IP addresses that this DICOM receiver can interact with.  Any association requested by an AE-title or IP address not in this list will be rejected.  Entries can be AE-titles, IP addresses with an optional CIDR subnet mask, or both (e.g. ae_title@ip_address/mask). Entries should be separated by a new line.
+        routingExpressionsEnabled:
+            kind: panel.input.switchbox
+            label: Enable Receiver-Specific Routing Expressions
+            id: routingExpressions-enabled
+            name: routingExpressionsEnabled
+            onText: "Routing Expressions: <b>Enabled</b>"
+            offText: "Routing Expressions: <b>Disabled</b>"
+            description: Enable or disable custom routing expressions for this DICOM Receiver.
+        projectRoutingExpression:
+            kind: panel.textarea
+            class: ignore
+            name: projectRoutingExpression
+            label: Project Routing Expression
+            description: >
+                Routing expression to extract Project label.
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+        subjectRoutingExpression:
+            kind: panel.textarea
+            class: ignore
+            name: subjectRoutingExpression
+            label: Subject Routing Expression
+            description: >
+                Routing expression to extract Subject label.
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+        sessionRoutingExpression:
+            kind: panel.textarea
+            class: ignore
+            name: sessionRoutingExpression
+            label: Session Routing Expression
+            description: >
+                Routing expression to extract Session label.
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+
+dicomScpReceiversGlobal:
+    kind: panel.form
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    name: dicomScpReceiversGlobal
+    label: Manage DICOM SCP Receivers Globally
+    contents:
+        enableDicomReceiver:
+            kind: panel.input.switchbox
+            name: enableDicomReceiver
+            label: Global Permission
+            onText: "DICOM Receivers: <b>Allowed</b>"
+            offText: "DICOM Receivers: <b>Not Allowed</b>"
+            description: Globally Allow or Disallow DICOM Receivers
 
 dicomScpReceivers:
     kind: panel
@@ -1904,8 +2004,19 @@ zipExtensions:
     name: zipExtensions
     label: Zip Extensions
     description: >
-        Determines which filetypes should be handled by the ZipUtils class and ZIP CompressionMethod in the XNAT file system.
+        Determines which filetypes should be handled by the ZipUtils class.
         (.tar and .gz are handled separately)
+zipCompressionMethod:
+    kind: panel.select.single
+    name: zipCompressionMethod
+    label: Zip Compression Method
+    options:
+        0: "Uncompressed"
+        8: "Compressed"
+    description: >
+        Default zip compression method used for XNAT Restlet API calls and turbine actions. <br/>
+        Uncompressed - Files are written to the zip with no compression (STORED).<br/>
+        Compressed - Files in the zip are compressed using the DEFLATE algorithm (DEFLATED).<br/>
 checksums:
     kind: panel.input.switchbox
     name: checksums
@@ -1979,6 +2090,7 @@ fileSystemBehaviors:
     url: /xapi/siteConfig
     contents:
         ${zipExtensions}
+        ${zipCompressionMethod}
         ${checksums}
         ${backupDeletedToCache}
         ${maintainFileHistory}
@@ -1997,14 +2109,19 @@ asyncOperationsSettingsWarning:
             style:
                 fontWeight: bold
 defaultTimeout:
-    kind: panel.input.text
-    name: defaultTimeout
+    kind: panel.element
     label: Default Timeout
-    validation: required onblur
-    description: "Sets the timeout for asynchronous request handling."
     info: >
         <p>This sets the timeout for asynchronous request handling and defines the maximum lifespan of an asynchronous process.
         Generally speaking, this should stay set to -1.</p>
+    contents:
+        defaultTimeoutInput:
+            kind: input.text
+            name: defaultTimeout
+            validation: required onblur
+            after: > 
+                <p class="description">Sets the timeout for asynchronous request handling.</p>
+
 corePoolSize:
     kind: panel.input.text
     name: corePoolSize
@@ -2024,15 +2141,47 @@ keepAliveSeconds:
     validation: required onblur
     description: "Sets the time (as a number of seconds) that idle threads above the core pool size should be kept alive before disposal."
 allowCoreThreadTimeOut:
-    kind: panel.input.switchbox
-    name: allowCoreThreadTimeOut
-    label: Allow Core Thread Time-Out
-    onText: Enabled
-    offText: Disabled
-    description: "Indicates whether core threads are allowed to time out."
+    kind: panel.element
+    label: Allow Core Thread Time Out
     info: >
         Allowing core threads to time out enables dynamic growing and shrinking even in combination with a non-zero queue
         (since the max pool size will only grow once the queue is full).
+    contents:
+        defaultallowCoreThreadTimeOutInput:
+            kind: input.switchbox
+            name: allowCoreThreadTimeOut
+            onText: Allow core thread time out
+            offText: Disallow core thread time out
+
+reactorWorkQueueDispatcherPoolSize:
+    kind: panel.element
+    label: Event Thread Pool Size
+    info: >
+        This controls the size of the Reactor Dispatcher thread pool. If you are seeing issues with event throughput, 
+        you might increase this value. You would likely want to do so in concert with increasing the event buffer size, 
+        and with consideration for the resources available on your system.
+    contents:
+        reactorWorkQueueDispatcherPoolSizeInput:
+            kind: input.text
+            name: reactorWorkQueueDispatcherPoolSize
+            validation: required onblur integer gte:5
+            after: >
+                <p class="description">Sets the number of threads dedicated to consuming and processing events.</p>
+reactorWorkQueueDispatcherRingBufferSizePower:
+    kind: panel.element
+    label: Event Buffer Size
+    info: >
+        This controls the size of the Reactor Dispatcher RingBuffer, which will be 2 raised to the power of this value 
+        (i.e., if you set the event buffer size to 13, the Reactor Dispatcher RingBuffer's bufferSize will be 
+        2^13 = 8192). If you are seeing CPU pressure during high bursts of events (e.g., large-scale bulk ingestion, 
+        container launch, etc.), you might increase this value.
+    contents:
+        reactorWorkQueueDispatcherRingBufferSizePowerInput:
+            kind: input.text
+            name: reactorWorkQueueDispatcherRingBufferSizePower
+            validation: required onblur integer gte:10 lte:31
+            after: >
+                <p class="description">Sets the size of the event buffer.</p>
 
 ## EVENT SERVICE
 
@@ -2187,6 +2336,8 @@ asyncOperations:
         ${allowCoreThreadTimeOut}
         ${maxPoolSize}
         ${keepAliveSeconds}
+        ${reactorWorkQueueDispatcherPoolSize}
+        ${reactorWorkQueueDispatcherRingBufferSizePower}
 
 #automationSettings:
 #    kind: panel.form
@@ -2407,6 +2558,7 @@ root:
             contents:
                 ${dateFormatting}
                 ${themeManagement}
+                ${adminControls}
         plugins:
             kind: tab
             name: plugins
@@ -2495,6 +2647,7 @@ root:
             label: DICOM SCP Receivers
             group: advanced
             contents:
+                ${dicomScpReceiversGlobal}
                 ${dicomScpReceivers}
         fileSystemTab:
             kind: tab

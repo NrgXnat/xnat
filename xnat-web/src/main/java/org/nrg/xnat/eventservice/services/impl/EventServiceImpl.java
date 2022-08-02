@@ -18,28 +18,14 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.entities.SubscriptionEntity;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
+import org.nrg.xnat.eventservice.events.ScheduledEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionAccessException;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.listeners.EventServiceListener;
-import org.nrg.xnat.eventservice.model.Action;
-import org.nrg.xnat.eventservice.model.ActionProvider;
-import org.nrg.xnat.eventservice.model.EventPropertyNode;
-import org.nrg.xnat.eventservice.model.EventServicePrefs;
-import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
-import org.nrg.xnat.eventservice.model.SimpleEvent;
-import org.nrg.xnat.eventservice.model.Subscription;
-import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
-import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
+import org.nrg.xnat.eventservice.model.*;
 import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
-import org.nrg.xnat.eventservice.services.ActionManager;
-import org.nrg.xnat.eventservice.services.EventPropertyService;
-import org.nrg.xnat.eventservice.services.EventService;
-import org.nrg.xnat.eventservice.services.EventServiceActionProvider;
-import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
-import org.nrg.xnat.eventservice.services.EventServicePrefsBean;
-import org.nrg.xnat.eventservice.services.EventSubscriptionEntityService;
-import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityPaginatedRequest;
-import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
+import org.nrg.xnat.eventservice.services.*;
+import org.nrg.xnat.eventservice.sort.SimpleEventComparator;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -49,24 +35,10 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.FAILED;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERED;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTERING_FAULT;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZATION_FAULT;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.OBJECT_SERIALIZED;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.SUBSCRIPTION_DISABLED_HALT;
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.SUBSCRIPTION_TRIGGERED;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.*;
 
 @SuppressWarnings("UnstableApiUsage")
 @Slf4j
@@ -80,13 +52,16 @@ public class EventServiceImpl implements EventService {
     private final UserManagementServiceI              userManagementService;
     private final EventPropertyService                eventPropertyService;
     private final ObjectMapper                        mapper;
+    private final EventSchedulingService              schedulingService;
     private final Configuration                       jaywayConf     = Configuration.builder().build().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
     private final EventServicePrefsBean               prefs;
     private final XnatAppInfo                         xnatAppInfo;
 
 
     @Autowired
-    public EventServiceImpl(EventSubscriptionEntityService subscriptionService, EventBus eventBus,
+    public EventServiceImpl(EventSubscriptionEntityService subscriptionService,
+                            EventSchedulingService schedulingService,
+                            EventBus eventBus,
                             EventServiceComponentManager componentManager,
                             ActionManager actionManager,
                             SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
@@ -102,6 +77,7 @@ public class EventServiceImpl implements EventService {
         this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
         this.userManagementService = userManagementService;
         this.eventPropertyService = eventPropertyService;
+        this.schedulingService = schedulingService;
         this.mapper = mapper;
         this.prefs = prefsBean;
         this.xnatAppInfo = xnatAppInfo;
@@ -111,7 +87,9 @@ public class EventServiceImpl implements EventService {
     @Override
     public Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException, SubscriptionAccessException {
         throwIfDisabled();
-        return subscriptionService.createSubscription(subscription);
+        Subscription created = subscriptionService.createSubscription(subscription);
+        scheduleEventsForSubscription(created);
+        return created;
     }
 
     @Override
@@ -140,18 +118,31 @@ public class EventServiceImpl implements EventService {
     public Subscription updateSubscription(Subscription subscription) throws SubscriptionValidationException, NotFoundException, SubscriptionAccessException {
         throwIfDisabled();
         subscriptionService.validate(subscription);
-        final Subscription updated = subscriptionService.update(subscription);
+        final Subscription original = subscriptionService.getSubscription(subscription.id());
+        final Subscription updated  = subscriptionService.update(subscription);
         if (updated == null) {
             return null;
         }
+
+        cancelEventsForSubscription(original);
+
         log.debug("Reactivating updated subscription: {}", subscription.id());
-        return ObjectUtils.defaultIfNull(updated.active(), false) ? subscriptionService.activate(updated) : subscriptionService.deactivate(updated);
+        if(ObjectUtils.defaultIfNull(updated.active(), false)){
+            Subscription activated = subscriptionService.activate(updated);
+            scheduleEventsForSubscription(activated);
+            return activated;
+        }else{
+            Subscription deactivated = subscriptionService.deactivate(updated);
+            return deactivated;
+        }
     }
 
     @Override
     public void deleteSubscription(Long id) throws Exception {
         throwIfDisabled();
+        Subscription toDelete = subscriptionService.getSubscription(id);
         subscriptionService.delete(id);
+        cancelEventsForSubscription(toDelete);
     }
 
     @Override
@@ -249,6 +240,7 @@ public class EventServiceImpl implements EventService {
             // TODO: This is a stupid way to get all the events
             events.add(getEvent(e.getType(), loadDetails));
         }
+        events.sort(new SimpleEventComparator());
         return events;
     }
 
@@ -283,6 +275,7 @@ public class EventServiceImpl implements EventService {
                 log.debug("Reactivating subscription: " + Long.toString(subscription.id()));
                 try {
                     Subscription active = subscriptionService.activate(subscription);
+                    scheduleEventsForSubscription(active);
                     if (active == null || !active.active()) {
                         failedReactivations.add(subscription);
                     }
@@ -329,6 +322,7 @@ public class EventServiceImpl implements EventService {
             return;
         }
 
+
         try {
             log.debug("Event noticed by EventService: " + event.getData().getClass().getSimpleName());
             String          jsonObject  = null;
@@ -359,64 +353,65 @@ public class EventServiceImpl implements EventService {
                                            userManagementService.getUser(subscription.subscriptionOwner());
                         log.debug("Action User: " + actionUser.getUsername());
 
-                        // ** Serialized event object ** //
-                        try {
-                            Object eventPayloadObject = esEvent.getObject(actionUser);
+                        if (!(esEvent instanceof ScheduledEvent)) {
+                            // ** Serialized event object ** //
                             try {
-                                modelObject = componentManager.getModelObject(eventPayloadObject, actionUser);
-                                if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
-                                    // Serialize data object
-                                    log.debug("Serializing event object as known Model Object.");
-                                    jsonObject = mapper.writeValueAsString(modelObject);
-                                } else if (eventPayloadObject != null && mapper.canDeserialize(mapper.getTypeFactory().constructType(eventPayloadObject.getClass()))) {
-                                    log.debug("Serializing event object as unknown object type.");
-                                    jsonObject = mapper.writeValueAsString(eventPayloadObject);
-                                } else {
-                                    log.debug("Could not serialize event object in: " + esEvent.getType());
+                                Object eventPayloadObject = esEvent.getObject(actionUser);
+                                try {
+                                    modelObject = componentManager.getModelObject(eventPayloadObject, actionUser);
+                                    if (modelObject != null && mapper.canSerialize(modelObject.getClass())) {
+                                        // Serialize data object
+                                        log.debug("Serializing event object as known Model Object.");
+                                        jsonObject = mapper.writeValueAsString(modelObject);
+                                    } else if (eventPayloadObject != null && mapper.canDeserialize(mapper.getTypeFactory().constructType(eventPayloadObject.getClass()))) {
+                                        log.debug("Serializing event object as unknown object type.");
+                                        jsonObject = mapper.writeValueAsString(eventPayloadObject);
+                                    } else {
+                                        log.debug("Could not serialize event object in: " + esEvent.getType());
+                                    }
+                                } catch (JsonProcessingException e) {
+                                    log.error("Exception attempting to serialize: {}", eventPayloadObject != null ? eventPayloadObject.getClass().getCanonicalName() : "null", e);
                                 }
-                            } catch (JsonProcessingException e) {
-                                log.error("Exception attempting to serialize: {}", eventPayloadObject != null ? eventPayloadObject.getClass().getCanonicalName() : "null", e);
+
+                                if (!Strings.isNullOrEmpty(jsonObject)) {
+                                    String objectSubString = StringUtils.substring(jsonObject, 0, 200);
+                                    log.debug("Serialized Object: " + objectSubString + "...");
+                                    subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Payload Object Serialized.");
+                                }
+                            } catch (NullPointerException e) {
+                                log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass().getName());
+                                log.error(e.getMessage());
+                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), Strings.isNullOrEmpty(e.getMessage()) ? e.getStackTrace().toString() : e.getMessage());
+                                return;
                             }
 
-                            if (!Strings.isNullOrEmpty(jsonObject)) {
-                                String objectSubString = StringUtils.substring(jsonObject, 0, 200);
-                                log.debug("Serialized Object: " + objectSubString + "...");
-                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZED, new Date(), "Payload Object Serialized.");
-                            }
-                        } catch (NullPointerException e) {
-                            log.error("Aborting Event Service object serialization. Exception serializing event object: " + esEvent.getObjectClass().getName());
-                            log.error(e.getMessage());
-                            subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_SERIALIZATION_FAULT, new Date(), Strings.isNullOrEmpty(e.getMessage()) ? e.getStackTrace().toString() : e.getMessage());
-                            return;
-                        }
-
-                        try {
-                            //Filter on data object (if filter and object exist)
-                            if (subscription.eventFilter() != null && !Strings.isNullOrEmpty(subscription.eventFilter().jsonPathFilter())) {
-                                // ** Attempt to filter event if serialization was successful ** //
-                                if (Strings.isNullOrEmpty(jsonObject)) {
-                                    log.debug("Aborting event pipeline - Event: {} has no object that can be serialized and filtered.", esEvent.getType());
-                                    subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event has no object that can be serialized and filtered.");
-                                    return;
-                                } else {
-                                    String jsonFilter = "$[?(" + subscription.eventFilter().jsonPathFilter() + ")]";
-                                    jsonFilter = jsonFilter.contains("'") ? jsonFilter.replace("'", "\"") : jsonFilter;
-                                    List<String> filterResult    = JsonPath.using(jaywayConf).parse(jsonObject).read(jsonFilter);
-                                    String       objectSubString = StringUtils.substring(jsonObject, 0, 200);
-                                    if (filterResult.isEmpty()) {
-                                        log.debug("Aborting event pipeline - Serialized event:\n" + objectSubString + "..." + "\ndidn't match JSONPath Filter:\n" + jsonFilter);
-                                        subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event objected failed filter test.");
+                            try {
+                                //Filter on data object (if filter and object exist)
+                                if (subscription.eventFilter() != null && !Strings.isNullOrEmpty(subscription.eventFilter().jsonPathFilter())) {
+                                    // ** Attempt to filter event if serialization was successful ** //
+                                    if (Strings.isNullOrEmpty(jsonObject)) {
+                                        log.debug("Aborting event pipeline - Event: {} has no object that can be serialized and filtered.", esEvent.getType());
+                                        subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event has no object that can be serialized and filtered.");
                                         return;
                                     } else {
-                                        log.debug("JSONPath Filter Match - Serialized event:\n" + objectSubString + "..." + "\nJSONPath Filter:\n" + jsonFilter);
-                                        subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERED, new Date(), "Event objected passed filter test.");
+                                        List<String> filterResult = performJsonFilter(subscription, jsonObject);
+                                        String objectSubString = StringUtils.substring(jsonObject, 0, 200);
+                                        String filterDebug = subscription.eventFilter().jsonPathFilter();
+                                        if (filterResult.isEmpty()) {
+                                            log.debug("Aborting event pipeline - Serialized event:\n" + objectSubString + "..." + "\ndidn't match JSONPath Filter:\n" + filterDebug);
+                                            subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTER_MISMATCH_HALT, new Date(), "Event objected failed filter test.");
+                                            return;
+                                        } else {
+                                            log.debug("JSONPath Filter Match - Serialized event:\n" + objectSubString + "..." + "\nJSONPath Filter:\n" + filterDebug);
+                                            subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERED, new Date(), "Event objected passed filter test.");
+                                        }
                                     }
                                 }
+                            } catch (Throwable e) {
+                                log.error("Aborting Event Service object filtering. Exception: " + e.getMessage());
+                                subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERING_FAULT, new Date(), Strings.isNullOrEmpty(e.getMessage()) ? e.getStackTrace().toString() : e.getMessage());
+                                return;
                             }
-                        } catch (Throwable e) {
-                            log.error("Aborting Event Service object filtering. Exception: " + e.getMessage());
-                            subscriptionDeliveryEntityService.addStatus(deliveryId, OBJECT_FILTERING_FAULT, new Date(), Strings.isNullOrEmpty(e.getMessage()) ? e.getStackTrace().toString() : e.getMessage());
-                            return;
                         }
                         try {
                             // ** Extract triggering event details and save to delivery entity ** //
@@ -460,17 +455,47 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    public List<String> performJsonFilter(Subscription subscription, String jsonItem) {
+        String jsonFilter = "$[?(" + subscription.eventFilter().jsonPathFilter().replace("'", "\"") + ")]";
+        return JsonPath.using(jaywayConf).parse(jsonItem).read(jsonFilter);
+    }
+
     @Override
     public Subscription activateSubscription(long id) throws NotFoundException {
         Subscription subscription = subscriptionService.getSubscription(id);
-        return subscriptionService.activate(subscription);
+        Subscription activated =  subscriptionService.activate(subscription);
+        scheduleEventsForSubscription(activated);
+        return activated;
     }
 
 
     @Override
     public Subscription deactivateSubscription(long id) throws NotFoundException {
         Subscription subscription = subscriptionService.getSubscription(id);
-        return subscriptionService.deactivate(subscription);
+        Subscription deactivated = subscriptionService.deactivate(subscription);
+        cancelEventsForSubscription(deactivated);
+        return deactivated;
+    }
+
+    private void scheduleEventsForSubscription(Subscription subscription){
+        final String schedule = subscription.eventFilter().schedule();
+        final String status = subscription.eventFilter().status();
+        if(ScheduledEvent.Status.CRON.name().equals(status) && StringUtils.isNotEmpty(schedule)){
+            schedulingService.scheduleEvent(() -> this.triggerEvent(new ScheduledEvent(schedule)), schedule);
+        }
+    }
+
+    private void cancelEventsForSubscription(Subscription subscription){
+        final String schedule = subscription.eventFilter().schedule();
+        final String status = subscription.eventFilter().status();
+
+        if(ScheduledEvent.Status.CRON.name().equals(status) && StringUtils.isNotEmpty(schedule)){
+            final List<Subscription> subscriptions = subscriptionService.findActiveSubscriptionsBySchedule(schedule);
+            if(subscriptions.isEmpty()){
+                // If there are no active subscriptions using this cron trigger, cancel the event.
+                schedulingService.cancelScheduledEvent(schedule);
+            }
+        }
     }
 
     @Override

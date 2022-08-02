@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -97,16 +98,19 @@ public class TestThreadAndProcessFileLock {
     }
 
     @Test
+    @Ignore
     public void testCatalog() throws Exception {
         doReadWrite(TEST_CATALOG_FILE);
     }
 
     @Test
+    @Ignore
     public void testCatalogRepeat() throws Exception {
         doReadWrite(TEST_CATALOG_FILE);
     }
 
     @Test
+    @Ignore
     public void testCatalogRepeat2() throws Exception {
         doReadWrite(TEST_CATALOG_FILE);
     }

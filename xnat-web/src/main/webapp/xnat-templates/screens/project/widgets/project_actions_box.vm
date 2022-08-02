@@ -41,7 +41,7 @@
                     "search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo(
                     "popup","$!popup")">Download XML</a>
             </li>
-            #if($user.checkFeature($om,"data_download"))
+            #if($user.checkRestrictedFeature("$!om.getId()","data_download"))
                 <li class="yuimenuitem">
                     <a class="yuimenuitemlabel" data-wait="Preparing data for download..." href="$link.setAction("ProjectDownloadAction").addPathInfo('project',$project.getId())">Download Images</a>
                 </li>

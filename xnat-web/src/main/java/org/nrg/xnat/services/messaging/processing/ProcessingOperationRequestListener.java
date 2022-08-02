@@ -29,6 +29,10 @@ public class ProcessingOperationRequestListener implements JmsRequestListener<Pr
         _resolver = resolver;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     @JmsListener(id = "processingOperationRequest", destination = "processingOperationRequest")
     public void onRequest(final ProcessingOperationRequest<? extends ProcessingOperationRequestData> request) {
         final ProcessingOperationRequestData   data     = request.getRequestData();

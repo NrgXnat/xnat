@@ -9,11 +9,26 @@
 
 package org.nrg.dcm.id;
 
+import org.nrg.dcm.scp.daos.DicomSCPInstanceService;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.services.cache.UserProjectCache;
 
-public class ClassicDicomObjectIdentifier extends XnatDefaultDicomObjectIdentifier {
-    public ClassicDicomObjectIdentifier(final String name, final XnatUserProvider userProvider, final UserProjectCache userProjectCache) {
-        super(name, userProvider, new Xnat15DicomProjectIdentifier(userProjectCache));
+/**
+ * ClassicDicomObjectIdentifier
+ *
+ * Now brought to you by the Xnat15PerReceiverDicomProjectIdentifier DicomProjectIdentifier
+ * and the XnatDefaultPerReceiverDicomObjectIdentifier which extends XnatDefaultDicomObjectIdentifier to look for
+ * dynamic configuration by receiver before falling back to configService config and then fixed extractors.
+ *
+ */
+public class ClassicDicomObjectIdentifier extends XnatDefaultPerReceiverDicomObjectIdentifier {
+    public ClassicDicomObjectIdentifier(final String name,
+                                        final XnatUserProvider userProvider,
+                                        final UserProjectCache userProjectCache,
+                                        final DicomSCPInstanceService dicomSCPInstanceService) {
+        super( name,
+                userProvider,
+                new Xnat15PerReceiverDicomProjectIdentifier(userProjectCache, dicomSCPInstanceService),
+                dicomSCPInstanceService);
     }
 }

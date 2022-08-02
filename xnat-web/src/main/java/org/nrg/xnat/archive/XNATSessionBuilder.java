@@ -19,17 +19,16 @@ import org.nrg.dcm.xnat.XnatAttrDef;
 import org.nrg.dcm.xnat.XnatImagesessiondataBeanFactory;
 import org.nrg.ecat.xnat.PETSessionBuilder;
 import org.nrg.framework.services.ContextService;
-import org.nrg.resources.SupplementalResourceBuilderUtils;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.session.SessionBuilder;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatAbstractresourceBean;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
-import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.XFT;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
-import org.xml.sax.SAXException;
+import org.springframework.core.io.Resource;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -38,12 +37,15 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
@@ -59,13 +61,14 @@ public class XNATSessionBuilder implements Callable<Boolean> {
     private static final String[]                                               PROP_OBJECT_FIELDS           = new String[]{CLASS_NAME, SEQUENCE};
     private static final String                                                 PROP_OBJECT_IDENTIFIER       = "org.nrg.SessionBuilder.impl";
     private static final String                                                 SESSION_BUILDER_PROPERTIES   = "session-builder.properties";
+    private static final String                                                 SESSION_BUILDER_RESOURCES    = "classpath*:META-INF/xnat/**/*-session-builder.properties";
     private static final String                                                 PROJECT_PARAM                = "project";
     private static final String                                                 DICOM                        = "DICOM";
     private static final BuilderConfig                                          DICOM_BUILDER                = new BuilderConfig(DICOM, DICOMSessionBuilder.class, 0);
     private static final String                                                 ECAT                         = "ECAT";
     private static final BuilderConfig                                          ECAT_BUILDER                 = new BuilderConfig(ECAT, PETSessionBuilder.class, 1);
     private static final Class<?>[]                                             PARAMETER_TYPES              = new Class[]{File.class, Writer.class};
-    private static final List<BuilderConfig>                                    BUILDER_CLASSES              = initializeBuilderClasses();
+    private static final Collection<BuilderConfig>                              BUILDER_CLASSES              = initializeBuilderClasses();
     private static final List<Class<? extends XnatImagesessiondataBeanFactory>> SESSION_DATA_FACTORY_CLASSES = new ArrayList<>();
 
     private static ContextService  _contextService  = null;
@@ -153,34 +156,32 @@ public class XNATSessionBuilder implements Callable<Boolean> {
             }
         }
 
-        try (final FileWriter fileWriter = new FileWriter(xml)) {
-            if (null == _contextService && SESSION_DATA_FACTORY_CLASSES.isEmpty()) {
-                _contextService = XDAT.getContextService();
-                try {
-                    //Legacy support for a bean of a list of classes
-                    SESSION_DATA_FACTORY_CLASSES.addAll(_contextService.getBean("sessionDataFactoryClasses", Collection.class));
-                } catch (Exception ignored) {
-                    // Ignore
-                }
+        if (null == _contextService && SESSION_DATA_FACTORY_CLASSES.isEmpty()) {
+            _contextService = XDAT.getContextService();
+            try {
+                //Legacy support for a bean of a list of classes
+                SESSION_DATA_FACTORY_CLASSES.addAll(_contextService.getBean("sessionDataFactoryClasses", Collection.class));
+            } catch (Exception ignored) {
+                // Ignore
+            }
+        }
+
+        for (final BuilderConfig bc : BUILDER_CLASSES) {
+            switch (bc.getCode()) {
+                case DICOM:
+                    buildDicomSession();
+                    break;
+
+                case ECAT:
+                    buildPetSession();
+                    break;
+
+                default:
+                    buildCustomSession(bc);
             }
 
-            for (final BuilderConfig bc : BUILDER_CLASSES) {
-                switch (bc.getCode()) {
-                    case DICOM:
-                        buildDicomSession(fileWriter);
-                        break;
-
-                    case ECAT:
-                        buildPetSession(fileWriter);
-                        break;
-
-                    default:
-                        buildCustomSession(fileWriter, bc);
-                }
-
-                if (xml.exists() && xml.length() > 0) {
-                    break;
-                }
+            if (xml.exists() && xml.length() > 0) {
+                break;
             }
         }
 
@@ -199,42 +200,52 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         return Boolean.TRUE;
     }
 
-    private void buildCustomSession(final FileWriter fileWriter, final BuilderConfig builderConfig) {
+    private void buildCustomSession(final BuilderConfig builderConfig) throws IOException {
         //this is currently unused... and probably should be re-written.  It was a first pass.
-        try {
+        try (final FileWriter fileWriter = new FileWriter(xml)) {
             final Constructor<? extends SessionBuilder> constructor = builderConfig.sessionBuilderClass.getConstructor(PARAMETER_TYPES);
             try {
                 final SessionBuilder sessionBuilder = constructor.newInstance(dir, fileWriter);
                 sessionBuilder.setIsInPrearchive(isInPrearchive);
+                sessionBuilder.setParameters(params);
                 sessionBuilder.run();
             } catch (IllegalArgumentException | InstantiationException | InvocationTargetException | IllegalAccessException e) {
                 log.error("An error occurred trying to build the non-DICOM non-ECAT session", e);
             }
         } catch (SecurityException | NoSuchMethodException e) {
             log.error("An error occurred trying to build the specified session builder class", e);
+        } catch (IOException e) {
+            log.warn("unable to process session directory {}", dir, e);
+            throw e;
         }
     }
 
-    private void buildPetSession(final FileWriter fw) {
-        //hard coded implementation for ECAT
-        final PETSessionBuilder petSessionBuilder = new PETSessionBuilder(dir, fw, params.get(PROJECT_PARAM));
-        log.debug("assigning session params for ECAT session builder from {}", params);
+    private void buildPetSession() throws IOException {
+        try (final FileWriter fw = new FileWriter(xml)) {
+            //hard coded implementation for ECAT
+            final PETSessionBuilder petSessionBuilder = new PETSessionBuilder(dir, fw, params.get(PROJECT_PARAM));
+            log.debug("assigning session params for ECAT session builder from {}", params);
 
-        petSessionBuilder.setSessionLabel(params.get(PARAM_LABEL));
-        petSessionBuilder.setSubject(params.get(PARAM_SUBJECT_ID));
-        petSessionBuilder.setTimezone(Optional.ofNullable(params.get(PARAM_TIMEZONE)).orElseGet(() -> TimeZone.getDefault().toString()));
-        petSessionBuilder.setIsInPrearchive(isInPrearchive);
-        petSessionBuilder.run();
+            petSessionBuilder.setSessionLabel(params.get(PARAM_LABEL));
+            petSessionBuilder.setSubject(params.get(PARAM_SUBJECT_ID));
+            petSessionBuilder.setTimezone(Optional.ofNullable(params.get(PARAM_TIMEZONE)).orElseGet(() -> TimeZone.getDefault().toString()));
+            petSessionBuilder.setIsInPrearchive(isInPrearchive);
+            petSessionBuilder.run();
+        } catch (IOException e) {
+            log.warn("unable to process session directory {}", dir, e);
+            throw e;
+        }
     }
 
-    private void buildDicomSession(final FileWriter fileWriter) throws IOException {
+    private void buildDicomSession() throws IOException {
         // Hard-coded implementation for DICOM.
         // Turn the parameters into an array of XnatAttrDef.Constant attribute definitions
         final boolean createPetMrAsPet = HandlePetMr.get(params.get(SEPARATE_PET_MR)) == HandlePetMr.Pet;
         final XnatAttrDef[] attrDefs = params.entrySet().stream().map(entry -> new XnatAttrDef.Constant(entry.getKey(), createPetMrAsPet && entry.getKey().equals("label") && entry.getValue().toLowerCase().contains(HandlePetMr.PetMr.value())
                                                                                                                         ? new StringBuilder(new StringBuilder(entry.getValue()).reverse().toString().replaceFirst("(?i)rmtep", "TEP")).reverse().toString()
                                                                                                                         : entry.getValue())).toArray(XnatAttrDef[]::new);
-        try (final DICOMSessionBuilder dicomSessionBuilder = new DICOMSessionBuilder(dir, fileWriter, attrDefs)) {
+        try (final FileWriter fileWriter = new FileWriter(xml);
+             final DICOMSessionBuilder dicomSessionBuilder = new DICOMSessionBuilder(dir, fileWriter, attrDefs)) {
             @SuppressWarnings("unchecked") final List<String> excludedFields = XDAT.getContextService().getBean("excludedDicomImportFields", List.class);
             if (excludedFields != null) {
                 dicomSessionBuilder.setExcludedFields(excludedFields);
@@ -296,24 +307,56 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         return null;
     }
 
-    private static List<BuilderConfig> initializeBuilderClasses() {
-        //EXAMPLE PROPERTIES FILE
+    private static Collection<BuilderConfig> initializeBuilderClasses() {
+        //EXAMPLE PROPERTIES FILE (note repeated key "org.nrg.SessionBuilder.impl": this is OKAY!)
         //org.nrg.SessionBuilder.impl=NIFTI
         //org.nrg.SessionBuilder.impl.NIFTI.className=org.nrg.builders.CustomNiftiBuilder
         //org.nrg.SessionBuilder.impl.NIFTI.sequence=3
-        final File properties = new File(XFT.GetConfDir(), SESSION_BUILDER_PROPERTIES);
-        final List<BuilderConfig> configurations = PropertiesHelper.RetrievePropertyObjects(properties, PROP_OBJECT_IDENTIFIER, PROP_OBJECT_FIELDS).entrySet()
-                                                                   .stream()
-                                                                   .filter(entry -> StringUtils.isNotBlank((String) entry.getValue().get(CLASS_NAME)))
-                                                                   .map(XNATSessionBuilder::getBuilderConfig)
-                                                                   .filter(Objects::nonNull).collect(Collectors.toList());
-        if (configurations.stream().noneMatch(config -> config.getCode().equals(DICOM))) {
-            configurations.add(DICOM_BUILDER);
+        //org.nrg.SessionBuilder.impl=BIDS
+        //org.nrg.SessionBuilder.impl.BIDS.className=org.nrg.builders.CustomBidsBuilder
+        //org.nrg.SessionBuilder.impl.BIDS.sequence=4
+        final List<URL> urls = new ArrayList<>();
+        try {
+            final File file = new File(XFT.GetConfDir(), SESSION_BUILDER_PROPERTIES);
+            if (file.exists()) {
+                urls.add(file.toURI().toURL());
+            }
+        } catch (MalformedURLException e) {
+            log.warn("An error occurred trying to get the URL for the file {}", SESSION_BUILDER_PROPERTIES, e);
         }
-        if (configurations.stream().noneMatch(config -> config.getCode().equals(ECAT))) {
-            configurations.add(ECAT_BUILDER);
+        try {
+            for (final Resource resource : BasicXnatResourceLocator.getResources(SESSION_BUILDER_RESOURCES)) {
+                try {
+                    urls.add(resource.getURL());
+                } catch (IOException e) {
+                    log.warn("An error occurred trying to get the URL for the resource {}", resource, e);
+                }
+            }
+        } catch (IOException e) {
+            log.warn("An error occurred trying to retrieve session builder resources matching the pattern {}", SESSION_BUILDER_RESOURCES, e);
         }
-        return configurations;
+
+        final Map<String, BuilderConfig> configurations = !urls.isEmpty()
+                                                          ? new HashMap<>(urls.stream()
+                                                                              .map(url -> PropertiesHelper.RetrievePropertyObjects(url, PROP_OBJECT_IDENTIFIER, PROP_OBJECT_FIELDS))
+                                                                              .map(Map::entrySet)
+                                                                              .flatMap(Collection::stream)
+                                                                              .filter(entry -> StringUtils.isNotBlank((String) entry.getValue().get(CLASS_NAME)))
+                                                                              .map(XNATSessionBuilder::getBuilderConfig)
+                                                                              .filter(Objects::nonNull)
+                                                                              .collect(Collectors.toMap(BuilderConfig::getCode, Function.identity())))
+                                                          : new HashMap<>();
+        if (!configurations.containsKey(DICOM)) {
+            configurations.put(DICOM, DICOM_BUILDER);
+        }
+        if (!configurations.containsKey(ECAT)) {
+            configurations.put(ECAT, ECAT_BUILDER);
+        }
+
+        return configurations.values()
+                             .stream()
+                             .sorted(BuilderConfig::compareTo)
+                             .collect(Collectors.toList());
     }
 
     @Value

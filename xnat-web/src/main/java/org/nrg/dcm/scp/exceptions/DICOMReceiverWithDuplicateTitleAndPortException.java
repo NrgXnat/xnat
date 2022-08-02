@@ -9,7 +9,6 @@
 
 package org.nrg.dcm.scp.exceptions;
 
-import static org.nrg.dcm.scp.DicomSCPInstance.formatDicomSCPInstanceKey;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 import com.google.common.base.Function;
@@ -67,7 +66,7 @@ public class DICOMReceiverWithDuplicateTitleAndPortException extends DICOMReceiv
 
     @Override
     public String toString() {
-        return "Tried to create or update a DICOM SCP receiver with the title and port " + formatDicomSCPInstanceKey(getAeTitle(), getPort()) + ", but a receiver with the same title and port already exists.";
+        return "Tried to create or update a DICOM SCP receiver with the title and port " + DicomSCPInstance.formatDicomSCPInstanceKey(getAeTitle(), getPort()) + ", but a receiver with the same title and port already exists.";
     }
 
     private final List<Pair<String, Integer>> _duplicates = new ArrayList<>();

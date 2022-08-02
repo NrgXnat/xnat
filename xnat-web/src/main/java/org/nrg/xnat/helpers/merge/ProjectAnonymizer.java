@@ -113,7 +113,7 @@ public class ProjectAnonymizer extends AnonymizerA implements Callable<Boolean> 
             for (final XnatAbstractresourceI abstractResource : scan.getFile()) {
                 if (abstractResource instanceof XnatResource) {
                     final XnatResource resource = (XnatResource) abstractResource;
-                    if (resource.getFormat().equals("DICOM")) {
+                    if ("DICOM".equals(resource.getFormat())) {
                         for (final File file : resource.getCorrespondingFiles(this.sessionPath)) {
                             ret.add(file);
                         }

@@ -15,9 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nullable;
 import java.text.NumberFormat;
 import java.util.*;
+import javax.annotation.Nullable;
 
 import static org.nrg.framework.exceptions.NrgServiceError.UserServiceError;
 
@@ -26,9 +26,9 @@ import static org.nrg.framework.exceptions.NrgServiceError.UserServiceError;
 public class InitializeGroupRequestListener implements GroupsAndPermissionsCache.Listener, JmsRequestListener<InitializeGroupRequest> {
     @Autowired
     public InitializeGroupRequestListener() {
-        _groupIds = new HashSet<>();
+        _groupIds  = new HashSet<>();
         _processed = Sets.newConcurrentHashSet();
-        _start = new Date();
+        _start     = new Date();
     }
 
     @Autowired

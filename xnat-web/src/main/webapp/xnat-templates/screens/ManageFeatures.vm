@@ -9,6 +9,7 @@
     }
 </style>
 <div class="mgmt_container">
+    <h1 class="edit_title">Manage Site-wide Features</h1>
     <div id="features_mgmt_div" class="row">
         These features are currently supported by your XNAT Server.  As a site administrator, you can 'ban' any of these features
 		so that the features they represent will be concealed on the site.  Or, you can mark features as 'on by default' so that the features will be enabled for all users 

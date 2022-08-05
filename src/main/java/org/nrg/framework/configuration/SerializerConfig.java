@@ -63,7 +63,7 @@ public class SerializerConfig {
                 .failOnEmptyBeans(false)
                 .mixIns(mixIns())
                 .featuresToEnable(JsonParser.Feature.ALLOW_SINGLE_QUOTES, JsonParser.Feature.ALLOW_YAML_COMMENTS)
-                .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS, SerializationFeature.WRITE_NULL_MAP_VALUES)
+                .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
                 .modulesToInstall(_jacksonModules.toArray(new Module[0]));
     }
 

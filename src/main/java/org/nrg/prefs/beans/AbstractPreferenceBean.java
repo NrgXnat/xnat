@@ -1425,7 +1425,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
                 properties.setProperty(info.getProperty(), value);
             }
         } else if (isMap) {
-            @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map<String, ?>>) valueType, String.class, itemType);
+            @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType(Map.class, String.class, itemType);
             final Map<String, ?>                         map     = deserialize(StringUtils.defaultIfBlank(value, "{}"), mapType);
             if (!BeanUtils.isSimpleValueType(itemType)) {
                 if (StringUtils.isBlank(key)) {

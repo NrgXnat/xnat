@@ -32,6 +32,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
@@ -1512,12 +1513,17 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         private final String _preference;
     }
 
-    private static ObjectMapper getObjectMapper() {
+    @Autowired
+    public final void setObjectMapper(final SerializerService serializerService) {
+        _mapper = serializerService.getObjectMapper();
+    }
+
+    private ObjectMapper getObjectMapper() {
         return _mapper;
     }
 
-    private static TypeFactory getTypeFactory() {
-        return TYPE_FACTORY;
+    private TypeFactory getTypeFactory() {
+        return getObjectMapper().getTypeFactory();
     }
 
     private static String getPreferencePrimaryKey(final String preferenceName) {
@@ -1540,12 +1546,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         return Pattern.compile(String.format(PREFERENCE_PATTERN_FORMAT, namespace));
     }
 
-    private static final ObjectMapper _mapper = new ObjectMapper() {{
-        configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-        setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
-    }};
+    private ObjectMapper _mapper;
 
-    private static final TypeFactory TYPE_FACTORY              = _mapper.getTypeFactory();
     private static final String      COMMA_SPACE_SEPARATOR     = ", ";
     private static final String      PREFERENCE_PATTERN_FORMAT = "^%s(" + NAMESPACE_DELIMITER + ".*)?$";
 

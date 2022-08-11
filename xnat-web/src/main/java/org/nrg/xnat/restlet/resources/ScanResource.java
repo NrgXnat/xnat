@@ -279,11 +279,17 @@ public class ScanResource extends ItemResource {
                     }
 
                 } else {
+                    //MATCHED
                     if (!Permissions.canEdit(user, session)) {
                         getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient edit privileges for sessions in this project.");
                         return;
                     }
-                    //MATCHED
+
+                    if(!StringUtils.equals(XnatImagescandata.SCHEMA_ELEMENT_NAME,existing.getXSIType()) && !StringUtils.equals(existing.getXSIType(),scan.getXSIType())){
+                        //operation would change xsi:type, which isn't allowed... unless the type was xnat:imageScanData (which we'd want to allow them to fix)
+                        getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified xsiType differs from existing xsiType");
+                        return;
+                    }
                 }
 
                 boolean allowDataDeletion = false;

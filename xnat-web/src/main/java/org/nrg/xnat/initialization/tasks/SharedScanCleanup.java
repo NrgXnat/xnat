@@ -58,7 +58,7 @@ public class SharedScanCleanup extends AbstractInitializingTask {
             throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
         }
 
-        UserI adminUser = primaryAdminUserProvider.get();
+        final UserI adminUser = primaryAdminUserProvider.get();
         if (scanCleanupRanAndSucceeded(adminUser)) {
             return;
         }
@@ -68,17 +68,17 @@ public class SharedScanCleanup extends AbstractInitializingTask {
         executorService.execute(() -> removeOrphanedScans(adminUser));
     }
 
-    private boolean scanCleanupRanAndSucceeded(UserI adminUser) {
+    private boolean scanCleanupRanAndSucceeded(final UserI adminUser) {
         final CriteriaCollection cc = new CriteriaCollection("AND");
         cc.addClause(WrkWorkflowdata.SCHEMA_ELEMENT_NAME + ".ExternalID", ADMIN_EXTERNAL_ID);
         cc.addClause(WrkWorkflowdata.SCHEMA_ELEMENT_NAME + ".ID", ADMIN_EXTERNAL_ID);
         cc.addClause(WrkWorkflowdata.SCHEMA_ELEMENT_NAME + ".pipeline_name", WORKFLOW_ACTION);
         cc.addClause(WrkWorkflowdata.SCHEMA_ELEMENT_NAME + ".status", PersistentWorkflowUtils.COMPLETE);
         return WrkWorkflowdata.getWrkWorkflowdatasByField(cc, adminUser, false).stream()
-                .anyMatch(w -> Roles.isSiteAdmin(w.getCreateUser()));
+                .anyMatch(w -> Roles.isSiteAdmin(w.getInsertUser()));
     }
 
-    private void removeOrphanedScans(UserI adminUser) {
+    private void removeOrphanedScans(final UserI adminUser) {
         final PersistentWorkflowI wrk;
         try {
             wrk = makeWorkflow(adminUser);
@@ -118,17 +118,17 @@ public class SharedScanCleanup extends AbstractInitializingTask {
         }
     }
 
-    private PersistentWorkflowI makeWorkflow(UserI adminUser) throws PersistentWorkflowUtils.IDAbsent,
+    private PersistentWorkflowI makeWorkflow(final UserI adminUser) throws PersistentWorkflowUtils.IDAbsent,
             PersistentWorkflowUtils.JustificationAbsent, PersistentWorkflowUtils.ActionNameAbsent {
-        EventDetails eventDetails = EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE,
+        final EventDetails eventDetails = EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE,
                 WORKFLOW_ACTION, "Cleanup", null);
         return WorkflowUtils.buildOpenWorkflow(adminUser, SITE_TYPE, ADMIN_EXTERNAL_ID,
                 ADMIN_EXTERNAL_ID, eventDetails);
     }
 
-    private boolean removeOrphanedScansFromSession(XnatImagesessiondata session, UserI user, EventMetaI c) {
+    private boolean removeOrphanedScansFromSession(final XnatImagesessiondata session, final UserI user, final EventMetaI c) {
         // Projects into which this session is shared
-        Set<String> sessionSharedIntoProjects = session.getSharing_share().stream()
+        final Set<String> sessionSharedIntoProjects = session.getSharing_share().stream()
                 .map(XnatExperimentdataShareI::getProject)
                 .collect(Collectors.toSet());
 

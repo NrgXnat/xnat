@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -46,7 +46,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     private final ApplicationContext _context;
-    private final DicomSCPStore _dicomSCPStore;
+    private final Executor _executor;
+    private final DicomSCPStore      _dicomSCPStore;
     private final DicomSCPInstanceService _dicomSCPInstanceService;
     private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _dicomObjectIdentifierMap;
     private final String _primaryDicomObjectIdentifierBeanId;
@@ -57,7 +58,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     private static final String ENABLE_DICOM_RECEIVER_PREFERENCE = "enableDicomReceiver";
 
     @Autowired
-    public DicomSCPManager(final ExecutorService executorService,
+    public DicomSCPManager(final DicomScpExecutor dicomScpExecutor,
                            final DicomSCPInstanceService dicomSCPInstanceService,
                            final XnatUserProvider receivedFileUserProvider,
                            final ApplicationContext context,
@@ -65,6 +66,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
                            final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier,
                            final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
         super(receivedFileUserProvider, ENABLE_DICOM_RECEIVER_PREFERENCE);
+        _executor = dicomScpExecutor;
         _dicomSCPInstanceService = dicomSCPInstanceService;
         _context = context;
 
@@ -95,7 +97,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
 
         _isEnableDicomReceiver = siteConfigPreferences.isEnableDicomReceiver();
 
-        _dicomSCPStore = new DicomSCPStore(executorService, this);
+        _dicomSCPStore = new DicomSCPStore(this);
     }
 
     @PreDestroy
@@ -108,6 +110,10 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         } catch (UnknownDicomHelperInstanceException e) {
             log.error("An unknown DICOM helper error occurred while trying to shut down", e);
         }
+    }
+
+    public Executor getExecutor() {
+        return _executor;
     }
 
     @Transactional

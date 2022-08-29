@@ -1,8 +1,5 @@
 package org.nrg.dcm.scp;
 
-import static lombok.AccessLevel.PROTECTED;
-import static org.dcm4che2.data.UID.*;
-
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -27,27 +24,30 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static lombok.AccessLevel.PROTECTED;
+import static org.dcm4che2.data.UID.*;
+
 @Getter(PROTECTED)
 @Accessors(prefix = "_")
 @Slf4j
 public class DicomSCP {
-    private DicomSCP(final Executor executor, final Device device, final int port, final DicomSCPManager manager) {
+    private DicomSCP(final Device device, final int port, final DicomSCPManager manager) {
         if (port != device.getNetworkConnection()[0].getPort()) {
             throw new NrgServiceRuntimeException("The port configured for this DICOM SCP receiver on creation is " + port + ", but the port I found in the configured network connection is " + device.getNetworkConnection()[0].getPort() + ". That's not right, so things may get weird around here.");
         }
 
-        _executor = executor;
+        _executor = manager.getExecutor();
         _device = device;
         _port = port;
         _manager = manager;
         setStarted(false);
     }
 
-    public static DicomSCP create(final DicomSCPManager manager, final Executor executor, final int port) {
-        return create(manager, executor, Collections.singletonList(port)).get(port);
+    public static DicomSCP create(final DicomSCPManager manager, final int port) {
+        return create(manager, Collections.singletonList(port)).get(port);
     }
 
-    public static Map<Integer, DicomSCP> create(final DicomSCPManager manager, final Executor executor, final List<Integer> ports) {
+    public static Map<Integer, DicomSCP> create(final DicomSCPManager manager, final List<Integer> ports) {
         if (ports == null || ports.size() == 0) {
             return null;
         }
@@ -62,7 +62,7 @@ public class DicomSCP {
                 final Device device = new Device(DEVICE_NAME);
                 device.setNetworkConnection(connection);
 
-                dicomSCPs.put(port, new DicomSCP(executor, device, port, manager));
+                dicomSCPs.put(port, new DicomSCP(device, port, manager));
             }
         }
         return dicomSCPs;
@@ -111,7 +111,7 @@ public class DicomSCP {
 
         try {
             final InetAddress localHost = InetAddress.getLocalHost();
-            log.info("Starting DICOM SCP on {}{}:{}, found {} enabled DICOM SCP instances for this port", StringUtils.defaultIfBlank(getDevice().getNetworkConnection()[0].getHostname(), localHost.getHostName()), InetAddress.getByAddress(localHost.getAddress()).toString(), getPort(), instances.size());
+            log.info("Starting DICOM SCP on {}{}:{}, found {} enabled DICOM SCP instances for this port", StringUtils.defaultIfBlank(getDevice().getNetworkConnection()[0].getHostname(), localHost.getHostName()), InetAddress.getByAddress(localHost.getAddress()), getPort(), instances.size());
         } catch (UnknownHostException e) {
             log.warn("Got an error retrieving localhost via InetAddress.getLocalhost()", e);
         }
@@ -215,7 +215,7 @@ public class DicomSCP {
         return _device.getNetworkConnection()[0].getServer() != null;
     }
 
-    private void addApplicationEntity(final DicomSCPInstance instance) throws UnknownDicomHelperInstanceException {
+    private void addApplicationEntity(final DicomSCPInstance instance) {
         if (instance.getPort() != getPort()) {
             throw new RuntimeException("Port for instance " + instance.getLabel() + " doesn't match port for DicomSCP instance: " + getPort());
         }

@@ -1,8 +1,6 @@
 package org.nrg.dcm.scp;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -12,16 +10,15 @@ import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 
 import javax.annotation.Nonnull;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class DicomSCPStore {
     private final Map<Integer, DicomSCP> _dicomSCPs = new HashMap<>();
-    private final ExecutorService _executorService;
+
     private final DicomSCPManager _manager;
 
-    public DicomSCPStore(final ExecutorService executorService, final DicomSCPManager manager) {
-        _executorService = executorService;
+    public DicomSCPStore(final DicomSCPManager manager) {
         _manager = manager;
     }
 
@@ -39,13 +36,16 @@ public class DicomSCPStore {
             final DicomSCP dicomSCP = _dicomSCPs.remove(port);
             dicomSCP.stop();
         }
-        final DicomSCP dicomSCP = DicomSCP.create(_manager, _executorService, port);
+        final DicomSCP dicomSCP = DicomSCP.create(_manager, port);
         _dicomSCPs.put(port, dicomSCP);
         final List<String> aeTitles = dicomSCP.start();
-        log.debug("Created and started new DICOM SCP on port {}, got {} AE titles for this port: {}", port, aeTitles.size(), aeTitles.isEmpty() ? "<nothing>" : StringUtils.join(aeTitles, ", "));
-        return Lists.transform(aeTitles, new ReceiverTransform(port, true));
+        if (log.isDebugEnabled()) {
+            log.debug("Created and started new DICOM SCP on port {}, got {} AE titles for this port: {}", port, aeTitles.size(), aeTitles.isEmpty() ? "<nothing>" : String.join(", ", aeTitles));
+        }
+        return convertReceivers(aeTitles, port, true);
     }
 
+    @Nonnull
     public DicomSCP get(final int port) {
         return _dicomSCPs.get(port);
     }
@@ -57,13 +57,13 @@ public class DicomSCPStore {
         }
         final DicomSCP     dicomSCP  = _dicomSCPs.remove(port);
         final boolean      isStarted = dicomSCP.isStarted();
-        final List<String> aeTitles  = isStarted ? dicomSCP.stop() : Collections.<String>emptyList();
+        final List<String> aeTitles  = isStarted ? dicomSCP.stop() : Collections.emptyList();
         if (isStarted) {
             log.debug("Request to stop DICOM SCP on port {}, removed instance, stopped it, included {} AE titles: {}", port, aeTitles.size(), StringUtils.join(aeTitles, ", "));
         } else {
             log.debug("Request to stop DICOM SCP on port {}, removed instance, but it wasn't started, just disposing of it", port);
         }
-        return isStarted ? Lists.transform(aeTitles, new ReceiverTransform(port, false)) : Collections.<Triple<String, Integer, Boolean>>emptyList();
+        return isStarted ? convertReceivers(aeTitles, port, false) : Collections.emptyList();
     }
 
     public List<Triple<String, Integer, Boolean>> cycle(final Set<Integer> updated) throws DicomNetworkException, UnknownDicomHelperInstanceException {
@@ -108,29 +108,13 @@ public class DicomSCPStore {
                 results.addAll(titles);
             }
         }
-        log.debug("{} operations on ports {}, got {} total AEs in response: {}", enable ? "Started" : "Stopped", ports, results.size(), StringUtils.join(Lists.transform(results, AE_TRIPLE_TO_AE_PORT), ", "));
+        if (log.isDebugEnabled()) {
+            log.debug("{} operations on ports {}, got {} total AEs in response: {}", enable ? "Started" : "Stopped", ports, results.size(), results.stream().map(result -> DicomSCPInstance.formatDicomSCPInstanceKey(result.getLeft(), result.getMiddle())).collect(Collectors.joining(", ")));
+        }
         return results;
     }
 
-    private static class ReceiverTransform implements Function<String, Triple<String, Integer, Boolean>> {
-        ReceiverTransform(final int port, final boolean enabled) {
-            _port = port;
-            _enabled = enabled;
-        }
-
-        @Override
-        public Triple<String, Integer, Boolean> apply(final String aeTitle) {
-            return Triple.of(aeTitle, _port, _enabled);
-        }
-
-        private final int     _port;
-        private final boolean _enabled;
+    private static List<Triple<String, Integer, Boolean>> convertReceivers(final List<String> aeTitles, final Integer port, final boolean enabled) {
+        return aeTitles.stream().map(aeTitle -> Triple.of(aeTitle, port, enabled)).collect(Collectors.toList());
     }
-
-    private static final Function<Triple<String, Integer, Boolean>, String> AE_TRIPLE_TO_AE_PORT = new Function<Triple<String, Integer, Boolean>, String>() {
-        @Override
-        public String apply(final Triple<String, Integer, Boolean> entity) {
-            return DicomSCPInstance.formatDicomSCPInstanceKey(entity.getLeft(), entity.getMiddle());
-        }
-    };
 }

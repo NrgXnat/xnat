@@ -489,13 +489,5 @@ public class ItemCollection {
     		}
     	}
     }
-
-    public boolean isEmpty(){
-        return (this.size()==0);
-    }
-
-    public boolean isNotEmpty(){
-        return !isEmpty();
-    }
 }
 

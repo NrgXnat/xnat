@@ -82,18 +82,6 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	private static final String STATUS = _STATUS;
 	private static final String META_STATUS = "meta/status";
 	private static final Logger logger = Logger.getLogger(XFTItem.class);
-	public static final String POP_ITEM_START = "Item:(";
-	public static final String POP_OPEN_EQUALS_CLOSE = ")=(";
-	public static final String POP_OPEN_CLOSE = ")(";
-	public static final char POP_OPEN = '(';
-	public static final char POP_CLOSE = ')';
-	private final static Map<String,Method> fastAccessValueOfMethod = new HashMap<>();
-	private final char[] START_OF_ITEM_CHARS= new char[]{'I', 't', 'e', 'm', ':'};
-	private final char[] POP_OPEN_CHARS=new char[]{POP_OPEN};
-
-	public static final String SINGLE = "single";
-	public static final String ROOT = "root";
-	public static final int START_OF_ITEM = 6;
 	private static Hashtable PRE_FORMATTED_ITEMS = new Hashtable();
 	public final static String EXTENDED_FIELD_NAME = "extension";
 	public final static String EXTENDED_ITEM = "extension_item";
@@ -1228,259 +1216,192 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		return this;
 	}
 
-	private Boolean cachedMayNeedExtensions = null;
-
 	/**
-	 * During lazy-loading (extension) of child objects,
-	 * the review of other items already loaded (ItemTrackingCollection) can get quite expensive. Previously,
-	 * this occurred on items which were already fully loaded, or that didn't even have children that could be extended.
-	 * So, we added this 'precheck' method to see if the item (or its children) can need extension, to prevent the
-	 * expensive extension process when unnecessary.  This showed huge time savings on large guest user objects (like >500 public projects).
-	 *
-	 * It duplicates alot of the structure in extendSubItems.  This could all be refactored to prevent that duplication, but seemed to aggressive for a hot-fix.
-	 *
-	 * @param allowMultiples    Whether multiple subitems should be allowed.
-	 * @throws Exception When an error occurs.
-	 */
-	private boolean mayNeedExtensions() throws Exception{
-		if(cachedMayNeedExtensions!=null){
-			return cachedMayNeedExtensions;
-		}
-		boolean allowMultiples = true;
-
-		for(final GenericWrapperField f: this.getGenericSchemaElement().getReferenceFields(true)){
-			if (f.isMultiple()){
-				final GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-				final List<XFTItem> children = (List<XFTItem>) getChildItems(f,allowMultiples,false,user,false,null);
-
-				if (StringUtils.equalsIgnoreCase(foreign.getFullXMLName(),this.getXSIType()) && StringUtils.equalsIgnoreCase(f.getRelationType(),SINGLE)){
-					if (!children.isEmpty()){
-						if(mayNeedExtensions_childCheck(true,f,children,allowMultiples)){
-							return true;
-						}
-					}else{
-						cachedMayNeedExtensions=Boolean.TRUE;
-						return true;
-					}
-				}else if (foreign.isExtended()){
-					//populate missing objects (lazy load)
-					final GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
-					for(final XFTItem sub: children){
-						final String extensionName = sub.getExtensionElement();
-						if (StringUtils.isNotEmpty(extensionName) && !StringUtils.equals(extensionName,sub.getXSIType())){
-							cachedMayNeedExtensions=Boolean.TRUE;
-							return true;
-						}
-					}
-				}else{
-					if(mayNeedExtensions_childCheck(true,f,children,allowMultiples)){
-						return true;
-					}
-				}
-			}else{
-				final XFTItem sub = (XFTItem)getField(f.getId());
-
-				if (sub == null) {
-					continue;
-				}
-
-				if (!StringUtils.equalsIgnoreCase(this.getGenericSchemaElement().getExtensionFieldName(),f.getName())){
-					final GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-
-					if (foreign.isExtended()){
-						final String extensionName = sub.getExtensionElement();
-						if (StringUtils.isNotEmpty(extensionName) && (!StringUtils.equalsIgnoreCase(extensionName,sub.getXSIType())) && (!StringUtils.equalsIgnoreCase(extensionName,getXSIType()))){
-							cachedMayNeedExtensions=Boolean.TRUE;
-							return true;
-						}
-					}else{
-						if(mayNeedExtensions_check(false,f,sub,allowMultiples)){
-							return true;
-						}
-					}
-				}else{
-					if(mayNeedExtensions_check(false,f,sub,allowMultiples)){
-						return true;
-					}
-				}
-			}
-		}
-		cachedMayNeedExtensions=Boolean.FALSE;
-		return false;
-	}
-
-	//used for code de-duplication
-	private boolean mayNeedExtensions_childCheck(final boolean skipRootCheck, final GenericWrapperField f, final List<XFTItem> children, final boolean allowMultiples) throws Exception {
-		for (final XFTItem sub : children) {
-			if (mayNeedExtensions_check(skipRootCheck, f, sub, allowMultiples)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	//used for code de-duplication
-	private boolean mayNeedExtensions_check(final boolean skipRootCheck, final GenericWrapperField f, final XFTItem sub, final boolean allowMultiples) throws Exception {
-		if(skipRootCheck || f.getXMLDisplay().equalsIgnoreCase(ROOT)){
-			if(sub.mayNeedExtensions()){
-				cachedMayNeedExtensions=Boolean.TRUE;
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Hydrates lazy-loaded object
 	 * If this item, or any of its subItems can be extended to a higher type, then the extension is performed.
-	 *
-	 * XNAT-7155 Added pre-check method (mayNeedExtensions) to prevent unnecessary executions.
-	 *
 	 * @param history    The history.
 	 * @param allowMultiples    Whether multiple subitems should be allowed.
      * @throws Exception When an error occurs.
 	 */
-	private void extendSubItems(final ItemTrackingCollection history, final boolean allowMultiples) throws Exception
+	private void extendSubItems(ItemTrackingCollection history, boolean allowMultiples) throws Exception
 	{
 		history.AddItem(this);
-		if(! mayNeedExtensions()){
-			return;
-		}
+		Iterator iter = this.getGenericSchemaElement().getReferenceFields(true).iterator();
+		while (iter.hasNext())
+		{
+			GenericWrapperField f = (GenericWrapperField)iter.next();
+			if (f.isMultiple())
+			{
+				GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
 
-		//iterate over fields to see if they specify any objects which could be extended
-		for (final GenericWrapperField f: this.getGenericSchemaElement().getReferenceFields(true)){
-			if (f.isMultiple()){ //a one-to-many or many-to-many relationship
-				final GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement(); //the data type which this field relates to
-				if (StringUtils.equalsIgnoreCase(foreign.getFullXMLName(),this.getXSIType()) && StringUtils.equalsIgnoreCase(f.getRelationType(),SINGLE)){
-					//if this references itself (ugly,rare situation) and a one-to-many relationship
-					final List<XFTItem> children = (List<XFTItem>) getChildItems(f,allowMultiples,false,user,false,null);
-					if (!children.isEmpty()){
-						//children have already been loaded, so check their children.
-						extendSubItems_extendChildren(f,allowMultiples,history,false);
-					}else{
-						//load extended child objects
-						final GenericWrapperField primaryKey = (GenericWrapperField)getGenericSchemaElement().getAllPrimaryKeys().get(0);
-						final String searchFieldPath=foreign.getFullXMLName() + XFT.PATH_SEPARATOR + f.getSQLName() + "_" + primaryKey.getSQLName();
-						final String searchPropPath = primaryKey.getXMLPathString(this.getGenericSchemaElement().getFullXMLName());
-						final Object searchValue = this.getProperty(searchPropPath);
 
-						try {
-							extendSubItems_search(searchFieldPath,searchValue,f,primaryKey,foreign,allowMultiples,history,-1);
-						} catch (IllegalAccessException e) {
-							logger.error("",e);
-						}
-					}
-				}else if (foreign.isExtended()){
-					//populate missing objects (lazy load) that may need additional extension
-					//this is like when imageSession references imageScanData.
-					//You need to execute a query that will return the MrScanData objects, not the imageScanData objects.
-					final GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
-					int childCounter =0;
-					final List<XFTItem> children = (List<XFTItem>) getChildItems(f,allowMultiples,false,user,false,null);
-					for(final XFTItem sub: children){
-						final String extensionName = sub.getExtensionElement();
-						if (StringUtils.isNotEmpty(extensionName) &&
-								(!StringUtils.equalsIgnoreCase(extensionName,sub.getXSIType()))){
-							final GenericWrapperElement extensionElement = GenericWrapperElement.GetElement(extensionName);
-							final String searchFieldPath=foreignKey.getXMLPathString(extensionElement.getFullXMLName());
-							final String searchValuePath=foreignKey.getXMLPathString(foreign.getFullXMLName());
-							final Object searchValue = sub.getProperty(searchValuePath);
-
-							try {
-								extendSubItems_search(searchFieldPath,searchValue,f,foreignKey,extensionElement,allowMultiples,history,childCounter);
-							} catch (IllegalAccessException e) {
-								this.removeItem(sub);
+				if (foreign.getFullXMLName().equalsIgnoreCase(this.getXSIType()) && f.getRelationType().equalsIgnoreCase("single"))
+				{
+					if (getChildItems(f,allowMultiples,false,user,false,null).size() > 0)
+					{
+						Iterator children = getChildItems(f,allowMultiples,false,user,false,null).iterator();
+						while(children.hasNext())
+						{
+							XFTItem sub = (XFTItem)children.next();
+							if (!history.contains(sub))
+							{
+								sub.extendSubItems(history,allowMultiples);
 							}
+						}
+					}else{
+						//CHECK FOR sub items
+						GenericWrapperField primaryKey = (GenericWrapperField)getGenericSchemaElement().getAllPrimaryKeys().get(0);
+						ItemSearch search = new ItemSearch();
+
+						search.setUser(this.getUser());
+
+						SearchCriteria c = new SearchCriteria();
+						c.setFieldWXMLPath(foreign.getFullXMLName() + XFT.PATH_SEPARATOR + f.getSQLName() + "_" + primaryKey.getSQLName());
+						c.setValue(this.getProperty(primaryKey.getXMLPathString(this.getGenericSchemaElement().getFullXMLName())));
+						c.setCleanedType(primaryKey.getXMLType().getLocalType());
+						search.add(c);
+						search.setElement(foreign);
+						try {
+                            ItemCollection items = search.exec(allowMultiples,false);
+                            if (items.size() > 0)
+                            {
+                            	Iterator newSubs = items.iterator();
+                            	while (newSubs.hasNext())
+                            	{
+                            		XFTItem newSub = (XFTItem)newSubs.next();
+                            		if (! history.contains(newSub))
+                            		{
+                            			newSub.extendSubItems(history,allowMultiples);
+                            			this.setChild(f, newSub, true);
+                            			newSub.setParent(this);
+                            		}
+                            	}
+                            }
+                        } catch (IllegalAccessException e) {
+                            logger.error("",e);
+                        }
+					}
+				}else if (foreign.isExtended())
+				{
+					GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
+					int childCounter =0;
+					Iterator children = getChildItems(f,allowMultiples,false,user,false,null).iterator();
+					while(children.hasNext())
+					{
+						XFTItem sub = (XFTItem)children.next();
+						String extensionName = sub.getExtensionElement();
+						if (extensionName != null)
+						{
+						    if (! extensionName.equalsIgnoreCase(sub.getXSIType()))
+						    {
+								GenericWrapperElement extensionElement = GenericWrapperElement.GetElement(extensionName);
+
+								ItemSearch search = new ItemSearch();
+								search.setUser(this.getUser());
+
+								SearchCriteria c = new SearchCriteria();
+								c.setFieldWXMLPath(foreignKey.getXMLPathString(extensionElement.getFullXMLName()));
+								Object v = sub.getProperty(foreignKey.getXMLPathString(foreign.getFullXMLName()));
+								c.setValue(v);
+								c.setCleanedType(foreignKey.getXMLType().getLocalType());
+								search.add(c);
+								search.setElement(extensionElement);
+
+								try {
+	                                ItemCollection items = search.exec(allowMultiples,false);
+	                                if (items.size() > 0)
+	                                {
+	                                	XFTItem newSub = (XFTItem)items.get(0);
+	                                	newSub.extendSubItems(history,allowMultiples);
+	                                	this.setChild(f,newSub,childCounter);
+	                                	newSub.setParent(this);
+	                                }
+	                            } catch (IllegalAccessException e) {
+	                                this.removeItem(sub);
+	                            }
+						    }
 						}
 						childCounter++;
 					}
 				}else{
-					//populate missing objects (lazy load) that may have children which need additional extension
-					extendSubItems_extendChildren(f,allowMultiples,history,true);
+					Iterator children = getChildItems(f,allowMultiples,false,user,false,null).iterator();
+					while(children.hasNext())
+					{
+						XFTItem sub = (XFTItem)children.next();
+
+						if (sub != null)
+						{
+							if (history.contains(sub))
+							{
+								props.remove(f.getId());
+							}else{
+								sub.extendSubItems(history,allowMultiples);
+							}
+						}
+					}
 				}
 			}else{
-				//one-to-one or many-to-one relationship
-				final XFTItem sub = (XFTItem)getField(f.getId());
+				XFTItem sub = (XFTItem)getField(f.getId());
 
-				if (sub == null) {
-					continue;
-				}
+				if (sub != null)
+				{
+					if (!this.getGenericSchemaElement().getExtensionFieldName().equalsIgnoreCase(f.getName()))
+					{
+					    GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
 
-				if (! StringUtils.equalsIgnoreCase(this.getGenericSchemaElement().getExtensionFieldName(),f.getName())){
-					//this is a reference to the extended object (i.e. imageSessionData -> experimentData)
-					final GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-					if (foreign.isExtended()){
-						final GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
-						final String extensionName = sub.getExtensionElement();
-						if (StringUtils.isNotEmpty(extensionName) &&
-								(!StringUtils.equalsIgnoreCase(extensionName,sub.getXSIType()) &&
-										(!StringUtils.equalsIgnoreCase(extensionName,getXSIType())))){
-							final GenericWrapperElement extensionElement = GenericWrapperElement.GetElement(extensionName);
-							final String searchFieldPath=foreignKey.getXMLPathString(extensionElement.getFullXMLName());
-							final String searchValuePath=foreignKey.getXMLPathString(foreign.getFullXMLName());
-							final Object searchValue = sub.getProperty(searchValuePath);
+						if (foreign.isExtended())
+						{
+							GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
 
-							try {
-								extendSubItems_search(searchFieldPath,searchValue,f,foreignKey,extensionElement,allowMultiples,history,-1);
-							} catch (IllegalAccessException e) {
-								this.removeItem(sub);
+							String extensionName = sub.getExtensionElement();
+							if (extensionName != null)
+							{
+							    if ((! extensionName.equalsIgnoreCase(sub.getXSIType())) && (!extensionName.equalsIgnoreCase(getXSIType())))
+							    {
+									GenericWrapperElement extensionElement = GenericWrapperElement.GetElement(extensionName);
+
+									ItemSearch search = new ItemSearch();
+									search.setUser(this.getUser());
+
+									SearchCriteria c = new SearchCriteria();
+									c.setFieldWXMLPath(foreignKey.getXMLPathString(extensionElement.getFullXMLName()));
+									Object v = sub.getProperty(foreignKey.getXMLPathString(foreign.getFullXMLName()));
+									c.setValue(v);
+									c.setCleanedType(foreignKey.getXMLType().getLocalType());
+									search.add(c);
+									search.setElement(extensionElement);
+
+									try {
+		                                ItemCollection items = search.exec(allowMultiples,false);
+		                                if (items.size() > 0)
+		                                {
+		                                	XFTItem newSub = (XFTItem)items.get(0);
+		                                	newSub.extendSubItems(history,allowMultiples);
+		                                	this.setChild(f, newSub, true);
+		                                	newSub.setParent(this);
+		                                }
+		                            } catch (IllegalAccessException e) {
+		                                this.removeItem(sub);
+		                            }
+							    }
+							}
+						}else{
+
+							if (history.contains(sub) && f.getXMLDisplay().equalsIgnoreCase("root"))
+							{
+								props.remove(f.getId());
+							}else{
+								sub.extendSubItems(history,allowMultiples);
 							}
 						}
 					}else{
-						extendSubItems_extend(false,true,f,history,sub,allowMultiples);
+
+						if (history.contains(sub) && f.getXMLDisplay().equalsIgnoreCase("root"))
+						{
+							props.remove(f.getId());
+						}else{
+							sub.extendSubItems(history,allowMultiples);
+						}
 					}
-				}else{
-					//not a reference to its own extension
-					extendSubItems_extend(false,true,f,history,sub,allowMultiples);
-				}
-			}
-		}
-	}
-
-	//added for de-duplication
-	private void extendSubItems_extendChildren(final GenericWrapperField f, final boolean allowMultiples, final ItemTrackingCollection history, final boolean removeDuplicates) throws Exception {
-		final List<XFTItem> children = (List<XFTItem>) getChildItems(f,allowMultiples,true,user,false,null);
-		for(final XFTItem sub: children){
-			extendSubItems_extend(true,removeDuplicates,f,history,sub,allowMultiples);
-		}
-	}
-
-	//added for de-duplication
-	//method used to execute a search to 'extend' or load an XFTItem
-	private void extendSubItems_search(final String searchFieldPath, final Object searchValue, final GenericWrapperField f, final GenericWrapperField foreignKey, final GenericWrapperElement extensionElement, final boolean allowMultiples, final ItemTrackingCollection history, final int childCounter) throws Exception {
-		final ItemSearch search = new ItemSearch();
-		search.setUser(this.getUser());
-
-		final SearchCriteria c = new SearchCriteria();
-		c.setFieldWXMLPath(searchFieldPath);
-		c.setValue(searchValue);
-		c.setCleanedType(foreignKey.getXMLType().getLocalType());
-		search.add(c);
-		search.setElement(extensionElement);
-
-		//execute query
-		final ItemCollection items = search.exec(allowMultiples,false);
-		if (items.isNotEmpty()){
-			XFTItem newSub = (XFTItem)items.first();
-			newSub.extendSubItems(history,allowMultiples);
-			if(childCounter==-1){
-				this.setChild(f,newSub,true);
-			}else{
-				this.setChild(f,newSub,childCounter);
-			}
-			newSub.setParent(this);
-		}
-	}
-
-	private void extendSubItems_extend(boolean skipRootCheck,boolean removeDuplicates, final GenericWrapperField f, final ItemTrackingCollection history, final XFTItem sub, final boolean allowMultiples) throws Exception {
-		if(skipRootCheck || f.getXMLDisplay().equalsIgnoreCase(ROOT)){
-			if(sub.mayNeedExtensions()) {
-				if(removeDuplicates && history.contains(sub)){
-					props.remove(f.getId());
-				}else{
-					sub.extendSubItems(history,allowMultiples);
 				}
 			}
 		}
@@ -3444,7 +3365,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		XFTItem item=null;
         try {
             item = XFTItem.NewItem(elementName,user);
-			item.populateFromFlatString(s);
+            item.populateFromFlatString(s);
             item.setLoading(false);
             if (allowMultiples)
             	item.setPreLoaded(allowMultiples);
@@ -6935,9 +6856,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 
 
-	public static final String POP_OBJ_OPEN = "*OPEN*";
-	public static final String POP_OBJ_CLOSE = "*CLOSE*";
-	public static final String POP_END_ITEM = "*END_ITEM*";
+	public static final String SPECIAL_CHAR1 = "*OPEN*";
+	public static final String SPECIAL_CHAR2 = "*CLOSE*";
+	public static final String SPECIAL_CHAR3 = "*END_ITEM*";
 
 	public String writeToFlatString(int count) throws IOException {
         String s = "Item:(" + count + "(";
@@ -6955,12 +6876,12 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                 s+= ((XFTItem)o).writeToFlatString(++count) + ")";
             }else if (o instanceof String){
                 s+="(" +key + ":)=(";
-                o = StringUtils.replace(StringUtils.replace(((String)o), "(", POP_OBJ_OPEN), ")", POP_OBJ_CLOSE);
+                o = StringUtils.replace(StringUtils.replace(((String)o), "(", SPECIAL_CHAR1), ")", SPECIAL_CHAR2);
 
                s+= o + ")";
             }else if (o instanceof JsonNode){
 				s+="(" +key + ":string)=(";
-				o = StringUtils.replace(StringUtils.replace((o.toString()), "(", POP_OBJ_OPEN), ")", POP_OBJ_CLOSE);
+				o = StringUtils.replace(StringUtils.replace((o.toString()), "(", SPECIAL_CHAR1), ")", SPECIAL_CHAR2);
 
 				s+= o + ")";
 			} else{
@@ -6982,7 +6903,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                 }
             }
         }
-        s+=")"+ POP_END_ITEM +localCount + ")";
+        s+=")"+SPECIAL_CHAR3 +localCount + ")";
 
         return s;
     }
@@ -6996,18 +6917,18 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    {
 	        return value;
 	    }else{
-	        if (StringUtils.equals(className,"java.lang.String"))
+	        if (className.equals("java.lang.String"))
 	        {
-	            value = StringUtils.replace(StringUtils.replace(value, POP_OBJ_OPEN, "("), POP_OBJ_CLOSE, ")");
+	            value = StringUtils.replace(StringUtils.replace(value, SPECIAL_CHAR1, "("), SPECIAL_CHAR2, ")");
                 return value;
-	        }else if (StringUtils.equals(XMLType.CleanType(type),"date"))
+	        }else if (XMLType.CleanType(type).equals("date"))
 	        {
 	            try{
 	                return java.sql.Date.valueOf(value);
 	            } catch (RuntimeException e) {
                     return value;
                 }
-	        }else if (StringUtils.equals(XMLType.CleanType(type),"dateTime"))
+	        }else if (XMLType.CleanType(type).equals("dateTime"))
 	        {
 	            try{
 	                return java.sql.Timestamp.valueOf(value);
@@ -7020,14 +6941,14 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	                    return value;
 	                }
                 }
-	        }else if (StringUtils.equals(XMLType.CleanType(type),"time"))
+	        }else if (XMLType.CleanType(type).equals("time"))
 	        {
 	            try {
                     return java.sql.Time.valueOf(value);
                 } catch (RuntimeException e) {
                     return value;
                 }
-	        }else if (StringUtils.equals(className,"java.util.Date"))
+	        }else if (className.equals("java.util.Date"))
 	        {
 	            Object o;
                 try {
@@ -7036,30 +6957,15 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                 } catch (ParseException e) {
                     return value;
                 }
-	        }else if (StringUtils.equals(className,"java.lang.Boolean"))
+	        }else if (className.equals("java.lang.Boolean"))
 	        {
 	            return value;
 	        }else{
 	            try {
-					//profiling showed that creation of the Method was expensive when done ALOT of times
-					//so caching them saves a few seconds on larger objects.
-					Method m = fastAccessValueOfMethod.computeIfAbsent(className,s -> {
-						try {
-							return Class.forName(className).getMethod("valueOf", new Class[]{String.class});
-						} catch (NoSuchMethodException e) {
-							logger.error("",e);
-							return null;
-						} catch (ClassNotFoundException e) {
-							logger.error("",e);
-							return null;
-						}
-					});
+                    Class c = Class.forName(className);
+                    Method m = c.getMethod("valueOf",new Class[]{String.class});
+                    return m.invoke(null,new Object[]{value});
 
-					if(m==null){
-						return value;
-					}else{
-						return m.invoke(null,new Object[]{value});
-					}
                 } catch (Exception e) {
                     logger.error("",e);
                     return value;
@@ -7068,100 +6974,62 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    }
 	}
 
-	//XNAT-7155 Modified implementation to use a CharSequence and just move the startIndex pointer (rather then a bunch of calls to String.substring)
-	//This eliminated alot of string redefinitions that were burdensome on larger objects.
-	//The underlying implementation should be migrated to JSON
-	//Example string Item:(0(xdat:user)((login:string)=(someUsername)(firstname:string)=(someName)(lastname:string)=(Admin)(email:string)=(email@flywheel.io)(primary_password:string)=(XXXXXXX)(groups_groupid_user_groupid0:XFTItem)=(Item:(1(xdat:user_groupID)((groupid:string)=(ALL_DATA_ADMIN)(user_groupid_info:integer)=(5)(user_groupid_info_user_groupid_meta_data:XFTItem)=(Item:(2(xdat:user_groupID_meta_data)((xft_version:string)=(92)(last_modified:dateTime)=(2022-05-25 10:51:32.721)(status:string)=(active)(activation_date:dateTime)=(2022-05-25 10:51:32.72)(row_last_modified:dateTime)=(2022-05-25 10:51:32.718)(insert_date:dateTime)=(2022-05-25 10:51:32.718)(activation_user_xdat_user_id:integer)=(1)(insert_user_xdat_user_id:integer)=(1)(modified:integer)=(1)(shareable:integer)=(1)(meta_data_id:integer)=(5))*END_ITEM*2))(groups_groupid_xdat_user_xdat_user_id:integer)=(4)(xdat_user_groupid_id:integer)=(5))*END_ITEM*1))(groups_groupid_user_groupid1:XFTItem)=(Item:(2(xdat:user_groupID)((groupid:string)=(001_owner)(user_groupid_info:integer)=(6)(user_groupid_info_user_groupid_meta_data:XFTItem)=(Item:(3(xdat:user_groupID_meta_data)((xft_version:string)=(100)(last_modified:dateTime)=(2022-05-25 10:55:43.007)(status:string)=(active)(activation_date:dateTime)=(2022-05-25 10:55:43.007)(row_last_modified:dateTime)=(2022-05-25 10:55:42.98)(insert_date:dateTime)=(2022-05-25 10:55:42.98)(activation_user_xdat_user_id:integer)=(4)(insert_user_xdat_user_id:integer)=(4)(modified:integer)=(1)(shareable:integer)=(1)(meta_data_id:integer)=(6))*END_ITEM*3))(groups_groupid_xdat_user_xdat_user_id:integer)=(4)(xdat_user_groupid_id:integer)=(6))*END_ITEM*2))(groups_groupid_user_groupid2:XFTItem)=(Item:(3(xdat:user_groupID)((groupid:string)=(Test_TPZxkpVF2NXdvekpQ6f8enQxtP9_member)(user_groupid_info:integer)=(7)(user_groupid_info_user_groupid_meta_data:XFTItem)=(Item:(4(xdat:user_groupID_meta_data)((xft_version:string)=(113)(last_modified:dateTime)=(2022-05-25 11:00:03.079)(status:string)=(active)(activation_date:dateTime)=(2022-05-25 11:00:03.077)(row_last_modified:dateTime)=(2022-05-25 11:00:03.045)(insert_date:dateTime)=(2022-05-25 11:00:03.045)(activation_user_xdat_user_id:integer)=(4)(insert_user_xdat_user_id:integer)=(4)(modified:integer)=(1)(shareable:integer)=(1)(meta_data_id:integer)=(7))*END_ITEM*4))(groups_groupid_xdat_user_xdat_user_id:integer)=(4)(xdat_user_groupid_id:integer)=(7))*END_ITEM*3))(enabled:integer)=(1)(verified:integer)=(1)(salt:string)=(XXXXXX)(user_info:integer)=(4)(user_info_user_meta_data:XFTItem)=(Item:(4(xdat:user_meta_data)((xft_version:string)=(96)(last_modified:dateTime)=(2022-05-25 11:00:03.089889)(status:string)=(active)(activation_date:dateTime)=(2022-05-25 10:51:13.73)(row_last_modified:dateTime)=(2022-05-25 10:54:08.389)(insert_date:dateTime)=(2022-05-25 10:51:13.696)(activation_user_xdat_user_id:integer)=(1)(insert_user_xdat_user_id:integer)=(1)(modified:integer)=(1)(shareable:integer)=(1)(meta_data_id:integer)=(4))*END_ITEM*4))(xdat_user_id:integer)=(4))*END_ITEM*0)
-	private void populateFromFlatString(CharSequence s) throws Exception
+	public void populateFromFlatString(String s) throws Exception
 	{
-		int leftMostIndexPointer=0;
-		if (populateFromFlatString_startsWith(s,leftMostIndexPointer,START_OF_ITEM_CHARS)) {
-			//used to be 'if (s.startsWith("Item:("))' ,doing .charAt was faster then string substring comparisons in Profiling.
-			leftMostIndexPointer += START_OF_ITEM;
-			final int openStringIndex = StringUtils.indexOf(s, POP_OPEN, leftMostIndexPointer);
-			final CharSequence localCountSt = s.subSequence(leftMostIndexPointer, openStringIndex);
-			leftMostIndexPointer = openStringIndex + 1; // past open (
+	    if (s.startsWith("Item:("))
+	    {
+	        s = s.substring(6);
+	        String localCountSt = s.substring(0,s.indexOf("("));
+	        s = s.substring(s.indexOf("(")+1);
 
-			//REMOVE NAME(
-			leftMostIndexPointer = StringUtils.indexOf(s, POP_OPEN_CLOSE, leftMostIndexPointer) + POP_OPEN_CLOSE.length();
-			final Map<String, GenericWrapperElement> cachedElements = new HashMap<>();
+	        int index = s.indexOf(")(");
 
-			while (populateFromFlatString_startsWith(s, leftMostIndexPointer,POP_OPEN_CHARS)) {
-				//used to be 'while (s.startsWith("("))' , doing .charAt was faster then string substring comparisons in Profiling.
-				final int colonIndex = StringUtils.indexOf(s, COLON, leftMostIndexPointer);
-				final CharSequence field = s.subSequence(leftMostIndexPointer + COLON.length(), colonIndex);
-				leftMostIndexPointer = colonIndex + 1;//move pointer past :
+	        //REMOVE NAME(
+	        s = s.substring(index+2);
 
-				final int paramSeparatorIndex=StringUtils.indexOf(s, POP_OPEN_EQUALS_CLOSE, leftMostIndexPointer);
-				final CharSequence type = s.subSequence(leftMostIndexPointer, paramSeparatorIndex);
-				leftMostIndexPointer = paramSeparatorIndex + POP_OPEN_EQUALS_CLOSE.length();
+	        while (s.startsWith("("))
+	        {
+	            String field = s.substring(1,s.indexOf(COLON));
+	            s= s.substring(s.indexOf(COLON)+1);
+	            String type = s.substring(0,s.indexOf(")=("));
 
-				if (populateFromFlatString_startsWith(s,leftMostIndexPointer, START_OF_ITEM_CHARS)) {
-					//used to be 'if (s.startsWith("Item:("))', doing .charAt was faster then string substring comparisons in Profiling.
-					final CharSequence childCountSt = s.subSequence(leftMostIndexPointer + START_OF_ITEM, StringUtils.indexOf(s, POP_OPEN, leftMostIndexPointer + START_OF_ITEM));
+	            s= s.substring(s.indexOf(")=(")+3);
 
-					final int item_num = Integer.parseInt(childCountSt.toString());
-					int endItem = StringUtils.indexOf(s, POP_END_ITEM + item_num + POP_CLOSE, leftMostIndexPointer);
-					if (endItem == -1) {
-						throw new ItemPopulationException(String.format("Invalid content (3) in XFTItem(%1$s) parsing:%2$s", this.getXSIType(),childCountSt));
-					}
-					endItem += POP_END_ITEM.length() + childCountSt.length() +1; //+1 is for closing paren )
-					final CharSequence value = s.subSequence(leftMostIndexPointer, endItem);
-					leftMostIndexPointer = endItem + 1; // remove concluding paren )
+	            if (s.startsWith("Item:("))
+	            {
+	                String childCountSt = s.substring(6,s.indexOf("(",6));
+	                int item_num= Integer.parseInt(childCountSt);
+	                int end_index = s.indexOf(SPECIAL_CHAR3 +item_num +")");
+	                if (end_index==-1)
+	                {
+	                    throw new Exception();
+	                }
+	                end_index += childCountSt.length()+11;
+	                String value = s.substring(0,end_index);
+	                s = s.substring(end_index +1);
 
-					final String childName = (value.subSequence(START_OF_ITEM + 1 + childCountSt.length(), StringUtils.indexOf(value, POP_CLOSE))).toString(); //+1 is for paren
-					if (!cachedElements.containsKey(childName)) {
-						cachedElements.put(childName, GenericWrapperElement.GetElement(childName));
-					}
-					final XFTItem child = XFTItem.NewItem(cachedElements.get(childName), user);
-					child.populateFromFlatString(value);
-					this.setField(field.toString(), child);
+	                String childName = value.substring(7 + childCountSt.length(),value.indexOf(")"));
+	        		XFTItem child=null;
+	        		child = XFTItem.NewItem(childName,user);
+	                child.populateFromFlatString(value);
+	                this.setField(field,child);
 					child.setParent(this);
-				} else {
-					final int endingIndex=StringUtils.indexOf(s, POP_CLOSE, leftMostIndexPointer);
-					final CharSequence value = s.subSequence(leftMostIndexPointer, endingIndex);
-					leftMostIndexPointer = endingIndex + 1;
-					final Object o = parseObject(type.toString(), value.toString());
-					this.setField(field.toString(), o);
-				}
-			}
+	            }else{
+		            String value = s.substring(0,s.indexOf(")"));
+		            s = s.substring(s.indexOf(")")+1);
+		            Object o =parseObject(type,value);
+		            this.setField(field,o);
+	            }
+	        }
 
-			if((s.length() > (leftMostIndexPointer +4)) && ((s.charAt(leftMostIndexPointer) != POP_CLOSE)  || (s.charAt(leftMostIndexPointer+1) != '*') || (s.charAt(leftMostIndexPointer+2) != 'E'))){//matches )*END_ITEM
-				//throw exception for unparsable content remaining after parsing
-				throw new ItemPopulationException(String.format("Invalid content (1) in XFTItem(%1$s) parsing:%2$s", this.getXSIType(),s.subSequence(leftMostIndexPointer,(leftMostIndexPointer+4))));
-			}
-
-			if (isMetaElement()) {
-				this.internValues();
-			}
-		}else{
-			if(s.length() > leftMostIndexPointer){
-				//throw exception for unparsable content remaining after parsing
-				throw new ItemPopulationException(String.format("Invalid content (2) in XFTItem(%1$s) parsing:%2$s", this.getXSIType(),s.subSequence(leftMostIndexPointer,(leftMostIndexPointer+4))));
-			}
-		}
+	        if(isMetaElement()){
+	        	this.internValues();
+	        }
+	        
+	        //REMOVE ENDING )
+	        s = s.substring(0,s.indexOf(")" +SPECIAL_CHAR3 +localCountSt + ")"));
+	    }
 	}
-
-	//hard to believe this is actually faster then String.startsWith... checking '.charAt' seems to be in Profiling.
-	private boolean populateFromFlatString_startsWith(final CharSequence s, final int leftMostIndexPointer, char[] toCheck){
-		if(s.length()<toCheck.length){
-			return false;
-		}
-
-		for(int i=0; i<(toCheck.length); i++){
-			if(toCheck[i]!=s.charAt(leftMostIndexPointer+i)){
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	public static class ItemPopulationException extends Exception{
-		public ItemPopulationException(String s){
-			super(s);
-		}
-	};
 
 	Boolean isMeta=null;
 	private boolean isMetaElement(){

@@ -83,20 +83,33 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
     @Nonnull
     public UserI getGuestUser() throws UserNotFoundException, UserInitException {
         if (_guest == null) {
+            loadGuest();
+        }
+        return _guest;
+    }
+
+    private synchronized void loadGuest() throws UserNotFoundException, UserInitException {
+        try {
             final XdatUser user = XdatUser.getXdatUsersByLogin(Users.DEFAULT_GUEST_USERNAME, null, false);
             if (user == null) {
                 throw new UserNotFoundException(Users.DEFAULT_GUEST_USERNAME);
             }
             _guest = new XDATUser(user.getItem());
             _guestId = _guest.getID();
+        } catch (UserInitException|UserNotFoundException e) {
+            _guest=null;
+            _guestId=null;
+            throw e;
         }
-        return _guest;
     }
 
     @Override
     public void invalidateGuest() {
-        _guest = null;
-        _guestId = null;
+        try {
+            loadGuest();
+        } catch (UserNotFoundException|UserInitException e) {
+            log.error("Unable to reload guest object after invalidation",e);
+        }
     }
 
     @Override

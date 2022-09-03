@@ -1379,7 +1379,26 @@ adminControls:
                 This page will allow site admins to set default appearance of defined features in the UI.
                 <a href="https://wiki.xnat.org/documentation/xnat-administration/enabling-features-at-the-site-wide-level" target="_blank">See documentation</a>
 
-
+displayedUserIdentifier:
+    kind: panel.form
+    label: Displayed User Identifier
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        displayedUserIdentifierType:
+            kind: panel.element
+            label: Displayed User Identifier Type
+            contents:
+                displayedUserIdentifierTypeMenu:
+                    kind: select.menu
+                    name: displayedUserIdentifierType
+                    options:
+                        USERNAME: Username
+                        EMAIL: Email
+                        NAME: Name
+                    after: >
+                        <p class="description">Sets the user identifier displayed at the top right of each page. To see the change after you modify and save this value, you'll need to refresh the page.</p>
 ## PLUGINS
 
 # create a container for the plugin table to be spawned into
@@ -2559,6 +2578,7 @@ root:
                 ${dateFormatting}
                 ${themeManagement}
                 ${adminControls}
+                ${displayedUserIdentifier}
         plugins:
             kind: tab
             name: plugins

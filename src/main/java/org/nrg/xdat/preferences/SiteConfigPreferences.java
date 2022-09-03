@@ -1974,6 +1974,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "USERNAME")
+    public DisplayedUserIdentifierType getDisplayedUserIdentifierType() {
+        return getEnumValue(DisplayedUserIdentifierType.class, "displayedUserIdentifierType");
+    }
+
+    public void setDisplayedUserIdentifierType(final DisplayedUserIdentifierType displayedUserIdentifierType) {
+        try {
+            setEnumValue(displayedUserIdentifierType, "displayedUserIdentifierType");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'displayedUserIdentifierType': something is very wrong here.", e);
+        }
+    }
+
     public boolean isComplete() {
         return getMissingInitSettings().size() == 0;
     }

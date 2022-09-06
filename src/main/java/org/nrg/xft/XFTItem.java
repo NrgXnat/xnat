@@ -7077,16 +7077,24 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	            try {
 					//profiling showed that creation of the Method was expensive when done ALOT of times
 					//so caching them saves a few seconds on larger objects.
-					Method m = fastAccessValueOfMethod.get(className);
+					Method m = fastAccessValueOfMethod.computeIfAbsent(className,s -> {
+						try {
+							return Class.forName(className).getMethod("valueOf", new Class[]{String.class});
+						} catch (NoSuchMethodException|ClassNotFoundException e) {
+							logger.error(String.format("XFTItem.parseObject(1): %s,%s",type,className),e);
+							return null;
+						}
+					});
+
 					if(m==null){
-						Class c = Class.forName(className);
-						m = fastAccessValueOfMethod.put(className,c.getMethod("valueOf",new Class[]{String.class}));
+						logger.error(String.format("XFTItem.parseObject(2): %s,%s,%s",type,className,value));
+						return value;
+					}else{
+						return m.invoke(null,new Object[]{value});
 					}
 
-                    return m.invoke(null,new Object[]{value});
-
                 } catch (Exception e) {
-                    logger.error("",e);
+                    logger.error(String.format("XFTItem.parseObject(3): %s,%s,%s",type,className,value),e);
                     return value;
                 }
 	        }

@@ -30,7 +30,7 @@ public class ScanSecurityServiceImpl implements ScanSecurityService {
         }
 
         // If we have an image session for the scan, return it
-        ItemI session = scanItem.getImageSessionData();
+        ItemI session = scanItem.getImageSessionId() != null ? scanItem.getImageSessionData() : null;
         if (session != null) {
             return session;
         }

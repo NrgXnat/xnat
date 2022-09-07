@@ -1396,7 +1396,8 @@ displayedUserIdentifier:
                     options:
                         USERNAME: Username
                         EMAIL: Email
-                        NAME: Name
+                        NAME_FIRST_SPACE_LAST: Name (First Last)
+                        NAME_LAST_COMMA_FIRST: Name (Last, First)
                     after: >
                         <p class="description">Sets the user identifier displayed at the top right of each page. To see the change after you modify and save this value, you'll need to refresh the page.</p>
 ## PLUGINS

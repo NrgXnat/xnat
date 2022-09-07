@@ -22,7 +22,7 @@ $page.setBgColor($ui.bgcolor)
                 #if($username != "" && $username != "guest")
                     ## use default timout value from web.xml as the starting text in the "timeLeft" element
                     #if(!$hideUserInfo)
-                        <span id="user_info">Logged in as: &nbsp;<i>#renderDisplayedUserIdentifier()</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
+                        <span id="user_info">Logged in as: &nbsp;<i>$!turbineUtils.getDisplayedUserIdentifier($user)</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
                     #end
                     <script>
                         window.loggedIn = true;

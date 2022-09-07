@@ -29,7 +29,7 @@ $page.setBgColor($ui.bgcolor)
             #set($username = $user.getUsername())
             #if($username != "" && $username != "guest")
                 ## use default timout value from web.xml as the starting text in the "timeLeft" element
-                <span id="user_info">Logged in as: &nbsp;<a href="$link.setPage("XDATScreen_UpdateUser.vm")">#renderDisplayedUserIdentifier()</a> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
+                <span id="user_info">Logged in as: &nbsp;<a href="$link.setPage("XDATScreen_UpdateUser.vm")">$!turbineUtils.getDisplayedUserIdentifier($user)</a> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
                 <script>
                     window.loggedIn = true;
                 </script>

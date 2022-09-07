@@ -71,6 +71,8 @@ import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -83,6 +85,7 @@ import static org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader.safeJo
 @Slf4j
 public class TurbineUtils {
     public static final  String       EDIT_ITEM = "edit_item";
+    public static final String        BASE_DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
     private static final Logger       logger    = Logger.getLogger(TurbineUtils.class);
     private              XdatSecurity _security = null;
 
@@ -956,12 +959,31 @@ public class TurbineUtils {
     public static SimpleDateFormat getDateTimeFormatter() {
         if (default_date_time_format == null) {
             try {
-                default_date_time_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("uiDateTimeFormat", "yyyy-MM-dd HH:mm:ss"));
+                default_date_time_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("uiDateTimeFormat", BASE_DATE_TIME_FORMAT));
             } catch (ConfigServiceException e) {
-                default_date_time_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                default_date_time_format = new SimpleDateFormat(BASE_DATE_TIME_FORMAT);
             }
         }
         return default_date_time_format;
+    }
+
+    public String formatLocalDateTime(LocalDateTime dateTime) {
+        synchronized (getLocalDateTimeFormatter()) {
+            return getLocalDateTimeFormatter().format(dateTime);
+        }
+    }
+
+    private static DateTimeFormatter default_local_date_time_formatter = null;
+
+    public static DateTimeFormatter getLocalDateTimeFormatter() {
+        if (default_local_date_time_formatter == null) {
+            try {
+                default_local_date_time_formatter = DateTimeFormatter.ofPattern(XDAT.getSiteConfigurationProperty("uiDateTimeFormat", BASE_DATE_TIME_FORMAT));
+            } catch (ConfigServiceException e) {
+                default_local_date_time_formatter = DateTimeFormatter.ofPattern(BASE_DATE_TIME_FORMAT);
+            }
+        }
+        return default_local_date_time_formatter;
     }
 
     @SuppressWarnings("unused")

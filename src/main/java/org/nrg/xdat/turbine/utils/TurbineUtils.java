@@ -1547,6 +1547,20 @@ public class TurbineUtils {
         }
     }
 
+    public String getDisplayedUserIdentifier(UserI user) {
+        switch (XDAT.getSiteConfigPreferences().getDisplayedUserIdentifierType()) {
+            case NAME_FIRST_SPACE_LAST:
+                return String.format("%s %s", user.getFirstname(), user.getLastname());
+            case NAME_LAST_COMMA_FIRST:
+                return String.format("%s, %s", user.getLastname(), user.getFirstname());
+            case EMAIL:
+                return user.getEmail();
+            case USERNAME:
+            default:
+                return user.getUsername();
+        }
+    }
+
     private static Boolean isPreload(final String elementName) {
         try {
             return SchemaElement.GetElement(elementName).isPreLoad();

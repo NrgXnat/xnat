@@ -12,20 +12,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@XnatEventServiceEvent(name="SessionEvent")
+@XnatEventServiceEvent(name = "SessionEvent")
 public class SessionEvent extends AbstractEventServiceEvent<XnatImagesessiondataI> {
 
-    public enum Status {CREATED, DELETED};
+    public enum Status {CREATED, MERGED, DELETED}
 
     private final String displayName = "Session";
-    private final String description = "Session created or deleted.";
+    private final String description = "Session created, merged, or deleted.";
     private String payloadId = null;
 
-        public SessionEvent(){};
+    public SessionEvent() {}
 
     public SessionEvent(final XnatImagesessiondataI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
-        payloadId = payload.getId();
+        payloadId = payload != null ? payload.getId() : null;
     }
 
     @Override
@@ -49,5 +49,7 @@ public class SessionEvent extends AbstractEventServiceEvent<XnatImagesessiondata
     }
 
     @Override
-    public List<String> getStatiStates() { return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList()); }
+    public List<String> getStatiStates() {
+        return Arrays.stream(Status.values()).map(Status::name).collect(Collectors.toList());
+    }
 }

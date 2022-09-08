@@ -12,6 +12,9 @@ import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.XdatUsergroupI;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.ImageAssessorEvent;
 import org.nrg.xnat.eventservice.events.ProjectAssetEvent;
@@ -24,15 +27,15 @@ import org.nrg.xnat.eventservice.events.SubjectEvent;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
 import org.nrg.xnat.eventservice.services.XnatObjectIntrospectionService;
+import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.nrg.xft.event.EventUtils.MERGE;
 
 @Slf4j
 @Aspect
@@ -51,15 +54,16 @@ public class EventServiceItemSaveAspect {
         this.componentManager = componentManager;
     }
 
-   @Around(value = "execution(* org.nrg.xft.utils.SaveItemHelper.save(..)) && @annotation(org.nrg.xft.utils.EventServiceTrigger) && args(item, user,..)")
-    public Object processItemSaveTrigger(final ProceedingJoinPoint joinPoint, ItemI item, UserI user) throws Throwable {
+    @Around(value = "execution(* org.nrg.xft.utils.SaveItemHelper.save(..)) && " +
+            "@annotation(org.nrg.xft.utils.EventServiceTrigger) && args(item, user, .., eventMeta)")
+    public Object processItemSaveTrigger(final ProceedingJoinPoint joinPoint, ItemI item, UserI user, EventMetaI eventMeta) throws Throwable {
 
-        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getEnabled()){
+        if (eventService != null && eventService.getPrefs() != null && !eventService.getPrefs().getEnabled()) {
            return joinPoint.proceed();
-       }
+        }
 
 
-       StopWatch sw = new StopWatch();
+        StopWatch sw = new StopWatch();
         sw.start();
         Object proceedingReturn = null;
         try {
@@ -72,9 +76,9 @@ public class EventServiceItemSaveAspect {
             } else if (isItemA(item, XnatType.WORKFLOW)){
                 //retVal = joinPoint.proceed();
 
-            }else if (isItemA(item, XnatType.PROJECT) || isItemA(item, XnatType.ARC_PROJECT)) {
+            } else if (isItemA(item, XnatType.PROJECT) || isItemA(item, XnatType.ARC_PROJECT)) {
                 log.debug("Project Data Save" + " : xsiType:" + item.getXSIType());
-                Boolean alreadyStored = item instanceof ArcProjectI ? xnatObjectIntrospectionService.storedInDatabase((ArcProjectI) item) :
+                boolean alreadyStored = item instanceof ArcProjectI ? xnatObjectIntrospectionService.storedInDatabase((ArcProjectI) item) :
                         xnatObjectIntrospectionService.storedInDatabase(new ArcProject(item));
                 if (!alreadyStored){
                     log.debug("New Project Data Save" + " : xsiType:" + item.getXSIType());
@@ -90,19 +94,15 @@ public class EventServiceItemSaveAspect {
                 }
             } else if (isItemA(item, XnatType.PROJECT_ASSET)) {
                 log.debug("Project Asset Data Save" + " : xsiType:" + item.getXSIType());
-                XnatAbstractprojectassetI projectAsset = item instanceof XnatAbstractprojectassetI ? (XnatAbstractprojectassetI) item : new XnatAbstractprojectasset(item) {
-                };
-                if (projectAsset != null) {
-                    proceedingReturn = joinPoint.proceed();
-                    triggerProjectAssetCreate(projectAsset, user);
-                } else {
-                    log.error("Event Service could not cast item " + item.getXSIType() + " to XnatAbstractprojectassetI");
-                }
-                if(log.isDebugEnabled() && sw.isRunning()) {
+                XnatAbstractprojectassetI projectAsset = item instanceof XnatAbstractprojectassetI ?
+                        (XnatAbstractprojectassetI) item : new XnatAbstractprojectasset(item) {};
+                proceedingReturn = joinPoint.proceed();
+                triggerProjectAssetCreate(projectAsset, user);
+                if (log.isDebugEnabled() && sw.isRunning()) {
                     sw.stop();
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
                 }
-            }else if (isItemA(item, XnatType.SUBJECT)) {
+            } else if (isItemA(item, XnatType.SUBJECT)) {
                 XnatSubjectdataI subject = item instanceof XnatSubjectdataI ? (XnatSubjectdataI) item : new XnatSubjectdata(item);
                 Boolean alreadyStored = xnatObjectIntrospectionService.storedInDatabase(subject);
                 if (!alreadyStored) {
@@ -112,7 +112,8 @@ public class EventServiceItemSaveAspect {
                     proceedingReturn = joinPoint.proceed();
                     triggerSubjectCreate(subject, user);
 
-                } else if (alreadyStored && (item instanceof XnatSubjectdataI) && (subject.getExperiments_experiment() == null || subject.getExperiments_experiment().isEmpty())){
+                } else if (item instanceof XnatSubjectdataI &&
+                        (subject.getExperiments_experiment() == null || subject.getExperiments_experiment().isEmpty())){
                     // This is an existing subject being edited
                     log.debug("SubjectEvent.Status.UPDATED detected - no-op");
                 } else {
@@ -129,7 +130,7 @@ public class EventServiceItemSaveAspect {
                     final List<String> removedSubjectAssessorIds = preSubjectAssessorIds.stream()
                                                                         .filter(id -> !currentSubjectAssessorIds.contains(id)).collect(Collectors.toList());
                     final List<String> removedSessionIds = (preSessionIds == null || preSessionIds.isEmpty())
-                                                        ? Arrays.asList()
+                                                        ? Collections.emptyList()
                                                         : preSessionIds.stream()
                                                                        .filter(sid -> !currentSessionIds.contains(sid)).collect(Collectors.toList());
                     //final List<String> removeNonImageAssesorIds = (removedSubjectAssessorIds == null || removedSubjectAssessorIds.isEmpty())
@@ -176,24 +177,24 @@ public class EventServiceItemSaveAspect {
                     //eventService.triggerEvent(new SubjectEvent(subject, userLogin, SubjectEvent.Status.UPDATED, subject.getProject()));
 
                 }
-                if(log.isDebugEnabled() && sw.isRunning()) {
+                if (log.isDebugEnabled() && sw.isRunning()) {
                     sw.stop();
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
                 }
             } else if (isItemA(item, XnatType.SUBJECT_ASSESSOR)) {
                 XnatSubjectassessordataI subjectAssessor = item instanceof XnatSubjectassessordataI ? (XnatSubjectassessordataI) item : new XnatSubjectassessordata(item);
-                Boolean subAssessorAlreadyStored = xnatObjectIntrospectionService.storedInDatabase(subjectAssessor);
+                boolean subAssessorAlreadyStored = xnatObjectIntrospectionService.storedInDatabase(subjectAssessor);
 
                 if (isItemA(item, XnatType.SESSION)) {
                     XnatImagesessiondataI session = item instanceof XnatImagesessiondataI ? (XnatImagesessiondataI) item : new XnatImagesessiondata(item);
                     if (!subAssessorAlreadyStored) {
-                        log.debug("New Session Data Save" + " : xsiType:" + item.getXSIType());
+                        log.debug("New Session Data Save : xsiType: {}", item.getXSIType());
 
                         // ** Proceed with save operation ** //
                         proceedingReturn = joinPoint.proceed();
                         triggerSessionCreate(session, user);
                     } else {
-                        log.debug("Existing Session Data Save" + " : xsiType:" + item.getXSIType());
+                        log.debug("Existing Session Data Save : xsiType: {}", item.getXSIType());
                         List<String> preScanIds = xnatObjectIntrospectionService.getStoredScanIds((XnatExperimentdata) session);
 
                         // ** Proceed with save operation ** //
@@ -204,8 +205,12 @@ public class EventServiceItemSaveAspect {
                             List<XnatImagescandataI> newScans = session.getScans_scan().stream().filter(scn -> postScanIds.contains(scn.getId())).collect(Collectors.toList());
                             triggerScansCreate(newScans, session.getProject(), user);
                         }
+                        PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(user, eventMeta.getEventId().toString());
+                        if (workflow != null && MERGE.equals(workflow.getPipelineName())) {
+                            eventService.triggerEvent(new SessionEvent(session, user.getLogin(), SessionEvent.Status.MERGED,
+                                    session.getProject()));
+                        }
                         log.debug("SessionEvent.Status.UPDATED detected - no-op");
-                        //eventService.triggerEvent(new SessionEvent(session, userLogin, SessionEvent.Status.UPDATED, session.getProject()));
                     }
                 }
 
@@ -219,7 +224,7 @@ public class EventServiceItemSaveAspect {
                     //Subject Assessor Updated - no-op
                 }
 
-                if(log.isDebugEnabled() && sw.isRunning()) {
+                if (log.isDebugEnabled() && sw.isRunning()) {
                     sw.stop();
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
                 }
@@ -240,8 +245,8 @@ public class EventServiceItemSaveAspect {
                 triggerResourceUpdate(resource, user, project);
 
             } else if (isItemA(item, XnatType.SCAN)) {
-                XnatImagescandataI sc = (XnatImagescandata)item;
-                XnatImagesessiondata session = ((XnatImagescandata) sc).getImageSessionData();
+                XnatImagescandata sc = (XnatImagescandata) item;
+                XnatImagesessiondata session = sc.getImageSessionData();
                 final String project = session == null ? null : session.getProject();
                 List<String> scanIds = xnatObjectIntrospectionService.getStoredScanIds(session);
 
@@ -286,7 +291,7 @@ public class EventServiceItemSaveAspect {
                         triggerImageAssessorUpdate(assessor, user);
                     }
                 }
-                if(log.isDebugEnabled() && sw.isRunning()) {
+                if (log.isDebugEnabled() && sw.isRunning()) {
                     sw.stop();
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
                 }
@@ -296,13 +301,12 @@ public class EventServiceItemSaveAspect {
             log.error("Exception in EventServiceItemSaveAspect.processItemSaveTrigger() joinpoint.proceed(): " + joinPoint.toString()
 //                    + "item: " + item.toString()
 //                    + "user: " + user.toString()
-                    + "\n" + e.getStackTrace());
-        } finally {
-            if (proceedingReturn == null) {
-                proceedingReturn = joinPoint.proceed();;
-            }
-            return proceedingReturn;
+                    + "\n" + Arrays.toString(e.getStackTrace()));
         }
+        if (proceedingReturn == null) {
+            proceedingReturn = joinPoint.proceed();;
+        }
+        return proceedingReturn;
     }
 
     @AfterReturning(pointcut = "@annotation(org.nrg.xft.utils.EventServiceTrigger) " +

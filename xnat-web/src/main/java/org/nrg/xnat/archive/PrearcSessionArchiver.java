@@ -75,6 +75,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public class PrearcSessionArchiver extends ArchiveStatusProducer implements Callable<String> {
@@ -510,116 +511,136 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             }
 
             try {
-                // TODO get rid of this check once XNAT-6889 is fixed
-                if (!Permissions.canCreate(user, src)) {
-                    Groups.getGroupsAndPermissionsCache().clearUserCache(user.getUsername());
-                }
+                MergePrearcToArchiveSession mergePrearcToArchiveSession;
 
                 try {
-                    preArchive(user, src, params, existing);
-                } catch (RuntimeException e) {
-                    if (e.getCause() != null) {
-                        throw e.getCause();
-                    } else {
-                        throw e;
+                    // TODO get rid of this check once XNAT-6889 is fixed
+                    if (!Permissions.canCreate(user, src)) {
+                        Groups.getGroupsAndPermissionsCache().clearUserCache(user.getUsername());
                     }
-                }
 
-                processing("validating loaded data");
-                validateSession();
-
-                final File arcSessionDir = getArcSessionDir();
-
-                if (existing != null) {
-                    checkForConflicts(src, this.prearcSession.getSessionDir(), existing, arcSessionDir);
-                }
-
-
-                if (!overrideExceptions) {
-                    validateDicomFiles();
-                }
-
-                if (XDAT.getBoolSiteConfigurationProperty("verifyComplianceInPrearcSessionReview", false)) {
-                    verifyCompliance();
-                }
-
-                try {
-                    getApplyPluginValidationService().validate(src, params, user);
-                } catch (ClientException e) {
-                    // ServerException exceptions ought to be thrown always, ClientException only if overrideExceptions=false
-                    if (!overrideExceptions) {
-                        throw e;
-                    }
-                }
-
-                if (arcSessionDir.exists()) {
-                    processing("merging files data with existing session");
-                } else {
-                    processing("archiving session");
-                }
-
-                final boolean shouldForceQuarantine;
-                shouldForceQuarantine = params.containsKey(ViewManager.QUARANTINE) && params.get(ViewManager.QUARANTINE).toString().equalsIgnoreCase("true");
-
-                if (needsScanIdCorrection && existing != null) {
-                    correctScanID(existing);
-                }
-
-                SaveHandlerI<XnatImagesessiondata> saveImpl = merged -> {
-                    if (SaveItemHelper.authorizedSave(merged, user, false, false, c)) {
-                        final Date inserted     = merged.getItem().getInsertDate();
-                        final Date lastModified = merged.getItem().getLastModified();
-                        XDAT.triggerXftItemEvent(merged, lastModified == null || lastModified.getTime() - inserted.getTime() == 0 ? CREATE : UPDATE);
-                        Users.clearCache(user);
-                        try {
-                            MaterializedView.deleteByUser(user);
-                        } catch (Exception e) {
-                            log.error("", e);
+                    try {
+                        preArchive(user, src, params, existing);
+                    } catch (RuntimeException e) {
+                        if (e.getCause() != null) {
+                            throw e.getCause();
+                        } else {
+                            throw e;
                         }
+                    }
 
-                        try {
-                            if (shouldForceQuarantine) {
-                                src.quarantine(user);
-                            } else {
-                                // A bunch of null checks here because, under certain race or heavy load conditions,
-                                // one or more of these values can come back null.
-                                final XnatProjectdata project = src.getPrimaryProject(false);
-                                if (project != null) {
-                                    final ArcProject arcProject = project.getArcSpecification();
-                                    if (arcProject != null) {
-                                        final Integer quarantineCode = arcProject.getQuarantineCode();
-                                        if (quarantineCode != null) {
-                                            if (quarantineCode.equals(1)) {
-                                                src.quarantine(user);
+                    processing("validating loaded data");
+                    validateSession();
+
+                    final File arcSessionDir = getArcSessionDir();
+
+                    if (existing != null) {
+                        checkForConflicts(src, this.prearcSession.getSessionDir(), existing, arcSessionDir);
+                    }
+
+
+                    if (!overrideExceptions) {
+                        validateDicomFiles();
+                    }
+
+                    if (XDAT.getBoolSiteConfigurationProperty("verifyComplianceInPrearcSessionReview", false)) {
+                        verifyCompliance();
+                    }
+
+                    try {
+                        getApplyPluginValidationService().validate(src, params, user);
+                    } catch (ClientException e) {
+                        // ServerException exceptions ought to be thrown always, ClientException only if overrideExceptions=false
+                        if (!overrideExceptions) {
+                            throw e;
+                        }
+                    }
+
+                    if (arcSessionDir.exists()) {
+                        processing("merging files data with existing session");
+                    } else {
+                        processing("archiving session");
+                    }
+
+                    final boolean shouldForceQuarantine;
+                    shouldForceQuarantine = params.containsKey(ViewManager.QUARANTINE) && params.get(ViewManager.QUARANTINE).toString().equalsIgnoreCase("true");
+
+                    if (needsScanIdCorrection && existing != null) {
+                        correctScanID(existing);
+                    }
+
+                    SaveHandlerI<XnatImagesessiondata> saveImpl = merged -> {
+                        if (SaveItemHelper.authorizedSave(merged, user, false, false, c)) {
+                            final Date inserted     = merged.getItem().getInsertDate();
+                            final Date lastModified = merged.getItem().getLastModified();
+                            XDAT.triggerXftItemEvent(merged, lastModified == null || lastModified.getTime() - inserted.getTime() == 0 ? CREATE : UPDATE);
+                            Users.clearCache(user);
+                            try {
+                                MaterializedView.deleteByUser(user);
+                            } catch (Exception e) {
+                                log.error("", e);
+                            }
+
+                            try {
+                                if (shouldForceQuarantine) {
+                                    src.quarantine(user);
+                                } else {
+                                    // A bunch of null checks here because, under certain race or heavy load conditions,
+                                    // one or more of these values can come back null.
+                                    final XnatProjectdata project = src.getPrimaryProject(false);
+                                    if (project != null) {
+                                        final ArcProject arcProject = project.getArcSpecification();
+                                        if (arcProject != null) {
+                                            final Integer quarantineCode = arcProject.getQuarantineCode();
+                                            if (quarantineCode != null) {
+                                                if (quarantineCode.equals(1)) {
+                                                    src.quarantine(user);
+                                                }
+                                            } else {
+                                                log.debug("Got arcProject {} for project {} associated with session {}, but the quarantine code was null", arcProject.getArcProjectId(), project.getId(), src.getLabel());
                                             }
                                         } else {
-                                            log.debug("Got arcProject {} for project {} associated with session {}, but the quarantine code was null", arcProject.getArcProjectId(), project.getId(), src.getLabel());
+                                            log.debug("Didn't find arcProject for project {}", project.getId());
                                         }
                                     } else {
-                                        log.debug("Didn't find arcProject for project {}", project.getId());
+                                        log.debug("Couldn't get primary project for session {}.", src.getLabel());
                                     }
-                                } else {
-                                    log.debug("Couldn't get primary project for session {}.", src.getLabel());
                                 }
+                            } catch (Exception e) {
+                                log.error("", e);
                             }
-                        } catch (Exception e) {
-                            log.error("", e);
                         }
+                    };
+
+                    mergePrearcToArchiveSession = new MergePrearcToArchiveSession(src.getPrearchivePath(),
+                                                                                  this.prearcSession,
+                                                                                  src,
+                                                                                  src.getPrearchivepath(),
+                                                                                  arcSessionDir,
+                                                                                  existing,
+                                                                                  arcSessionDir.getAbsolutePath(),
+                                                                                  allowSessionMerge,
+                                                                                  overrideExceptions || overwriteFiles,
+                                                                                  saveImpl, user, workflow.buildEvent());
+
+                    ListenerUtils.addListeners(this, mergePrearcToArchiveSession).call();
+
+                } catch (Exception e) {
+                    if (existing != null) {
+                        Stream.of(workflow, workflow2).filter(Objects::nonNull)
+                                .forEach(w -> {
+                                    w.setStatus(PersistentWorkflowUtils.FAILED);
+                                    w.setDetails(e.getMessage());
+                                    try {
+                                        PersistentWorkflowUtils.save(w, w.buildEvent());
+                                    } catch (Exception wfe) {
+                                        log.error("Unable to save workflow {}", w.getWorkflowId(), e);
+                                    }
+                                });
                     }
-                };
+                    throw e;
+                }
 
-                MergePrearcToArchiveSession mergePrearcToArchiveSession = new MergePrearcToArchiveSession(src.getPrearchivePath(),
-                                                                                                          this.prearcSession,
-                                                                                                          src,
-                                                                                                          src.getPrearchivepath(),
-                                                                                                          arcSessionDir,
-                                                                                                          existing,
-                                                                                                          arcSessionDir.getAbsolutePath(),
-                                                                                                          allowSessionMerge,
-                                                                                                          overrideExceptions || overwriteFiles,
-                                                                                                          saveImpl, user, workflow.buildEvent());
-
-                ListenerUtils.addListeners(this, mergePrearcToArchiveSession).call();
                 XnatImagesessiondata merged;
                 if (XDAT.getBoolSiteConfigurationProperty("preventCrossModalityMerge", true)) {
                     merged = src;
@@ -648,7 +669,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                         workflow2.setStepDescription(PersistentWorkflowUtils.COMPLETE);
                         WorkflowUtils.complete(workflow2, workflow2.buildEvent());
                     }
-
                 } catch (Exception e1) {
                     log.error("", e1);
                 }

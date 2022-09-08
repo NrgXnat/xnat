@@ -28,6 +28,7 @@ import org.json.JSONObject;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatSecurity;
+import org.nrg.xdat.preferences.DisplayedUserIdentifierType;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
@@ -1548,17 +1549,8 @@ public class TurbineUtils {
     }
 
     public String getDisplayedUserIdentifier(UserI user) {
-        switch (XDAT.getSiteConfigPreferences().getDisplayedUserIdentifierType()) {
-            case NAME_FIRST_SPACE_LAST:
-                return String.format("%s %s", user.getFirstname(), user.getLastname());
-            case NAME_LAST_COMMA_FIRST:
-                return String.format("%s, %s", user.getLastname(), user.getFirstname());
-            case EMAIL:
-                return user.getEmail();
-            case USERNAME:
-            default:
-                return user.getUsername();
-        }
+        return ObjectUtils.defaultIfNull(XDAT.getSiteConfigPreferences().getDisplayedUserIdentifierType(),
+                DisplayedUserIdentifierType.USERNAME).format(user);
     }
 
     private static Boolean isPreload(final String elementName) {

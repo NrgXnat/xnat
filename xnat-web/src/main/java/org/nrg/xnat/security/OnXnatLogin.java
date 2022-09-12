@@ -18,6 +18,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -102,6 +103,11 @@ public class OnXnatLogin extends SavedRequestAwareAuthenticationSuccessHandler {
     }
 
     private boolean shouldUpgradePassword(final String username) {
-        return _template.queryForObject(QUERY_UPGRADE_NEEDED, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class);
+        try {
+            return _template.queryForObject(QUERY_UPGRADE_NEEDED, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class);
+        } catch (EmptyResultDataAccessException e) {
+            log.warn("Checked for password encoding upgrade required, but couldn't find the username {}", username);
+            return false;
+        }
     }
 }

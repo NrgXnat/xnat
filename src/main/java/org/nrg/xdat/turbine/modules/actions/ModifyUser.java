@@ -106,10 +106,6 @@ public class ModifyUser extends SecureAction {
         if(StringUtils.isNotEmpty(newPassword)){
         	submitted.setVerified(Boolean.TRUE);
         	submitted.setPassword(newPassword);
-
-			if(newPassword!=null && newPassword.length()==64){
-				submitted.setSalt(oldUser.getSalt());
-			}
 		}else{
 			data.setMessage("Password cannot be empty.");
 			data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");

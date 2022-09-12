@@ -9,9 +9,6 @@
 
 package org.nrg.xdat.security.helpers;
 
-import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
-import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -36,7 +33,7 @@ import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.security.validators.PasswordValidatorChain;
+import org.nrg.xdat.security.validators.PasswordValidator;
 import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFTItem;
@@ -44,21 +41,20 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
-import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.encoding.PasswordEncoder;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -69,8 +65,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
+
+import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
+import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
 
 @SuppressWarnings({"WeakerAccess", "SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Slf4j
@@ -96,14 +93,14 @@ public class Users {
     public static final List<GrantedAuthority> AUTHORITIES_USER            = Collections.singletonList(AUTHORITY_USER);
     public static final String                 EXPRESSION_USERNAME         = "[A-Za-z][" + Patterns.ALPHANUMERIC_AND_DASHES + "]{0,63}";
     public static final String                 EXPRESSION_EMAIL            = "^[A-Za-z0-9_!#$%&'*+/=?`{|}~^-]+(?:\\.[A-Za-z0-9_!#$%&'*+/=?`{|}~^-]+)*@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*$";
-    public static final String                 EXPRESSION_COMBINED         = "^(?<username>" + EXPRESSION_USERNAME + ")[\\s]*<(?<email>" + EXPRESSION_EMAIL + ")>$";
+    public static final String                 EXPRESSION_COMBINED         = "^(?<username>" + EXPRESSION_USERNAME + ")\\s*<(?<email>" + EXPRESSION_EMAIL + ")>$";
     public static final Pattern                PATTERN_USERNAME            = Pattern.compile("^" + EXPRESSION_USERNAME + "$");
     public static final Pattern                PATTERN_EMAIL               = Pattern.compile("^" + EXPRESSION_EMAIL + "$");
     public static final Pattern                PATTERN_COMBINED            = Pattern.compile(EXPRESSION_COMBINED);
 
     /**
-     * Indicates whether the submitted username complies with requirements. Note that this doesn't check whether
-     * the username already exists on the system, just that it complies with XNAT's required format.
+     * Indicates whether the submitted username complies with requirements. Note that this doesn't check whether the
+     * username already exists on the system, just that it complies with XNAT's required format.
      *
      * @param username The username to check.
      *
@@ -114,8 +111,8 @@ public class Users {
     }
 
     /**
-     * Indicates whether the submitted email address complies with requirements. Note that this doesn't check whether or
-     * not the email is already used on the system, just that it complies with the required format.
+     * Indicates whether the submitted email address complies with requirements. Note that this doesn't check whether
+     * the email is already used on the system, just that it complies with the required format.
      *
      * @param email The email to check.
      *
@@ -153,6 +150,18 @@ public class Users {
     }
 
     /**
+     * Gets the password validator from the application context.
+     *
+     * @return The password validator.
+     */
+    public static PasswordValidator getPasswordValidator() {
+        if (_passwordValidator == null) {
+            _passwordValidator = XDAT.getContextService().getBean(PasswordValidator.class);
+        }
+        return _passwordValidator;
+    }
+
+    /**
      * Returns the currently configured user management service.  You can customize the implementation returned by
      * adding a new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured
      * package). You can change the default implementation returned via the security.userManagementService.default
@@ -163,14 +172,14 @@ public class Users {
     @Nonnull
     public static UserManagementServiceI getUserManagementService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
-        if (singleton == null) {
+        if (_userManagementService == null) {
             // First find out if it exists in the application context.
             final ContextService contextService = XDAT.getContextService();
             if (contextService != null) {
                 try {
-                    singleton = contextService.getBean(UserManagementServiceI.class);
-                    if (singleton != null) {
-                        return singleton;
+                    _userManagementService = contextService.getBean(UserManagementServiceI.class);
+                    if (_userManagementService != null) {
+                        return _userManagementService;
                     }
                 } catch (NoSuchBeanDefinitionException ignored) {
                     // This is OK, we'll just create it from the indicated class.
@@ -182,7 +191,7 @@ public class Users {
                 if (classes != null && classes.size() > 0) {
                     for (Class<?> clazz : classes) {
                         if (UserManagementServiceI.class.isAssignableFrom(clazz)) {
-                            singleton = (UserManagementServiceI) clazz.newInstance();
+                            _userManagementService = (UserManagementServiceI) clazz.newInstance();
                         }
                     }
                 }
@@ -191,19 +200,19 @@ public class Users {
             }
 
             //default to XDATUser implementation (unless a different default is configured)
-            if (singleton == null) {
+            if (_userManagementService == null) {
                 try {
                     final String className = XDAT.safeSiteConfigProperty("security.userManagementService.default", DEFAULT_USER_SERVICE);
-                    singleton = (UserManagementServiceI) Class.forName(className).newInstance();
+                    _userManagementService = (UserManagementServiceI) Class.forName(className).newInstance();
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                     log.error("", e);
                 }
             }
-            if (singleton == null) {
+            if (_userManagementService == null) {
                 throw new NrgServiceRuntimeException(NrgServiceError.UserServiceError, "Couldn't create an instance of the user management service.");
             }
         }
-        return singleton;
+        return _userManagementService;
     }
 
     public static GrantedAuthority getGrantedAuthority(final String role) {
@@ -230,7 +239,7 @@ public class Users {
 
     /**
      * Tries to get a user object from the submitted parameter. If the object's a {@link UserI} object, it just returns
-     * that. If it's a <b>String</b>, it tries to retrieve the user object with that username. Otherwise it returns the
+     * that. If it's a <b>String</b>, it tries to retrieve the user object with that username. Otherwise, it returns the
      * guest user.
      *
      * @param principal The principal to coerce into a {@link UserI} object.
@@ -312,7 +321,8 @@ public class Users {
     }
 
     /**
-     * Returns the user object for the system's primary administrator as configured in {@link SiteConfigPreferences#getPrimaryAdminUsername()}.
+     * Returns the user object for the system's primary administrator as configured in
+     * {@link SiteConfigPreferences#getPrimaryAdminUsername()}.
      *
      * @return The primary administrator.
      */
@@ -442,7 +452,8 @@ public class Users {
      *
      * @param user              The user object to be saved.
      * @param authenticatedUser The user saving the user object.
-     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null)
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if
+     *                          authenticatedUser is null)
      * @param event             The event metadata.
      *
      * @throws Exception When something goes wrong.
@@ -457,7 +468,8 @@ public class Users {
      *
      * @param user              The user object to be saved.
      * @param authenticatedUser The user saving the user object.
-     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null)
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if
+     *                          authenticatedUser is null)
      * @param event             The event details.
      *
      * @throws Exception When something goes wrong.
@@ -471,7 +483,8 @@ public class Users {
      *
      * @param user              The user object to be saved.
      * @param authenticatedUser The user saving the user object.
-     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null)
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if
+     *                          authenticatedUser is null)
      * @param event             The event details.
      *
      * @throws Exception When something goes wrong.
@@ -626,16 +639,6 @@ public class Users {
     }
 
     /**
-     * Return a random 64-character string for use as a salt
-     *
-     * @return A new random salt
-     */
-    @Nonnull
-    public static String createNewSalt() {
-        return createRandomString(64);
-    }
-
-    /**
      * Return a random string with the indicated number of characters.
      *
      * @return A new random string.
@@ -654,6 +657,7 @@ public class Users {
      *
      * @throws Exception When something goes wrong.
      */
+    @SuppressWarnings("RedundantThrows")
     public static Date getLastLogin(UserI user) throws Exception {
         try {
             return XDAT.getNamedParameterJdbcTemplate().queryForObject("SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id = :xdatUserId ORDER BY login_date DESC LIMIT 1", new MapSqlParameterSource("xdatUserId", user.getID()), Date.class);
@@ -663,7 +667,7 @@ public class Users {
     }
 
     /**
-     * Verify if this user account is allowed to login (enabled, verified, not locked, etc)
+     * Verify if this user account is allowed to log in (enabled, verified, not locked, etc)
      *
      * @param user The user account to verify.
      */
@@ -732,66 +736,85 @@ public class Users {
     }
 
     /**
-     * Tests password and salt for existing and updated user to determine what value should be set when user is saved.
-     * The password value will always be encoded using the returned salt.
+     * Tests password for existing and updated user to determine what value should be set when user is saved.
      *
      * @param existing The existing user.
      * @param updated  The updated user.
      *
-     * @return The password and salt attributes to be set returned in a map.
+     * @return The password to be set.
      *
      * @throws PasswordComplexityException If the password doesn't meet the system's specified complexity requirements.
      */
-    public static Map<UserAttributes, String> getUpdatedPassword(final UserI existing, final UserI updated) throws PasswordComplexityException {
+    public static String getUpdatedPassword(final UserI existing, final UserI updated) throws PasswordComplexityException {
         final String  savedPassword    = existing.getPassword();
-        final String  savedSalt        = existing.getSalt();
         final boolean hasSavedPassword = StringUtils.isNotBlank(savedPassword);
-        final boolean hasSavedSalt     = StringUtils.isNotBlank(savedSalt);
+        final String  updatedPassword  = updated.getPassword();
 
-        final String  updatedPassword    = updated.getPassword();
-        final boolean hasUpdatedPassword = StringUtils.isNotBlank(updatedPassword) && !StringUtils.equals(savedPassword, updatedPassword);
-
-        // If there's no saved password, no saved salt, or an updated password, create a new salt whether or not we already have one.
-        final String saltToSet = !hasSavedPassword || !hasSavedSalt || hasUpdatedPassword ? Users.createNewSalt() : savedSalt;
-
-        // check if the password is being updated (also do this if password remains the same but salt is empty)
-        final String passwordToSet;
-
-        if (hasUpdatedPassword) {
+        // check if the password is being updated
+        if (!getPasswordEncoder().matches(updatedPassword, savedPassword)) {
             // The user specified a new password, test for validity.
-            final String message = XDAT.getContextService().getBean(PasswordValidatorChain.class).isValid(updatedPassword, updated);
-            if (StringUtils.isNotBlank(message)) {
-                throw new PasswordComplexityException(message);
-            }
-
-            passwordToSet = encode(updatedPassword, saltToSet);
-        } else if (!hasSavedPassword) {
-            // If the user didn't specify a new password and there's no saved password, generate a new random one.
-            passwordToSet = encode(createRandomString(32), saltToSet);
-        } else if (!hasSavedSalt) {
-            // If there's no saved salt, the password is plain text.
-            passwordToSet = encode(savedPassword, saltToSet);
-        } else {
-            passwordToSet = savedPassword;
+            validatePassword(updated, updatedPassword);
+            return encode(updatedPassword);
         }
 
-        return new HashMap<UserAttributes, String>() {{
-            put(UserAttributes.password, passwordToSet);
-            put(UserAttributes.salt, saltToSet);
-        }};
+        // If the user didn't specify a new password and there's no saved password, generate a new random one.
+        return !hasSavedPassword ? encode(createRandomString(32)) : savedPassword;
     }
 
-    public static String encode(final String value, final String salt) {
-        return _encoder.encodePassword(value, salt);
+    /**
+     * Encodes the given value using the password encoder from the application context.
+     *
+     * @param value The value to encode
+     * @param salt  The salt to use for encoding
+     *
+     * @return The encoded value
+     *
+     * @since 1.8.6
+     * @deprecated Use {@link #encode(String)} instead.
+     */
+    @Deprecated
+    public static String encode(final String value, @SuppressWarnings("unused") final String salt) {
+        return encode(value);
     }
 
-    public static boolean isPasswordValid(final String encoded, final String plaintext, final String salt) {
-        return _encoder.isPasswordValid(encoded, plaintext, salt);
+    /**
+     * Encodes the given value using the password encoder from the application context.
+     *
+     * @param value The value to encode
+     *
+     * @return The encoded value
+     */
+    public static String encode(final String value) {
+        return getPasswordEncoder().encode(value);
     }
 
-    @SuppressWarnings("deprecation")
-    public static PasswordEncoder getEncoder() {
-        return _encoder;
+    /**
+     * Tests whether the submitted plaintext password matches the encoded password.
+     *
+     * @param encoded   The encoded (i.e. existing) password
+     * @param plaintext The plain-text (i.e. submitted) password
+     * @param salt      The salt to use for encoding the plain-text password
+     *
+     * @return Returns <b>true</b> if the encoded plain-text password matches the existing encoded password.
+     *
+     * @since 1.8.6
+     * @deprecated Use {@link #passwordMatches(String, String)} instead.
+     */
+    @Deprecated
+    public static boolean isPasswordValid(final String encoded, final String plaintext, @SuppressWarnings("unused") final String salt) {
+        return passwordMatches(encoded, plaintext);
+    }
+
+    /**
+     * Tests whether the submitted plaintext password matches the encoded password.
+     *
+     * @param encoded   The encoded (i.e. existing) password
+     * @param plaintext The plain-text (i.e. submitted) password
+     *
+     * @return Returns <b>true</b> if the encoded plain-text password matches the existing encoded password.
+     */
+    public static boolean passwordMatches(final String encoded, final String plaintext) {
+        return getPasswordEncoder().matches(plaintext, encoded);
     }
 
     /**
@@ -833,11 +856,25 @@ public class Users {
         return grantedAuthorities;
     }
 
+    private static void validatePassword(UserI updated, String updatedPassword) throws PasswordComplexityException {
+        final String message = getPasswordValidator().isValid(updatedPassword, updated);
+        if (StringUtils.isNotBlank(message)) {
+            throw new PasswordComplexityException(message);
+        }
+    }
+
     private static UserDataCache getUserDataCache() {
         if (_cache == null) {
             _cache = XDAT.getContextService().getBean(UserDataCache.class);
         }
         return _cache;
+    }
+
+    private static PasswordEncoder getPasswordEncoder() {
+        if (_passwordEncoder == null) {
+            _passwordEncoder = XDAT.getContextService().getBean(PasswordEncoder.class);
+        }
+        return _passwordEncoder;
     }
 
     private static Map<Integer, String> getCachedUserIds() {
@@ -861,11 +898,12 @@ public class Users {
     private static final String NODE_ID           = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".node_id";
     private static final String SESSION_ID        = XdatUserLogin.SCHEMA_ELEMENT_NAME + ".session_id";
 
-    @SuppressWarnings("deprecation")
-    private static final ShaPasswordEncoder            _encoder             = new ShaPasswordEncoder(256);
     private static final Map<Integer, String>          _users               = new ConcurrentHashMap<>();
     private static final Map<String, GrantedAuthority> _authorities         = new HashMap<>();
     private static final String                        DEFAULT_USER_SERVICE = "org.nrg.xdat.security.XDATUserMgmtServiceImpl";
-    private static       UserManagementServiceI        singleton            = null;
-    private static       UserDataCache                 _cache               = null;
+
+    private static UserManagementServiceI _userManagementService = null;
+    private static UserDataCache          _cache                 = null;
+    private static PasswordEncoder        _passwordEncoder       = null;
+    private static PasswordValidator      _passwordValidator     = null;
 }

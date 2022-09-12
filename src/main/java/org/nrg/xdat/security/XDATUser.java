@@ -160,10 +160,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             throw new PasswordAuthenticationException(getUsername());
         }
 
-        final String salt = getStringProperty("salt");
-
         // encryption
-        if (Users.isPasswordValid(password, submitted, salt)) {
+        if (Users.passwordMatches(password, submitted)) {
             return true;
         }
         throw new PasswordAuthenticationException(getUsername());

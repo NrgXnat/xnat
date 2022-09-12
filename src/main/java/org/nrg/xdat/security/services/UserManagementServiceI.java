@@ -29,6 +29,8 @@ import java.util.Map;
  * @author Tim Olsen &lt;tim@deck5consulting.com&gt;
  */
 public interface UserManagementServiceI {
+    String QUERY_CHECK_USER_EXISTS = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
+
     /**
      * Return a freshly created (empty) user.
      *
@@ -109,9 +111,8 @@ public interface UserManagementServiceI {
     String getUserDataType();
 
     /**
-     * Return a freshly created user object populated with the passed parameters.
-     *
-     * Object may or may not already exist in the database.
+     * Return a freshly created user object populated with the passed parameters. Object may or
+     * may not already exist in the database.
      *
      * @param properties The properties for the user to create or retrieve.
      *
@@ -134,7 +135,8 @@ public interface UserManagementServiceI {
      *
      * @param user              The user to save.
      * @param authenticatedUser The user actually performing the save operation.
-     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null)
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if
+     *                          authenticatedUser is null)
      * @param event             The event metadata for the save operation.
      *
      * @throws Exception When something goes wrong.
@@ -146,7 +148,8 @@ public interface UserManagementServiceI {
      *
      * @param user              The user to save.
      * @param authenticatedUser The user actually performing the save operation.
-     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null)
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if
+     *                          authenticatedUser is null)
      * @param event             The event metadata for the save operation.
      * @param newUserAuth       UserAuth object associated with this user (null defaults to localdb)
      *
@@ -159,7 +162,8 @@ public interface UserManagementServiceI {
      *
      * @param user              The user to save.
      * @param authenticatedUser The user actually performing the save operation.
-     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null).
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if
+     *                          authenticatedUser is null).
      * @param event             The event data for the save operation.
      *
      * @throws Exception When something goes wrong.
@@ -171,7 +175,8 @@ public interface UserManagementServiceI {
      *
      * @param user              The user to save.
      * @param authenticatedUser The user actually performing the save operation.
-     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if authenticatedUser is null).
+     * @param overrideSecurity  Whether to check if this user can modify this user object (should be false if
+     *                          authenticatedUser is null).
      * @param event             The event data for the save operation.
      * @param newUserAuth       UserAuth object associated with this user (null defaults to localdb)
      *

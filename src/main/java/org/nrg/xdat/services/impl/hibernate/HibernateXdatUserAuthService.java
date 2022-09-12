@@ -24,15 +24,12 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityMessageSource;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -45,11 +42,6 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     @Autowired
     public void setSiteConfigPreferences(final SiteConfigPreferences preferences) {
         _preferences = preferences;
-    }
-
-    @Autowired
-    public void setUserManagementService(final UserManagementServiceI userManagementService) {
-        _userManagementService = userManagementService;
     }
 
     @Autowired
@@ -78,7 +70,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     @Override
     public String getXdatUsernameByAuthNameAndProvider(final String user, final String authMethod, final String authMethodId) {
         final String xdatUsername = getDao().getUsernameByNameAndAuth(user, authMethod, authMethodId);
-        return _userManagementService.exists(xdatUsername) ? xdatUsername : null;
+        return exists(xdatUsername) ? xdatUsername : null;
     }
 
     @Override
@@ -110,7 +102,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     public List<XdatUserAuth> getUsersByXdatUsername(String xdatUser) {
         final XdatUserAuth example = new XdatUserAuth();
         example.setXdatUsername(xdatUser);
-        return _dao.findByExample(example, EXCLUSION_PROPERTIES_XDATUSER);
+        return _dao.findByExample(example, EXCLUSION_PROPERTIES_XDAT_USER);
     }
 
     @Override
@@ -214,6 +206,18 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         }
     }
 
+    /**
+     * Reimplementation of {@link UserManagementServiceI#exists(String)} to prevent circular dependency on
+     * initialization.
+     *
+     * @param username The username to check.
+     *
+     * @return Returns <b>true</b> if a user with the specified name exists on the system, <b>false</b> otherwise.
+     */
+    private boolean exists(final String username) {
+        return _jdbcTemplate.queryForObject(UserManagementServiceI.QUERY_CHECK_USER_EXISTS, new String[]{username}, Boolean.class);
+    }
+
     @Nullable
     private XdatUserAuth getXdatUserAuthByExample(final String auth, final String id, final XdatUserAuth example, final String[] exclusionProperties) {
         example.setAuthMethod(auth);
@@ -225,14 +229,11 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     }
 
     private List<GrantedAuthority> loadUserAuthorities(String username) {
-        return _jdbcTemplate.query("SELECT login AS username, 'ROLE_USER' AS authority FROM xdat_user WHERE login = ?", new String[]{username}, new RowMapper<GrantedAuthority>() {
-            public GrantedAuthority mapRow(final ResultSet results, final int rowNum) throws SQLException {
-                final String           roleName  = results.getString(2);
-                final GrantedAuthority authority = Users.getGrantedAuthority(roleName);
-
-                log.debug("Found authority: {} for role name: {}", authority.getAuthority(), roleName);
-                return authority;
-            }
+        return _jdbcTemplate.query("SELECT login AS username, 'ROLE_USER' AS authority FROM xdat_user WHERE login = ?", new String[]{username}, (results, rowNum) -> {
+            final String           roleName  = results.getString(2);
+            final GrantedAuthority authority = Users.getGrantedAuthority(roleName);
+            log.debug("Found authority: {} for role name: {}", authority.getAuthority(), roleName);
+            return authority;
         });
     }
 
@@ -264,7 +265,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         final XdatUserAuth example = new XdatUserAuth();
         example.setXdatUsername(username);
         example.setLockoutTime(null);
-        return getUsersFromUserAuths(_dao.findByExample(example, EXCLUSION_PROPERTIES_XDATUSERLOCK));
+        return getUsersFromUserAuths(_dao.findByExample(example, EXCLUSION_PROPERTIES_XDAT_USER_LOCK));
     }
 
     private List<UserI> getUsersFromUserAuths(final List<XdatUserAuth> userAuths) {
@@ -287,11 +288,10 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     private static final String[] EXCLUSION_PROPERTIES_USERNAME             = AbstractHibernateEntity.getExcludedProperties("xdatUsername", "verified", "authMethodId", "failedLoginAttempts", "authMethod", "lastSuccessfulLogin", "passwordUpdated", "lockoutTime");
     private static final String[] EXCLUSION_PROPERTIES_USERNAME_AUTH_METHOD = AbstractHibernateEntity.getExcludedProperties("xdatUsername", "failedLoginAttempts", "lastSuccessfulLogin", "lastLoginAttempt", "passwordUpdated", "lockoutTime", "authorities");
     private static final String[] EXCLUSION_PROPERTIES_XDAT_USER_DETAILS    = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "failedLoginAttempts", "lockoutTime");
-    private static final String[] EXCLUSION_PROPERTIES_XDATUSER             = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "authMethodId", "failedLoginAttempts", "authMethod", "lastSuccessfulLogin", "passwordUpdated", "lockoutTime");
-    private static final String[] EXCLUSION_PROPERTIES_XDATUSERLOCK         = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "authMethodId", "failedLoginAttempts", "authMethod", "lastSuccessfulLogin", "passwordUpdated");
+    private static final String[] EXCLUSION_PROPERTIES_XDAT_USER            = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "authMethodId", "failedLoginAttempts", "authMethod", "lastSuccessfulLogin", "passwordUpdated", "lockoutTime");
+    private static final String[] EXCLUSION_PROPERTIES_XDAT_USER_LOCK       = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "authMethodId", "failedLoginAttempts", "authMethod", "lastSuccessfulLogin", "passwordUpdated");
 
-    private SiteConfigPreferences  _preferences;
-    private UserManagementServiceI _userManagementService;
-    private XdatUserAuthDAO        _dao;
-    private JdbcTemplate           _jdbcTemplate;
+    private SiteConfigPreferences _preferences;
+    private XdatUserAuthDAO       _dao;
+    private JdbcTemplate          _jdbcTemplate;
 }

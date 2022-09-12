@@ -9,7 +9,6 @@
 
 package org.nrg.xdat.security;
 
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
@@ -23,7 +22,7 @@ import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.security.validators.PasswordValidatorChain;
+import org.nrg.xdat.security.validators.PasswordValidator;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.event.EventDetails;
@@ -31,17 +30,18 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.security.UserAttributes;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
 import javax.annotation.Nonnull;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 @Service
@@ -114,13 +114,13 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
 
     @Override
     public List<UserI> getUsers() {
-        return Lists.transform(XdatUser.getAllXdatUsers(null, false), XdatUserToUserITransform.getInstance());
+        return convertXdatUsers(XdatUser.getAllXdatUsers(null, false));
     }
 
     @Override
     @Nonnull
     public List<UserI> getUsersByEmail(String email) {
-        return Lists.transform(XdatUser.getXdatUsersByField("xdat:user.email", email, null, true), XdatUserToUserITransform.getInstance());
+        return convertXdatUsers(XdatUser.getXdatUsersByField("xdat:user.email", email, null, true));
     }
 
     @Override
@@ -164,12 +164,11 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
             if (id.equals(user.getLogin())) {
                 //this was a new user or didn't include the user's id.
                 //before we save the workflow entry, we should replace the login with the ID.
-                Integer userId = Users.getUserId(user.getLogin());
-                if (userId != null) {
-                    wrk.setId(user.getID().toString());
-                } else {
+                final Integer userId = Users.getUserId(user.getLogin());
+                if (userId == null) {
                     throw new Exception("Couldn't find a user for the indicated login: " + user.getLogin());
                 }
+                wrk.setId(user.getID().toString());
             }
 
             PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
@@ -199,21 +198,18 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
         } catch (Exception ignored) {
         }
 
-        final XdatUserAuthService userAuthService = XDAT.getXdatUserAuthService();
         if (existing == null) {
             // NEW USER
             if (overrideSecurity || Roles.isSiteAdmin(authenticatedUser)) {
                 final String password = user.getPassword();
                 if (StringUtils.isNotBlank(password)) {
-                    final String message = XDAT.getContextService().getBean(PasswordValidatorChain.class).isValid(password, null);
+                    final String message = getPasswordValidator().isValid(password, null);
                     if (StringUtils.isNotBlank(message)) {
                         throw new PasswordComplexityException(message);
                     }
                     //this is set to null instead of authenticatedUser because new users should be able to use any password even those that have recently been used by other users.
-                    final String salt = StringUtils.defaultIfBlank(user.getSalt(), Users.createNewSalt());
-                    user.setSalt(salt);
                     if (user.getPassword() == null || user.getPassword().length() != 64) {
-                        user.setPassword(Users.encode(password, salt));
+                        user.setPassword(getPasswordEncoder().encode(password));
                     }
                 }
 
@@ -221,15 +217,13 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
                 if (newUserAuth == null) {
                     newUserAuth = new XdatUserAuth(user.getLogin(), XdatUserAuthService.LOCALDB);
                 }
-                userAuthService.create(newUserAuth);
+                getXdatUserAuthService().create(newUserAuth);
             } else {
                 throw new InvalidPermissionException("Unauthorized user modification attempt");
             }
         } else {
-            final Map<UserAttributes, String> passwordAndSalt = Users.getUpdatedPassword(existing, user);
-
-            user.setPassword(passwordAndSalt.get(UserAttributes.password));
-            user.setSalt(passwordAndSalt.get(UserAttributes.salt));
+            final String password = Users.getUpdatedPassword(existing, user);
+            user.setPassword(password);
 
             if (overrideSecurity) {
                 SaveItemHelper.authorizedSave(((XDATUser) user), authenticatedUser, true, false, event);
@@ -241,7 +235,6 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
                 XDATUser toSave = (XDATUser) createUser();
                 toSave.setLogin(authenticatedUser.getLogin());
                 toSave.setPassword(user.getPassword());
-                toSave.setSalt(user.getSalt());
                 toSave.setEmail(user.getEmail());
 
                 if (!user.isEnabled()) {
@@ -257,7 +250,6 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
                 SaveItemHelper.authorizedSave(toSave, authenticatedUser, false, false, event);
 
                 authenticatedUser.setPassword(user.getPassword());
-                authenticatedUser.setSalt(user.getSalt());
                 authenticatedUser.setEmail(user.getEmail());
 
                 if (user.isVerified() != null) {
@@ -273,10 +265,10 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
 
             // This means the password was actually updated, so reset the password updated date and failed login attempts.
             if (!StringUtils.equals(existing.getPassword(), user.getPassword())) {
-                final XdatUserAuth auth = userAuthService.getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
+                final XdatUserAuth auth = getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
                 if (auth != null) {
                     auth.setPasswordUpdated(new Date());
-                    userAuthService.resetFailedLogins(auth);
+                    getXdatUserAuthService().resetFailedLogins(auth);
                 }
             }
         }
@@ -317,10 +309,48 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
         return _guestId;
     }
 
-    private static final String QUERY_CHECK_USER_EXISTS = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
+    private XdatUserAuthService getXdatUserAuthService() {
+        if (_userAuthService == null) {
+            _userAuthService = XDAT.getXdatUserAuthService();
+        }
+        return _userAuthService;
+    }
+
+    private PasswordEncoder getPasswordEncoder() {
+        if (_passwordEncoder == null) {
+            _passwordEncoder = XDAT.getContextService().getBeanSafely(PasswordEncoder.class);
+        }
+        return _passwordEncoder;
+    }
+
+    private PasswordValidator getPasswordValidator() {
+        if (_passwordValidator == null) {
+            _passwordValidator = XDAT.getContextService().getBeanSafely(PasswordValidator.class);
+        }
+        return _passwordValidator;
+    }
+
+    private static List<UserI> convertXdatUsers(final List<XdatUser> users) {
+        return users.stream()
+                    .map(XDATUserMgmtServiceImpl::convertXdatUser)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toList());
+    }
+
+    private static Optional<UserI> convertXdatUser(final XdatUser user) {
+        try {
+            return user == null ? Optional.empty() : Optional.of(new XDATUser(user.getItem()));
+        } catch (UserInitException e) {
+            return Optional.empty();
+        }
+    }
 
     private final NamedParameterJdbcTemplate _template;
 
-    private UserI   _guest;
-    private Integer _guestId;
+    private XdatUserAuthService _userAuthService;
+    private PasswordEncoder     _passwordEncoder;
+    private PasswordValidator   _passwordValidator;
+    private UserI               _guest;
+    private Integer             _guestId;
 }

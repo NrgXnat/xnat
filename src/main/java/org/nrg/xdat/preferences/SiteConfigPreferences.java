@@ -484,11 +484,29 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    /**
+     * Indicates whether passwords must be salted.
+     *
+     * @return Whether passwords must be salted.
+     *
+     * @since 1.8.6
+     * @deprecated Passwords are automatically salted by the security framework.
+     */
+    @Deprecated
     @NrgPreference(defaultValue = "false")
     public boolean getRequireSaltedPasswords() {
         return getBooleanValue("requireSaltedPasswords");
     }
 
+    /**
+     * Sets whether passwords must be salted.
+     *
+     * @param requireSaltedPasswords Whether passwords must be salted.
+     *
+     * @since 1.8.6
+     * @deprecated Passwords are automatically salted by the security framework.
+     */
+    @Deprecated
     public void setRequireSaltedPasswords(final boolean requireSaltedPasswords) {
         try {
             setBooleanValue(requireSaltedPasswords, "requireSaltedPasswords");

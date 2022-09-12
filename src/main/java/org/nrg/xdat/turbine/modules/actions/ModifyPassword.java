@@ -63,8 +63,8 @@ public class ModifyPassword extends ModifyAction {
             return;
         }
 
-        final String login = found.getLogin();
-        final UserI existing = found.getID() != null ? Users.getUser(found.getID()) : StringUtils.isNotBlank(login) ? Users.getUser(login) : null;
+        final String login    = found.getLogin();
+        final UserI  existing = found.getID() != null ? Users.getUser(found.getID()) : StringUtils.isNotBlank(login) ? Users.getUser(login) : null;
 
         if (existing == null) {
             redirect(false, "Unable to identify user for password modification.");
@@ -78,12 +78,13 @@ public class ModifyPassword extends ModifyAction {
         if (data.getSession().getAttribute("forgot") == null) {
             final boolean specifiedCurrentPassword = StringUtils.isNotBlank(currentPassword);
             final boolean hasCurrentPassword       = StringUtils.isNotBlank(user.getPassword());
-            if ((!specifiedCurrentPassword && hasCurrentPassword) || StringUtils.isBlank(updatedPassword) || (StringUtils.isNotBlank(encodedPassword) && !Users.isPasswordValid(encodedPassword, currentPassword, existing.getSalt()))) {
-                //User correctly entered their old password or they forgot their old password
+            final boolean hasUpdatedPassword       = StringUtils.isNotBlank(updatedPassword);
+            if (!specifiedCurrentPassword && hasCurrentPassword || !hasUpdatedPassword || StringUtils.isNotBlank(encodedPassword) && !Users.passwordMatches(encodedPassword, currentPassword)) {
+                //User correctly entered their old password, or they forgot their old password
                 final StringBuilder message = new StringBuilder("Your password was not updated: ");
-                if (!specifiedCurrentPassword || StringUtils.isBlank(updatedPassword)) {
+                if (!specifiedCurrentPassword || !hasUpdatedPassword) {
                     message.append("you must provide values for both your current and updated password.");
-                } else if (!Users.isPasswordValid(encodedPassword, currentPassword, existing.getSalt())) {
+                } else {
                     message.append("you entered an incorrect value for your current password.");
                 }
                 redirect(false, message.toString());
@@ -111,7 +112,7 @@ public class ModifyPassword extends ModifyAction {
                 //need to update password expiration
                 final XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(existing.getUsername(), XdatUserAuthService.LOCALDB, "");
                 auth.setPasswordUpdated(new Date());
-                if(XDAT.getSiteConfigPreferences().getCanResetFailedLoginsWithForgotPassword()) {
+                if (XDAT.getSiteConfigPreferences().getCanResetFailedLoginsWithForgotPassword()) {
                     auth.resetFailedLogins();
                 }
                 XDAT.getXdatUserAuthService().update(auth);
@@ -129,7 +130,7 @@ public class ModifyPassword extends ModifyAction {
         } catch (InvalidPermissionException e) {
             if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
                 String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
-                String type = "attempted. User attempted to modify a user account other than thier own. This typically requires tampering with the HTTP form submission process.";
+                String type = "attempted. User attempted to modify a user account other than their own. This typically requires tampering with the HTTP form submission process.";
                 body = body.replaceAll("TYPE", type);
                 body = body.replaceAll("USER_DETAILS", "");
                 notifyAdmin(user, data, 403, "Possible Authorization Bypass event", body);

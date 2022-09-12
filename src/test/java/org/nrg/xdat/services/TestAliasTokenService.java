@@ -147,7 +147,6 @@ public class TestAliasTokenService {
         properties.put("password", password);
         properties.put("enabled", true);
         properties.put("verified", true);
-        properties.put("salt", UUID.randomUUID());
         properties.put("active", true);
         return properties;
     }

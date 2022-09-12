@@ -34,6 +34,15 @@ public interface UserI extends UserDetails,Serializable{
     String getPassword();
     boolean isEnabled();
     Boolean isVerified();
+
+    /**
+     * The user's salt
+     *
+     * @return The user's salt
+     *
+     * @deprecated Passwords are automatically salted by the security framework.
+     */
+    @Deprecated
     String getSalt();
     boolean isActive()throws MetaDataException;
 
@@ -44,6 +53,14 @@ public interface UserI extends UserDetails,Serializable{
     void setFirstname(String firstname);
     void setLastname(String lastname);
     void setPassword(String encodePassword);
+    /**
+     * Sets the user's salt
+     *
+     * @param salt The value to set for the user's salt
+     *
+     * @deprecated Passwords are automatically salted by the security framework.
+     */
+    @Deprecated
     void setSalt(String salt);
     void setPrimaryPassword_encrypt(Object b);
     void setEnabled(Object enabled);

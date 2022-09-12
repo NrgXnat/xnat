@@ -24,6 +24,7 @@ public enum UserAttributes {
     password,
     enabled,
     verified,
+    @Deprecated
     salt,
     active,
     lastModified,

@@ -36,11 +36,9 @@ import java.util.Objects;
 @Slf4j
 public class XMLScreen extends XDATRawScreen {
     private static final String USER_PASSWORD_PROPERTY       = "primary_password";
-    private static final String USER_SALT_PROPERTY           = "salt";
     private static final String LOGIN_SESSION_ID_PROPERTY    = "session_id";
     private static final String LOGIN_IP_ADDRESS_PROPERTY    = "ip_address";
     private static final String LOGIN_USER_PASSWORD_PROPERTY = "user/primary_password";
-    private static final String LOGIN_USER_SALT_PROPERTY     = "user/salt";
 
     /**
      * Set the content type to Xml. (see RawScreen)
@@ -95,8 +93,7 @@ public class XMLScreen extends XDATRawScreen {
     }
 
     /**
-     * Removes or clears properties that may compromise security, e.g. session IDs, IP addresses, passwords
-     * and salts, and so on.
+     * Removes or clears properties that may compromise security, e.g. session IDs, IP addresses, passwords, and so on.
      *
      * @param item The item to be scrubbed.
      *
@@ -105,11 +102,11 @@ public class XMLScreen extends XDATRawScreen {
     private static ItemI scrubItem(final ItemI item) {
         switch (item.getXSIType()) {
             case XdatUser.SCHEMA_ELEMENT_NAME:
-                clearProperties(item, USER_PASSWORD_PROPERTY, USER_SALT_PROPERTY);
+                clearProperties(item, USER_PASSWORD_PROPERTY);
                 break;
 
             case XdatUserLogin.SCHEMA_ELEMENT_NAME:
-                clearProperties(item, LOGIN_SESSION_ID_PROPERTY, LOGIN_IP_ADDRESS_PROPERTY, LOGIN_USER_PASSWORD_PROPERTY, LOGIN_USER_SALT_PROPERTY);
+                clearProperties(item, LOGIN_SESSION_ID_PROPERTY, LOGIN_IP_ADDRESS_PROPERTY, LOGIN_USER_PASSWORD_PROPERTY);
                 break;
 
             default:

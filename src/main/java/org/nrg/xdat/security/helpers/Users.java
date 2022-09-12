@@ -750,6 +750,11 @@ public class Users {
         final boolean hasSavedPassword = StringUtils.isNotBlank(savedPassword);
         final String  updatedPassword  = updated.getPassword();
 
+        // No new password specified or passwords are equal so return saved password.
+        if (StringUtils.isBlank(updatedPassword) || StringUtils.equals(savedPassword, updatedPassword)) {
+            return savedPassword;
+        }
+
         // check if the password is being updated
         if (!getPasswordEncoder().matches(updatedPassword, savedPassword)) {
             // The user specified a new password, test for validity.

@@ -369,8 +369,7 @@ public class UsersApi extends AbstractXapiRestController {
 
         // Don't do password compare: we can't.
         if (StringUtils.isNotBlank(model.getPassword())) {
-            if (!adminUpdate && (StringUtils.isBlank(model.getCurrentPassword()) ||
-                    !Users.isPasswordValid(user.getPassword(), model.getCurrentPassword(), user.getSalt()))) {
+            if (!adminUpdate && (StringUtils.isBlank(model.getCurrentPassword()) || !Users.passwordMatches(user.getPassword(), model.getCurrentPassword()))) {
                 throw new XapiException(HttpStatus.BAD_REQUEST, "Current password needed to update password");
             }
             user.setPassword(model.getPassword());
@@ -462,7 +461,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "User not found."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "active/{username}", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.User)
-    public List<String> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable @Username final String username) throws InitializationException, UserNotFoundException, UserInitException, NotModifiedException {
+    public List<String> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException, NotModifiedException {
         final UserI  user;
         final String currentSessionId;
         if (StringUtils.equals(getSessionUser().getUsername(), username)) {
@@ -636,7 +635,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/roles", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Admin)
     public ResponseEntity<Collection<String>> usersIdAddRoles(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable @Username final String username,
-                                                              @ApiParam(value = "The user's new roles.", required = true) @RequestBody final List<String> roles) throws NotFoundException, InitializationException, UserNotFoundException, UserInitException {
+                                                              @ApiParam(value = "The user's new roles.", required = true) @RequestBody final List<String> roles) throws UserNotFoundException, UserInitException {
         final UserI user = getUserManagementService().getUser(username);
 
         final Collection<String> failed = new ArrayList<>();

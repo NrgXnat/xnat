@@ -9,13 +9,10 @@
 
 package org.nrg.xnat.initialization;
 
-import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
-import static org.nrg.xdat.security.helpers.Users.DEFAULT_GUEST_USERNAME;
-import static org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.LegacySha256PasswordEncoder;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
@@ -45,7 +42,6 @@ import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.ReflectionSaltSource;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -54,6 +50,9 @@ import org.springframework.security.config.http.ChannelAttributeFactory;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.access.channel.ChannelDecisionManagerImpl;
 import org.springframework.security.web.access.channel.ChannelProcessingFilter;
@@ -61,6 +60,7 @@ import org.springframework.security.web.access.channel.InsecureChannelProcessor;
 import org.springframework.security.web.access.channel.SecureChannelProcessor;
 import org.springframework.security.web.access.intercept.DefaultFilterInvocationSecurityMetadataSource;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
@@ -73,9 +73,13 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.RequestContextFilter;
 
-import java.util.*;
 import javax.servlet.SessionCookieConfig;
 import javax.sql.DataSource;
+import java.util.*;
+
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
+import static org.nrg.xdat.security.helpers.Users.DEFAULT_GUEST_USERNAME;
+import static org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED;
 
 @Configuration
 @EnableWebSecurity
@@ -83,7 +87,9 @@ import javax.sql.DataSource;
 @Slf4j
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
-    public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService, final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource, final NamedParameterJdbcTemplate template, final DataSource dataSource, final SecurityPreferences securityPreferences) {
+    public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService,
+                          final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource,
+                          final NamedParameterJdbcTemplate template, final DataSource dataSource, final SecurityPreferences securityPreferences) {
         _preferences = preferences;
         _appInfo = appInfo;
         _aliasTokenService = aliasTokenService;
@@ -137,8 +143,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public OnXnatLogin logUserLogin() {
-        return new OnXnatLogin();
+    public AuthenticationSuccessHandler authenticationSuccessHandler() {
+        return new OnXnatLogin(_template);
     }
 
     @Bean
@@ -185,7 +191,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public XnatExpiredPasswordFilter expiredPasswordFilter(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final AliasTokenService aliasTokenService, final DateValidation dateValidation) {
-        XnatExpiredPasswordFilter filter =  new XnatExpiredPasswordFilter(preferences, jdbcTemplate, aliasTokenService, dateValidation);
+        XnatExpiredPasswordFilter filter = new XnatExpiredPasswordFilter(preferences, jdbcTemplate, aliasTokenService, dateValidation);
         filter.setChangePasswordPath("/app/template/XDATScreen_UpdateUser.vm");
         filter.setChangePasswordDestination("/app/action/ModifyPassword");
         filter.setLogoutDestination("/app/action/LogoutUser");
@@ -219,15 +225,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public AuthenticationProvider xnatDatabaseAuthenticationProvider() {
-        final ReflectionSaltSource saltSource = new ReflectionSaltSource();
-        saltSource.setUserPropertyToUse("salt");
+    public PasswordEncoder passwordEncoder() {
+        final DelegatingPasswordEncoder encoder = (DelegatingPasswordEncoder) PasswordEncoderFactories.createDelegatingPasswordEncoder();
+        encoder.setDefaultPasswordEncoderForMatches(new LegacySha256PasswordEncoder());
+        return encoder;
+    }
 
-        final XnatDatabaseAuthenticationProvider sha2DatabaseAuthProvider = new XnatDatabaseAuthenticationProvider(_dbAuthProviderName, _aliasTokenService);
-        sha2DatabaseAuthProvider.setUserDetailsService(userDetailsService());
-        sha2DatabaseAuthProvider.setPasswordEncoder(Users.getEncoder());
-        sha2DatabaseAuthProvider.setSaltSource(saltSource);
-        return sha2DatabaseAuthProvider;
+    @Bean
+    public AuthenticationProvider xnatDatabaseAuthenticationProvider() {
+        final XnatDatabaseAuthenticationProvider authenticationProvider = new XnatDatabaseAuthenticationProvider(_dbAuthProviderName, _aliasTokenService);
+        authenticationProvider.setUserDetailsService(userDetailsService());
+        authenticationProvider.setPasswordEncoder(passwordEncoder());
+        return authenticationProvider;
     }
 
     @Bean

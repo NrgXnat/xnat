@@ -598,15 +598,6 @@ passwords:
             validation: interval onblur
             description: >
                 Interval for which users cannot reuse an old password of theirs. Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
-        requireSaltedPasswords:
-            kind: panel.input.switchbox
-            id: require-salted-passwords
-            name: requireSaltedPasswords
-            label: Require Passwords To Be Salted
-            onText: Required
-            offText: Not Required
-            description: >
-                If set to "Required", any user whose password is not salted in the database will be required to set a new password.
         passwordsjs:
             tag: script|src=/scripts/xnat/admin/passwords.js
 

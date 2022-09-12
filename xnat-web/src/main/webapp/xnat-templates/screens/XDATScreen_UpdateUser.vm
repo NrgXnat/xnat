@@ -2,7 +2,7 @@
 #* @vtlvariable name="success" type="java.lang.Boolean" *#
 #* @vtlvariable name="expired" type="java.lang.Boolean" *#
 #* @vtlvariable name="forgot" type="java.lang.Boolean" *#
-#* @vtlvariable name="missingSalt" type="java.lang.Boolean" *#
+#* @vtlvariable name="unathenticated" type="java.lang.Boolean" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #if ($expired || $forgot || $unathenticated)
@@ -19,7 +19,7 @@
 <div class="$msgClass">$data.message</div><br>
 #end
 
-#if($expired || $missingSalt)
+#if($expired)
     <div class="alert">Your password has expired. Please create a new one.</div>
     #parse("screens/XDATScreen_password.vm")
 

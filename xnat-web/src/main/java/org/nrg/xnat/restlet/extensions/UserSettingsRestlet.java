@@ -155,10 +155,8 @@ public class UserSettingsRestlet extends SecureResource {
             }
             final String password = attributes.get(UserProperty.password);
             if (!StringUtils.isBlank(password)) {
-                String salt = Users.createNewSalt();
-                xdatUser.setPassword(Users.encode(password, salt));
+                xdatUser.setPassword(Users.encode(password));
                 xdatUser.setPrimaryPassword_encrypt(true);
-                xdatUser.setSalt(salt);
             }
             final String enabled = attributes.get(UserProperty.enabled);
             if (!StringUtils.isBlank(enabled)) {
@@ -231,7 +229,7 @@ public class UserSettingsRestlet extends SecureResource {
             _log.debug("Validating parameters for method call: " + method.toString());
         }
         if (_action == null && _userId == null && _payload == null && method.equals(Method.POST)) {
-            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "You can't do a " + method.toString() + " operation without specifying a user ID, action, or payload.");
+            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "You can't do a " + method + " operation without specifying a user ID, action, or payload.");
         }
     }
 
@@ -427,7 +425,7 @@ public class UserSettingsRestlet extends SecureResource {
             return this.name();
         }
 
-        private static Map<String, UserAction> _actions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        private static final Map<String, UserAction> _actions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 
     private enum UserProperty {

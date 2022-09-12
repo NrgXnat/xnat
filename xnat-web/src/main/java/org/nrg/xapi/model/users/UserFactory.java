@@ -54,7 +54,6 @@ public class UserFactory {
         user.setEmail(xdatUser.getEmail());
         checkPendingEmail(user, xdatUser);
         user.setPassword(xdatUser.getPassword());
-        user.setSalt(xdatUser.getSalt());
         user.setLastModified(xdatUser.getLastModified());
         user.setAuthorization(xdatUser.getAuthorization());
         user.setEnabled(xdatUser.isEnabled());

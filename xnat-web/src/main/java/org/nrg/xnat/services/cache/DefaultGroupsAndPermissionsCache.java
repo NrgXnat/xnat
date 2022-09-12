@@ -31,6 +31,7 @@ import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.*;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.Initializing;
@@ -1596,7 +1597,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if(!_userChecks.containsKey(username) || !_userChecks.get(username)) {
             // See if the user exists now. The non-existent user existing should be updated with the add user event,
             // but we don't have a clearly defined handler for that yet.
-            _userChecks.put(username, _template.queryForObject(QUERY_CHECK_USER_EXISTS, parameters, Boolean.class));
+            _userChecks.put(username, _template.queryForObject(UserManagementServiceI.QUERY_CHECK_USER_EXISTS, parameters, Boolean.class));
         }
         if(!_userChecks.get(username)) {
             throw new UserNotFoundException(username);
@@ -1764,7 +1765,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                        "  tag IS NOT NULL AND " +
                                                                        "  id LIKE '%_collaborator' " +
                                                                        "ORDER BY project_id, group_id";
-    private static final String QUERY_CHECK_USER_EXISTS              = "SELECT EXISTS(SELECT TRUE FROM xdat_user WHERE login = :username) AS exists";
     private static final String QUERY_GET_EXPERIMENT_PROJECT         = "SELECT project FROM xnat_experimentdata WHERE id = :experimentId";
     private static final String QUERY_GET_SUBJECT_PROJECT            = "SELECT project FROM xnat_subjectdata WHERE id = :subjectId OR label = :subjectId";
     private static final String QUERY_GET_USERS_FOR_PROJECTS         = "SELECT DISTINCT login " +

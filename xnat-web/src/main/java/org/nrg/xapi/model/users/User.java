@@ -30,10 +30,10 @@ import java.util.List;
 
 /**
  * A transport container for user details. The {@link #isSecured() secured property} controls whether security-related
- * properties like password and salt are available. When a new user object is created from an existing user record in
- * XNAT, the secure flag is set to true. This prevents serializing beans with existing user accounts to prevent exposing
- * password data. Newly created beans have secure set to false by default to allow for serializing the bean for REST
- * calls with all data intact.
+ * properties like password are available. When a new user object is created from an existing user record in XNAT, the
+ * secure flag is set to true. This prevents serializing beans with existing user accounts to prevent exposing password
+ * data. Newly created beans have secure set to false by default to allow for serializing the bean for REST calls with
+ * all data intact.
  */
 @ApiModel(description = "Contains the properties that define a user on the system.")
 @Data
@@ -63,7 +63,6 @@ public class User {
                                                                                                  resultSet.getString("lastName"),
                                                                                                  resultSet.getString("email"),
                                                                                                  null,
-                                                                                                 null,
                                                                                                  true,
                                                                                                  DateUtils.getDateForTimestamp(resultSet.getTimestamp("last_modified")),
                                                                                                  null,
@@ -90,10 +89,15 @@ public class User {
 
     /**
      * The salt used to encrypt the user's _password.
-     **/
+     *
+     * @return The user's salt
+     *
+     * @deprecated Passwords are automatically salted by the security framework.
+     */
+    @Deprecated
     @ApiModelProperty(value = "The salt used to encrypt the user's password.")
     public String getSalt() {
-        return getSecuredProperty(_salt);
+        return null;
     }
 
     /**
@@ -119,7 +123,6 @@ public class User {
                "  lastName: " + _lastName + "\n" +
                "  email: " + _email + "\n" +
                "  password: " + _password + "\n" +
-               "  salt: " + _salt + "\n" +
                "  lastModified: " + _lastModified + "\n" +
                "  lastSuccessfulLogin: " + _lastSuccessfulLogin + "\n" +
                "  authorization: " + _authorization + "\n" +
@@ -143,9 +146,7 @@ public class User {
     private String    _email;
     @ApiModelProperty(value = "The user's encrypted password.")
     private String    _password;
-    @ApiModelProperty(value = "The salt used to encrypt the user's password.")
-    private String    _salt;
-    @ApiModelProperty(value = "Indicates whether the user object is secured, which causes secure fields like password and salt to return null.")
+    @ApiModelProperty(value = "Indicates whether the user object is secured, which causes secure fields like password to return null.")
     private boolean   _secured;
     @ApiModelProperty(value = "The date and time the user record was last modified.")
     private Date      _lastModified;

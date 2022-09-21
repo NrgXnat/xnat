@@ -452,7 +452,7 @@ var XNAT = getObject(XNAT || {});
     }
 
     dicomScpManager.confirmIdentifierChange = function( identifierSelect, previousIdentifier, isRoutingEnabledSwitch, $mainDialog) {
-        let isConflict = isRoutingEnabledSwitch.value && !dicomScpManager.isCustomRoutingCapable( identifierSelect.value);
+        let isConflict = isRoutingEnabledSwitch.checked && !dicomScpManager.isCustomRoutingCapable( identifierSelect.value);
         if( isConflict) {
             XNAT.dialog.open({
                 title: 'Unsupported Per-Receiver Routing.',

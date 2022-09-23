@@ -36,9 +36,11 @@ import java.util.Objects;
 @Slf4j
 public class XMLScreen extends XDATRawScreen {
     private static final String USER_PASSWORD_PROPERTY       = "primary_password";
+    private static final String USER_SALT_PROPERTY           = "salt";
     private static final String LOGIN_SESSION_ID_PROPERTY    = "session_id";
     private static final String LOGIN_IP_ADDRESS_PROPERTY    = "ip_address";
-    private static final String LOGIN_USER_PASSWORD_PROPERTY = "user/primary_password";
+    private static final String LOGIN_USER_PASSWORD_PROPERTY = "user/" + USER_PASSWORD_PROPERTY;
+    private static final String LOGIN_USER_SALT_PROPERTY     = "user/" + USER_SALT_PROPERTY;
 
     /**
      * Set the content type to Xml. (see RawScreen)
@@ -64,7 +66,7 @@ public class XMLScreen extends XDATRawScreen {
             }
 
             final UserI user = XDAT.getUserDetails();
-            if (!TurbineUtils.isAccessibleItem(user, item) || user == null || user.isGuest()) {
+            if (user == null || user.isGuest() || !TurbineUtils.isAccessibleItem(user, item)) {
                 TurbineUtils.denyAccess(data);
                 return;
             }
@@ -72,14 +74,14 @@ public class XMLScreen extends XDATRawScreen {
             final HttpServletResponse response = data.getResponse();
             response.setContentType("text/xml");
 
-            writeToXml(Roles.isSiteAdmin(user) || isUserRelated(user, item) ? item : scrubItem(item), response);
+            writeToXml(scrubItem(item, Roles.isSiteAdmin(user) || isUserRelated(user, item)), response);
         } catch (IllegalAccessException e) {
             final HttpServletResponse response = data.getResponse();
             response.setStatus(Status.CLIENT_ERROR_FORBIDDEN.getCode());
         }
     }
 
-    private static boolean isUserRelated(UserI user, final ItemI item) throws ElementNotFoundException, XFTInitException, FieldNotFoundException {
+    private static boolean isUserRelated(final UserI user, final ItemI item) throws ElementNotFoundException, XFTInitException, FieldNotFoundException {
         if (!(item instanceof XFTItem)) {
             return false;
         }
@@ -99,14 +101,18 @@ public class XMLScreen extends XDATRawScreen {
      *
      * @return The item with sensitive properties scrubbed.
      */
-    private static ItemI scrubItem(final ItemI item) {
+    private static ItemI scrubItem(final ItemI item, final boolean privileged) {
         switch (item.getXSIType()) {
             case XdatUser.SCHEMA_ELEMENT_NAME:
-                clearProperties(item, USER_PASSWORD_PROPERTY);
+                clearProperties(item, USER_PASSWORD_PROPERTY, USER_SALT_PROPERTY);
                 break;
 
             case XdatUserLogin.SCHEMA_ELEMENT_NAME:
-                clearProperties(item, LOGIN_SESSION_ID_PROPERTY, LOGIN_IP_ADDRESS_PROPERTY, LOGIN_USER_PASSWORD_PROPERTY);
+                if (privileged) {
+                    clearProperties(item, LOGIN_USER_PASSWORD_PROPERTY, LOGIN_USER_SALT_PROPERTY);
+                } else {
+                    clearProperties(item, LOGIN_SESSION_ID_PROPERTY, LOGIN_IP_ADDRESS_PROPERTY, LOGIN_USER_PASSWORD_PROPERTY, LOGIN_USER_SALT_PROPERTY);
+                }
                 break;
 
             default:

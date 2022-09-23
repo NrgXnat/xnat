@@ -359,11 +359,14 @@ XNAT.app.upload.defaultStr = "DEFAULT";
 
     XNAT.app.upload.imageUploader.uploadImages = function(config) {
         // If import handler is not specified, let's see if we have a mapping for the datatype
-        if (!config['import-handler'] && config.datatype) {
-            XNAT.app.upload.imageUploader.determineHandler(config, XNAT.app.upload.imageUploader.openUploadModal);
+        if (!config['import-handler'] && config.datatype ) {
+            XNAT.app.upload.imageUploader.determineHandler(config, XNAT.app.upload.imageUploader.openAppropriateDialog);
             return;
         }
+        XNAT.app.upload.imageUploader.openAppropriateDialog(config);
+    };
 
+    XNAT.app.upload.imageUploader.openAppropriateDialog = function(config) {
         // If no import handler and config.modal undefined or false, open Desktop Client
         if (!config['import-handler'] && (!config.modal || config.modal === "false")) {
             XNAT.app.upload.imageUploader.openUploadViaDesktopClient(config);

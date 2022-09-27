@@ -3,8 +3,8 @@ package org.nrg.xft.schema.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
-import org.nrg.framework.utilities.ReusableInputStream;
 import org.nrg.xft.schema.DataTypeSchemaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -16,42 +16,56 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
 public class DefaultDataTypeSchemaService implements DataTypeSchemaService {
     @Autowired
     public DefaultDataTypeSchemaService(final DocumentBuilder builder) {
+        this.documentBuilder = builder;
+
+        List<Resource> schemaResources;
         try {
-            for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:schemas/*/*.xsd")) {
-                try {
-                    final String      schemaPath = StringUtils.substringAfterLast(resource.getURI().toString(), "/schemas/");
-                    final String      schemaName = StringUtils.split(schemaPath, "/")[1];
-                    final InputStream input      = new ReusableInputStream(resource.getInputStream());
-                    try (final BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-                        final Document document = builder.parse(new InputSource(reader));
-                        _schemaDocs.put(schemaPath, document);
-                        _schemaDocs.put(schemaName, document);
-                    }
-                    try (final BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-                        final String contents = IOUtils.toString(reader);
-                        _schemas.put(schemaPath, contents);
-                        _schemas.put(schemaName, contents);
-                    }
-                } catch (IOException e) {
-                    log.error("An error occurred trying to read the contents of the resource {}", resource, e);
-                } catch (SAXException e) {
-                    log.error("An error occurred trying to parse the contents of the resource {}", resource, e);
-                }
-            }
+            schemaResources = BasicXnatResourceLocator.getResources("classpath*:schemas/*/*.xsd");
         } catch (IOException e) {
             log.error("An error occurred trying to read resources matching the pattern \"classpath*:schemas/*/*.xsd\"", e);
+            schemaResources = Collections.emptyList();
         }
+
+        // Build map to look up schema resource by schema name or schema path
+        schemas = schemaResources.stream()
+                .map(resource -> {
+                    String resourceUri;
+                    try {
+                        resourceUri = resource.getURI().toString();
+                    } catch (IOException e) {
+                        log.error("An error occurred trying to read the contents of the resource {}", resource, e);
+                        resourceUri = null;
+                    }
+
+                    return resourceUri == null ? null : Pair.of(resourceUri, resource);
+                })
+                .filter(Objects::nonNull)
+                .flatMap(pair -> {
+                    final String resourceUri = pair.getLeft();
+                    final Resource resource = pair.getRight();
+
+                    final String schemaPath = StringUtils.substringAfterLast(resourceUri, "/schemas/");
+                    final String schemaName = StringUtils.split(schemaPath, "/")[1];
+                    return Stream.of(
+                        Pair.of(schemaPath, resource),
+                        Pair.of(schemaName, resource)
+                    );
+                })
+                .collect(Collectors.collectingAndThen(Collectors.toMap(Pair::getLeft, Pair::getRight, (p, q) -> p), Collections::unmodifiableMap));
     }
 
     /**
@@ -88,8 +102,7 @@ public class DefaultDataTypeSchemaService implements DataTypeSchemaService {
      */
     @Override
     public Document getSchema(final String namespace, final String schema) {
-        final String schemaPath = getSchemaPath(namespace, schema);
-        return _schemaDocs.containsKey(schemaPath) ? _schemaDocs.get(schemaPath) : _schemaDocs.get(schema);
+        return getSchemaDoc(getResource(namespace, schema));
     }
 
     /**
@@ -97,7 +110,16 @@ public class DefaultDataTypeSchemaService implements DataTypeSchemaService {
      */
     @Override
     public Document getSchema(final String schema) {
-        return _schemaDocs.get(schema);
+        return getSchemaDoc(getResource(schema));
+    }
+
+    private Document getSchemaDoc(final Resource resource) {
+        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+            return documentBuilder.parse(new InputSource(reader));
+        } catch (IOException | SAXException e) {
+            log.error("An error occurred trying to read resource {}", resource, e);
+        }
+        return null;
     }
 
     /**
@@ -105,8 +127,7 @@ public class DefaultDataTypeSchemaService implements DataTypeSchemaService {
      */
     @Override
     public String getSchemaContents(final String namespace, final String schema) {
-        final String schemaPath = getSchemaPath(namespace, schema);
-        return _schemas.containsKey(schemaPath) ? _schemas.get(schemaPath) : _schemas.get(schema);
+        return getSchemaContents(getResource(namespace, schema));
     }
 
     /**
@@ -114,9 +135,31 @@ public class DefaultDataTypeSchemaService implements DataTypeSchemaService {
      */
     @Override
     public String getSchemaContents(final String schema) {
-        return _schemas.containsKey(schema) ? _schemas.get(schema) : _schemas.get(getSchemaPath(schema));
+        return getSchemaContents(getResource(schema));
     }
 
-    private final Map<String, String>   _schemas    = new HashMap<>();
-    private final Map<String, Document> _schemaDocs = new HashMap<>();
+    private String getSchemaContents(final Resource resource) {
+        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+            return IOUtils.toString(reader);
+        } catch (IOException e) {
+            log.error("An error occurred trying to read resource {}", resource, e);
+        }
+        return null;
+    }
+
+    private Resource getResource(final String schema) {
+        return getResourceWithBackup(schema, getSchemaPath(schema));
+    }
+
+    private Resource getResource(final String namespace, final String schema) {
+        return getResourceWithBackup(getSchemaPath(namespace, schema), schema);
+    }
+
+    private Resource getResourceWithBackup(final String firstTryKey, final String secondTryKey) {
+        final Resource firstTry = schemas.get(firstTryKey);
+        return firstTry != null ? firstTry : schemas.get(secondTryKey);
+    }
+
+    private final Map<String, Resource> schemas;
+    private final DocumentBuilder documentBuilder;
 }

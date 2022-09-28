@@ -1497,6 +1497,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "['xnat:mrSessionData', 'xnat:petSessionData', 'xnat:ctSessionData']")
+    public List<String> getMainPageSearchDatatypeOptions() {
+        return getListValue("mainPageSearchDatatypeOptions");
+    }
+
+    public void setMainPageSearchDatatypeOptions(List<String> mainPageSearchDatatypeOptions) {
+        try {
+            setListValue("mainPageSearchDatatypeOptions", mainPageSearchDatatypeOptions);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'mainPageSearchDatatypeOptions': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "['bmp', 'gif', 'jpeg', 'jpg', 'png', 'tiff', 'txt', 'xml']")
     public List<String> getHtmlResourceRenderingWhitelist() {
         return getListValue("htmlResourceRenderingWhitelist");

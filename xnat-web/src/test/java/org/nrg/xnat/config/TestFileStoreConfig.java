@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.mockito.Mockito;
-import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.framework.test.OrmTestConfiguration;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -19,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import({OrmTestConfiguration.class, SerializerConfig.class})
+@Import(OrmTestConfiguration.class)
 public class TestFileStoreConfig {
     @Bean
     public HibernateEntityPackageList fileStoreEntityPackages() {

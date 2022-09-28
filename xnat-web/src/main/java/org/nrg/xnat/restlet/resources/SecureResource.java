@@ -939,9 +939,6 @@ public abstract class SecureResource extends Resource {
             }
 
             if (populator != null) {
-                if (populator.hasError()) {
-                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, populator.getError().getMessage());
-                }
                 item = populator.getItem();
             }
         } catch (XFTInitException e) {

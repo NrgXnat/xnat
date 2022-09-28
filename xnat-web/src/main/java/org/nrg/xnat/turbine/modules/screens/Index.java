@@ -10,12 +10,14 @@
 package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
@@ -25,6 +27,10 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Index extends SecureScreen {
     @Override
@@ -61,5 +67,22 @@ public class Index extends SecureScreen {
         context.put("proj_count", XDAT.getTotalCounts().get(XnatProjectdata.SCHEMA_ELEMENT_NAME));
         context.put("sub_count", XDAT.getTotalCounts().get(XnatSubjectdata.SCHEMA_ELEMENT_NAME));
         context.put("isd_count", XDAT.getTotalCounts().get(XnatImagesessiondata.SCHEMA_ELEMENT_NAME));
+
+        final Map<String, String> codeMap = XDAT.getSiteConfigPreferences().getMainPageSearchDatatypeOptions()
+                .stream()
+                .map(dataType -> Pair.of(dataType, getElementSecurityCode(dataType)))
+                .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+
+        context.put("codeMap", codeMap);
+    }
+
+    private String getElementSecurityCode(String dataType) {
+        String elementSecurityCode = "";
+        try {
+            elementSecurityCode =  ElementSecurity.GetElementSecurity(dataType).getCode();
+        } catch (Exception ignored) {
+
+        }
+        return elementSecurityCode;
     }
 }

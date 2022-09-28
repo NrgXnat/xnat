@@ -1391,6 +1391,25 @@ displayedUserIdentifier:
                         NAME_LAST_COMMA_FIRST: Name (Last, First)
                     after: >
                         <p class="description">Sets the user identifier displayed at the top right of each page. To see the change after you modify and save this value, you'll need to refresh the page.</p>
+searchTabsHomePage:
+    kind: panel.form
+    label: Quick Search Datatype Options
+    footer: false
+    contents:
+        mainPageSearchDatatypeOptions:
+            tag: "div#quick-search-datatypes"
+        jqueryUi:
+            tag: script|src="~/scripts/lib/jquery-ui/jquery-ui.min.js"
+        jqueryUiCss:
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/lib/jquery-ui/jquery-ui.css"
+        chosenScript:
+            tag: script|src="~/scripts/lib/jquery-plugins/chosen/chosen.jquery.js"
+        chosenCss:
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/lib/jquery-plugins/chosen/chosen.css"
+        quickSearchDatatypeScript:
+            tag: script|src=/scripts/xnat/admin/quickSearchDatatypeInputs.js
+
+
 ## PLUGINS
 
 # create a container for the plugin table to be spawned into
@@ -2569,6 +2588,7 @@ root:
             contents:
                 ${dateFormatting}
                 ${themeManagement}
+                ${searchTabsHomePage}
                 ${adminControls}
                 ${displayedUserIdentifier}
         plugins:

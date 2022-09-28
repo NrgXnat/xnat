@@ -1,4 +1,6 @@
 <!-- QuickSearch -->
+#set($quickSearchConfig = $siteConfig.getMainPageSearchDatatypeOptions())
+
 <div>
     $!systemName currently contains $proj_count $displayManager.getPluralDisplayNameForProject().toLowerCase(),
     $sub_count $displayManager.getPluralDisplayNameForSubject().toLowerCase(),
@@ -23,6 +25,24 @@
 <script type="text/javascript">
     (function(){
 
+        var searchDatatypes = new Array();
+
+        #foreach($searchOption in $quickSearchConfig)
+        searchDatatypes.push("$searchOption");
+        #end
+
+        var typeCodes = "${codeMap}";
+        typeCodes = typeCodes.substring(1, typeCodes.length - 1);
+        var typeCodesList = typeCodes.split(", ");
+
+        var typeCodeMap = new Map();
+
+        typeCodesList.forEach(type => {
+            var dataTypeName = type.substring(0, type.indexOf('='));
+            var typeCode = type.substring(type.indexOf('=') + 1);
+            typeCodeMap.set(dataTypeName, typeCode);
+        });
+
         // add 'xnat-home' class to <body> on home page
         $('body').addClass('xnat-home');
 
@@ -43,20 +63,16 @@
             content: '<div id="quick-search-subject" data-type="subjectData" class="quick-search-tab"></div>'
         }));
 
-        frontTabs.addTab(new YAHOO.widget.Tab({
-            label: '<span data-tab="quick-search-mr">MR</span>',
-            content: '<div id="quick-search-mr" data-type="mrSessionData" class="quick-search-tab"></div>'
-        }));
+        searchDatatypes.forEach(element => {
+            var element_code = element.substring(element.indexOf(':') + 1, element.indexOf(':') + 3);
+            var full_element = element.substring(element.indexOf(':') + 1);
+            var tab_content = '<div id="quick-search-'+ element_code +'" data-type="'+ full_element + '" class= quick-search-tab></div>'
+            frontTabs.addTab(new YAHOO.widget.Tab({
+                label: '<span data-tab="quick-search-'+ element_code +'">' + typeCodeMap.get(element) + '</span>',
+                content: tab_content
+            }));
+        });
 
-        frontTabs.addTab(new YAHOO.widget.Tab({
-            label: '<span data-tab="quick-search-pet">PET</span>',
-            content: '<div id="quick-search-pet" data-type="petSessionData" class="quick-search-tab"></div>'
-        }));
-
-        frontTabs.addTab(new YAHOO.widget.Tab({
-            label: '<span data-tab="quick-search-ct">CT</span>',
-            content: '<div id="quick-search-ct" data-type="ctSessionData" class="quick-search-tab"></div>'
-        }));
 
         $.each(XNAT.frontTabSearchItems, function(i, e) {
             frontTabs.addTab(new YAHOO.widget.Tab({

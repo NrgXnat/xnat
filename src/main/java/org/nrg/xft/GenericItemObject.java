@@ -344,9 +344,7 @@ public abstract class GenericItemObject implements ItemI {
 
 						if (local.instanceOf(other.getXSIType())) {
 							this.setProperty(this.getXSIType()+ key.substring(key.indexOf("/")),validate(hash.get(key)));
-						} else {
-                            throw new InvalidValueException("Specified xsiType differs from existing xsiType");
-                        }
+						}
 					} catch (XFTInitException e) {
 					} catch (ElementNotFoundException e) {
 					} catch (FieldNotFoundException e) {

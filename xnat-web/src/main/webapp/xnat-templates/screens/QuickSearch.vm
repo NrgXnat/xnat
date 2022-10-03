@@ -64,11 +64,10 @@
         }));
 
         searchDatatypes.forEach(element => {
-            var element_code = element.substring(element.indexOf(':') + 1, element.indexOf(':') + 3);
             var full_element = element.substring(element.indexOf(':') + 1);
-            var tab_content = '<div id="quick-search-'+ element_code +'" data-type="'+ full_element + '" class= quick-search-tab></div>'
+            var tab_content = '<div id="quick-search-'+ full_element +'" data-type="'+ full_element + '" class= quick-search-tab></div>'
             frontTabs.addTab(new YAHOO.widget.Tab({
-                label: '<span data-tab="quick-search-'+ element_code +'">' + typeCodeMap.get(element) + '</span>',
+                label: '<span data-tab="quick-search-'+ full_element +'">' + typeCodeMap.get(element) + '</span>',
                 content: tab_content
             }));
         });

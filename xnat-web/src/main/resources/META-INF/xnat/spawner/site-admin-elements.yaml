@@ -1398,6 +1398,8 @@ searchTabsHomePage:
     contents:
         mainPageSearchDatatypeOptions:
             tag: "div#quick-search-datatypes"
+        afterButton: >
+                <button id="update-quick-search" class="btn btn-sm" type="submit" style="margin-top:15px;">Update Options</button>
         jqueryUi:
             tag: script|src="~/scripts/lib/jquery-ui/jquery-ui.min.js"
         jqueryUiCss:

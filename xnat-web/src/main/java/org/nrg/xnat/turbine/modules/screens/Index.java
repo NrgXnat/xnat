@@ -79,7 +79,14 @@ public class Index extends SecureScreen {
     private String getElementSecurityCode(String dataType) {
         String elementSecurityCode = "";
         try {
-            elementSecurityCode =  ElementSecurity.GetElementSecurity(dataType).getCode();
+            ElementSecurity elementSecurity =  ElementSecurity.GetElementSecurity(dataType);
+            if (elementSecurity.getCode() != null) {
+                elementSecurityCode = elementSecurity.getCode();
+            } else if (elementSecurity.getPlural() != null) {
+                elementSecurityCode = elementSecurity.getPlural();
+            } else {
+                elementSecurityCode = elementSecurity.getElementName();
+            }
         } catch (Exception ignored) {
 
         }

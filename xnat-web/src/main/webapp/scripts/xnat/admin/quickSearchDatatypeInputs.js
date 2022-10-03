@@ -62,11 +62,8 @@ console.log("quickSearchDatatypeInputs.js");
                     menuInit('select.project-multi-select-menu');
             });
 
-            var submit_button = "<button type='button' id='submit-button' class='btn btn-sm' type='submit'>Submit</button> "
-            $("#quick-search-datatypes").append(submit_button);
-
             $(document).ready(function() {
-                $("#submit-button").click(function(){
+                $("#update-quick-search").on("click",function(){
                     XNAT.xhr.postJSON({
                         url: rootUrl("xapi/siteConfig/mainPageSearchDatatypeOptions"),
                         data: JSON.stringify($("#datatype-options-multi-select").chosen().val()),

@@ -58,7 +58,7 @@ public class SharedScanCleanup extends AbstractInitializingTask {
 
     @Override
     public String getTaskName() {
-        return "Unshare orphaned scans";
+        return "Unshare orphaned scans v2";
     }
 
     @Override

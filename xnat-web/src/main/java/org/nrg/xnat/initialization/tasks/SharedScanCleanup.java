@@ -36,7 +36,7 @@ import static org.nrg.xft.event.persist.PersistentWorkflowUtils.ADMIN_EXTERNAL_I
 public class SharedScanCleanup extends AbstractInitializingTask {
     private final XnatAppInfo appInfo;
     private final XnatUserProvider primaryAdminUserProvider;
-    private static final String WORKFLOW_ACTION = "Unshare orphaned scans";
+    private static final String WORKFLOW_ACTION = "Unshare orphaned scans v2";
     private static final String SITE_TYPE = "site";
     private static final String XNAT_IMAGESSCANDATA_ID = "xnat_imagescandata_id";
     private static final String PROJECT = "project";
@@ -58,7 +58,7 @@ public class SharedScanCleanup extends AbstractInitializingTask {
 
     @Override
     public String getTaskName() {
-        return "Unshare orphaned scans v2";
+        return WORKFLOW_ACTION;
     }
 
     @Override

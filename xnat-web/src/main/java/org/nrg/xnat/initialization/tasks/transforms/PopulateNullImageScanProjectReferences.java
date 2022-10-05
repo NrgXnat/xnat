@@ -28,7 +28,7 @@ public class PopulateNullImageScanProjectReferences implements Callable<String> 
     public PopulateNullImageScanProjectReferences(final DatabaseHelper helper, final String table, final String column) {
         _helper = helper;
         _template = _helper.getJdbcTemplate();
-        if (!StringUtils.equalsIgnoreCase(table, "xnat_imagescandata") || !StringUtils.equalsIgnoreCase(column, "project")) {
+        if (!StringUtils.startsWithIgnoreCase(table, "xnat_imagescandata") || !StringUtils.equalsIgnoreCase(column, "project")) {
             log.warn("For some reason I'm being invoked for column {}.{} instead of xnat_imagescandata.project", table, column);
         }
         _table = table;

@@ -163,12 +163,13 @@ public class MqConfig {
     }
 
     @Bean
+    @Primary
     public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(final ErrorHandler errorHandler) {
         final DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory());
         factory.setErrorHandler(errorHandler);
         factory.setConcurrency("10-40");
-        factory.setSessionAcknowledgeMode(Session.SESSION_TRANSACTED);
+        factory.setSessionAcknowledgeMode(Session.AUTO_ACKNOWLEDGE);
         return factory;
     }
 }

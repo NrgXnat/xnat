@@ -36,10 +36,9 @@ public class DicomImportConfig {
     @Primary
     public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final MessageSource messageSource,
                                                                         final XnatUserProvider receivedFileUserProvider,
-                                                                        final UserProjectCache userProjectCache,
-                                                                        final DicomSCPInstanceService dicomSCPInstanceService) {
+                                                                        final UserProjectCache userProjectCache) {
         final String name = messageSource.getMessage("dicomConfig.defaultObjectIdentifier", new Object[]{ClassicDicomObjectIdentifier.class.getSimpleName()}, "Default DICOM object identifier ({0})", Locale.getDefault());
-        return new ClassicDicomObjectIdentifier(name, receivedFileUserProvider, userProjectCache, dicomSCPInstanceService);
+        return new ClassicDicomObjectIdentifier(name, receivedFileUserProvider, userProjectCache);
     }
 
     @Bean

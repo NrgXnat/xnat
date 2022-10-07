@@ -9,7 +9,6 @@
 
 package org.nrg.dcm.id;
 
-import org.nrg.dcm.scp.daos.DicomSCPInstanceService;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.services.cache.UserProjectCache;
 
@@ -24,11 +23,9 @@ import org.nrg.xnat.services.cache.UserProjectCache;
 public class ClassicDicomObjectIdentifier extends XnatDefaultPerReceiverDicomObjectIdentifier {
     public ClassicDicomObjectIdentifier(final String name,
                                         final XnatUserProvider userProvider,
-                                        final UserProjectCache userProjectCache,
-                                        final DicomSCPInstanceService dicomSCPInstanceService) {
-        super( name,
+                                        final UserProjectCache userProjectCache) {
+        super(name,
                 userProvider,
-                new Xnat15PerReceiverDicomProjectIdentifier(userProjectCache, dicomSCPInstanceService),
-                dicomSCPInstanceService);
+                new Xnat15PerReceiverDicomProjectIdentifier(userProjectCache));
     }
 }

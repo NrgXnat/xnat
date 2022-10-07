@@ -14,40 +14,35 @@ import java.util.List;
  *
  */
 @Slf4j
-public class RoutingExpressionFromInstanceProvider implements RoutingExpressionProvider, AeTitleAndPortAware {
-    private final DicomSCPInstanceService _dicomSCPInstanceService;
-    private String _aeTitle;
-    private int _port;
+public class RoutingExpressionFromInstanceProvider implements RoutingExpressionProvider {
+    private final DicomSCPInstance _dicomScpInstance;
 
-    public RoutingExpressionFromInstanceProvider(DicomSCPInstanceService dicomSCPInstanceService) {
-        _dicomSCPInstanceService = dicomSCPInstanceService;
+    public RoutingExpressionFromInstanceProvider(final DicomSCPInstance dicomScpInstance) {
+        _dicomScpInstance = dicomScpInstance;
     }
+
     @Override
     public List<String> provide(CompositeDicomObjectIdentifier.ExtractorType type) {
-        DicomSCPInstance instance = _dicomSCPInstanceService.findByAETitleAndPort( _aeTitle, _port)
-                .orElseThrow(() -> new IllegalArgumentException(String.format("No configuration found for receiver at %s:%d.", _aeTitle, _port)));
-
         List<String> rules = new ArrayList<>();
-        if (instance.isRoutingExpressionsEnabled()) {
+        if (_dicomScpInstance.isRoutingExpressionsEnabled()) {
             String routingExpression;
             switch (type) {
                 case PROJECT:
-                    routingExpression = instance.getProjectRoutingExpression();
+                    routingExpression = _dicomScpInstance.getProjectRoutingExpression();
                     break;
                 case SUBJECT:
-                    routingExpression = instance.getSubjectRoutingExpression();
+                    routingExpression = _dicomScpInstance.getSubjectRoutingExpression();
                     break;
                 case SESSION:
-                    routingExpression = instance.getSessionRoutingExpression();
+                    routingExpression = _dicomScpInstance.getSessionRoutingExpression();
                     break;
                 case AA:
-                    routingExpression = null;
-                    break;
                 default:
                     routingExpression = null;
+                    break;
             }
-            if( routingExpression != null) {
-                rules.addAll( parseConfig( routingExpression));
+            if (routingExpression != null) {
+                rules.addAll(parseConfig(routingExpression));
             }
         }
         return rules;
@@ -75,25 +70,5 @@ public class RoutingExpressionFromInstanceProvider implements RoutingExpressionP
         expressions.addAll( provide( CompositeDicomObjectIdentifier.ExtractorType.SESSION));
         expressions.addAll( provide( CompositeDicomObjectIdentifier.ExtractorType.AA));
         return expressions;
-    }
-
-    @Override
-    public String getAeTitle() {
-        return _aeTitle;
-    }
-
-    @Override
-    public void setAeTitle(String aeTitle) {
-        _aeTitle = aeTitle;
-    }
-
-    @Override
-    public int getPort() {
-        return _port;
-    }
-
-    @Override
-    public void setPort(int port) {
-        _port = port;
     }
 }

@@ -419,12 +419,9 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         DicomSCPInstance instance = _dicomSCPInstanceService.findByAETitleAndPort(aeTitle, port)
                 .orElseThrow(() -> new IllegalArgumentException(String.format("Unknown DicomSCPInstances with aeTitle '%s' and port %d", aeTitle, port)));
         DicomObjectIdentifier<XnatProjectdata> doi = _dicomObjectIdentifierMap.get(instance.getIdentifier());
-        if (doi instanceof AeTitleAndPortAware) {
-            AeTitleAndPortAware aware = (AeTitleAndPortAware) doi;
-            aware.setAeTitle(aeTitle);
-            aware.setPort(port);
-        }
-        return doi;
+        return doi instanceof ReceiverAwareIdentifier ?
+                ((ReceiverAwareIdentifier<? extends DicomObjectIdentifier<XnatProjectdata>>) doi).forInstance(instance) :
+                doi;
     }
 
 

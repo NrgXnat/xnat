@@ -127,7 +127,7 @@
             #set($username = $!user.getUsername())
             #if($username != "" && $username != "guest")
                 ## use default timeout value from web.xml as the starting text in the "#timeLeft" element
-                <span id="user_info">Logged in as: &nbsp;<a id="username-link" href="$link.setPage("XDATScreen_UpdateUser.vm")">$username</a> <b>|</b><span class="tip_icon" style="margin-right:3px;">
+                <span id="user_info">Logged in as: &nbsp;<a id="username-link" href="$link.setPage("XDATScreen_UpdateUser.vm")">$!turbineUtils.getDisplayedUserIdentifier($user)</a> <b>|</b><span class="tip_icon" style="margin-right:3px;">
                     <span class="tip shadowed" style="top:20px;z-index:10000;white-space:normal;left:-150px;width:300px;background-color:#ffc;">Your XNAT session will auto-logout after a certain period of inactivity. You can reset that timer without reloading the page by clicking "renew."</span>
                 </span>
                 ## some kind of default text needs to be there so stuff doesn't shift around before the timer functions kick in

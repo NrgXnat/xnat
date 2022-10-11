@@ -1735,7 +1735,7 @@ public abstract class SecureResource extends Resource {
             if (!StringUtils.startsWith(filepath, "projects/")) {
                 throw new IllegalArgumentException("Illegal file path '" + filepath + "' does not start with 'projects/'.");
             }
-            final String projectId = StringUtils.stripStart(filepath, "projects/");
+            final String projectId = StringUtils.removeStart(filepath, "projects/");
             return getProjectById(projectId);
         }
         return project != null ? project : getProjectById(item.getProject());

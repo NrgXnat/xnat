@@ -31,6 +31,8 @@ import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.AuthDelegate;
 import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -268,6 +270,34 @@ public class SchemaApi extends AbstractXapiRestController {
         return getElementMaps(getElementNamesFromTypeAndTypes(dataTypes, dataType));
     }
 
+    @ApiOperation(value = "Gets the image session datatypes which are searchable within the system.", response = String.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "The list of searchable image session datatypes which are available from the system."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the searchable datatypes."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "datatypes/searchable", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
+    @AuthDelegate(GuestUserAccessXapiAuthorization.class)
+    @ResponseBody
+    public List<String> getListOfSearchableDatatypes() throws Exception {
+        List<ElementSecurity> elementSecurities = ElementSecurity.GetSecureElements().stream().filter(x -> x.isSearchable()).collect(Collectors.toList());
+        List<String> results = new ArrayList<>();
+        for (ElementSecurity elementSecurity : elementSecurities) {
+            try {
+                String elementName = elementSecurity.getElementName();
+                List<Object> parentElements = SchemaElement.GetElement(elementName).getGenericXFTElement().getExtendedElements()
+                        .stream()
+                        .map(x -> x.get(PARENT_ELEMENT_INDEX))
+                        .collect(Collectors.toList());
+                if (parentElements.contains(elementName+"/imageSessionData")) {
+                    results.add(elementName);
+                }
+            } catch (ElementNotFoundException ignored) {
+
+            }
+        }
+        return results;
+    }
+
     @Nonnull
     private List<String> getElementNamesFromTypeAndTypes(final List<String> dataTypes, final String dataType) {
         final List<String> allDataTypes = new ArrayList<>(dataTypes);
@@ -390,4 +420,6 @@ public class SchemaApi extends AbstractXapiRestController {
      * Contains all data types in the standard XNAT schema element format, e.g. <code>xnat:mrSessionData</code>.
      */
     private final Set<String>                        _elementTypes        = new ConcurrentSkipListSet<>();
+
+    private static final int PARENT_ELEMENT_INDEX = 1;
 }

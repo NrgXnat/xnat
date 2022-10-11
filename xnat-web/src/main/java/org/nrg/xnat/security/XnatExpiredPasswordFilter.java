@@ -189,9 +189,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
                             // Shouldn't check for a localdb expired password if user is coming in through a non-localdb provider.
                             chain.doFilter(request, response);
                         } else if (isEnabled) {
-                            final boolean isExpired     = isPasswordExpired(session, user);
-                            final boolean requireSalted = _preferences.getRequireSaltedPasswords();
-                            if ((!isUserNonExpiring(user) && isExpired) || (requireSalted && user.getSalt() == null)) {
+                            if (!isUserNonExpiring(user) && isPasswordExpired(session, user)) {
                                 response.sendRedirect(TurbineUtils.GetFullServerPath() + changePasswordPath);
                             } else {
                                 chain.doFilter(request, response);
@@ -290,7 +288,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
             return false;
         }
         try {
-            final MapSqlParameterSource parameters = new MapSqlParameterSource("username", username).addValue("authMethod", AUTH_DEFAULT);
+            final MapSqlParameterSource parameters = new MapSqlParameterSource("username", username).addValue("authMethod", XdatUserAuthService.LOCALDB);
 
             final String query;
             if (isPasswordExpirationInterval()) {
@@ -306,7 +304,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
                 session.setAttribute("expired", queried);
                 return queried;
             } catch (EmptyResultDataAccessException e) {
-                log.debug("No results found for user '{}' and auth method {} running query: {}", username, AUTH_DEFAULT, query);
+                log.debug("No results found for user '{}' and auth method {} running query: {}", username, XdatUserAuthService.LOCALDB, query);
                 return false;
             }
         } catch (Throwable e) { // ldap authentication can throw an exception during these queries
@@ -379,7 +377,6 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
     }
 
     private static final String COOKIE_SESSION_EXPIRATION_TIME = "SESSION_EXPIRATION_TIME";
-    private static final String AUTH_DEFAULT                   = "localdb";
     private static final String QUERY_BY_INTERVAL              = "SELECT now() - password_updated > :interval::INTERVAL AS expired FROM xhbm_xdat_user_auth WHERE auth_user = :username AND auth_method = :authMethod";
     private static final String QUERY_BY_DATE                  = "SELECT to_date(:date, 'MM/DD/YYYY') BETWEEN password_updated AND now() AS expired FROM xhbm_xdat_user_auth WHERE auth_user = :username AND auth_method = :authMethod";
     private static final String QUERY_USER_ROLE_ENABLE         = "SELECT exists(SELECT id FROM xhbm_user_role WHERE username = :username AND role = :role AND enabled = 't')";

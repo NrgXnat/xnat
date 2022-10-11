@@ -36,7 +36,6 @@ public class TestUserSerialization {
         secured.setUsername("name");
         secured.setEmail("foo@bar.com");
         secured.setPassword("password");
-        secured.setSalt("salt");
         secured.setEnabled(true);
         secured.setSecured(true);
 
@@ -45,7 +44,6 @@ public class TestUserSerialization {
         unsecured.setUsername("name");
         unsecured.setEmail("foo@bar.com");
         unsecured.setPassword("password");
-        unsecured.setSalt("salt");
         unsecured.setEnabled(true);
 
         final String secureJson = _serializer.toJson(secured);
@@ -55,23 +53,21 @@ public class TestUserSerialization {
         assertNotNull(unsecureJson);
         assertTrue(StringUtils.isNotBlank(unsecureJson));
 
-        // Here's where we make sure the password and salt aren't serialized.
+        // Here's where we make sure the password isn't serialized.
         final JsonNode securedMap = _serializer.deserializeJson(secureJson);
         assertNotNull(securedMap);
         assertTrue(securedMap.has("username"));
         assertTrue(securedMap.has("email"));
         assertFalse(securedMap.has("password"));
-        assertFalse(securedMap.has("salt"));
         assertTrue(securedMap.has("enabled"));
         assertFalse(securedMap.has("verified"));
 
-        // Here's where we make sure the password and salt ARE serialized.
+        // Here's where we make sure the password is serialized.
         final JsonNode unsecuredMap = _serializer.deserializeJson(unsecureJson);
         assertNotNull(unsecuredMap);
         assertTrue(unsecuredMap.has("username"));
         assertTrue(unsecuredMap.has("email"));
         assertTrue(unsecuredMap.has("password"));
-        assertTrue(unsecuredMap.has("salt"));
         assertTrue(unsecuredMap.has("enabled"));
         assertFalse(unsecuredMap.has("verified"));
 
@@ -80,7 +76,6 @@ public class TestUserSerialization {
         assertTrue(StringUtils.isNotBlank(securedOutput.getUsername()));
         assertTrue(StringUtils.isNotBlank(securedOutput.getEmail()));
         assertTrue(StringUtils.isBlank(securedOutput.getPassword()));
-        assertTrue(StringUtils.isBlank(securedOutput.getSalt()));
         assertTrue(securedOutput.getEnabled());
         assertNull(securedOutput.getVerified());
 
@@ -89,7 +84,6 @@ public class TestUserSerialization {
         assertTrue(StringUtils.isNotBlank(unsecuredOutput.getUsername()));
         assertTrue(StringUtils.isNotBlank(unsecuredOutput.getEmail()));
         assertTrue(StringUtils.isNotBlank(unsecuredOutput.getPassword()));
-        assertTrue(StringUtils.isNotBlank(unsecuredOutput.getSalt()));
         assertTrue(unsecuredOutput.getEnabled());
         assertNull(unsecuredOutput.getVerified());
     }

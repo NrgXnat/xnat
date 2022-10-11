@@ -46,11 +46,12 @@ import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.List;
 
 public class ScanResource extends ItemResource {
     private static final Logger logger = LoggerFactory.getLogger(ScanResource.class);
@@ -170,9 +171,17 @@ public class ScanResource extends ItemResource {
                 }
 
                 returnDefaultRepresentation();
-            } else {
-                // Not sharing
-                XFTItem item = loadItem(null, true);
+            } else {// Not scan sharing activity
+                XnatImagescandata existing = null;
+
+                //Find preexisting scan by scanID in url
+                if (session!=null && StringUtils.isNotEmpty(scanID)) {
+                    existing=queryForScan(user,scanID,session.getId());
+                }
+
+                //XNAT-7015 this used to just pass null, but we changed it to pass the xsi-type when it is known
+                final String existingType=(existing==null) ? null : existing.getXSIType();
+                XFTItem item = loadItem(existingType, true);
 
                 if (item == null) {
                     String xsiType = getQueryVariable("xsiType");
@@ -238,20 +247,14 @@ public class ScanResource extends ItemResource {
                     scan.setType(getQueryVariable("type"));
                 }
 
-                //FIND PRE-EXISTING
-                XnatImagescandata existing = null;
+                if(existing==null){
+                    //recheck in case anything changed during loadItem... like if a scan xml was in the request body
+                    if (scan.getXnatImagescandataId() != null) {
+                        existing = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(scan.getXnatImagescandataId(), user, completeDocument);
+                    }
 
-                if (scan.getXnatImagescandataId() != null) {
-                    existing = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(scan.getXnatImagescandataId(), user, completeDocument);
-                }
-
-                if (scan.getId() != null) {
-                    CriteriaCollection cc = new CriteriaCollection("AND");
-                    cc.addClause("xnat:imageScanData/ID", scan.getId());
-                    cc.addClause("xnat:imageScanData/image_session_ID", scan.getImageSessionId());
-                    ArrayList<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(cc, user, completeDocument);
-                    if (scans.size() > 0) {
-                        existing = scans.get(0);
+                    if (existing != null && scan.getId() != null) {
+                        existing=queryForScan(user,scan.getId(),scan.getImageSessionId());
                     }
                 }
 
@@ -279,11 +282,17 @@ public class ScanResource extends ItemResource {
                     }
 
                 } else {
+                    //MATCHED
                     if (!Permissions.canEdit(user, session)) {
                         getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Specified user account has insufficient edit privileges for sessions in this project.");
                         return;
                     }
-                    //MATCHED
+
+                    if(!StringUtils.equals(XnatImagescandata.SCHEMA_ELEMENT_NAME,existing.getXSIType()) && !StringUtils.equals(existing.getXSIType(),scan.getXSIType())){
+                        //operation would change xsi:type, which isn't allowed... unless the type was xnat:imageScanData (which we'd want to allow them to fix)
+                        getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified xsiType differs from existing xsiType");
+                        return;
+                    }
                 }
 
                 boolean allowDataDeletion = false;
@@ -386,15 +395,18 @@ public class ScanResource extends ItemResource {
     protected void searchForScan() {
         if (scan == null && scanID != null) {
             if (session != null) {
-                CriteriaCollection cc = new CriteriaCollection("AND");
-                cc.addClause("xnat:imageScanData/ID", scanID);
-                cc.addClause("xnat:imageScanData/image_session_ID", session.getId());
-                ArrayList<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(cc, getUser(), completeDocument);
-                if (scans.size() > 0) {
-                    scan = scans.get(0);
-                }
+                scan=queryForScan(getUser(),scanID,session.getId());
             }
         }
+    }
+
+    @Nullable
+    private XnatImagescandata queryForScan(final UserI user, final String scanId, final String sessionId){
+        final CriteriaCollection cc = new CriteriaCollection("AND");
+        cc.addClause("xnat:imageScanData/ID", scanId);
+        cc.addClause("xnat:imageScanData/image_session_ID", sessionId);
+        final List<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(cc, user, completeDocument);
+        return scans.isEmpty() ? null : scans.get(0);
     }
 
     protected XnatImagescandata getScan() {

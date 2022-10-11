@@ -598,15 +598,6 @@ passwords:
             validation: interval onblur
             description: >
                 Interval for which users cannot reuse an old password of theirs. Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
-        requireSaltedPasswords:
-            kind: panel.input.switchbox
-            id: require-salted-passwords
-            name: requireSaltedPasswords
-            label: Require Passwords To Be Salted
-            onText: Required
-            offText: Not Required
-            description: >
-                If set to "Required", any user whose password is not salted in the database will be required to set a new password.
         passwordsjs:
             tag: script|src=/scripts/xnat/admin/passwords.js
 
@@ -1378,6 +1369,47 @@ adminControls:
                 When Site-wide Feature Management is enabled, a new menu item will appear in the Administer menu in the top navigation.
                 This page will allow site admins to set default appearance of defined features in the UI.
                 <a href="https://wiki.xnat.org/documentation/xnat-administration/enabling-features-at-the-site-wide-level" target="_blank">See documentation</a>
+
+displayedUserIdentifier:
+    kind: panel.form
+    label: Displayed User Identifier
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        displayedUserIdentifierType:
+            kind: panel.element
+            label: Displayed User Identifier Type
+            contents:
+                displayedUserIdentifierTypeMenu:
+                    kind: select.menu
+                    name: displayedUserIdentifierType
+                    options:
+                        USERNAME: Username
+                        EMAIL: Email
+                        NAME_FIRST_SPACE_LAST: Name (First Last)
+                        NAME_LAST_COMMA_FIRST: Name (Last, First)
+                    after: >
+                        <p class="description">Sets the user identifier displayed at the top right of each page. To see the change after you modify and save this value, you'll need to refresh the page.</p>
+searchTabsHomePage:
+    kind: panel.form
+    label: Quick Search Datatype Options
+    footer: false
+    contents:
+        mainPageSearchDatatypeOptions:
+            tag: "div#quick-search-datatypes"
+        afterButton: >
+                <button id="update-quick-search" class="btn btn-sm" type="submit" style="margin-top:15px;">Update Options</button>
+        jqueryUi:
+            tag: script|src="~/scripts/lib/jquery-ui/jquery-ui.min.js"
+        jqueryUiCss:
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/lib/jquery-ui/jquery-ui.css"
+        chosenScript:
+            tag: script|src="~/scripts/lib/jquery-plugins/chosen/chosen.jquery.js"
+        chosenCss:
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/lib/jquery-plugins/chosen/chosen.css"
+        quickSearchDatatypeScript:
+            tag: script|src=/scripts/xnat/admin/quickSearchDatatypeInputs.js
 
 
 ## PLUGINS
@@ -2558,7 +2590,9 @@ root:
             contents:
                 ${dateFormatting}
                 ${themeManagement}
+                ${searchTabsHomePage}
                 ${adminControls}
+                ${displayedUserIdentifier}
         plugins:
             kind: tab
             name: plugins

@@ -239,7 +239,21 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
                 continue;
             }
             columns.put(column, columnType);
+            updateHistoryTable(table, column, columnType);
         }
+    }
+
+    private void updateHistoryTable(String table, String column, String columnType) {
+        String historyTable = table + HISTORY_SUFFIX;
+        if (isInvalidTable(historyTable)) {
+            return;
+        }
+        if (!_columns.containsKey(historyTable)) {
+            _columns.put(historyTable, new HashMap<>());
+        }
+        // We want the history table to always match the base table, and if we get into this method, base table is
+        // requesting update of this column to this type
+        _columns.get(historyTable).put(column, columnType);
     }
 
     private void getConstraints(final URI resourceUri, final SubnodeConfiguration configuration) {
@@ -324,6 +338,8 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
         return _tablesAndTypes;
     }
 
+
+    private static final String  HISTORY_SUFFIX                   = "_history";
     private static final String  SQL_WARNING_TABLE                = "The requested table";
     private static final Pattern COMPOUND_KEY                     = Pattern.compile("^(?<prefix>[^:]+)\\.\\.(?<payload>[^:]+)$");
     private static final Pattern COLUMNS_KEY                      = Pattern.compile("^columns-(?<columns>[a-z\\d_-]+)$");

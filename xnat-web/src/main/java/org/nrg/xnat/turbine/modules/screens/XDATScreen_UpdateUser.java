@@ -143,9 +143,6 @@ public class XDATScreen_UpdateUser extends SecureScreen {
 
                 final boolean noCurrentPassword = StringUtils.isBlank(user.getPassword());
                 context.put("noCurrentPassword", noCurrentPassword);
-                if (!noCurrentPassword && XDAT.getSiteConfigPreferences().getRequireSaltedPasswords() && StringUtils.isBlank(user.getSalt())){
-                    context.put("missingSalt", true);
-                }
 
                 if(XDAT.getSiteConfigPreferences().getEmailVerification()){
                     UserChangeRequest changeRequest = XDAT.getContextService().getBean(UserChangeRequestService.class).findChangeRequestForUserAndField(user.getUsername(), "email");

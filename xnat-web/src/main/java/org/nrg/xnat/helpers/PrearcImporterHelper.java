@@ -259,9 +259,11 @@ public class PrearcImporterHelper extends PrearcImporterA{
 		
 		SaveHandlerI<XnatImagesessiondataBean> saveImpl=new SaveHandlerI<XnatImagesessiondataBean>() {
 			public void save(XnatImagesessiondataBean merged) throws Exception {
-				FileWriter fw = new FileWriter(destXML);
-				merged.toXML(fw);
-				fw.close();
+				try(FileWriter fw = new FileWriter(destXML)){
+					merged.toXML(fw);
+				} catch (Exception e){
+					logger.error("Error writing prearchive xml",e);
+				}
 			}
 		};
 		

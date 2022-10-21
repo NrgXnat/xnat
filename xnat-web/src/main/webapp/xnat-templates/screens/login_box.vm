@@ -1,6 +1,7 @@
 #* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
 #* @vtlvariable name="login_methods" type="java.util.Collection" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+<!-- BEGIN xnat-templates/screens/login_box.vm -->
 <form name="form1" method="post" action="$content.getURI('')/login">
     #set($showLoginMethodRow = true)
     #if($login_methods)
@@ -48,3 +49,4 @@
         </tr>
     </table>
 </form>
+<!-- END xnat-templates/screens/login_box.vm -->

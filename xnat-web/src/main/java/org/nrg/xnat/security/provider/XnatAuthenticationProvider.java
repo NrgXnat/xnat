@@ -105,6 +105,27 @@ public interface XnatAuthenticationProvider extends AuthenticationProvider {
     void setAutoVerified(final boolean autoVerified);
 
     /**
+     * Indicates whether the provider has HTML or text to display on the login page.
+     *
+     * @return Returns <pre>true</pre> if this provider has HTML or text to display on the login page.
+     * @see #getLink()
+     */
+    default boolean hasLink() {
+        return false;
+    }
+
+    /**
+     * Provides the HTML or text to display on the login page for this provider. This may return <pre>null</pre> or a
+     * blank string when {@link  #hasLink()} returns <pre>false</pre>.
+     *
+     * @return The HTML or text to display on the login page.
+     * @see #hasLink()
+     */
+    default String getLink() {
+        return null;
+    }
+
+    /**
      * @deprecated Ordering of authentication providers is set through the {@link SiteConfigPreferences#getEnabledProviders()} property.
      */
     @Deprecated

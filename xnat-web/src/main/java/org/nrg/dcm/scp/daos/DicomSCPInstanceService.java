@@ -6,6 +6,7 @@ import org.nrg.dcm.scp.DicomSCPInstance;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -61,12 +62,24 @@ public class DicomSCPInstanceService extends AbstractHibernateEntityService<Dico
         return findAllEnabled().stream().map( DicomSCPInstance::getPort).collect(Collectors.toSet());
     }
 
-    public String validate( DicomSCPInstance instance) {
-        List<String> expressions = Arrays.asList( instance.getProjectRoutingExpression(),
-                instance.getSubjectRoutingExpression(),
-                instance.getSessionRoutingExpression());
-        RoutingExpressionFromMultilineStringProvider expressionProvider = new RoutingExpressionFromMultilineStringProvider( expressions);
-        ExtractorFromRuleProvider extratorProvider = new ExtractorFromRuleProvider( expressionProvider);
-        return extratorProvider.validate().stream().collect(Collectors.joining(":"));
+    /**
+     * validate
+     *
+     * @param instance to be validated
+     * @return A string of colon delimited error messages,
+     * or empty string if valid,
+     * or null if validation was not run because instance does not have routing expressions enabled.
+     */
+    @Nullable
+    public String validate( @Nullable DicomSCPInstance instance) {
+        if(instance != null && instance.isRoutingExpressionsEnabled()) {
+            List<String> expressions = Arrays.asList(instance.getProjectRoutingExpression(),
+                    instance.getSubjectRoutingExpression(),
+                    instance.getSessionRoutingExpression());
+            RoutingExpressionFromMultilineStringProvider expressionProvider = new RoutingExpressionFromMultilineStringProvider(expressions);
+            ExtractorFromRuleProvider extratorProvider = new ExtractorFromRuleProvider(expressionProvider);
+            return extratorProvider.validate().stream().collect(Collectors.joining(":"));
+        }
+        return null;
     }
 }

@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -569,7 +570,17 @@ public class XnatPipelineLauncher {
      *            The pipelineName to set.
      */
     public void setPipelineName(String pipelineName) {
-        this.pipelineName = pipelineName;
+        final String pipelineHome = XDAT.getSiteConfigPreferences().getPipelinePath();
+        Path path = Paths.get(pipelineName).normalize();
+        if (!path.isAbsolute()) {
+            path = Paths.get(pipelineHome).resolve(pipelineName).toAbsolutePath().normalize();
+        }
+        if (path.startsWith(pipelineHome)) {
+            this.pipelineName = path.toString();
+        } else {
+            logger.error("The pipeline {} is not within the PIPELINE_HOME {}", pipelineName, pipelineHome);
+            this.pipelineName = null;
+        }
     }
 
     private String escapeSpecialShellCharacters(String input) {

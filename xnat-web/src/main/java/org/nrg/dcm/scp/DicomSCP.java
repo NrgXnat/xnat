@@ -215,7 +215,7 @@ public class DicomSCP {
         return _device.getNetworkConnection()[0].getServer() != null;
     }
 
-    private void addApplicationEntity(final DicomSCPInstance instance) {
+    private void addApplicationEntity(final DicomSCPInstance instance) throws UnknownDicomHelperInstanceException {
         if (instance.getPort() != getPort()) {
             throw new RuntimeException("Port for instance " + instance.getLabel() + " doesn't match port for DicomSCP instance: " + getPort());
         }
@@ -236,10 +236,11 @@ public class DicomSCP {
         final NetworkApplicationEntity applicationEntity = createApplicationEntity(aeTitle, instance);
 
         getApplicationEntities().put(aeTitle, applicationEntity);
-        getDicomServicesByApplicationEntity().put( applicationEntity,
-                new CStoreService.Specifier( aeTitle,
+        getDicomServicesByApplicationEntity().put(applicationEntity,
+                new CStoreService.Specifier(aeTitle,
                         _manager.getUserProvider(),
-                        _manager.getDicomObjectIdentifier( aeTitle, port),
+                        _manager.getDicomObjectIdentifier(aeTitle, port),
+                        _manager.getDicomFileNamer(fileNamer),
                         _manager)
                         .build());
     }

@@ -689,8 +689,8 @@ var XNAT = getObject(XNAT || {});
             storedAttributes = JSON.parse(storedAttributes);
 
             // overwrite any generic values with saved values
-            Object.keys(storedAttributes).forEach(function(key,val){
-                attributesObj[key] = val;
+            Object.keys(storedAttributes).forEach(function(key){
+                attributesObj[key] = storedAttributes[key];
             });
 
             // if any generic values were ignored, zero them out
@@ -734,6 +734,11 @@ var XNAT = getObject(XNAT || {});
                 el = XNAT.ui.panel.input.switchbox(obj);
                 break;
 
+            case 'text':
+                if (opts) obj = Object.assign( obj, opts );
+                el = XNAT.ui.panel.input.textarea(obj).get();
+                break;
+
             default:
                 if (opts) obj = Object.assign( obj, opts );
                 el = XNAT.ui.panel.input.text(obj);
@@ -748,7 +753,7 @@ var XNAT = getObject(XNAT || {});
             inputElements = [];
             Object.keys(attributesObj).forEach(function(name){
                 var opts = {};
-                var props = attributesObj[name];
+                var props = genericAttributes[name];
 
                 // check to see if supplied attribute is a part of the basic set of supported attributes
                 if (Object.keys(genericAttributes).indexOf(name) < 0) opts = { addClass: 'invalid', description: 'This parameter is not natively supported by this action and may be ignored' };

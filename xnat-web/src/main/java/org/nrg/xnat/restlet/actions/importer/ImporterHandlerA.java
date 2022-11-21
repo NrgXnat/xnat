@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -52,7 +53,8 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
     }
 
     public DicomFileNamer getNamer() {
-        return ObjectUtils.defaultIfNull(_namer, DEFAULT_NAMER);
+        return Optional.ofNullable(_namer)
+                .orElseGet(() -> _namer = XDAT.getContextService().getBeanSafely("dicomFileNamer", DicomFileNamer.class));
     }
 
     public ImporterHandlerA setNamer(final DicomFileNamer namer) {
@@ -127,18 +129,9 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
         final ImporterHandlerA handler     = (ImporterHandlerA) constructor.newInstance(uID, u, fi, params);
         final ContextService   context     = XDAT.getContextService();
 
-        final DicomFileNamer namer = context.getBeanSafely("dicomFileNamer", DicomFileNamer.class);
-        if (namer == null) {
-            logger.debug("No DicomFileNamer instance could be found in the application context.");
-        }
-
         /* Abuse Spring to inject some additional parameters. Please fix this. */
         final DicomObjectIdentifier identifier = context.getBean("dicomObjectIdentifier", DicomObjectIdentifier.class);
         handler.setIdentifier(identifier);
-        if (namer != null) {
-            handler.setNamer(namer);
-        }
-
         return handler;
 
     }
@@ -154,8 +147,6 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
     public static Map<String, Class<? extends ImporterHandlerA>> getImporters() {
         return IMPORTERS;
     }
-
-    private static final DicomFileNamer DEFAULT_NAMER = new SOPHashDicomFileNamer();
 
     private DicomObjectIdentifier _identifier;
     private DicomFileNamer        _namer;

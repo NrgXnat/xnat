@@ -570,16 +570,17 @@ public class XnatPipelineLauncher {
      *            The pipelineName to set.
      */
     public void setPipelineName(String pipelineName) {
+        this.pipelineName = isLegalPath(pipelineName) ? pipelineName : null;
+    }
+
+    private boolean isLegalPath(String pipelineName) {
         final String pipelineHome = XDAT.getSiteConfigPreferences().getPipelinePath();
-        Path path = Paths.get(pipelineName).normalize();
-        if (!path.isAbsolute()) {
-            path = Paths.get(pipelineHome).resolve(pipelineName).toAbsolutePath().normalize();
-        }
+        Path path = Paths.get(pipelineHome).resolve(pipelineName).toAbsolutePath().normalize();
         if (path.startsWith(pipelineHome)) {
-            this.pipelineName = path.toString();
+            return true;
         } else {
             logger.error("The pipeline {} is not within the PIPELINE_HOME {}", pipelineName, pipelineHome);
-            this.pipelineName = null;
+            return false;
         }
     }
 

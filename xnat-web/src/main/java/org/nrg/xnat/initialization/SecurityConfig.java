@@ -63,10 +63,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
-import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
+import org.springframework.security.web.authentication.session.*;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -90,13 +87,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService,
                           final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource,
                           final NamedParameterJdbcTemplate template, final DataSource dataSource, final SecurityPreferences securityPreferences) {
-        _preferences = preferences;
-        _appInfo = appInfo;
-        _aliasTokenService = aliasTokenService;
-        _userAuthService = userAuthService;
-        _dateValidation = dateValidation;
-        _template = template;
-        _dataSource = dataSource;
+        _preferences         = preferences;
+        _appInfo             = appInfo;
+        _aliasTokenService   = aliasTokenService;
+        _userAuthService     = userAuthService;
+        _dateValidation      = dateValidation;
+        _template            = template;
+        _dataSource          = dataSource;
         _securityPreferences = securityPreferences;
 
         _dbAuthProviderName = messageSource.getMessage("authProviders.localdb.defaults.name", EMPTY_OBJECT_ARRAY, "Database", Locale.getDefault());
@@ -290,14 +287,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // This is basically what super.configure() does, minus httpBasic().
         http.authorizeRequests().anyRequest().authenticated().and().formLogin();
 
-        final InteractiveAgentDetector     detector                 = interactiveAgentDetector();
-        final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, detector);
+        final InteractiveAgentDetector      detector                 = interactiveAgentDetector();
+        final XnatAuthenticationEntryPoint  authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, detector);
+        final SessionAuthenticationStrategy authenticationStrategy   = sessionAuthenticationStrategy();
 
-        http.apply(new XnatBasicAuthConfigurer<>(authenticationEntryPoint, _aliasTokenService));
+        http.apply(new XnatBasicAuthConfigurer<>(authenticationEntryPoint, customAuthenticationManager(), authenticationStrategy, authenticationSuccessHandler(), _aliasTokenService));
 
         http.sessionManagement()
             .sessionCreationPolicy(IF_REQUIRED)
-            .sessionAuthenticationStrategy(sessionAuthenticationStrategy())
+            .sessionAuthenticationStrategy(authenticationStrategy)
             .maximumSessions(_preferences.getConcurrentMaxSessions())
             .maxSessionsPreventsLogin(true)
             .sessionRegistry(sessionRegistry())

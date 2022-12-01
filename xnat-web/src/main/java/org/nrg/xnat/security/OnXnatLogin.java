@@ -11,6 +11,8 @@ package org.nrg.xnat.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.om.XdatUserLogin;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.XdatUserAuthService;
@@ -18,6 +20,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xnat.utils.XnatHttpUtils;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -30,6 +33,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.ParseException;
+import java.util.Optional;
 
 @Component
 @Slf4j
@@ -66,24 +71,7 @@ public class OnXnatLogin extends SavedRequestAwareAuthenticationSuccessHandler {
             log.error("An unknown error was found", e);
         }
 
-        if (StringUtils.equals(XdatUserAuthService.LOCALDB, request.getParameter(PARAM_LOGIN_METHOD))) {
-            final String username = request.getParameter(PARAM_USERNAME);
-            if (shouldUpgradePassword(username)) {
-                log.debug("It seems I should upgrade the password for user {}", username);
-                final int affected = _template.update(QUERY_UPGRADE_PASSWORD, new MapSqlParameterSource(PARAM_USERNAME, username).addValue(PARAM_PASSWORD, Users.encode(request.getParameter(PARAM_PASSWORD))));
-                if (affected == 0) {
-                    log.warn("Tried to upgrade password encoding for user {} but query said no rows were affected", username);
-                } else {
-                    if (affected > 1) {
-                        log.warn("Tried to upgrade password encoding for user {} but query said {} rows were affected, which seems weird", username, affected);
-                    } else {
-                        log.info("I upgraded password encoding for user {}", username);
-                    }
-                    final int deleted = _template.update(String.format(QUERY_CLEAR_CACHE_ENTRY, username), EmptySqlParameterSource.INSTANCE);
-                    log.debug("Deleted {} cache entries for user {}", deleted, username);
-                }
-            }
-        }
+        checkAccountUpgrades(request);
 
         super.onAuthenticationSuccess(request, response, authentication);
     }
@@ -102,12 +90,71 @@ public class OnXnatLogin extends SavedRequestAwareAuthenticationSuccessHandler {
         return isRootDefault ? DEFAULT_LANDING : super.determineTargetUrl(request, response);
     }
 
+    /**
+     * Checks if any upgrades are required to the user's account, e.g. upgrading password encryption.
+     *
+     * @param request The request for user authentication.
+     */
+    private void checkAccountUpgrades(final HttpServletRequest request) {
+        // The login method may be null in some cases, specifically basic auth, but that indicates localdb or alias token auth.
+        final String loginMethod = StringUtils.defaultIfBlank(request.getParameter(PARAM_LOGIN_METHOD), XdatUserAuthService.LOCALDB);
+        final String username    = getCredentials(request).getLeft();
+
+        // We have to have a username to upgrade a password
+        if (StringUtils.isNotBlank(username) && StringUtils.equals(XdatUserAuthService.LOCALDB, loginMethod)) {
+            if (shouldUpgradePassword(username)) {
+                log.debug("It seems I should upgrade the password for user {}", username);
+                final String password = StringUtils.getIfBlank(request.getParameter(PARAM_PASSWORD), () -> {
+                    log.debug("Couldn't find password on the authentication request, checking for basic auth credentials instead.");
+                    try {
+                        final Pair<String, String> credentials = XnatHttpUtils.getCredentials(request);
+                        if (credentials == null) {
+                            log.warn("Couldn't find password for user {} on the authentication request or in basic auth credentials, so I can't upgrade that password", username);
+                        } else if (StringUtils.equals(username, credentials.getKey())) {
+                            return credentials.getValue();
+                        } else {
+                            log.warn("I found credentials for user {} in the basic auth credentials, but that doesn't match the login username {}", credentials.getKey(), username);
+                        }
+                    } catch (ParseException e) {
+                        log.error("An error occurred trying to parse the user credentials from basic auth header.", e);
+                    }
+                    return null;
+                });
+                if (StringUtils.isBlank(password)) {
+                    log.warn("I'm trying to upgrade the password for user {} but I can't find a password to store", username);
+                    return;
+                }
+                final int affected = _template.update(QUERY_UPGRADE_PASSWORD, new MapSqlParameterSource(PARAM_USERNAME, username).addValue(PARAM_PASSWORD, Users.encode(password)));
+                if (affected == 0) {
+                    log.warn("Tried to upgrade password encoding for user {} but query said no rows were affected", username);
+                } else {
+                    if (affected > 1) {
+                        log.warn("Tried to upgrade password encoding for user {} but query said {} rows were affected, which seems weird", username, affected);
+                    } else {
+                        log.info("I upgraded password encoding for user {}", username);
+                    }
+                    final int deleted = _template.update(String.format(QUERY_CLEAR_CACHE_ENTRY, username), EmptySqlParameterSource.INSTANCE);
+                    log.debug("Deleted {} cache entries for user {}", deleted, username);
+                }
+            }
+        }
+    }
+
     private boolean shouldUpgradePassword(final String username) {
         try {
             return _template.queryForObject(QUERY_UPGRADE_NEEDED, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class);
         } catch (EmptyResultDataAccessException e) {
             log.warn("Checked for password encoding upgrade required, but couldn't find the username {}", username);
             return false;
+        }
+    }
+
+    private static Pair<String, String> getCredentials(final HttpServletRequest request) {
+        try {
+            return Optional.ofNullable(XnatHttpUtils.getCredentials(request)).orElseGet(ImmutablePair::nullPair);
+        } catch (ParseException ignore) {
+            // We can ignore this: the exception is for improperly formatted credentials, but we wouldn't have a successful login in that case.
+            return ImmutablePair.nullPair();
         }
     }
 }

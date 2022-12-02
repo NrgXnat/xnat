@@ -275,7 +275,7 @@
                                 <TD NOWRAP>
                                     <input id="5_prearchive" type="radio" name="prearchive" value="5" #if($prearc==5)CHECKED#end/>
                                 </TD>
-                                <TD>All image data will be placed into the archive automatically and will overwrite existing files. Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD>
+                                <TD>All image data will be placed into the archive automatically and will overwrite existing files. Warnings about non-parsable DICOM data or duplicated SOP Instance UIDs will be ignored. Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD>
                             </TR>
                             <TR>
                                 <TD COLSPAN="2">

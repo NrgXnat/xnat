@@ -7,12 +7,10 @@
  * Released under the Simplified BSD.
  */
 
-/**
- *
- */
 package org.nrg.xnat.helpers.merge;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.CatDcmentryI;
@@ -23,10 +21,10 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 
 import java.io.File;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 public class MergeCatCatalog implements Callable<MergeSessionsA.Results<Boolean>> {
-    @SuppressWarnings("serial")
     public static class DCMEntryConflict extends Exception {
         public DCMEntryConflict(String string, Exception exception) {
             super(string, exception);
@@ -34,7 +32,6 @@ public class MergeCatCatalog implements Callable<MergeSessionsA.Results<Boolean>
 
     }
 
-    @SuppressWarnings("serial")
     public static class EntryConflict extends Exception {
         public EntryConflict(String string, Exception exception) {
             super(string, exception);
@@ -68,7 +65,7 @@ public class MergeCatCatalog implements Callable<MergeSessionsA.Results<Boolean>
             throws Exception {
 
         boolean merge = false;
-        MergeSessionsA.Results<Boolean> result = new MergeSessionsA.Results<Boolean>();
+        final MergeSessionsA.Results<Boolean> result = new MergeSessionsA.Results<>();
         for (final CatCatalogI subCat : src.getSets_entryset()) {
             final MergeSessionsA.Results<Boolean> r = merge(subCat, dest, overwrite, ci, destCatFile, destProject);
             if (r.result) {
@@ -78,41 +75,72 @@ public class MergeCatCatalog implements Callable<MergeSessionsA.Results<Boolean>
         }
 
         for (final CatEntryI entry : src.getEntries_entry()) {
+            merge = true;   // if there are any entries in the catalog, we're merging
+                            // (or throwing an exception if overwrite not permitted)
+
+            final String uid = entry instanceof CatDcmentryI ? ((CatDcmentryI) entry).getUid() : null;
+            final Optional<CatEntryI> existingEntry = locateExistingEntry(entry, uid, dest);
+            if (!existingEntry.isPresent()) {
+                dest.addEntries_entry(entry);
+                continue; // Additive change, moving along
+            }
+
+            final CatEntryI destEntry = existingEntry.get();
             if (!overwrite) {
-                if (entry instanceof CatDcmentryI && !StringUtils.isEmpty(((CatDcmentryI) entry).getUid())) {
-                    final CatEntryI destEntry = CatalogUtils.getDCMEntryByUID(dest, ((CatDcmentryI) entry).getUid());
-                    if (destEntry != null) {
-                        throw new DCMEntryConflict("Duplicate DCM UID cannot be merged at this time.", new Exception());
-                    }
+                // There's already an entry for this file, throw an exception
+                if (destEntry instanceof CatDcmentryI) {
+                    throw new DCMEntryConflict("Duplicate DICOM file uploaded.", new Exception());
+                } else {
+                    throw new EntryConflict("Duplicate file uploaded.", new Exception());
                 }
             }
 
-            final CatEntryI destEntry = CatalogUtils.getEntryByURI(dest, entry.getUri());
+            if (destEntry instanceof CatDcmentryI) {
+                if (!StringUtils.equals(uid, ((CatDcmentryI) destEntry).getUid())) {
+                    // Do not permit overwriting an existing file with a different UID, regardless of overwrite = true
+                    throw new DCMEntryConflict("A DICOM file with the same name but different UID already exists.",
+                            new Exception());
+                }
 
-            if (destEntry == null) {
-                dest.addEntries_entry(entry);
-                merge = true;
-            } else if (!overwrite) {
-                throw new EntryConflict("Duplicate file uploaded.", new Exception());
-            } else if (ci != null) {
+                if (!StringUtils.equals(entry.getUri(), destEntry.getUri())) {
+                    // Update name
+                    destEntry.setUri(entry.getUri());
+                    destEntry.setId(entry.getId());
+                    destEntry.setCachepath(entry.getCachepath());
+                }
+            }
+
+            if (ci != null) {
+                // Update existing catalog entry with this event
+                CatalogUtils.updateModificationEvent(destEntry, ci);
+            }
+
+            if (CatalogUtils.maintainFileHistory()) {
                 //backup existing file
                 //the entry should be copied to the .history catalog, the file will be moved separately
-                if (CatalogUtils.maintainFileHistory()) {
-                    result.getAfter().add(new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() throws Exception {
-                            File destFile = CatalogUtils.getFile(destEntry, destCatFile.getParentFile().getAbsolutePath(), destProject);
-                            if (destFile != null) {
-                                File f = FileUtils.BuildHistoryFile(destFile, EventUtils.getTimestamp(ci));
-                                CatalogUtils.addCatHistoryEntry(destCatFile, destProject, f.getAbsolutePath(), (CatEntryBean) entry, ci);
-                            }
-                            return true;
-                        }
-                    });
-                }
+                result.getAfter().add(() -> {
+                    File destFile = CatalogUtils.getFile(destEntry, destCatFile.getParentFile().getAbsolutePath(), destProject);
+                    if (destFile != null) {
+                        File f = FileUtils.BuildHistoryFile(destFile, EventUtils.getTimestamp(ci));
+                        CatalogUtils.addCatHistoryEntry(destCatFile, destProject, f.getAbsolutePath(), (CatEntryBean) entry, ci);
+                    }
+                    return true;
+                });
             }
         }
 
         return result.setResult(merge);
+    }
+
+    private static Optional<CatEntryI> locateExistingEntry(final CatEntryI entry, final String uid, final CatCatalogI dest) {
+        CatEntryI destEntry = null;
+        if (XDAT.getSiteConfigPreferences().getUseSopInstanceUidToUniquelyIdentifyDicom() &&
+                entry instanceof CatDcmentryI && !StringUtils.isBlank(uid)) {
+            destEntry = CatalogUtils.getDCMEntryByUID(dest, uid);
+        }
+        if (destEntry == null) {
+            destEntry = CatalogUtils.getEntryByURI(dest, entry.getUri());
+        }
+        return Optional.ofNullable(destEntry);
     }
 }

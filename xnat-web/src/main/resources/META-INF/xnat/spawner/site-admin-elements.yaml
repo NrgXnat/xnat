@@ -1753,6 +1753,37 @@ sessionRouting:
             description: >
                 Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
 
+## DICOM NAMING
+dicomNaming:
+    kind: panel.form
+    label: DICOM File Naming
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        dicomFileNameTemplate:
+            kind: panel.input.text
+            name: dicomFileNameTemplate
+            label: DICOM Filename Template
+            validation: not-empty
+            description: >
+                Template for naming DICOM files ingested via GradualDicomImporter (e.g., gradual-DICOM, DICOM-zip, C-STORE), 
+                unless rename = false. Variables must be 
+                <a href="https://www.dcm4che.org/docs/dcm4che-2.0.17-apidocs/org/dcm4che2/data/Tag.html" target="_blank">dcm4che tag names</a>, 
+                within <code>${}</code>, for example: <code>\${SOPInstanceUID}</code>. Changing this value may lead to 
+                duplicated DICOM files on merge unless using SOP Instance UID to uniquely identify DICOM.
+        useSopInstanceUidToUniquelyIdentifyDicom:
+            kind: panel.input.switchbox
+            name: useSopInstanceUidToUniquelyIdentifyDicom
+            label: "Use SOP Instance UID to uniquely identify a DICOM file?"
+            onText: Yes, use SOP Instance UID
+            offText: No, use file name
+            description: >
+                SOP Instance UID should uniquely identify a DICOM file, and using this setting will prevent XNAT 
+                storing duplicate files when file names change due to source, import method, or updates to the 
+                "dicomFileNameTemplate" configuration setting. However, using file name is offered for backward 
+                compatibility or handling non-compliant scenarios.
+
 
 ## PIPELINE SETTINGS
 
@@ -2669,6 +2700,13 @@ root:
                 ${projectRouting}
                 ${subjectRouting}
                 ${sessionRouting}
+        dicomFileNaming:
+            kind: tab
+            name: dicomFileNaming
+            label: "DICOM File Naming"
+            group: manageData
+            contents:
+                ${dicomNaming}
         pipelinesTab:
             kind: tab
             label: Pipeline Settings

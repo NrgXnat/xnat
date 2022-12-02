@@ -9,19 +9,14 @@
 
 package org.nrg.xnat.security;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.nrg.xnat.utils.XnatHttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,7 +25,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -46,24 +40,23 @@ import java.text.ParseException;
 import static org.nrg.xnat.utils.XnatHttpUtils.getBasicAuthCredentials;
 
 @Component
-@Getter(AccessLevel.PRIVATE)
-@Accessors(prefix = "_")
 @Slf4j
 public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
-    private final WebAuthenticationDetailsSource _authenticationDetailsSource;
-    private final XnatProviderManager            _providerManager;
-    private final SessionAuthenticationStrategy  _authenticationStrategy;
-    private final AuthenticationSuccessHandler   _successHandler;
-    private final AliasTokenService              _aliasTokenService;
-
     @Autowired
-    public XnatBasicAuthenticationFilter(final AuthenticationManager manager, final AuthenticationEntryPoint entryPoint, final XnatProviderManager providerManager, final SessionAuthenticationStrategy authenticationStrategy, final AuthenticationSuccessHandler successHandler, final AliasTokenService aliasTokenService) {
+    public XnatBasicAuthenticationFilter(final AuthenticationManager manager, final AuthenticationEntryPoint entryPoint, final AliasTokenService aliasTokenService) {
         super(manager, entryPoint);
         _authenticationDetailsSource = new WebAuthenticationDetailsSource();
-        _providerManager             = providerManager;
-        _authenticationStrategy      = authenticationStrategy;
-        _successHandler              = successHandler;
-        _aliasTokenService           = aliasTokenService;
+        _aliasTokenService = aliasTokenService;
+    }
+
+    @Autowired
+    public void setXnatProviderManager(final XnatProviderManager providerManager) {
+        _providerManager = providerManager;
+    }
+
+    @Autowired
+    public void setSessionAuthenticationStrategy(final SessionAuthenticationStrategy strategy) {
+        _authenticationStrategy = strategy;
     }
 
     @Override
@@ -77,12 +70,12 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
         }
 
         if (credentials != null) {
-            String username     = credentials.getLeft();
+            String username = credentials.getLeft();
             String providerName = null;
-            int    idx          = username.indexOf('/');
+            int idx = username.indexOf('/');
             if (idx != -1) {
                 providerName = username.substring(0, idx);
-                username     = username.substring(idx + 1);
+                username = username.substring(idx + 1);
             }
             final String password = credentials.getRight();
 
@@ -90,7 +83,7 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
                 final UsernamePasswordAuthenticationToken authRequest;
                 if (StringUtils.isBlank(providerName)) {
                     authRequest = _providerManager.buildUPTokenForAuthMethod(_providerManager.retrieveAuthMethod(username),
-                                                                             username, password);
+                            username, password);
                 } else {
                     authRequest = _providerManager.buildUPTokenForProviderName(providerName, username, password);
                 }
@@ -123,16 +116,14 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     }
 
     @Override
+    // XNAT-2186 requested that REST logins also leave records of last login date
     protected void onSuccessfulAuthentication(final HttpServletRequest request, final HttpServletResponse response, final Authentication authentication) throws IOException {
         try {
-            _successHandler.onAuthenticationSuccess(request, response, authentication);
-        } catch (ServletException e) {
-            try {
-                log.error("An error occurred trying to call the authentication success handler for user {}", XnatHttpUtils.getCredentials(request), e);
-            } catch (ParseException ex) {
-                log.error("Couldn't parse user credential while trying to log an error calling the authentication success handler. Initial error is below, parse error is {}:\n{}\n--------------------------------", ex.getMessage(), ex.getStackTrace(), e);
-            }
+            Users.recordUserLogin(request);
+        } catch (Exception e) {
+            log.error("An unknown error occurred", e);
         }
+
         super.onSuccessfulAuthentication(request, response, authentication);
     }
 
@@ -167,5 +158,9 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
         final AliasToken token = _aliasTokenService.locateToken(username);
         return token == null ? null : token.getXdatUserId();
     }
-}
 
+    private final WebAuthenticationDetailsSource _authenticationDetailsSource;
+    private final AliasTokenService              _aliasTokenService;
+    private       XnatProviderManager            _providerManager;
+    private       SessionAuthenticationStrategy  _authenticationStrategy;
+}

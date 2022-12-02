@@ -20,21 +20,14 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.annotation.web.configurers.ExceptionHandlingConfigurer;
 import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AndRequestMatcher;
-import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
-import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.util.matcher.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.accept.ContentNegotiationStrategy;
 import org.springframework.web.accept.HeaderContentNegotiationStrategy;
@@ -68,11 +61,8 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
      *
      * @throws Exception When an error occurs during initialization.
      */
-    public XnatBasicAuthConfigurer(final AuthenticationEntryPoint entryPoint, final XnatProviderManager providerManager, final SessionAuthenticationStrategy sessionAuthenticationStrategy, final AuthenticationSuccessHandler authenticationSuccessHandler, final AliasTokenService aliasTokenService) throws Exception {
-        _providerManager               = providerManager;
-        _sessionAuthenticationStrategy = sessionAuthenticationStrategy;
-        _authenticationSuccessHandler  = authenticationSuccessHandler;
-        _aliasTokenService             = aliasTokenService;
+    public XnatBasicAuthConfigurer(final AuthenticationEntryPoint entryPoint, final AliasTokenService aliasTokenService) throws Exception {
+        _aliasTokenService = aliasTokenService;
 
         realmName(DEFAULT_REALM);
 
@@ -172,7 +162,7 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
 
     @Override
     public void configure(final B http) {
-        final XnatBasicAuthenticationFilter basicAuthenticationFilter = new XnatBasicAuthenticationFilter(http.getSharedObject(AuthenticationManager.class), _authenticationEntryPoint, _providerManager, _sessionAuthenticationStrategy, _authenticationSuccessHandler, _aliasTokenService);
+        final XnatBasicAuthenticationFilter basicAuthenticationFilter = new XnatBasicAuthenticationFilter(http.getSharedObject(AuthenticationManager.class), _authenticationEntryPoint, _aliasTokenService);
         if (_authenticationDetailsSource != null) {
             basicAuthenticationFilter.setAuthenticationDetailsSource(_authenticationDetailsSource);
         }
@@ -186,13 +176,9 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
     private static final RequestHeaderRequestMatcher X_REQUESTED_WITH = new RequestHeaderRequestMatcher("X-Requested-With", "XMLHttpRequest");
     private static final String                      DEFAULT_REALM    = "XNAT";
 
-    private final BasicAuthenticationEntryPoint _basicAuthenticationEntryPoint = new BasicAuthenticationEntryPoint();
-
-    private final XnatProviderManager           _providerManager;
-    private final SessionAuthenticationStrategy _sessionAuthenticationStrategy;
-    private final AuthenticationSuccessHandler  _authenticationSuccessHandler;
-    private final AliasTokenService             _aliasTokenService;
-
     private AuthenticationEntryPoint                           _authenticationEntryPoint;
     private AuthenticationDetailsSource<HttpServletRequest, ?> _authenticationDetailsSource;
+    private AliasTokenService                                  _aliasTokenService;
+
+    private BasicAuthenticationEntryPoint _basicAuthenticationEntryPoint = new BasicAuthenticationEntryPoint();
 }

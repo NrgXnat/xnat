@@ -17,13 +17,12 @@ public class ResourceEvent extends AbstractEventServiceEvent<XnatResourcecatalog
 
     private final String displayName = "Resource";
     private final String description = "Resource created.";
-    private Integer payloadId = null;
 
     public ResourceEvent(){};
 
     public ResourceEvent(final XnatResourcecatalogI payload, final String eventUser, final Status status, final String projectId) {
         super(payload, eventUser, status, projectId, (payload != null ? payload.getXSIType() : null));
-        payloadId = payload.getXnatAbstractresourceId();
+        payloadId = Integer.toString(payload.getXnatAbstractresourceId());
     }
 
     @Override
@@ -38,7 +37,7 @@ public class ResourceEvent extends AbstractEventServiceEvent<XnatResourcecatalog
 
     @Override
     public XnatResourcecatalogI getObject(UserI user) {
-        return XnatResourcecatalog.getXnatResourcecatalogsByXnatAbstractresourceId(payloadId, user, false);
+        return XnatResourcecatalog.getXnatResourcecatalogsByXnatAbstractresourceId(Integer.valueOf(payloadId), user, false);
     }
 
     @Override

@@ -20,7 +20,6 @@ public class SubjectAssessorEvent extends AbstractEventServiceEvent<XnatSubjecta
 
     private final String displayName = "Subject Assessor";
     private final String description = "Subject Assessor created or deleted.";
-    private String payloadId = null;
 
     public SubjectAssessorEvent(){};
 

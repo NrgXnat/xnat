@@ -19,7 +19,6 @@ public class SessionEvent extends AbstractEventServiceEvent<XnatImagesessiondata
 
     private final String displayName = "Session";
     private final String description = "Session created, merged, or deleted.";
-    private String payloadId = null;
 
     public SessionEvent() {}
 

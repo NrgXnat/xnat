@@ -16,7 +16,6 @@ public class ProjectEvent extends AbstractEventServiceEvent<XnatProjectdataI> {
 
     private final String displayName = "Project";
     private final String description = "Project created or deleted.";
-    private String payloadId = null;
 
     public ProjectEvent(){};
 

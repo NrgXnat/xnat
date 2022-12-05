@@ -98,4 +98,9 @@ public class SampleEvent implements EventServiceEvent {
 
     @Override
     public List<EventScope> getEventScope() {return Arrays.asList(EventScope.PROJECT);}
+
+    @Override
+    public String getPayloadId() {
+        return null;
+    }
 }

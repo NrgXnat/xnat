@@ -16,7 +16,6 @@ public class ImageAssessorEvent extends AbstractEventServiceEvent<XnatImageasses
 
     private final String displayName = "Image Assessor";
     private final String description = "Image assessor created.";
-    private String payloadId = null;
 
     public ImageAssessorEvent(){};
 

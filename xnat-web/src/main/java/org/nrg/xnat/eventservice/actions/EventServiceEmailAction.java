@@ -6,6 +6,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.NotNull;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.services.MailService;
 import org.nrg.xapi.model.users.User;
@@ -15,23 +17,36 @@ import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.model.ActionAttributeConfiguration;
 import org.nrg.xnat.eventservice.model.Subscription;
+import org.nrg.xnat.eventservice.model.xnat.XnatModelObject;
+import org.nrg.xnat.eventservice.services.EventServiceComponentManager;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.*;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_COMPLETE;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_ERROR;
+import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.ACTION_FAILED;
 
 @Slf4j
-//@Service
+@Service
 public class EventServiceEmailAction extends SingleActionProvider {
 
     private static final String FROM_KEY    = "from";
@@ -40,6 +55,7 @@ public class EventServiceEmailAction extends SingleActionProvider {
     private static final String BCC_KEY     = "bcc";
     private static final String SUBJECT_KEY = "subject";
     private static final String BODY_KEY    = "body";
+    private static final String INCLUDE_SENDER = "includeSender";
 
     private final String                                    displayName = "Email Action";
     private final String                                    description = "Project owners and site administrators can send an email in response to events.";
@@ -51,20 +67,22 @@ public class EventServiceEmailAction extends SingleActionProvider {
     private final NamedParameterJdbcTemplate        jdbcTemplate;
     private final RoleHolder                        roleHolder;
     private final UserManagementServiceI            userManagementService;
+    private final EventServiceComponentManager componentManager;
 
     @Autowired
     public EventServiceEmailAction(final MailService mailService,
                                    final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService,
                                    final NamedParameterJdbcTemplate jdbcTemplate,
                                    final RoleHolder roleHolder,
+                                   final EventServiceComponentManager componentManager,
                                    final UserManagementServiceI userManagementService) {
         this.mailService = mailService;
         this.subscriptionDeliveryEntityService = subscriptionDeliveryEntityService;
         this.jdbcTemplate = jdbcTemplate;
         this.roleHolder = roleHolder;
+        this.componentManager = componentManager;
         this.userManagementService = userManagementService;
     }
-
 
     @Override
     public String getDisplayName() {
@@ -100,9 +118,15 @@ public class EventServiceEmailAction extends SingleActionProvider {
         //                                    .required(true)
         //                                    .build());
 
+        attributeConfigurationMap.put(INCLUDE_SENDER,
+                ActionAttributeConfiguration.builder()
+                        .description("Send email to the user who triggers the event.")
+                        .type("boolean")
+                        .defaultValue("false")
+                        .build());
         attributeConfigurationMap.put(TO_KEY,
                                       ActionAttributeConfiguration.builder()
-                                                                  .description("Comma separated list of email recipients.")
+                                                                  .description("Comma separated list of users.")
                                                                   .type("string")
                                                                   .defaultValue("")
                                                                   .restrictTo(emailList)
@@ -111,7 +135,7 @@ public class EventServiceEmailAction extends SingleActionProvider {
 
         attributeConfigurationMap.put(CC_KEY,
                                       ActionAttributeConfiguration.builder()
-                                                                  .description("Comma separated list of email recipients.")
+                                                                  .description("Comma separated list of users.")
                                                                   .type("string")
                                                                   .defaultValue("")
                                                                   .restrictTo(emailList)
@@ -120,7 +144,7 @@ public class EventServiceEmailAction extends SingleActionProvider {
 
         attributeConfigurationMap.put(BCC_KEY,
                                       ActionAttributeConfiguration.builder()
-                                                                  .description("Comma separated list of email recipients.")
+                                                                  .description("Comma separated list of users.")
                                                                   .type("string")
                                                                   .defaultValue("")
                                                                   .restrictTo(emailList)
@@ -129,16 +153,16 @@ public class EventServiceEmailAction extends SingleActionProvider {
 
         attributeConfigurationMap.put(SUBJECT_KEY,
                                       ActionAttributeConfiguration.builder()
-                                                                  .description("Email message subject.")
+                                                                  .description("Email message subject. Can include #ID#, #LABEL#, and #URL# variables. Note: Only ID variable is available for Delete events")
                                                                   .type("string")
                                                                   .defaultValue("")
-                                                                  .required(false)
+                                                                  .required(true)
                                                                   .build());
 
         attributeConfigurationMap.put(BODY_KEY,
                                       ActionAttributeConfiguration.builder()
-                                                                  .description("Textual body of email.")
-                                                                  .type("string")
+                                                                  .description("Textual body of email. Can include #ID#, #LABEL#, and #URL# variables. Note: Only ID variable is available for Delete events")
+                                                                  .type("text")
                                                                   .defaultValue("")
                                                                   .required(true)
                                                                   .build());
@@ -148,15 +172,10 @@ public class EventServiceEmailAction extends SingleActionProvider {
 
     @Override
     public void processEvent(EventServiceEvent event, Subscription subscription, UserI user, final Long deliveryId) {
-
         log.debug("Attempting to send email with EventServiceEmailAction.");
         final Map<String, String> inputValues = subscription.attributes() != null ? subscription.attributes() : Maps.newHashMap();
 
         MailMessage mailMessage = new MailMessage();
-
-
-        // String from = inputValues.get(FROM_KEY);
-        String from = user.getEmail();
 
         List<String> toUsersList = Splitter.on(CharMatcher.anyOf(";:, "))
                                            .trimResults().omitEmptyStrings()
@@ -169,48 +188,38 @@ public class EventServiceEmailAction extends SingleActionProvider {
                                             .splitToList(inputValues.get(BCC_KEY) != null ? inputValues.get(BCC_KEY) : "");
 
 
-        if (!areRecipientsAllowed(toUsersList, event.getProjectId(), user)) {
-            failWithMessage(deliveryId, "TO: Recipients are not allowed for User: " + user.getLogin());
-            return;
-        } else if (!ccUsersList.isEmpty() && !areRecipientsAllowed(ccUsersList, event.getProjectId(), user)) {
-            failWithMessage(deliveryId, "CC: Recipients are not allowed for User: " + user.getLogin());
-            return;
-        } else if (!bccUsersList.isEmpty() && !areRecipientsAllowed(bccUsersList, event.getProjectId(), user)) {
-            failWithMessage(deliveryId, "BCC: Recipients are not allowed for User: " + user.getLogin());
+        if (!recipientsVerified(event, user, deliveryId, toUsersList, ccUsersList, bccUsersList)) {
             return;
         }
 
-
+        String from = user.getEmail();
         if (Strings.isNullOrEmpty(from)) {
             failWithMessage(deliveryId, "Action missing \"from\" email attribute.");
             log.debug("Action missing \"from\" email attribute.");
             return;
-        } else {
-            mailMessage.setFrom(from);
         }
 
-
         List<String> toEmailList = getEmailList(toUsersList);
+        if ("true".equalsIgnoreCase(inputValues.get(INCLUDE_SENDER))) {
+            Optional<String> emailOptional=getEmail(event.getUser());
+            if (emailOptional.isPresent()) {
+                toEmailList.add(emailOptional.get());
+            }
+        }
         if (toEmailList == null || toEmailList.isEmpty()) {
             failWithMessage(deliveryId, "Action missing email recipient as \"to\" attribute.");
             log.debug("Action missing email recipient as \"to\" attribute.");
             return;
         }
-        mailMessage.setTos(toEmailList);
 
         List<String> ccEmailList = getEmailList(ccUsersList);
-        if (ccEmailList != null && !ccEmailList.isEmpty()) {
-            mailMessage.setCcs(ccEmailList);
-        }
-
         List<String> bccEmailList = getEmailList(bccUsersList);
-        if (bccEmailList != null && !bccEmailList.isEmpty()) {
-            mailMessage.setBccs(bccEmailList);
-        }
 
-        if (!Strings.isNullOrEmpty(inputValues.get(SUBJECT_KEY))) {
-            String subject = inputValues.get(SUBJECT_KEY);
-            mailMessage.setSubject(subject);
+        String subject = inputValues.get(SUBJECT_KEY);
+        if (Strings.isNullOrEmpty(subject)) {
+            failWithMessage(deliveryId, "Action missing \"subject\" email attribute.");
+            log.debug("Action missing \"subject\" email attribute.");
+            return;
         }
 
         String body = inputValues.get(BODY_KEY);
@@ -219,10 +228,16 @@ public class EventServiceEmailAction extends SingleActionProvider {
             log.debug("Action missing \"body\" email attribute.");
             return;
         }
-        mailMessage.setText(body);
+        body= StringEscapeUtils.escapeHtml4(body);
 
+        Map<String, String> templateVariable = getTemplateValues(event, user);
+        for (String key : templateVariable.keySet()) {
+            subject = subject.replaceAll(key, templateVariable.get(key));
+            body = body.replaceAll("(\r\n|\n)", "<br/>");
+            body = body.replaceAll(key, templateVariable.get(key));
+        }
         try {
-            mailService.sendMessage(mailMessage);
+            mailService.sendHtmlMessage(from, toEmailList.toArray(new String[0]), ccEmailList.toArray(new String[0]), bccEmailList.toArray(new String[0]), subject, body);
             subscriptionDeliveryEntityService.addStatus(deliveryId, ACTION_COMPLETE, new Date(), "Email action completed successfully.");
         } catch (MessagingException e) {
             log.error("Email service failed to send message. \n" + e.getMessage());
@@ -230,6 +245,41 @@ public class EventServiceEmailAction extends SingleActionProvider {
         }
 
 
+    }
+
+    private boolean recipientsVerified(EventServiceEvent event, UserI user, Long deliveryId, List<String> toUsersList, List<String> ccUsersList, List<String> bccUsersList) {
+        if (!areRecipientsAllowed(toUsersList, event.getProjectId(), user)) {
+            failWithMessage(deliveryId, "TO: Recipients are not allowed for User: " + user.getLogin());
+            return false;
+        } else if (!ccUsersList.isEmpty() && !areRecipientsAllowed(ccUsersList, event.getProjectId(), user)) {
+            failWithMessage(deliveryId, "CC: Recipients are not allowed for User: " + user.getLogin());
+            return false;
+        } else if (!bccUsersList.isEmpty() && !areRecipientsAllowed(bccUsersList, event.getProjectId(), user)) {
+            failWithMessage(deliveryId, "BCC: Recipients are not allowed for User: " + user.getLogin());
+            return false;
+        }
+        return true;
+    }
+
+    @NotNull
+    private Map<String, String> getTemplateValues(EventServiceEvent event, UserI user) {
+        Map<String, String> templateVariable = new HashMap<>();
+
+        Object payloadObject = event.getObject(user);
+        XnatModelObject xnatModelObject = componentManager.getModelObject(payloadObject, user);
+        if (xnatModelObject != null) {
+            String id = xnatModelObject.getId();
+            templateVariable.put("#ID#", id);
+            templateVariable.put("#LABEL#", xnatModelObject.getLabel());
+            String url = "<a href=\"" + TurbineUtils.GetFullServerPath() + "/data" + xnatModelObject.getUri() + "\">" + id + "</a>";
+            templateVariable.put("#URL#", url);
+        } else {
+            String payloadId = event.getPayloadId();
+            if (payloadId != null) {
+                templateVariable.put("#ID#", event.getPayloadId());
+            }
+        }
+        return templateVariable;
     }
 
     /* Get allowed emails and context */
@@ -243,13 +293,21 @@ public class EventServiceEmailAction extends SingleActionProvider {
     private List<String> getEmailList(List<String> usernameList) {
         List<String> toEmailList = new ArrayList<>();
         for (String userName : usernameList) {
-            try {
-                toEmailList.add(userManagementService.getUser(userName).getEmail());
-            } catch (UserNotFoundException | UserInitException e) {
-                log.error("Could not load user: " + userName + "\n" + e.getStackTrace());
+            Optional<String> emailOptional = getEmail(userName);
+            if (emailOptional.isPresent()) {
+                toEmailList.add(emailOptional.get());
             }
         }
         return toEmailList;
+    }
+
+    private Optional<String> getEmail(String userName) {
+        try {
+            return Optional.of(userManagementService.getUser(userName).getEmail());
+        } catch (UserNotFoundException | UserInitException e) {
+            log.error("Could not load user: {}. ", userName, e);
+        }
+        return Optional.empty();
     }
 
     private List<User> getAllowedRecipients(String projectId) {

@@ -30,6 +30,8 @@ public abstract class AbstractEventServiceEvent<EventObjectT>
     protected Enum status = null;
     protected String projectId = null;
     protected String xsiType = null;
+    protected String payloadId = null;
+
 
     public AbstractEventServiceEvent() {}
 
@@ -102,6 +104,11 @@ public abstract class AbstractEventServiceEvent<EventObjectT>
     @Override
     public Object getPayloadSignatureObject() {return null;}
 
+
+    @Override
+    public String getPayloadId() {
+        return payloadId;
+    }
 
     @Override
     public List<EventScope> getEventScope() { return Arrays.asList(EventScope.PROJECT, EventScope.SITE); }

@@ -16,7 +16,6 @@ public class SubjectEvent extends AbstractEventServiceEvent<XnatSubjectdataI> {
 
     private final String displayName = "Subject";
     private final String description = "Subject created, updated, or deleted.";
-    private String payloadId = null;
 
     public SubjectEvent(){};
 

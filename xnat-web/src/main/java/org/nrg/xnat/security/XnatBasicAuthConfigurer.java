@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.HttpSecurityBuilder;
@@ -61,8 +62,9 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
      *
      * @throws Exception When an error occurs during initialization.
      */
-    public XnatBasicAuthConfigurer(final AuthenticationEntryPoint entryPoint, final AliasTokenService aliasTokenService) throws Exception {
+    public XnatBasicAuthConfigurer(final AuthenticationEntryPoint entryPoint, final AliasTokenService aliasTokenService, final NamedParameterJdbcTemplate template) throws Exception {
         _aliasTokenService = aliasTokenService;
+        _template=template;
 
         realmName(DEFAULT_REALM);
 
@@ -162,7 +164,7 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
 
     @Override
     public void configure(final B http) {
-        final XnatBasicAuthenticationFilter basicAuthenticationFilter = new XnatBasicAuthenticationFilter(http.getSharedObject(AuthenticationManager.class), _authenticationEntryPoint, _aliasTokenService);
+        final XnatBasicAuthenticationFilter basicAuthenticationFilter = new XnatBasicAuthenticationFilter(http.getSharedObject(AuthenticationManager.class), _authenticationEntryPoint, _aliasTokenService, _template);
         if (_authenticationDetailsSource != null) {
             basicAuthenticationFilter.setAuthenticationDetailsSource(_authenticationDetailsSource);
         }
@@ -179,6 +181,7 @@ public final class XnatBasicAuthConfigurer<B extends HttpSecurityBuilder<B>> ext
     private AuthenticationEntryPoint                           _authenticationEntryPoint;
     private AuthenticationDetailsSource<HttpServletRequest, ?> _authenticationDetailsSource;
     private AliasTokenService                                  _aliasTokenService;
+    private final NamedParameterJdbcTemplate                   _template;
 
     private BasicAuthenticationEntryPoint _basicAuthenticationEntryPoint = new BasicAuthenticationEntryPoint();
 }

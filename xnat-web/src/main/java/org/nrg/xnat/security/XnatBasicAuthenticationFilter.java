@@ -13,11 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xnat.utils.XnatHttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -43,10 +44,11 @@ import static org.nrg.xnat.utils.XnatHttpUtils.getBasicAuthCredentials;
 @Slf4j
 public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     @Autowired
-    public XnatBasicAuthenticationFilter(final AuthenticationManager manager, final AuthenticationEntryPoint entryPoint, final AliasTokenService aliasTokenService) {
+    public XnatBasicAuthenticationFilter(final AuthenticationManager manager, final AuthenticationEntryPoint entryPoint, final AliasTokenService aliasTokenService, final NamedParameterJdbcTemplate template) {
         super(manager, entryPoint);
         _authenticationDetailsSource = new WebAuthenticationDetailsSource();
         _aliasTokenService = aliasTokenService;
+        _template=template;
     }
 
     @Autowired
@@ -119,7 +121,7 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     // XNAT-2186 requested that REST logins also leave records of last login date
     protected void onSuccessfulAuthentication(final HttpServletRequest request, final HttpServletResponse response, final Authentication authentication) throws IOException {
         try {
-            Users.recordUserLogin(request);
+            XnatHttpUtils.onAuthenticationSuccess(request, _template);
         } catch (Exception e) {
             log.error("An unknown error occurred", e);
         }
@@ -163,4 +165,5 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     private final AliasTokenService              _aliasTokenService;
     private       XnatProviderManager            _providerManager;
     private       SessionAuthenticationStrategy  _authenticationStrategy;
+    private final NamedParameterJdbcTemplate     _template;
 }

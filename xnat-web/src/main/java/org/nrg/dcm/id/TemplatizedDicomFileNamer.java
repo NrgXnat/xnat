@@ -23,7 +23,9 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.nrg.dcm.DicomFileNamer;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
+import org.springframework.stereotype.Component;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -32,10 +34,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
+@Component("dicomFileNamer")
 public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMethod implements DicomFileNamer {
-    public TemplatizedDicomFileNamer(final String naming) {
+    public TemplatizedDicomFileNamer(final SiteConfigPreferences siteConfigPreferences) {
         super("dicomFileNameTemplate");
 
+        final String naming = siteConfigPreferences.getDicomFileNameTemplate();
         log.debug("Initializing the templatized DICOM file namer with the template: {}", naming);
         setNamingPattern(naming);
         validate();

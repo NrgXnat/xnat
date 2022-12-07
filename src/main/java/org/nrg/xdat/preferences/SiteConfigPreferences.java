@@ -723,6 +723,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "true")
+    public boolean getUseSopInstanceUidToUniquelyIdentifyDicom() {
+        return getBooleanValue("useSopInstanceUidToUniquelyIdentifyDicom");
+    }
+
+    public void setUseSopInstanceUidToUniquelyIdentifyDicom(final boolean useSopInstanceUidToUniquelyIdentifyDicom) {
+        try {
+            setBooleanValue(useSopInstanceUidToUniquelyIdentifyDicom, "useSopInstanceUidToUniquelyIdentifyDicom");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'useSopInstanceUidToUniquelyIdentifyDicom': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "${StudyInstanceUID}-${SeriesNumber}-${InstanceNumber}-${HashSOPClassUIDWithSOPInstanceUID}")
     public String getDicomFileNameTemplate() {
         return getValue("dicomFileNameTemplate");

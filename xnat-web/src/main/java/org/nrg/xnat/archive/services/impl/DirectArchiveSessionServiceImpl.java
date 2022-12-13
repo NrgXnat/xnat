@@ -269,16 +269,19 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
     @Override
     public List<SessionData> getPaginated(UserI user, DirectArchiveSessionPaginatedRequest request) {
-        // restrict to projects user can access
-        restrictProjects(request, user);
+        List<String> projects = groupsAndPermissionsCache.getProjectsForUser(user.getUsername(), SecurityManager.READ);
+        if(projects.isEmpty()){
+            return Collections.emptyList();
+        }
 
+        // restrict to projects user can access
+        restrictProjects(request, projects);
         return directArchiveSessionHibernateService.getPaginated(request).stream()
                                                    .map(DirectArchiveSession::toSessionData).collect(Collectors.toList());
     }
 
-    private void restrictProjects(DirectArchiveSessionPaginatedRequest request, UserI user) {
+    private void restrictProjects(DirectArchiveSessionPaginatedRequest request, List<String> projects) {
         Map<String, Filter> filtersMap = request.getFiltersMap();
-        List<String>        projects   = groupsAndPermissionsCache.getProjectsForUser(user.getUsername(), SecurityManager.READ);
         HibernateFilter projectFilter = HibernateFilter.builder()
                                                        .values(projects.toArray())
                                                        .operator(HibernateFilter.Operator.IN).build();

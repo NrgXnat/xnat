@@ -27,7 +27,7 @@ $page.setVlinkColor($ui.vlink)
 							<TR><TD>Workflow ID</TD><TD>#escapeCleanHTML($!item.getIntegerProperty("wrk:workflowData/wrk_workflowdata_id"))</TD></TR>
 							<TR><TD>ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/ID"))</TD></TR>
 							<TR><TD>External ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/ExternalID"))</TD></TR>
-							<TR><TD>Scan ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/scan_id"))</TD></TR>
+							<TR><TD>Scan primary key (database ID)</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/scan_id"))</TD></TR>
 							<TR><TD>Datatype</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/data_type"))</TD></TR>
 							<TR><TD>Pipeline</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/pipeline_name"))</TD></TR>
 							<TR><TD>Status</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/status"))</TD></TR>
@@ -40,7 +40,7 @@ $page.setVlinkColor($ui.vlink)
 							<TR><TD>Current step launch time</TD><TD>#escapeCleanHTML($!item.getProperty("wrk:workflowData/current_step_launch_time"))</TD></TR>
 							<TR><TD>Current step ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/current_step_id"))</TD></TR>
 							<TR><TD>Next step ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/next_step_id"))</TD></TR>
-							<TR><TD>Step Description</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/step_description"))</TD></TR>
+							<TR><TD>Step description</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/step_description"))</TD></TR>
 
 							<TR><TD>Comments</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/comments"))</TD></TR>
 							<TR><TD>Details</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/details"))</TD></TR>

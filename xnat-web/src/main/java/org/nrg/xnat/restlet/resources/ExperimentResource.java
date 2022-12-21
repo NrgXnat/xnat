@@ -51,9 +51,7 @@ public class ExperimentResource extends ItemResource {
         super(context, request, response);
 
         _experimentId = (String) getParameter(request, "EXPT_ID");
-        if (StringUtils.isNotBlank(_experimentId)) {
-            getVariants().add(new Variant(MediaType.TEXT_XML));
-        } else {
+        if (StringUtils.isBlank(_experimentId)) {
             response.setStatus(Status.CLIENT_ERROR_NOT_FOUND);
         }
 
@@ -63,6 +61,9 @@ public class ExperimentResource extends ItemResource {
             _project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
             _existing = XnatExperimentdata.GetExptByProjectIdentifier(projectId, _experimentId, user, false);
         }
+
+        getVariants().add(new Variant(MediaType.TEXT_HTML));
+        getVariants().add(new Variant(MediaType.TEXT_XML));
     }
 
     @Override

@@ -780,11 +780,27 @@ var XNAT = getObject(XNAT || {});
                 {
                     label: 'OK',
                     isDefault: true,
-                    close: true,
+                    close: false,
                     action: function(obj){
-                        var $form = obj.$modal.find('form');
+                        let $form = obj.$modal.find('form');
+                        let invalidFields = [];
+
+                        $form.find('*[data-validate=required]').each(function(){
+                            if (!XNAT.validate($(this)).check()) {
+                                $(this).addClass('invalid');
+                                invalidFields.push($(this).prop('name'));
+                            }
+                        });
+                        if (invalidFields.length) {
+                            XNAT.ui.dialog.message({
+                                title: false,
+                                content: '<h4>Form Validation Errors Found</h4><p>Please fix errors found in the following fields: <b>'+invalidFields.join(", ")+'</b></p>'
+                            });
+                            return false;
+                        }
                         eventServicePanel.subscriptionAttributes = JSON.stringify($form);
                         $(document).find('#sub-action-attribute-preview').html(eventServicePanel.subscriptionAttributes);
+                        XNAT.dialog.close();
                     }
                 },
                 {

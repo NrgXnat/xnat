@@ -128,7 +128,6 @@ public class EventServiceEmailAction extends SingleActionProvider {
                                       ActionAttributeConfiguration.builder()
                                                                   .description("Comma separated list of users.")
                                                                   .type("string")
-                                                                  .defaultValue("")
                                                                   .restrictTo(emailList)
                                                                   .required(true)
                                                                   .build());
@@ -155,7 +154,6 @@ public class EventServiceEmailAction extends SingleActionProvider {
                                       ActionAttributeConfiguration.builder()
                                                                   .description("Email message subject. Can include #ID#, #LABEL#, and #URL# variables. Note: Only ID variable is available for Delete events")
                                                                   .type("string")
-                                                                  .defaultValue("")
                                                                   .required(true)
                                                                   .build());
 
@@ -163,7 +161,6 @@ public class EventServiceEmailAction extends SingleActionProvider {
                                       ActionAttributeConfiguration.builder()
                                                                   .description("Textual body of email. Can include #ID#, #LABEL#, and #URL# variables. Note: Only ID variable is available for Delete events")
                                                                   .type("text")
-                                                                  .defaultValue("")
                                                                   .required(true)
                                                                   .build());
 

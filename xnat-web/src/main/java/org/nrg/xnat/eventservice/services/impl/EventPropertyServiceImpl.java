@@ -161,20 +161,20 @@ public class EventPropertyServiceImpl implements EventPropertyService {
                 // Get all of the event property nodes for this event
                 List<EventPropertyNode> eventPropertyNodes = generateEventPropertyValues(esEvent, user);
                 // Collect property nodes that are needed to replace found replacement keys
-                for(Map.Entry<String, String> resolvableAttribute : resolvableAttributes){
-                    log.debug("Resolving event property in " + resolvableAttribute.getValue());
+                for (Map.Entry<String, String> resolvableAttribute : resolvableAttributes) {
                     List<EventPropertyNode> matchingPropertyNodes = eventPropertyNodes.stream()
                             .filter(epn -> (epn.replacementKey() != null &&
                                     (!Strings.isNullOrEmpty(resolvableAttribute.getValue()) && StringUtils.containsIgnoreCase(resolvableAttribute.getValue(), epn.replacementKey()))))
                             .collect(Collectors.toList());
-                    String resolvedValue = matchingPropertyNodes.isEmpty() ? "" : matchingPropertyNodes.get(0).value();
-                    log.debug(" as: " + resolvedValue);
+                    String attributeValue = resolvableAttribute.getValue();
+                    log.debug("Resolving event property in {}", attributeValue);
+                    for (EventPropertyNode node : matchingPropertyNodes) {
+                        attributeValue = attributeValue.replaceAll("(?i)" + node.replacementKey(), node.value());
+                    }
                     // TODO: There are properties in the key generator that are not in the value nodes ???
-                    resolvedAttributes.put(resolvableAttribute.getKey(), resolvedValue);
+                    resolvedAttributes.put(resolvableAttribute.getKey(), attributeValue);
                 }
             }
-
-
         }
         return resolvedSubscription;
     }

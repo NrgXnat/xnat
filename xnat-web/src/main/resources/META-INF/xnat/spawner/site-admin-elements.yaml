@@ -2095,7 +2095,7 @@ checksums:
     description: >
         Determines whether checksums will be calculated for each image file as it is archived.
         Enabling checksums provides greater assurance of data integrity, but may add significant
-        overhead to the archive process.
+        overhead to the archive process. Changes to this setting require a tomcat restart to take effect.
 backupDeletedToCache:
     kind: panel.input.switchbox
     name: backupDeletedToCache
@@ -2117,7 +2117,7 @@ maintainFileHistory:
         Determines whether XNAT should retain copies of deleted files in a .history subdirectory of the cache space for
         version control. Only files corresponding to existing entities (projects, subjects, sessions, etc.) can be tracked.
         Deleting an entire entity cannot be version controlled, though you can enable the cache "recycle bin" for some
-        added deletion protection.
+        added deletion protection. Changes to this setting require a tomcat restart to take effect.
 uiShowPrearchiveFileActions:
     kind: panel.input.switchbox
     name: uiShowPrearchiveFileActions

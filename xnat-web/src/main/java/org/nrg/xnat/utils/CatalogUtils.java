@@ -2459,7 +2459,6 @@ public class CatalogUtils {
                 attr.relativePath, attr.name, attr.size, attr.md5, attr.format, attr.content, null, eventMeta);
     }
 
-    @SuppressWarnings({"unused", "RedundantSuppression"})
     public static boolean updateExistingCatEntry(CatEntryI entry, File f, String relativePath,
                                                  final EventMetaI eventMeta) {
         String digest = null;
@@ -2467,10 +2466,10 @@ public class CatalogUtils {
             if (getChecksumConfiguration()) {
                 digest = getHash(f);
             }
-        } catch (ConfigServiceException e) {
+        } catch (ConfigServiceException ignored) {
             //Ignore
         }
-        return updateExistingCatEntry(entry, f.getAbsolutePath(), relativePath, f.getName(), f.length(), digest, null, null,
+        return updateExistingCatEntry(entry, relativePath, relativePath, f.getName(), f.length(), digest, null, null,
                 null, eventMeta);
     }
 

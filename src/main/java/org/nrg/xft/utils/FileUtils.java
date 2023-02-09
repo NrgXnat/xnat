@@ -33,6 +33,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1025,16 +1026,81 @@ public  class FileUtils {
             }
         }
     }
+
     public static void deleteQuietly(File src) {
-		if(src.exists())org.apache.commons.io.FileUtils.deleteQuietly(src);
+        if (src.exists()) {
+            org.apache.commons.io.FileUtils.deleteQuietly(src);
+        }
     }
+
     public static void deleteDirQuietly(File s) {
-		if(s.exists())
+        if (s.exists()) {
             try {
                 org.apache.commons.io.FileUtils.deleteDirectory(s);
             } catch (IOException ignored) {
             }
         }
+    }
+
+    /**
+     * Creates a function that maps files from the root folder specified in <pre>origin</pre> to the root folder specified
+     * in <pre>destination</pre>. Any files that aren't located under <pre>origin</pre> are not modified. This method
+     * converts the incoming file parameters to paths then uses {@link #fileRootMapper(Path, Path)} to generate the
+     * function.
+     *
+     * @param origin      The origin root folder.
+     * @param destination The destination root folder.
+     *
+     * @return A function that can be used to map a stream of files from one root folder to another.
+     * @see #fileRootMapper(Path, Path)
+     */
+    public static Function<File, File> fileRootMapper(final File origin, final File destination) {
+        return fileRootMapper(origin.toPath(), destination.toPath());
+    }
+
+    /**
+     * Creates a function that maps files from the root folder specified in <pre>origin</pre> to the root folder specified
+     * in <pre>destination</pre>. Any files that aren't located under <pre>origin</pre> are not modified.
+     *
+     * @param origin      The origin root folder.
+     * @param destination The destination root folder.
+     *
+     * @return A function that can be used to map a stream of files from one root folder to another.
+     * @see #fileRootMapper(Path, Path)
+     */
+    public static Function<File, File> fileRootMapper(final Path origin, final Path destination) {
+        return path -> path.toPath().startsWith(origin) ? destination.resolve(origin.relativize(path.toPath())).toFile() : path;
+    }
+
+    /**
+     * Creates a function that maps files from the root folder specified in <pre>origin</pre> to the root folder specified
+     * in <pre>destination</pre>. Any files that aren't located under <pre>origin</pre> are not modified. This method
+     * converts the incoming file parameters to paths then uses {@link #fileRootMapper(Path, Path)} to generate the
+     * function.
+     *
+     * @param origin      The origin root folder.
+     * @param destination The destination root folder.
+     *
+     * @return A function that can be used to map a stream of files from one root folder to another.
+     * @see #fileRootMapper(Path, Path)
+     */
+    public static Function<Path, Path> pathRootMapper(final File origin, final File destination) {
+        return pathRootMapper(origin.toPath(), destination.toPath());
+    }
+
+    /**
+     * Creates a function that maps files from the root folder specified in <pre>origin</pre> to the root folder specified
+     * in <pre>destination</pre>. Any files that aren't located under <pre>origin</pre> are not modified.
+     *
+     * @param origin      The origin root folder.
+     * @param destination The destination root folder.
+     *
+     * @return A function that can be used to map a stream of files from one root folder to another.
+     * @see #fileRootMapper(Path, Path)
+     */
+    public static Function<Path, Path> pathRootMapper(final Path origin, final Path destination) {
+        return path -> path.startsWith(origin) ? destination.resolve(origin.relativize(path)) : path;
+    }
 
     private static void logFailedToDelete(final File f) {
         if (log.isDebugEnabled()) {

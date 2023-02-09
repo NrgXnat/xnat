@@ -73,6 +73,7 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.ClassUtils;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -995,7 +996,7 @@ public class XDAT {
 	}
 
     public static void sendJmsRequest(final JmsTemplate jmsTemplate, final Object request) {
-        final String      taskId      = StringUtils.uncapitalize(request.getClass().getSimpleName());
+        final String      taskId      = StringUtils.uncapitalize(ClassUtils.getUserClass(request).getSimpleName());
         final Destination destination = XDAT.getContextService().getBeanSafely(taskId, Destination.class, () -> XDAT.getContextService().getBeanSafely(DEFAULT_REQUEST_QUEUE, Destination.class));
         jmsTemplate.convertAndSend(destination, request, processor -> {
             processor.setStringProperty("taskId", taskId.endsWith("Request") ? taskId : "defaultRequest");

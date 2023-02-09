@@ -12,7 +12,6 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.xapi.XapiUtils;
 import org.nrg.xapi.authorization.XapiAuthorization;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotAuthenticatedException;
@@ -32,13 +31,18 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static org.nrg.xdat.security.helpers.AccessLevel.*;
-import static org.springframework.http.HttpHeaders.WWW_AUTHENTICATE;
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
+import static org.nrg.xdat.security.helpers.AccessLevel.Null;
+import static org.nrg.xdat.security.helpers.AccessLevel.Read;
 
 /**
  * The aspect to handle the {@link XapiRequestMapping} annotation.
@@ -53,7 +57,6 @@ public class XapiRequestMappingAspect {
         for (final XapiAuthorization authorizer : authorizers) {
             _authorizers.put(authorizer.getClass(), authorizer);
         }
-        _realm = XapiUtils.getWwwAuthenticateBasicHeaderValue(_preferences.getSiteId());
     }
 
     public void setOpenUrls(final List<String> openUrls) {
@@ -80,31 +83,17 @@ public class XapiRequestMappingAspect {
     @Around(value = "xapiRequestMappingPointcut(xapiRequestMapping)", argNames = "joinPoint,xapiRequestMapping")
     public Object processXapiRequest(final ProceedingJoinPoint joinPoint, final XapiRequestMapping xapiRequestMapping) throws Throwable {
         final HttpServletRequest request = getRequest();
-        try {
-            evaluate(joinPoint, xapiRequestMapping);
+        evaluate(joinPoint, xapiRequestMapping);
 
-            final StopWatch stopWatch = log.isDebugEnabled() ? StopWatch.createStarted() : null;
-            try {
-                return joinPoint.proceed();
-            } finally {
-                if (stopWatch != null) {
-                    stopWatch.stop();
-                    log.debug("Request to {} took {} ms to execute", getRequestPath(request), NumberFormat.getInstance().format(stopWatch.getTime()));
-                }
+        final StopWatch stopWatch = log.isDebugEnabled() ? StopWatch.createStarted() : null;
+        try {
+            return joinPoint.proceed();
+        } finally {
+            if (stopWatch != null) {
+                stopWatch.stop();
+                log.debug("Request to {} took {} ms to execute", getRequestPath(request), NumberFormat.getInstance().format(stopWatch.getTime()));
             }
-        } catch (InsufficientPrivilegesException e) {
-            final HttpServletResponse response = getResponse();
-            response.setStatus(HttpStatus.FORBIDDEN.value());
-            final UserI user = XDAT.getUserDetails();
-            AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, AccessLogger.getFullRequestUrl(request), FORBIDDEN);
-        } catch (NotAuthenticatedException e) {
-            final HttpServletResponse response = getResponse();
-            response.setStatus(UNAUTHORIZED_VALUE);
-            response.setHeader(WWW_AUTHENTICATE, _realm);
-            final UserI user = XDAT.getUserDetails();
-            AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, AccessLogger.getFullRequestUrl(request), UNAUTHORIZED);
         }
-        return null;
     }
 
     private void evaluate(final JoinPoint joinPoint, final XapiRequestMapping xapiRequestMapping) throws InsufficientPrivilegesException, NotAuthenticatedException, NotFoundException {
@@ -185,17 +174,10 @@ public class XapiRequestMappingAspect {
         return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
     }
 
-    private static HttpServletResponse getResponse() {
-        return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getResponse();
-    }
-
     private static final AntPathMatcher PATH_MATCHER       = new AntPathMatcher();
     private static final String         UNAUTHORIZED       = HttpStatus.UNAUTHORIZED.toString();
-    private static final int            UNAUTHORIZED_VALUE = HttpStatus.UNAUTHORIZED.value();
-    private static final String         FORBIDDEN          = HttpStatus.FORBIDDEN.toString();
 
     private final SiteConfigPreferences _preferences;
-    private final String                _realm;
 
     private final Map<Class<? extends XapiAuthorization>, XapiAuthorization> _authorizers = new HashMap<>();
     private final List<String>                                               _openUrls    = new ArrayList<>();

@@ -9,29 +9,41 @@
 
 package org.nrg.xft.utils;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Test;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.springframework.core.io.Resource;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 public class FileUtilsTest {
-    private static final String CSV_PATH               = "classpath:org/nrg/xft/utils/import.csv";
-    private static final String BOM_UTF_8              = "\uFEFF";
-    private static final String ACCESSION_NUMBER       = "Accession Number";
-    private static final String UTF_8_ACCESSION_NUMBER = BOM_UTF_8 + ACCESSION_NUMBER;
+    private static final String     CSV_PATH               = "classpath:org/nrg/xft/utils/import.csv";
+    private static final String     BOM_UTF_8              = "\uFEFF";
+    private static final String     ACCESSION_NUMBER       = "Accession Number";
+    private static final String     UTF_8_ACCESSION_NUMBER = BOM_UTF_8 + ACCESSION_NUMBER;
+    private static final Path       ORIGIN_PATH            = Paths.get("/this/is/the/origin");
+    private static final Path       DESTINATION_PATH       = Paths.get("/this/is/the/destination");
+    private static final Path       UNRELATED_PATH         = Paths.get("/this/one/is/unrelated");
+    private static final List<Path> STARTING_PATHS         = Arrays.asList(ORIGIN_PATH.resolve("path/one"), ORIGIN_PATH.resolve("path/two"), ORIGIN_PATH.resolve("path/three"), ORIGIN_PATH.resolve("path/four"), ORIGIN_PATH.resolve("path/five"), UNRELATED_PATH.resolve("path/six"));
+    private static final List<Path> ENDING_PATHS           = Arrays.asList(DESTINATION_PATH.resolve("path/one"), DESTINATION_PATH.resolve("path/two"), DESTINATION_PATH.resolve("path/three"), DESTINATION_PATH.resolve("path/four"), DESTINATION_PATH.resolve("path/five"), UNRELATED_PATH.resolve("path/six"));
+    private static final List<File> STARTING_FILES         = STARTING_PATHS.stream().map(Path::toFile).collect(Collectors.toList());
+    private static final List<File> ENDING_FILES           = ENDING_PATHS.stream().map(Path::toFile).collect(Collectors.toList());
 
     final File src  = new File("./FileUtilsSrcTest");
     final File dest = new File("./FileUtilsDestTest");
@@ -48,33 +60,20 @@ public class FileUtilsTest {
         }
     }
 
-//	@Test
-//	public void testValidateUriAgainstRootStringStringString() {
-//		final File session_dir=new File("test/mr1");
-//		final String snapshot = "SCANS/1/SNAPSHOTS/x.gif";
-//		
-//		try {
-//			FileUtils.ValidateUriAgainstRoot((new File(session_dir,snapshot)).getAbsolutePath(), session_dir.getAbsolutePath(), "");
-//			fail("This should not succeed.");
-//		} catch (InvalidValueException e) {
-//			
-//		}
-//	}
-
-    private static String[] c = new String[] {"AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH"};
-    private static String[] f = new String[] {"TEST1.txt", "TEST2.txt", "TEST3.txt", "TEST4.txt", "TEST5.txt", "TEST6.txt", "TEST7.txt", "TEST8.txt"};
+    private static final String[] c = new String[]{"AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH"};
+    private static final String[] f = new String[]{"TEST1.txt", "TEST2.txt", "TEST3.txt", "TEST4.txt", "TEST5.txt", "TEST6.txt", "TEST7.txt", "TEST8.txt"};
 
     public File createFile(File dir, String name, String content) throws IOException {
         if (!dir.exists()) {
             dir.mkdirs();
         }
         File f = new File(dir, name);
-        org.apache.commons.io.FileUtils.writeStringToFile(new File(dir, name), content);
+        org.apache.commons.io.FileUtils.writeStringToFile(new File(dir, name), content, Charset.defaultCharset());
         return f;
     }
 
     public String get(File dir, String name) throws IOException {
-        return org.apache.commons.io.FileUtils.readFileToString(new File(dir, name));
+        return org.apache.commons.io.FileUtils.readFileToString(new File(dir, name), Charset.defaultCharset());
     }
 
     @Test
@@ -102,9 +101,9 @@ public class FileUtilsTest {
 
         FileUtils.MoveDir(src, dest, true);
 
-        org.junit.Assert.assertFalse((file1.exists()));
+        Assert.assertFalse((file1.exists()));
 
-        org.junit.Assert.assertEquals(c[0], get(dest, f[0]));
+        Assert.assertEquals(c[0], get(dest, f[0]));
     }
 
     @Test
@@ -113,8 +112,8 @@ public class FileUtilsTest {
 
         FileUtils.CopyDir(src, dest, true);
 
-        org.junit.Assert.assertTrue((file1.exists()));
-        org.junit.Assert.assertEquals(get(src, f[0]), get(dest, f[0]));
+        Assert.assertTrue((file1.exists()));
+        Assert.assertEquals(get(src, f[0]), get(dest, f[0]));
     }
 
     @Test
@@ -123,9 +122,9 @@ public class FileUtilsTest {
 
         FileUtils.MoveDir(src, dest, false);
 
-        org.junit.Assert.assertFalse((file1.exists()));
+        Assert.assertFalse((file1.exists()));
 
-        org.junit.Assert.assertEquals(c[0], get(dest, f[0]));
+        Assert.assertEquals(c[0], get(dest, f[0]));
     }
 
     @Test
@@ -134,8 +133,8 @@ public class FileUtilsTest {
 
         FileUtils.CopyDir(src, dest, false);
 
-        org.junit.Assert.assertTrue((file1.exists()));
-        org.junit.Assert.assertEquals(get(src, f[0]), get(dest, f[0]));
+        Assert.assertTrue((file1.exists()));
+        Assert.assertEquals(get(src, f[0]), get(dest, f[0]));
     }
 
 
@@ -154,9 +153,9 @@ public class FileUtilsTest {
             assertEquals(e.getMessage(), "TEST2.txt already exists.");
         }
 
-        org.junit.Assert.assertEquals(get(src, f[0]), c[0]);
-        org.junit.Assert.assertEquals(get(src, "level1/" + f[1]), c[1]);
-        org.junit.Assert.assertEquals(get(dest, "level1/" + f[1]), c[2]);
+        Assert.assertEquals(get(src, f[0]), c[0]);
+        Assert.assertEquals(get(src, "level1/" + f[1]), c[1]);
+        Assert.assertEquals(get(dest, "level1/" + f[1]), c[2]);
     }
 
 
@@ -169,7 +168,7 @@ public class FileUtilsTest {
 
         FileUtils.CopyDir(src, dest, true);
 
-        org.junit.Assert.assertEquals(get(dest, "level1/" + f[1]), c[1]);
+        Assert.assertEquals(get(dest, "level1/" + f[1]), c[1]);
     }
 
 
@@ -188,9 +187,9 @@ public class FileUtilsTest {
             assertEquals(e.getMessage(), "TEST2.txt already exists.");
         }
 
-        org.junit.Assert.assertEquals(get(src, f[0]), c[0]);
-        org.junit.Assert.assertEquals(get(src, "level1/" + f[1]), c[1]);
-        org.junit.Assert.assertEquals(get(dest, "level1/" + f[1]), c[2]);
+        Assert.assertEquals(get(src, f[0]), c[0]);
+        Assert.assertEquals(get(src, "level1/" + f[1]), c[1]);
+        Assert.assertEquals(get(dest, "level1/" + f[1]), c[2]);
     }
 
 
@@ -203,11 +202,29 @@ public class FileUtilsTest {
 
         FileUtils.MoveDir(src, dest, true);
 
-        org.junit.Assert.assertEquals(get(dest, "level1/" + f[1]), c[1]);
+        Assert.assertEquals(get(dest, "level1/" + f[1]), c[1]);
+    }
+
+    @Test
+    public void testRootMappers() {
+        final Function<Path, Path> mapPathsFromPathToPath = FileUtils.pathRootMapper(ORIGIN_PATH, DESTINATION_PATH);
+        final Function<Path, Path> mapPathsFromFileToFile = FileUtils.pathRootMapper(ORIGIN_PATH.toFile(), DESTINATION_PATH.toFile());
+        final Function<File, File> mapFilesFromPathToPath = FileUtils.fileRootMapper(ORIGIN_PATH, DESTINATION_PATH);
+        final Function<File, File> mapFilesFromFileToFile = FileUtils.fileRootMapper(ORIGIN_PATH.toFile(), DESTINATION_PATH.toFile());
+
+        final List<Path> pathsFromPathToPath = STARTING_PATHS.stream().map(mapPathsFromPathToPath).collect(Collectors.toList());
+        final List<Path> pathsFromFileToFile = STARTING_PATHS.stream().map(mapPathsFromFileToFile).collect(Collectors.toList());
+        final List<File> filesFromPathToPath = STARTING_FILES.stream().map(mapFilesFromPathToPath).collect(Collectors.toList());
+        final List<File> filesFromFileToFile = STARTING_FILES.stream().map(mapFilesFromFileToFile).collect(Collectors.toList());
+
+        assertThat(pathsFromPathToPath).isNotNull().isNotEmpty().hasSize(ENDING_PATHS.size()).containsExactlyElementsOf(ENDING_PATHS);
+        assertThat(pathsFromFileToFile).isNotNull().isNotEmpty().hasSize(ENDING_PATHS.size()).containsExactlyElementsOf(ENDING_PATHS);
+        assertThat(filesFromPathToPath).isNotNull().isNotEmpty().hasSize(ENDING_FILES.size()).containsExactlyElementsOf(ENDING_FILES);
+        assertThat(filesFromFileToFile).isNotNull().isNotEmpty().hasSize(ENDING_FILES.size()).containsExactlyElementsOf(ENDING_FILES);
     }
 
     private static List<List<String>> getUntranslatedCsvFileToList(final File file) throws IOException {
-        try (final InputStream input = new FileInputStream(file)) {
+        try (final InputStream input = Files.newInputStream(file.toPath())) {
             return IOUtils.readLines(input, Charset.defaultCharset()).stream().map(XftStringUtils::CommaDelimitedStringToArrayList).collect(Collectors.toList());
         }
     }

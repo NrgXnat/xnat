@@ -271,6 +271,15 @@ public class CatalogUtils {
             return projects.get(0);
         }
 
+        public static Optional<CatalogData> get(final XnatResourcecatalog catalogResource, @Nullable final String projectId)
+                throws ServerException {
+            File catalogFile = new File(catalogResource.getUri());
+            if (!catalogFile.exists()) {
+                return Optional.empty();
+            }
+            return Optional.of(new CatalogData(catalogFile, catalogResource, projectId));
+        }
+
         @Nonnull
         public static CatalogData getOrCreate(ArchivableItem item, final XnatResourcecatalogI resource)
                 throws ServerException {
@@ -2290,14 +2299,41 @@ public class CatalogUtils {
         return _maintainFileHistory.get();
     }
 
-    public static void moveToHistory(File catFile, String project, File f, CatEntryBean entry, EventMetaI ci) throws Exception {
+    /**
+     * Removes the file from the resource catalog. If {@link CatalogUtils#maintainFileHistory()} is <pre>true</pre>, the
+     * file is moved to a folder in the system history cache and this method returns a reference to the destination file.
+     * If {@link CatalogUtils#maintainFileHistory()} is <pre>false</pre>, the file is deleted and an empty optional is
+     * returned.
+     *
+     * @param catFile    The catalog file
+     * @param project    The project containing the catalog and file
+     * @param fileToMove The file to move to history
+     * @param entry      The catalog entry for the file to be moved/deleted
+     * @param ci         The event object
+     *
+     * @return Returns the file from the history folder if file history is maintained, an empty optional otherwise.
+     *
+     * @throws Exception When an error occurs at some point in the operation
+     */
+    public static Optional<File> moveToHistory(File catFile, String project, File fileToMove, CatEntryBean entry, EventMetaI ci) throws Exception {
         //move existing file to audit trail
         if (CatalogUtils.maintainFileHistory()) {
-            final File newFile = FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
+            final File newFile = FileUtils.MoveToHistory(fileToMove, EventUtils.getTimestamp(ci));
             addCatHistoryEntry(catFile, project, newFile.getAbsolutePath(), entry, ci);
-        } else {
-            Files.delete(f.toPath());
+            return Optional.of(newFile);
         }
+        Files.delete(fileToMove.toPath());
+        return Optional.empty();
+    }
+
+    public static Optional<File> copyToHistory(File catFile, String project, File f, CatEntryBean entry, EventMetaI ci) throws Exception {
+        //move existing file to audit trail
+        if (CatalogUtils.maintainFileHistory()) {
+            final File newFile = FileUtils.CopyToHistory(f, EventUtils.getTimestamp(ci));
+            addCatHistoryEntry(catFile, project, newFile.getAbsolutePath(), entry, ci);
+            return Optional.of(newFile);
+        }
+        return Optional.empty();
     }
 
     public static void addCatHistoryEntry(File catFile, String project, String f, CatEntryBean entry, EventMetaI ci)

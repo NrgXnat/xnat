@@ -9,12 +9,14 @@
 
 package org.nrg.xnat.archive;
 
+import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.transaction.TransactionException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.SecurityManager;
@@ -47,9 +49,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "RedundantThrows"})
 @Slf4j
 public class Rename implements Callable<File>{
+    public static final String OLD_LABEL = "oldLabel";
+    public static final String OLD_PATH  = "oldPath";
+    public static final String NEW_LABEL = "newLabel";
+    public static final String NEW_PATH  = "newPath";
+
 	enum STEP {PREPARING, PREPARE_SQL, COPY_DIR, ANONYMIZE, EXECUTE_SQL, DELETE_OLD_DIR, COMPLETE}
 	private static final String    SUCCESSFUL_RENAMES = "successful_renames";
 	private static final String    FAILED_RENAME      = "failed_rename";
@@ -197,7 +204,7 @@ public class Rename implements Callable<File>{
 				updateStep(workflow, setStep(STEP.EXECUTE_SQL));
 				executeSQL(cache, user);
 
-				//If successful, move old directory to cache)
+				//If successful, move old directory to cache
 				updateStep(workflow, setStep(STEP.DELETE_OLD_DIR));
 				if (moveFiles) {
 					org.nrg.xnat.utils.FileUtils.moveToCache(projectId, SUCCESSFUL_RENAMES, oldSessionDir);
@@ -206,6 +213,9 @@ public class Rename implements Callable<File>{
 				//Close workflow entry
 				workflow.setStepDescription(setStep(STEP.COMPLETE).toString());
 				workflow.setStatus(PersistentWorkflowUtils.COMPLETE);
+
+                // Fire event so other functions can adjust as needed.
+                XDAT.triggerXftItemEvent(item.getXSIType(), id, EventUtils.RENAME, ImmutableMap.of(OLD_LABEL, currentLabel, OLD_PATH, oldSessionDir.getAbsoluteFile().toPath(), NEW_LABEL, newLabel, NEW_PATH, newSessionDir.getAbsoluteFile().toPath()));
 			} catch (final Exception e) {
 				if (!getStep().equals(STEP.DELETE_OLD_DIR)) {
 					try {
@@ -241,12 +251,13 @@ public class Rename implements Callable<File>{
 		return eventMeta;
 	}
 	
-	public static boolean checkPermissions(final ArchivableItem item, final UserI user) throws Exception{
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public static boolean checkPermissions(final ArchivableItem item, final UserI user) throws Exception{
 		return Permissions.canEdit(user,item);
 	}
 	
 	/**
-	 * Generate the SQL update logic for all of the items resources.  
+	 * Generate the SQL update logic for all the items resources.
 	 * Checks permissions for assessments, if they were modified.
 	 * 
 	 * @param item       The item

@@ -345,6 +345,15 @@
     <logger name="org.nrg.xnat.security" additivity="false" level="WARN">
         <appender-ref ref="security"/>
     </logger>
+    <logger name="org.apache.catalina" additivity="false" level="ERROR">
+        <appender-ref ref="app"/>
+    </logger>
+    <logger name="org.apache.coyote" additivity="false" level="ERROR">
+        <appender-ref ref="app"/>
+    </logger>
+    <logger name="org.apache.tomcat" additivity="false" level="ERROR">
+        <appender-ref ref="app"/>
+    </logger>
     <logger name="org.apache.xalan" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
     </logger>
@@ -367,7 +376,10 @@
         <appender-ref ref="configuration"/>
     </logger>
     <logger name="org.nrg.xnat.daos" additivity="false" level="WARN">
-        <appender-ref ref="configuration"/>
+        <appender-ref ref="orm"/>
+    </logger>
+    <logger name="org.nrg.xnat.entities" additivity="false" level="WARN">
+        <appender-ref ref="orm"/>
     </logger>
     <logger name="org.nrg.xnat.web" additivity="false" level="WARN">
         <appender-ref ref="xapi"/>
@@ -446,6 +458,9 @@
     </logger>
     <logger name="org.apache.axis" additivity="false" level="ERROR">
         <appender-ref ref="axis"/>
+    </logger>
+    <logger name="org.nrg.xnat.services" additivity="false" level="WARN">
+        <appender-ref ref="app"/>
     </logger>
     <logger name="org.nrg.xnat.services.logging" additivity="false" level="INFO">
         <appender-ref ref="app"/>

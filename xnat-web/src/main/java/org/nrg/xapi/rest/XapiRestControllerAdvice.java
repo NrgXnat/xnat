@@ -18,9 +18,16 @@ import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicateTitleAndPortExceptio
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.XapiUtils;
-import org.nrg.xapi.exceptions.*;
+import org.nrg.xapi.exceptions.ConflictedStateException;
+import org.nrg.xapi.exceptions.DataFormatException;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
+import org.nrg.xapi.exceptions.NoContentException;
+import org.nrg.xapi.exceptions.NotAuthenticatedException;
+import org.nrg.xapi.exceptions.NotFoundException;
+import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.exception.XftItemException;
 import org.nrg.xft.security.UserI;
@@ -44,9 +51,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import static org.apache.commons.lang3.StringUtils.*;
+import static org.apache.commons.lang3.StringUtils.contains;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.valueOf;
-import static org.springframework.http.HttpStatus.*;
 
 @ControllerAdvice(annotations = XapiRestController.class)
 @Slf4j
@@ -67,8 +82,10 @@ public class XapiRestControllerAdvice {
     }
 
     @ExceptionHandler(InsufficientPrivilegesException.class)
-    public ResponseEntity<?> handleInsufficientPrivilegesException() {
-        return ResponseEntity.status(FORBIDDEN).build();
+    public ResponseEntity<?> handleInsufficientPrivilegesException(final HttpServletRequest request) {
+        final UserI user = XDAT.getUserDetails();
+        AccessLogger.LogResourceAccess(user != null ? user.getUsername() : "unknown", request, AccessLogger.getFullRequestUrl(request), FORBIDDEN.toString());
+        return getExceptionResponseEntity(request, null, FORBIDDEN, null);
     }
 
     @ExceptionHandler(NotAuthenticatedException.class)
@@ -150,9 +167,9 @@ public class XapiRestControllerAdvice {
         return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "There was an error reading or writing the requested resource");
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleException(final HttpServletRequest request, final Exception exception) {
-        return getExceptionResponseEntity(request, exception, INTERNAL_SERVER_ERROR, "There was an error in the request ");
+    @ExceptionHandler(Throwable.class)
+    public ResponseEntity<?> handleThrowable(final HttpServletRequest request, final Throwable throwable) {
+        return getExceptionResponseEntity(request, throwable, INTERNAL_SERVER_ERROR, "There was an error in the request ");
     }
 
     @NotNull
@@ -161,19 +178,19 @@ public class XapiRestControllerAdvice {
     }
 
     @NotNull
-    private ResponseEntity<?> getExceptionResponseEntity(@Nonnull final HttpServletRequest request, final Exception exception, final HttpStatus status, final String message) {
+    private ResponseEntity<?> getExceptionResponseEntity(@Nonnull final HttpServletRequest request, final Throwable throwable, final HttpStatus status, final String message) {
         final String resolvedMessage;
-        if (message == null && exception == null) {
+        if (message == null && throwable == null) {
             resolvedMessage = null;
         } else if (message == null) {
-            resolvedMessage = exception.getMessage();
-        } else if (exception == null) {
+            resolvedMessage = throwable.getMessage();
+        } else if (throwable == null) {
             resolvedMessage = message;
         } else {
-            resolvedMessage = message + ": " + exception.getMessage();
+            resolvedMessage = message + ": " + throwable.getMessage();
         }
         // If there's an explicit status, use that. Otherwise, try to get it off of the exception and default to 500 if not available.
-        final HttpStatus resolvedStatus = exception != null ? getExceptionResponseStatus(exception) : status != null ? status : DEFAULT_ERROR_STATUS;
+        final HttpStatus resolvedStatus = throwable != null ? getExceptionResponseStatus(throwable) : status != null ? status : DEFAULT_ERROR_STATUS;
 
         // Log 500s as errors, other statuses can just be logged as info messages.
         final UserI  userDetails = XDAT.getUserDetails();
@@ -181,9 +198,9 @@ public class XapiRestControllerAdvice {
         final String requestUri  = request.getServletPath() + request.getPathInfo();
 
         if (resolvedStatus == INTERNAL_SERVER_ERROR) {
-            log.error("HTTP status 500: Request by user {} to URL {} caused an internal server error", username, requestUri, exception);
-        } else if (exception != null) {
-            log.info("HTTP status {}: Request by user {} to URL {} caused an exception of type {}{}", resolvedStatus, username, requestUri, exception.getClass().getName(), defaultIfBlank(resolvedMessage, ""));
+            log.error("HTTP status 500: Request by user {} to URL {} caused an internal server error", username, requestUri, throwable);
+        } else if (throwable != null) {
+            log.info("HTTP status {}: Request by user {} to URL {} caused an exception of type {}{}", resolvedStatus, username, requestUri, throwable.getClass().getName(), defaultIfBlank(resolvedMessage, ""));
         }
 
         final ResponseEntity.BodyBuilder builder = ResponseEntity.status(resolvedStatus);
@@ -193,8 +210,9 @@ public class XapiRestControllerAdvice {
         return isBlank(resolvedMessage) ? builder.contentLength(0).build() : builder.contentType(MediaType.TEXT_PLAIN).contentLength(resolvedMessage.length()).body(resolvedMessage);
     }
 
-    private HttpStatus getExceptionResponseStatus(final Exception exception) {
-        return AnnotationUtils.findAnnotation(exception.getClass(), ResponseStatus.class).value();
+    private HttpStatus getExceptionResponseStatus(final Throwable throwable) {
+        final ResponseStatus annotation = AnnotationUtils.findAnnotation(throwable.getClass(), ResponseStatus.class);
+        return annotation != null ? annotation.value() : DEFAULT_ERROR_STATUS;
     }
 
     private static final HttpStatus DEFAULT_ERROR_STATUS = INTERNAL_SERVER_ERROR;

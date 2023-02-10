@@ -390,7 +390,8 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
                    @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @XapiRequestMapping(value = "mitigate/resources", consumes = MULTIPART_FORM_DATA_VALUE, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = AccessLevel.Delete)
+    // TODO: No restrictTo here because there is no XAPI authorization for resource IDs: see XNAT-7373. The underlying service has to manage permissions checks.
+    @XapiRequestMapping(value = "mitigate/resources/csv", consumes = MULTIPART_FORM_DATA_VALUE, produces = APPLICATION_JSON_VALUE, method = POST)
     public Map<String, Collection<Long>> mitigateResources(@RequestParam final MultipartFile uploadFile) throws NoContentException, DataFormatException, NotFoundException, ServerException {
         return _resourceSurveyService.queueResourceMitigation(getSessionUser(), _resourceSurveyService.getResourceIds(uploadFile));
     }

@@ -12,6 +12,8 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import java.io.File;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -44,10 +46,18 @@ public class CreateCSVTemplate extends RawScreen {
 
          StringBuffer sb = new StringBuffer();
          List fields = fm.getFields();
+         Pattern pattern = Pattern.compile(fm.getElementName() +  "\\/fields\\/field\\[name=(.*)\\]\\/field");
          for(int i=0;i<fields.size();i++){
              String xmlPath=(String)fields.get(i);
+             Matcher matcher = pattern.matcher(xmlPath);
              if (i>0)sb.append(",");
-             sb.append(xmlPath.substring(xmlPath.lastIndexOf("/")+1));
+             boolean matchFound = matcher.find();
+             //Is it a custom field or not
+             if (matchFound) {
+            	 sb.append(matcher.group(1));
+             }else {
+            	 sb.append(xmlPath.substring(xmlPath.lastIndexOf("/")+1));
+             }
          }
          out.print(sb.toString());
          out.close();

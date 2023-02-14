@@ -33,9 +33,14 @@ import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
-import org.nrg.notify.entities.*;
+import org.nrg.notify.entities.Category;
+import org.nrg.notify.entities.Channel;
+import org.nrg.notify.entities.Definition;
+import org.nrg.notify.entities.Subscriber;
+import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.preferences.NotificationsPreferences;
@@ -75,24 +80,36 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.ClassUtils;
 
+import javax.jms.Destination;
+import javax.servlet.http.HttpServletRequest;
+import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.jms.Destination;
-import javax.servlet.http.HttpServletRequest;
-import javax.sql.DataSource;
 
 import static org.nrg.config.entities.Configuration.DISABLED_STRING;
-import static org.nrg.xdat.security.helpers.Users.*;
+import static org.nrg.xdat.security.helpers.Users.AUTHORITIES_ADMIN;
+import static org.nrg.xdat.security.helpers.Users.AUTHORITIES_ANONYMOUS;
+import static org.nrg.xdat.security.helpers.Users.AUTHORITIES_USER;
+import static org.nrg.xdat.security.helpers.Users.getGrantedAuthorities;
 
 /**
  * @author Tim
@@ -126,6 +143,7 @@ public class XDAT {
 	private static CacheManager               _cacheManager;
 	private static NotificationsPreferences   _notificationsPreferences;
 	private static File                       _screenTemplatesFolder;
+	private static NrgPreferenceService       _preferenceService;
 
 	private static       String            _configFilesLocation    = null;
 	private static final Map<String, File> _screenTemplatesFolders = new HashMap<>();
@@ -174,6 +192,18 @@ public class XDAT {
 	public static String getConfigValue(final String project, final String toolName, final String path, final boolean inherit, final String defaultValue) {
 		return getConfigValue(Optional.ofNullable(getConfigService().getConfig(toolName, path, Scope.Project, project))
 									  .orElseGet(() -> inherit ? XDAT.getConfigService().getConfig(toolName, path) : null));
+	}
+
+	public static boolean getBooleanConfigValue(final String toolName, final String path, final boolean defaultValue) {
+		return getBooleanValue(getConfigValue(toolName, path), defaultValue);
+	}
+
+	public static boolean getBooleanConfigValue(final String project, final String toolName, final String path, final boolean inherit, final boolean defaultValue) {
+		return getBooleanValue(getConfigValue(project, toolName, path, inherit, null), defaultValue);
+	}
+
+	private static boolean getBooleanValue(final String config, final boolean _default) {
+		return StringUtils.isNotBlank(config) ? BooleanUtils.toBoolean(config.trim()) : _default;
 	}
 
 	public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
@@ -231,6 +261,14 @@ public class XDAT {
 		} catch (Throwable e) {
 			return defaultValue;
 		}
+	}
+
+	public static String getPreferenceValue(final String toolId, final String preference) {
+		return getPreferenceService().getPreferenceValue(toolId, preference);
+	}
+
+	public static boolean getBooleanPreferenceValue(final String toolId, final String preference, final boolean defaultValue) {
+		return getBooleanValue(getPreferenceValue(toolId, preference), defaultValue);
 	}
 
 	public static boolean verificationOn() {
@@ -769,6 +807,17 @@ public class XDAT {
 	    	_siteConfigPreferences = getContextService().getBean(SiteConfigPreferences.class);
 	    }
 	    return _siteConfigPreferences;
+	}
+
+	/**
+	 * Returns an instance of the preference service.
+	 * @return An instance of the {@link NrgPreferenceService}.
+	 */
+	public static NrgPreferenceService getPreferenceService() {
+	    if (_preferenceService == null) {
+	    	_preferenceService = getContextService().getBean(NrgPreferenceService.class);
+	    }
+	    return _preferenceService;
 	}
 
 	/**

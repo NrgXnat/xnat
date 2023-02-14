@@ -82,16 +82,16 @@ public class CSVUpload2 extends SecureAction {
 
             temp.delete();
             fi.delete();
-
+            
 
             if (rows.size()>0 && rows.get(0).get(0).equals("ID")){
                 rows.remove(0);
             }
 
             data.getSession().setAttribute("rows", rows);
-            data.setScreenTemplate("XDATScreen_uploadCSV2.vm");
+            data.setScreenTemplate("XDATScreen_uploadCSV2_Save.vm");
         }else{
-            data.setScreenTemplate("XDATScreen_uploadCSV2.vm");
+            data.setScreenTemplate("XDATScreen_uploadCSV2_Save.vm");
         }
     }
 

@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.search.DisplayFieldAliasCache;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFT;
@@ -250,11 +251,18 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 				query+=buildComparison(entry.getKey(),entry.getValue());
 			}
 		}
-		
 		if(sortBy!=null){
-			query+=" ORDER BY " + sortBy + ", key";
+			String[] sortParts = sortBy.split(" ");
+			String columnName = sortParts[0];
+			String sortOrder = "";
+			if (sortParts.length == 2) {
+				sortOrder = sortParts[1];
+			}
+			columnName = DisplayFieldAliasCache.getAlias(columnName);
+			query+=" ORDER BY " + columnName + " " + sortOrder + ", key";
 		}
-		
+
+
 		if(offset!=null){
 			query+=" OFFSET " + offset;
 		}
@@ -310,7 +318,8 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 	 */
 	@Override
 	public XFTTable getColumnValues(String column) throws SQLException,Exception{
-		String query="SELECT " + column +" AS VALUES,COUNT(*) FROM " + PoolDBUtils.search_schema_name + "." + this.table_name + " GROUP BY " + column + " ORDER BY " + column;
+		String columnAlias = DisplayFieldAliasCache.getAlias(column);
+		String query="SELECT " + columnAlias +" AS VALUES,COUNT(*) FROM " + PoolDBUtils.search_schema_name + "." + this.table_name + " GROUP BY " + columnAlias + " ORDER BY " + columnAlias;
 		
 		XFTTable t=XFTTable.Execute(query + ";", PoolDBUtils.getDefaultDBName(), user.getUsername());
 				
@@ -330,7 +339,8 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 	 */
 	@Override
 	public XFTTable getColumnsValues(String column,Map<String,Object> filters) throws Exception{
-		String query="SELECT " + column +",COUNT(*) FROM " + PoolDBUtils.search_schema_name + "." + this.table_name;
+		String columnAlias = DisplayFieldAliasCache.getAlias(column);
+		String query="SELECT " + columnAlias +",COUNT(*) FROM " + PoolDBUtils.search_schema_name + "." + this.table_name;
 		
 		if(filters!=null && filters.size()>0){
 			validateColumns(filters.keySet(),this);
@@ -344,7 +354,7 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 			}
 		}
 		
-		query+= " GROUP BY " + column + " ORDER BY " + column;
+		query+= " GROUP BY " + columnAlias + " ORDER BY " + columnAlias;
 		
 		XFTTable t=XFTTable.Execute(query + ";", PoolDBUtils.getDefaultDBName(), user.getUsername());
 				
@@ -413,11 +423,12 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 		return search.getDisplaySearch(user);
 	}
 	
-	public static String buildComparison(String key, Object v){
+	public static String buildComparison(String requestedKey, Object v){
 		List<String> values= XftStringUtils.CommaDelimitedStringToArrayList(v.toString());
 		List<String> validValues=Lists.newArrayList();
 		String clause="";
-		
+		String key = DisplayFieldAliasCache.getAlias(requestedKey);
+
 		int count=0;
 		for(String value:values){
 			if(!PoolDBUtils.HackCheck(value)){

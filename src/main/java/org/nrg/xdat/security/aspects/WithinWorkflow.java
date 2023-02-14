@@ -21,6 +21,7 @@ public @interface WithinWorkflow {
     String externalIdArg() default "";
     String userListArgForJustification() default "";
 
+    boolean createWorkflowAndReplaceEvent() default false;
     // Static values passed straight to workflow constructor
     String xsiType() default "";
     EventUtils.CATEGORY eventCategory();

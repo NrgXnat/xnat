@@ -58,7 +58,7 @@ public class CSVUpload1 extends SecureAction {
             data.setMessage("Select a root data type.");
             data.setScreenTemplate("XDATScreen_uploadCSV.vm");
         }else{
-            data.setScreenTemplate("XDATScreen_uploadCSV1.vm");
+            data.setScreenTemplate("XDATScreen_uploadCSVWithCustomVariables1.vm");
             String id = "" + Calendar.getInstance().getTimeInMillis();
             FieldMapping fm = new FieldMapping();
             fm.setElementName(root);

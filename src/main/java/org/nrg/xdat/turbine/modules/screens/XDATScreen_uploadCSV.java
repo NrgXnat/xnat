@@ -30,7 +30,8 @@ public class XDATScreen_uploadCSV extends SecureScreen {
     protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
         context.put("elements", ElementSecurity.GetNonXDATElementNames());
         context.put("all_elements", GenericWrapperElement.GetAllElements(false));
-
+        //If an upload was attempted earlier in the session, then those rows must be cleared off.
+        data.getSession().removeAttribute("rows");
         final UserI user = XDAT.getUserDetails();
         assert user != null;
 

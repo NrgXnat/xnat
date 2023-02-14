@@ -74,7 +74,19 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -1135,16 +1147,15 @@ public class TurbineUtils {
     }
 
     public boolean getBooleanConfigValue(String project, String toolName, String path, boolean inherit, boolean _default) {
-        String config = this.getConfigValue(project, toolName, path, inherit, null);
+        return XDAT.getBooleanConfigValue(project, toolName, path, inherit, _default);
+    }
 
-        if (config == null) {
-            return _default;
-        } else {
-            if (config.endsWith("\n")) {
-                config = config.substring(0, config.length() - 1);
-            }
-            return this.toBoolean(config);
-        }
+    public String getPreferenceValue(final String toolId, final String path) {
+        return XDAT.getPreferenceValue(toolId, path);
+    }
+
+    public boolean getBooleanPreferenceValue(final String toolId, final String path, final boolean defaultValue) {
+        return XDAT.getBooleanPreferenceValue(toolId, path, defaultValue);
     }
 
     public String getConfigValue(String project, String toolName, String path, boolean inherit, String key, String _default) {

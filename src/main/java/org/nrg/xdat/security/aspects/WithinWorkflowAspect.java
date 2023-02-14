@@ -103,13 +103,14 @@ public class WithinWorkflowAspect {
         xsiType = StringUtils.defaultIfBlank(xsiType, withinWorkflow.xsiType());
 
         PersistentWorkflowI workflow = null;
-        if (eventMeta == null) {
+        if (eventMeta == null || withinWorkflow.createWorkflowAndReplaceEvent()) {
             workflow = PersistentWorkflowUtils.buildOpenWorkflow(authorizingUser, xsiType, id,
                     externalId, EventUtils.newEventInstance(withinWorkflow.eventCategory(),
                             withinWorkflow.eventType(), action.get()));
             workflow.setJustification(justification);
             eventMeta = workflow.buildEvent();
             if (eventIndex != -1) {
+                // Update eventMeta for the proceed
                 parameterValues[eventIndex] = eventMeta;
             }
         }

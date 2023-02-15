@@ -105,7 +105,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests for the specified project."),
                    @ApiResponse(code = 404, message = "No project exists with the specified ID."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @XapiRequestMapping(value = "survey/project/{projectId}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Delete)
+    @XapiRequestMapping(value = "survey/project/{projectId}", produces = APPLICATION_JSON_VALUE, method = GET)
     public List<ResourceSurveyRequest> getResourceSurveyRequestsByProject(final @PathVariable String projectId) throws InsufficientPrivilegesException, NotFoundException {
         return _resourceSurveyService.getByProjectIdAndStatus(getSessionUser(), projectId, ResourceSurveyRequest.Status.SURVEY_VALUES);
     }
@@ -241,17 +241,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
         return _resourceSurveyService.getRequestStatus(getSessionUser(), requestId);
     }
 
-    @ApiOperation(value = "Downloads survey reports for the specified project", notes = "Returns the summarized survey report for a project or the site ")
-    @ApiResponses({@ApiResponse(code = 200, message = "Downloads the summarized survey report for a project or the site."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests."),
-                   @ApiResponse(code = 404, message = "No resource survey request exists on the server."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
-    @XapiRequestMapping(value = "survey/project/{projectId}/report/download", method = GET, produces = APPLICATION_OCTET_STREAM_VALUE, restrictTo = AccessLevel.Delete)
-    public ResponseEntity<Resource> downloadSurveyReport(final @PathVariable String projectId) throws InsufficientPrivilegesException, NotFoundException, InitializationException {
-        return downloadSurveyReports(projectId);
-    }
-
-    @ApiOperation(value = "Downloads the survey report for the specified resource", notes = "Returns the summarized survey report for a project or the site ")
+    @ApiOperation(value = "Downloads the survey reports for the site or a particular project", notes = "Returns the survey reports for the project specified by the value in the projectId querystring parameter or the overall site if no project ID is specified.")
     @ApiResponses({@ApiResponse(code = 200, message = "Downloads the summarized survey report for a project or the site."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests."),
                    @ApiResponse(code = 404, message = "No resource survey request exists on the server."),

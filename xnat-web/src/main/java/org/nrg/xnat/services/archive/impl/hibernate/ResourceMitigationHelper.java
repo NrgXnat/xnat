@@ -1,6 +1,7 @@
 package org.nrg.xnat.services.archive.impl.hibernate;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.InitializationException;
@@ -21,7 +22,6 @@ import org.nrg.xnat.entities.ResourceSurveyRequest;
 import org.nrg.xnat.services.archive.ResourceMitigationReport;
 import org.nrg.xnat.services.archive.ResourceMitigationReport.ResourceMitigationReportBuilder;
 import org.nrg.xnat.services.archive.ResourceSurveyReport;
-import org.nrg.xnat.services.archive.ResourceSurveyRequestEntityService;
 import org.nrg.xnat.utils.CatalogUtils;
 
 import java.io.File;
@@ -447,6 +447,12 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
         final String relativePath = sourcePath.relativize(target).toString();
         entry.setUri(relativePath);
         entry.setId(relativePath);
+        if (StringUtils.isNotBlank(entry.getName())) {
+            entry.setName(relativePath);
+        }
+        if (StringUtils.isNotBlank(entry.getCachepath())) {
+            entry.setCachepath(relativePath);
+        }
         CatalogUtils.updateModificationEvent(entry, event);
 
         return file;

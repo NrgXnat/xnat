@@ -2,6 +2,7 @@ package org.nrg.xapi.rest.data;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.AllArgsConstructor;
@@ -110,14 +111,20 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
         return _resourceSurveyService.getByProjectIdAndStatus(getSessionUser(), projectId, ResourceSurveyRequest.Status.SURVEY_VALUES);
     }
 
-    @ApiOperation(value = "Get resource survey requests with the indicated status for resources in the specified project", notes = "This call returns the full resource survey request, including completed resource scan requests", response = ResourceSurveyRequest.class, responseContainer = "List")
+    @ApiOperation(value = "Get the resource survey requests with the indicated status for resources in the specified project. The status value can be one of the following case-insensitive options: all, created, queued_for_survey, surveying, divergent, conforming, queued_for_mitigation, mitigating, canceled, error",
+            notes = "This call returns the full resource survey request, including completed resource scan requests",
+            response = ResourceSurveyRequest.class,
+            responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns resource survey requests with the indicated status for the specified project ID."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests for the specified project."),
                    @ApiResponse(code = 404, message = "No project exists with the specified ID."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "survey/project/{projectId}/{status}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Delete)
-    public List<ResourceSurveyRequest> getResourceSurveyRequestsByProjectAndStatus(final @PathVariable String projectId, final @PathVariable String status) throws InsufficientPrivilegesException, NotFoundException, DataFormatException {
-        return StringUtils.isBlank(status) || StringUtils.equals("all", status)
+    public List<ResourceSurveyRequest> getResourceSurveyRequestsByProjectAndStatus(
+            final @PathVariable String projectId,
+            final @PathVariable @ApiParam(value = "status", required = true, allowableValues = "all,created,queued_for_survey,surveying,divergent,conforming,queued_for_mitigation,mitigating,canceled,error") String status
+    ) throws InsufficientPrivilegesException, NotFoundException, DataFormatException {
+        return StringUtils.isBlank(status) || StringUtils.equalsIgnoreCase("all", status)
                ? _resourceSurveyService.getAllByProjectId(getSessionUser(), projectId)
                : _resourceSurveyService.getByProjectIdAndStatus(getSessionUser(), projectId,
                                                                 ResourceSurveyRequest.Status.parse(status)
@@ -199,7 +206,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
         return _resourceSurveyService.cancelRequestsByProjectId(getSessionUser(), projectId);
     }
 
-    @ApiOperation(value = "Gets the status of survey requests for the specified project", notes = "Returns a map containing the ID of each resource in the specified project with at least one resource survey request, along with the status of the latest resource survey request for each resource.", response = Integer.class, responseContainer = "Map")
+    @ApiOperation(value = "Gets the status of survey requests for the specified project that have been created or surveyed but not yet mitigated or otherwise closed", notes = "Returns a map containing the ID of each resource in the specified project with at least one resource survey request, along with the status of the latest resource survey request for each resource.", response = Integer.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns the status of the latest survey operations for the specified project."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests for the specified project."),
                    @ApiResponse(code = 404, message = "No project exists with the specified ID."),
@@ -241,7 +248,8 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
         return _resourceSurveyService.getRequestStatus(getSessionUser(), requestId);
     }
 
-    @ApiOperation(value = "Downloads the survey reports for the site or a particular project", notes = "Returns the survey reports for the project specified by the value in the projectId querystring parameter or the overall site if no project ID is specified.")
+    @ApiOperation(value = "Downloads all the summarized survey reports associated with the project if a project ID is provided, regardless of their status; otherwise, download all the summarized survey reports for the whole site.",
+                  notes = "Returns the summarized survey report for a project or the whole site ")
     @ApiResponses({@ApiResponse(code = 200, message = "Downloads the summarized survey report for a project or the site."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests."),
                    @ApiResponse(code = 404, message = "No resource survey request exists on the server."),
@@ -284,7 +292,8 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
                 .collect(Collectors.toList());
     }
 
-    @ApiOperation(value = "Gets the survey reports for resource survey requests associated with the specified project", notes = "This call returns a map of IDs for the associated resource for each resource survey request in the specified project that have a survey report, along with the survey report itself.", response = Long.class, responseContainer = "Map")
+    @ApiOperation(value = "Gets the survey reports for resource survey requests associated with the specified project that have been created or surveyed but not yet mitigated or otherwise closed",
+            notes = "This call returns a map of resource IDs for the associated resource for each resource survey request in the specified project that have a survey report but not yet mitigated or otherwise closed, along with the survey report itself.", response = Long.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Retrieved the survey reports for the specified project."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access resource mitigation report."),
                    @ApiResponse(code = 404, message = "No project exists for the specified ID."),

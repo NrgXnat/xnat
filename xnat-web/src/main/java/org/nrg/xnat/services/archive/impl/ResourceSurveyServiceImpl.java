@@ -532,7 +532,11 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      */
     @Override
     public long cancelRequest(final UserI requester, final long requestId) throws InsufficientPrivilegesException, NotFoundException {
-        return cancelRequests(requester, Collections.singletonList(requestId)).get(0);
+        final List<Long> results = cancelRequests(requester, Collections.singletonList(requestId));
+        if (results.isEmpty()) {
+            throw new NotFoundException("The specified ID does not exist or the request can not be canceled.");
+        }
+        return results.get(0);
     }
 
     /**

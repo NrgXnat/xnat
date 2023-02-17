@@ -6,6 +6,7 @@ import org.nrg.xapi.exceptions.ConflictedStateException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotFoundException;
+import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xnat.entities.ResourceSurveyRequest;
 import org.nrg.xnat.services.archive.ResourceSurveyRequestEntityService;
 import org.nrg.xnat.services.archive.ResourceSurveyService;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class ResourceSurveyRequestListener implements JmsRequestListener<ResourceSurveyRequest> {
+    private static final String MESSAGE_NOT_FOUND = "No resource of type " + XnatAbstractresource.SCHEMA_ELEMENT_NAME + " with the ID";
+
     private final ResourceSurveyService              _surveyService;
     private final ResourceSurveyRequestEntityService _entityService;
 
@@ -54,16 +57,27 @@ public class ResourceSurveyRequestListener implements JmsRequestListener<Resourc
     }
 
     private void handleError(final Exception exception, final ResourceSurveyRequest request) {
+        final ResourceSurveyRequest.Status status;
         if (exception instanceof InsufficientPrivilegesException) {
             log.error("Tried to handle resource survey request {} for resource {} with status {} but the referenced user \"{}\" doesn't have sufficient privileges on the project {}", request.getId(), request.getResourceId(), request.getRsnStatus(), request.getRequester(), request.getProjectId());
+            status = ResourceSurveyRequest.Status.ERROR;
         } else if (exception instanceof NotFoundException) {
-            log.error("Tried to handle resource survey request {} for resource {} with status {} but couldn't find something: {}", request.getId(), request.getResourceId(), request.getRsnStatus(), exception.getMessage());
+            final NotFoundException notFoundException = (NotFoundException) exception;
+            if (notFoundException.getMessage().startsWith(MESSAGE_NOT_FOUND)) {
+                log.warn("It looks like resource {} was deleted, sorry about that", request.getResourceId());
+                status = ResourceSurveyRequest.Status.RESOURCE_DELETED;
+            } else{
+                log.error("Tried to handle resource survey request {} for resource {} with status {} but couldn't find something: {}", request.getId(), request.getResourceId(), request.getRsnStatus(), exception.getMessage());
+                status = ResourceSurveyRequest.Status.ERROR;
+            }
         } else if (exception instanceof ConflictedStateException) {
             log.error("Tried to handle resource survey request {} for resource {} with status {} but found a conflicted state: {}", request.getId(), request.getResourceId(), request.getRsnStatus(), exception.getMessage());
-        } else if (exception instanceof InitializationException) {
+            status = ResourceSurveyRequest.Status.ERROR;
+        } else {
             log.error("Tried to handle resource survey request {} for resource {} with status {} but encountered an error trying to initialize the task: {}", request.getId(), request.getResourceId(), request.getRsnStatus(), exception.getMessage());
+            status = ResourceSurveyRequest.Status.ERROR;
         }
-        request.setRsnStatus(ResourceSurveyRequest.Status.ERROR);
+        request.setRsnStatus(status);
         _entityService.update(request);
     }
 }

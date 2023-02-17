@@ -78,12 +78,13 @@ public class ResourceSurveyRequest extends AbstractHibernateEntity {
         CONFORMING,
         QUEUED_FOR_MITIGATION,
         MITIGATING,
+        RESOURCE_DELETED,
         CANCELED,
         ERROR;
 
         public static final String       ALL_VALUES     = Arrays.stream(ResourceSurveyRequest.Status.values()).map(Objects::toString).collect(Collectors.joining(", "));
         public static final List<Status> SURVEY_VALUES  = Arrays.asList(CREATED, QUEUED_FOR_SURVEY, SURVEYING, DIVERGENT);
-        public static final List<Status> CLOSING_VALUES = Arrays.asList(CONFORMING, CANCELED, ERROR);
+        public static final List<Status> CLOSING_VALUES = Arrays.asList(CONFORMING, RESOURCE_DELETED, CANCELED, ERROR);
 
         public static Optional<Status> parse(final String status) {
             return Arrays.stream(values())

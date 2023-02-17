@@ -3,7 +3,6 @@ package org.nrg.xnat.services.archive.impl;
 import com.google.common.collect.ArrayListMultimap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -46,7 +45,6 @@ import org.nrg.xnat.services.archive.impl.hibernate.ResourceMitigationHelper;
 import org.nrg.xnat.services.archive.impl.hibernate.ResourceSurveyHelper;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -75,6 +73,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import static org.nrg.xnat.entities.ResourceSurveyRequest.Status.DIVERGENT;
+import static org.nrg.xnat.services.archive.ResourceSurveyRequestEntityService.PARAM_RESOURCE_IDS;
+
 @Service
 @Slf4j
 public class ResourceSurveyServiceImpl implements ResourceSurveyService {
@@ -85,22 +86,19 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     public static final  String FORBIDDEN      = "forbidden";
     public static final  String INVALID        = "invalid";
     public static final  String MISSING        = "missing";
+    public static final  String DELETED        = "deleted";
     public static final  String ERRORS         = "errors";
 
-    private static final String QUERY_VALIDATE_RESOURCE_IDS = "SELECT xnat_abstractresource_id "
-                                                              + "FROM xnat_abstractresource "
-                                                              + "WHERE xnat_abstractresource_id IN (:" + ResourceSurveyRequestEntityService.PARAM_RESOURCE_IDS + ") "
-                                                              + "ORDER BY xnat_abstractresource_id";
-    private static final String QUERY_GET_RESOURCE_PROJECT  = "SELECT x.project "
-                                                              + "FROM xnat_abstractresource ar "
-                                                              + "         JOIN xnat_imagescandata s ON ar.xnat_imagescandata_xnat_imagescandata_id = s.xnat_imagescandata_id "
-                                                              + "         JOIN xnat_experimentdata x ON s.image_session_id = x.id "
-                                                              + "WHERE ar.xnat_abstractresource_id = :" + ResourceSurveyRequestEntityService.PARAM_RESOURCE_ID;
+    private static final String QUERY_VALIDATE_RESOURCE_IDS = "SELECT DISTINCT h.xnat_abstractresource_id AS history_id, a.xnat_abstractresource_id AS resource_id "
+                                                              + "FROM xnat_abstractresource_history h "
+                                                              + "         LEFT JOIN xnat_abstractresource a ON h.xnat_abstractresource_id = a.xnat_abstractresource_id "
+                                                              + "WHERE h.xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ") "
+                                                              + "ORDER BY h.xnat_abstractresource_id";
     private static final String QUERY_GET_RESOURCE_PROJECTS = "SELECT DISTINCT x.project "
                                                               + "FROM xnat_abstractresource ar "
                                                               + "         JOIN xnat_imagescandata s ON ar.xnat_imagescandata_xnat_imagescandata_id = s.xnat_imagescandata_id "
                                                               + "         JOIN xnat_experimentdata x ON s.image_session_id = x.id "
-                                                              + "WHERE ar.xnat_abstractresource_id IN (:" + ResourceSurveyRequestEntityService.PARAM_RESOURCE_IDS + ")";
+                                                              + "WHERE ar.xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ")";
 
     private final ResourceSurveyRequestEntityService _entityService;
     private final SerializerService                  _serializer;
@@ -128,8 +126,11 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     @Override
     public ResourceSurveyRequest getById(final UserI requester, final long requestId) throws NotFoundException, InsufficientPrivilegesException {
         final ResourceSurveyRequest request = _entityService.getRequest(requestId);
-        validateResourceAccess(requester, request.getResourceId());
-        log.debug("User {} requested resource survey request {} for resource {}", requester.getUsername(), request.getId(), request);
+        if (validateResourceAccess(requester, request.getResourceId())) {
+            log.debug("User {} requested resource survey request {} for resource {}", requester.getUsername(), request.getId(), request);
+        } else {
+            log.info("User {} requested resource survey request {} for resource {}, which is fine except that that resource has been deleted", requester.getUsername(), request.getId(), request);
+        }
         return request;
     }
 
@@ -138,7 +139,11 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      */
     @Override
     public List<ResourceSurveyRequest> getAllByResourceId(final UserI requester, final int resourceId) throws NotFoundException, InsufficientPrivilegesException {
-        validateResourceAccess(requester, resourceId);
+        if (validateResourceAccess(requester, resourceId)) {
+            log.debug("User {} requested resource survey requests for resource {}", requester.getUsername(), resourceId);
+        } else {
+            log.info("User {} requested resource survey requests for resource {}, which is fine except that that resource has been deleted", requester.getUsername(), resourceId);
+        }
         final List<ResourceSurveyRequest> requests = _entityService.getAllRequestsByResourceId(resourceId);
         if (log.isTraceEnabled()) {
             log.trace("User {} requested resource survey requests for resource {} and got {} instances: {}", requester.getUsername(), resourceId, requests.size(), requests.stream().map(ResourceSurveyRequest::getId).map(Objects::toString).collect(Collectors.joining(", ")));
@@ -153,7 +158,11 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      */
     @Override
     public ResourceSurveyRequest getByResourceId(final UserI requester, final int resourceId) throws NotFoundException, InsufficientPrivilegesException {
-        validateResourceAccess(requester, resourceId);
+        if (validateResourceAccess(requester, resourceId)) {
+            log.debug("User {} requested the latest resource survey request for resource {}", requester.getUsername(), resourceId);
+        } else {
+            log.info("User {} requested the resource survey request for resource {}, which is fine except that that resource has been deleted", requester.getUsername(), resourceId);
+        }
         final ResourceSurveyRequest request = _entityService.getRequestByResourceId(resourceId);
         log.debug("User {} requested resource survey request {} for resource {}", requester.getUsername(), request.getId(), resourceId);
         return request;
@@ -249,7 +258,18 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      */
     @Override
     public long queueResourceSurvey(final UserI requester, final int resourceId, final String reason, final String comment) throws NotFoundException, ConflictedStateException, InsufficientPrivilegesException {
-        validateResourceAccess(requester, resourceId);
+        if (!validateResourceAccess(requester, resourceId)) {
+            try {
+                final ResourceSurveyRequest request = _entityService.getRequestByResourceId(resourceId);
+                log.info("User {} tried to queue a survey on resource survey request {} for resource {} but that resource has been deleted: the request status will be updated appropriately", requester.getUsername(), request.getId(), resourceId);
+                request.setRsnStatus(ResourceSurveyRequest.Status.RESOURCE_DELETED);
+                _entityService.update(request);
+                throw new ConflictedStateException("The resource with ID " + resourceId + " has been deleted: the resource survey request " + request.getId() + " can not be queued for survey");
+            } catch (NotFoundException e) {
+                log.info("User {} tried to queue a survey on a new resource survey request for resource {} but that resource has been deleted", requester.getUsername(), resourceId);
+                throw new ConflictedStateException("The resource with ID " + resourceId + " has been deleted: no new resource survey request can be created or queued for survey");
+            }
+        }
         return queueSurveyRequest(requester, _entityService.getOrCreateRequestByResourceId(requester, resourceId), reason, comment);
     }
 
@@ -339,8 +359,12 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     @Override
     public ResourceSurveyRequest surveyResource(final ResourceSurveyRequest request) throws NotFoundException, ConflictedStateException, InsufficientPrivilegesException {
         // TODO: This should really be implemented as an aspect, similar to XapiRequestMappingAspect.
-        validateResourceAccess(getRequester(request), request.getResourceId());
-
+        if (!validateResourceAccess(getRequester(request), request.getResourceId())) {
+            log.info("User {} tried to queue resource survey request {} for resource {} but that resource has been deleted: the request status will be updated appropriately", request.getRequester(), request.getId(), request.getResourceId());
+            request.setRsnStatus(ResourceSurveyRequest.Status.RESOURCE_DELETED);
+            _entityService.update(request);
+            throw new ConflictedStateException("The resource with ID " + request + " has been deleted: the resource survey request " + request.getId() + " can not be queued for survey");
+        }
         log.debug("User {} wants to survey the resource {} so created new resource survey request {}", request.getRequester(), request.getResourceId(), request.getId());
         return runSurveyForRequest(request);
     }
@@ -390,8 +414,14 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      */
     @Override
     public ResourceSurveyRequest.Status getRequestStatus(final UserI requester, final int resourceId) throws InsufficientPrivilegesException, NotFoundException {
-        validateResourceAccess(requester, resourceId);
-        return Optional.ofNullable(_entityService.getRequestByResourceId(resourceId)).orElseThrow(() -> new NotFoundException("No resource survey request found for resource ID " + resourceId)).getRsnStatus();
+        if (!validateResourceAccess(requester, resourceId)) {
+            final ResourceSurveyRequest request = _entityService.getRequestByResourceId(resourceId);
+            request.setRsnStatus(ResourceSurveyRequest.Status.RESOURCE_DELETED);
+            _entityService.update(request);
+            log.info("User {} tried to get the status of the latest resource survey request for resource {} but that resource has been deleted: any corresponding request has been updated accordingly", requester.getUsername(), resourceId);
+            return ResourceSurveyRequest.Status.RESOURCE_DELETED;
+        }
+        return _entityService.getRequestByResourceId(resourceId).getRsnStatus();
     }
 
     /**
@@ -399,8 +429,8 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      */
     @Override
     public Map<Integer, ResourceSurveyRequest.Status> getRequestStatus(final UserI requester, final List<Integer> resourceIds) throws InsufficientPrivilegesException, NotFoundException {
-        validateResourceAccess(requester, resourceIds);
-        return _entityService.getRequestsByResourceIds(resourceIds).stream().collect(toSortedMap(ResourceSurveyRequest::getResourceId, ResourceSurveyRequest::getRsnStatus));
+        final List<Integer> deletedIds = validateResourceAccess(requester, resourceIds);
+        return _entityService.getRequestsByResourceIds(getRemainingIds(resourceIds, deletedIds)).stream().collect(toSortedMap(ResourceSurveyRequest::getResourceId, ResourceSurveyRequest::getRsnStatus));
     }
 
     /**
@@ -433,7 +463,18 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      */
     @Override
     public long queueResourceMitigation(final UserI requester, final int resourceId, final String reason, final String comment) throws NotFoundException, ConflictedStateException, InsufficientPrivilegesException {
-        validateResourceAccess(requester, resourceId);
+        if (!validateResourceAccess(requester, resourceId)) {
+            try {
+                final ResourceSurveyRequest request = _entityService.getRequestByResourceId(resourceId);
+                log.info("User {} tried to queue mitigation on resource survey request {} for resource {} but that resource has been deleted: the request status will be updated appropriately", requester.getUsername(), request.getId(), resourceId);
+                request.setRsnStatus(ResourceSurveyRequest.Status.RESOURCE_DELETED);
+                _entityService.update(request);
+                throw new ConflictedStateException("The resource with ID " + resourceId + " has been deleted: the resource survey request " + request.getId() + " can not be queued for mitigation");
+            } catch (NotFoundException e) {
+                log.info("User {} tried to queue mitigation for resource {} but that resource has been deleted and there is no open resource survey request for it", requester.getUsername(), resourceId);
+                throw new ConflictedStateException("The resource with ID " + resourceId + " has been deleted: no new resource survey request can be created or queued for mitigation");
+            }
+        }
         return queueMitigationRequest(requester, _entityService.getRequestByResourceId(resourceId), reason, comment);
     }
 
@@ -461,7 +502,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     @Override
     public List<Long> queueProjectMitigation(final UserI requester, final String projectId, final String reason, final String comment) throws NotFoundException, InsufficientPrivilegesException {
         validateProjectAccess(requester, projectId);
-        final List<ResourceSurveyRequest> requests = getByProjectIdAndStatus(requester, projectId, ResourceSurveyRequest.Status.DIVERGENT);
+        final List<ResourceSurveyRequest> requests = getByProjectIdAndStatus(requester, projectId, DIVERGENT);
 
         log.info("Got a request from user {} to queue resource mitigation on project {}, found {} divergent requests for that project", requester.getUsername(), projectId, requests.size());
         final Map<String, Collection<Long>> results = queueMitigationRequests(requester, requests, reason, comment);
@@ -504,9 +545,14 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      * {@inheritDoc}
      */
     @Override
-    public void mitigateResource(final ResourceSurveyRequest request) throws NotFoundException, InsufficientPrivilegesException, InitializationException {
+    public void mitigateResource(final ResourceSurveyRequest request) throws NotFoundException, InsufficientPrivilegesException, InitializationException, ConflictedStateException {
         final UserI requester = getRequester(request);
-        validateResourceAccess(requester, request.getResourceId());
+        if (!validateResourceAccess(requester, request.getResourceId())) {
+            log.info("User {} tried to queue mitigation on resource survey request {} for resource {} but that resource has been deleted: the request status will be updated appropriately", requester.getUsername(), request.getId(), request.getResourceId());
+            request.setRsnStatus(ResourceSurveyRequest.Status.RESOURCE_DELETED);
+            _entityService.update(request);
+            throw new ConflictedStateException("The resource with ID " + request.getResourceId() + " has been deleted: the resource survey request " + request.getId() + " can not be queued for survey");
+        }
 
         if (isInvalidStatus(request, ResourceSurveyRequest.Status.QUEUED_FOR_MITIGATION)) {
             if (request.getRsnStatus() == ResourceSurveyRequest.Status.CREATED) {
@@ -522,9 +568,19 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         setStatus(request, workflow, ResourceSurveyRequest.Status.MITIGATING);
 
         final ResourceMitigationHelper helper = new ResourceMitigationHelper(request, workflow, requester, _preferences);
-        final ResourceMitigationReport report = helper.call();
-        request.setMitigationReport(report);
-        setStatus(request, workflow, ResourceSurveyRequest.Status.CONFORMING);
+        try {
+            final ResourceMitigationReport report = helper.call();
+            if (report != null) {
+                request.setMitigationReport(report);
+                setStatus(request, workflow, ResourceSurveyRequest.Status.CONFORMING);
+            } else {
+                log.info("User {} wanted to mitigate resource survey request {} for resource {} but that resource no longer exists. Marking that request as \"ERROR\".", requester.getUsername(), request.getId(), request.getResourceId());
+                setStatus(request, workflow, ResourceSurveyRequest.Status.RESOURCE_DELETED);
+            }
+        } catch (NotFoundException e) {
+            log.warn("User {} wanted to mitigate resource survey request {} for resource {} but that resource doesn't exist. Marking that request as \"ERROR\".", requester.getUsername(), request.getId(), request.getResourceId());
+            setStatus(request, workflow, ResourceSurveyRequest.Status.ERROR);
+        }
     }
 
     /**
@@ -605,7 +661,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     @Override
     public String convertRequestsToCsv(List<ResourceSurveyRequest> requests) {
         return CSV_HEADER + LINE_SEPARATOR +
-               requests.stream().map(this::requestToCsvRow)
+               requests.stream().map(ResourceSurveyServiceImpl::requestToCsvRow)
                        .collect(Collectors.joining(LINE_SEPARATOR));
     }
 
@@ -687,7 +743,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     private Map<String, Collection<Long>> queueMitigationRequests(final UserI requester, final List<ResourceSurveyRequest> requests, final String reason, final String comment) {
         log.debug("Queuing {} requests for mitigation at the request of user {} for reason of \"{}\": {}", requests.size(), requester.getUsername(), reason, comment);
 
-        return processRequests(requester, requests, "mitigation", ResourceSurveyRequest.Status.DIVERGENT, request -> {
+        return processRequests(requester, requests, "mitigation", DIVERGENT, request -> {
             try {
                 final PersistentWorkflowI workflow = buildMitigationWorkflow(requester, request, reason, comment);
                 log.debug("Created mitigation workflow {} for resource survey request {} for resource {}", workflow.getWorkflowId(), request.getId(), request.getResourceId());
@@ -715,7 +771,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         log.info("Finished running resource survey helper mitigation for resource survey request {} on resource {}, report says operation handled {} duplicates, {} mismatched files, and {} bad files", request.getId(), request.getResourceId(), report.getTotalDuplicates(), report.getTotalMismatchedFiles(), report.getTotalBadFiles());
 
         request.setSurveyReport(report);
-        request.setRsnStatus(NumberUtils.max(report.getTotalBadFiles(), report.getTotalMismatchedFiles(), report.getTotalDuplicates()) > 0 ? ResourceSurveyRequest.Status.DIVERGENT : ResourceSurveyRequest.Status.CONFORMING);
+        request.setRsnStatus(NumberUtils.max(report.getTotalBadFiles(), report.getTotalMismatchedFiles(), report.getTotalDuplicates()) > 0 ? DIVERGENT : ResourceSurveyRequest.Status.CONFORMING);
         _entityService.update(request);
         return request;
     }
@@ -723,25 +779,34 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     private Map<String, Collection<Long>> processRequests(final UserI requester, final List<ResourceSurveyRequest> requests, final String action, final ResourceSurveyRequest.Status validStatus, final Predicate<ResourceSurveyRequest> processor) {
         final ArrayListMultimap<String, Long> results = ArrayListMultimap.create();
 
-        final Map<HttpStatus, List<ResourceSurveyRequest>> validated = requests.stream().collect(Collectors.groupingBy(new RequestValidator(requester, validStatus)));
+        final Pair<List<Integer>, List<Integer>> deletedAndInvalidResourceIds = validateResourceIdsSimple(requests.stream().map(ResourceSurveyRequest::getResourceId).distinct().collect(Collectors.toList()));
+
+        final Map<HttpStatus, List<ResourceSurveyRequest>> validated = requests.stream().collect(Collectors.groupingBy(new RequestValidator(requester, validStatus, deletedAndInvalidResourceIds.getKey(), deletedAndInvalidResourceIds.getValue())));
 
         final List<ResourceSurveyRequest> invalid = validated.get(HttpStatus.BAD_REQUEST);
         if (CollectionUtils.isNotEmpty(invalid)) {
-            final List<Long> invalidRequestIds = invalid.stream().map(ResourceSurveyRequest::getId).collect(Collectors.toList());
+            final List<Long> invalidRequestIds = invalid.stream().map(ResourceSurveyRequest::getId).sorted().collect(Collectors.toList());
             log.warn("User {} wants to queue {} resource survey requests for {} but {} of those requests have invalid statuses (should be \"{}\"): {}", requester.getUsername(), requests.size(), action, invalidRequestIds.size(), validStatus, invalid.stream().map(request -> request.getRsnStatus().toString()).distinct().collect(Collectors.joining(", ")));
             results.putAll(INVALID, invalidRequestIds);
         }
 
         final List<ResourceSurveyRequest> missing = validated.get(HttpStatus.NOT_FOUND);
         if (CollectionUtils.isNotEmpty(missing)) {
-            final List<Long> missingRequestIds = missing.stream().map(ResourceSurveyRequest::getId).collect(Collectors.toList());
+            final List<Long> missingRequestIds = missing.stream().map(ResourceSurveyRequest::getId).sorted().collect(Collectors.toList());
             log.warn("User {} wants to queue {} resource survey requests for {} but {} of those requests don't seem to exist: {}", requester.getUsername(), requests.size(), action, missingRequestIds.size(), missingRequestIds.stream().map(Objects::toString).collect(Collectors.joining(", ")));
             results.putAll(MISSING, missingRequestIds);
         }
 
+        final List<ResourceSurveyRequest> deleted = validated.get(HttpStatus.CONFLICT);
+        if (CollectionUtils.isNotEmpty(deleted)) {
+            final List<Long> deletedRequestIds = deleted.stream().map(ResourceSurveyRequest::getId).sorted().collect(Collectors.toList());
+            log.warn("User {} wants to queue {} resource survey requests for {} but {} of those requests reference resources that have been deleted: {}", requester.getUsername(), requests.size(), action, deletedRequestIds.size(), deletedRequestIds.stream().map(Objects::toString).collect(Collectors.joining(", ")));
+            results.putAll(DELETED, deletedRequestIds);
+        }
+
         final List<ResourceSurveyRequest> inaccessible = validated.get(HttpStatus.FORBIDDEN);
         if (CollectionUtils.isNotEmpty(inaccessible)) {
-            final List<Long> inaccessibleRequestIds = inaccessible.stream().map(ResourceSurveyRequest::getId).collect(Collectors.toList());
+            final List<Long> inaccessibleRequestIds = inaccessible.stream().map(ResourceSurveyRequest::getId).sorted().collect(Collectors.toList());
             log.warn("User {} wants to queue {} resource survey requests for {} but {} of those requests are inaccessible to the user: {}", requester.getUsername(), requests.size(), action, inaccessibleRequestIds.size(), inaccessibleRequestIds.stream().map(Objects::toString).collect(Collectors.joining(", ")));
             results.putAll(FORBIDDEN, inaccessibleRequestIds);
         }
@@ -757,8 +822,8 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
 
         final Map<Boolean, List<ResourceSurveyRequest>> queueable = valid.stream().collect(Collectors.partitioningBy(processor));
 
-        results.putAll(ERRORS, queueable.get(false).stream().map(ResourceSurveyRequest::getId).collect(Collectors.toList()));
-        results.putAll(QUEUED, queueable.get(true).stream().map(this::queueRequest).collect(Collectors.toList()));
+        results.putAll(ERRORS, queueable.get(false).stream().map(ResourceSurveyRequest::getId).sorted().collect(Collectors.toList()));
+        results.putAll(QUEUED, queueable.get(true).stream().map(this::queueRequest).sorted().collect(Collectors.toList()));
 
         return results.asMap();
     }
@@ -847,27 +912,31 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
 
     /**
      * Verifies that the specified resource exists and that the user has sufficient access to the project containing the
-     * resource.
+     * resource. This method If the resource currently exists, this method returns true. If the ID is associated with a resource
+     * that has been deleted, this method returns false. If the
      *
      * @param requester  The user to check
      * @param resourceId The resource to check
+     *
+     * @return Returns true if the resource ID is valid
      */
-    private void validateResourceAccess(final UserI requester, final int resourceId) throws NotFoundException, InsufficientPrivilegesException {
-        validateProjectAccess(requester, getResourceProject(resourceId));
+    private boolean validateResourceAccess(final UserI requester, final int resourceId) throws NotFoundException, InsufficientPrivilegesException {
+        return validateResourceAccess(requester, Collections.singletonList(resourceId)).isEmpty();
     }
 
     /**
-     * Verifies that the specified resource exists and that the user has sufficient access to the project containing the
-     * resource.
+     * Verifies that the specified resources exist and that the user has sufficient access to the project(s) containing the
+     * resources. If
      *
      * @param requester   The user to check
      * @param resourceIds The resources to check
      */
-    private void validateResourceAccess(final UserI requester, final List<Integer> resourceIds) throws NotFoundException, InsufficientPrivilegesException {
-        final List<String> projectIds = getResourceProjects(resourceIds);
-        for (final String projectId : projectIds) {
+    private List<Integer> validateResourceAccess(final UserI requester, final List<Integer> resourceIds) throws NotFoundException, InsufficientPrivilegesException {
+        final Pair<List<String>, List<Integer>> ids = getResourceProjects(resourceIds);
+        for (final String projectId : ids.getKey()) {
             validateProjectAccess(requester, projectId);
         }
+        return ids.getValue();
     }
 
     /**
@@ -909,36 +978,64 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     }
 
     /**
-     * Gets the project with which a particular resource is associated.
+     * Checks whether the resource IDs currently exist, existed but were deleted, or are invalid. This method returns
+     * the list of deleted IDs (if any) in the optional. If <em>any</em> of the IDs are invalid, this method throws an
+     * exception.
      *
-     * @param resourceId The ID resource to evaluate
+     * @param resourceIds The resource IDs to validate
      *
-     * @return The ID of the associated project if available.
+     * @return Returns a list of deleted IDs if one or more IDs doesn't exist.
+     *
+     * @throws NotFoundException When one or more resource IDs is invalid
      */
-    private String getResourceProject(final int resourceId) throws NotFoundException {
-        try {
-            return _jdbcTemplate.queryForObject(QUERY_GET_RESOURCE_PROJECT, new MapSqlParameterSource(ResourceSurveyRequestEntityService.PARAM_RESOURCE_ID, resourceId), String.class);
-        } catch (EmptyResultDataAccessException e) {
-            throw new NotFoundException(XnatAbstractresource.SCHEMA_ELEMENT_NAME, resourceId);
+    private List<Integer> validateResourceIds(final List<Integer> resourceIds) throws NotFoundException {
+        final Pair<List<Integer>, List<Integer>> deletedAndInvalidIds = validateResourceIdsSimple(resourceIds);
+        final List<Integer>                      deletedIds           = deletedAndInvalidIds.getKey();
+        final List<Integer>                      invalidIds           = deletedAndInvalidIds.getValue();
+        final boolean                            noDeletedIds         = deletedIds.isEmpty();
+        final boolean                            noInvalidIds         = invalidIds.isEmpty();
+
+        if (noDeletedIds && noInvalidIds) {
+            return Collections.emptyList();
         }
+        if (noInvalidIds) {
+            return deletedIds;
+        }
+
+        final String formatted = invalidIds.stream().map(value -> Integer.toString(value)).collect(Collectors.joining(", "));
+        log.error("Found {} invalid resource IDs: {}", invalidIds.size(), formatted);
+        throw new NotFoundException("No resource of type " + XnatAbstractresource.SCHEMA_ELEMENT_NAME + " with the IDs: " + formatted);
+    }
+
+    private Pair<List<Integer>, List<Integer>> validateResourceIdsSimple(final List<Integer> resourceIds) {
+        final Map<Integer, Integer> validatedIds = _jdbcTemplate.query(QUERY_VALIDATE_RESOURCE_IDS, new MapSqlParameterSource(PARAM_RESOURCE_IDS, resourceIds), results -> {
+            final Map<Integer, Integer> ids = new HashMap<>();
+            while (results.next()) {
+                ids.put(results.getObject("history_id", Integer.class), results.getObject("resource_id", Integer.class));
+            }
+            return ids;
+        });
+        return Pair.of(validatedIds.entrySet().stream().filter(entry -> Objects.isNull(entry.getValue())).map(Map.Entry::getKey).collect(Collectors.toList()),
+                       getRemainingIds(resourceIds, validatedIds.keySet()));
     }
 
     /**
-     * Gets the project(s) with which one or more resources are associated.
+     * Gets the project(s) with which one or more resources are associated. This method first validates the resource IDs
+     * to find IDs for resources that have been deleted and invalid IDs that don't and have not existed on the system.
+     * If any invalid IDs are found, this method immediately throws an exception. If any IDs are for resources that have
+     * been deleted, they are included in the list returned on the pair.
      *
      * @param resourceIds The IDs of the resources to evaluate
      *
-     * @return The ID(s) of the associated project(s) if available.
+     * @return The ID(s) of the associated project(s) if available, with a list of IDs associated with resources that have been deleted.
+     *
+     * @throws NotFoundException When one or more invalid resource IDs are found
      */
-    private List<String> getResourceProjects(final List<Integer> resourceIds) throws NotFoundException {
-        final List<Integer>         unique     = resourceIds.stream().distinct().sorted().collect(Collectors.toList());
-        final MapSqlParameterSource parameters = new MapSqlParameterSource(ResourceSurveyRequestEntityService.PARAM_RESOURCE_IDS, unique);
-
-        final List<Integer> found = _jdbcTemplate.queryForList(QUERY_VALIDATE_RESOURCE_IDS, parameters, Integer.class);
-        if (ListUtils.isEqualList(unique, found)) {
-            return _jdbcTemplate.queryForList(QUERY_GET_RESOURCE_PROJECTS, parameters, String.class);
-        }
-        throw new NotFoundException("The following resources were requested but don't exist: " + GenericUtils.convertToTypedList(ListUtils.subtract(unique, found), Integer.class).stream().map(Objects::toString).collect(Collectors.joining(", ")));
+    private Pair<List<String>, List<Integer>> getResourceProjects(final List<Integer> resourceIds) throws NotFoundException {
+        final List<Integer> unique       = resourceIds.stream().distinct().sorted().collect(Collectors.toList());
+        final List<Integer> deletedIds   = validateResourceIds(unique);
+        final List<Integer> remainingIds = getRemainingIds(unique, deletedIds);
+        return Pair.of(remainingIds.isEmpty() ? Collections.emptyList() : _jdbcTemplate.queryForList(QUERY_GET_RESOURCE_PROJECTS, new MapSqlParameterSource(PARAM_RESOURCE_IDS, remainingIds), String.class), deletedIds);
     }
 
     private class RequestValidator implements Function<ResourceSurveyRequest, HttpStatus> {
@@ -946,16 +1043,28 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
 
         private final UserI                        _requester;
         private final ResourceSurveyRequest.Status _validStatus;
+        private final List<Integer>                _deletedResourceIds;
+        private final List<Integer>                _invalidResourceIds;
 
-        RequestValidator(final UserI requester, final ResourceSurveyRequest.Status validStatus) {
-            _requester   = requester;
-            _validStatus = validStatus;
+        RequestValidator(final UserI requester, final ResourceSurveyRequest.Status validStatus, final List<Integer> deletedResourceIds, final List<Integer> invalidResourceIds) {
+            _requester          = requester;
+            _validStatus        = validStatus;
+            _deletedResourceIds = deletedResourceIds;
+            _invalidResourceIds = invalidResourceIds;
         }
 
         @Override
         public HttpStatus apply(final ResourceSurveyRequest request) {
-            return _validStatus == request.getRsnStatus()
-                   ? _checkedProjects.computeIfAbsent(request.getProjectId(), projectId -> {
+            if (_validStatus != request.getRsnStatus()) {
+                return HttpStatus.BAD_REQUEST;
+            }
+            if (_deletedResourceIds.contains(request.getResourceId())) {
+                return HttpStatus.CONFLICT;
+            }
+            if (_invalidResourceIds.contains(request.getResourceId())) {
+                return HttpStatus.NOT_FOUND;
+            }
+            return _checkedProjects.computeIfAbsent(request.getProjectId(), projectId -> {
                 try {
                     validateProjectAccess(_requester, projectId);
                     return HttpStatus.OK;
@@ -964,14 +1073,17 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
                 } catch (InsufficientPrivilegesException e) {
                     return HttpStatus.FORBIDDEN;
                 }
-            })
-                   : HttpStatus.BAD_REQUEST;
+            });
         }
     }
 
     @NotNull
     private static <K, S, T> Collector<S, ?, Map<K, T>> toSortedMap(final Function<S, K> mapKeyFunction, final Function<S, T> mapValueFunction) {
         return Collectors.toMap(mapKeyFunction, mapValueFunction, (k1, k2) -> k1, TreeMap::new);
+    }
+
+    private static List<Integer> getRemainingIds(final Collection<Integer> allIds, final Collection<Integer> deletedIds) {
+        return GenericUtils.convertToTypedList(CollectionUtils.subtract(allIds, deletedIds), Integer.class);
     }
 
     private static long translateFromResultsMap(final UserI requester, final ResourceSurveyRequest request, final String operation, final Map<String, Collection<Long>> results) throws ConflictedStateException, InsufficientPrivilegesException, NotFoundException {
@@ -994,7 +1106,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
 
     }
 
-    private String requestToCsvRow(ResourceSurveyRequest request) {
+    private static String requestToCsvRow(ResourceSurveyRequest request) {
         String s1 = String.join(",",
                                 request.getProjectId(),
                                 request.getSubjectId(),
@@ -1049,20 +1161,15 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     }
 
     private int getTargetColumn(String[] firstLine) throws DataFormatException {
-        int targetColumn = -1;
         for (int i = 0; i < firstLine.length; i++) {
             if ("resourceId".equalsIgnoreCase(firstLine[i].trim())) {
-                targetColumn = i;
-                break;
+                return i;
             }
         }
-        if (targetColumn < 0) {
-            throw new DataFormatException("Can not find the resourceId column in the uploaded file");
-        }
-        return targetColumn;
+        throw new DataFormatException("Can not find the resourceId column in the uploaded file");
     }
 
-    private UserI getRequester(final ResourceSurveyRequest request) throws NotFoundException {
+    private static UserI getRequester(final ResourceSurveyRequest request) throws NotFoundException {
         try {
             return Users.getUser(request.getRequester());
         } catch (UserInitException | UserNotFoundException e) {

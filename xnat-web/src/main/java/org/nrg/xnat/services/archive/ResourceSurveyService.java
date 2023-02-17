@@ -550,7 +550,7 @@ public interface ResourceSurveyService {
      * @throws InsufficientPrivilegesException When the requesting user has insufficient permissions to request resource mitigation.
      * @throws NotFoundException               When the specified resource doesn't exist.
      */
-    void mitigateResource(final ResourceSurveyRequest request) throws NotFoundException, InsufficientPrivilegesException, InitializationException;
+    void mitigateResource(final ResourceSurveyRequest request) throws NotFoundException, InsufficientPrivilegesException, InitializationException, ConflictedStateException;
 
     /**
      * Remove details from all survey and mitigation reports for the specified resource.

@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.InitializationException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.om.WrkWorkflowdata;
@@ -55,8 +56,8 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
     public static final String DELETED         = "deleted";
     public static final String UPDATED         = "updated";
 
-    private static final FileTime         DEFAULT_FILE_TIME = FileTime.fromMillis(0);
-    private static final Comparator<File> FILES_BY_DATE     = Comparator.comparing(file -> {
+    private static final FileTime         DEFAULT_FILE_TIME          = FileTime.fromMillis(0);
+    private static final Comparator<File> FILES_BY_DATE              = Comparator.comparing(file -> {
         try {
             return Files.readAttributes(file.toPath().toAbsolutePath(), BasicFileAttributes.class).creationTime();
         } catch (IOException e) {
@@ -64,10 +65,10 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
         }
     });
 
-    private final ResourceSurveyRequest _request;
-    private final Path                  _cachePath;
-    private final WrkWorkflowdata       _workflow;
-    private final UserI                 _requester;
+    private final ResourceSurveyRequest      _request;
+    private final Path                       _cachePath;
+    private final WrkWorkflowdata            _workflow;
+    private final UserI                      _requester;
 
     public ResourceMitigationHelper(final ResourceSurveyRequest request,
                                     final WrkWorkflowdata workflow,
@@ -81,7 +82,7 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
     }
 
     @Override
-    public ResourceMitigationReport call() {
+    public ResourceMitigationReport call() throws NotFoundException {
         final long requestId  = _request.getId();
         final int  resourceId = _request.getResourceId();
 

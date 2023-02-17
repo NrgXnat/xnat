@@ -524,7 +524,8 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         final ResourceMitigationHelper helper = new ResourceMitigationHelper(request, workflow, requester, _preferences);
         final ResourceMitigationReport report = helper.call();
         request.setMitigationReport(report);
-        setStatus(request, workflow, ResourceSurveyRequest.Status.CONFORMING);
+        ResourceSurveyRequest.Status status = StringUtils.isNotBlank(report.getCatalogWriteError()) || StringUtils.isNotBlank(report.getResourceSaveError()) || report.getTotalFileErrors() > 0 ? ResourceSurveyRequest.Status.ERROR : ResourceSurveyRequest.Status.CONFORMING;
+        setStatus(request, workflow, status);
     }
 
     /**

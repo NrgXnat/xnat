@@ -3,6 +3,7 @@ package org.nrg.xnat.services.archive.impl;
 import com.google.common.collect.ArrayListMultimap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -79,26 +80,29 @@ import static org.nrg.xnat.services.archive.ResourceSurveyRequestEntityService.P
 @Service
 @Slf4j
 public class ResourceSurveyServiceImpl implements ResourceSurveyService {
-    private static final String CSV_HEADER     = "projectId,subjectId,experimentId,scanId,resourceId,resourceLabel,resourceUri,requestStatus,surveyDate,totalEntries,totalUids,totalDuplicates,totalBadFiles,totalMismatchedFiles";
-    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
-    public static final  String QUEUED         = "queued";
-    public static final  String OK             = "ok";
-    public static final  String FORBIDDEN      = "forbidden";
-    public static final  String INVALID        = "invalid";
-    public static final  String MISSING        = "missing";
-    public static final  String DELETED        = "deleted";
-    public static final  String ERRORS         = "errors";
+    public static final String QUEUED    = "queued";
+    public static final String OK        = "ok";
+    public static final String FORBIDDEN = "forbidden";
+    public static final String INVALID   = "invalid";
+    public static final String MISSING   = "missing";
+    public static final String DELETED   = "deleted";
+    public static final String ERRORS    = "errors";
 
-    private static final String QUERY_VALIDATE_RESOURCE_IDS = "SELECT DISTINCT h.xnat_abstractresource_id AS history_id, a.xnat_abstractresource_id AS resource_id "
-                                                              + "FROM xnat_abstractresource_history h "
-                                                              + "         LEFT JOIN xnat_abstractresource a ON h.xnat_abstractresource_id = a.xnat_abstractresource_id "
-                                                              + "WHERE h.xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ") "
-                                                              + "ORDER BY h.xnat_abstractresource_id";
-    private static final String QUERY_GET_RESOURCE_PROJECTS = "SELECT DISTINCT x.project "
-                                                              + "FROM xnat_abstractresource ar "
-                                                              + "         JOIN xnat_imagescandata s ON ar.xnat_imagescandata_xnat_imagescandata_id = s.xnat_imagescandata_id "
-                                                              + "         JOIN xnat_experimentdata x ON s.image_session_id = x.id "
-                                                              + "WHERE ar.xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ")";
+    private static final Pair<List<Integer>, List<Integer>> EMPTY_PAIR_OF_LISTS         = Pair.of(Collections.emptyList(), Collections.emptyList());
+    private static final String                             CSV_HEADER                  = "projectId,subjectId,experimentId,scanId,resourceId,resourceLabel,resourceUri,requestStatus,surveyDate,totalEntries,totalUids,totalDuplicates,totalBadFiles,totalMismatchedFiles";
+    private static final String                             LINE_SEPARATOR              = System.getProperty("line.separator");
+    private static final String                             QUERY_VALIDATE_RESOURCE_IDS = "WITH resource_ids AS (SELECT xnat_abstractresource_id AS id FROM xnat_abstractresource WHERE xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ")), "
+                                                                                          + "    history_ids AS (SELECT xnat_abstractresource_id AS id FROM xnat_abstractresource_history WHERE xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ")), "
+                                                                                          + "    all_ids AS (SELECT DISTINCT id FROM (SELECT id FROM resource_ids UNION select id FROM history_ids) ids) "
+                                                                                          + "SELECT DISTINCT r.id AS resource_id, h.id AS history_id "
+                                                                                          + "FROM all_ids a "
+                                                                                          + "         LEFT JOIN resource_ids r ON a.id = r.id "
+                                                                                          + "         LEFT JOIN history_ids h ON a.id = h.id";
+    private static final String                             QUERY_GET_RESOURCE_PROJECTS = "SELECT DISTINCT x.project "
+                                                                                          + "FROM xnat_abstractresource ar "
+                                                                                          + "         JOIN xnat_imagescandata s ON ar.xnat_imagescandata_xnat_imagescandata_id = s.xnat_imagescandata_id "
+                                                                                          + "         JOIN xnat_experimentdata x ON s.image_session_id = x.id "
+                                                                                          + "WHERE ar.xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ")";
 
     private final ResourceSurveyRequestEntityService _entityService;
     private final SerializerService                  _serializer;
@@ -315,8 +319,12 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         validateProjectAccess(requester, projectId);
 
         final List<ResourceSurveyRequest> requests = _entityService.create(requester, projectId, since);
-        log.debug("User {} wants to survey resources in project {}, so created {} requests", requester.getUsername(), projectId, requests.size());
+        if (requests.isEmpty()) {
+            log.debug("User {} wants to survey resources in project {} that have been created or modified since {}, but that created no requests", requester.getUsername(), projectId, since);
+            return Collections.emptyList();
+        }
 
+        log.debug("User {} wants to survey resources in project {} that have been created or modified since {}, so created {} requests", requester.getUsername(), projectId, since, requests.size());
         final Map<String, Collection<Long>> results = queueSurveyRequests(requester, requests, reason, comment);
         return results.containsKey(QUEUED) ? new ArrayList<>(results.get(QUEUED)) : Collections.emptyList();
     }
@@ -727,8 +735,12 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     }
 
     private Map<String, Collection<Long>> queueSurveyRequests(final UserI requester, final List<ResourceSurveyRequest> requests, final String reason, final String comment) {
-        log.debug("Queuing {} requests for survey at the request of user {} for reason of \"{}\": {}", requests.size(), requester.getUsername(), reason, comment);
+        if (requests.isEmpty()) {
+            log.debug("User {} asked to queue an empty list of requests, not gonna do it", requester.getUsername());
+            return Collections.emptyMap();
+        }
 
+        log.debug("Queuing {} requests for survey at the request of user {} for reason of \"{}\": {}", requests.size(), requester.getUsername(), reason, comment);
         return processRequests(requester, requests, "survey", ResourceSurveyRequest.Status.CREATED, request -> {
             request.setRsnStatus(ResourceSurveyRequest.Status.QUEUED_FOR_SURVEY);
             _entityService.update(request);
@@ -777,6 +789,10 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     }
 
     private Map<String, Collection<Long>> processRequests(final UserI requester, final List<ResourceSurveyRequest> requests, final String action, final ResourceSurveyRequest.Status validStatus, final Predicate<ResourceSurveyRequest> processor) {
+        if (requests.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
         final ArrayListMultimap<String, Long> results = ArrayListMultimap.create();
 
         final Pair<List<Integer>, List<Integer>> deletedAndInvalidResourceIds = validateResourceIdsSimple(requests.stream().map(ResourceSurveyRequest::getResourceId).distinct().collect(Collectors.toList()));
@@ -1008,15 +1024,27 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     }
 
     private Pair<List<Integer>, List<Integer>> validateResourceIdsSimple(final List<Integer> resourceIds) {
-        final Map<Integer, Integer> validatedIds = _jdbcTemplate.query(QUERY_VALIDATE_RESOURCE_IDS, new MapSqlParameterSource(PARAM_RESOURCE_IDS, resourceIds), results -> {
-            final Map<Integer, Integer> ids = new HashMap<>();
+        if (resourceIds.isEmpty()) {
+            return EMPTY_PAIR_OF_LISTS;
+        }
+
+        final List<Pair<Integer, Integer>> validatedIds = _jdbcTemplate.query(QUERY_VALIDATE_RESOURCE_IDS, new MapSqlParameterSource(PARAM_RESOURCE_IDS, resourceIds), results -> {
+            final List<Pair<Integer, Integer>> ids = new ArrayList<>();
             while (results.next()) {
-                ids.put(results.getObject("history_id", Integer.class), results.getObject("resource_id", Integer.class));
+                ids.add(Pair.of(results.getObject("resource_id", Integer.class), results.getObject("history_id", Integer.class)));
             }
             return ids;
         });
-        return Pair.of(validatedIds.entrySet().stream().filter(entry -> Objects.isNull(entry.getValue())).map(Map.Entry::getKey).collect(Collectors.toList()),
-                       getRemainingIds(resourceIds, validatedIds.keySet()));
+
+        // Anything that has a resource ID exists regardless of history ID
+        final List<Integer> validIds = validatedIds.stream().filter(pair -> Objects.nonNull(pair.getKey())).map(Pair::getKey).collect(Collectors.toList());
+        // Anything that has a history ID exists but no resource ID was deleted
+        final List<Integer> deletedIds = validatedIds.stream().filter(pair -> Objects.isNull(pair.getKey()) && Objects.nonNull(pair.getValue())).map(Pair::getValue).collect(Collectors.toList());
+        // Anything that's not in valid or deleted IDs is invalid
+        final List<Integer> invalidIds = getRemainingIds(resourceIds, GenericUtils.convertToTypedList(ListUtils.sum(validIds, deletedIds), Integer.class));
+
+        log.debug("Asked to validate {} resource IDs, found {} valid existing IDs, {} valid deleted IDs, and {} invalid IDs", resourceIds.size(), validIds.size(), deletedIds.size(), invalidIds.size());
+        return Pair.of(deletedIds, invalidIds);
     }
 
     /**

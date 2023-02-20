@@ -588,7 +588,8 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
             final ResourceMitigationReport report = helper.call();
             if (report != null) {
                 request.setMitigationReport(report);
-                setStatus(request, workflow, ResourceSurveyRequest.Status.CONFORMING);
+                ResourceSurveyRequest.Status status = StringUtils.isNotBlank(report.getCatalogWriteError()) || StringUtils.isNotBlank(report.getResourceSaveError()) || report.getTotalFileErrors() > 0 ? ResourceSurveyRequest.Status.ERROR : ResourceSurveyRequest.Status.CONFORMING;
+                setStatus(request, workflow, status);
             } else {
                 log.info("User {} wanted to mitigate resource survey request {} for resource {} but that resource no longer exists. Marking that request as \"ERROR\".", requester.getUsername(), request.getId(), request.getResourceId());
                 setStatus(request, workflow, ResourceSurveyRequest.Status.RESOURCE_DELETED);

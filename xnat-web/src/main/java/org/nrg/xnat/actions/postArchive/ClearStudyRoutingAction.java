@@ -26,6 +26,10 @@ public class ClearStudyRoutingAction implements PrearcSessionArchiver.PostArchiv
     @Override
     public Boolean execute(final UserI user, final XnatImagesessiondata src, final Map<String, Object> params) {
         final String studyInstanceUid = src.getUid();
+        return doClear(studyInstanceUid);
+    }
+
+    public static boolean doClear(final String studyInstanceUid) {
         return StringUtils.isNotBlank(studyInstanceUid) && XDAT.getContextService().getBean(StudyRoutingService.class).close(studyInstanceUid);
     }
 }

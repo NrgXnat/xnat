@@ -274,7 +274,15 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
                 throw new ConflictedStateException("The resource with ID " + resourceId + " has been deleted: no new resource survey request can be created or queued for survey");
             }
         }
-        return queueSurveyRequest(requester, _entityService.getOrCreateRequestByResourceId(requester, resourceId), reason, comment);
+        final ResourceSurveyRequest request = _entityService.getOrCreateRequestByResourceId(requester, resourceId);
+        if (request != null) {
+            return queueSurveyRequest(requester, request, reason, comment);
+        }
+        final ResourceSurveyRequest existing = _entityService.getRequestByResourceId(resourceId);
+        if (existing == null) {
+            throw new NotFoundException("No resource survey request for resource " + resourceId + " was found, but couldn't create a new one for some reason");
+        }
+        throw new ConflictedStateException("There's already a resource survey request with ID " + existing.getId() + " and status " + existing.getRsnStatus() + " for resource " + resourceId);
     }
 
     /**

@@ -30,12 +30,12 @@ public class ResourceMitigationReport {
     @Builder
     public ResourceMitigationReport(final long resourceSurveyRequestId, final Path cachePath, final Map<File, File> movedFiles, final Map<File, File> removedFiles,
                                     final Map<File, Map<String, String>> backupErrors, final Map<File, Map<String, String>> moveErrors, final Map<File, String> deleteErrors, final String catalogWriteError, final String resourceSaveError) {
-        this(resourceSurveyRequestId, cachePath, movedFiles, removedFiles, backupErrors, moveErrors, deleteErrors, catalogWriteError, resourceSaveError, -1, -1, -1);
+        this(resourceSurveyRequestId, cachePath.toAbsolutePath().toString(), movedFiles, removedFiles, backupErrors, moveErrors, deleteErrors, catalogWriteError, resourceSaveError, -1, -1, -1);
     }
 
     @JsonCreator
     public ResourceMitigationReport(final @JsonProperty("resourceSurveyRequestId") long resourceSurveyRequestId,
-                                    final @JsonProperty("cachePath") @Nonnull Path cachePath,
+                                    final @JsonProperty("cachePath") @Nonnull String cachePath,
                                     final @JsonProperty("movedFiles") Map<File, File> movedFiles,
                                     final @JsonProperty("removedFiles") Map<File, File> removedFiles,
                                     final @JsonProperty("backupErrors") Map<File, Map<String, String>> backupErrors,
@@ -72,7 +72,7 @@ public class ResourceMitigationReport {
 
     @NonNull
     @NotNull
-    Path _cachePath;
+    String _cachePath;
     Map<File, File>                _movedFiles;
     Map<File, File>                _removedFiles;
     Map<File, Map<String, String>> _backupErrors;

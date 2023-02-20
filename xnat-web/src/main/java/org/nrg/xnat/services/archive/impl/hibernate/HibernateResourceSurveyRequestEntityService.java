@@ -43,33 +43,45 @@ import java.util.stream.Collectors;
 @Slf4j
 public class HibernateResourceSurveyRequestEntityService extends AbstractHibernateEntityService<ResourceSurveyRequest, ResourceSurveyRequestRepository> implements ResourceSurveyRequestEntityService {
     private static final String PARAM_IDS                                  = "ids";
-    private static final String TEMPLATE_GENERATE_SURVEY_REQUESTS          = "SELECT s.label                     AS subject_label, "
-                                                                             + "       x.label                     AS experiment_label, "
-                                                                             + "       sc.id                       AS scan_label, "
-                                                                             + "       sc.series_description       AS scan_description, "
-                                                                             + "       x.project                   AS project_id, "
-                                                                             + "       s.id                        AS subject_id, "
-                                                                             + "       x.id                        AS experiment_id, "
-                                                                             + "       e.element_name              AS xsi_type, "
-                                                                             + "       sc.xnat_imagescandata_id    AS scan_id, "
-                                                                             + "       ar.xnat_abstractresource_id AS resource_id, "
-                                                                             + "       ar.label                    AS resource_label, "
-                                                                             + "       r.uri                       AS resource_uri, "
-                                                                             + "       :" + PARAM_REQUESTER + "                  AS requester, "
-                                                                             + "       :" + PARAM_REQUEST_TIME + "                AS request_time "
-                                                                             + "FROM xnat_abstractresource ar "
-                                                                             + "         LEFT JOIN xnat_abstractresource_meta_data armd ON ar.abstractresource_info = armd.meta_data_id "
-                                                                             + "         LEFT JOIN xhbm_resource_survey_request rsr ON ar.xnat_abstractresource_id = rsr.resource_id "
-                                                                             + "         LEFT JOIN xnat_resource r ON ar.xnat_abstractresource_id = r.xnat_abstractresource_id "
-                                                                             + "         LEFT JOIN xnat_imagescandata sc ON ar.xnat_imagescandata_xnat_imagescandata_id = sc.xnat_imagescandata_id "
+    private static final String TEMPLATE_GENERATE_SURVEY_REQUESTS          =    "WITH requested_resources AS (SELECT ar.xnat_abstractresource_id                 AS resource_id, "
+                                                                             + "                                    ar.label                                    AS resource_label, "
+                                                                             + "                                    ar.xnat_imagescandata_xnat_imagescandata_id AS scan_id, "
+                                                                             + "                                    ar.abstractresource_info "
+                                                                             + "                             FROM xnat_abstractresource ar LEFT JOIN xnat_abstractresource_meta_data armd ON ar.abstractresource_info = armd.meta_data_id "
+                                                                             + "                                      LEFT JOIN xnat_resource r ON ar.xnat_abstractresource_id = r.xnat_abstractresource_id "
+                                                                             + "                                      LEFT JOIN xnat_imagescandata sc ON ar.xnat_imagescandata_xnat_imagescandata_id = sc.xnat_imagescandata_id "
+                                                                             + "                                      LEFT JOIN xnat_experimentdata x ON sc.image_session_id = x.id "
+                                                                             + "                             WHERE r.format = 'DICOM' "
+                                                                             + "                               AND %s), "
+                                                                             + "     open_requests AS (SELECT resource_id "
+                                                                             + "                       FROM xhbm_resource_survey_request "
+                                                                             + "                       WHERE closing_date IS NULL "
+                                                                             + "                         AND resource_id IN (SELECT resource_id FROM requested_resources) "
+                                                                             + "                       GROUP BY resource_id) "
+                                                                             + "SELECT res.resource_id, "
+                                                                             + "       res.resource_label, "
+                                                                             + "       s.label                  AS subject_label, "
+                                                                             + "       x.label                  AS experiment_label, "
+                                                                             + "       sc.id                    AS scan_label, "
+                                                                             + "       sc.series_description    AS scan_description, "
+                                                                             + "       x.project                AS project_id, "
+                                                                             + "       s.id                     AS subject_id, "
+                                                                             + "       x.id                     AS experiment_id, "
+                                                                             + "       e.element_name           AS xsi_type, "
+                                                                             + "       sc.xnat_imagescandata_id AS scan_id, "
+                                                                             + "       r.uri                    AS resource_uri, "
+                                                                             + "       :" + PARAM_REQUESTER + "               AS requester, "
+                                                                             + "       :" + PARAM_REQUEST_TIME + "             AS request_time "
+                                                                             + "FROM requested_resources res "
+                                                                             + "         LEFT JOIN open_requests orc ON res.resource_id = orc.resource_id "
+                                                                             + "         LEFT JOIN xnat_resource r ON res.resource_id = r.xnat_abstractresource_id "
+                                                                             + "         LEFT JOIN xnat_imagescandata sc ON res.scan_id = sc.xnat_imagescandata_id "
                                                                              + "         LEFT JOIN xnat_experimentdata x ON sc.image_session_id = x.id "
                                                                              + "         LEFT JOIN xdat_meta_element e ON x.extension = e.xdat_meta_element_id "
                                                                              + "         LEFT JOIN xnat_subjectassessordata sa ON x.id = sa.id "
                                                                              + "         LEFT JOIN xnat_subjectdata s ON sa.subject_id = s.id "
-                                                                             + "WHERE r.format = 'DICOM' "
-                                                                             + "  AND (rsr.resource_id IS NULL OR rsr.closing_date IS NOT NULL) "
-                                                                             + "  AND %s";
-    private static final String QUERY_GENERATE_PROJECT_SURVEY_REQUESTS     = String.format(TEMPLATE_GENERATE_SURVEY_REQUESTS, "coalesce(armd.last_modified, armd.insert_date) > :" + PARAM_SINCE_DATE + " AND " + "x.project = :" + PARAM_PROJECT_ID);
+                                                                             + "WHERE res.resource_id NOT IN (SELECT resource_id FROM open_requests)";
+    private static final String QUERY_GENERATE_PROJECT_SURVEY_REQUESTS     = String.format(TEMPLATE_GENERATE_SURVEY_REQUESTS, "coalesce(armd.last_modified, armd.insert_date) > :" + PARAM_SINCE_DATE + " AND x.project = :" + PARAM_PROJECT_ID);
     private static final String QUERY_GENERATE_RESOURCE_SURVEY_REQUEST     = String.format(TEMPLATE_GENERATE_SURVEY_REQUESTS, "ar.xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ")");
     private static final String TEMPLATE_VERIFY_ID                         = "SELECT EXISTS(SELECT 1 FROM %1$s WHERE %2$s = :%3$s)";
     private static final String QUERY_VERIFY_REQUEST_ID                    = String.format(TEMPLATE_VERIFY_ID, "xhbm_resource_survey_request", "id", PARAM_REQUEST_ID);
@@ -219,9 +231,12 @@ public class HibernateResourceSurveyRequestEntityService extends AbstractHiberna
     @Override
     public List<ResourceSurveyRequest> getOrCreateRequestsByResourceId(final UserI requester, final List<Integer> resourceIds) throws NotFoundException {
         verifyResourceIds(resourceIds);
-        final List<ResourceSurveyRequest> existing = getRequestsByResourceIds(resourceIds);
-        existing.addAll(create(requester, GenericUtils.convertToTypedList(CollectionUtils.subtract(resourceIds, existing.stream().map(ResourceSurveyRequest::getResourceId).collect(Collectors.toSet())), Integer.class)));
-        return existing;
+
+        // Get all existing requests with status CREATED corresponding to the submitted resource IDs...
+        final List<ResourceSurveyRequest> requests = getRequestsByResourceIds(resourceIds).stream().filter(request -> request.getRsnStatus() == ResourceSurveyRequest.Status.CREATED).collect(Collectors.toList());
+        // Create requests for submitted resource IDs that aren't represented in the existing requests
+        requests.addAll(create(requester, GenericUtils.convertToTypedList(CollectionUtils.subtract(resourceIds, requests.stream().map(ResourceSurveyRequest::getResourceId).collect(Collectors.toSet())), Integer.class)));
+        return requests;
     }
 
     /**
@@ -244,6 +259,8 @@ public class HibernateResourceSurveyRequestEntityService extends AbstractHiberna
             return Collections.emptyList();
         }
 
+        verifyResourceIds(resourceIds);
+
         final String timestamp = DateUtils.getMsTimestamp();
         final List<ResourceSurveyRequest> requests = _template.query(QUERY_GENERATE_RESOURCE_SURVEY_REQUEST,
                                                                      new MapSqlParameterSource(PARAM_RESOURCE_IDS, resourceIds)
@@ -254,16 +271,11 @@ public class HibernateResourceSurveyRequestEntityService extends AbstractHiberna
                                                               .map(this::create)
                                                               .collect(Collectors.toList());
 
-        // There should be a 1:1 correspondence between resource IDs and requests: if not, then some resource IDs were not found.
+        // Check for resource IDs that didn't have requests generated: there's probably an open resource survey request for missing ones
         if (resourceIds.size() != requests.size()) {
-            // If there's just one resource ID, then throw NotFoundException
-            if (resourceIds.size() == 1) {
-                throw new NotFoundException(XnatAbstractresource.SCHEMA_ELEMENT_NAME, resourceIds.get(0));
-            }
             final List<Integer> missing = requests.stream().map(ResourceSurveyRequest::getResourceId).filter(resourceId -> !resourceIds.contains(resourceId)).collect(Collectors.toList());
-            log.warn("User {} asked to create survey requests for {} resources, but includes {} resource IDs that don't appear to exist: {}", requester.getUsername(), resourceIds.size(), missing.size(), missing.stream().sorted().map(Object::toString).collect(Collectors.joining(", ")));
+            log.info("User {} asked to create survey requests for {} resources, but includes {} resource IDs that appear to be associated with resource survey requests that are currently open: {}", requester.getUsername(), resourceIds.size(), missing.size(), missing.stream().sorted().map(Object::toString).collect(Collectors.joining(", ")));
         }
-
         if (log.isDebugEnabled()) {
             log.debug("Created {} resource survey requests with timestamp {} for resources {}", requests.size(), timestamp, resourceIds.stream().map(Objects::toString).collect(Collectors.joining(", ")));
         }

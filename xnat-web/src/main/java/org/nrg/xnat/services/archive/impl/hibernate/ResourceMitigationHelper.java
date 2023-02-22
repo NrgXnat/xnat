@@ -52,12 +52,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ResourceMitigationHelper implements Callable<ResourceMitigationReport> {
     public static final String FILE_MITIGATION = "file-mitigation";
+    public static final String REPORT_CLEANING = "file-mitigation-report-cleaning";
     public static final String REQUEST         = "request";
     public static final String DELETED         = "deleted";
     public static final String UPDATED         = "updated";
 
-    private static final FileTime         DEFAULT_FILE_TIME          = FileTime.fromMillis(0);
-    private static final Comparator<File> FILES_BY_DATE              = Comparator.comparing(file -> {
+    private static final FileTime         DEFAULT_FILE_TIME = FileTime.fromMillis(0);
+    private static final Comparator<File> FILES_BY_DATE     = Comparator.comparing(file -> {
         try {
             return Files.readAttributes(file.toPath().toAbsolutePath(), BasicFileAttributes.class).creationTime();
         } catch (IOException e) {
@@ -65,10 +66,10 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
         }
     });
 
-    private final ResourceSurveyRequest      _request;
-    private final Path                       _cachePath;
-    private final WrkWorkflowdata            _workflow;
-    private final UserI                      _requester;
+    private final ResourceSurveyRequest _request;
+    private final Path                  _cachePath;
+    private final WrkWorkflowdata       _workflow;
+    private final UserI                 _requester;
 
     public ResourceMitigationHelper(final ResourceSurveyRequest request,
                                     final WrkWorkflowdata workflow,
@@ -151,7 +152,7 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
                     final boolean isMove = moves.containsKey(source);
                     if (isFileHistoryOn) {
                         log.debug("Processing resource survey request {} for resource {}: file {} will be {}", requestId, resourceId, source, isMove ? "moved" : "deleted");
-                        writer.format(" * %s (to be " + (isMove ? "moved" : "deleted") + ")", source.toAbsolutePath());
+                        writer.format(" * %s (to be " + (isMove ? "moved" : "deleted") + ")\n", source.toAbsolutePath());
                     } else {
                         log.debug("Processing resource survey request {} for resource {}: copying file {} to {}", requestId, resourceId, source, target);
                         Files.copy(source, target);

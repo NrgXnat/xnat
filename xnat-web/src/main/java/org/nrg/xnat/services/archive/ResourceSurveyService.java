@@ -43,6 +43,7 @@ public interface ResourceSurveyService {
      * @throws NotFoundException               When the specified resource doesn't exist.
      * @see #getByResourceId(UserI, int)
      */
+    @SuppressWarnings("unused")
     List<ResourceSurveyRequest> getAllByResourceId(final UserI requester, final int resourceId) throws NotFoundException, InsufficientPrivilegesException;
 
     /**
@@ -421,6 +422,7 @@ public interface ResourceSurveyService {
      *
      * @return The ID for the queued request.
      */
+    @SuppressWarnings("unused")
     long queueResourceMitigation(final UserI requester, final int resourceId) throws NotFoundException, ConflictedStateException, InsufficientPrivilegesException;
 
     /**
@@ -473,6 +475,7 @@ public interface ResourceSurveyService {
      *
      * @return A list of IDs for queued requests.
      */
+    @SuppressWarnings("unused")
     List<Long> queueProjectMitigation(final UserI requester, final String projectId) throws NotFoundException, InsufficientPrivilegesException;
 
     /**
@@ -557,16 +560,46 @@ public interface ResourceSurveyService {
      *
      * @param requester  The user requesting to clean the survey and mitigation reports.
      * @param resourceId The resource ID to check.
+     *
+     * @see #cleanResourceReports(UserI, int, String, String)
      */
+    @SuppressWarnings("unused")
     void cleanResourceReports(final UserI requester, final int resourceId) throws InsufficientPrivilegesException, NotFoundException;
+
+    /**
+     * Remove details from all survey and mitigation reports for the specified resource.
+     *
+     * @param requester  The user requesting to clean the survey and mitigation reports.
+     * @param resourceId The resource ID to check.
+     * @param reason     The reason for cleaning the resource survey reports.
+     * @param comment    A comment for cleaning the resource survey reports.
+     *
+     * @see #cleanResourceReports(UserI, int)
+     */
+    void cleanResourceReports(final UserI requester, final int resourceId, final String reason, final String comment) throws InsufficientPrivilegesException, NotFoundException;
 
     /**
      * Remove details from the specified survey and mitigation report.
      *
      * @param requester The user requesting to clean the survey report.
      * @param requestId The ID of the request to clean.
+     *
+     * @see #cleanRequestReports(UserI, long, String, String)
      */
+    @SuppressWarnings("unused")
     void cleanRequestReports(final UserI requester, final long requestId) throws InsufficientPrivilegesException, NotFoundException;
+
+    /**
+     * Remove details from the specified survey and mitigation report.
+     *
+     * @param requester The user requesting to clean the survey report.
+     * @param requestId The ID of the request to clean.
+     * @param reason    The reason for cleaning the resource survey reports.
+     * @param comment   A comment for cleaning the resource survey reports.
+     *
+     * @see #cleanRequestReports(UserI, long)
+     */
+    void cleanRequestReports(final UserI requester, final long requestId, final String reason, final String comment) throws InsufficientPrivilegesException, NotFoundException;
 
     /**
      * Convert a list of resource survey requests to a string in the CSV format

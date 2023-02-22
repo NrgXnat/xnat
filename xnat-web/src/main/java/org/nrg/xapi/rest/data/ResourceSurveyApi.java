@@ -325,28 +325,32 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
         return Optional.ofNullable(_resourceSurveyService.getById(getSessionUser(), requestId).getSurveyReport()).orElseThrow(() -> new NotFoundException("The resource survey request with ID " + requestId + " does not have an associated resource survey report."));
     }
 
-    @ApiOperation(value = "Clean the survey and mitigation reports for all resource survey requests associated with the specified resource", notes = "This removes filenames and other possible sources of PHI from the survey and mitigation reports.")
+    @ApiOperation(value = "Clean the survey and mitigation reports for all resource survey requests associated with the specified resource", notes = "This removes filenames and other possible sources of PHI from the survey and mitigation reports. The optional querystring parameters \"reason\" and \"comment\" are used when committing the workflow entries recording the report cleaning.")
     @ApiResponses({@ApiResponse(code = 200, message = "Cleaned all survey and mitigation reports for the specified resource ID."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access resource mitigation report."),
                    @ApiResponse(code = 404, message = "No resource exists for the specified resource ID."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     // TODO: No restrictTo here because there is no XAPI authorization for resource IDs: see XNAT-7373. The underlying service has to manage permissions checks.
     @XapiRequestMapping(value = "survey/resource/{resourceId}/report", produces = APPLICATION_JSON_VALUE, method = DELETE)
-    public void cleanResourceReports(final @PathVariable int resourceId) throws InsufficientPrivilegesException, NotFoundException {
-        _resourceSurveyService.cleanResourceReports(getSessionUser(), resourceId);
+    public void cleanResourceReports(final @PathVariable int resourceId,
+                                     final @RequestParam(required = false) String reason,
+                                     final @RequestParam(required = false) String comment) throws InsufficientPrivilegesException, NotFoundException {
+        _resourceSurveyService.cleanResourceReports(getSessionUser(), resourceId, reason, comment);
     }
 
-    @ApiOperation(value = "Clean the survey and mitigation reports for the specified resource survey request", notes = "This removes filenames and other possible sources of PHI from the survey and mitigation reports.")
+    @ApiOperation(value = "Clean the survey and mitigation reports for the specified resource survey request", notes = "This removes filenames and other possible sources of PHI from the survey and mitigation reports. The optional querystring parameters \"reason\" and \"comment\" are used when committing the workflow entries recording the report cleaning.")
     @ApiResponses({@ApiResponse(code = 200, message = "Cleaned the survey and mitigation reports for the specified resource survey request."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access resource survey report."),
                    @ApiResponse(code = 404, message = "No resource survey request exists for the specified request ID."),
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "survey/request/{requestId}/report", produces = APPLICATION_JSON_VALUE, method = DELETE)
-    public void cleanRequestReports(final @PathVariable long requestId) throws InsufficientPrivilegesException, NotFoundException {
-        _resourceSurveyService.cleanRequestReports(getSessionUser(), requestId);
+    public void cleanRequestReports(final @PathVariable long requestId,
+                                    final @RequestParam(required = false) String reason,
+                                    final @RequestParam(required = false) String comment) throws InsufficientPrivilegesException, NotFoundException {
+        _resourceSurveyService.cleanRequestReports(getSessionUser(), requestId, reason, comment);
     }
 
-    @ApiOperation(value = "Queues resource survey requests for the specified project for mitigation operations", notes = "Returns a list of IDs for the queued requests. The querystring parameters \"reason\" and \"comment\" are used when committing the workflow entries recording the file mitigation.", response = Long.class, responseContainer = "List")
+    @ApiOperation(value = "Queues resource survey requests for the specified project for mitigation operations", notes = "Returns a list of IDs for the queued requests. The optional querystring parameters \"reason\" and \"comment\" are used when committing the workflow entries recording the file mitigation.", response = Long.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns a list of IDs for newly resource survey requests for the specified project."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests for the specified project."),
                    @ApiResponse(code = 404, message = "No project exists with the specified ID."),
@@ -358,7 +362,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
         return _resourceSurveyService.queueProjectMitigation(getSessionUser(), projectId, reason, comment);
     }
 
-    @ApiOperation(value = "Queues the latest open resource survey request for the specified resource for mitigation", notes = "Returns the ID of the queued request. If the specified ID doesn't exist as a resource ID or no open resource survey request is associated with the specified resource, 404 is returned. The querystring parameters \"reason\" and \"comment\" are used when committing the workflow entries recording the file mitigation.", response = Long.class)
+    @ApiOperation(value = "Queues the latest open resource survey request for the specified resource for mitigation", notes = "Returns the ID of the queued request. If the specified ID doesn't exist as a resource ID or no open resource survey request is associated with the specified resource, 404 is returned. The optional querystring parameters \"reason\" and \"comment\" are used when committing the workflow entries recording the file mitigation.", response = Long.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Returns the ID of the newly queued resource survey request."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests in the project containing the specified resource."),
                    @ApiResponse(code = 404, message = "Either the specified ID is not a valid resource ID or the resource has no associated resource survey requests."),
@@ -395,7 +399,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
         return _resourceSurveyService.queueResourceMitigation(getSessionUser(), _resourceSurveyService.getResourceIds(uploadFile));
     }
 
-    @ApiOperation(value = "Queues the specified resource survey request for mitigation", notes = "Returns the ID of the queued request. If the specified ID doesn't exist as a resource survey request, 404 is returned. If the resource survey request exists but the status is not DIVERGENT, 400 is returned. The querystring parameters \"reason\" and \"comment\" are used when committing the workflow entries recording the file mitigation.", response = Long.class)
+    @ApiOperation(value = "Queues the specified resource survey request for mitigation", notes = "Returns the ID of the queued request. If the specified ID doesn't exist as a resource survey request, 404 is returned. If the resource survey request exists but the status is not DIVERGENT, 400 is returned. The optional querystring parameters \"reason\" and \"comment\" are used when committing the workflow entries recording the file mitigation.", response = Long.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Returns the ID of the newly queued resource survey request."),
                    @ApiResponse(code = 403, message = "The resource survey request is not in a divergent state so mitigation can't be performed."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests in the project containing the specified resource."),

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -664,14 +665,24 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      */
     @Override
     public void cleanResourceReports(final UserI requester, final int resourceId) throws InsufficientPrivilegesException, NotFoundException {
+        cleanResourceReports(requester, resourceId, null, null);
+    }
+
+    @Override
+    public void cleanResourceReports(final UserI requester, final int resourceId, final String reason, final String comment) throws InsufficientPrivilegesException, NotFoundException {
         validateResourceAccess(requester, resourceId);
-        _entityService.getAllRequestsByResourceId(resourceId).forEach(this::cleanReports);
+        _entityService.getAllRequestsByResourceId(resourceId).forEach(report -> cleanReports(requester, report, reason, comment));
     }
 
     @Override
     public void cleanRequestReports(final UserI requester, final long requestId) throws InsufficientPrivilegesException, NotFoundException {
+        cleanRequestReports(requester, requestId, null, null);
+    }
+
+    @Override
+    public void cleanRequestReports(final UserI requester, final long requestId, final String reason, final String comment) throws InsufficientPrivilegesException, NotFoundException {
         validateRequestAccess(requester, requestId);
-        cleanReports(_entityService.getRequest(requestId));
+        cleanReports(requester, _entityService.getRequest(requestId), reason, comment);
     }
 
     @NotNull
@@ -707,20 +718,27 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
                 mitigationReport.getTotalFileErrors());
     }
 
-    private void cleanReports(final ResourceSurveyRequest request) {
-        boolean              isDirty      = false;
-        ResourceSurveyReport surveyReport = request.getSurveyReport();
+    private void cleanReports(final UserI requester, final ResourceSurveyRequest request, final String reason, final String comment) {
+        final ResourceSurveyReport     surveyReport     = request.getSurveyReport();
+        final ResourceMitigationReport mitigationReport = request.getMitigationReport();
+        if (ObjectUtils.allNull(surveyReport, mitigationReport)) {
+            return;
+        }
+
         if (surveyReport != null) {
             request.setSurveyReport(getSurveyReportWithoutDetails(surveyReport));
-            isDirty = true;
         }
-        ResourceMitigationReport mitigationReport = request.getMitigationReport();
         if (mitigationReport != null) {
             request.setMitigationReport(getMitigationReportWithoutDetails(mitigationReport));
-            isDirty = true;
         }
-        if (isDirty) {
-            _entityService.update(request);
+
+        _entityService.update(request);
+
+        try {
+            final PersistentWorkflowI workflow = buildCleanWorkflow(requester, request, reason, comment);
+            log.debug("User {} requested that I clean the survey and/or mitigation reports for resource survey request {} for resource {}, created workflow {} to record it", requester.getUsername(), request.getId(), request.getResourceId(), workflow.getWorkflowId());
+        } catch (InitializationException e) {
+            log.error("An error occurred trying to build a workflow for user {} request to clean the survey and mitigation reports for request {}", requester.getUsername(), request.getId(), e);
         }
     }
 
@@ -859,18 +877,36 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     }
 
     private PersistentWorkflowI buildMitigationWorkflow(final UserI requester, final ResourceSurveyRequest request, final String reason, final String comment) throws InitializationException {
+        return buildWorkflow(requester, request, ResourceSurveyRequest.Status.QUEUED_FOR_MITIGATION, ResourceMitigationHelper.FILE_MITIGATION, reason, comment);
+    }
+
+    private PersistentWorkflowI buildCleanWorkflow(final UserI requester, final ResourceSurveyRequest request, final String reason, final String comment) throws InitializationException {
+        return buildWorkflow(requester, request, request.getRsnStatus(), ResourceMitigationHelper.REPORT_CLEANING, reason, comment);
+    }
+
+    private PersistentWorkflowI buildWorkflow(final UserI requester, final ResourceSurveyRequest request, final ResourceSurveyRequest.Status status, final String action, final String reason, final String comment) throws InitializationException {
         try {
             final PersistentWorkflowI workflow = Optional.ofNullable(PersistentWorkflowUtils.buildOpenWorkflow(requester, request.getXsiType(), request.getExperimentId(), request.getScanLabel(), request.getProjectId(),
-                                                                                                               EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, ResourceMitigationHelper.FILE_MITIGATION, reason, comment)))
+                                                                                                               EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, action, reason, comment)))
                                                          .orElseThrow(() -> new InitializationException("Failed to create a workflow entry for mitigation operation for resource survey request " + request.getId() + " on resource " + request.getResourceId()));
-            workflow.setStatus(ResourceSurveyRequest.Status.QUEUED_FOR_MITIGATION.toString());
+            workflow.setStatus(status.toString());
             workflow.setSrc(Integer.toString(request.getResourceId()));
+
             final EventMetaI event = workflow.buildEvent();
             PersistentWorkflowUtils.save(workflow, event);
 
-            request.setWorkflowId(workflow.getWorkflowId());
-            request.setRsnStatus(ResourceSurveyRequest.Status.QUEUED_FOR_MITIGATION);
-            _entityService.update(request);
+            switch (action) {
+                case ResourceMitigationHelper.FILE_MITIGATION:
+                    request.setWorkflowId(workflow.getWorkflowId());
+                    request.setRsnStatus(status);
+                    _entityService.update(request);
+                    break;
+                case ResourceMitigationHelper.REPORT_CLEANING:
+                    PersistentWorkflowUtils.complete(workflow, event);
+                    break;
+                default:
+                    log.warn("User {} requested workflow with unknown action {} for request {}, maybe this is okay", requester.getUsername(), action, request.getId());
+            }
 
             return workflow;
         } catch (PersistentWorkflowUtils.JustificationAbsent e) {

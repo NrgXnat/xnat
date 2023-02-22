@@ -708,6 +708,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
                 mitigationReport.getCachePath(),
                 Collections.emptyMap(),
                 Collections.emptyMap(),
+                Collections.emptySet(),
                 Collections.emptyMap(),
                 Collections.emptyMap(),
                 Collections.emptyMap(),

@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Value
 @Accessors(prefix = "_")
@@ -29,8 +30,9 @@ public class ResourceMitigationReport {
 
     @Builder
     public ResourceMitigationReport(final long resourceSurveyRequestId, final Path cachePath, final Map<File, File> movedFiles, final Map<File, File> removedFiles,
-                                    final Map<File, Map<String, String>> backupErrors, final Map<File, Map<String, String>> moveErrors, final Map<File, String> deleteErrors, final String catalogWriteError, final String resourceSaveError) {
-        this(resourceSurveyRequestId, cachePath.toAbsolutePath().toString(), movedFiles, removedFiles, backupErrors, moveErrors, deleteErrors, catalogWriteError, resourceSaveError, -1, -1, -1);
+                                    final Set<File> retainedFiles, final Map<File, Map<String, String>> backupErrors, final Map<File, Map<String, String>> moveErrors,
+                                    final Map<File, String> deleteErrors, final String catalogWriteError, final String resourceSaveError) {
+        this(resourceSurveyRequestId, cachePath.toAbsolutePath().toString(), movedFiles, removedFiles, retainedFiles, backupErrors, moveErrors, deleteErrors, catalogWriteError, resourceSaveError, -1, -1, -1);
     }
 
     @JsonCreator
@@ -38,6 +40,7 @@ public class ResourceMitigationReport {
                                     final @JsonProperty("cachePath") @Nonnull String cachePath,
                                     final @JsonProperty("movedFiles") Map<File, File> movedFiles,
                                     final @JsonProperty("removedFiles") Map<File, File> removedFiles,
+                                    final @JsonProperty("retainedFiles") Set<File> retainedFiles,
                                     final @JsonProperty("backupErrors") Map<File, Map<String, String>> backupErrors,
                                     final @JsonProperty("moveErrors") Map<File, Map<String, String>> moveErrors,
                                     final @JsonProperty("deleteErrors") Map<File, String> deleteErrors,
@@ -50,6 +53,7 @@ public class ResourceMitigationReport {
         _cachePath               = cachePath;
         _movedFiles              = Optional.ofNullable(movedFiles).orElseGet(Collections::emptyMap);
         _removedFiles            = Optional.ofNullable(removedFiles).orElseGet(Collections::emptyMap);
+        _retainedFiles           = Optional.ofNullable(retainedFiles).orElseGet(Collections::emptySet);
         _backupErrors            = Optional.ofNullable(backupErrors).orElseGet(Collections::emptyMap);
         _moveErrors              = Optional.ofNullable(moveErrors).orElseGet(Collections::emptyMap);
         _deleteErrors            = Optional.ofNullable(deleteErrors).orElseGet(Collections::emptyMap);
@@ -75,6 +79,7 @@ public class ResourceMitigationReport {
     String _cachePath;
     Map<File, File>                _movedFiles;
     Map<File, File>                _removedFiles;
+    Set<File>                      _retainedFiles;
     Map<File, Map<String, String>> _backupErrors;
     Map<File, Map<String, String>> _moveErrors;
     Map<File, String>              _deleteErrors;

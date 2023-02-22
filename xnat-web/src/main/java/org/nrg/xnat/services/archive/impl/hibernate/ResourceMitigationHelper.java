@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -107,8 +108,8 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
             writer.println("Have the following items:");
 
             // ALL files get backed up: renames get backed and then renamed, all remaining are deleted after renaming finished.
-            final Map<Path, Path> backups = new HashMap<>();
-            final Map<Path, Path> moves   = new HashMap<>();
+            final Map<Path, Path> backupGatherer = new HashMap<>();
+            final Map<Path, Path> moveGatherer   = new HashMap<>();
 
             final List<File> badFiles = report.getBadFiles();
             writer.format(" * %d bad files (unparsable, etc.)\n", badFiles.size());
@@ -120,8 +121,8 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
             final Map<File, String> mismatchedFiles = report.getMismatchedFiles();
             writer.format(" * %d mismatched files\n", mismatchedFiles.size());
             if (!mismatchedFiles.isEmpty()) {
-                backups.putAll(mismatchedFiles.keySet().stream().collect(Collectors.toMap(File::toPath, backupMapper)));
-                moves.putAll(mismatchedFiles.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toPath(), renameMapper)));
+                backupGatherer.putAll(mismatchedFiles.keySet().stream().collect(Collectors.toMap(File::toPath, backupMapper)));
+                moveGatherer.putAll(mismatchedFiles.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toPath(), renameMapper)));
             }
 
             final Map<Pair<String, String>, Map<File, String>> duplicates = ResourceSurveyReport.flattenDuplicateMaps(report.getDuplicates());
@@ -132,11 +133,23 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
                     if (calculatedNames.size() > 1) {
                         writer.format(" * There are %d calculated names for SOP class UID %s and instance UID %s, I can't fix this myself.", calculatedNames.size(), uid.getKey(), uid.getValue());
                     } else {
-                        backups.putAll(map.keySet().stream().collect(Collectors.toMap(File::toPath, backupMapper)));
-                        map.keySet().stream().max(FILES_BY_DATE).ifPresent(file -> moves.put(file.toPath(), sourcePath.resolve(map.get(file))));
+                        backupGatherer.putAll(map.keySet().stream().collect(Collectors.toMap(File::toPath, backupMapper)));
+                        map.keySet().stream().max(FILES_BY_DATE).ifPresent(file -> moveGatherer.put(file.toPath(), sourcePath.resolve(map.get(file))));
                     }
                 });
             }
+
+            // Remove any file that's being "moved" to itself: it doesn't need to be backed up or "moved"
+            final Map<Boolean, Map<Path, Path>> partitions = moveGatherer.entrySet().stream()
+                                                                         .collect(Collectors.partitioningBy(entry -> entry.getKey().equals(entry.getValue()),
+                                                                                                            Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+            final Set<Path> identities = partitions.getOrDefault(true, Collections.emptyMap()).keySet();
+            final Map<Path, Path> backups = !identities.isEmpty()
+                                            ? backupGatherer.entrySet().stream()
+                                                            .filter(entry -> !identities.contains(entry.getKey()))
+                                                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+                                            : backupGatherer;
+            final Map<Path, Path> moves = partitions.getOrDefault(false, Collections.emptyMap());
 
             writer.format("Actions:\n\nI have %d files to backup, %d files to rename\n\n", backups.size(), moves.size());
             writer.format(isFileHistoryOn ? "Files to be moved/deleted (not backing up, maintain file history is turned on\n" : "Backing up files\n");
@@ -225,6 +238,7 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
             log.debug("Completed file operations for mitigating resource survey request {} for resource {}", requestId, resourceId);
             builder.removedFiles(backups.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toAbsolutePath().toFile(), entry -> entry.getValue().toAbsolutePath().toFile())));
             builder.movedFiles(moves.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toAbsolutePath().toFile(), entry -> entry.getValue().toAbsolutePath().toFile())));
+            builder.retainedFiles(identities.stream().map(Path::toFile).collect(Collectors.toSet()));
 
             if (!backupErrors.isEmpty()) {
                 log.warn("Found {} backup errors for mitigating resource survey request {} for resource {}", backupErrors.size(), requestId, resourceId);

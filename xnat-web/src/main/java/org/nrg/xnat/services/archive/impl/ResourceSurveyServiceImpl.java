@@ -499,7 +499,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds) throws NotFoundException {
+    public Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds) throws NotFoundException, ConflictedStateException {
         return queueResourceMitigation(requester, resourceIds, null, null);
     }
 
@@ -507,8 +507,15 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds, final String reason, final String comment) throws NotFoundException {
-        return queueMitigationRequests(requester, _entityService.getRequestsByResourceIds(resourceIds), reason, comment);
+    public Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds, final String reason, final String comment) throws NotFoundException, ConflictedStateException {
+        final List<ResourceSurveyRequest> requests = _entityService.getRequestsByResourceIds(resourceIds);
+        if (requests.size() == resourceIds.size()) {
+            return queueMitigationRequests(requester, requests, reason, comment);
+        }
+        final Set<Integer> found = requests.stream().map(ResourceSurveyRequest::getResourceId).collect(Collectors.toSet());
+        throw new ConflictedStateException("User " + requester.getUsername() + " tried to queue " + resourceIds.size() + " resources for mitigation but "
+                                           + (resourceIds.size() - requests.size()) + " of those resources have no associated resource survey requests: "
+                                           + resourceIds.stream().filter(resourceId -> !found.contains(resourceId)).sorted().map(Objects::toString).collect(Collectors.joining(", ")));
     }
 
     @Override

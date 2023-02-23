@@ -449,7 +449,7 @@ public interface ResourceSurveyService {
      *
      * @return A map with a list of IDs for queued requests as "queued" and non-queued requests under "invalid" and "forbidden".
      */
-    Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds) throws NotFoundException;
+    Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds) throws NotFoundException, ConflictedStateException;
 
     /**
      * Queues requests to mitigate issues from the resource survey reports for resources with the specified IDs. The
@@ -463,7 +463,7 @@ public interface ResourceSurveyService {
      *
      * @return A map with a list of IDs for queued requests as "queued" and non-queued requests under "invalid" and "forbidden".
      */
-    Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds, final String reason, final String comment) throws NotFoundException;
+    Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds, final String reason, final String comment) throws NotFoundException, ConflictedStateException;
 
     /**
      * Queues requests to mitigate issues from the resource survey reports for resources in the specified project. The

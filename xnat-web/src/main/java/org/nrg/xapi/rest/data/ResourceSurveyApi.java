@@ -112,9 +112,9 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Get the resource survey requests with the indicated status for resources in the specified project. The status value can be one of the following case-insensitive options: all, created, queued_for_survey, surveying, divergent, conforming, queued_for_mitigation, mitigating, canceled, error",
-            notes = "This call returns the full resource survey request, including completed resource scan requests",
-            response = ResourceSurveyRequest.class,
-            responseContainer = "List")
+                  notes = "This call returns the full resource survey request, including completed resource scan requests",
+                  response = ResourceSurveyRequest.class,
+                  responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Returns resource survey requests with the indicated status for the specified project ID."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access or administer resource survey requests for the specified project."),
                    @ApiResponse(code = 404, message = "No project exists with the specified ID."),
@@ -123,7 +123,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
     public List<ResourceSurveyRequest> getResourceSurveyRequestsByProjectAndStatus(
             final @PathVariable String projectId,
             final @PathVariable @ApiParam(value = "status", required = true, allowableValues = "all,created,queued_for_survey,surveying,divergent,conforming,queued_for_mitigation,mitigating,canceled,error") String status
-    ) throws InsufficientPrivilegesException, NotFoundException, DataFormatException {
+                                                                                  ) throws InsufficientPrivilegesException, NotFoundException, DataFormatException {
         return StringUtils.isBlank(status) || StringUtils.equalsIgnoreCase("all", status)
                ? _resourceSurveyService.getAllByProjectId(getSessionUser(), projectId)
                : _resourceSurveyService.getByProjectIdAndStatus(getSessionUser(), projectId,
@@ -293,7 +293,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Gets the survey reports for resource survey requests associated with the specified project that have been created or surveyed but not yet mitigated or otherwise closed",
-            notes = "This call returns a map of resource IDs for the associated resource for each resource survey request in the specified project that have a survey report but not yet mitigated or otherwise closed, along with the survey report itself.", response = Long.class, responseContainer = "Map")
+                  notes = "This call returns a map of resource IDs for the associated resource for each resource survey request in the specified project that have a survey report but not yet mitigated or otherwise closed, along with the survey report itself.", response = Long.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Retrieved the survey reports for the specified project."),
                    @ApiResponse(code = 403, message = "Insufficient permissions to access resource mitigation report."),
                    @ApiResponse(code = 404, message = "No project exists for the specified ID."),
@@ -382,7 +382,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     // TODO: No restrictTo here because there is no XAPI authorization for resource IDs: see XNAT-7373. The underlying service has to manage permissions checks.
     @XapiRequestMapping(value = "mitigate/resources", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = POST)
-    public Map<String, Collection<Long>> mitigateResources(final @RequestBody List<Integer> resourceIds) throws NotFoundException {
+    public Map<String, Collection<Long>> mitigateResources(final @RequestBody List<Integer> resourceIds) throws NotFoundException, ConflictedStateException {
         return _resourceSurveyService.queueResourceMitigation(getSessionUser(), resourceIds);
     }
 
@@ -395,7 +395,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
     // TODO: No restrictTo here because there is no XAPI authorization for resource IDs: see XNAT-7373. The underlying service has to manage permissions checks.
     @XapiRequestMapping(value = "mitigate/resources/csv", consumes = MULTIPART_FORM_DATA_VALUE, produces = APPLICATION_JSON_VALUE, method = POST)
-    public Map<String, Collection<Long>> mitigateResources(@RequestParam final MultipartFile uploadFile) throws NoContentException, DataFormatException, NotFoundException, ServerException {
+    public Map<String, Collection<Long>> mitigateResources(@RequestParam final MultipartFile uploadFile) throws NoContentException, DataFormatException, NotFoundException, ServerException, ConflictedStateException {
         return _resourceSurveyService.queueResourceMitigation(getSessionUser(), _resourceSurveyService.getResourceIds(uploadFile));
     }
 

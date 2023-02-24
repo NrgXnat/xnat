@@ -29,4 +29,27 @@
 		#end
 	#end
 #end
+<br>
+<div id="customFieldsRow" style="width: 75%; overflow-y:auto">
+<h3 style="margin: 1em 0 0.5em;">Custom Field Sets</h3>
+<div id="formio" class="xnat-bootstrap" style="width: 75%; overflow-y:auto"  data-id="$!om.getId()" data-type="$!om.getXSIType()" data-project="$!om.getProject()"></div>
+
+
+<script type="text/javascript"> 
+   var formOptions = {  readOnly:true,
+                        renderMode: 'html',
+                        buttonSettings: {
+                             showCancel: false,
+                             showSubmit: false,
+                             showNext: false,
+                             showPrevious: false
+                           }
+                     };
+</script>
+
+#parse('screens/formioJSIncludes.vm')
+#parse('screens/formioIncludes.vm')
+<hr>
+</div>
+
 <!--END ReportProjectSpecificFields.vm -->

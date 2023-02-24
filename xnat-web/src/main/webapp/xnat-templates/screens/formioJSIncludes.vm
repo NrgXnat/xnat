@@ -1,0 +1,23 @@
+<!-- BEGIN xnat-templates/screens/formioJSIncludes.vm -->
+
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+
+<link rel="stylesheet" type="text/css"  href="$content.getURI('/style/xnat-bootstrap4/bootstrap.css')" >
+<link rel="stylesheet" type="text/css"  href="$content.getURI('/style/formiojs/formio.full.min.css')">
+<link rel="stylesheet" type="text/css"  href="$content.getURI('/style/bootstrap-shims.css')">
+<script src="$content.getURI('/scripts/xnat/app/formJson/formiojs/formio.full.min.js')" charset="utf-8"></script>
+
+
+<script type="text/javascript"> 
+   Formio.icons = 'fontawesome';
+</script>
+
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/xdat_insertyuicalendar.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/customizations/xnatButtonComponent.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/customizations/xnatSelectComponent.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/customizations/xnatNumberComponent.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/customizations/xnatDateComponent.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/customizations/xnatRadioComponent.js')"></script>
+
+
+<!-- END xnat-templates/screens/formioJSIncludes.vm -->

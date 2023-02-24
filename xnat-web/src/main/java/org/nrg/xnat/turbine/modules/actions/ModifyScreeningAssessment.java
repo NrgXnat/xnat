@@ -9,9 +9,28 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
+import groovy.util.logging.Slf4j;
+import org.apache.turbine.util.RunData;
+import org.apache.velocity.context.Context;
+import org.nrg.framework.utilities.Reflection;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.turbine.modules.actions.ModifyItem;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ModifyScreeningAssessment extends ModifyItem {
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+public class ModifyScreeningAssessment extends ModifyImageAssessorData {
 
 	@Override
 	public boolean allowDataDeletion() {
@@ -20,5 +39,6 @@ public class ModifyScreeningAssessment extends ModifyItem {
 		// as it would be cleared out.
 		return true;
 	}
+
 
 }

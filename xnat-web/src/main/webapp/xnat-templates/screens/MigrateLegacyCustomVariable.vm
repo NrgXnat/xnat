@@ -1,0 +1,12 @@
+<!-- BEGIN xnat-templates/screens/MigrateLegacyCustomVariable.vm -->
+
+<div class="header"><b>Custom Variable Definitions </b>
+ <div style="display: flex;justify-content: flex-end;"> <button id="reload-customvariable-list" style="margin-right: 20px;" onclick="location.reload();">Refresh</button> </div>
+    <div id="custom-variable-container"></div>
+</div>
+
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/datatypeManager.js')"></script>
+<script type="text/javascript" src="$content.getURI("/scripts/xnat/app/formJson/migrationActivityMonitoring.js")"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/projectListModal.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/migrateCustomVariable.js')"></script>
+<!-- END xnat-templates/screens/MigrateLegacyCustomVariable.vm -->

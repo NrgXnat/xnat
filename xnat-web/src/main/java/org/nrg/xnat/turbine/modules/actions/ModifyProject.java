@@ -25,6 +25,7 @@ import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.turbine.modules.actions.ModifyItem;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -47,7 +48,7 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 @Slf4j
-public class ModifyProject extends SecureAction {
+public class ModifyProject extends AbstractProjectSecureAction {
     /**
      * {@inheritDoc}
      */
@@ -97,6 +98,16 @@ public class ModifyProject extends SecureAction {
 
             removeExcessInvestigators(project, user);
             removeExcessAliases(project, user);
+
+            try {
+                dynamicPreSave(XDAT.getUserDetails(),project,TurbineUtils.GetDataParameterHash(data), workflow);
+            } catch (ModifyItem.CriticalException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                log.error("",e);
+                throw e;
+            }
+
             SaveItemHelper.authorizedSave(item, user, false, false, event);
 
             final XnatProjectdata postSave = new XnatProjectdata(item);

@@ -167,6 +167,7 @@
             #end
         </td>
     </tr>
+    #parse("/screens/xnat_projectData/edit/parameters.vm")
 
 </table>
 

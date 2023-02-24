@@ -9,16 +9,12 @@
 
 package org.nrg.xnat.restlet.resources.search;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.display.SQLQueryField;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.UserHelper;
@@ -33,6 +29,11 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
+import org.nrg.xnat.customforms.exceptions.CustomFormFetcherNotFoundException;
+import org.nrg.xnat.customforms.helpers.CustomFormDisplayFieldHelper;
+import org.nrg.xnat.customforms.interfaces.CustomFormDisplayFieldsI;
+import org.nrg.xnat.customforms.manager.DefaultCustomFormManager;
+import org.nrg.xnat.customforms.utils.CustomFormsConstants;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -42,13 +43,21 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+
 public class SearchFieldListResource extends SecureResource{
 	static Logger logger = Logger.getLogger(SearchFieldListResource.class);
 	private String elementName=null;
+	private String projectScope=null;
 	public SearchFieldListResource(Context context, Request request, Response response) {
 		super(context, request, response);
 
 			elementName= (String)getParameter(request,"ELEMENT_NAME");
+			projectScope = getQueryVariable("projectScope");
 			if(elementName!=null){
 				this.getVariants().add(new Variant(MediaType.TEXT_XML));
 			}else{
@@ -182,10 +191,12 @@ public class SearchFieldListResource extends SecureResource{
 		params.put("title", "Search Fields");
 
 		params.put("element_name", elementName);
+		CustomFormDisplayFieldHelper customFormDisplayFieldHelper = new CustomFormDisplayFieldHelper();
 
 
 		XFTTable fields = new XFTTable();
 		fields.initTable(new String[]{"FIELD_ID","HEADER","SUMMARY","TYPE","REQUIRES_VALUE","DESC","ELEMENT_NAME","SRC"});
+
 
 		ArrayList<String> elementNames=XftStringUtils.CommaDelimitedStringToArrayList(elementName);
 		for(String en : elementNames)
@@ -193,16 +204,22 @@ public class SearchFieldListResource extends SecureResource{
             try {
 				SchemaElement se = SchemaElement.GetElement(en);
 				ElementDisplay ed = se.getDisplay();
+				DisplayField pi=ed.getProjectIdentifierField();
+
 				params.put("versions", ed.getVersionsJSON());
 
 				ArrayList displays = ed.getSortedFields();
 
 				Iterator iter = displays.iterator();
+
 				while (iter.hasNext())
 				{
 				   DisplayField df = (DisplayField)iter.next();
 				   if(df.isSearchable()){
 					   String id = df.getId();
+					   if (customFormDisplayFieldHelper.isCustomFieldDisplayField(id, en)) {
+						   continue;
+					   }
 					   String summary = df.getSummary();
 					   String header = df.getHeader();
 					   String type = df.getDataType();
@@ -219,13 +236,10 @@ public class SearchFieldListResource extends SecureResource{
 					   fields.rows().add(sub);
 				   }
 				}
-
-				try {
+				try{
 					final UserI user = getUser();
-
-					List<List> custom_fields =UserHelper.getUserHelperService(user).getQueryResultsAsArrayList("SELECT DISTINCT ON (name) dtp.xnat_projectdata_id AS project, fdgf.name, fdgf.datatype AS type FROM xnat_abstractprotocol dtp LEFT JOIN xnat_datatypeprotocol_fieldgroups dtp_fg ON dtp.xnat_abstractprotocol_id=dtp_fg.xnat_datatypeprotocol_xnat_abstractprotocol_id LEFT JOIN xnat_fielddefinitiongroup fdg  ON dtp_fg.xnat_fielddefinitiongroup_xnat_fielddefinitiongroup_id=fdg.xnat_fielddefinitiongroup_id LEFT JOIN xnat_fielddefinitiongroup_field fdgf ON fdg.xnat_fielddefinitiongroup_id=fdgf.fields_field_xnat_fielddefiniti_xnat_fielddefinitiongroup_id WHERE dtp.data_type='" + en + "' AND fdgf.type='custom'");
-
-					DisplayField pi=ed.getProjectIdentifierField();
+				    List<List> legacy_custom_fields =UserHelper.getUserHelperService(user).getQueryResultsAsArrayList("SELECT DISTINCT ON (name) dtp.xnat_projectdata_id AS project, fdgf.name, fdgf.datatype AS type FROM xnat_abstractprotocol dtp LEFT JOIN xnat_datatypeprotocol_fieldgroups dtp_fg ON dtp.xnat_abstractprotocol_id=dtp_fg.xnat_datatypeprotocol_xnat_abstractprotocol_id LEFT JOIN xnat_fielddefinitiongroup fdg  ON dtp_fg.xnat_fielddefinitiongroup_xnat_fielddefinitiongroup_id=fdg.xnat_fielddefinitiongroup_id LEFT JOIN xnat_fielddefinitiongroup_field fdgf ON fdg.xnat_fielddefinitiongroup_id=fdgf.fields_field_xnat_fielddefiniti_xnat_fielddefinitiongroup_id WHERE dtp.data_type='" + en + "' AND fdgf.type='custom'");
+					List<String> addedJsonFields = new ArrayList<>();
 
 					ArrayList<Object[]> label_fields=new ArrayList<Object[]>();
 					try {
@@ -243,21 +257,27 @@ public class SearchFieldListResource extends SecureResource{
 								    sub[6]=se.getFullXMLName();
 								    sub[7]=2;
 								    label_fields.add(sub);
-
-								    for(List cf:custom_fields){
-								    	if(cf.get(0).equals(o)){
-								    		sub = new Object[8];
-										    sub[0]=se.getSQLName().toUpperCase() + "_FIELD_MAP=" + cf.get(1).toString().toLowerCase();
-										    sub[1]=cf.get(1);
-										    sub[2]="Custom Field: "  + cf.get(1);
-										    sub[3]=cf.get(2);
-										    sub[4]=false;
-										    sub[5]="Custom Field: "  + cf.get(1);
-										    sub[6]=se.getFullXMLName();
-										    sub[7]=1;
-											   fields.rows().add(sub);
-										   }
+									for(List cf:legacy_custom_fields){
+										if(cf.get(0).equals(o)){
+											sub = new Object[8];
+											sub[0]=se.getSQLName().toUpperCase() + "_FIELD_MAP=" + cf.get(1).toString().toLowerCase();
+											sub[1]=cf.get(1);
+											sub[2]="Custom Variable: "  + cf.get(1);
+											sub[3]=cf.get(2);
+											sub[4]=false;
+											sub[5]="Custom Variable: "  + cf.get(1);
+											sub[6]=se.getFullXMLName();
+											sub[7]=1;
+											fields.rows().add(sub);
 										}
+									}
+
+									if(!"*".equals(o)){
+										if (null != projectScope && !projectScope.equals(o)) {
+											continue;
+										}
+										addCustomFormFields(se, o, addedJsonFields, fields);
+									}
 								}
 							} catch (Exception e) {
 								logger.error("",e);
@@ -266,13 +286,25 @@ public class SearchFieldListResource extends SecureResource{
 					} catch (FieldNotFoundException e) {
 					}
 
+					if (elementName.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME)) {
+						List<Object> av=Permissions.getAllowedValues(user,se.getFullXMLName(), se.getFullXMLName() + "/ID", "read");
+						for(Object o:av) {
+							if(!"*".equals(o)){
+								if (null != projectScope && !projectScope.equals(o)) {
+									continue;
+								}
+								addCustomFormFields(se, o, addedJsonFields, fields);
+							}
+						}
+					}
+
 					if(label_fields.size()>0){
 						fields.rows().addAll(label_fields);
 					}
 				} catch (SQLException e) {
 					logger.error("",e);
 				} catch (DBPoolException e) {
-					logger.error("",e);
+						logger.error("", e);
 				}
 			} catch (XFTInitException e) {
 	            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
@@ -287,4 +319,35 @@ public class SearchFieldListResource extends SecureResource{
 		return this.representTable(fields, mt, params);
 	}
 
+
+	private void addCustomFormFields(final SchemaElement se, final Object o, List<String> addedJsonFields, XFTTable fields) {
+		DefaultCustomFormManager defaultCustomFormManager = null;
+		try {
+			defaultCustomFormManager	= XDAT.getContextService().getBeanSafely(DefaultCustomFormManager.class);
+		}catch(NoClassDefFoundError ncdfe) {
+
+		}
+		if (null == defaultCustomFormManager) {
+			return;
+		}
+		try {
+			CustomFormDisplayFieldsI displayBuilder = defaultCustomFormManager.getCustomFormDisplayFieldBuilderByTypeAnnotation(CustomFormsConstants.PROTOCOL_PLUGIN_AWARE);
+			if (null == displayBuilder) {
+				//Looks like this instance has no protocol plugin; resolve to default
+				displayBuilder = defaultCustomFormManager.getCustomFormDisplayFieldBuilderByTypeAnnotation(CustomFormsConstants.PROTOCOL_UNAWARE);
+				if (displayBuilder != null) {
+					displayBuilder.addDisplayFields(se, o, addedJsonFields, fields);
+				}
+			} else {
+				//This will be a protocol aware form
+				displayBuilder.addDisplayFields(se, o, addedJsonFields, fields);
+			}
+		}catch(CustomFormFetcherNotFoundException e) {
+			logger.error("Could not get CustomFormDisplayBuilder", e);
+		}
+
+	}
+
+
 }
+

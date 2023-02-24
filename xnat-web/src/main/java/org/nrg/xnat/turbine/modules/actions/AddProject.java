@@ -14,11 +14,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.ScreenLoader;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.turbine.modules.actions.ModifyItem;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.modules.screens.EditScreenA;
 import org.nrg.xdat.turbine.utils.PopulateItem;
@@ -37,12 +39,14 @@ import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.utils.WorkflowUtils;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import static org.nrg.xft.event.XftItemLifecyclePhase.Save;
 
 @SuppressWarnings("unused")
 @Slf4j
-public class AddProject extends SecureAction {
+public class AddProject extends AbstractProjectSecureAction {
     @Override
     public void doPerform(final RunData data, final Context context) {
         if (TurbineUtils.HasPassedParameter("tag", data)) {
@@ -102,6 +106,15 @@ public class AddProject extends SecureAction {
                 return;
             }
 
+            try {
+                dynamicPreSave(XDAT.getUserDetails(),project,TurbineUtils.GetDataParameterHash(data), workflow);
+            } catch (ModifyItem.CriticalException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                log.error("",e);
+                throw e;
+            }
+
             final XnatProjectdata postSave = saveProject(project, submitted, user, event, data, context);
             if (postSave == null) {
                 // Just return: error display and handling is already done in method.
@@ -127,6 +140,8 @@ public class AddProject extends SecureAction {
             handleException(data, submitted, e, TurbineUtils.EDIT_ITEM);
         }
     }
+
+
 
     private PopulateItem getSubmittedXFTItem(final RunData data) {
         try {

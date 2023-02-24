@@ -73,7 +73,8 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnat.helpers.merge", "org.nrg.xnat.helpers.processing", "org.nrg.xnat.helpers.resolvers",
                 "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.node", "org.nrg.xnat.preferences", "org.nrg.xnat.processor.dao",
                 "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processors",
-                "org.nrg.xnat.task", "org.nrg.xnat.tracking", "org.nrg.xnat.archive", "org.nrg.xnat.services.customfields.impl"})
+                "org.nrg.xnat.task", "org.nrg.xnat.tracking", "org.nrg.xnat.archive", "org.nrg.xnat.services.customfields.impl",
+                "org.nrg.xnat.features"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @EnableCaching
 @Getter

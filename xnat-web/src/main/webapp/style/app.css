@@ -648,7 +648,7 @@ font[color="yellow"] {
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
     -khtml-border-radius: 3px;
-    font-weight: bold;
+    font-weight: normal;
     text-align: center;
     background: #888;
     background: -moz-linear-gradient(top, #cccccc 0%, #999999 25%);
@@ -1145,13 +1145,14 @@ input {
 }
 
 /* base button style */
+/* body button,
+   body [type="button"],
+   body [type="submit"],
+   body [type="reset"], */
+button, [type="button"], [type="submit"], [type="reset"],
 .btn,
 .btn1,
-.btn2,
-body button,
-body [type="button"],
-body [type="submit"],
-body [type="reset"] {
+.btn2 {
     display: inline-block;
     padding: 6px 12px;
     /*max-height: 28px;*/
@@ -1182,9 +1183,10 @@ body [type="reset"]:hover {
 .btn.primary,
 .btn.submit,
 .btn.save,
-body input.btn1,
+input.btn1, .btn1[type="button"], [type="submit"]
+/*body input.btn1,
 body .btn1[type="button"],
-body [type="submit"] {
+body [type="submit"] */ {
     color: #fff;
     background: #1A75BB linear-gradient( #3C8BC7, #1A75BB );
     /*border: 1px solid #033E77;*/
@@ -1196,9 +1198,10 @@ body [type="submit"] {
 .btn.primary:hover,
 .btn.submit:hover,
 .btn.save:hover,
-body input.btn1:hover,
+input.btn1:hover, .btn1[type="button"]:hover, [type="submit"]:hover
+/* body input.btn1:hover,
 body .btn1[type="button"]:hover,
-body [type="submit"]:hover {
+body [type="submit"]:hover */ {
     /*background: #096BB7;*/
     background: #1A75BB;
     box-shadow: none;
@@ -1208,9 +1211,10 @@ body [type="submit"]:hover {
 .btn.primary:active,
 .btn.submit:active,
 .btn.save:active,
-body input.btn1:active,
+input.btn1:active, .btn1[type="button"]:active, [type="submit"]:active
+/* body input.btn1:active,
 body .btn1[type="button"]:active,
-body [type="submit"]:active {
+body [type="submit"]:active */ {
     background: #145b91;
     box-shadow: none;
 }
@@ -1234,28 +1238,32 @@ body [type="submit"]:active {
 }
 
 /* btn2 gets gray background */
-.btn,
-.btn2,
-body button,
+/* body button,
 body [type="button"],
-body [type="reset"] {
-    background: #f8f8f8 linear-gradient( #ffffff, #f0f0f0 );
+body [type="reset"], */
+button, [type="button"], [type="reset"],
+.btn,
+.btn2 {
+    background-color: #f8f8f8;
+    background-image: linear-gradient( #ffffff, #f0f0f0 );
     border: 1px solid #a0a0a0;
 }
 
-.btn:hover,
-.btn2:hover,
-body button:hover,
+/* body button:hover,
 body [type="button"]:hover,
-body [type="reset"]:hover {
+body [type="reset"]:hover, */
+button:hover, [type="button"]:hover, [type="reset"]:hover,
+.btn:hover,
+.btn2:hover {
    background: #f0f0f0;
 }
 
-.btn:active,
-.btn2:active,
-body button:active,
+/* body button:active,
 body [type="button"]:active,
-body [type="reset"]:active {
+body [type="reset"]:active, */
+button:active, [type="button"]:active, [type="reset"]:active,
+.btn:active,
+.btn2:active {
     background: #e0e0e0;
 }
 

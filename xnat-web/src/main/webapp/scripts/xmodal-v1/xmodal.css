@@ -102,7 +102,7 @@ div.xmodal .footer .button,
 div.xmodal .footer .button.cancel.default {
     color: #000 ; background: #f8f8f8 linear-gradient( #ffffff, #f0f0f0 ) ; border: 1px solid #a0a0a0 ; border-radius: 3px ; }
 div.xmodal .footer .button:hover,
-div.xmodal .footer .button.cancel.default:hover { background: #e8e8e8; }
+div.xmodal .footer .button.cancel.default:hover { background: #e8e8e8; box-shadow: none; }
 div.xmodal .footer .button:active,
 div.xmodal .footer .button.cancel.default:active { color: inherit ; background: #d0d0d0 }
 div.xmodal .footer .button.default { color: #fff ; background: #1A75BB linear-gradient( #3C8BC7, #1A75BB ); border-color: #085895 ; }

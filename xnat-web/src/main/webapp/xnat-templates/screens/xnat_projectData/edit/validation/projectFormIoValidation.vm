@@ -1,0 +1,10 @@
+      try {
+          let isValid = projectComponents.checkFormIOValidity();
+          if (!isValid) {
+               err_messages.push('Custom variable validation failed');
+                __projTitle.addClass('invalid');
+                invalid_count++;
+          }
+      }catch(err) {
+          console.log(err);
+      }

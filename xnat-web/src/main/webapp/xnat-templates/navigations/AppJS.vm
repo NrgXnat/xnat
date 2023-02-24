@@ -30,7 +30,8 @@
 ##        <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
 ##    #end
 
-    <!-- app.css loaded first -->
+    <!-- Brand colors and app.css loaded first -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/brand.${css}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.${css}">
 
     <!-- Icon sets -->

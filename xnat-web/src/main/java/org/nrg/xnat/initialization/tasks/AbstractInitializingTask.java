@@ -100,10 +100,11 @@ public abstract class AbstractInitializingTask implements InitializingTask {
         }
     }
 
+
     private static final Logger _log = LoggerFactory.getLogger(AbstractInitializingTask.class);
 
     private final int _maxExecutions;
 
-    private Date _completedAt;
+    protected Date _completedAt;
     private int _executions;
 }

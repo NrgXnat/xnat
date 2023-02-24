@@ -1,0 +1,346 @@
+<!-- BEGIN xnat-templates/screens/formioIncludesBase.vm -->
+#* @vtlvariable name="escUtils" type="org.apache.commons.text.StringEscapeUtils" *#
+
+<script type="text/javascript">
+   console.log('IN xnat-templates/screens/formioIncludesBase.vm');
+</script>
+
+<input type="hidden" id="custom_fields_elt" name="$om.getXSIType()/custom_fields" value="{}">
+
+<script type="text/javascript">
+var XNAT = getObject(XNAT || {});
+var csrfUrl = XNAT.url.csrfUrl;
+var formIOObj = undefined;
+var projectFieldName = '$om.getXSIType()/project';
+
+
+function errorHandler(e, title, closeAll = false) {
+    console.log(e);
+    title = (title) ? 'Error: ' + title : 'Error';
+    const msg = (e.statusText) ? '<p><strong>Error ' + e.status + ': ' +
+        e.statusText + '</strong></p><p>' + e.responseText + '</p>' : e;
+    XNAT.dialog.open({
+        width: 450,
+        title: title,
+        content: msg,
+        buttons: [
+            {
+                label: 'OK',
+                isDefault: true,
+                close: true,
+                action: function () {
+                    if (closeAll) {
+                        xmodal.closeAll();
+                    }
+                }
+            }
+        ]
+    });
+ }
+
+function cleanUpElements(obj) {
+    //Any key that looks like page[0-9]+[Next|Prev]Page should not be submitted
+    //This hack is needed as FormIO submits these custom navigation buttons
+    const pageButtonRegEx = new RegExp("^page[0-9]+(Next|Previous)Page$");
+    let testIfJson = obj;
+    try {
+       testIfJson = JSON.parse(obj);
+    }catch(e){}
+       if (typeof testIfJson === "object") {
+            $.each(obj, function(key, value){
+                if (pageButtonRegEx.test(key)) {
+                    delete obj[key];
+                }else {
+                    if (value === "" || value === null){
+                        delete obj[key];
+                    } else if (Object.prototype.toString.call(value) === '[object Object]') {
+                        cleanUpElements(value);
+                    } else if (Array.isArray(value)) {
+                        value.forEach(element => cleanUpElements(element));
+                    }
+                }
+            });
+       }
+}
+
+
+function mergeExistingCustomFieldsValueInItem(submissionData) {
+    //The XFT Item could have preexisting values not in the dynamic form
+    //This values are to be preserved
+    let existingStr = localStorage.getItem("existingCustomFields");
+    try {
+        if (existingStr != null) {
+            let existing = JSON.parse(existingStr);
+            if (existing != null) {
+                $.each(existing, function(key, value){
+                    //Does this key exist in the form? If so, leave it alone
+                    if (!submissionData.hasOwnProperty(key)) {
+                        submissionData[key] = value;
+                    }
+                });
+            }
+            localStorage.removeItem("existingCustomFields");
+        }
+    }catch(err) {console.log(err);}
+}
+
+
+function unescapeXML(val) {
+    let tobeEscaped = "&quot;";
+    return val.replaceAll(tobeEscaped,"\"");
+}
+
+ function checkFormIOValidity(){
+              let isValid = true;
+              if (typeof formIOObj != "undefined") {
+                 isValid = formIOObj.checkData(formIOObj.submission.data);
+                 if (!isValid) {
+                   XNAT.dialog.open({
+                       width: 450,
+                       title: "Invalid custom form data",
+                       content: "Data entered in the custom form is invalid or missing. Please review the data entered across all tab(s).",
+                       buttons: [{
+                           label: 'OK',
+                           isDefault: true,
+                           close: true
+                       }]
+                   });
+                 }else {
+                   mergeExistingCustomFieldsValueInItem(formIOObj.submission.data);
+                   cleanUpElements(formIOObj.submission.data);
+                   let dataString = JSON.stringify(formIOObj.submission.data);
+                   if (dataString != "{}") {
+                     $('#custom_fields_elt').val(JSON.stringify(formIOObj.submission.data));
+                   }
+                 }
+              }
+              return isValid;
+          }
+
+
+
+  function CustomVariableFormComponents(formName = "form1") {
+	localStorage.removeItem("existingCustomFields");
+	const myId = '$!om.getId()';
+	let myProjectId = '$!om.getProject()';
+	if (window.projectScope) {
+      myProjectId = window.projectScope;
+    }
+    let xsiType = '$!om.getXSIType()';
+    if (xsiType === "xnat:subjectData") {
+       formName = "editSubjectForm";
+    }
+    let myVisitId = '$!om.getVisit()';
+    if (myVisitId === '') {
+       myVisitId = 'null';
+    }
+    let myVisitSubType = '$!om.getProtocol()';
+    if (myVisitSubType === '') {
+       myVisitSubType = 'null';
+    }
+
+    var myForm=YUIDOM.get(formName);
+
+	this.formsIOValidator={
+		  form: myForm,
+		  priority : 0,
+		  validate : function() {
+		     return checkFormIOValidity();
+		  }
+	}
+
+	this.checkFormIOValidity = function(){
+            return checkFormIOValidity();
+    }
+
+
+   var formData = undefined;
+   #if ($!om.getId() != "" || ((! $matches.equals(null)) && ($matches.size() > 0)))
+      ##It appears to be an edit. Get the fields
+      formData = {};
+      #set($omCustomData = $!turbineUtils.escapeJS("$!om.getCustomFields()").toString().trim())
+      #if ("$omCustomData" != '')
+          formData = JSON.parse("$omCustomData")
+          localStorage.setItem("existingCustomFields", JSON.stringify(formData));
+      #else
+         ## This is required since the custom_field contains the XML escaped values.
+         #set($xsiType = $om.getXSIType())
+         #set($prop = "xnat:experimentData/custom_fields")
+         #if($xsiType == "xnat:subjectData")
+             #set($prop = "xnat:subjectData/custom_fields")
+         #elseif ($xsiType == "xnat:projectData" )
+             #set($prop = "xnat:projectData/custom_fields")
+         #end
+         #set($dblQoutes = '"')
+         #set($valUnescapedXML = $!escUtils.unescapeXml($!om.getStringProperty($prop)))
+         #set($val = $!escUtils.unescapeHtml4($!valUnescapedXML))
+         #set($escapedCustomFieldItem = $!turbineUtils.escapeJS($!val).toString().trim())
+         #if ("$!escapedCustomFieldItem" != "")
+            let formDataStr = unescapeXML("$!escapedCustomFieldItem");
+            formData = JSON.parse(formDataStr);
+            localStorage.setItem("existingCustomFields", JSON.stringify(formData));
+         #end
+      #end
+   #end
+
+
+	function showForm(components, htmlDivElementId = 'formio', htmlDivElementParentId = undefined) {
+	   let htmlDivElt = document.getElementById(htmlDivElementId);
+	   htmlDivElt.innerHTML = '';
+	   if (components != undefined && JSON.stringify(components) === "{}") {
+	            if (htmlDivElementParentId != undefined) {
+	               document.getElementById(htmlDivElementParentId).style.display = 'none';
+	            }
+	   	        htmlDivElt.style.display='none';
+	   }else if (components != undefined)  {
+	     try {
+	       let formDataPreFilled = JSON.parse(localStorage.getItem("currentFormIO"));
+	       if (formDataPreFilled != null) {
+	        formData = formDataPreFilled.submission;
+	       }
+	     }catch(err) {console.log(err);}
+	     if (formData != undefined) {
+           Formio.createForm(htmlDivElt, components, formOptions).then(function(form) {
+                form.submission = {data:formData};
+                formIOObj = form;
+                form.on('gotoNextPage', function() {
+                    form.nextPage();
+                });
+                form.on('gotoPreviousPage', function() {
+                    form.prevPage();
+                });
+           });
+	     }else {
+            Formio.createForm(htmlDivElt, components).then(function(form){
+              formIOObj = form;
+                form.on('gotoNextPage', function() {
+                    form.nextPage();
+                });
+                form.on('gotoPreviousPage', function() {
+                    form.prevPage();
+                });
+            });
+	     }
+	   }
+	   localStorage.removeItem("currentFormIO");
+	}
+
+	 this.init = function() {
+	 	this.loadCustomFormComponents(myVisitId,myVisitSubType);
+	 }
+
+
+	 this.updateOnProjectChange = function() {
+          myProjectId =  document.getElementById(projectFieldName).value;
+          let projectSingularName = "$displayManager.getSingularDisplayNameForProject()";
+          if (formIOObj != undefined && myProjectId != "Select Project") {
+             if (this.formHasFilledData(formIOObj.submission.data)) {
+                 let warnMsg = "Since you have changed the " + projectSingularName + ", the custom fields associated with the current " + projectSingularName + " have changed. The previously filled data for the custom fields is being rendered. Please review the custom fields for this " + projectSingularName +  " carefully";
+                 XNAT.dialog.message("Dynamic Variables are being modified", warnMsg);
+                 let currentFormData = {};
+                 currentFormData.formId = formIOObj.id;
+                 currentFormData.submission = formIOObj.submission.data;
+                 localStorage.setItem("currentFormIO",JSON.stringify(currentFormData));
+             }
+          }
+          this.refreshCustomFormComponents(myVisitId,myVisitSubType);
+     }
+
+     this.formHasFilledData = function(myObj) {
+        let hasFilledData = false;
+        if (myObj != undefined) {
+             for (var key in myObj) {
+                if (myObj.hasOwnProperty(key)) {
+                  var val = myObj[key];
+                  if (val != "") {
+                     hasFilledData = true;
+                     break;
+                  }
+                  hasFilledData = this.formHasFilledData(val);
+                  if (hasFilledData) {
+                    return true;
+                  }
+                }
+              }
+        }
+        return hasFilledData;
+     }
+
+
+	 this.refreshCustomFormComponents = function(selectedVisitId, selectedSubType) {
+		this.loadCustomFormComponents(selectedVisitId,selectedSubType);
+	}
+
+
+	 this.loadCustomFormComponents = function(selectedVisit,selectedSubType, htmlDivElementId = 'formio', htmlDivElementParentId = "customFieldsRow") {
+	 		//Id is not set on a new entity
+	 		var id = myId;
+			if (myId === undefined || myId === '') {
+			  id='null';
+			}
+			if (typeof selectedVisit === 'undefined' || null === selectedVisit || selectedVisit === '') {
+			  selectedVisit = 'null';
+			}
+			if (typeof selectedSubType === 'undefined' || null === selectedSubType || selectedSubType === '') {
+			  selectedSubType = 'null';
+			}
+			let configEndpoint = 'xapi/customforms/element?xsiType=$!om.getXSIType()';
+			let includePreviousNextButtons = true;
+			if (typeof formOptions !== "undefined") {
+                if (formOptions.readOnly) {
+                   includePreviousNextButtons  = false;
+                }
+			}
+			#if ($data.message || $vr)
+			  //The entity was not saved in the backend.
+			  //Attempt to guess the project from context
+			  myProjectId = XNAT.data.context.projectID;
+			  configEndpoint = configEndpoint.concat('&id=NULL&appendPrevNextButtons=' + includePreviousNextButtons +'&projectId='+ myProjectId +'&visitId=' + selectedVisit+'&subtype='+ selectedSubType);
+			#else
+			  configEndpoint = configEndpoint.concat('&id=' + id + '&appendPrevNextButtons=' + includePreviousNextButtons +'&projectId='+ myProjectId +'&visitId=' + selectedVisit+'&subtype='+ selectedSubType);
+			#end
+			//loading.open();
+
+			return XNAT.xhr.get({
+			    url: csrfUrl(configEndpoint , {format:'json'},true),
+			    contentType: 'application/json;charset=UTF-8',
+			    dataType: 'json',
+			    async: false,
+			    success: function(formJsonStr){
+				try {
+				  showForm(formJsonStr, htmlDivElementId, htmlDivElementParentId);
+				}catch(error) {
+				   console.log(error);
+				   try {
+				     if (htmlDivElementParentId != undefined) {
+				       let htmlElement = document.getElementById(htmlDivElementParentId)
+				       if (htmlElement != null) {
+				          htmlElement.style.display = 'none';
+				       }
+				     }
+				     document.getElementById(htmlDivElementId).style.display = 'none';
+				     document.getElementById(htmlDivElementId).innerHTML = '';
+				   }catch(elementDoesNotExistError) {
+
+				   }
+				}
+			    },
+			    error: function (xhr) {
+			       if (xhr.status === 404) {
+				      errorHandler(xhr, 'Could not fetch form', false);
+			       }
+			    },
+			    complete: function() {
+			      // loading.close();
+			    }
+			});
+	}
+
+  }
+
+</script>
+
+
+
+
+<!-- END xnat-templates/screens/formioIncludesBase.vm -->

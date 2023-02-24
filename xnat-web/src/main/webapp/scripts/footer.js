@@ -451,6 +451,20 @@ YAHOO.util.Event.onDOMReady( function()
                 	if(env != undefined){
                         YAHOO.util.Event.stopEvent(env);
                 	}
+
+                    //hack here to make sure that no matter what we are checking custom form validation and creating a modal
+                    //if there are any custom form errors. this first check will be done in the case that another error has been found in base validation 
+                    if(XNAT.formValidators!=undefined){
+                        var formValidators = XNAT.formValidators[this.ID];
+                        if(formValidators!=undefined){
+                            for(var i=0;i<formValidators.length;i++){
+                                if (formValidators[i].validate!=undefined) {
+                                    formValidators[i].validate();
+                                }
+                            }
+                        }
+                    }
+
                     showContent();
                     return false;
                 }

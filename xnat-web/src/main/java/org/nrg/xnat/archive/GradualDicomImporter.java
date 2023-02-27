@@ -300,7 +300,11 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
             final PrearcUtils.PrearcFileLock lock;
             try {
-                lock = PrearcUtils.lockFile(session.getSessionDataTriple(), outputFile.getName());
+                // Because filenames can overlap across scans, we need to include the scan id. Because the prearchive
+                // doesn't use the DICOM/secondary distinction, DICOM filenames must be unique within a scan
+                // (see getSafeFile method within this class, particularly if rename=False).
+                final String uniqueFilename = scan + outputFile.getName();
+                lock = PrearcUtils.lockFile(session.getSessionDataTriple(), uniqueFilename);
             } catch (SessionFileLockException e) {
                 throw new ClientException("Concurrent file sends of the same data is not supported.");
             }

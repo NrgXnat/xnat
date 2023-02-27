@@ -67,6 +67,7 @@ public class ResourceSurveyRequest extends AbstractHibernateEntity {
                                                                                                                         .resourceLabel(resultSet.getString("resource_label"))
                                                                                                                         .resourceUri(resultSet.getString("resource_uri"))
                                                                                                                         .requester(resultSet.getString("requester"))
+                                                                                                                        .mitigationRequester(resultSet.getString("mitigation_requester"))
                                                                                                                         .requestTime(resultSet.getString("request_time"))
                                                                                                                         .build();
 
@@ -175,6 +176,8 @@ public class ResourceSurveyRequest extends AbstractHibernateEntity {
     @NonNull
     @NotNull
     private String requester;
+
+    private String mitigationRequester;
 
     @NonNull
     @NotNull

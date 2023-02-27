@@ -88,6 +88,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     public static final String MISSING   = "missing";
     public static final String DELETED   = "deleted";
     public static final String ERRORS    = "errors";
+    public static final String MOVED     = "moved";
 
     private static final Pair<List<Integer>, List<Integer>> EMPTY_PAIR_OF_LISTS         = Pair.of(Collections.emptyList(), Collections.emptyList());
     private static final String                             CSV_HEADER                  = "projectId,subjectId,experimentId,scanId,resourceId,resourceLabel,resourceUri,requestStatus,surveyDate,totalEntries,totalUids,totalDuplicates,totalBadFiles,totalMismatchedFiles";
@@ -570,11 +571,17 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      */
     @Override
     public void mitigateResource(final ResourceSurveyRequest request) throws NotFoundException, InsufficientPrivilegesException, InitializationException, ConflictedStateException {
-        final UserI requester = getRequester(request);
+        final WrkWorkflowdata workflow = WrkWorkflowdata.getWrkWorkflowdatasByWrkWorkflowdataId(request.getWorkflowId(), getRequester(request), false);
+        final UserI requester;
+        try {
+            requester = Users.getUser(request.getMitigationRequester());
+        } catch (UserInitException | UserNotFoundException e) {
+            throw new NotFoundException(XDATUser.SCHEMA_ELEMENT_NAME, request.getMitigationRequester());
+        }
+
         if (!validateResourceAccess(requester, request.getResourceId())) {
             log.info("User {} tried to queue mitigation on resource survey request {} for resource {} but that resource has been deleted: the request status will be updated appropriately", requester.getUsername(), request.getId(), request.getResourceId());
-            request.setRsnStatus(ResourceSurveyRequest.Status.RESOURCE_DELETED);
-            _entityService.update(request);
+            setStatus(request, workflow, ResourceSurveyRequest.Status.RESOURCE_DELETED);
             throw new ConflictedStateException("The resource with ID " + request.getResourceId() + " has been deleted: the resource survey request " + request.getId() + " can not be queued for survey");
         }
 
@@ -588,7 +595,6 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         }
 
         log.debug("Got request from user {} to mitigate resource survey request {} for resource {}", requester.getUsername(), request.getId(), request.getResourceId());
-        final WrkWorkflowdata workflow = WrkWorkflowdata.getWrkWorkflowdatasByWrkWorkflowdataId(request.getWorkflowId(), requester, false);
         setStatus(request, workflow, ResourceSurveyRequest.Status.MITIGATING);
 
         final ResourceMitigationHelper helper = new ResourceMitigationHelper(request, workflow, requester, _preferences);
@@ -862,7 +868,18 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
             results.putAll(FORBIDDEN, inaccessibleRequestIds);
         }
 
-        final List<ResourceSurveyRequest> valid = Optional.ofNullable(validated.get(HttpStatus.OK)).orElse(Collections.emptyList());
+        final Map<Boolean, List<ResourceSurveyRequest>> validatedPartition = Optional.ofNullable(validated.get(HttpStatus.OK)).orElse(Collections.emptyList())
+                .stream()
+                .collect(Collectors.partitioningBy(this::movedResource));
+
+        final List<ResourceSurveyRequest> moved = validatedPartition.getOrDefault(true, Collections.emptyList());
+        if (CollectionUtils.isNotEmpty(moved)) {
+            final List<Long> movedRequestIds = moved.stream().map(ResourceSurveyRequest::getId).sorted().collect(Collectors.toList());
+            log.warn("User {} wants to queue {} resource survey requests for {} but {} of those requests are has been moved to another project", requester.getUsername(), requests.size(), action, moved.size(), movedRequestIds.stream().map(Objects::toString).collect(Collectors.joining(", ")));
+            results.putAll(MOVED, movedRequestIds);
+        }
+
+        final List<ResourceSurveyRequest> valid = validatedPartition.getOrDefault(false, Collections.emptyList());
         if (CollectionUtils.isNotEmpty(valid)) {
             if (log.isInfoEnabled()) {
                 log.info("User {} wants to queue {} resource survey requests for {}, found {} requests with valid status that are accessible to the user: {}", requester.getUsername(), requests.size(), action, valid.size(), valid.stream().map(ResourceSurveyRequest::getId).map(Object::toString).collect(Collectors.joining(", ")));
@@ -877,6 +894,11 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         results.putAll(QUEUED, queueable.get(true).stream().map(this::queueRequest).sorted().collect(Collectors.toList()));
 
         return results.asMap();
+    }
+
+    private boolean movedResource(final ResourceSurveyRequest request) {
+        List<String> projects = _jdbcTemplate.queryForList(QUERY_GET_RESOURCE_PROJECTS, new MapSqlParameterSource(PARAM_RESOURCE_IDS, Collections.singletonList(request.getResourceId())), String.class);
+        return !(CollectionUtils.isEmpty(projects) || StringUtils.equals(request.getProjectId(), projects.get(0)));
     }
 
     private long queueRequest(final ResourceSurveyRequest request) {
@@ -906,6 +928,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
             switch (action) {
                 case ResourceMitigationHelper.FILE_MITIGATION:
                     request.setWorkflowId(workflow.getWorkflowId());
+                    request.setMitigationRequester(requester.getUsername());
                     request.setRsnStatus(status);
                     _entityService.update(request);
                     break;
@@ -956,7 +979,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
 
         // Workflow status is already complete if status is conforming, so only set if not conforming.
         if (status != ResourceSurveyRequest.Status.CONFORMING) {
-            workflow.setStatus(status.toString());
+            workflow.setStatus(PersistentWorkflowUtils.FAILED);
             try {
                 WorkflowUtils.save(workflow, workflow.buildEvent());
             } catch (Exception e) {
@@ -1176,6 +1199,9 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         }
         if (results.containsKey(FORBIDDEN)) {
             throw new InsufficientPrivilegesException(requester.getUsername(), request.getProjectId());
+        }
+        if (results.containsKey(MOVED)) {
+            throw new ConflictedStateException("The resource "+request.getResourceId() + " has been moved to another project");
         }
         if (results.containsKey(QUEUED)) {
             final Optional<Long> requestId = results.get(QUEUED).stream().findAny();

@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -75,6 +74,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import static org.nrg.xnat.entities.ResourceSurveyRequest.Status.CANCELED;
 import static org.nrg.xnat.entities.ResourceSurveyRequest.Status.DIVERGENT;
 import static org.nrg.xnat.services.archive.ResourceSurveyRequestEntityService.PARAM_RESOURCE_IDS;
 
@@ -735,15 +735,13 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     private void cleanReports(final UserI requester, final ResourceSurveyRequest request, final String reason, final String comment) {
         final ResourceSurveyReport     surveyReport     = request.getSurveyReport();
         final ResourceMitigationReport mitigationReport = request.getMitigationReport();
-        if (ObjectUtils.allNull(surveyReport, mitigationReport)) {
-            return;
-        }
-
         if (surveyReport != null) {
             request.setSurveyReport(getSurveyReportWithoutDetails(surveyReport));
         }
         if (mitigationReport != null) {
             request.setMitigationReport(getMitigationReportWithoutDetails(mitigationReport));
+        } else {
+            request.setRsnStatus(CANCELED);
         }
 
         _entityService.update(request);

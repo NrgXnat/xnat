@@ -8,6 +8,7 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
@@ -69,6 +70,10 @@ public class ResourceMitigationReport {
         map.put(ResourceMitigationReport.KEY_FILE, file.getAbsolutePath());
         map.put(ResourceMitigationReport.KEY_MESSAGE, message);
         return map;
+    }
+
+    public boolean hasErrors() {
+        return StringUtils.isNotBlank(_catalogWriteError) || StringUtils.isNotBlank(_resourceSaveError) || _totalFileErrors > 0;
     }
 
     @Positive

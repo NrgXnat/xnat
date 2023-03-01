@@ -602,7 +602,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
             final ResourceMitigationReport report = helper.call();
             if (report != null) {
                 request.setMitigationReport(report);
-                ResourceSurveyRequest.Status status = StringUtils.isNotBlank(report.getCatalogWriteError()) || StringUtils.isNotBlank(report.getResourceSaveError()) || report.getTotalFileErrors() > 0 ? ResourceSurveyRequest.Status.ERROR : ResourceSurveyRequest.Status.CONFORMING;
+                ResourceSurveyRequest.Status status = report.hasErrors() ? ResourceSurveyRequest.Status.ERROR : ResourceSurveyRequest.Status.CONFORMING;
                 setStatus(request, workflow, status);
             } else {
                 log.info("User {} wanted to mitigate resource survey request {} for resource {} but that resource no longer exists. Marking that request as \"ERROR\".", requester.getUsername(), request.getId(), request.getResourceId());
@@ -975,14 +975,35 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         request.setRsnStatus(status);
         _entityService.update(request);
 
-        // Workflow status is already complete if status is conforming, so only set if not conforming.
-        if (status != ResourceSurveyRequest.Status.CONFORMING) {
-            workflow.setStatus(PersistentWorkflowUtils.FAILED);
-            try {
-                WorkflowUtils.save(workflow, workflow.buildEvent());
-            } catch (Exception e) {
-                log.error("An error occurred trying to update the status of workflow {} for resource survey request {} for resource {}", workflow.getWrkWorkflowdataId(), request.getId(), request.getResourceId(), e);
-            }
+        switch (status) {
+            case CONFORMING:
+                return;
+            case MITIGATING:
+                workflow.setStatus(PersistentWorkflowUtils.RUNNING);
+                try {
+                    WorkflowUtils.save(workflow, workflow.buildEvent());
+                } catch (Exception e) {
+                    log.error("An error occurred trying to update the status of workflow {} for resource survey request {} for resource {}", workflow.getWrkWorkflowdataId(), request.getId(), request.getResourceId(), e);
+                }
+                break;
+            case ERROR:
+                workflow.setDetails("Failed mitigation for resource survey request " + request.getId() + " on resource " + request.getResourceId());
+                setWorkflowFailed(request, workflow);
+                break;
+            case RESOURCE_DELETED:
+                workflow.setDetails("Failed mitigation on resource survey request " + request.getId() + " as the resource " + request.getResourceId() + " has been deleted");
+                setWorkflowFailed(request, workflow);
+                break;
+        }
+    }
+
+    private void setWorkflowFailed(final ResourceSurveyRequest request, final WrkWorkflowdata workflow) {
+        try {
+            workflow.setStepDescription("Failed");
+            workflow.setPercentagecomplete("0%");
+            PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
+        } catch (Exception e) {
+            log.error("An error occurred trying to update the status of workflow {} for resource survey request {} for resource {}", workflow.getWrkWorkflowdataId(), request.getId(), request.getResourceId(), e);
         }
     }
 

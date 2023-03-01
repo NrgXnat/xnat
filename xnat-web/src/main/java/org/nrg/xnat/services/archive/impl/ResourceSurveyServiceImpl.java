@@ -914,7 +914,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
 
     private PersistentWorkflowI buildWorkflow(final UserI requester, final ResourceSurveyRequest request, final ResourceSurveyRequest.Status status, final String action, final String reason, final String comment) throws InitializationException {
         try {
-            final PersistentWorkflowI workflow = Optional.ofNullable(PersistentWorkflowUtils.buildOpenWorkflow(requester, request.getXsiType(), request.getExperimentId(), request.getScanLabel(), request.getProjectId(),
+            final PersistentWorkflowI workflow = Optional.ofNullable(PersistentWorkflowUtils.buildOpenWorkflow(requester, request.getXsiType(), request.getExperimentId(), Integer.toString(request.getScanId()), request.getProjectId(),
                                                                                                                EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.REST, action, reason, comment)))
                                                          .orElseThrow(() -> new InitializationException("Failed to create a workflow entry for mitigation operation for resource survey request " + request.getId() + " on resource " + request.getResourceId()));
             workflow.setStatus(status.toString());

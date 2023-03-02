@@ -106,13 +106,13 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
                                                                                           + "         JOIN xnat_experimentdata x ON s.image_session_id = x.id "
                                                                                           + "WHERE ar.xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ")";
 
-    private final ResourceSurveyRequestEntityService _entityService;
-    private final SerializerService                  _serializer;
-    private final DicomFileNamer                     _dicomFileNamer;
-    private final StopTagInputHandler                _stopTagInputHandler;
-    private final SiteConfigPreferences              _preferences;
-    private final NamedParameterJdbcTemplate         _jdbcTemplate;
-    private final JmsTemplate                        _jmsTemplate;
+    private final        ResourceSurveyRequestEntityService _entityService;
+    private final        SerializerService                  _serializer;
+    private final        DicomFileNamer                     _dicomFileNamer;
+    private final        StopTagInputHandler                _stopTagInputHandler;
+    private final        SiteConfigPreferences              _preferences;
+    private final        NamedParameterJdbcTemplate         _jdbcTemplate;
+    private final        JmsTemplate                        _jmsTemplate;
 
     @Autowired
     public ResourceSurveyServiceImpl(final ResourceSurveyRequestEntityService entityService, final SerializerService serializer, final DicomFileNamer dicomFileNamer, final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final JmsTemplate jmsTemplate) {
@@ -500,7 +500,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds) throws NotFoundException, ConflictedStateException {
+    public Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds) throws ConflictedStateException {
         return queueResourceMitigation(requester, resourceIds, null, null);
     }
 
@@ -508,15 +508,24 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds, final String reason, final String comment) throws NotFoundException, ConflictedStateException {
-        final List<ResourceSurveyRequest> requests = _entityService.getRequestsByResourceIds(resourceIds);
-        if (requests.size() == resourceIds.size()) {
-            return queueMitigationRequests(requester, requests, reason, comment);
+    public Map<String, Collection<Long>> queueResourceMitigation(final UserI requester, final List<Integer> resourceIds, final String reason, final String comment) throws ConflictedStateException {
+        final Map<Integer, Optional<ResourceSurveyRequest>> requestsById = resourceIds.stream().collect(Collectors.toMap(Function.identity(), resourceId -> {
+            try {
+                return _entityService.getAllRequestsByResourceId(resourceId).stream().max(ResourceSurveyRequest.REQUESTS_BY_DATE);
+            } catch (NotFoundException e) {
+                return Optional.empty();
+            }
+        }));
+        final Map<Boolean, Map<Integer, ResourceSurveyRequest>> partitioned = requestsById.entrySet().stream()
+                                                                                                .collect(Collectors.partitioningBy(entry -> entry.getValue().isPresent(),
+                                                                                                                                   Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().orElse(null))));
+        final Set<Integer> nonexistent = new HashSet<>(partitioned.get(false).keySet());
+        if (!nonexistent.isEmpty()) {
+            throw new ConflictedStateException("User " + requester.getUsername() + " tried to queue " + resourceIds.size() + " resources for mitigation but "
+                                               + nonexistent.size() + " of those resources have no associated resource survey requests: "
+                                               + StringUtils.join(nonexistent, ", "));
         }
-        final Set<Integer> found = requests.stream().map(ResourceSurveyRequest::getResourceId).collect(Collectors.toSet());
-        throw new ConflictedStateException("User " + requester.getUsername() + " tried to queue " + resourceIds.size() + " resources for mitigation but "
-                                           + (resourceIds.size() - requests.size()) + " of those resources have no associated resource survey requests: "
-                                           + resourceIds.stream().filter(resourceId -> !found.contains(resourceId)).sorted().map(Objects::toString).collect(Collectors.joining(", ")));
+        return queueMitigationRequests(requester, new ArrayList<>(partitioned.get(true).values()), reason, comment);
     }
 
     @Override
@@ -572,7 +581,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     @Override
     public void mitigateResource(final ResourceSurveyRequest request) throws NotFoundException, InsufficientPrivilegesException, InitializationException, ConflictedStateException {
         final WrkWorkflowdata workflow = WrkWorkflowdata.getWrkWorkflowdatasByWrkWorkflowdataId(request.getWorkflowId(), getRequester(request), false);
-        final UserI requester;
+        final UserI           requester;
         try {
             requester = Users.getUser(request.getMitigationRequester());
         } catch (UserInitException | UserNotFoundException e) {
@@ -867,13 +876,13 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         }
 
         final Map<Boolean, List<ResourceSurveyRequest>> validatedPartition = Optional.ofNullable(validated.get(HttpStatus.OK)).orElse(Collections.emptyList())
-                .stream()
-                .collect(Collectors.partitioningBy(this::movedResource));
+                                                                                     .stream()
+                                                                                     .collect(Collectors.partitioningBy(this::movedResource));
 
         final List<ResourceSurveyRequest> moved = validatedPartition.getOrDefault(true, Collections.emptyList());
         if (CollectionUtils.isNotEmpty(moved)) {
             final List<Long> movedRequestIds = moved.stream().map(ResourceSurveyRequest::getId).sorted().collect(Collectors.toList());
-            log.warn("User {} wants to queue {} resource survey requests for {} but {} of those requests are has been moved to another project", requester.getUsername(), requests.size(), action, moved.size(), movedRequestIds.stream().map(Objects::toString).collect(Collectors.joining(", ")));
+            log.warn("User {} wants to queue {} resource survey requests for {} but {} of those requests are has been moved to another project: {}", requester.getUsername(), requests.size(), action, moved.size(), movedRequestIds.stream().map(Objects::toString).collect(Collectors.joining(", ")));
             results.putAll(MOVED, movedRequestIds);
         }
 
@@ -1220,7 +1229,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
             throw new InsufficientPrivilegesException(requester.getUsername(), request.getProjectId());
         }
         if (results.containsKey(MOVED)) {
-            throw new ConflictedStateException("The resource "+request.getResourceId() + " has been moved to another project");
+            throw new ConflictedStateException("The resource " + request.getResourceId() + " has been moved to another project");
         }
         if (results.containsKey(QUEUED)) {
             final Optional<Long> requestId = results.get(QUEUED).stream().findAny();

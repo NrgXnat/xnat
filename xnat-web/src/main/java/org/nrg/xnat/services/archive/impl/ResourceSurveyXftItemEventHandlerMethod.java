@@ -43,6 +43,7 @@ public class ResourceSurveyXftItemEventHandlerMethod extends AbstractXftItemEven
                                                                      + "         LEFT JOIN xnat_subjectassessordata sa ON x.id = sa.id "
                                                                      + "         LEFT JOIN xnat_subjectdata s ON sa.subject_id = s.id "
                                                                      + "WHERE r.format = 'DICOM' "
+                                                                     + "  AND rsr.id IS NOT NULL "
                                                                      + "  AND rsr.closing_date IS NULL "
                                                                      + "  AND x.id = :" + PARAM_EXPERIMENT_ID;
 

@@ -1,6 +1,5 @@
 package org.nrg.xnat.customforms.interfaces.impl;
 
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.forms.models.pojo.FormFieldPojo;
 import org.nrg.xdat.forms.services.FormIOJsonService;
 import org.nrg.xdat.schema.SchemaElement;
@@ -9,6 +8,7 @@ import org.nrg.xnat.customforms.helpers.CustomFormDisplayFieldHelper;
 import org.nrg.xnat.customforms.interfaces.CustomFormDisplayFieldsI;
 import org.nrg.xnat.customforms.interfaces.annotations.CustomFormFetcherAnnotation;
 import org.nrg.xnat.customforms.utils.CustomFormsConstants;
+import org.nrg.xnat.customforms.utils.TypeConversionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -36,12 +36,13 @@ public class DefaultCustomFormDisplayFieldImpl implements CustomFormDisplayField
                 continue;
             }
             final String fieldDisplayLabel = formJsonPojo.getLabel() +"["+formJsonPojo.getFormUUID()+"]";
-
+            final String formioType = formJsonPojo.getType();
+            String type = TypeConversionUtils.mapFormioTypeToXnatType(formioType);
             Object[] availableField = new Object[8];
             availableField[0] = displayFieldId; //Id
             availableField[1] = displayHelper.getCleanFieldHeader(formJsonPojo); //Header
             availableField[2] = fieldDisplayLabel; //Summary
-            availableField[3] = "string";
+            availableField[3] = type;
             availableField[4] = false;
             availableField[5] = fieldDisplayLabel; //Description
             availableField[6] = se.getFullXMLName();

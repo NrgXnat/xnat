@@ -1,7 +1,6 @@
 package org.nrg.xnat.customforms.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayFieldElement;
 import org.nrg.xdat.display.DisplayManager;
@@ -14,16 +13,13 @@ import org.nrg.xnat.customforms.helpers.CustomFormDisplayFieldHelper;
 import org.nrg.xnat.customforms.helpers.CustomFormHelper;
 import org.nrg.xnat.customforms.service.CustomVariableFormService;
 import org.nrg.xnat.customforms.service.FormDisplayFieldService;
+import org.nrg.xnat.customforms.utils.CustomFormsConstants;
+import org.nrg.xnat.customforms.utils.TypeConversionUtils;
 import org.nrg.xnat.entities.CustomVariableForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -157,17 +153,25 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
 
         displayField.addDisplayFieldElement(element);
         displayField.setSearchable(true);
+        final String formioType = field.getType();
+        String type = TypeConversionUtils.mapFormioTypeToXnatType(formioType);
+        displayField.setDataType(type);
         displayField.setDescription("Custom Field: "  + field.getLabel());
         displayField.setId(displayHelper.getCleanFieldId(dataType, field));
-        displayField.setContent(Collections.singletonMap("sql", displayHelper.buildSql("@Field1",  field)));
-        displayField.setHeader(displayHelper.getCleanFieldHeader(field));
+        String fieldSql = displayHelper.buildSql("@Field1", field);
+        if (!type.equalsIgnoreCase(CustomFormsConstants.DEFAULT_XNAT_TYPE)) {
+            fieldSql =  "CAST (" + fieldSql + " AS " + type + ") ";
+        }
+        displayField.setContent(Collections.singletonMap("sql", fieldSql));
 
+        displayField.setHeader(displayHelper.getCleanFieldHeader(field));
         elementDisplay.setAllowReplacement(true);
         elementDisplay.addDisplayField(displayField);
         elementDisplay.setAllowReplacement(false);
         schemaElement.setElementDisplay(elementDisplay);
         displayManager.addElement(elementDisplay);
     }
+
 
     private final DisplayManager displayManager;
     private final CustomVariableFormService formService;

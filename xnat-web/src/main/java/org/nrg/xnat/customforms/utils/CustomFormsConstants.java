@@ -12,6 +12,7 @@
 package org.nrg.xnat.customforms.utils;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -53,5 +54,14 @@ public class CustomFormsConstants {
     public static final Set<String> IS_SITEWIDE_VALUES = Stream.of(IS_SITEWIDE_YES, IS_SITEWIDE_NO)
             .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
 
+    public static final String DEFAULT_XNAT_TYPE = "string";
+    public static final Map<String, String> FORMIO_TYPE_TO_XNAT_TYPE = Stream.of(new String[][] {
+            { "xnatNumber", "float" },
+            { "Number", "float" },
+            { "day", "date" },
+            { "datetime", "timestamp" },
+            { "time", "time" },
+            { "xnatdate", "date" }
+    }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
 }

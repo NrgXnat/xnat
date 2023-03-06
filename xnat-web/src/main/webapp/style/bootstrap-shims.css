@@ -119,6 +119,10 @@ div.xmodal button.close {
     border: inherit;
     border-radius: inherit;
 }
+div.xnat-dialog-shell.loader {
+    animation: inherit;
+    display: inherit;
+}
 
 /* Form Builder Shims */
 .builder-sidebar_scroll {

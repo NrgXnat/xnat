@@ -18,5 +18,5 @@ public interface CustomFieldService {
 
     JsonNode setFields(UserI user, ItemI item, JsonNode fields) throws NrgServiceException, InsufficientPrivilegesException;
 
-    JsonNode removeField(UserI user, ItemI item, String key) throws NrgServiceException, InsufficientPrivilegesException;
+    JsonNode removeField(UserI user, ItemI item, String key) throws NrgServiceException, InsufficientPrivilegesException, NotFoundException;
 }

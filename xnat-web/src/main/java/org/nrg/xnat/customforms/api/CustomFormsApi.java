@@ -29,7 +29,6 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.AuthorizedRoles;
 import org.nrg.xapi.rest.XapiRequestMapping;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -100,7 +99,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, method = RequestMethod.PUT)
     public ResponseEntity<String> addCustomFormsToProtocolsAndProjects(final @RequestBody String jsonbody)
             throws JsonProcessingException {
-        final UserI user = XDAT.getUserDetails();
+        final UserI user = getSessionUser();
         ClientPojo clientPojo = objectMapperNoFailOnUnknown.readValue(jsonbody, ClientPojo.class);
         String problem = clientPojo.validate();
         if (StringUtils.isNotBlank(problem)) {
@@ -139,7 +138,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
                                                 final @RequestParam(required = false) String subtype
     ) {
         try {
-            final UserI user = XDAT.getUserDetails();
+            final UserI user = getSessionUser();
             final String customFormJson = formManagerService.getCustomForm(user, xsiType, id, projectId, visitId, subtype, appendPrevNextButtons);
             if (null == customFormJson) {
                 return new ResponseEntity<>("Custom Forms Not Found", HttpStatus.NOT_FOUND);
@@ -159,8 +158,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/enable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> enableCustomForm(final @RequestBody String jsonbody) {
-        final UserI user = XDAT.getUserDetails();
-        ObjectMapper objectMapper = new ObjectMapper();
+        final UserI user = getSessionUser();
         try {
             List<FormAppliesToPoJo> formAppliesToPoJos = objectMapper.readValue(jsonbody, new TypeReference<List<FormAppliesToPoJo>>() {});
             boolean success = true;
@@ -189,7 +187,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "/optin/{rowId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
     @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE_NAME, CustomFormsConstants.DATAFORM_MANAGER_ROLE})
     public ResponseEntity<String> optInCustomForm(final @PathVariable String rowId, final @RequestBody String jsonbody) {
-        final UserI user = XDAT.getUserDetails();
+        final UserI user = getSessionUser();
         try {
             List<String> projects = objectMapper.readValue(jsonbody, new TypeReference<List<String>>() {});
             RowIdentifier rowIdentifier = RowIdentifier.Unmarshall(rowId);
@@ -213,7 +211,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/optout/{formId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> optOutCustomForm(final @PathVariable String formId, final @RequestBody String jsonbody) {
-        final UserI user = XDAT.getUserDetails();
+        final UserI user = getSessionUser();
         try {
             List<String> projectIds = objectMapper.readValue(jsonbody, new TypeReference<List<String>>() {});
             boolean success = formManagerService.optOutOfForm(user, formId, projectIds);
@@ -238,7 +236,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/formId/{formId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> modifyZIndex(final @PathVariable String formId, final @RequestParam Integer zIndex) {
-        final UserI user = XDAT.getUserDetails();
+        final UserI user = getSessionUser();
         try {
             boolean success = formManagerService.modifyZIndex(user, zIndex, formId);
             if (success) {
@@ -263,7 +261,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
     @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE_NAME, CustomFormsConstants.DATAFORM_MANAGER_ROLE})
     public ResponseEntity<String> promoteform(final @RequestBody String jsonbody) {
         try {
-            final UserI user = XDAT.getUserDetails();
+            final UserI user = getSessionUser();
             List<FormAppliesToPoJo> formAppliesToPoJos = objectMapper.readValue(jsonbody, new TypeReference<List<FormAppliesToPoJo>>() {});
             boolean success = formManagerService.promoteForm(user, formAppliesToPoJos);
             if (success) {
@@ -289,7 +287,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/disable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> disableCustomForm(final @RequestBody String jsonbody) {
-        final UserI user = XDAT.getUserDetails();
+        final UserI user = getSessionUser();
         try {
             List<FormAppliesToPoJo> formAppliesToPoJos = objectMapper.readValue(jsonbody, new TypeReference<List<FormAppliesToPoJo>>() {});
             boolean success = true;
@@ -317,7 +315,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> deleteCustomForm(final @RequestBody String jsonbody) {
-        final UserI user = XDAT.getUserDetails();
+        final UserI user = getSessionUser();
         try {
             List<FormAppliesToPoJo> formAppliesToPoJos = objectMapper.readValue(jsonbody, new TypeReference<List<FormAppliesToPoJo>>() {});
             List<String> deleteStatuses = new ArrayList<>();
@@ -351,7 +349,6 @@ public class CustomFormsApi extends AbstractXapiRestController {
     public ResponseEntity<List<PseudoConfiguration>> getAllCustomFormConfigurations(
             final @RequestParam(required = false) String projectId) {
         try {
-            final UserI user = XDAT.getUserDetails();
             List<PseudoConfiguration> configurations = formManagerService.getAllCustomForms(projectId);
             if (null == configurations) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -372,7 +369,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
     public ResponseEntity<XnatFormsIOEnv> getXnatEnvironmentForFormsIO(
             final @RequestParam(required = false) String projectId) {
         try {
-            final UserI user = XDAT.getUserDetails();
+            final UserI user = getSessionUser();
             if (!permissionsService.isUserAdminOrDataManager(user) && !permissionsService.isUserProjectOwner(user, projectId)) {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

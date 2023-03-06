@@ -45,10 +45,11 @@ public class DefaultCustomFieldService implements CustomFieldService {
     @Override
     public JsonNode getFieldValue(final ItemI item, final String key) throws NotFoundException {
         final JsonNode fields = getFieldsForItem(item);
-        if (!fields.has(key)) {
+        final JsonNode value = fields.get(key);
+        if (value == null) {
             throw new NotFoundException("Field " + key + " does not exist.");
         }
-        return fields.get(key);
+        return value;
     }
 
     @Override
@@ -67,10 +68,13 @@ public class DefaultCustomFieldService implements CustomFieldService {
     }
 
     @Override
-    public JsonNode removeField(final UserI user, final ItemI item, String key) throws NrgServiceException, InsufficientPrivilegesException {
+    public JsonNode removeField(final UserI user, final ItemI item, String key) throws NrgServiceException, InsufficientPrivilegesException, NotFoundException {
         throwForInvalidEditPermissions(user, item);
 
         final ObjectNode currFields = (ObjectNode) getFieldsForItem(item);
+        if (!currFields.hasNonNull(key)) {
+            throw new NotFoundException("Field " + key + " does not exist.");
+        }
         currFields.remove(key);
         saveItem(setFieldsForItem(item, currFields), user);
 

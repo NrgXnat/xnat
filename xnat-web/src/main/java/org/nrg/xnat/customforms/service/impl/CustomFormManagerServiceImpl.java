@@ -60,7 +60,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.nrg.xnat.customforms.events.CustomFormEventI.CREATE;
 import static org.nrg.xnat.customforms.events.CustomFormEventI.DELETE;
@@ -268,7 +267,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
      */
     private String validateSavePermission(final SubmissionPojo submission, final UserI user) {
         // Check permissions. Is the user allowed to do what they intend to do?
-        if (Roles.isSiteAdmin(user.getUsername()) || Roles.checkRole(user, CustomFormsConstants.DATAFORM_MANAGER_ROLE)) {
+        if (Roles.isSiteAdmin(user.getUsername()) || Roles.checkRole(user, CustomFormsConstants.FORM_MANAGER_ROLE)) {
             // User is an admin or form manager, they can do whatever they want. No problems here.
             return null;
         }

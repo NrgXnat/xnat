@@ -69,7 +69,7 @@ public class CustomFormPermissionsServiceImpl implements CustomFormPermissionsSe
     }
 
     public boolean isUserAdminOrDataManager(final UserI user) {
-        return Roles.isSiteAdmin(user.getUsername()) || Roles.checkRole(user, CustomFormsConstants.DATAFORM_MANAGER_ROLE);
+        return Roles.isSiteAdmin(user.getUsername()) || Roles.checkRole(user, CustomFormsConstants.FORM_MANAGER_ROLE);
     }
 
 }

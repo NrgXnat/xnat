@@ -20,8 +20,8 @@ import java.util.stream.Stream;
 
 public class CustomFormsConstants {
 
-    public static final String ADMIN_ROLE_NAME = "Administrator";
-    public static final String DATAFORM_MANAGER_ROLE = "DataFormManager";
+    public static final String ADMIN_ROLE = "Administrator";
+    public static final String FORM_MANAGER_ROLE = "CustomFormManager";
     public static final String PROTOCOL_UNAWARE = "PROTOCOL_UNAWARE";
     public static final String PROTOCOL_PLUGIN_AWARE = "PROTOCOL_AWARE";
     public static final String DELIMITER = ":";

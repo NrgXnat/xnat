@@ -28,7 +28,7 @@ public class FormManagerDashBoard extends SecureScreen {
 	@Override
 	protected void doBuildTemplate(RunData data, Context context) throws Exception {
 		UserI user = XDAT.getUserDetails();
-		if (!Roles.isSiteAdmin(user) && !Roles.checkRole(user, CustomFormsConstants.DATAFORM_MANAGER_ROLE)) {
+		if (!Roles.isSiteAdmin(user) && !Roles.checkRole(user, CustomFormsConstants.FORM_MANAGER_ROLE)) {
 			data.setMessage("Unauthorized: You do not have sufficient permission to access this page");
 			data.setScreenTemplate("Error.vm");
 			return;

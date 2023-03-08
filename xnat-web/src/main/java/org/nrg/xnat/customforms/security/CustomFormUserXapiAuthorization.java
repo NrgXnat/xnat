@@ -3,7 +3,6 @@ package org.nrg.xnat.customforms.security;
 import org.aspectj.lang.JoinPoint;
 import org.nrg.xapi.authorization.AbstractXapiAuthorization;
 import org.nrg.xdat.security.helpers.AccessLevel;
-import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.customforms.utils.CustomFormsConstants;
@@ -15,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 public class CustomFormUserXapiAuthorization extends AbstractXapiAuthorization {
     @Override
     protected boolean checkImpl(final AccessLevel accessLevel, final JoinPoint joinPoint, final UserI user, final HttpServletRequest request) {
-        return Roles.isSiteAdmin(user) || Roles.checkRole(user, CustomFormsConstants.DATAFORM_MANAGER_ROLE);
+        return Roles.isSiteAdmin(user) || Roles.checkRole(user, CustomFormsConstants.FORM_MANAGER_ROLE);
     }
 
     @Override

@@ -20,7 +20,7 @@ public class MigrateLegacyCustomVariable extends SecureScreen {
             return;
         }
         UserI user = XDAT.getUserDetails();
-        if (!Roles.isSiteAdmin(user) && !Roles.checkRole(user, CustomFormsConstants.DATAFORM_MANAGER_ROLE)) {
+        if (!Roles.isSiteAdmin(user) && !Roles.checkRole(user, CustomFormsConstants.FORM_MANAGER_ROLE)) {
             data.setMessage("Unauthorized: You do not have sufficient permission to access this page");
             data.setScreenTemplate("Error.vm");
             return;

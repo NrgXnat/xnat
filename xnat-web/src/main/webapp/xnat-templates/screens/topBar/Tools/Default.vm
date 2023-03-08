@@ -4,7 +4,7 @@
 <li><a href="https://download.xnat.org/desktop-client" target="_blank">XNAT Desktop Client</a></li>
 <li><a href="https://wiki.xnat.org/xnat-tools/dicombrowser" target="_blank">DICOM Browser</a></li>
 <li><a href="https://wiki.xnat.org/xnat-tools/xnat-web-services-client-tools" target="_blank">Command Prompt Tools</a></li>
-#if($user.isSiteAdmin() || $user.checkRole("DataFormManager"))
+#if($user.isSiteAdmin() || $user.checkRole("CustomFormManager"))
     <li><a href="#!" class="nolink">Custom Forms</a>
     <ul>
     <li><a href="$link.setPage("FormManagerDashBoard.vm")">Manage Custom Forms</a></li>

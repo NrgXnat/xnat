@@ -68,7 +68,7 @@ public class LegacyCustomVariableApi extends AbstractXapiRestController {
         try {
             final UserI user = XDAT.getUserDetails();
             boolean filter = true;
-            if (Roles.isSiteAdmin(user.getUsername()) || Roles.checkRole(user, CustomFormsConstants.DATAFORM_MANAGER_ROLE)) {
+            if (Roles.isSiteAdmin(user.getUsername()) || Roles.checkRole(user, CustomFormsConstants.FORM_MANAGER_ROLE)) {
                 filter = false;
             }
             return new ResponseEntity<>(customVariableMigrator.getAllFieldDefinitions(user,filter), HttpStatus.OK);
@@ -86,7 +86,7 @@ public class LegacyCustomVariableApi extends AbstractXapiRestController {
             @ApiResponse(code = 403, message = "Not enabled"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/migratetoformio/{field_definition_id}",  method = RequestMethod.POST, restrictTo = Role)
-    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE_NAME, CustomFormsConstants.DATAFORM_MANAGER_ROLE})
+    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<Void> migrateCustomVariableToDynamicVariable(final @PathVariable String field_definition_id,
                                                                          final @RequestParam(required = false) String trackingId
     ) {

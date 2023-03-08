@@ -303,7 +303,7 @@ public class LegacyCustomVariableMigrator {
                          final String trackingId) throws CustomVariableMigrationException {
         UserI privilegeUser = user;
         final UserI adminUser = primaryAdminUserProvider.get();
-        if (Roles.checkRole(user, CustomFormsConstants.DATAFORM_MANAGER_ROLE)) {
+        if (Roles.checkRole(user, CustomFormsConstants.FORM_MANAGER_ROLE)) {
             //The form manager may not have access to the project
             privilegeUser = adminUser;
         }

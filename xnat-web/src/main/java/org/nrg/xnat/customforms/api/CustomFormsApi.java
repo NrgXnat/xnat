@@ -185,7 +185,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/optin/{rowId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
-    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE_NAME, CustomFormsConstants.DATAFORM_MANAGER_ROLE})
+    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> optInCustomForm(final @PathVariable String rowId, final @RequestBody String jsonbody) {
         final UserI user = getSessionUser();
         try {
@@ -258,7 +258,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/promote", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
-    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE_NAME, CustomFormsConstants.DATAFORM_MANAGER_ROLE})
+    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> promoteform(final @RequestBody String jsonbody) {
         try {
             final UserI user = getSessionUser();

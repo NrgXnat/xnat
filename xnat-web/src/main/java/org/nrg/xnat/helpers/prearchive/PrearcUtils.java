@@ -27,6 +27,7 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.preferences.HandlePetMr;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
@@ -233,7 +234,7 @@ public class PrearcUtils {
         String prearcPath;
         String prearcRootPref = XDAT.getSiteConfigPreferences().getPrearchivePath();
         if (project == null || project.equals(UNASSIGNED)) {
-            if (allowUnassigned || user == null || Roles.isSiteAdmin(user)) {
+            if (allowUnassigned || user == null || Roles.isSiteAdmin(user) || Groups.isDataAdmin(user)) {
                 prearcPath = prearcRootPref;
             } else {
                 throw new InsufficientPrivilegesException(user.getUsername(), XnatProjectdata.SCHEMA_ELEMENT_NAME, UNASSIGNED);

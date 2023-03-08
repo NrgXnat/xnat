@@ -173,7 +173,7 @@ public class PipelineApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(value = {"/launch/{pipelineNameOrStep}"}, method = POST, restrictTo = Edit, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Resolve the parameters and launch the pipeline")
-    public PipelineLaunchReport launchPipelineWQueryParams(@RequestParam(value = "project", required = false) final String projectId,
+    public PipelineLaunchReport launchPipelineWQueryParams(@RequestParam(value = "project", required = false) @Project final String projectId,
                                                            @PathVariable final String pipelineNameOrStep,
                                                            final @RequestBody Map<String, String> allRequestParams) throws DataFormatException, NotFoundException {
         if (StringUtils.isNotBlank(projectId) && !Permissions.verifyProjectExists(_jdbcTemplate, projectId)) {

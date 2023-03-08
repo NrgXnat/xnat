@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 /**
  * Used to test configurations and workflows in XNAT archive operations.
  */
-@Component
 public class FixedProjectSubjectDicomObjectIdentifier extends ReferencedCompositeDicomObjectIdentifier {
     /**
      * Configures a {@link DicomObjectIdentifier DICOM object identifier} that always assigns the DICOM to the submitted
@@ -26,7 +25,6 @@ public class FixedProjectSubjectDicomObjectIdentifier extends ReferencedComposit
      * @param projectId    The fixed project ID.
      * @param subjectLabel The fixed subject label.
      */
-    @Autowired
     public FixedProjectSubjectDicomObjectIdentifier(final JdbcTemplate template, final String projectId, final String subjectLabel) {
         this(new NamedParameterJdbcTemplate(template), projectId, subjectLabel);
     }
@@ -45,7 +43,6 @@ public class FixedProjectSubjectDicomObjectIdentifier extends ReferencedComposit
      * @param projectId    The fixed project ID.
      * @param subjectLabel The fixed subject label.
      */
-    @Autowired
     public FixedProjectSubjectDicomObjectIdentifier(final NamedParameterJdbcTemplate template, final String projectId, final String subjectLabel) {
         super("Fixed project-subject identifier for " + projectId + " and " + subjectLabel,
               new FixedDicomProjectIdentifier(projectId),

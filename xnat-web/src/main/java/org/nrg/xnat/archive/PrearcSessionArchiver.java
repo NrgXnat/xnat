@@ -74,6 +74,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -787,13 +788,29 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                         warn(20, String.format("Scan %1$s has %2$s non-%3$s (or non-parsable %3$s) files", scan.getId(), unreferenced.size(), resource.getLabel()));
                     }
 
-                    if (StringUtils.equals(resource.getLabel(), RESOURCE_LABEL_DICOM)) {
+                    if (StringUtils.equals(((XnatResourcecatalogI) resource).getFormat(), RESOURCE_FORMAT)) {
                         //check for entries that aren't DICOM entries or don't have a UID stored
                         final CatCatalogI           catalog  = catalogData.catBean;
                         final Collection<CatEntryI> nonDicom = CatalogUtils.getEntriesByFilter(catalog, entry -> ((!(entry instanceof CatDcmentryI)) || StringUtils.isEmpty(((CatDcmentryI) entry).getUid())));
 
                         if (!nonDicom.isEmpty()) {
                             warn(20, String.format("Scan %1$s has %2$s non-DICOM (or non-parsable DICOM) files", scan.getId(), nonDicom.size()));
+                        }
+
+                        if (XDAT.getSiteConfigPreferences().getUseSopInstanceUidToUniquelyIdentifyDicom()) {
+                            final String duplicateUids = catalog.getEntries_entry().stream()
+                                    .filter(CatDcmentryI.class::isInstance)
+                                    .map(CatDcmentryI.class::cast)
+                                    .map(CatDcmentryI::getUid)
+                                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                                    .entrySet().stream()
+                                    .filter(entry -> entry.getValue() > 1)
+                                    .map(Map.Entry::getKey)
+                                    .collect(Collectors.joining(", "));
+                            if (StringUtils.isNotBlank(duplicateUids)) {
+                                warn(22, String.format("Scan %s %s catalog contains duplicated SOP instance " +
+                                        "UIDs: %3$s", scan.getId(), resource.getLabel(), duplicateUids));
+                            }
                         }
                     }
                 }

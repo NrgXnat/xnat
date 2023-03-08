@@ -795,10 +795,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if(projectIds.isEmpty()) {
             return false;
         }
-        final Set<String> users = getProjectUsers(projectIds);
-        for (final String username : users) {
-            initReadableCountsForUser(username);
-        }
+
+        initReadableCountsForProjectUsers(projectIds,action,event.getXsiType());
         return true;
     }
 
@@ -901,21 +899,26 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         final String xsiType = event.getXsiType();
         log.debug("Handling experiment {} event for {} {}", XftItemEventI.ACTIONS.get(action), xsiType, event.getId());
         final String target, origin;
+        final Set<String> projectIds = new HashSet<>();
         switch (action) {
             case CREATE:
                 target = _template.queryForObject(QUERY_GET_EXPERIMENT_PROJECT, new MapSqlParameterSource("experimentId", event.getId()), String.class);
                 origin = null;
+                projectIds.add(target);
                 break;
 
             case SHARE:
             case DELETE:
                 target = (String) event.getProperties().get("target");
                 origin = null;
+                projectIds.add(target);
                 break;
 
             case MOVE:
                 origin = (String) event.getProperties().get("origin");
                 target = (String) event.getProperties().get("target");
+                projectIds.add(target);
+                projectIds.add(origin);
                 break;
 
             default:
@@ -953,11 +956,30 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                       xsiType,
                       isTargetProjectPublic ? "target project is public" : "target project is not public");
         }
-        initReadableCountsForUsers(hasOriginProject ? getProjectUsers(target) : getProjectUsers(target, origin));
+
+        initReadableCountsForProjectUsers(projectIds,action,event.getXsiType());
+
         if(StringUtils.equalsAny(action, CREATE, DELETE)) {
             resetTotalCounts();
         }
         return true;
+    }
+
+    private void initReadableCountsForProjectUsers(final Set<String> projectIds, final String action, final String dataType){
+        final Set<String> users = getProjectUsers(projectIds);
+        for (final String username : users) {
+            final Map<String,Long> cachedCounts=getCachedReadableCounts(username);
+            if(cachedCounts==null || cachedCounts.size()==0){
+                initReadableCountsForUser(username);
+            }else if(StringUtils.equals(CREATE,action) && (!cachedCounts.containsKey(dataType) || cachedCounts.get(dataType)==0)){
+                //we only need to worry about this if it is null or 0
+                initReadableCountsForUser(username);
+            }else if(StringUtils.equals(DELETE,action)){
+                //do we need this?  Only if its going from 1 to 0, but we don't know that if counts aren't refreshed as they get closer to 1
+                //leaving it, but if it becomes an issue in profiling, then we could consider removing it.
+                initReadableCountsForUser(username);
+            }
+        }
     }
 
     private void handleCacheRemoveEvent(final Ehcache cache, final Element element, final String event) {
@@ -973,6 +995,24 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     private List<String> getProjectOwners(final String projectId) {
         return _template.queryForList(QUERY_PROJECT_OWNERS, new MapSqlParameterSource("projectId", projectId), String.class);
+    }
+
+    private Map<String, Long> getCachedReadableCounts(final String username) {
+        if(StringUtils.isBlank(username)) {
+            return Collections.emptyMap();
+        }
+
+        final String cacheId = getCacheIdForUserElements(username, READABLE);
+
+        // Check whether the element types are cached and, if so, return that.
+        log.trace("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
+        final Map<String, Long> cachedReadableCounts = getCachedMap(cacheId);
+        if(cachedReadableCounts != null) {
+            log.debug("Found cached readable counts entry for user '{}' with cache ID '{}' containing {} entries", username, cacheId, cachedReadableCounts.size());
+            return cachedReadableCounts;
+        } else {
+            return Collections.emptyMap();
+        }
     }
 
     private Map<String, Long> getReadableCounts(final String username) {

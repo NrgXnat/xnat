@@ -19,7 +19,6 @@ public class ProjectAssetEvent extends AbstractEventServiceEvent<XnatAbstractpro
 
     private final String displayName = "Project Asset";
     private final String description = "Project Asset created.";
-    private String payloadId = null;
 
     public ProjectAssetEvent(){};
 

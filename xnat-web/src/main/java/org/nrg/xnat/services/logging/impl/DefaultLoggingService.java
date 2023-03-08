@@ -13,16 +13,11 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -40,7 +35,11 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -50,38 +49,57 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Getter
 @Accessors(prefix = "_")
 @Slf4j
+@SuppressWarnings("ClassWithMultipleLoggers")
 public class DefaultLoggingService implements LoggingService {
+    private static final Properties EMPTY_PROPERTIES = new Properties();
+
     @Autowired
     public DefaultLoggingService(final Path xnatHome, final DocumentBuilder builder, final Transformer transformer, final XnatPluginBeanManager beans) throws IOException, SAXException {
         INSTANCE = this;
 
-        _xnatHome = xnatHome;
-        _builder = builder;
+        _xnatHome    = xnatHome;
+        _builder     = builder;
         _transformer = transformer;
 
         _runnableTasks = new HashMap<>();
 
-        _context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        _context     = (LoggerContext) LoggerFactory.getILoggerFactory();
         _initializer = new ContextInitializer(_context);
         if (log.isDebugEnabled()) {
             StatusPrinter.printInCaseOfErrorsOrWarnings(_context);
         }
 
-        _configurationResources = new HashMap<>();
+        _configurationResources  = new HashMap<>();
         _primaryLogConfiguration = getPrimaryLogConfiguration();
-        _primaryElements = new HashMap<>();
+        _primaryElements         = new HashMap<>();
 
         if (_primaryLogConfiguration != null) {
             _primaryElements.put("loggers", findAllElementNames(_primaryLogConfiguration, "logger"));
@@ -112,12 +130,12 @@ public class DefaultLoggingService implements LoggingService {
      */
     @Override
     public <T extends Runnable> void start(final T runnable) {
-        final String objectId = ObjectUtils.identityToString(runnable);
-        if (_runnableTasks.containsKey(objectId)) {
-            RUNNABLE_LOGGER.warn("Received a start timing request from {} of type {}, but I already have a time started for that. I'll replace the existing time, but there might be a problem with this task.", objectId, runnable.getClass().getName());
+        final String executionId = getExecutionId(runnable);
+        if (_runnableTasks.containsKey(executionId)) {
+            RUNNABLE_LOGGER.warn("Received a start timing request from {} of type {}, but I already have a time started for that. I'll replace the existing time, but there might be a problem with this task.", executionId, runnable.getClass().getName());
         }
-        RUNNABLE_LOGGER.info("Started method {}.run() for object {}", runnable.getClass().getSimpleName(), objectId);
-        _runnableTasks.put(objectId, StopWatch.createStarted());
+        RUNNABLE_LOGGER.info("Started method {}.run() for object {}", runnable.getClass().getSimpleName(), executionId);
+        _runnableTasks.put(executionId, StopWatch.createStarted());
     }
 
     /**
@@ -125,12 +143,12 @@ public class DefaultLoggingService implements LoggingService {
      */
     @Override
     public <T extends Runnable> void update(final T runnable, final String message, final Object... parameters) {
-        final String objectId = ObjectUtils.identityToString(runnable);
-        if (!_runnableTasks.containsKey(objectId)) {
-            RUNNABLE_LOGGER.warn("Received an update timing request from {} of type {}, but I don't have a time started for that.", objectId, runnable.getClass().getName());
+        final String executionId = getExecutionId(runnable);
+        if (!_runnableTasks.containsKey(executionId)) {
+            RUNNABLE_LOGGER.warn("Received an update timing request from {} of type {}, but I don't have a time started for that.", executionId, runnable.getClass().getName());
             return;
         }
-        RUNNABLE_LOGGER.info(message + " in method {}.run() for object {} in {} ns", ArrayUtils.addAll(parameters, runnable.getClass().getSimpleName(), objectId, _runnableTasks.get(objectId).getNanoTime()));
+        RUNNABLE_LOGGER.info("{} in method {}.run() for object {} in {} ns with parameters: {}", message, runnable.getClass().getSimpleName(), executionId, _runnableTasks.get(executionId).getNanoTime(), Arrays.stream(parameters).map(Objects::toString).collect(Collectors.joining(", ")));
     }
 
     /**
@@ -138,14 +156,14 @@ public class DefaultLoggingService implements LoggingService {
      */
     @Override
     public <T extends Runnable> void finish(final T runnable) {
-        final String objectId = ObjectUtils.identityToString(runnable);
-        if (!_runnableTasks.containsKey(objectId)) {
-            RUNNABLE_LOGGER.warn("Received a stop timing request from {} of type {}, but I don't have a time started for that.", objectId, runnable.getClass().getName());
+        final String executionId = getExecutionId(runnable);
+        if (!_runnableTasks.containsKey(executionId)) {
+            RUNNABLE_LOGGER.warn("Received a stop timing request from {} of type {}, but I don't have a time started for that.", executionId, runnable.getClass().getName());
             return;
         }
-        final StopWatch stopWatch = _runnableTasks.remove(objectId);
+        final StopWatch stopWatch = _runnableTasks.remove(executionId);
         stopWatch.stop();
-        RUNNABLE_LOGGER.info("Finished method {}.run() for object {} in {} ns", runnable.getClass().getSimpleName(), objectId, stopWatch.getNanoTime());
+        RUNNABLE_LOGGER.info("Finished method {}.run() for object {} in {} ns", runnable.getClass().getSimpleName(), executionId, stopWatch.getNanoTime());
     }
 
     /**
@@ -175,6 +193,19 @@ public class DefaultLoggingService implements LoggingService {
             log.error("An error occurred trying to reset the logging configurations. I'm not sure what this means for logging on this server.", e);
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * Creates a unique ID for the runnable execution based on object ID and thread name and ID.
+     *
+     * @param runnable The runnable task
+     * @param <T>      A type that extends Runnable
+     *
+     * @return The ID generated from object ID and thread name and ID
+     */
+    @NotNull
+    private static <T extends Runnable> String getExecutionId(final T runnable) {
+        return ObjectUtils.identityToString(runnable) + ":" + Thread.currentThread().getName();
     }
 
     private void attachPluginLogConfigurations() {
@@ -228,7 +259,7 @@ public class DefaultLoggingService implements LoggingService {
     private Map<String, Resource> getPluginLogConfigurations(final Map<String, XnatPluginBean> beanMap) throws IOException {
         final Path convertedLogConfigFolder = Files.createTempDirectory(_xnatHome.resolve("work"), "logback-");
 
-        final Map<String, XnatPluginBean> loggingBeans   = new HashMap<>(Maps.filterValues(beanMap, HAS_LOGGING_CONFIG_PREDICATE));
+        final Map<String, XnatPluginBean> loggingBeans   = beanMap.entrySet().stream().filter(HAS_LOGGING_CONFIG_PREDICATE).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         final Map<String, Resource>       configurations = new HashMap<>();
         final List<String>                converted      = new ArrayList<>();
         for (final String pluginId : loggingBeans.keySet()) {
@@ -293,21 +324,12 @@ public class DefaultLoggingService implements LoggingService {
         final Document document    = _builder.newDocument();
         final Element  rootElement = document.createElement("configuration");
         document.appendChild(rootElement);
-        if (log4j.containsKey("appender")) {
-            final Map<String, Properties> appenders = Beans.getNamespacedPropertiesMap(log4j.get("appender"));
-            for (final String appender : appenders.keySet()) {
-                final Node appenderElement = createAppenderElement(document, appender, appenders.get(appender));
-                if (appenderElement != null) {
-                    rootElement.appendChild(appenderElement);
-                }
-            }
-        }
-        for (final String logger : loggers.stringPropertyNames()) {
-            final Element loggerElement = createLoggerElement(document, logger, loggers.getProperty(logger), additivity.getProperty(logger, "false"));
-            if (loggerElement != null) {
-                rootElement.appendChild(loggerElement);
-            }
-        }
+        Stream.concat(Beans.getNamespacedPropertiesMap(log4j.getOrDefault("appender", DefaultLoggingService.EMPTY_PROPERTIES)).entrySet().stream()
+                           .map(entry -> createAppenderElement(document, entry.getKey(), entry.getValue())),
+                      loggers.stringPropertyNames().stream()
+                             .map(logger -> createLoggerElement(document, logger, loggers.getProperty(logger), additivity.getProperty(logger, "false")))
+                             .filter(Objects::nonNull))
+              .forEach(rootElement::appendChild);
 
         final File outputFile = convertedLogConfigFolder.resolve(pluginId + "-logback.xml").toFile();
         log.info("Converting log configuration for plugin \"{}\" to logback configuration. You can find the translated results in the file \"{}\".", pluginId, outputFile);
@@ -400,35 +422,21 @@ public class DefaultLoggingService implements LoggingService {
 
     private static void normalizePropertyNames(final Properties properties) {
         // Convert any properties with uppercase letters to all lowercase. This is just to simplify "file" vs "File" etc.
-        for (final String property : Iterables.filter(properties.stringPropertyNames(), Predicates.contains(Pattern.compile("[A-Z]")))) {
+        final Pattern     pattern       = Pattern.compile("[A-Z]");
+        final Set<String> propertyNames = properties.stringPropertyNames();
+        propertyNames.stream().filter(property -> pattern.matcher(property).matches()).forEach(property -> {
             final String value = properties.getProperty(property);
             properties.remove(property);
             properties.setProperty(StringUtils.lowerCase(property), value);
-        }
+        });
     }
 
-    private static final Predicate<XnatPluginBean> HAS_LOGGING_CONFIG_PREDICATE  = new Predicate<XnatPluginBean>() {
-        @Override
-        public boolean apply(@Nullable final XnatPluginBean bean) {
-            return bean != null && StringUtils.isNotBlank(bean.getLogConfigurationFile());
-        }
-    };
-    private static final Predicate<Resource>       RESOURCE_NOT_IN_JAR_PREDICATE = new Predicate<Resource>() {
-        @Override
-        public boolean apply(final Resource resource) {
-            try {
-                return !StringUtils.contains(resource.getURI().toString(), "jar!");
-            } catch (IOException e) {
-                return false;
-            }
-        }
-    };
-
-    private static final Logger              RUNNABLE_LOGGER = LoggerFactory.getLogger("RUNNABLE");
-    private static final Map<String, String> APPENDER_MAP    = ImmutableMap.of("org.apache.log4j.ConsoleAppender", "ch.qos.logback.core.ConsoleAppender",
-                                                                               "org.apache.log4j.DailyRollingFileAppender", "ch.qos.logback.core.rolling.RollingFileAppender",
-                                                                               "org.apache.log4j.FileAppender", "ch.qos.logback.core.FileAppender",
-                                                                               "org.apache.log4j.RollingFileAppender", "ch.qos.logback.core.rolling.RollingFileAppender");
+    private static final Predicate<Map.Entry<String, XnatPluginBean>> HAS_LOGGING_CONFIG_PREDICATE = entry -> entry.getValue() != null && StringUtils.isNotBlank(entry.getValue().getLogConfigurationFile());
+    private static final Logger                                       RUNNABLE_LOGGER              = LoggerFactory.getLogger("RUNNABLE");
+    private static final Map<String, String>                          APPENDER_MAP                 = ImmutableMap.of("org.apache.log4j.ConsoleAppender", "ch.qos.logback.core.ConsoleAppender",
+                                                                                                                     "org.apache.log4j.DailyRollingFileAppender", "ch.qos.logback.core.rolling.RollingFileAppender",
+                                                                                                                     "org.apache.log4j.FileAppender", "ch.qos.logback.core.FileAppender",
+                                                                                                                     "org.apache.log4j.RollingFileAppender", "ch.qos.logback.core.rolling.RollingFileAppender");
 
     private static LoggingService INSTANCE;
 
@@ -440,6 +448,6 @@ public class DefaultLoggingService implements LoggingService {
     private final Map<String, String>       _configurationResources;
     private final Map<String, List<String>> _primaryElements;
     private final Map<String, StopWatch>    _runnableTasks;
-    private       LoggerContext             _context;
-    private       ContextInitializer        _initializer;
+    private final LoggerContext             _context;
+    private final ContextInitializer        _initializer;
 }

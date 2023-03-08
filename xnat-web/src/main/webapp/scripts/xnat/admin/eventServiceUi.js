@@ -689,8 +689,8 @@ var XNAT = getObject(XNAT || {});
             storedAttributes = JSON.parse(storedAttributes);
 
             // overwrite any generic values with saved values
-            Object.keys(storedAttributes).forEach(function(key,val){
-                attributesObj[key] = val;
+            Object.keys(storedAttributes).forEach(function(key){
+                attributesObj[key] = storedAttributes[key];
             });
 
             // if any generic values were ignored, zero them out
@@ -734,6 +734,11 @@ var XNAT = getObject(XNAT || {});
                 el = XNAT.ui.panel.input.switchbox(obj);
                 break;
 
+            case 'text':
+                if (opts) obj = Object.assign( obj, opts );
+                el = XNAT.ui.panel.input.textarea(obj).get();
+                break;
+
             default:
                 if (opts) obj = Object.assign( obj, opts );
                 el = XNAT.ui.panel.input.text(obj);
@@ -748,7 +753,7 @@ var XNAT = getObject(XNAT || {});
             inputElements = [];
             Object.keys(attributesObj).forEach(function(name){
                 var opts = {};
-                var props = attributesObj[name];
+                var props = genericAttributes[name];
 
                 // check to see if supplied attribute is a part of the basic set of supported attributes
                 if (Object.keys(genericAttributes).indexOf(name) < 0) opts = { addClass: 'invalid', description: 'This parameter is not natively supported by this action and may be ignored' };
@@ -775,11 +780,27 @@ var XNAT = getObject(XNAT || {});
                 {
                     label: 'OK',
                     isDefault: true,
-                    close: true,
+                    close: false,
                     action: function(obj){
-                        var $form = obj.$modal.find('form');
+                        let $form = obj.$modal.find('form');
+                        let invalidFields = [];
+
+                        $form.find('*[data-validate=required]').each(function(){
+                            if (!XNAT.validate($(this)).check()) {
+                                $(this).addClass('invalid');
+                                invalidFields.push($(this).prop('name'));
+                            }
+                        });
+                        if (invalidFields.length) {
+                            XNAT.ui.dialog.message({
+                                title: false,
+                                content: '<h4>Form Validation Errors Found</h4><p>Please fix errors found in the following fields: <b>'+invalidFields.join(", ")+'</b></p>'
+                            });
+                            return false;
+                        }
                         eventServicePanel.subscriptionAttributes = JSON.stringify($form);
                         $(document).find('#sub-action-attribute-preview').html(eventServicePanel.subscriptionAttributes);
+                        XNAT.dialog.close();
                     }
                 },
                 {

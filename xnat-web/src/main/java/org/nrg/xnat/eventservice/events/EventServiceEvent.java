@@ -47,5 +47,6 @@ public interface EventServiceEvent<ObjectT> extends EventI {
     // while SITE scoped events will never be confined to acting on a certain project. e.g. Project Created Event
     List<EventScope> getEventScope();
 
+    String getPayloadId();
     String toString();
 }

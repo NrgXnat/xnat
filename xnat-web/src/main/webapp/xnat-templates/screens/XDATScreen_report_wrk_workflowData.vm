@@ -1,3 +1,4 @@
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
 $page.setTitle("Workflow Details")
 $page.setLinkColor($ui.alink)
 $page.setVlinkColor($ui.vlink)
@@ -23,29 +24,31 @@ $page.setVlinkColor($ui.vlink)
 				<TR>
 					<TD valign="top">
 						<TABLE>
-							<TR><TD>ID</TD><TD>$!item.getStringProperty("wrk:workflowData/ID")</TD></TR>
-							<TR><TD>ExternalID</TD><TD>$!item.getStringProperty("wrk:workflowData/ExternalID")</TD></TR>
-							<TR><TD>Datatype</TD><TD>$!item.getStringProperty("wrk:workflowData/data_type")</TD></TR>
-							<TR><TD>Pipeline</TD><TD>$!item.getStringProperty("wrk:workflowData/pipeline_name")</TD></TR>
-							<TR><TD>Status</TD><TD>$!item.getStringProperty("wrk:workflowData/status")</TD></TR>
+							<TR><TD>Workflow ID</TD><TD>#escapeCleanHTML($!item.getIntegerProperty("wrk:workflowData/wrk_workflowdata_id"))</TD></TR>
+							<TR><TD>ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/ID"))</TD></TR>
+							<TR><TD>External ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/ExternalID"))</TD></TR>
+							<TR><TD>Scan primary key (database ID)</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/scan_id"))</TD></TR>
+							<TR><TD>Datatype</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/data_type"))</TD></TR>
+							<TR><TD>Pipeline</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/pipeline_name"))</TD></TR>
+							<TR><TD>Status</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/status"))</TD></TR>
 
-							<TR><TD>Launch time</TD><TD>$!item.getProperty("wrk:workflowData/launch_time")</TD></TR>
-							<TR><TD>Percentage complete</TD><TD>$!item.getStringProperty("wrk:workflowData/percentageComplete")</TD></TR>
-							<TR><TD>Job Id</TD><TD>$!item.getStringProperty("wrk:workflowData/jobID")</TD></TR>
-							<TR><TD>Created by user</TD><TD>$!item.getStringProperty("wrk:workflowData/create_user")</TD></TR>
+							<TR><TD>Launch time</TD><TD>#escapeCleanHTML($!item.getProperty("wrk:workflowData/launch_time"))</TD></TR>
+							<TR><TD>Percentage complete</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/percentageComplete"))</TD></TR>
+							<TR><TD>Job ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/jobID"))</TD></TR>
+							<TR><TD>Created by user</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/create_user"))</TD></TR>
 
-							<TR><TD>Current step launch time</TD><TD>$!item.getProperty("wrk:workflowData/current_step_launch_time")</TD></TR>
-							<TR><TD>Current step id</TD><TD>$!item.getStringProperty("wrk:workflowData/current_step_id")</TD></TR>
-							<TR><TD>Next step id</TD><TD>$!item.getStringProperty("wrk:workflowData/next_step_id")</TD></TR>
-							<TR><TD>Step Description</TD><TD>$!item.getStringProperty("wrk:workflowData/step_description")</TD></TR>
+							<TR><TD>Current step launch time</TD><TD>#escapeCleanHTML($!item.getProperty("wrk:workflowData/current_step_launch_time"))</TD></TR>
+							<TR><TD>Current step ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/current_step_id"))</TD></TR>
+							<TR><TD>Next step ID</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/next_step_id"))</TD></TR>
+							<TR><TD>Step description</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/step_description"))</TD></TR>
 
-							<TR><TD>Comments</TD><TD>$!item.getStringProperty("wrk:workflowData/comments")</TD></TR>
-							<TR><TD>Details</TD><TD>$!item.getStringProperty("wrk:workflowData/details")</TD></TR>
-							<TR><TD>Justification</TD><TD>$!item.getStringProperty("wrk:workflowData/justification")</TD></TR>
-							<TR><TD>Description</TD><TD>$!item.getStringProperty("wrk:workflowData/description")</TD></TR>
-							<TR><TD>Src</TD><TD>$!item.getStringProperty("wrk:workflowData/src")</TD></TR>
-							<TR><TD>Type</TD><TD>$!item.getStringProperty("wrk:workflowData/type")</TD></TR>
-							<TR><TD>Category</TD><TD>$!item.getStringProperty("wrk:workflowData/category")</TD></TR>
+							<TR><TD>Comments</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/comments"))</TD></TR>
+							<TR><TD>Details</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/details"))</TD></TR>
+							<TR><TD>Justification</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/justification"))</TD></TR>
+							<TR><TD>Description</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/description"))</TD></TR>
+							<TR><TD>Src</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/src"))</TD></TR>
+							<TR><TD>Type</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/type"))</TD></TR>
+							<TR><TD>Category</TD><TD>#escapeCleanHTML($!item.getStringProperty("wrk:workflowData/category"))</TD></TR>
 						</TABLE>
 					</TD>
 					<TD valign="top" align="right">

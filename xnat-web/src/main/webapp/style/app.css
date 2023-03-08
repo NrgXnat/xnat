@@ -1510,6 +1510,9 @@ body.xnat .chosen-container {
     border: 1px solid #ccc;
     padding: 20px;
 }
+#login_auth_providers + #login_form {
+    border-width: 0 1px 1px;
+}
 
 .login-box-container-fixed #login_box,
 .login-box-container-fixed #register_box {
@@ -1551,6 +1554,27 @@ body.xnat .chosen-container {
 #loginBoxMoreOptions ul li {
     list-style-type:none;
     padding-bottom: 10px;
+}
+
+#login_auth_providers {
+    padding: 20px 20px 0;
+    border: 1px solid #ccc;
+    border-width: 1px 1px 0;
+}
+
+fieldset.divider {
+    border-top: 1px solid #aaa;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    display: block;
+    text-align: center;
+    margin: 1px;
+    padding: 1px;
+}
+
+fieldset.divider legend {
+    padding: 5px 10px;
 }
 
 #register_forgot a,

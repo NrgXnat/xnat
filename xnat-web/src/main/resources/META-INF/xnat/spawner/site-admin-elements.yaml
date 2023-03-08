@@ -1753,6 +1753,43 @@ sessionRouting:
             description: >
                 Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
 
+## DICOM NAMING
+dicomNaming:
+    kind: panel.form
+    label: DICOM File Naming
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        dicomFileNameTemplate:
+            kind: panel.input.text
+            size: 100
+            name: dicomFileNameTemplate
+            label: DICOM Filename Template
+            validation: not-empty
+            description: >
+                The DICOM Filename Template controls naming of DICOM files ingested via GradualDicomImporter 
+                (e.g., gradual-DICOM, DICOM-zip, C-STORE), unless rename = false. Variables must be 
+                <a href="https://www.dcm4che.org/docs/dcm4che-2.0.17-apidocs/org/dcm4che2/data/Tag.html"
+                target="_blank">dcm4che tag names</a>, or to compute a hash of tags, use <code>HashTag1WithTag2WithTag3</code> 
+                (etc). Variables should be demarcated with <code>${}</code> per the 
+                <a href="https://commons.apache.org/proper/commons-text/apidocs/org/apache/commons/text/StringSubstitutor.html"
+                target="_blank">StringSubstitutor</a> class. <strong>Use extreme caution when changing this value: it must 
+                be unique per instance or data will be overwritten silently.</strong> Additionally, changing this value 
+                may lead to duplicated DICOM files on merge unless using SOP Instance UID to uniquely identify DICOM, 
+                controlled below.
+        useSopInstanceUidToUniquelyIdentifyDicom:
+            kind: panel.input.switchbox
+            name: useSopInstanceUidToUniquelyIdentifyDicom
+            label: "Use SOP Instance UID to uniquely identify a DICOM file?"
+            onText: Yes, use SOP Instance UID
+            offText: No, use file name
+            description: >
+                SOP Instance UID should uniquely identify a DICOM file, and using this setting will prevent XNAT 
+                storing duplicate files when file names change due to source, import method, or updates to the 
+                "dicomFileNameTemplate" configuration setting. However, using file name is offered for backward 
+                compatibility or handling non-compliant scenarios.
+
 
 ## PIPELINE SETTINGS
 
@@ -2058,7 +2095,7 @@ checksums:
     description: >
         Determines whether checksums will be calculated for each image file as it is archived.
         Enabling checksums provides greater assurance of data integrity, but may add significant
-        overhead to the archive process.
+        overhead to the archive process. Changes to this setting require a tomcat restart to take effect.
 backupDeletedToCache:
     kind: panel.input.switchbox
     name: backupDeletedToCache
@@ -2080,7 +2117,7 @@ maintainFileHistory:
         Determines whether XNAT should retain copies of deleted files in a .history subdirectory of the cache space for
         version control. Only files corresponding to existing entities (projects, subjects, sessions, etc.) can be tracked.
         Deleting an entire entity cannot be version controlled, though you can enable the cache "recycle bin" for some
-        added deletion protection.
+        added deletion protection. Changes to this setting require a tomcat restart to take effect.
 uiShowPrearchiveFileActions:
     kind: panel.input.switchbox
     name: uiShowPrearchiveFileActions
@@ -2669,6 +2706,13 @@ root:
                 ${projectRouting}
                 ${subjectRouting}
                 ${sessionRouting}
+        dicomFileNaming:
+            kind: tab
+            name: dicomFileNaming
+            label: "DICOM File Naming"
+            group: manageData
+            contents:
+                ${dicomNaming}
         pipelinesTab:
             kind: tab
             label: Pipeline Settings

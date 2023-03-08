@@ -271,6 +271,15 @@ public class CatalogUtils {
             return projects.get(0);
         }
 
+        public static Optional<CatalogData> get(final XnatResourcecatalog catalogResource, @Nullable final String projectId)
+                throws ServerException {
+            File catalogFile = new File(catalogResource.getUri());
+            if (!catalogFile.exists()) {
+                return Optional.empty();
+            }
+            return Optional.of(new CatalogData(catalogFile, catalogResource, projectId));
+        }
+
         @Nonnull
         public static CatalogData getOrCreate(ArchivableItem item, final XnatResourcecatalogI resource)
                 throws ServerException {
@@ -768,6 +777,61 @@ public class CatalogUtils {
         setMetaFieldByName(entry, SIZE, size);
     }
 
+    /**
+     * Refresh catalog bean and write catalog to file
+
+     * @param catalogData           catalog data object
+     * @param user                  user for transaction
+     * @param resourceMap           map of resource metadata
+     * @param now                   event for transaction
+     * @param addUnreferencedFiles  add files present in directory but not in catalog
+     * @param removeMissingFiles    remove catalog entries for files not present in directory
+     * @param populateStats         update size and count on catalog resource object
+     * @throws Exception            for issues writing the catalog file or saving the resource
+     */
+    public static void refreshAndWriteCatalog(final CatalogData catalogData,
+                                              final UserI user,
+                                              final XnatResourceInfoMap resourceMap,
+                                              final EventMetaI now,
+                                              final boolean addUnreferencedFiles,
+                                              final boolean removeMissingFiles,
+                                              final boolean populateStats) throws Exception {
+        refreshAndWriteCatalog(catalogData, user, resourceMap, now, addUnreferencedFiles, removeMissingFiles,
+                populateStats, getChecksumConfiguration());
+    }
+
+    /**
+     * Refresh catalog bean and write catalog to file
+
+     * @param catalogData           catalog data object
+     * @param user                  user for transaction
+     * @param resourceMap           map of resource metadata
+     * @param now                   event for transaction
+     * @param addUnreferencedFiles  add files present in directory but not in catalog
+     * @param removeMissingFiles    remove catalog entries for files not present in directory
+     * @param populateStats         update size and count on catalog resource object
+     * @param checksums             compute checksums of files in catalog
+     * @throws Exception            for issues writing the catalog file or saving the resource
+     */
+    public static void refreshAndWriteCatalog(final CatalogData catalogData,
+                                              final UserI user,
+                                              final XnatResourceInfoMap resourceMap,
+                                              final EventMetaI now,
+                                              final boolean addUnreferencedFiles,
+                                              final boolean removeMissingFiles,
+                                              final boolean populateStats,
+                                              final boolean checksums) throws Exception {
+        final Pair<Boolean, Map<String, Map<String, Integer>>> refreshInfo = CatalogUtils.refreshCatalog(user, catalogData, resourceMap, now, addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
+        if (refreshInfo.getLeft()) {
+            final Map<String, Map<String, Integer>> auditSummary = refreshInfo.getRight();
+            //checksums and auditSummary computed in CatalogUtils.refreshCatalog
+            CatalogUtils.writeCatalogToFile(catalogData, false, auditSummary);
+            if (populateStats && catalogData.catRes != null) {
+                catalogData.catRes.save(user, false, false, now);
+            }
+        }
+    }
+
 
     /**
      * Reviews the catalog directory and adds any files that aren't already referenced in the catalog,
@@ -802,8 +866,36 @@ public class CatalogUtils {
      * @param addUnreferencedFiles  adds files not referenced in catalog
      * @param removeMissingFiles    removes files referenced in catalog but not on filesystem
      * @param populateStats         updates file count & size for catRes in XNAT db
+     * @return Pair with boolean set as true if the catalog was modified and needs to be saved. The map value contains info on the changes made.
+     */
+    public static Pair<Boolean, Map<String, Map<String, Integer>>> refreshCatalog(final UserI user,
+                                                                                  final CatalogData catalogData,
+                                                                                  final EventMetaI eventMeta,
+                                                                                  final boolean addUnreferencedFiles,
+                                                                                  final boolean removeMissingFiles,
+                                                                                  final boolean populateStats) {
+        boolean checksums = false;
+        try {
+            checksums = getChecksumConfiguration();
+        } catch (ConfigServiceException e) {
+            log.error("Unable to determine checksum configuration", e);
+        }
+        return refreshCatalog(user, catalogData, null, eventMeta, addUnreferencedFiles, removeMissingFiles,
+                populateStats, checksums);
+    }
+
+    /**
+     * Reviews the catalog directory and adds any files that aren't already referenced in the catalog,
+     *  removes any that have been deleted, computes checksums, and updates catalog stats.
+     *
+     * @param catalogData           catalog data object
+     * @param user                  user for transaction
+     * @param eventMeta             event for transaction
+     * @param addUnreferencedFiles  adds files not referenced in catalog
+     * @param removeMissingFiles    removes files referenced in catalog but not on filesystem
+     * @param populateStats         updates file count & size for catRes in XNAT db
      * @param checksums             computes/updates checksums
-     * @return Pair with boolean set as true if the catalog was modified and needs saved. The map value contains info on the changes made.
+     * @return Pair with boolean set as true if the catalog was modified and needs to be saved. The map value contains info on the changes made.
      */
     public static Pair<Boolean, Map<String, Map<String, Integer>>> refreshCatalog(final UserI user, final CatalogData catalogData, final EventMetaI eventMeta,
                                                                                   final boolean addUnreferencedFiles, final boolean removeMissingFiles,
@@ -2207,14 +2299,41 @@ public class CatalogUtils {
         return _maintainFileHistory.get();
     }
 
-    public static void moveToHistory(File catFile, String project, File f, CatEntryBean entry, EventMetaI ci) throws Exception {
+    /**
+     * Removes the file from the resource catalog. If {@link CatalogUtils#maintainFileHistory()} is <pre>true</pre>, the
+     * file is moved to a folder in the system history cache and this method returns a reference to the destination file.
+     * If {@link CatalogUtils#maintainFileHistory()} is <pre>false</pre>, the file is deleted and an empty optional is
+     * returned.
+     *
+     * @param catFile    The catalog file
+     * @param project    The project containing the catalog and file
+     * @param fileToMove The file to move to history
+     * @param entry      The catalog entry for the file to be moved/deleted
+     * @param ci         The event object
+     *
+     * @return Returns the file from the history folder if file history is maintained, an empty optional otherwise.
+     *
+     * @throws Exception When an error occurs at some point in the operation
+     */
+    public static Optional<File> moveToHistory(File catFile, String project, File fileToMove, CatEntryBean entry, EventMetaI ci) throws Exception {
         //move existing file to audit trail
         if (CatalogUtils.maintainFileHistory()) {
-            final File newFile = FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
+            final File newFile = FileUtils.MoveToHistory(fileToMove, EventUtils.getTimestamp(ci));
             addCatHistoryEntry(catFile, project, newFile.getAbsolutePath(), entry, ci);
-        } else {
-            Files.delete(f.toPath());
+            return Optional.of(newFile);
         }
+        Files.delete(fileToMove.toPath());
+        return Optional.empty();
+    }
+
+    public static Optional<File> copyToHistory(File catFile, String project, File f, CatEntryBean entry, EventMetaI ci) throws Exception {
+        //move existing file to audit trail
+        if (CatalogUtils.maintainFileHistory()) {
+            final File newFile = FileUtils.CopyToHistory(f, EventUtils.getTimestamp(ci));
+            addCatHistoryEntry(catFile, project, newFile.getAbsolutePath(), entry, ci);
+            return Optional.of(newFile);
+        }
+        return Optional.empty();
     }
 
     public static void addCatHistoryEntry(File catFile, String project, String f, CatEntryBean entry, EventMetaI ci)
@@ -2376,7 +2495,6 @@ public class CatalogUtils {
                 attr.relativePath, attr.name, attr.size, attr.md5, attr.format, attr.content, null, eventMeta);
     }
 
-    @SuppressWarnings({"unused", "RedundantSuppression"})
     public static boolean updateExistingCatEntry(CatEntryI entry, File f, String relativePath,
                                                  final EventMetaI eventMeta) {
         String digest = null;
@@ -2384,16 +2502,16 @@ public class CatalogUtils {
             if (getChecksumConfiguration()) {
                 digest = getHash(f);
             }
-        } catch (ConfigServiceException e) {
+        } catch (ConfigServiceException ignored) {
             //Ignore
         }
-        return updateExistingCatEntry(entry, f.getAbsolutePath(), relativePath, f.getName(), f.length(), digest, null, null,
+        return updateExistingCatEntry(entry, relativePath, relativePath, f.getName(), f.length(), digest, null, null,
                 null, eventMeta);
     }
 
     public static boolean updateExistingCatEntry(CatEntryI entry, @Nullable String uri, String relativePath, String name,
-                                                 long fileSize, @Nullable String digest, @Nullable String format, @Nullable String content,
-                                                 @Nullable XnatResourceInfo info, final EventMetaI eventMeta) {
+                                                 @Nullable Long fileSize, @Nullable String digest, @Nullable String format,
+                                                 @Nullable String content, @Nullable XnatResourceInfo info, final EventMetaI eventMeta) {
 
         boolean mod = false;
 
@@ -2443,7 +2561,7 @@ public class CatalogUtils {
         }
 
         //Set size
-        if (setMetaFieldByName(entry, SIZE, Long.toString(fileSize))) {
+        if (fileSize != null && setMetaFieldByName(entry, SIZE, Long.toString(fileSize))) {
             mod = true;
         }
 
@@ -2481,17 +2599,34 @@ public class CatalogUtils {
         }
 
         if (mod) {
-            if (eventId != null) entry.setModifiedeventid(eventId);
-            if (user != null) entry.setModifiedby(user.getUsername());
-            if (entry instanceof CatEntryBean) {
-                // This method throws illegal arg exception on CatEntryBean objects
-                ((CatEntryBean) entry).setModifiedtime(now);
-            } else {
-                entry.setModifiedtime(now);
-            }
+            updateModificationEvent(entry, eventMeta);
         }
 
         return mod;
+    }
+
+    /**
+     * Update catalog entry with modification event details
+     * @param entry catalog entry to update
+     * @param eventMeta the modification event object
+     */
+    public static void updateModificationEvent(final CatEntryI entry, final EventMetaI eventMeta) {
+        final UserI user = eventMeta.getUser();
+        final Date now = eventMeta.getEventDate();
+        final Integer eventId = eventMeta.getEventId() != null ? eventMeta.getEventId().intValue() : null;
+
+        if (eventId != null) {
+            entry.setModifiedeventid(eventId);
+        }
+        if (user != null) {
+            entry.setModifiedby(user.getUsername());
+        }
+        if (entry instanceof CatEntryBean) {
+            // Generic method throws illegal arg exception on CatEntryBean objects
+            ((CatEntryBean) entry).setModifiedtime(now);
+        } else {
+            entry.setModifiedtime(now);
+        }
     }
 
     public static Collection<CatEntryI> findCatEntriesWithinPath(String path,

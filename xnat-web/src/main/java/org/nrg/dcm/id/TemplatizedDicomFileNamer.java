@@ -9,33 +9,29 @@
 
 package org.nrg.dcm.id;
 
-import com.google.common.base.Functions;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.RuntimeSingleton;
-import org.apache.velocity.runtime.parser.ParseException;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.apache.commons.text.StringSubstitutor;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.nrg.dcm.DicomFileNamer;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
+import org.springframework.stereotype.Component;
 
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
+@Component("dicomFileNamer")
 public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMethod implements DicomFileNamer {
-    public TemplatizedDicomFileNamer(final String naming) {
+    public TemplatizedDicomFileNamer(final SiteConfigPreferences siteConfigPreferences) {
         super("dicomFileNameTemplate");
 
+        final String naming = siteConfigPreferences.getDicomFileNameTemplate();
         log.debug("Initializing the templatized DICOM file namer with the template: {}", naming);
         setNamingPattern(naming);
         validate();
@@ -51,24 +47,17 @@ public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMeth
      */
     @Override
     public String makeFileName(final DicomObject dicomObject) {
-        final VelocityContext     context = new VelocityContext();
         final Map<String, String> values  = new HashMap<>();
         for (final String variable : _variables) {
             if (!variable.startsWith(HASH_PREFIX)) {
                 final String value = StringUtils.defaultIfBlank(dicomObject.getString(Tag.forName(variable)), "no-value-for-" + variable);
-                context.put(variable, value);
                 values.put(variable, value);
             }
         }
         for (final String key : _hashes.keySet()) {
-            context.put(key, calculateHashString(_hashes.get(key), values));
+            values.put(key, calculateHashString(_hashes.get(key), values));
         }
-        try (final StringWriter writer = new StringWriter()) {
-            getTemplate().merge(context, writer);
-            return writer.toString();
-        } catch (Exception exception) {
-            throw new RuntimeException("Error trying to resolve naming template", exception);
-        }
+        return new StringSubstitutor(values).replace(_naming);
     }
 
     /**
@@ -102,7 +91,7 @@ public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMeth
      * @return The calculated hash.
      */
     private String calculateHashString(final List<String> variables, final Map<String, String> values) {
-        final int hash = Lists.transform(variables, Functions.forMap(values)).hashCode();
+        final int hash = variables.stream().map(values::get).collect(Collectors.toList()).hashCode();
         return Long.toString(hash & 0xffffffffL, 36);
     }
 
@@ -120,29 +109,6 @@ public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMeth
         }
         final String lastElement = template.substring(template.lastIndexOf("."));
         return !StringUtils.isBlank(lastElement) && lastElement.matches("^\\.[A-z0-9]+");
-    }
-
-    /**
-     * Initializes the template for the life of the file namer.
-     *
-     * @return The initialized Velocity template.
-     *
-     * @throws ParseException When an error occurs parsing the specified file naming template.
-     */
-    private Template getTemplate() throws ParseException {
-        synchronized (MUTEX) {
-            if (_template == null) {
-                final RuntimeServices runtimeServices = RuntimeSingleton.getRuntimeServices();
-                runtimeServices.init();
-                final StringReader reader = new StringReader(_naming);
-                final SimpleNode   node   = runtimeServices.parse(reader, "naming");
-                _template = new Template();
-                _template.setRuntimeServices(runtimeServices);
-                _template.setData(node);
-                _template.initDocument();
-            }
-        }
-        return _template;
     }
 
     /**
@@ -202,15 +168,13 @@ public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMeth
     }
 
     @SuppressWarnings("RegExpRedundantEscape")
-    private static final Pattern VARIABLE_EXTRACTION = Pattern.compile("\\$\\{([A-z0-9]+)\\}");
+    private static final Pattern VARIABLE_EXTRACTION = Pattern.compile("\\$\\{([A-Za-z0-9]+)\\}");
     private static final String  SUFFIX              = ".dcm";
     private static final String  HASH_PREFIX         = "Hash";
     private static final String  HASH_DELIMITER      = "With";
-    private static final Object  MUTEX               = new Object();
 
     private final Set<String>                       _variables = new HashSet<>();
     private final ArrayListMultimap<String, String> _hashes    = ArrayListMultimap.create();
 
-    private Template _template;
     private String   _naming;
 }

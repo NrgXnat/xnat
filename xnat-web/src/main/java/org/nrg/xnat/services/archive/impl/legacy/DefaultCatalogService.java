@@ -25,7 +25,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.nrg.action.ClientException;
@@ -1566,23 +1565,15 @@ public class DefaultCatalogService implements CatalogService {
             try {
                 final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile,
                                                                                                          false);
-                fl.tryLock(2L, TimeUnit.MINUTES);
+                fl.tryLock(30L, TimeUnit.SECONDS);
+                final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
+                        (XnatResourcecatalog) resource, projectId);
                 try {
-                    final CatalogUtils.CatalogData                         catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath, (XnatResourcecatalog) resource, projectId);
-                    final Pair<Boolean, Map<String, Map<String, Integer>>> refreshInfo = CatalogUtils.refreshCatalog(user, catalogData, resourceMap, now, addUnreferencedFiles, removeMissingFiles, populateStats, checksums);
-                    if (refreshInfo.getLeft()) {
-                        final Map<String, Map<String, Integer>> auditSummary = refreshInfo.getRight();
-                        try {
-                            //checksums and auditSummary computed in CatalogUtils.refreshCatalog
-                            CatalogUtils.writeCatalogToFile(catalogData, false, auditSummary);
-                            if (populateStats) {
-                                resource.save(user, false, false, now);
-                            }
-                        } catch (Exception e) {
-                            throw new ServerException("An error occurred writing the catalog file " +
-                                                      catalogData.catFile.getAbsolutePath(), e);
-                        }
-                    }
+                    CatalogUtils.refreshAndWriteCatalog(catalogData, user, resourceMap, now, addUnreferencedFiles,
+                            removeMissingFiles, populateStats, checksums);
+                } catch (Exception e) {
+                    throw new ServerException("An error occurred writing the catalog file " +
+                            catalogData.catFile.getAbsolutePath(), e);
                 } finally {
                     fl.unlock();
                 }

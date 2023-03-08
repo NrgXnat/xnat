@@ -38,14 +38,10 @@ public class CatalogRepresentation extends OutputRepresentation {
 	
 	@Override
 	public void write(OutputStream out) throws IOException {
-			try {
-				PrintWriter pw = new PrintWriter(out);
+			try (PrintWriter pw = new PrintWriter(out)) {
 				cat.toXML(pw, false);
-				pw.close();
-			} catch (IllegalArgumentException e) {
-				logger.error("",e);
-			} catch (TransformerFactoryConfigurationError e) {
-				logger.error("",e);
+			} catch (IllegalArgumentException | TransformerFactoryConfigurationError e) {
+				logger.error("Error writing xml",e);
 			}
 	}
 

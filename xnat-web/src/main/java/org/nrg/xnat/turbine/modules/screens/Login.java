@@ -8,6 +8,7 @@
  */
 
 package org.nrg.xnat.turbine.modules.screens;
+
 import org.nrg.xdat.security.helpers.Features;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -25,6 +26,7 @@ public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
         final boolean forceLocalLogin = data.getParameters().getBoolean("forceLocalLogin");
         if (!forceLocalLogin) {
             context.put("login_methods", getProviderManager().getVisibleEnabledProviders().values());
+            context.put("linked_logins", getProviderManager().getLinkedEnabledProviders().values());
         } else {
             log.info("Got login request with forceLocalLogin set to true");
         }

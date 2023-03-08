@@ -9,7 +9,9 @@
 
 package org.nrg.xnat.security;
 
+import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -36,6 +38,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.nrg.xdat.security.helpers.Users.AUTHORITIES_ANONYMOUS;
@@ -59,18 +62,18 @@ public class XnatProviderManager extends ProviderManager {
     public XnatProviderManager(final SiteConfigPreferences preferences, final AuthenticationEventPublisher eventPublisher, final XdatUserAuthService userAuthService, final List<AuthenticationProvider> providers) {
         super(providers);
 
-        _preferences = preferences;
+        _preferences     = preferences;
         _userAuthService = userAuthService;
-        _eventPublisher = eventPublisher;
+        _eventPublisher  = eventPublisher;
         _xnatAuthenticationProviders.putAll(providers.stream().filter(XnatAuthenticationProvider.class::isInstance)
-                .map(XnatAuthenticationProvider.class::cast)
-                .collect(Collectors.toMap(XnatAuthenticationProvider::getProviderId,
-                        Function.identity())));
+                                                     .map(XnatAuthenticationProvider.class::cast)
+                                                     .collect(Collectors.toMap(XnatAuthenticationProvider::getProviderId,
+                                                                               Function.identity())));
     }
 
     @Override
     public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
-        final Class<? extends Authentication> toTest = authentication.getClass();
+        final Class<? extends Authentication>  toTest    = authentication.getClass();
         final List<XnatAuthenticationProvider> providers = new ArrayList<>();
 
         // HACK: This is a hack to work around open XNAT auth issue. If this is a bare un/pw auth token, use anon auth.
@@ -92,7 +95,7 @@ public class XnatProviderManager extends ProviderManager {
             }
         }
 
-        if (providers.size() == 0) {
+        if (providers.isEmpty()) {
             final ProviderNotFoundException exception = new ProviderNotFoundException(_messageSource.getMessage("providerManager.providerNotFound", new Object[]{toTest.getName()}, "No authentication provider found for {0}"));
             _eventPublisher.publishAuthenticationFailure(exception, authentication);
             throw exception;
@@ -132,14 +135,14 @@ public class XnatProviderManager extends ProviderManager {
         }
 
         final AuthenticationException cause;
-        final AuthenticationProvider provider;
+        final AuthenticationProvider  provider;
         if (exceptionMap.size() == 1) {
             provider = exceptionMap.entrySet().iterator().next().getKey();
-            cause = exceptionMap.get(provider);
+            cause    = exceptionMap.get(provider);
         } else {
             final Pair<AuthenticationProvider, AuthenticationException> pair = getMostImportantException(exceptionMap);
             provider = pair.getLeft();
-            cause = pair.getRight();
+            cause    = pair.getRight();
         }
         log.info("Provider '{}' failed to validate user {}: {}", provider != null ? provider.toString() : "<unknown>", authentication.getPrincipal(), cause.getMessage());
         _eventPublisher.publishAuthenticationFailure(cause, authentication);
@@ -203,21 +206,30 @@ public class XnatProviderManager extends ProviderManager {
     }
 
     public Map<String, XnatAuthenticationProvider> getVisibleEnabledProviders() {
-        final Map<String, XnatAuthenticationProvider> visibleEnabledProviders = new LinkedHashMap<>();
-        for (final String providerId : _preferences.getEnabledProviders()) {
-            if (!_xnatAuthenticationProviders.containsKey(providerId)) {
-                log.warn("The provider ID {} is enabled, but there is no configured definition for that ID", providerId);
-                continue;
-            }
-            final XnatAuthenticationProvider provider = _xnatAuthenticationProviders.get(providerId);
-            if (!provider.isVisible()) {
-                log.warn("The provider ID {} is enabled, but the provider is not a visible provider", providerId);
-                continue;
-            }
-            log.debug("Added provider ID {} to the list of visible enabled authentication providers. Name: \"{}\", auth method: {}, is auto-enabled: {}, is auto-verified: {} ", provider.getProviderId(), provider.getName(), provider.getAuthMethod(), provider.isAutoEnabled(), provider.isAutoVerified());
-            visibleEnabledProviders.put(provider.getProviderId(), provider);
+        return getFilteredEnabledProviders(XnatAuthenticationProvider::isVisible);
+    }
+
+    public Map<String, XnatAuthenticationProvider> getLinkedEnabledProviders() {
+        return getFilteredEnabledProviders(XnatAuthenticationProvider::hasLink);
+    }
+
+    private Map<String, XnatAuthenticationProvider> getFilteredEnabledProviders(final Predicate<XnatAuthenticationProvider> filter) {
+        final List<String> enabled = _preferences.getEnabledProviders();
+        final Map<String, XnatAuthenticationProvider> configured = enabled.stream()
+                                                                          .map(_xnatAuthenticationProviders::get)
+                                                                          .filter(Objects::nonNull)
+                                                                          .collect(Collectors.toMap(XnatAuthenticationProvider::getProviderId, Function.identity()));
+        if (enabled.size() > configured.size()) {
+            final Sets.SetView<String> difference = Sets.difference(new HashSet<>(enabled), configured.keySet());
+            log.warn("{} provider IDs are enabled, but don't have configured definitions: {}", difference.size(), String.join(", ", difference));
         }
-        return visibleEnabledProviders;
+        final Map<String, XnatAuthenticationProvider> filteredProviders = configured.values().stream()
+                                                                                    .filter(filter)
+                                                                                    .collect(Collectors.toMap(XnatAuthenticationProvider::getProviderId, Function.identity(), (k1, k2) -> k2, LinkedHashMap::new));
+        if (log.isDebugEnabled()) {
+            log.debug("Added {} provider IDs to the list of filtered authentication providers: {}", filteredProviders.keySet().size(), String.join(", ", filteredProviders.keySet()));
+        }
+        return filteredProviders;
     }
 
     private Pair<AuthenticationProvider, AuthenticationException> getMostImportantException(final Map<AuthenticationProvider, AuthenticationException> exceptionMap) {
@@ -272,27 +284,27 @@ public class XnatProviderManager extends ProviderManager {
 
     private static UsernamePasswordAuthenticationToken buildUPToken(final AuthenticationProvider provider, final String username, final String password) {
         return provider instanceof XnatAuthenticationProvider
-                ? (UsernamePasswordAuthenticationToken) ((XnatAuthenticationProvider) provider).createToken(username, password)
-                : new XnatDatabaseUsernamePasswordAuthenticationToken(username, password);
+               ? (UsernamePasswordAuthenticationToken) ((XnatAuthenticationProvider) provider).createToken(username, password)
+               : new XnatDatabaseUsernamePasswordAuthenticationToken(username, password);
     }
 
     private interface XnatAuthenticationProviderMatcher {
         boolean matches(XnatAuthenticationProvider provider);
     }
 
-    private static final String ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-provider-key";
-    private static final Map<String, String> CACHED_AUTH_METHODS = new ConcurrentHashMap<>(); // This will prevent 20,000 curl scripts from hitting the db every time
-    private static final List<Class<? extends AuthenticationException>> RANKED_AUTH_EXCEPTIONS = Arrays.asList(BadCredentialsException.class,
-            AuthenticationCredentialsNotFoundException.class,
-            AuthenticationServiceException.class,
-            ProviderNotFoundException.class,
-            InsufficientAuthenticationException.class,
-            AccountStatusException.class);
+    private static final String                                         ANONYMOUS_AUTH_PROVIDER_KEY = "xnat-anonymous-provider-key";
+    private static final Map<String, String>                            CACHED_AUTH_METHODS         = new ConcurrentHashMap<>(); // This will prevent 20,000 curl scripts from hitting the db every time
+    private static final List<Class<? extends AuthenticationException>> RANKED_AUTH_EXCEPTIONS      = Arrays.asList(BadCredentialsException.class,
+                                                                                                                    AuthenticationCredentialsNotFoundException.class,
+                                                                                                                    AuthenticationServiceException.class,
+                                                                                                                    ProviderNotFoundException.class,
+                                                                                                                    InsufficientAuthenticationException.class,
+                                                                                                                    AccountStatusException.class);
 
-    private final MessageSourceAccessor _messageSource = SpringSecurityMessageSource.getAccessor();
+    private final MessageSourceAccessor                   _messageSource               = SpringSecurityMessageSource.getAccessor();
     private final Map<String, XnatAuthenticationProvider> _xnatAuthenticationProviders = new HashMap<>();
 
-    private final SiteConfigPreferences _preferences;
-    private final XdatUserAuthService _userAuthService;
+    private final SiteConfigPreferences        _preferences;
+    private final XdatUserAuthService          _userAuthService;
     private final AuthenticationEventPublisher _eventPublisher;
 }

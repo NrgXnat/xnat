@@ -13,6 +13,7 @@ import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.id.ClassicDicomObjectIdentifier;
 import org.nrg.dcm.id.TemplatizedDicomFileNamer;
 import org.nrg.dcm.scp.daos.DicomSCPInstanceService;
+import org.nrg.dicom.dicomedit.DE6ScriptFactory;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.Locale;
 
 @Configuration
-@ComponentScan({"org.nrg.dcm.scp", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl", "org.nrg.xnat.services.messaging.archive"})
+@ComponentScan({"org.nrg.dcm.scp", "org.nrg.dcm.id", "org.nrg.dcm.edit.mizer", "org.nrg.dicom.dicomedit.mizer", "org.nrg.dicom.mizer.service.impl", "org.nrg.xnat.services.messaging.archive"})
 public class DicomImportConfig {
     @Bean
     @Primary
@@ -42,8 +43,8 @@ public class DicomImportConfig {
     }
 
     @Bean
-    public DicomFileNamer dicomFileNamer(final SiteConfigPreferences preferences) {
-        return new TemplatizedDicomFileNamer(preferences.getDicomFileNameTemplate());
+    public DE6ScriptFactory scriptFactory() {
+        return new DE6ScriptFactory();
     }
 
     @Bean

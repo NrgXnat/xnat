@@ -19,7 +19,6 @@ public class WorkflowStatusChangeEvent extends AbstractEventServiceEvent<Persist
 
     private final String displayName = "Workflow Status";
     private final String description = "XNAT Workflow status change detected.";
-    private String payloadId = null;
 
     public WorkflowStatusChangeEvent() {};
 

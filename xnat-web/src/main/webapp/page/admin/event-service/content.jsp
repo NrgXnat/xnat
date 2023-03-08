@@ -31,10 +31,8 @@
 
                 <!-- Task Settings tab container -->
                 <div id="event-service-admin-tabs" class="xnat-tab-container"></div>
-                <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
-                <script type="text/javascript" src="https://code.jquery.com/ui/1.9.2/jquery-ui.min.js"></script>
-                <script src="${SITE_ROOT}/scripts/xnat/admin/eventServiceUi.js"></script>
-                <script src="${SITE_ROOT}/scripts/xnat/admin/eventServiceHistory.js"></script>
+                <script type="text/javascript" src="${SITE_ROOT}/scripts/xnat/admin/eventServiceUi.js"></script>
+                <script type="text/javascript" src="${SITE_ROOT}/scripts/xnat/admin/eventServiceHistory.js"></script>
                 <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/admin/eventServiceAdmin.css?v=event-service-1.0" />
                 <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/app/scanTable/scanTable.css?v=event-service-1.0" />
                 <script>

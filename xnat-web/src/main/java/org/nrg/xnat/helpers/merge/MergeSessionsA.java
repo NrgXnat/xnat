@@ -301,21 +301,20 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         final CatalogUtils.CatalogData dest = CatalogUtils.CatalogData.getOrCreateAndClean(destRootPath, destRes, false, destProject,
                 user, c);
 
-        MergeCatCatalog merge = new MergeCatCatalog(src.catBean, dest.catBean, allowSessionMerge, c,
-                dest.catFile, dest.project);
+        final MergeCatCatalog merge = new MergeCatCatalog(src, dest, allowSessionMerge, c);
 
         MergeSessionsA.Results<Boolean> r = merge.call();
         if (r.result != null && r.result) {
+            src.catBean = dest.catBean; // overwrite src.catBean with dest.catBean
             try {
                 //write merged destination file to src directory for merge process to move
-                src.catBean = dest.catBean; // overwrite src.catBean with dest.catBean
                 CatalogUtils.writeCatalogToFile(src);
-
-                return new MergeSessionsA.Results<>(dest.catFile, r);
             } catch (Exception e) {
                 failed("Failed to update XML Specification document.");
                 throw new ServerException(e.getMessage(), e);
             }
+
+            return new MergeSessionsA.Results<>(dest.catFile, r);
         }
 
         return null;

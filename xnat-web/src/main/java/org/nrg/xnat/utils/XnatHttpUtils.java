@@ -9,6 +9,10 @@
 
 package org.nrg.xnat.utils;
 
+import java.io.IOException;
+import java.util.Optional;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -16,8 +20,20 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.om.XdatUserLogin;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.services.XdatUserAuthService;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.InvalidValueException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xnat.security.alias.AliasTokenException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.codec.Base64;
 
 import javax.annotation.Nonnull;
@@ -28,6 +44,13 @@ import java.text.ParseException;
 
 @Slf4j
 public class XnatHttpUtils {
+    private static final String PARAM_LOGIN_METHOD      = "login_method";
+    private static final String PARAM_USERNAME          = "username";
+    private static final String PARAM_PASSWORD          = "password";
+    private static final String QUERY_UPGRADE_NEEDED    = "SELECT primary_password ~ '^[A-Fa-f0-9]{64}\\{[A-Za-z0-9]{64}}$' FROM xdat_user WHERE login = :" + PARAM_USERNAME;
+    private static final String QUERY_UPGRADE_PASSWORD  = "UPDATE xdat_user SET primary_password = :" + PARAM_PASSWORD + ", salt = null, primary_password_encrypt = 1 WHERE login = :" + PARAM_USERNAME;
+    private static final String QUERY_CLEAR_CACHE_ENTRY = "DELETE FROM xs_item_cache WHERE contents LIKE 'Item:(0(xdat:user)((login:string)=(%s)%%'";
+
     public static String getServerRoot(final HttpServletRequest request) {
         final String port        = request.getServerPort() == 80 ? "" : ":" + request.getServerPort();
         final String servletPath = StringUtils.defaultIfBlank(request.getContextPath(), "");
@@ -53,6 +76,14 @@ public class XnatHttpUtils {
             return getCredentials(request, null);
         } catch (AliasTokenException ignored) {
             // This method doesn't check for an alias token, so this won't happen.
+            return new MutablePair<>();
+        }
+    }
+
+    private static Pair<String, String> getCredentialsNoExceptions(final HttpServletRequest request) {
+        try {
+            return getCredentials(request, null);
+        } catch (AliasTokenException|ParseException ignored) {
             return new MutablePair<>();
         }
     }
@@ -146,4 +177,91 @@ public class XnatHttpUtils {
         return StringUtils.isNotBlank(project) ? StringUtils.joinWith("/", project, timestamp, session) : session;
     }
 
+    /**
+     * Completes actions which happen after a user logs into the application.
+     *
+     * @param request
+     * @param template
+     * @throws IOException
+     * @throws ServletException
+     */
+    public static void onAuthenticationSuccess(final HttpServletRequest request, final NamedParameterJdbcTemplate template) {
+        try {
+            Users.recordUserLogin(request);
+        } catch (XFTInitException e) {
+            log.error("An error occurred accessing XFT", e);
+        } catch (ElementNotFoundException e) {
+            log.error("Could not find the requested element {}", e.ELEMENT, e);
+        } catch (InvalidValueException e) {
+            log.error("An invalid value was submitted when creating the user login object", e);
+        } catch (FieldNotFoundException e) {
+            log.error("The field {} was not found when creating the user login object of type {}", e.FIELD, XdatUserLogin.SCHEMA_ELEMENT_NAME);
+        } catch (Exception e) {
+            log.error("An unknown error was found", e);
+        }
+
+        checkAccountUpgrades(request, template);
+    }
+
+
+    /**
+     * Checks if any upgrades are required to the user's account, e.g. upgrading password encryption.
+     *
+     * @param request The request for user authentication.
+     * @param template JDBC template for query executions
+     */
+    private static void checkAccountUpgrades(final HttpServletRequest request, final NamedParameterJdbcTemplate template) {
+        // The login method may be null in some cases, specifically basic auth, but that indicates localdb or alias token auth.
+        final String loginMethod = StringUtils.defaultIfBlank(request.getParameter(PARAM_LOGIN_METHOD), XdatUserAuthService.LOCALDB);
+        final String username = getCredentialsNoExceptions(request).getLeft();
+
+        // We have to have a username to upgrade a password
+        if (StringUtils.isNotBlank(username) && StringUtils.equals(XdatUserAuthService.LOCALDB, loginMethod)) {
+            if (shouldUpgradePassword(username,template)) {
+                log.debug("It seems I should upgrade the password for user {}", username);
+                final String password = StringUtils.getIfBlank(request.getParameter(PARAM_PASSWORD), () -> {
+                    log.debug("Couldn't find password on the authentication request, checking for basic auth credentials instead.");
+                    try {
+                        final Pair<String, String> credentials = XnatHttpUtils.getCredentials(request);
+                        if (credentials == null) {
+                            log.warn("Couldn't find password for user {} on the authentication request or in basic auth credentials, so I can't upgrade that password", username);
+                        } else if (StringUtils.equals(username, credentials.getKey())) {
+                            return credentials.getValue();
+                        } else {
+                            log.warn("I found credentials for user {} in the basic auth credentials, but that doesn't match the login username {}", credentials.getKey(), username);
+                        }
+                    } catch (ParseException e) {
+                        log.error("An error occurred trying to parse the user credentials from basic auth header.", e);
+                    }
+                    return null;
+                });
+                if (StringUtils.isBlank(password)) {
+                    log.warn("I'm trying to upgrade the password for user {} but I can't find a password to store", username);
+                    return;
+                }
+                final int affected = template.update(QUERY_UPGRADE_PASSWORD, new MapSqlParameterSource(PARAM_USERNAME, username).addValue(PARAM_PASSWORD, Users.encode(password)));
+                if (affected == 0) {
+                    log.warn("Tried to upgrade password encoding for user {} but query said no rows were affected", username);
+                } else {
+                    if (affected > 1) {
+                        log.warn("Tried to upgrade password encoding for user {} but query said {} rows were affected, which seems weird", username, affected);
+                    } else {
+                        log.info("I upgraded password encoding for user {}", username);
+                    }
+                    final int deleted = template.update(String.format(QUERY_CLEAR_CACHE_ENTRY, username), EmptySqlParameterSource.INSTANCE);
+                    log.debug("Deleted {} cache entries for user {}", deleted, username);
+                }
+            }
+        }
+    }
+
+
+    private static boolean shouldUpgradePassword(final String username,final NamedParameterJdbcTemplate template) {
+        try {
+            return template.queryForObject(QUERY_UPGRADE_NEEDED, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class);
+        } catch (EmptyResultDataAccessException e) {
+            log.warn("Checked for password encoding upgrade required, but couldn't find the username {}", username);
+            return false;
+        }
+    }
 }

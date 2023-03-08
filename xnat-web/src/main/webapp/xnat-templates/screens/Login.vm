@@ -2,6 +2,7 @@
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 #* @vtlvariable name="login_methods" type="java.util.Collection" *#
+#* @vtlvariable name="linked_logins" type="java.util.Collection" *#
 #* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
 #* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
@@ -13,13 +14,17 @@
 #macro (showProviders $providers)
     #* @vtlvariable name="providers" type="java.util.Collection" *#
     #* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+<!-- BEGIN xnat-templates/screens/Login.vm@showProviders -->
     #if($providers)
         #if($providers.isEmpty())
+        <!-- THERE ARE PROVIDERS BUT NONE WOW!! -->
         <input type="hidden" id="login_method" name="login_method" value="localdb">
         #elseif($providers.size() == 1)
+        <!-- THERE IS ONE PROVIDER!! -->
             #set($provider = $providers.iterator().next())
         <input type="hidden" id="login_method" name="login_method" value="$provider.providerId"/>
         #else
+        <!-- THERE ARE $providers.size() PROVIDERS!! -->
         <label for="login_method">Login</label>
         <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
             #foreach ($provider in $providers)
@@ -27,20 +32,40 @@
             #end
         </select>
         #end
+    #else
+    <!-- THERE ARE NO PROVIDERS!! -->
     #end
+<!-- END xnat-templates/screens/Login.vm@showProviders -->
+#end
+#macro (displayLoginLinks $providers)
+    #* @vtlvariable name="providers" type="java.util.Collection" *#
+    #* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+    <!-- BEGIN xnat-templates/screens/Login.vm@displayLoginLinks -->
+    #if($providers)
+        #if(!$providers.isEmpty())
+        <div id="login_auth_providers">
+            #foreach ($provider in $providers)
+                #if($provider.hasLink())
+                    <div id="auth-provider-$provider.providerId">
+                        $provider.link
+                    </div>
+                #end
+            #end
+            <fieldset class="divider">
+                <legend>OR</legend>
+            </fieldset>
+        </div>
+        #end
+    #end
+    <!-- END xnat-templates/screens/Login.vm@displayLoginLinks -->
 #end
 
 #set ($siteId = $siteConfig.siteId)
 $page.setTitle("$siteId - Please Login")
-    $page.setBgColor($ui.bgcolor)
-    $page.addAttribute("onLoad", "document.getElementById('username').focus();")
+$page.setBgColor($ui.bgcolor)
+$page.addAttribute("onLoad", "document.getElementById('username').focus();")
 
 <script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
-
-<script>
-//    XNAT.cookie.set('SESSION_ACTIVE', 'false');
-//    XNAT.cookie.set('SESSION_LOGOUT_REDIRECT', 'true');
-</script>
 
 <!--[if lte IE 8]>
 <div id="ie8_error" class="error" style="display:none;margin-bottom:4em;background-image:none;z-index:9">
@@ -60,188 +85,185 @@ $page.setTitle("$siteId - Please Login")
 
 <div id="login_area">
 
-#if($turbineUtils.GetPassedParameter("par",$data))
-## create custom layout when parameters are passed to the login page from an external link.
+    #if($turbineUtils.GetPassedParameter("par",$data))
+        ## create custom layout when parameters are passed to the login page from an external link.
 
-    <div id="login_welcome" class="login-box-container-flex">
-        #if($data.getMessage())
-            <div class="warning" style="margin-bottom: 2em;">
-                <strong>Note: </strong> $data.getMessage()
-            </div>
-        #end
-
-        <div id="PAR_welcome" style="margin-bottom: 2em; padding-bottom: 2em; border-bottom: 1px solid #eee">
-            <h1>Welcome To $siteId</h1>
-            <p>You have received an invitation to join a project on this site. To continue, please register a new account or log in with an existing one.</p>
-        </div>
-        #if($siteConfig.siteDescriptionType == "Text")
-            <div id="siteDescription"></div>
-            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
-        #else
-            #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
-                #parse($siteConfig.siteDescriptionPage)
-            #else
-                <p>Custom site description page not found!</p>
+        <div id="login_welcome" class="login-box-container-flex">
+            #if($data.getMessage())
+                <div class="warning" style="margin-bottom: 2em;">
+                    <strong>Note: </strong> $data.getMessage()
+                </div>
             #end
-        #end
-    </div>
+
+            <div id="PAR_welcome" style="margin-bottom: 2em; padding-bottom: 2em; border-bottom: 1px solid #eee">
+                <h1>Welcome To $siteId</h1>
+                <p>You have received an invitation to join a project on this site. To continue, please register a new account or log in with an existing one.</p>
+            </div>
+            #if($siteConfig.siteDescriptionType == "Text")
+                <div id="siteDescription"></div>
+                <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
+            #else
+                #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
+                    #parse($siteConfig.siteDescriptionPage)
+                #else
+                    <p>Custom site description page not found!</p>
+                #end
+            #end
+        </div>
 
     <div id="register_box_container" class="login-box-container-fixed #if($siteConfig.securityLocalDbParRegistrationDisabled) hidden #end">
-        <h3><span>Register A New Account</span>
+            <h3><span>Register A New Account</span>
          <button class="btn btn-sm" onclick="showLogin()">Already Have an Account?</button></h3>
-        <div class="clear"></div>
-        <div id="register_box">
-            #parse("/screens/register_box.vm")
+            <div class="clear"></div>
+            <div id="register_box">
+                #parse("/screens/register_box.vm")
+            </div>
         </div>
-    </div>
 
     <div id="login_box_container" class="login-box-container-fixed #if(!$siteConfig.securityLocalDbParRegistrationDisabled) hidden #end">
-        #if(!$siteConfig.securityLocalDbParRegistrationDisabled)
+            #if(!$siteConfig.securityLocalDbParRegistrationDisabled)
             <h3><span>Login</span> <button class="btn btn-sm" onclick="showRegistration()">Register?</button> </h3>
-        #end
-        <div class="clear"></div>
-        <div class="message">
+            #end
+            <div class="clear"></div>
+            <div class="message">
             <strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account.
-            <br><br>
+                <br><br>
             Not what you want? <a href="$content.getURI('/app/template/Login.vm')"><strong>Default Log In Page</strong></a>
-        </div>
-        <div class="clear" style="margin:2em 0;"></div>
-        <div id="login_box">
-            <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
-                #showProviders($login_methods)
-                <p>
-                    <label for="username">User</label>
-                    <input type="text"
-                           id="username"
-                           name="username"
-                           title="User"
-                           class="validate onblur"
-                           data-validate="not-empty"
-                           data-message="Username cannot be blank.">
-                </p>
-                <p>
-                    <label for="password">Password</label>
-                    <input type="password"
-                           name="password"
-                           autocomplete="off"
-                           title="Password"
-                           class="validate onblur"
-                           data-validate="not-empty"
-                           data-message="Password cannot be blank.">
-                </p>
-
-                <p class="form-submit">
+            </div>
+            <div class="clear" style="margin:2em 0;"></div>
+            <div id="login_box">
+                #displayLoginLinks($linked_logins)
+                <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
+                    #showProviders($login_methods)
+                    <p>
+                        <label for="username">User</label>
+                        <input type="text"
+                               id="username"
+                               name="username"
+                               title="User"
+                               class="validate onblur"
+                               data-validate="not-empty"
+                               data-message="Username cannot be blank.">
+                    </p>
+                    <p>
+                        <label for="password">Password</label>
+                        <input type="password"
+                               name="password"
+                               autocomplete="off"
+                               title="Password"
+                               class="validate onblur"
+                               data-validate="not-empty"
+                               data-message="Password cannot be blank.">
+                    </p>
+                    <p class="form-submit">
                         <span id="register_forgot">
                             <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
                         </span>
-                        
-                    <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
-                </p>
+                        <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
+                    </p>
 
-                #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
-                    #if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception" &&$key!="username" &&$key!="exception")
-                        <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+                    #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
+                        #if ($key != "action" && $key != "template" && $key != "password" && !$key.startsWith("xdat:user") && $key != "username" && $key != "exception" && $key != "username")
+                            <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+                        #end
                     #end
-                #end
-            </form>
-        </div>
-    </div>
-
-    <div class="clear"></div>
-
-    <script>
-        function showLogin() {
-            jq('#register_box_container').addClass('hidden');
-            jq('#login_box_container').removeClass('hidden');
-        }
-        function showRegistration() {
-            jq('#register_box_container').removeClass('hidden');
-            jq('#login_box_container').addClass('hidden');
-        }
-    </script>
-
-#else
-## standard layout for login page
-
-    <div id="login_welcome" class="login-box-container-flex">
-        #if($siteConfig.siteDescriptionType == "Text")
-            <div id="siteDescription"></div>
-            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
-        #else
-            #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
-                #parse($siteConfig.siteDescriptionPage)
-            #else
-                <p>Custom site description page not found!</p>
-            #end
-        #end
-    </div>
-
-    <div class="login-box-container-fixed">
-        <div id="login_box">
-
-        #if($data.getMessage())
-            <div class="message" style="border-bottom: 0">
-                <strong>Note: </strong> $data.getMessage()
+                </form>
             </div>
+        </div>
 
-        #end
+        <div class="clear"></div>
 
-        <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
-            #showProviders($login_methods)
-            <p>
-                <label for="username">User</label>
-                <input type="text"
-                       id="username"
-                       name="username"
-                       title="User"
-                       data-validate="not-empty"
-                       data-message="Username cannot be blank.">
-            </p>
-            <p>
-                <label for="password">Password</label>
-                <input type="password"
-                       id="password"
-                       name="password"
-                       autocomplete="off"
-                       title="Password"
-                       data-validate="not-empty"
-                       data-message="Password cannot be blank.">
-            </p>
+        <script>
+            function showLogin() {
+                jq('#register_box_container').addClass('hidden');
+                jq('#login_box_container').removeClass('hidden');
+            }
+            function showRegistration() {
+                jq('#register_box_container').removeClass('hidden');
+                jq('#login_box_container').addClass('hidden');
+            }
+        </script>
 
-            <p class="form-submit">
-            <span id="register_forgot" style="float:left">
-                #if(!$siteConfig.securityNewUserRegistrationDisabled)
-                    <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
+    #else
+        ## standard layout for login page
+
+        <div id="login_welcome" class="login-box-container-flex">
+            #if($siteConfig.siteDescriptionType == "Text")
+                <div id="siteDescription"></div>
+                <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
+            #else
+                #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
+                    #parse($siteConfig.siteDescriptionPage)
+                #else
+                    <p>Custom site description page not found!</p>
                 #end
+            #end
+        </div>
+
+        <div class="login-box-container-fixed">
+            <div id="login_box">
+                #if($data.getMessage())
+                    <div class="message" style="border-bottom: 0">
+                        <strong>Note: </strong> $data.getMessage()
+                    </div>
+                #end
+                #displayLoginLinks($linked_logins)
+                <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
+                    #showProviders($login_methods)
+                    <p>
+                        <label for="username">User</label>
+                        <input type="text"
+                               id="username"
+                               name="username"
+                               title="User"
+                               data-validate="not-empty"
+                               data-message="Username cannot be blank.">
+                    </p>
+                    <p>
+                        <label for="password">Password</label>
+                        <input type="password"
+                               id="password"
+                               name="password"
+                               autocomplete="off"
+                               title="Password"
+                               data-validate="not-empty"
+                               data-message="Password cannot be blank.">
+                    </p>
+
+                    <p class="form-submit">
+                <span id="register_forgot" style="float:left">
+                    #if(!$siteConfig.securityNewUserRegistrationDisabled)
+                    <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
+                    #end
                 <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
-                <a href="#" id="loginBoxMoreOptionsBtn" onclick="$('#loginBoxMoreOptions').slideToggle('fast')">More Options</a>
-            </span>
-            <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
-        </p>
-        <input type="hidden" name="XNAT_CSRF" value="">
-    </form>
-    </div>
-    <div id="loginBoxMoreOptions">
-        <ul>
-        #foreach($screenProps in $turbineUtils.getTemplates("loginBoxMoreOptions"))
-            #set($templateFileName=$screenProps.getProperty("path"))
-            #parse("/screens/$templateFileName")
-        #end
-        </ul>
-    </div>
-    </div>
-    <div class="clear"></div>
+                    <a href="#" id="loginBoxMoreOptionsBtn" onclick="$('#loginBoxMoreOptions').slideToggle('fast')">More Options</a>
+                </span>
+                        <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
+                    </p>
+                    <input type="hidden" name="XNAT_CSRF" value="">
+                </form>
+            </div>
+            <div id="loginBoxMoreOptions">
+                <ul>
+                    #foreach($screenProps in $turbineUtils.getTemplates("loginBoxMoreOptions"))
+                        #set($templateFileName=$screenProps.getProperty("path"))
+                        #parse("/screens/$templateFileName")
+                    #end
+                </ul>
+            </div>
+        </div>
+        <div class="clear"></div>
     #end
 </div>
 
 <script>
-    $(function(){
+    $(function () {
 
         var mdtext = $('#siteDescriptionMd').text();
         var markedText = marked(mdtext);
         $('#siteDescription').html(markedText);
 
-        $('#login_form').on('submit', function(e){
+        $('#login_form').on('submit', function (e) {
 
             var errorCount = 0;
 
@@ -265,12 +287,12 @@ $page.setTitle("$siteId - Please Login")
 //            }
 
             XNAT.xhr.submit(this, {
-                invalid: function(form, ers){
+                invalid: function (form, ers) {
                     errorCount = ers.length;
                     return false;
                 },
                 // callback for successful validation
-                valid: function(){
+                valid: function () {
                     // validation passed, hide the
                     // form and open the loader
                     concealContent();
@@ -284,8 +306,8 @@ $page.setTitle("$siteId - Please Login")
             return errorCount === 0;
 
         });
-        
-        if($("#loginBoxMoreOptions > ul > li").size() > 0){
+
+        if ($("#loginBoxMoreOptions > ul > li").size() > 0) {
             $("#loginBoxMoreOptionsBtn").show()
         }
     });

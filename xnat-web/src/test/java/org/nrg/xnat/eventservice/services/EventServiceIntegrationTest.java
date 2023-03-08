@@ -90,18 +90,17 @@ import static reactor.bus.selector.Selectors.type;
 @Transactional
 @ContextConfiguration(classes = EventServiceTestConfig.class)
 public class EventServiceIntegrationTest {
-
-    private static final String EVENT_RESOURCE_PATTERN = "classpath*:META-INF/xnat/event/*-xnateventserviceevent.properties";
+    private static final String  EVENT_RESOURCE_PATTERN = "classpath*:META-INF/xnat/event/*-xnateventserviceevent.properties";
+    private static final String  FAKE_USER              = "mockUser";
+    private static final Integer FAKE_USER_ID           = 1234;
+    private static final Integer FAKE_SCAN_ID           = 6789;
 
     private UserI mockUser;
-
-    private final String  FAKE_USER    = "mockUser";
-    private final Integer FAKE_USER_ID = 1234;
 
     @Autowired
     private EventBus                          eventBus;
     @Autowired
-    private TestDefaultEventServiceListener testListener;
+    private TestDefaultEventServiceListener   testListener;
     @Autowired
     private EventServiceActionProvider        testAction;
     @Autowired
@@ -150,11 +149,11 @@ public class EventServiceIntegrationTest {
 
     @Before
     public void setUp() throws Exception {
-        project1EventFilterCreator = EventFilterCreator.builder()
-                                                       .projectIds(Arrays.asList("PROJECTID-1"))
-                                                       .eventType("org.nrg.xnat.eventservice.events.ProjectEvent")
-                                                       .status("CREATED")
-                                                       .build();
+        project1EventFilterCreator  = EventFilterCreator.builder()
+                                                        .projectIds(Arrays.asList("PROJECTID-1"))
+                                                        .eventType("org.nrg.xnat.eventservice.events.ProjectEvent")
+                                                        .status("CREATED")
+                                                        .build();
         project1CreatedSubscription = SubscriptionCreator.builder()
                                                          .name("TestSubscription")
                                                          .active(true)
@@ -164,11 +163,11 @@ public class EventServiceIntegrationTest {
                                                          .actAsEventUser(false)
                                                          .build();
 
-        project2EventFilterCreator = EventFilterCreator.builder()
-                                                       .projectIds(Arrays.asList("PROJECTID-2"))
-                                                       .eventType("org.nrg.xnat.eventservice.events.ProjectEvent")
-                                                       .status("CREATED")
-                                                       .build();
+        project2EventFilterCreator  = EventFilterCreator.builder()
+                                                        .projectIds(Arrays.asList("PROJECTID-2"))
+                                                        .eventType("org.nrg.xnat.eventservice.events.ProjectEvent")
+                                                        .status("CREATED")
+                                                        .build();
         project2CreatedSubscription = SubscriptionCreator.builder()
                                                          .name("TestSubscription2")
                                                          .active(true)
@@ -440,8 +439,8 @@ public class EventServiceIntegrationTest {
         assertThat("Subscription 2 needs a non-null ID", subscription2.id(), not(nullValue()));
         assertThat("Subscription 1 and 2 need unique IDs", subscription2.id(), not(is(subscription1.id())));
         assertThat("Subscription 1 and 2 should have unique registration keys.",
-                eventSubscriptionEntityService.getListenerId(subscription1.id()).toString(),
-                not(containsString(eventSubscriptionEntityService.getListenerId(subscription2.id()).toString())));
+                   eventSubscriptionEntityService.getListenerId(subscription1.id()).toString(),
+                   not(containsString(eventSubscriptionEntityService.getListenerId(subscription2.id()).toString())));
     }
 
     @Test
@@ -1051,8 +1050,10 @@ public class EventServiceIntegrationTest {
         session.setSessionType("xnat:imageSessionData");
         session.setId("SESSION_ID");
 
-        XnatImagescandata scan = new XnatImagescandata();
-        scan.setImageSessionData(session);
+        // Mockito.
+        XnatImagescandata scan = Mockito.mock(XnatImagescandata.class);
+        Mockito.when(scan.getXnatImagescandataId()).thenReturn(FAKE_SCAN_ID);
+        Mockito.when(scan.getImageSessionData()).thenReturn(session);
 
         // Subscribe to event
         String testActionKey = testAction.getAllActions().get(0).actionKey();
@@ -1259,8 +1260,8 @@ public class EventServiceIntegrationTest {
         sessionToCatch.setProject(projectIdToCatch);
         sessionToCatch.setSessionType("xnat:mrSessionData");
 
-        String projectIdToIgnore = "ProjectIdToIgnore";
-        XnatImagesessiondata sessionToIgnore = new XnatImagesessiondata();
+        String               projectIdToIgnore = "ProjectIdToIgnore";
+        XnatImagesessiondata sessionToIgnore   = new XnatImagesessiondata();
         sessionToCatch.setModality("MR");
         sessionToCatch.setProject(projectIdToIgnore);
         sessionToCatch.setSessionType("xnat:mrSessionData");
@@ -1466,8 +1467,9 @@ public class EventServiceIntegrationTest {
         session.setProject(projectId1);
         session.setSessionType("xnat:mrSessionData");
 
-        XnatImagescandata scan = new XnatImagescandata();
-        scan.setImageSessionData(session);
+        XnatImagescandata scan = Mockito.mock(XnatImagescandata.class);
+        Mockito.when(scan.getXnatImagescandataId()).thenReturn(FAKE_SCAN_ID);
+        Mockito.when(scan.getImageSessionData()).thenReturn(session);
 
         // Subscribe to event
         String testActionKey = testAction.getAllActions().get(0).actionKey();
@@ -1511,8 +1513,9 @@ public class EventServiceIntegrationTest {
         session.setProject(projectId1);
         session.setSessionType("xnat:mrSessionData");
 
-        XnatImagescandata scan = new XnatImagescandata();
-        scan.setImageSessionData(session);
+        XnatImagescandata scan = Mockito.mock(XnatImagescandata.class);
+        Mockito.when(scan.getXnatImagescandataId()).thenReturn(FAKE_SCAN_ID);
+        Mockito.when(scan.getImageSessionData()).thenReturn(session);
 
         // Subscribe to event
         String testActionKey = testAction.getAllActions().get(0).actionKey();

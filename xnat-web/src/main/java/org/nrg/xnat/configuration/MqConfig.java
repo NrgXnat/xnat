@@ -22,6 +22,7 @@ import org.apache.activemq.usage.SystemUsage;
 import org.apache.activemq.usage.TempUsage;
 import org.apache.activemq.xbean.XBeanBrokerService;
 import org.apache.commons.math.util.MathUtils;
+import org.nrg.xnat.entities.ResourceSurveyRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -105,6 +106,11 @@ public class MqConfig {
     @Bean
     public Destination processingOperationRequest() {
         return new ActiveMQQueue("processingOperationRequest");
+    }
+
+    @Bean
+    public Destination resourceSurveyRequest() {
+        return new ActiveMQQueue(ResourceSurveyRequest.BEAN_NAME);
     }
 
     @Bean({"redeliveryPolicyMap", "activeMQRedeliveryPolicyMap"})

@@ -1,5 +1,5 @@
 <h2> Please review the records before storing.</h2>
-
+<h4> In case there is any error in data provided and you continue to save, any column listed as error will be ignored while saving </h4>
 <TABLE>
 #foreach($row in $summary)
   <tr>

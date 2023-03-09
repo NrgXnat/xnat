@@ -16,11 +16,14 @@ import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.actions.postArchive.ClearStudyRemappingAction;
+import org.nrg.xnat.actions.postArchive.ClearStudyRoutingAction;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
+
+import java.util.Map;
 
 import static org.nrg.xnat.archive.Operation.Delete;
 
@@ -51,9 +54,11 @@ public class PrearchiveDeleteHandler extends AbstractPrearchiveOperationHandler 
         log.debug("Deleting session {} from project {}", folderName, project);
         PrearcDatabase.deleteSession(folderName, timestamp, project);
 
-        // Clear study routing/remapping if the study instance UID is valid.
+        // Clear study routing and remapping if the study instance UID is valid.
         if (StringUtils.isNotBlank(studyInstanceUid)) {
-            new ClearStudyRemappingAction().execute(Users.getAdminUser(), null, ImmutableMap.<String, Object>of("studyInstanceUid", studyInstanceUid));
+            final Map<String, Object> uidParam = ImmutableMap.of("studyInstanceUid", studyInstanceUid);
+            new ClearStudyRoutingAction().execute(Users.getAdminUser(), null, uidParam);
+            new ClearStudyRemappingAction().execute(Users.getAdminUser(), null, uidParam);
         }
     }
 }

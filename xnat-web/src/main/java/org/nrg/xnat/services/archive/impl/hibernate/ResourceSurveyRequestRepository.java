@@ -46,6 +46,7 @@ public class ResourceSurveyRequestRepository extends AbstractHibernateDAO<Resour
     public List<ResourceSurveyRequest> findByResourceIds(final List<Integer> resourceIds) {
         final Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.in("resourceId", resourceIds));
+        criteria.add(Restrictions.isNull("closingDate"));
         return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
     }
 

@@ -1,9 +1,11 @@
 package org.nrg.xnat.services.archive.impl.hibernate;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.action.ServerException;
 import org.nrg.xapi.exceptions.InitializationException;
+import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.om.WrkWorkflowdata;
@@ -21,7 +23,6 @@ import org.nrg.xnat.entities.ResourceSurveyRequest;
 import org.nrg.xnat.services.archive.ResourceMitigationReport;
 import org.nrg.xnat.services.archive.ResourceMitigationReport.ResourceMitigationReportBuilder;
 import org.nrg.xnat.services.archive.ResourceSurveyReport;
-import org.nrg.xnat.services.archive.ResourceSurveyRequestEntityService;
 import org.nrg.xnat.utils.CatalogUtils;
 
 import java.io.File;
@@ -33,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,6 +53,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ResourceMitigationHelper implements Callable<ResourceMitigationReport> {
     public static final String FILE_MITIGATION = "file-mitigation";
+    public static final String REPORT_CLEANING = "file-mitigation-report-cleaning";
     public static final String REQUEST         = "request";
     public static final String DELETED         = "deleted";
     public static final String UPDATED         = "updated";
@@ -81,7 +84,7 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
     }
 
     @Override
-    public ResourceMitigationReport call() {
+    public ResourceMitigationReport call() throws NotFoundException {
         final long requestId  = _request.getId();
         final int  resourceId = _request.getResourceId();
 
@@ -105,8 +108,8 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
             writer.println("Have the following items:");
 
             // ALL files get backed up: renames get backed and then renamed, all remaining are deleted after renaming finished.
-            final Map<Path, Path> backups = new HashMap<>();
-            final Map<Path, Path> moves   = new HashMap<>();
+            final Map<Path, Path> backupGatherer = new HashMap<>();
+            final Map<Path, Path> moveGatherer   = new HashMap<>();
 
             final List<File> badFiles = report.getBadFiles();
             writer.format(" * %d bad files (unparsable, etc.)\n", badFiles.size());
@@ -118,8 +121,8 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
             final Map<File, String> mismatchedFiles = report.getMismatchedFiles();
             writer.format(" * %d mismatched files\n", mismatchedFiles.size());
             if (!mismatchedFiles.isEmpty()) {
-                backups.putAll(mismatchedFiles.keySet().stream().collect(Collectors.toMap(File::toPath, backupMapper)));
-                moves.putAll(mismatchedFiles.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toPath(), renameMapper)));
+                backupGatherer.putAll(mismatchedFiles.keySet().stream().collect(Collectors.toMap(File::toPath, backupMapper)));
+                moveGatherer.putAll(mismatchedFiles.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toPath(), renameMapper)));
             }
 
             final Map<Pair<String, String>, Map<File, String>> duplicates = ResourceSurveyReport.flattenDuplicateMaps(report.getDuplicates());
@@ -130,11 +133,23 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
                     if (calculatedNames.size() > 1) {
                         writer.format(" * There are %d calculated names for SOP class UID %s and instance UID %s, I can't fix this myself.", calculatedNames.size(), uid.getKey(), uid.getValue());
                     } else {
-                        backups.putAll(map.keySet().stream().collect(Collectors.toMap(File::toPath, backupMapper)));
-                        map.keySet().stream().max(FILES_BY_DATE).ifPresent(file -> moves.put(file.toPath(), sourcePath.resolve(map.get(file))));
+                        backupGatherer.putAll(map.keySet().stream().collect(Collectors.toMap(File::toPath, backupMapper)));
+                        map.keySet().stream().max(FILES_BY_DATE).ifPresent(file -> moveGatherer.put(file.toPath(), sourcePath.resolve(map.get(file))));
                     }
                 });
             }
+
+            // Remove any file that's being "moved" to itself: it doesn't need to be backed up or "moved"
+            final Map<Boolean, Map<Path, Path>> partitions = moveGatherer.entrySet().stream()
+                                                                         .collect(Collectors.partitioningBy(entry -> entry.getKey().equals(entry.getValue()),
+                                                                                                            Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+            final Set<Path> identities = partitions.getOrDefault(true, Collections.emptyMap()).keySet();
+            final Map<Path, Path> backups = !identities.isEmpty()
+                                            ? backupGatherer.entrySet().stream()
+                                                            .filter(entry -> !identities.contains(entry.getKey()))
+                                                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+                                            : backupGatherer;
+            final Map<Path, Path> moves = partitions.getOrDefault(false, Collections.emptyMap());
 
             writer.format("Actions:\n\nI have %d files to backup, %d files to rename\n\n", backups.size(), moves.size());
             writer.format(isFileHistoryOn ? "Files to be moved/deleted (not backing up, maintain file history is turned on\n" : "Backing up files\n");
@@ -150,7 +165,7 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
                     final boolean isMove = moves.containsKey(source);
                     if (isFileHistoryOn) {
                         log.debug("Processing resource survey request {} for resource {}: file {} will be {}", requestId, resourceId, source, isMove ? "moved" : "deleted");
-                        writer.format(" * %s (to be " + (isMove ? "moved" : "deleted") + ")", source.toAbsolutePath());
+                        writer.format(" * %s (to be " + (isMove ? "moved" : "deleted") + ")\n", source.toAbsolutePath());
                     } else {
                         log.debug("Processing resource survey request {} for resource {}: copying file {} to {}", requestId, resourceId, source, target);
                         Files.copy(source, target);
@@ -223,6 +238,7 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
             log.debug("Completed file operations for mitigating resource survey request {} for resource {}", requestId, resourceId);
             builder.removedFiles(backups.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toAbsolutePath().toFile(), entry -> entry.getValue().toAbsolutePath().toFile())));
             builder.movedFiles(moves.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toAbsolutePath().toFile(), entry -> entry.getValue().toAbsolutePath().toFile())));
+            builder.retainedFiles(identities.stream().map(Path::toFile).collect(Collectors.toSet()));
 
             if (!backupErrors.isEmpty()) {
                 log.warn("Found {} backup errors for mitigating resource survey request {} for resource {}", backupErrors.size(), requestId, resourceId);
@@ -447,6 +463,12 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
         final String relativePath = sourcePath.relativize(target).toString();
         entry.setUri(relativePath);
         entry.setId(relativePath);
+        if (StringUtils.isNotBlank(entry.getName())) {
+            entry.setName(relativePath);
+        }
+        if (StringUtils.isNotBlank(entry.getCachepath())) {
+            entry.setCachepath(relativePath);
+        }
         CatalogUtils.updateModificationEvent(entry, event);
 
         return file;

@@ -111,7 +111,7 @@ public class XnatHttpUtils {
         final Pair<String, String> credentials = ObjectUtils.defaultIfNull(getBasicAuthCredentials(request), getFormCredentials(request));
 
         if (credentials == null) {
-            return null;
+            return new MutablePair<>();
         }
 
         if (service == null) {
@@ -215,7 +215,7 @@ public class XnatHttpUtils {
         final String loginMethod = StringUtils.defaultIfBlank(request.getParameter(PARAM_LOGIN_METHOD), XdatUserAuthService.LOCALDB);
         final String username = getCredentialsNoExceptions(request).getLeft();
 
-        // We have to have a username to upgrade a password
+        // We have to have a username to upgrade a password (not having one may indicate e.g., oauth login)
         if (StringUtils.isNotBlank(username) && StringUtils.equals(XdatUserAuthService.LOCALDB, loginMethod)) {
             if (shouldUpgradePassword(username,template)) {
                 log.debug("It seems I should upgrade the password for user {}", username);

@@ -129,7 +129,7 @@ public class CustomFieldsApi extends AbstractXapiRestController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 403, message = "Not allowed."),
             @ApiResponse(code = 404, message = "Item not found.")})
-    @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.Delete, value = {
+    @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.Edit, value = {
             "/projects/{project}/fields/{fieldName}",
             "/projects/{project}/experiments/{experiment}/fields/{fieldName}",
             "/projects/{project}/experiments/{experiment}/scans/{scan}/fields/{fieldName}",

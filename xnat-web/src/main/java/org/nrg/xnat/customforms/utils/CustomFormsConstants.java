@@ -12,6 +12,7 @@
 package org.nrg.xnat.customforms.utils;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -42,19 +43,23 @@ public class CustomFormsConstants {
     public final static String DISPLAY_KEY = "display";
     public final static String COMPONENTS_KEY_FIELD = "key";
     public final static String COMPONENTS_TYPE_FIELD = "type";
+    public final static String COMPONENTS_INPUT_FIELD = "input";
     public final static String COMPONENT_CONTENT_TYPE = "content";
     public final static String COMPONENT_PANEL_TYPE = "panel";
+    public final static String COMPONENTS_ROWS_TYPE = "rows";
     public final static String COMPONENTS_COLUMNS_TYPE = "columns";
     public final static String CONTAINER_KEY = "container";
-
     public final static String DOT_SEPARATOR = ".";
-
     public static final String IS_SITEWIDE_YES = "YES";
     public static final String IS_SITEWIDE_NO = "NO";
+    public static final String DEFAULT_XNAT_TYPE = "string";
+
     public static final Set<String> IS_SITEWIDE_VALUES = Stream.of(IS_SITEWIDE_YES, IS_SITEWIDE_NO)
             .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
 
-    public static final String DEFAULT_XNAT_TYPE = "string";
+    public static final Set<String> NON_SEARCHABLE_FORMIO_TYPES = Stream.of("tree", "editgrid", "datagrid", "datamap", "address")
+            .collect(Collectors.toCollection(HashSet::new));
+
     public static final Map<String, String> FORMIO_TYPE_TO_XNAT_TYPE = Stream.of(new String[][] {
             { "xnatNumber", "float" },
             { "Number", "float" },
@@ -63,5 +68,4 @@ public class CustomFormsConstants {
             { "time", "time" },
             { "xnatdate", "date" }
     }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
-
 }

@@ -71,7 +71,7 @@ public class XnatTaskApi extends AbstractXapiRestController {
      */
     @ApiOperation(value = "Get node configuration status.", notes = "Returns node configuration status for this installation.", response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = {"/xnatTask/checkNodeConfigurationStatus"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Admin)
+    @XapiRequestMapping(value = {"/xnatTask/checkNodeConfigurationStatus"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<Properties> getNodeConfigurationStatus() {
        	final Properties prop = new Properties();

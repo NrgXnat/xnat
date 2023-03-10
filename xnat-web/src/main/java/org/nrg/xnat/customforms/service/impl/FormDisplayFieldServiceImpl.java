@@ -40,11 +40,11 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
      * Navigate over all schema-elements, look for all forms associated with the xsiType
      * which are in enabled state. For each of these, generate the in-memory display fields.
      */
-    public void refreshDisplayFields() {
+    public synchronized  void refreshDisplayFields() {
         getSchemaElements().forEach(schemaElement -> {
             final String dataType = schemaElement.getFullXMLName();
             formIOJsonService.getFormsForObject(dataType, null, null, null, null)
-                             .forEach(field -> addDisplayField(schemaElement, field));
+                    .forEach(field -> addDisplayField(schemaElement, field));
         });
     }
 
@@ -114,7 +114,7 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
         if (deleteExistingFormDisplayFields) {
             removeDisplayFieldsThatBeginWith(schemaElement, formUUID);
         }
-        CustomFormHelper.GetFormObj(form)
+        CustomFormHelper.GetFormObj(form, true)
                 .forEach(f -> addDisplayField(schemaElement, f));
     }
 
@@ -144,32 +144,33 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
     }
 
     private void addDisplayField(final SchemaElement schemaElement,  final FormFieldPojo field) {
-        final ElementDisplay elementDisplay = schemaElement.getDisplay();
         final String dataType = schemaElement.getFullXMLName();
-        final DisplayFieldElement element   = new DisplayFieldElement();
-        final DisplayField displayField     = new DisplayField(elementDisplay);
-        element.setSchemaElementName(dataType + "." + CUSTOM_FIELDS_COLUMN_NAME);
-        element.setName("Field1");
-
-        displayField.addDisplayFieldElement(element);
-        displayField.setSearchable(true);
-        final String formioType = field.getType();
-        String type = TypeConversionUtils.mapFormioTypeToXnatType(formioType);
-        displayField.setDataType(type);
-        displayField.setDescription("Custom Field: "  + field.getLabel());
-        displayField.setId(displayHelper.getCleanFieldId(dataType, field));
-        String fieldSql = displayHelper.buildSql("@Field1", field);
-        if (!type.equalsIgnoreCase(CustomFormsConstants.DEFAULT_XNAT_TYPE)) {
-            fieldSql =  "CAST (" + fieldSql + " AS " + type + ") ";
+        final String displayFieldId = displayHelper.getCleanFieldId(dataType, field);
+        if (!schemaElement.hasDisplayField(displayFieldId)) {
+            final ElementDisplay elementDisplay = schemaElement.getDisplay();
+            final DisplayFieldElement element = new DisplayFieldElement();
+            final DisplayField displayField = new DisplayField(elementDisplay);
+            element.setSchemaElementName(dataType + "." + CUSTOM_FIELDS_COLUMN_NAME);
+            element.setName("Field1");
+            displayField.addDisplayFieldElement(element);
+            displayField.setSearchable(true);
+            final String formioType = field.getType();
+            String type = TypeConversionUtils.mapFormioTypeToXnatType(formioType);
+            displayField.setDataType(type);
+            displayField.setDescription("Custom Field: " + field.getLabel());
+            displayField.setId(displayFieldId);
+            String fieldSql = displayHelper.buildSql("@Field1", field);
+            if (!type.equalsIgnoreCase(CustomFormsConstants.DEFAULT_XNAT_TYPE)) {
+                fieldSql = "CAST (" + fieldSql + " AS " + type + ") ";
+            }
+            displayField.setContent(Collections.singletonMap("sql", fieldSql));
+            displayField.setHeader(displayHelper.getCleanFieldHeader(field));
+            elementDisplay.setAllowReplacement(true);
+            elementDisplay.addDisplayField(displayField);
+            elementDisplay.setAllowReplacement(false);
+            schemaElement.setElementDisplay(elementDisplay);
+            displayManager.addElement(elementDisplay);
         }
-        displayField.setContent(Collections.singletonMap("sql", fieldSql));
-
-        displayField.setHeader(displayHelper.getCleanFieldHeader(field));
-        elementDisplay.setAllowReplacement(true);
-        elementDisplay.addDisplayField(displayField);
-        elementDisplay.setAllowReplacement(false);
-        schemaElement.setElementDisplay(elementDisplay);
-        displayManager.addElement(elementDisplay);
     }
 
 

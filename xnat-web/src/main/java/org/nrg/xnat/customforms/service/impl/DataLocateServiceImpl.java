@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -76,17 +77,16 @@ public class DataLocateServiceImpl implements DataLocateService {
             }
         }
 
-        final List<String> fieldNames = CustomFormHelper.GetFormObj(form)
+        final Set<String> fieldNames = CustomFormHelper.GetFormObj(form, false)
                 .stream()
-                .map(FormIOJsonToXnatCustomField::getFieldName)
-                .collect(Collectors.toList());
+                .map(FormIOJsonToXnatCustomField::getJsonRootName)
+                .collect(Collectors.toSet());
         //No fields on the form
         if (fieldNames.isEmpty()) {
             return 0;
         }
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("fieldNames", fieldNames);
-
         if (!isSiteWide) {
             parameters.addValue("projectIds", projectIds);
         }

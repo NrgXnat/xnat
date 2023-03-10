@@ -126,9 +126,10 @@ public class FormIOJsonServiceImpl implements FormIOJsonService {
                             JsonNode components = null;
                             try {
                                 JsonNode formJson = objectMapper.readTree(formJsonAsStr);
-                                components = formJson.get("components");
+                                components = formJson.get(CustomFormsConstants.COMPONENTS_KEY);
+                                components = components.get(0).get(CustomFormsConstants.COMPONENTS_KEY);
                             }catch (JsonProcessingException jpe) {log.debug("Encountered invalid json ", jpe);}
-                            return CustomFormHelper.GetFormObj(formUUID, components);
+                            return CustomFormHelper.GetFormObj(formUUID, components, true);
                         })
                         .flatMap(List::stream)
                         .collect(Collectors.toList());
@@ -207,17 +208,17 @@ public class FormIOJsonServiceImpl implements FormIOJsonService {
     }
 
     /**
-     * Parses a configuration and converts the FormsIO Fields to XNAT Custom Fields
+     * Parses a Form and converts the FormsIO Fields to XNAT Custom Fields
      *
      * @param c - CustomVariableAppliesTo from which the formsIO fields are to be extracted
      * @return List of FormIOJsonToXnatCustomField
      */
     private List<FormIOJsonToXnatCustomField> getFormObj(CustomVariableAppliesTo c) {
-        // Convert the configuration into a new FormJson Pojo
+        // Convert the form components into a new FormJson Pojo
         return c.getCustomVariableFormAppliesTos().stream()
                 .filter(customVariableFormAppliesTo -> CustomFormsConstants.ENABLED_STATUS_STRING.equals(customVariableFormAppliesTo.getStatus()))
                 .map(CustomVariableFormAppliesTo::getCustomVariableForm)
-                .map(CustomFormHelper::GetFormObj)
+                .map(form -> CustomFormHelper.GetFormObj(form, true))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

@@ -14,6 +14,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.nrg.xdat.forms.models.pojo.FormFieldPojo;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /*
@@ -27,12 +29,19 @@ public class FormIOJsonToXnatCustomField extends FormFieldPojo {
     public FormIOJsonToXnatCustomField(UUID formUUID, String label,
                                        String key,
                                        String fieldName,
-                                       String type) {
-        this.setLabel(label);
-        this.setKey(key);
-        this.setFieldName(fieldName);
-        this.setType(type);
-        this.setFormUUID(formUUID);
+                                       String type, 
+                                       List<String> jsonPath) {
+        setLabel(label);
+        setKey(key);
+        setFieldName(fieldName);
+        setType(type);
+        setFormUUID(formUUID);
+        setJsonpath(null == jsonPath ? new ArrayList<>() : jsonPath);
     }
+
+    public String getJsonRootName() {
+       return jsonpath.isEmpty() ? getFieldName() : jsonpath.get(0);
+    }
+
 
 }

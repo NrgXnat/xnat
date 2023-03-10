@@ -23,6 +23,7 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -309,10 +310,15 @@ public class CustomFieldsApi extends AbstractXapiRestController {
         return subjectData;
     }
 
-    private XnatProjectdata getProject(final UserI user, final String project) throws NotFoundException {
-        final XnatProjectdata projectData = XnatProjectdata.getProjectByIDorAlias(project, user, false);
-        if (null != projectData) {
-            return projectData;
+    private XnatProjectdata getProject(final UserI user, final String projectId) throws NotFoundException {
+        final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, user, false);
+        if (null != project) {
+            return project;
+        } else {
+            final List<XnatProjectdata> matches = AutoXnatProjectdata.getXnatProjectdatasByField("xnat:projectData/aliases/alias/alias", projectId, user, false);
+            if (matches != null && !matches.isEmpty()) {
+                return matches.get(0);
+            }
         }
         throw new NotFoundException("Unable to identify project: " + project);
     }

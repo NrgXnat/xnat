@@ -22,58 +22,117 @@ var XNAT = getObject(XNAT || {});
         let builderOptions = {};
         builderOptions.basic = false;
         builderOptions.advanced = false;
+        builderOptions.layout = false;
         builderOptions.premium = false;
         builderOptions.data = false;
+
         let customBasic = {};
         customBasic.title = 'Basic';
         customBasic.default = false;
         customBasic.weight = 0;
         let customBasicComponents = {};
-        customBasicComponents.checkbox = true;
-        customBasicComponents.xnatNumber = true;
-        customBasicComponents.textarea = true;
-        customBasicComponents.textfield = true;
-        customBasicComponents.xnatRadio = true;
-        customBasicComponents.xnatSelect = true;
-        customBasicComponents.selectBoxes = true;
+        let index = 100;
+        [
+            'checkbox',
+            'xnatNumber',
+            'xnatRadio',
+            'xnatSelect',
+            'textarea',
+            'textfield'
+        ].forEach(name => {
+            createComponent(name, index++);
+            customBasicComponents[name] = true;
+        });
         customBasic.components = customBasicComponents;
         builderOptions.customBasic = customBasic;
+
         let customAdvanced = {};
         customAdvanced.title = 'Advanced';
         customAdvanced.default = false;
         customAdvanced.weight = 10;
         let customAdvancedComponents = {};
-        customAdvancedComponents.datetime = true;
-        customAdvancedComponents.day = true;
-        customAdvancedComponents.email =  true;
-        customAdvancedComponents.phoneNumber = true;
-        customAdvancedComponents.survey = true;
-        customAdvancedComponents.time =  true;
+        index = 200;
+        [
+            'day',
+            'datetime',
+            'email',
+            'phoneNumber',
+            'survey',
+            'time'
+        ].forEach(name => {
+            createComponent(name, index++);
+            customAdvancedComponents[name] = true;
+        });
         customAdvanced.components = customAdvancedComponents;
         builderOptions.customAdvanced = customAdvanced;
+
+        let customLayout = {};
+        customLayout.title = 'Layout';
+        customLayout.default = false;
+        customLayout.weight = 20;
+        let customLayoutComponents = {};
+        index = 300;
+        [
+            'columns',
+            'fieldset',
+            'htmlelement',
+            'panel',
+            'table',
+            'tabs',
+            'well'
+        ].forEach(name => {
+            createComponent(name, index++);
+            customLayoutComponents[name] = true;
+        });
+        customLayout.components = customLayoutComponents;
+        builderOptions.customLayout = customLayout;
+
+
         let customData = {};
         customData.title = 'Data';
         customData.default = false;
         customData.weight = 40;
-
         let customDataComponents = {};
-        customDataComponents.hidden =  true;
-        customDataComponents.container =  true;
+        index = 400;
+        [
+            'container',
+            'hidden'
+        ].forEach(name => {
+            createComponent(name, index++);
+            customDataComponents[name] = true;
+        });
         customData.components = customDataComponents;
         builderOptions.customData = customData;
+
         let customNonSearchable = {};
         customNonSearchable.title = 'Non-searchable';
         customNonSearchable.default = false;
         customNonSearchable.weight = 50;
         let customNonSearchableComponents = {};
-        customNonSearchableComponents.address =  true;
-        customNonSearchableComponents.datagrid =  true;
-        customNonSearchableComponents.datamap =  true;
-        customNonSearchableComponents.editgrid =  true;
-        customNonSearchableComponents.tree =  true;
+        index = 500;
+        [
+            'address',
+            'datagrid',
+            'datamap',
+            'editgrid',
+            'tree'
+        ].forEach(name => {
+            createComponent(name, index++);
+            customNonSearchableComponents[name] = true;
+        });
         customNonSearchable.components = customNonSearchableComponents;
         builderOptions.customNonSearchable = customNonSearchable;
         return builderOptions;
+    }
+
+    function createComponent(name, componentWeight) {
+        let component = Formio.Components.components[name].builderInfo;
+        component.weight = componentWeight;
+        Object.defineProperty(Formio.Components.components[name], 'builderInfo', {
+            get() {
+                return component;
+            }
+        });
     }
 
 }));

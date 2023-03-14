@@ -184,46 +184,78 @@ function unescapeXML(val) {
    #end
 
 
-	function showForm(components, htmlDivElementId = 'formio', htmlDivElementParentId = undefined) {
-	   let htmlDivElt = document.getElementById(htmlDivElementId);
-	   htmlDivElt.innerHTML = '';
-	   if (components != undefined && JSON.stringify(components) === "{}") {
-	            if (htmlDivElementParentId != undefined) {
-	               document.getElementById(htmlDivElementParentId).style.display = 'none';
-	            }
-	   	        htmlDivElt.style.display='none';
-	   }else if (components != undefined)  {
-	     try {
-	       let formDataPreFilled = JSON.parse(localStorage.getItem("currentFormIO"));
-	       if (formDataPreFilled != null) {
-	        formData = formDataPreFilled.submission;
-	       }
-	     }catch(err) {console.log(err);}
-	     if (formData != undefined) {
-           Formio.createForm(htmlDivElt, components, formOptions).then(function(form) {
-                form.submission = {data:formData};
-                formIOObj = form;
-                form.on('gotoNextPage', function() {
-                    form.nextPage();
-                });
-                form.on('gotoPreviousPage', function() {
-                    form.prevPage();
-                });
-           });
-	     }else {
-            Formio.createForm(htmlDivElt, components).then(function(form){
-              formIOObj = form;
-                form.on('gotoNextPage', function() {
-                    form.nextPage();
-                });
-                form.on('gotoPreviousPage', function() {
-                    form.prevPage();
-                });
-            });
-	     }
-	   }
-	   localStorage.removeItem("currentFormIO");
-	}
+      function showForm(components, htmlDivElementId = 'formio', htmlDivElementParentId = undefined) {
+          let htmlDivElt = document.getElementById(htmlDivElementId);
+          htmlDivElt.innerHTML = '';
+          if (components !== undefined && JSON.stringify(components) === "{}") {
+              if (htmlDivElementParentId !== undefined) {
+                  document.getElementById(htmlDivElementParentId).style.display = 'none';
+              }
+              htmlDivElt.style.display='none';
+          } else if (components !== undefined)  {
+              try {
+                  let formDataPreFilled = JSON.parse(localStorage.getItem("currentFormIO"));
+                  if (formDataPreFilled != null) {
+                      formData = formDataPreFilled.submission;
+                  }
+              } catch(err) {console.log(err);}
+
+              if (formData !== undefined) {
+                  Formio.createForm(htmlDivElt, components, formOptions).then(function(form) {
+                      let formDataCopy = JSON.parse(JSON.stringify(formData));
+                      if (typeof formOptions !== "undefined") {
+                          if (formOptions.readOnly) {
+                              sanitizeFormDataForDisplay(components, formDataCopy);
+                          }
+                      }
+                      form.submission = {data: formDataCopy};
+                      formIOObj = form;
+                      form.on('gotoNextPage', function() {
+                          form.nextPage();
+                      });
+                      form.on('gotoPreviousPage', function() {
+                          form.prevPage();
+                      });
+                  });
+              } else {
+                  Formio.createForm(htmlDivElt, components).then(function(form){
+                      formIOObj = form;
+                      form.on('gotoNextPage', function() {
+                          form.nextPage();
+                      });
+                      form.on('gotoPreviousPage', function() {
+                          form.prevPage();
+                      });
+                  });
+              }
+          }
+          localStorage.removeItem("currentFormIO");
+      }
+
+      const formComponentTypesToSanitize = ["textfield", "textarea"];
+
+      // Escape HTML in text fields
+      function sanitizeFormDataForDisplay(formElements, formData) {
+          // Top level of the form elements are the "wizard" components which display paged forms
+          // Below that are the actual form definitions
+          for (const wizardPanel of (formElements.components || [])) {
+              sanitizeNestedFormData(wizardPanel.components[0], formData);
+          }
+      }
+
+      function sanitizeNestedFormData(formComponent, formData) {
+          if (Array.isArray(formComponent.components) && formComponent.components.length) {
+              // Recursing through child components
+              for (const childFormComponent of formComponent.components) {
+                  sanitizeNestedFormData(childFormComponent, formData[formComponent.key]);
+              }
+          } else {
+              if (formComponentTypesToSanitize.includes(formComponent.type)) {
+                  // Sanitize!
+                  formData[formComponent.key] = escapeHtml(formData[formComponent.key]);
+              }
+          }
+      }
 
 	 this.init = function() {
 	 	this.loadCustomFormComponents(myVisitId,myVisitSubType);

@@ -2,95 +2,25 @@
  * @author Mohana Ramaratnam <mohana@radiologics.com>
  */
 package org.nrg.xdat.forms.models.pojo;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.Singular;
+import lombok.experimental.SuperBuilder;
+
 import java.util.List;
 import java.util.UUID;
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@SuperBuilder
 public abstract class FormFieldPojo {
-	protected String label;
-	protected String key;
-	protected String fieldName;
-	protected String type;
-	protected UUID formUUID;
-	protected List<String> jsonpath;
-
-	/**
-	 * @return the label
-	 */
-	public String getLabel() {
-		return label;
-	}
-
-	/**
-	 * @param label the label to set
-	 */
-	public void setLabel(String label) {
-		this.label = label;
-	}
-
-	/**
-	 * @return the key
-	 */
-	public String getKey() {
-		return key;
-	}
-
-	/**
-	 * @param key the key to set
-	 */
-	public void setKey(String key) {
-		this.key = key;
-	}
-
-	/**
-	 * @return the fieldName
-	 */
-	public String getFieldName() {
-		return fieldName;
-	}
-
-	/**
-	 * @param fieldName the fieldName to set
-	 */
-	public void setFieldName(String fieldName) {
-		this.fieldName = fieldName;
-	}
-
-	/**
-	 * @return the type
-	 */
-	public String getType() {
-		return type;
-	}
-
-	/**
-	 * @param type the type to set
-	 */
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public UUID getFormUUID() {
-		return  formUUID;
-	}
-
-	public void setFormUUID(UUID f) {
-		this.formUUID = f;
-	}
-
-	/**
-	 * Gets the Json Path for this field
-	 * @return the jsonPath for this field
-	 */
-	public List<String> getJsonpath() {
-		return this.jsonpath;
-	}
-
-	/**
-	 * Sets the jsonPath for the field
-	 * @param path
-	 */
-	public void setJsonpath(List<String> path) {
-		this.jsonpath = path;
-	}
-
+	 private String label;
+	 private String key;
+	 private String fieldName;
+	 private String type;
+	 private UUID formUUID;
+	 @Singular
+	 private List<String> jsonPaths;
 }

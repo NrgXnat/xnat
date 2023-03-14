@@ -34,10 +34,10 @@ public class CustomFormDisplayFieldHelper {
     public String buildSql(final String column,  final FormFieldPojo field) {
         final String formUUID = field.getFormUUID().toString();
         final String fieldKey = field.getKey();
-        if (field.getJsonpath().isEmpty()) {
+        if (field.getJsonPaths().isEmpty()) {
             return column + " -> '" + formUUID + "' ->> '" + fieldKey + "'";
         }else {
-            String commalist  = "'" + formUUID + "', '" + StringUtils.join(field.getJsonpath(), "','") + "','" + fieldKey + "'" ;
+            String commalist  = "'" + formUUID + "', '" + StringUtils.join(field.getJsonPaths(), "','") + "','" + fieldKey + "'" ;
             return " jsonb_extract_path_text(" + column + ", " + commalist + ") ";
         }
     }

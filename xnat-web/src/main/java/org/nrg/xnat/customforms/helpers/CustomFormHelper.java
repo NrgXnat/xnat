@@ -13,12 +13,11 @@ package org.nrg.xnat.customforms.helpers;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xnat.customforms.pojo.FormIOJsonToXnatCustomField;
-import org.nrg.xnat.customforms.utils.CustomFormsConstants;
 import org.nrg.xnat.entities.CustomVariableForm;
 
 import java.util.*;
 
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.NON_SEARCHABLE_FORMIO_TYPES;
+import static org.nrg.xnat.customforms.utils.CustomFormsConstants.*;
 
 /**
  * A Helper class to manage the Custom Form JSONs
@@ -27,25 +26,25 @@ import static org.nrg.xnat.customforms.utils.CustomFormsConstants.NON_SEARCHABLE
 @Slf4j
 public class CustomFormHelper {
 
-    public static List<FormIOJsonToXnatCustomField> GetFormObj(CustomVariableForm form, final boolean skipNonSearchable) {
+    public static List<FormIOJsonToXnatCustomField> getFormObjects(CustomVariableForm form, final boolean skipNonSearchable) {
         if (null == form) {
             return Collections.emptyList();
         }
         final UUID formUUID = form.getFormUuid();
-        final JsonNode rootComponent = form.getFormIOJsonDefinition().get(CustomFormsConstants.COMPONENTS_KEY);
+        final JsonNode rootComponent = form.getFormIOJsonDefinition().get(COMPONENTS_KEY);
         //This is the root component. Underneath which lies a container with key formUUID.
         //This container has all the form elements
         try {
-            final JsonNode formComponents = rootComponent.get(0).get(CustomFormsConstants.COMPONENTS_KEY);
-            return GetFormObj(formUUID, formComponents, skipNonSearchable);
+            final JsonNode formComponents = rootComponent.get(0).get(COMPONENTS_KEY);
+            return getFormObjects(formUUID, formComponents, skipNonSearchable);
         } catch(Exception e) {
             log.error("Could not extract form components", e);
         }
         return Collections.emptyList();
     }
 
-    public static List<FormIOJsonToXnatCustomField> GetFormObj(final UUID formUUID, final JsonNode components, final boolean skipNonSearchable) {
-        if (components == null || !components.isArray()) {
+    public static List<FormIOJsonToXnatCustomField> getFormObjects(final UUID formUUID, final JsonNode components, final boolean skipNonSearchable) {
+        if (null == components || !components.isArray()) {
             return Collections.emptyList();
         }
         final List<FormIOJsonToXnatCustomField> formIOJsonToXnatCustomFields = new ArrayList<>();
@@ -54,8 +53,9 @@ public class CustomFormHelper {
     }
 
     private static void getFormIOJsonToXnatCustomField(final UUID formUUID, final JsonNode compNode, final List<FormIOJsonToXnatCustomField> formIOJsonToXnatCustomFields,  final boolean skipNonSearchable) {
-        final String formType = compNode.get(CustomFormsConstants.COMPONENTS_TYPE_FIELD).asText();
-        if (skipNonSearchable && NON_SEARCHABLE_FORMIO_TYPES.contains(formType)) {
+        if (compNode.has(COMPONENTS_TYPE_FIELD)
+            && skipNonSearchable
+            && NON_SEARCHABLE_FORMIO_TYPES.contains(compNode.get(COMPONENTS_TYPE_FIELD).asText())) {
             return;
         }
         traverse(formUUID, compNode, formIOJsonToXnatCustomFields, skipNonSearchable, new ArrayList<>());
@@ -69,22 +69,21 @@ public class CustomFormHelper {
      * @param components                   - FormIO components JSON
      * @param formIOJsonToXnatCustomFields - Converted input components are added to this list
      */
-    private static void traverse(final UUID formUUID, JsonNode components, List<FormIOJsonToXnatCustomField> formIOJsonToXnatCustomFields, final boolean skipNonSearchable, List<String> parentJsonPath) {
-        try {
-            final String formType = components.get(CustomFormsConstants.COMPONENTS_TYPE_FIELD).asText();
-            if (components.has(CustomFormsConstants.COMPONENTS_INPUT_FIELD) && components.get(CustomFormsConstants.COMPONENTS_INPUT_FIELD).asBoolean()) {
-                if (skipNonSearchable && NON_SEARCHABLE_FORMIO_TYPES.contains(formType)) {
-                    return;
-                }
-            }
-        } catch(Exception ignored) {}
+    private static void traverse(final UUID formUUID, JsonNode components, List<FormIOJsonToXnatCustomField> formIOJsonToXnatCustomFields, final boolean skipNonSearchable, List<String> parentJsonPaths) {
+        if (components.has(COMPONENTS_TYPE_FIELD)
+                && components.has(COMPONENTS_INPUT_FIELD)
+                && components.get(COMPONENTS_INPUT_FIELD).asBoolean()
+                && skipNonSearchable
+                && NON_SEARCHABLE_FORMIO_TYPES.contains(components.get(COMPONENTS_TYPE_FIELD).asText())) {
+                return;
+        }
         boolean isArray = components.isArray();
-        boolean hasColumns = components.has(CustomFormsConstants.COMPONENTS_COLUMNS_TYPE) && components.get(CustomFormsConstants.COMPONENTS_COLUMNS_TYPE).isArray();
-        boolean hasRows = components.has(CustomFormsConstants.COMPONENTS_ROWS_TYPE) && components.get(CustomFormsConstants.COMPONENTS_ROWS_TYPE).isArray();
-        boolean hasComponents = components.has(CustomFormsConstants.COMPONENTS_KEY) && components.get(CustomFormsConstants.COMPONENTS_KEY).isArray();
+        boolean hasColumns = components.has(COMPONENTS_COLUMNS_TYPE) && components.get(COMPONENTS_COLUMNS_TYPE).isArray();
+        boolean hasRows = components.has(COMPONENTS_ROWS_TYPE) && components.get(COMPONENTS_ROWS_TYPE).isArray();
+        boolean hasComponents = components.has(COMPONENTS_KEY) && components.get(COMPONENTS_KEY).isArray();
 
         if (!isArray && !hasColumns && !hasRows && !hasComponents) {
-            FormIOJsonToXnatCustomField f = getFormsIOJsonToXnatCustomField(formUUID, components, parentJsonPath);
+            FormIOJsonToXnatCustomField f = getFormsIOJsonToXnatCustomField(formUUID, components, parentJsonPaths);
             if (null != f) {
                 formIOJsonToXnatCustomFields.add(f);
             }
@@ -92,38 +91,40 @@ public class CustomFormHelper {
         }
 
         if (hasColumns) {
-            components.get(CustomFormsConstants.COMPONENTS_COLUMNS_TYPE).forEach(column -> traverse(formUUID, column.get(CustomFormsConstants.COMPONENTS_KEY), formIOJsonToXnatCustomFields, skipNonSearchable, parentJsonPath));
+            components.get(COMPONENTS_COLUMNS_TYPE).forEach(column -> traverse(formUUID, column.get(COMPONENTS_KEY), formIOJsonToXnatCustomFields, skipNonSearchable, parentJsonPaths));
         }
 
         if (hasRows) {
-            components.get(CustomFormsConstants.COMPONENTS_ROWS_TYPE).forEach(row -> row.forEach(rowComponent -> traverse(formUUID, rowComponent.get(CustomFormsConstants.COMPONENTS_KEY), formIOJsonToXnatCustomFields, skipNonSearchable, parentJsonPath)));
+            components.get(COMPONENTS_ROWS_TYPE).forEach(row -> row.forEach(rowComponent -> traverse(formUUID, rowComponent.get(COMPONENTS_KEY), formIOJsonToXnatCustomFields, skipNonSearchable, parentJsonPaths)));
         }
 
         if (hasComponents) {
-            final String type = components.get(CustomFormsConstants.COMPONENTS_TYPE_FIELD).asText();
-            final String key = components.get(CustomFormsConstants.COMPONENTS_KEY_FIELD).asText();
-            List<String> jsonPath = new ArrayList<>();
-            if (type.equalsIgnoreCase(CustomFormsConstants.CONTAINER_KEY)) {
-                if (!parentJsonPath.isEmpty()) {
-                    jsonPath.addAll(parentJsonPath);
+            List<String> jsonPaths = new ArrayList<>();
+            try {
+                final String type = components.get(COMPONENTS_TYPE_FIELD).asText();
+                final String key = components.get(COMPONENTS_KEY_FIELD).asText();
+                if (type.equalsIgnoreCase(CONTAINER_KEY)) {
+                    if (!parentJsonPaths.isEmpty()) {
+                        jsonPaths.addAll(parentJsonPaths);
+                    }
+                    jsonPaths.add(key);
                 }
-                jsonPath.add(key);
-            }
-            traverse(formUUID, components.get(CustomFormsConstants.COMPONENTS_KEY), formIOJsonToXnatCustomFields,  skipNonSearchable, jsonPath);
+            } catch(Exception ignored) {}
+            traverse(formUUID, components.get(COMPONENTS_KEY), formIOJsonToXnatCustomFields,  skipNonSearchable, jsonPaths);
         }
 
         if (isArray) {
-            components.forEach(component -> traverse(formUUID, component, formIOJsonToXnatCustomFields, skipNonSearchable, parentJsonPath));
+            components.forEach(component -> traverse(formUUID, component, formIOJsonToXnatCustomFields, skipNonSearchable, parentJsonPaths));
         }
     }
 
-    private static FormIOJsonToXnatCustomField getFormsIOJsonToXnatCustomField(final UUID formUUID, final JsonNode compNode, List<String> parentPath) {
+    private static FormIOJsonToXnatCustomField getFormsIOJsonToXnatCustomField(final UUID formUUID, final JsonNode compNode, List<String> parentPaths) {
         FormIOJsonToXnatCustomField formIOJsonToXnatCustomField = null;
-        if (compNode.has(CustomFormsConstants.COMPONENTS_INPUT_FIELD) && compNode.get(CustomFormsConstants.COMPONENTS_INPUT_FIELD).asBoolean()) {
-                String key = compNode.get(CustomFormsConstants.COMPONENTS_KEY_FIELD).asText();
-                String label = compNode.get(CustomFormsConstants.LABEL_KEY).asText();
-                String type = compNode.get(CustomFormsConstants.COMPONENTS_TYPE_FIELD).asText();
-                formIOJsonToXnatCustomField = new FormIOJsonToXnatCustomField(formUUID, label, key, key, type, parentPath);
+        if (compNode.has(COMPONENTS_INPUT_FIELD) && compNode.get(COMPONENTS_INPUT_FIELD).asBoolean()) {
+                String key = compNode.get(COMPONENTS_KEY_FIELD).asText();
+                String label = compNode.get(LABEL_KEY).asText();
+                String type = compNode.get(COMPONENTS_TYPE_FIELD).asText();
+                formIOJsonToXnatCustomField = new FormIOJsonToXnatCustomField(formUUID, label, key, key, type, parentPaths);
         }
         return formIOJsonToXnatCustomField;
     }

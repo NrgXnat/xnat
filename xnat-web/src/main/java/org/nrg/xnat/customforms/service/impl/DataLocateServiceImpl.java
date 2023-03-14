@@ -77,7 +77,7 @@ public class DataLocateServiceImpl implements DataLocateService {
             }
         }
 
-        final Set<String> fieldNames = CustomFormHelper.GetFormObj(form, false)
+        final Set<String> fieldNames = CustomFormHelper.getFormObjects(form, false)
                 .stream()
                 .map(FormIOJsonToXnatCustomField::getJsonRootName)
                 .collect(Collectors.toSet());

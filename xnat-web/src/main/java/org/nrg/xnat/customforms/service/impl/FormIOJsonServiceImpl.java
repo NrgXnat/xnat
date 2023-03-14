@@ -11,10 +11,8 @@
 package org.nrg.xnat.customforms.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xapi.exceptions.NotFoundException;
@@ -32,19 +30,14 @@ import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 import org.postgresql.util.PGobject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Service
@@ -129,7 +122,7 @@ public class FormIOJsonServiceImpl implements FormIOJsonService {
                                 components = formJson.get(CustomFormsConstants.COMPONENTS_KEY);
                                 components = components.get(0).get(CustomFormsConstants.COMPONENTS_KEY);
                             }catch (JsonProcessingException jpe) {log.debug("Encountered invalid json ", jpe);}
-                            return CustomFormHelper.GetFormObj(formUUID, components, true);
+                            return CustomFormHelper.getFormObjects(formUUID, components, true);
                         })
                         .flatMap(List::stream)
                         .collect(Collectors.toList());
@@ -218,7 +211,7 @@ public class FormIOJsonServiceImpl implements FormIOJsonService {
         return c.getCustomVariableFormAppliesTos().stream()
                 .filter(customVariableFormAppliesTo -> CustomFormsConstants.ENABLED_STATUS_STRING.equals(customVariableFormAppliesTo.getStatus()))
                 .map(CustomVariableFormAppliesTo::getCustomVariableForm)
-                .map(form -> CustomFormHelper.GetFormObj(form, true))
+                .map(form -> CustomFormHelper.getFormObjects(form, true))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

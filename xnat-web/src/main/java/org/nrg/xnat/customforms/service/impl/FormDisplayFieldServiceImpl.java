@@ -114,7 +114,7 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
         if (deleteExistingFormDisplayFields) {
             removeDisplayFieldsThatBeginWith(schemaElement, formUUID);
         }
-        CustomFormHelper.GetFormObj(form, true)
+        CustomFormHelper.getFormObjects(form, true)
                 .forEach(f -> addDisplayField(schemaElement, f));
     }
 

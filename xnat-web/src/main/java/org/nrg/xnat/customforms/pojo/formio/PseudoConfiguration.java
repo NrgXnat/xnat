@@ -18,7 +18,7 @@ public class PseudoConfiguration implements Serializable {
     private String contents;
     private String formId;
     private String formUUID;
-    private Integer formZIndex;
+    private Integer formDisplayOrder;
     private String path;
     private Scope scope;
     private boolean doProjectsShareForm;

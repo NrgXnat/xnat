@@ -215,31 +215,53 @@ XNAT.plugin =
         });
     }
 
+
+    function filterDisplayOrderInput(textbox, originalFormOrder) {
+      ["input", "keydown", "keyup", "select", "contextmenu", "drop"].forEach(function(event) {
+        textbox.addEventListener(event, function() {
+            let value = this.value;
+            let test = /^-?\d*$/.test(this.value);
+            if (/^-?\d*$/.test(this.value)) {
+                this.oldValue = this.value;
+            } else {
+                if (this.hasOwnProperty("oldValue")) {
+                    this.value = this.oldValue;
+                } else {
+                    this.value = originalFormOrder;
+                }
+            }
+        });
+      });
+    }
+
     modifyDisplayOrder = function (configDefinition) {
-        let formOrder = configDefinition['formZIndex'];
+        let formOrder = configDefinition['formDisplayOrder'];
         let itemObj = JSON.parse(configDefinition['contents']);
         const title = itemObj['title'] || '';
         const dateCreated = new Date(configDefinition['dateCreated']);
-        const formId = configDefinition['formId'];
+        const formId = configDefinition['formUUID'];
         var info_button = '<div class="info">Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker.</div>';
         xmodal.open({
             title: 'Change Form Order for ' + title,
-            content: info_button + '<br><br>Current Form Order: ' + formOrder + '<br><br> Creation Date: ' + dateCreated + '<br><br> New Form Order: <input type="number" step="1"  id="formOrderTxt" value="'+ formOrder + '">',
+            content: info_button + '<br><br>Current Form Order: ' + formOrder + '<br><br> Creation Date: ' + dateCreated + '<br><br> New Form Order: <input id="formOrderTxt" value="'+ formOrder + '">',
             width: 500,
             height: 350,
             overflow: 'auto',
+            afterShow: function () {
+                filterDisplayOrderInput(document.getElementById("formOrderTxt"), formOrder)
+            },
             buttons: {
                 ok: {
                     label: 'Ok',
                     isDefault: true,
                     action: function () {
                         let desiredFormOrder = document.getElementById('formOrderTxt').value;
-                        let containsDot = /\./.test(desiredFormOrder);
-                        if (containsDot) {
+                        let desiredFormOrderInt = parseInt(desiredFormOrder);
+                        if (desiredFormOrderInt > 1000000 || desiredFormOrderInt < -1000000) {
                             XNAT.dialog.open({
                                 width: 450,
                                 title: "Invalid Value for Form Order",
-                                content: "Form Order must be an integer value",
+                                content: "Form Order cannot exceed 1000000.",
                                 buttons: [{
                                     label: 'OK',
                                     isDefault: true,
@@ -248,10 +270,9 @@ XNAT.plugin =
                             });
                             return;
                         }
-                        let url = customFormUrl( 'formId/' + formId + '?zIndex=' + desiredFormOrder );
+                        let url = customFormUrl( 'formId/' + formId + '?displayOrder=' + desiredFormOrder );
                         XNAT.xhr.post({
                             url: url,
-                            contentType: 'application/json',
                             success: function () {
                                 xmodal.closeAll();
                                 XNAT.ui.banner.top(2000, 'Form Order updated.', 'success');
@@ -432,7 +453,7 @@ XNAT.plugin =
     function getSubmissionObjectForRow(configItem) {
         let dbRowId = getPK(configItem);
         let path = configItem.path;
-        let zIndex = configItem.formZIndex;
+        let zIndex = configItem.formDisplayOrder;
         let submissionJson = {};
         let submissionObj = {};
         let submissionDataObj = {};

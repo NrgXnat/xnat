@@ -102,7 +102,7 @@ var XNAT = getObject(XNAT || {});
                     promote(itemObj, title);
                 }
             }
-        }, 'Apply by default to all projects');
+        }, 'Apply by default to all ' + projectDataTypePluralName);
     }
 
     promote = function (configDefinition, title) {
@@ -293,10 +293,10 @@ var XNAT = getObject(XNAT || {});
             projectsTable.td({
                 classes: columnIds[2]
             }, e.id);
-            if (e.title){
+            if (e.investigator){
                 projectsTable.td({
                     classes: columnIds[3]
-                }, e.title);
+                }, e.investigator);
             }
         });
         $form.empty().prepend(projectsTable.table);

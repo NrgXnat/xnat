@@ -53,7 +53,7 @@ public class RoleBasedDataAccessApi extends AbstractXapiRestController {
     final XnatUserProvider userProvider;
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    private static final String QUERY_PROJECTS = "SELECT proj.ID, proj.name, proj.description, proj.secondary_id, inv.title FROM xnat_projectData proj LEFT JOIN xnat_investigatordata inv ON proj.pi_xnat_investigatordata_id=inv.xnat_investigatordata_id WHERE PROJ.id IN (:projectIds)";
+    private static final String QUERY_PROJECTS = "SELECT proj.ID, proj.name, proj.description, proj.secondary_id, inv.firstname || ' ' || inv.lastname as investigator FROM xnat_projectData proj LEFT JOIN xnat_investigatordata inv ON proj.pi_xnat_investigatordata_id=inv.xnat_investigatordata_id WHERE PROJ.id IN (:projectIds)";
 
 
     @Autowired
@@ -96,7 +96,7 @@ public class RoleBasedDataAccessApi extends AbstractXapiRestController {
             method = RequestMethod.GET, restrictTo = Authorizer)
     @AuthDelegate(CustomFormUserXapiAuthorization.class)
     public ResponseEntity<List<Map<String, Object>>> getSiteProjects() throws UserInitException, UserNotFoundException{
-        final String query = "SELECT proj.ID, proj.name, proj.description,proj.secondary_id, inv.title FROM xnat_projectData proj LEFT JOIN xnat_investigatordata inv ON proj.pi_xnat_investigatordata_id=inv.xnat_investigatordata_id;";
+        final String query = "SELECT proj.ID, proj.name, proj.description,proj.secondary_id, inv.firstname || ' ' || inv.lastname as investigator FROM xnat_projectData proj LEFT JOIN xnat_investigatordata inv ON proj.pi_xnat_investigatordata_id=inv.xnat_investigatordata_id;";
         List<Map<String, Object>> resultSet = jdbcTemplate.queryForList(query, EmptySqlParameterSource.INSTANCE);
         return ResponseEntity.ok(resultSet);
     }

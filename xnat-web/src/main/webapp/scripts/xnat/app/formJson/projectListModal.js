@@ -32,6 +32,8 @@ var XNAT = getObject(XNAT || {});
     XNAT.customFormManager.projectListModalManager = projectListLauncher =
         getObject(XNAT.customFormManager.projectListLauncher || {});
 
+    var projectDataTypeSingularName = XNAT.app.displayNames.singular.project;
+
 
 
     function errorHandler(e) {
@@ -54,12 +56,12 @@ var XNAT = getObject(XNAT || {});
         let columnIds = ["name", "id", "investigator"];
         let labelMap = {
             name: {
-                label: "Project Name",
+                label: projectDataTypeSingularName + " Name",
                 checkboxes: false,
                 id: "Project Name"
             },
             id: {
-                label: "Project ID",
+                label: projectDataTypeSingularName + " ID",
                 checkboxes: false,
                 id: "Project ID"
             },
@@ -181,10 +183,10 @@ var XNAT = getObject(XNAT || {});
             projectsTable.td({
                 classes: columnIds[1]
             }, e.id);
-            if (e.title){
+            if (e.investigator){
                 projectsTable.td({
                     classes: columnIds[2]
-                }, e.title);
+                }, e.investigator);
             }
         });
         $form.empty().prepend(projectsTable.table);

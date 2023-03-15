@@ -390,47 +390,41 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
     }
 
     /**
-     * MOdifies ZIndex of  a form
+     * Modifies display order of  a form
      * @param user - the user requesting
-     * @param formIdStr - the form Id for which the zIndex is to be modified
+     * @param formIdStr - the form Id for which the display order is to be modified
      * @return boolean - success status
      * @throws Exception
      */
 
-    @Override public boolean modifyZIndex(final UserI user, final Integer zIndex, final String formIdStr) throws Exception {
+    @Override public boolean modifyDisplayOrder(final UserI user, final Integer displayOrder, final String formIdStr) throws Exception {
         boolean modified = false;
         try {
-            long formId = Long.parseLong(formIdStr);
-            List<CustomVariableFormAppliesTo> customVariableFormAppliesTos = customVariableFormAppliesToService.findByFormId(formId);
-            if (customVariableFormAppliesTos != null && !customVariableFormAppliesTos.isEmpty()) {
+            CustomVariableForm form = formService.findByUuid(UUID.fromString(formIdStr));
+            if (form != null && form.getCustomVariableFormAppliesTos().size() > 0) {
                 boolean isAuthorized = false;
                 if (customFormPermissionsService.isUserAdminOrDataManager(user)) {
                     isAuthorized = true;
                 }else {
-                    if (customVariableFormAppliesTos.size() == 1) {
-                        CustomVariableFormAppliesTo customVariableFormAppliesTo = customVariableFormAppliesTos.get(0);
-                        CustomVariableAppliesTo appliesTo  = customVariableFormAppliesTo.getCustomVariableAppliesTo();
-                        if (appliesTo.getScope().equals(Scope.Project)) {
-                            String projId = appliesTo.getEntityId();
-                            if (customFormPermissionsService.isUserProjectOwner(user, projId)) {
-                                isAuthorized = true;
-                            }
+                    CustomVariableAppliesTo appliesTo = form.getCustomVariableFormAppliesTos().get(0).getCustomVariableAppliesTo();
+                    if (appliesTo.getScope().equals(Scope.Project)) {
+                        String projId = appliesTo.getEntityId();
+                        if (customFormPermissionsService.isUserProjectOwner(user, projId)) {
+                            isAuthorized = true;
                         }
                     }
                 }
                 if (isAuthorized) {
-                    CustomVariableFormAppliesTo customVariableFormAppliesTo = customVariableFormAppliesTos.get(0);
-                    CustomVariableForm form = customVariableFormAppliesTo.getCustomVariableForm();
-                    form.setzIndex(zIndex);
+                    form.setzIndex(displayOrder);
                     formService.saveOrUpdate(form);
-                    createWorkFlowEntry(user, customVariableFormAppliesTo, formId, "Form ZIndex modified");
+                    createWorkFlowEntry(user, form.getCustomVariableFormAppliesTos().get(0), form.getId(), "Form display order modified");
                     modified = true;
                 }else {
                     throw new InsufficientPermissionsException("User not authorized");
                 }
             }
         } catch (Exception e) {
-            log.error("ZIndex Modification request for " + formIdStr + " encountered exception", e);
+            log.error("Display ordermodification request for " + formIdStr + " encountered exception", e);
             throw e;
         }
         return modified;
@@ -961,7 +955,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         }
         configuration.setFormUUID(form.getFormUuid().toString());
         configuration.setFormId(Long.toString(form.getId()));
-        configuration.setFormZIndex(form.getzIndex());
+        configuration.setFormDisplayOrder(form.getzIndex());
         configuration.setPath(formAppliesTo.getCustomVariableAppliesTo().pathAsString());
         configuration.setDoProjectsShareForm(formAppliesTo.doProjectsShareForm());
         configuration.setDateCreated(form.getCreated());

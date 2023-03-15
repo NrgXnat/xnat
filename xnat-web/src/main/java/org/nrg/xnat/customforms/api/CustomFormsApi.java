@@ -228,25 +228,28 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Set ZIndex of a form", notes = "Set ZIndex of a form", response = String.class)
+    @ApiOperation(value = "Set display order of a form", notes = "Set display order of a form", response = String.class)
     @ApiResponses({
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/formId/{formId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<String> modifyZIndex(final @PathVariable String formId, final @RequestParam Integer zIndex) {
-        final UserI user = getSessionUser();
+    @XapiRequestMapping(value = "/formId/{formId}", method = RequestMethod.POST)
+    public ResponseEntity<String> modifyFormDisplayOrder(final @PathVariable String formId, final @RequestParam Integer displayOrder) {
+        if (displayOrder == null) {
+            return new ResponseEntity<>("The display order you have entered is empty.", HttpStatus.BAD_REQUEST);
+        }
+            final UserI user = getSessionUser();
         try {
-            boolean success = formManagerService.modifyZIndex(user, zIndex, formId);
+            boolean success = formManagerService.modifyDisplayOrder(user, displayOrder, formId);
             if (success) {
-                return new ResponseEntity<>("ZIndex updated to " + zIndex, HttpStatus.OK);
+                return new ResponseEntity<>("Display order updated to " + displayOrder, HttpStatus.OK);
             } else {
-                return new ResponseEntity<>("Failed to modify ZIndex", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("Failed to modify display order", HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
-            log.error("Could not modify zIndex of  form " + formId, e);
-            return new ResponseEntity<>("ZIndex of Custom Form could not be modified: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("Could not modify display order of form {}", formId, e);
+            return new ResponseEntity<>("Display order of Custom Form could not be modified: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

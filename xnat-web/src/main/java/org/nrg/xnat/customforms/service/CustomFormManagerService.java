@@ -22,7 +22,7 @@ public interface CustomFormManagerService {
 
     boolean disableForm(UserI user, String formAppliesId) throws Exception;
 
-    boolean modifyZIndex(UserI user, Integer zIndex, String formIdStr) throws Exception;
+    boolean modifyDisplayOrder(UserI user, Integer zIndex, String formIdStr) throws Exception;
 
     String deleteForm(UserI user, String formAppliesId) throws Exception;
 

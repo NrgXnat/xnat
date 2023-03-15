@@ -11,10 +11,13 @@ package org.nrg.xnat.customforms.interfaces.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.customforms.interfaces.CustomFormFetcherI;
 import org.nrg.xnat.customforms.interfaces.annotations.CustomFormFetcherAnnotation;
@@ -75,59 +78,33 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
             return concatenatedJson;
         }
 
+        final XnatProjectdata project = getProject(id, projectIdQueryParam, xsiType, user);
+        final String projectId;
+        final List<CustomVariableForm> formByCustomFieldUUID;
         if (XnatProjectdata.SCHEMA_ELEMENT_NAME.equals(xsiType)) {
-            // A project
-            XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(id, user, false);
             if (null == project) {
-                //A new project?
-                if (projectIdQueryParam != null) {
-                    project = XnatProjectdata.getXnatProjectdatasById(projectIdQueryParam, user, false);
-                }
+                throw new Exception("Did not find any project with ID " + id + (StringUtils.isNotBlank(projectIdQueryParam) ? " or " + projectIdQueryParam : ""));
             }
-            if (null == project) {
-                throw new Exception("Did not find any project with ID " + id + " or " + projectIdQueryParam);
-            }
-            List<CustomVariableForm> formByCustomFieldUUID = getFormsInCustomFields(project);
-            return getConcatenatedFormsJSON(project.getId(), xsiType, formByCustomFieldUUID, appendPreviousNextButtons);
+            formByCustomFieldUUID = getFormsInCustomFields(project);
+            projectId = project.getId();
         } else if (XnatSubjectdata.SCHEMA_ELEMENT_NAME.equals(xsiType)) {
             // A Subject
-            XnatSubjectdata subject = XnatSubjectdata.getXnatSubjectdatasById(id, user, false);
-            String projectId = null;
-            if (null == subject) {
-                if (null != projectIdQueryParam) {
-                    projectId = projectIdQueryParam;
-                } else {
-                    throw new Exception("Did not find any subject with ID " + id + " or project with " + projectIdQueryParam);
-                }
-            } else {
-                if (null != projectIdQueryParam) {
-                    projectId = projectIdQueryParam;
-                }else {
-                    projectId = subject.getProject();
-                }
+            final XnatSubjectdata subject = getSubjectByIdOrLabel(id, project, user);
+            if (ObjectUtils.allNull(subject, project)) {
+                throw new Exception("Did not find any subject with ID " + id + (StringUtils.isNotBlank(projectIdQueryParam) ? " or project " + projectIdQueryParam : ""));
             }
-            List<CustomVariableForm> formByCustomFieldUUID = getFormsInCustomFields(subject);
-            return getConcatenatedFormsJSON(projectId, xsiType, formByCustomFieldUUID, appendPreviousNextButtons);
+            projectId = subject == null ? project.getId() : subject.getProject();
+            formByCustomFieldUUID = getFormsInCustomFields(subject);
         } else {
             // An experiment
-            XnatExperimentdata experiment = XnatExperimentdata.getXnatExperimentdatasById(id, user, false);
-            String projectId = null;
-            if (null == experiment) { // A new experiment being created
-                if (null != projectIdQueryParam) {
-                    projectId = projectIdQueryParam;
-                } else {
-                    throw new Exception("Did not find any experiment with ID " + id);
-                }
-            } else {
-                if (null != projectIdQueryParam) {
-                    projectId = projectIdQueryParam;
-                }else {
-                    projectId = experiment.getProject();
-                }
+            final XnatExperimentdata experiment = getExperimentByIdOrLabel(id, project, user);
+            if (ObjectUtils.allNull(experiment, project)) {
+                throw new Exception("Did not find any experiment with ID " + id + (StringUtils.isNotBlank(projectIdQueryParam) ? " or project " + projectIdQueryParam : ""));
             }
-            List<CustomVariableForm> formByCustomFieldUUID = getFormsInCustomFields(experiment);
-            return getConcatenatedFormsJSON(projectId, xsiType, formByCustomFieldUUID, appendPreviousNextButtons);
+            projectId = experiment == null ? project.getId() : experiment.getProject();
+            formByCustomFieldUUID = getFormsInCustomFields(experiment);
         }
+        return getConcatenatedFormsJSON(projectId, xsiType, formByCustomFieldUUID, appendPreviousNextButtons);
     }
 
     private String getConcatenatedFormsJSON(final String projectId, final String xsiType, final List<CustomVariableForm> formByCustomFieldUUID, final boolean appendPreviousNextButtons) throws JsonProcessingException {
@@ -216,4 +193,49 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
         return forms;
     }
 
+    private XnatProjectdata getProject(final String idOrAlias, final String projectIdQueryParam, final String xsiType, final UserI user) {
+        if (XnatProjectdata.SCHEMA_ELEMENT_NAME.equals(xsiType)) {
+            // Try using the primary id
+            final XnatProjectdata project = getProjectByIdOrAliasSkipCache(idOrAlias, user);
+            if (null != project) {
+                return project;
+            }
+        }
+        return getProjectByIdOrAliasSkipCache(projectIdQueryParam, user);
+
+    }
+
+    private XnatProjectdata getProjectByIdOrAliasSkipCache(final String idOrAlias, final UserI user) {
+        final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(idOrAlias, user, false);
+        if (null != project) {
+            return project;
+        }
+        final List<XnatProjectdata> matches = AutoXnatProjectdata.getXnatProjectdatasByField("xnat:projectData/aliases/alias/alias", idOrAlias, user, false);
+        if (!matches.isEmpty()) {
+            return matches.get(0);
+        }
+        return null;
+    }
+
+    private XnatSubjectdata getSubjectByIdOrLabel(final String idOrLabel, final XnatProjectdata project, final UserI user) {
+        final XnatSubjectdata subject = XnatSubjectdata.getXnatSubjectdatasById(idOrLabel, user, false);
+        if (subject != null) {
+            return subject;
+        }
+        if (project != null) {
+            return XnatSubjectdata.GetSubjectByProjectIdentifier(project.getId(), idOrLabel, user, false);
+        }
+        return null;
+    }
+
+    private XnatExperimentdata getExperimentByIdOrLabel(final String idOrLabel, final XnatProjectdata project, final UserI user) {
+        final XnatExperimentdata experiment = XnatExperimentdata.getXnatExperimentdatasById(idOrLabel, user, false);
+        if (experiment != null) {
+            return experiment;
+        }
+        if (project != null) {
+            return XnatExperimentdata.GetExptByProjectIdentifier(project.getId(), idOrLabel, user, false);
+        }
+        return null;
+    }
 }

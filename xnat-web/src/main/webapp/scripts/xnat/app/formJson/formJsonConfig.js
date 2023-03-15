@@ -552,76 +552,116 @@ var XNAT = getObject(XNAT || {});
 
     }
 
+    xnatFormManager.getCurrentFormState = function() {
+        let wysiygBuilder = Formio.Builders.getBuilder("wysiwyg");
+        let formJsonCurrent = wysiygBuilder.schema;
+        return JSON.stringify(formJsonCurrent);
+    }
 
-    xnatFormManager.dialog = function (configDefinition, newCommand) {
+    xnatFormManager.changesHaveBeenMadeToTheForm = function(formJsonFromDB, formJsonCurrentStr) {
+        return formJsonCurrentStr != JSON.stringify(formJsonFromDB);
+    }
+
+    xnatFormManager.showEditDialog = function(configDefinition, jsonToEdit, showWarningUnsavedChanges) {
         let _source, _editor;
-        if (!newCommand) {
-            let path = configDefinition.path;
-            let configDefinitionObj = JSON.parse(configDefinition['contents']);
-            let label = configDefinitionObj.title;
-            label = label || {};
-
-            let dialogButtons = {
-                update: {
-                    label: 'Save',
-                    isDefault: true,
-                    close: false,
-                    action: function (obj) {
-                        let editorContent = _editor.getValue().code;
-                        let submissionJson = getSubmissionObjectForRow(configDefinition);
-                        try {
-                            submissionJson['builder'] = JSON.parse(editorContent);
-                            xnatFormManager.submitJson(submissionJson);
-                            obj.close();
-                        } catch (error) {
-                            console.error(error);
-                            XNAT.dialog.confirm({
-                                title: 'Invalid JSON',
-                                content: 'Please fix the errors in the JSON.',
-                                okAction: function(){
-                                }
-                            });
-                        }
-
-                    }
-                },
-                cancel: {
-                    label: 'Cancel',
-                    close: false,
-                    action: function(obj) {
-                        let $thisModal = obj.$modal;
-                        xmodal.confirm({
-                            content: 'Are you sure you want to abandon?',
+        let configDefinitionObj = JSON.parse(configDefinition['contents']);
+        let label = configDefinitionObj.title;
+        label = label || {};
+        let dialogButtons = {
+            update: {
+                label: 'Save',
+                isDefault: true,
+                close: false,
+                action: function (obj) {
+                    let editorContent = _editor.getValue().code;
+                    let submissionJson = getSubmissionObjectForRow(configDefinition);
+                    try {
+                        submissionJson['builder'] = JSON.parse(editorContent);
+                        xnatFormManager.submitJson(submissionJson);
+                        obj.close();
+                    } catch (error) {
+                        console.error(error);
+                        XNAT.dialog.confirm({
+                            title: 'Invalid JSON',
+                            content: 'Please fix the errors in the JSON.',
                             okAction: function(){
-                                // close 'parent' modal
-                                xmodal.close($thisModal);
                             }
                         });
                     }
+
                 }
-            };
-            _source = spawn('textarea', configDefinition.contents);
+            },
+            cancel: {
+                label: 'Cancel',
+                close: false,
+                action: function(obj) {
+                    let $thisModal = obj.$modal;
+                    xmodal.confirm({
+                        content: 'Are you sure you want to abandon?',
+                        okAction: function(){
+                            // close 'parent' modal
+                            xmodal.close($thisModal);
+                        }
+                    });
+                }
+            }
+        };
+        _source = spawn('textarea', jsonToEdit);
 
-            _editor = XNAT.app.codeEditor.init(_source, {
-                language: 'json'
-            });
+        _editor = XNAT.app.codeEditor.init(_source, {
+            language: 'json'
+        });
 
-            _editor.openEditor({
-                title: 'Form JSON Definition For ' + label,
-                classes: 'plugin-json',
-                buttons: dialogButtons,
-                height: 680,
-                closeBtn: false,
-                afterShow: function (dialog, obj) {
-                    obj.aceEditor.setReadOnly(false);
+        _editor.openEditor({
+            title: 'Form JSON Definition For ' + label,
+            classes: 'plugin-json',
+            buttons: dialogButtons,
+            height: 680,
+            closeBtn: false,
+            afterShow: function (dialog, obj) {
+                obj.aceEditor.setReadOnly(false);
+                if (showWarningUnsavedChanges) {
                     dialog.$modal.find('.body .inner').prepend(
                         spawn('div', [
-                            spawn('p', 'Path: ' + path),
+                            spawn('div|class="warning"', 'You have unsaved changes to the form. Clicking Cancel will result in loss of changes'),
                         ])
                     );
                 }
-            });
+            }
+        });
+    }
 
+    xnatFormManager.dialog = function (configDefinition,  newCommand, parentModal) {
+        let formJsonFromDB = JSON.parse(configDefinition['contents']);
+        let formJsonCurrentStr = xnatFormManager.getCurrentFormState();
+        let showWarningUnsavedChanges = xnatFormManager.changesHaveBeenMadeToTheForm(formJsonFromDB, formJsonCurrentStr);
+        if (!newCommand) {
+            if (showWarningUnsavedChanges) {
+                XNAT.dialog.open({
+                    width: 450,
+                    title: "Caution: Unsaved Changes",
+                    content: "You have made changes to this form that have not yet been saved. Opening the JSON editor will preserve these changes, but this WYSIWYG editor will not be accessible. Are you sure you want to open the JSON editor?",
+                    buttons: [{
+                        label: 'Proceed',
+                        isDefault: true,
+                        close: true,
+                        action: function () {
+                            xmodal.close(parentModal);
+                            xnatFormManager.showEditDialog(configDefinition, formJsonCurrentStr, showWarningUnsavedChanges);
+                        }
+                    },
+                        {
+                            label: 'Cancel',
+                            isDefault: false,
+                            close: true,
+                            action: function () {}
+                        }
+                    ]
+                });
+            }else {
+                xmodal.close(parentModal);
+                xnatFormManager.showEditDialog(configDefinition, formJsonCurrentStr, showWarningUnsavedChanges);
+            }
         }
     };
 
@@ -1028,9 +1068,10 @@ var XNAT = getObject(XNAT || {});
             },
             editJson: {
                 label: 'Edit JSON',
-                close: true,
-                action: function () {
-                    xnatFormManager.dialog(itemObj, false);
+                close: false,
+                action: function (obj) {
+                    let $thisModal = obj.$modal;
+                    xnatFormManager.dialog(itemObj, false, $thisModal);
                 }
             },
             cancel: {

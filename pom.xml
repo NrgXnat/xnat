@@ -139,6 +139,7 @@
         <commons-collections4.version>4.4</commons-collections4.version>
         <commons-configuration.version>1.10</commons-configuration.version>
         <commons-configuration2.version>2.1</commons-configuration2.version>
+        <commons-csv.version>1.10.0</commons-csv.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
         <commons-digester.version>1.8.1</commons-digester.version>
         <commons-discovery.version>0.5</commons-discovery.version>
@@ -938,6 +939,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
                 <version>${commons-configuration2.version}</version>
+            </dependency>
+	    <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>${commons-csv.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>

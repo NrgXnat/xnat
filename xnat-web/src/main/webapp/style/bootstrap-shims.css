@@ -4,15 +4,74 @@ a:visited { color: var(--link-color); }
 a:hover,
 a:active { color: var(--link-color-hover); }
 
+/* Fix pagination display */
+.xnat-bootstrap .pagination {
+    border-bottom: 5px solid var(--XNAT-blue-500);
+    border-radius: 0;
+    margin-bottom: 0;
+}
+.xnat-bootstrap .page-item:first-child .page-link {
+    border-bottom-left-radius: 0;
+}
+.xnat-bootstrap .page-item:last-child .page-link {
+    border-bottom-right-radius: 0;
+}
+
 .formio-form>div>nav>ul.pagination .page-item .page-link {
     background: var(--XNAT-gray-100);
     border-color: var(--XNAT-gray-300);
+    border-radius: 0;
+    border-width: 1px 1px 0;
     box-shadow: none;
-    color: var(--XNAT-gray-500);
+    color: var(--XNAT-gray-300);
+    cursor: default;
 }
 .formio-form>div>nav>ul.pagination .page-item.active .page-link {
     background: var(--XNAT-blue-500);
     border-color: var(--XNAT-blue-500);
+    border-width: 1px 1px 0;
+    color: #fff;
+}
+.formio-form .choices__list--dropdown .choices__list {
+    max-height: 200px;
+}
+
+.xnat-bootstrap .wizard-page {
+    background-color: var(--XNAT-gray-100);
+    border: 1px solid var(--XNAT-gray-200);
+    padding: 1em;
+}
+
+.xmodal.xnat-bootstrap .wizard-page,
+.dialog.xnat-bootstrap .wizard-page {
+    background-color: #fff;
+    border: none;
+    padding: 2em 0 1em;
+}
+
+/* Form HTML Display Hacks */
+.formio-form>div>nav>ul.pagination .page-item .page-link {
+    background: linear-gradient( #fcfcfc, #f0f0f0 );
+    color: var(--XNAT-gray-900);
+}
+.xnat-bootstrap .formio-read-only .form-group {
+    margin-bottom: 0;
+    display: table-row;
+}
+.xnat-bootstrap .formio-read-only label {
+    font-weight: bold;
+    display: table-cell;
+    line-height: 1.3;
+    min-width: 150px;
+    padding: 0 10px 10px 0;
+}
+.xnat-bootstrap .formio-read-only .form-group div[ref=element],
+.xnat-bootstrap .formio-read-only .form-group > div[ref=value] {
+    display: table-cell;
+    padding-bottom: 10px;
+}
+.xnat-bootstrap .formio-read-only .form-group .form-text {
+    display: none;
 }
 
 /* Bootstrap Alert Shims */
@@ -58,6 +117,8 @@ a:active { color: var(--link-color-hover); }
 
 .xnat-bootstrap .btn {
 /*    background: var(--default-button-bg); */
+    background-color: var(--XNAT-gray-100);
+    border: 1px solid var(--XNAT-gray-400);
     box-shadow: 0px 1px 1px rgba(153, 153, 153, 0.4);
     font-size: 13px;
     line-height: inherit;

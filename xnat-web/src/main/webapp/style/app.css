@@ -1153,6 +1153,9 @@ button, [type="button"], [type="submit"], [type="reset"],
 .btn,
 .btn1,
 .btn2 {
+    background-color: #f8f8f8;
+    background-image: linear-gradient( #ffffff, #f0f0f0 );
+    border: 1px solid #a0a0a0;
     display: inline-block;
     padding: 6px 12px;
     /*max-height: 28px;*/
@@ -1235,18 +1238,6 @@ body [type="submit"]:active */ {
 .btn.error:active {
     background: #723131;
     box-shadow: none;
-}
-
-/* btn2 gets gray background */
-/* body button,
-body [type="button"],
-body [type="reset"], */
-button, [type="button"], [type="reset"],
-.btn,
-.btn2 {
-    background-color: #f8f8f8;
-    background-image: linear-gradient( #ffffff, #f0f0f0 );
-    border: 1px solid #a0a0a0;
 }
 
 /* body button:hover,

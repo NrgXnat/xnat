@@ -1,0 +1,134 @@
+<script type="text/javascript">
+    //CONDITION CODE
+    var conditionCount=0;
+    var conditionTag;
+
+	#set($fields=$fm.getFields())
+	#set($fieldCount=0)
+	#foreach($child in $fields)
+        var field${fieldCount}s=new Array();
+	    #set($fieldCount=$fieldCount +1)
+	#end
+	   
+    function drawConditions() {
+        if (field0s.length > 0) {
+            var rowColor="#DEDEDE";
+            var htmlText = "<TABLE><TR><TH></TH>";
+            #set($fieldCount=0)
+	        #foreach($child in $fields)
+                htmlText += "<TH ALIGN='LEFT'>COLUMN $fieldCount</TH>";
+	            #set($fieldCount=$fieldCount +1)
+	        #end
+            htmlText += "<TH></TH></TR>";
+            for (var x=0;x<field0s.length;x++) {
+                var rowTag = "<TR><TD ALIGN='LEFT'>" + x + "</TD>";
+                #set($fieldCount=0)
+	            #foreach($child in $fields)
+                    rowTag += "<TD ALIGN='LEFT'><B>" + field${fieldCount}s[x] + "</B></TD>";
+	                #set($fieldCount=$fieldCount +1)
+	            #end
+                rowTag +="<TD WIDTH=100><INPUT TYPE='BUTTON' VALUE='REMOVE' ONCLICK='removeCondition(" + x +")'/></TD></TR>";
+                htmlText = htmlText + rowTag;
+            }
+            htmlText = htmlText + "</TABLE>";
+            conditionTag.innerHTML=htmlText;
+            if (rowColor=="#DEDEDE") {
+                 rowColor="#FFFFFF";
+            }else{
+                rowColor="#DEDEDE";
+            }
+        }else{
+            conditionTag.innerHTML="";
+        }
+        document.getElementById('preparing').innerHTML = "";
+        document.getElementById('preparing').style.display = 'none';
+
+    }
+
+
+
+    function removeCondition(removeIndex) {
+	   #set($fieldCount=0)
+	   #foreach($child in $fields)
+            field${fieldCount}s.splice(removeIndex,1);
+	        #set($fieldCount=$fieldCount +1)
+	   #end
+        populateHiddenForm();
+        drawConditions();
+    }
+
+
+    var formTag;
+    function populateHiddenForm(){
+        var htmlText ="";
+        for (var x=0;x<field0s.length;x++) {
+            var rowValue = "";
+            #set($fieldCount=0)
+	        #foreach($child in $fields)
+	            #if($fieldCount==0)
+                    rowValue += field${fieldCount}s[x];
+                #else
+                    rowValue += "," + field${fieldCount}s[x];
+                #end
+	            #set($fieldCount=$fieldCount +1)
+	        #end
+            var rowTag = "\r\n<INPUT TYPE='hidden' VALUE='" + rowValue + "' NAME='row" + x + "'/>";
+            htmlText = htmlText + rowTag;
+        }
+        formTag.innerHTML=htmlText;
+    }
+</script>
+
+
+	#if ($data.message)
+        <DIV class="error">$data.message</DIV><br>
+    #end
+    <div  id="preparing"><font color="green"><B>Loading data. Please wait...&nbsp;</B></font></div><br/>
+    <table valign="top" width="90%" border="0" align="center" cellpadding="5" cellspacing="0" bgcolor="#DEDEDE">
+
+		     <tr bgcolor="#FFFFFF"><td><DIV class="edit_header1">Step 3: Uploaded data</div></td></tr>
+		     <tr bgcolor="#FFFFFF"><td>Select the project you wish to upload data to and click the 'Save' button at the bottom of the page to review the uploaded data.</td></tr>
+		     <tr bgcolor="#FFFFFF"><td>&nbsp;</td></tr>
+		     <tr bgcolor="#FFFFFF">
+		     </td></tr>
+		     <tr bgcolor="#FFFFFF"><td>
+
+        <form id="form1" name="form1" method="POST" action="$link.setAction("CSVUpload2")">
+        <INPUT TYPE="hidden" name="fm_id" value="$fm.getID()"/>
+        <input type="hidden" name="XNAT_CSRF" value="$!XNAT_CSRF">
+		      <DIV ID="CONDITIONS"></DIV>
+		      <DIV ID="formTags"></DIV>
+        <table border="0" align="center">
+        <TR>
+            <TD>$displayManager.getSingularDisplayNameForProject()</TD>
+            <TD>#parse("/screens/ProjectSelectBox.vm")</TD>
+        </TR>
+        <tr>
+            <td colspan="2">
+                <div align="center">
+                    <input type="submit" name="eventSubmit_doProcess" value="Save" />
+                    <input type="submit" name="Submit2" value="Cancel" />
+                </div>
+            </td>
+        </tr>
+        </table>
+        </form>
+    <hr/>
+    </td></tr>
+	</table>
+
+	<script type="text/javascript">
+	window.onload=function(){
+	   formTag = document.getElementById('formTags');
+	   conditionTag = document.getElementById('CONDITIONS');
+        #foreach($child in $data.getSession().getAttribute("rows"))
+            #set($fieldCount=0)
+            #foreach($childT in $child)
+                field${fieldCount}s.push('$childT');
+	            #set($fieldCount=$fieldCount +1)
+            #end
+        #end
+        drawConditions();
+        populateHiddenForm();
+	}
+</script>

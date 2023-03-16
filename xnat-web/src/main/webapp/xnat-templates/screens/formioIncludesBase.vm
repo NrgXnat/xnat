@@ -228,6 +228,15 @@ function unescapeXML(val) {
                       });
                   });
               }
+              if (htmlDivElementParentId !== undefined) {
+                let htmlDivElementParent = document.getElementById(htmlDivElementParentId);
+                if (htmlDivElementParent !== null) {
+                    htmlDivElementParent.style.display = 'block';
+                }
+                if (htmlDivElt !== null) {
+                   htmlDivElt.style.display='block';
+                }
+              }
           }
           localStorage.removeItem("currentFormIO");
       }
@@ -252,7 +261,9 @@ function unescapeXML(val) {
           } else {
               if (formComponentTypesToSanitize.includes(formComponent.type)) {
                   // Sanitize!
-                  formData[formComponent.key] = escapeHtml(formData[formComponent.key]);
+                  if (formData.hasOwnProperty(formComponent.key)) {
+                     formData[formComponent.key] = escapeHtml(formData[formComponent.key]);
+                  }
               }
           }
       }
@@ -265,10 +276,11 @@ function unescapeXML(val) {
 	 this.updateOnProjectChange = function() {
           myProjectId =  document.getElementById(projectFieldName).value;
           let projectSingularName = "$displayManager.getSingularDisplayNameForProject()";
+          let projectSingularNameLC = projectSingularName.toLowerCase();
           if (formIOObj != undefined && myProjectId != "Select Project") {
              if (this.formHasFilledData(formIOObj.submission.data)) {
-                 let warnMsg = "Since you have changed the " + projectSingularName + ", the custom fields associated with the current " + projectSingularName + " have changed. The previously filled data for the custom fields is being rendered. Please review the custom fields for this " + projectSingularName +  " carefully";
-                 XNAT.dialog.message("Dynamic Variables are being modified", warnMsg);
+                 let warnMsg = "Since you have changed the " + projectSingularNameLC + ", the custom fields associated with the current " + projectSingularNameLC + " may have changed. The data for the custom fields already entered is being rendered. Please review the custom fields for this " + projectSingularNameLC +  " carefully";
+                 XNAT.dialog.message(projectSingularName + " change impacts associated custom fields", warnMsg);
                  let currentFormData = {};
                  currentFormData.formId = formIOObj.id;
                  currentFormData.submission = formIOObj.submission.data;

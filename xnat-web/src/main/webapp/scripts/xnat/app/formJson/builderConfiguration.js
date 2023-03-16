@@ -87,22 +87,6 @@ var XNAT = getObject(XNAT || {});
         customLayout.components = customLayoutComponents;
         builderOptions.customLayout = customLayout;
 
-
-        let customData = {};
-        customData.title = 'Data';
-        customData.default = false;
-        customData.weight = 40;
-        let customDataComponents = {};
-        index = 400;
-        [
-            'container'
-        ].forEach(name => {
-            createComponent(name, index++);
-            customDataComponents[name] = true;
-        });
-        customData.components = customDataComponents;
-        builderOptions.customData = customData;
-
         let customNonSearchable = {};
         customNonSearchable.title = 'Non-searchable';
         customNonSearchable.default = false;
@@ -111,6 +95,7 @@ var XNAT = getObject(XNAT || {});
         index = 500;
         [
             'address',
+            'container',
             'datagrid',
             'datamap',
             'editgrid',

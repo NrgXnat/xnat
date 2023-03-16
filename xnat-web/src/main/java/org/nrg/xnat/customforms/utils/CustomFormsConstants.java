@@ -57,7 +57,7 @@ public class CustomFormsConstants {
     public static final Set<String> IS_SITEWIDE_VALUES = Stream.of(IS_SITEWIDE_YES, IS_SITEWIDE_NO)
             .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
 
-    public static final Set<String> NON_SEARCHABLE_FORMIO_TYPES = Stream.of("tree", "editgrid", "datagrid", "datamap", "address")
+    public static final Set<String> NON_SEARCHABLE_FORMIO_TYPES = Stream.of("address", "container","datagrid", "datamap", "editgrid", "tree")
             .collect(Collectors.toCollection(HashSet::new));
 
     public static final Map<String, String> FORMIO_TYPE_TO_XNAT_TYPE = Stream.of(new String[][] {

@@ -1148,7 +1148,7 @@ var XNAT = getObject(XNAT || {});
                     XNAT.customFormManager.assignDialog.assignProject(itemObj, title, rowId, isSiteWide, projects);
                 }
             },
-            title: "Manage which" + projectDataTypePluralName + "are associated with this form"
+            title: "Manage which " + projectDataTypePluralName + " are associated with this form"
         }, [ spawn('i.fa.fa-list') ]);
     }
 

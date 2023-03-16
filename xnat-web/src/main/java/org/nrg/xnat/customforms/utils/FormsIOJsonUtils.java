@@ -137,7 +137,7 @@ public class FormsIOJsonUtils {
         List<CustomVariableForm> applicableForms = new ArrayList();
         if (!forms.isEmpty()) {
             Comparator comparator = Comparator.comparing((CustomVariableFormAppliesTo h) -> h.getCustomVariableForm().getzIndex())
-                    .thenComparing((CustomVariableFormAppliesTo h) -> h.getCustomVariableForm().getCreated()).reversed();
+                    .thenComparing((CustomVariableFormAppliesTo h) -> h.getCustomVariableForm().getCreated(), Comparator.reverseOrder());
             forms.sort(comparator);
             for (CustomVariableFormAppliesTo vfs : forms) {
                 if (!onlyEnabled || (onlyEnabled && vfs.getStatus().equals(CustomFormsConstants.ENABLED_STATUS_STRING))) {

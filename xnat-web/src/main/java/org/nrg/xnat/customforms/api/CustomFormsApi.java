@@ -139,7 +139,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
     ) {
         try {
             final UserI user = getSessionUser();
-            final String customFormJson = formManagerService.getCustomForm(user, xsiType, id, projectId, visitId, subtype, appendPrevNextButtons);
+            final String customFormJson;
+            try {
+                customFormJson = formManagerService.getCustomForm(user, xsiType, id, projectId, visitId, subtype, appendPrevNextButtons);
+            } catch (NotFoundException e) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            }
             if (null == customFormJson) {
                 return new ResponseEntity<>("Custom Forms Not Found", HttpStatus.NOT_FOUND);
             }

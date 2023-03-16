@@ -9,11 +9,11 @@
  */
 package org.nrg.xnat.customforms.interfaces.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
@@ -31,10 +31,15 @@ import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 @Component
 @CustomFormFetcherAnnotation(type = CustomFormsConstants.PROTOCOL_UNAWARE)
@@ -67,130 +72,90 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
     public String getCustomForm(final UserI user, final String xsiType, final String id,
                                 final String projectIdQueryParam, final String visitId,
                                 final String subType, final boolean appendPreviousNextButtons) throws Exception {
-
         if ((null == id || id.equalsIgnoreCase("NULL")) && (null == projectIdQueryParam || projectIdQueryParam.equalsIgnoreCase("") || projectIdQueryParam.equalsIgnoreCase("NULL"))) {
-            List<CustomVariableAppliesTo> forms = formAppliesToService.filterByStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Site, null, xsiType, null, null, null, CustomFormsConstants.ENABLED_STATUS_STRING);
-            List<CustomVariableFormAppliesTo> formsToConcatenate = new ArrayList<CustomVariableFormAppliesTo>();
-            for (CustomVariableAppliesTo c : forms) {
-                formsToConcatenate.addAll(c.getCustomVariableFormAppliesTos());
-            }
-            String concatenatedJson = FormsIOJsonUtils.concatenate(formsToConcatenate, null, "Custom Variables", true, appendPreviousNextButtons);
-            return concatenatedJson;
+            return FormsIOJsonUtils.concatenate(getFormsForTypeInProject(null, xsiType), null, "Custom Variables", true, appendPreviousNextButtons);
         }
 
         final XnatProjectdata project = getProject(id, projectIdQueryParam, xsiType, user);
         final String projectId;
-        final List<CustomVariableForm> formByCustomFieldUUID;
+        final List<UUID> formUuidsFromCustomFields;
         if (XnatProjectdata.SCHEMA_ELEMENT_NAME.equals(xsiType)) {
             if (null == project) {
-                throw new Exception("Did not find any project with ID " + id + (StringUtils.isNotBlank(projectIdQueryParam) ? " or " + projectIdQueryParam : ""));
+                throw new NotFoundException("Did not find any project with ID " + id + (StringUtils.isNotEmpty(projectIdQueryParam) ? " or " + projectIdQueryParam : ""));
             }
-            formByCustomFieldUUID = getFormsInCustomFields(project);
+            formUuidsFromCustomFields = getFormUuidsFromCustomFields(project);
             projectId = project.getId();
         } else if (XnatSubjectdata.SCHEMA_ELEMENT_NAME.equals(xsiType)) {
             // A Subject
             final XnatSubjectdata subject = getSubjectByIdOrLabel(id, project, user);
             if (ObjectUtils.allNull(subject, project)) {
-                throw new Exception("Did not find any subject with ID " + id + (StringUtils.isNotBlank(projectIdQueryParam) ? " or project " + projectIdQueryParam : ""));
+                throw new NotFoundException("Did not find any subject with ID " + id + (StringUtils.isNotBlank(projectIdQueryParam) ? " or project " + projectIdQueryParam : ""));
             }
             projectId = subject == null ? project.getId() : subject.getProject();
-            formByCustomFieldUUID = getFormsInCustomFields(subject);
+            formUuidsFromCustomFields = getFormUuidsFromCustomFields(subject);
         } else {
             // An experiment
             final XnatExperimentdata experiment = getExperimentByIdOrLabel(id, project, user);
             if (ObjectUtils.allNull(experiment, project)) {
-                throw new Exception("Did not find any experiment with ID " + id + (StringUtils.isNotBlank(projectIdQueryParam) ? " or project " + projectIdQueryParam : ""));
+                throw new NotFoundException("Did not find any experiment with ID " + id + (StringUtils.isNotBlank(projectIdQueryParam) ? " or project " + projectIdQueryParam : ""));
             }
             projectId = experiment == null ? project.getId() : experiment.getProject();
-            formByCustomFieldUUID = getFormsInCustomFields(experiment);
+            formUuidsFromCustomFields = getFormUuidsFromCustomFields(experiment);
         }
-        return getConcatenatedFormsJSON(projectId, xsiType, formByCustomFieldUUID, appendPreviousNextButtons);
+
+        final List<CustomVariableFormAppliesTo> forms = getFormsForTypeInProject(projectId, xsiType);
+        final List<CustomVariableForm> additionalForms = getAdditionalFormsFromCustomFieldUuids(formUuidsFromCustomFields, forms);
+
+        return FormsIOJsonUtils.concatenate(forms, additionalForms, "Custom Variables", true, appendPreviousNextButtons);
     }
 
-    private String getConcatenatedFormsJSON(final String projectId, final String xsiType, final List<CustomVariableForm> formByCustomFieldUUID, final boolean appendPreviousNextButtons) throws JsonProcessingException {
-        List<CustomVariableFormAppliesTo> customVariableFormAppliesTo = getFormsToConcatenate(projectId, xsiType);
-        List<CustomVariableForm> copyFormsByUUID = new ArrayList<>();
-        copyFormsByUUID.addAll(formByCustomFieldUUID);
-        copyFormsByUUID.removeIf(form -> formExists(customVariableFormAppliesTo, form.getFormUuid()));
-        return  FormsIOJsonUtils.concatenate(customVariableFormAppliesTo, copyFormsByUUID, "Custom Variables", true, appendPreviousNextButtons);
+    private  List<UUID> getFormUuidsFromCustomFields(final XnatProjectdata project) {
+        return getFormUuidsFromCustomFields(null == project ? null : project.getCustomFields());
     }
 
-    private  boolean formExists(final List<CustomVariableFormAppliesTo> list, final UUID formUUID){
-        return list.stream().anyMatch(customVariableFormAppliesTo -> formUUID.equals(customVariableFormAppliesTo.getCustomVariableForm().getFormUuid()));
+    private  List<UUID> getFormUuidsFromCustomFields(final XnatSubjectdata subject) {
+        return getFormUuidsFromCustomFields(null == subject ? null : subject.getCustomFields());
     }
 
-    private  List<CustomVariableForm> getFormsInCustomFields(final XnatProjectdata project) {
-        return getFormsForKeysInCustomFields(getCustomFieldKeys(project));
+    private  List<UUID> getFormUuidsFromCustomFields(final XnatExperimentdata experiment) {
+        return getFormUuidsFromCustomFields(null == experiment ? null : experiment.getCustomFields());
     }
 
-    private  List<CustomVariableForm> getFormsInCustomFields(final XnatSubjectdata subject) {
-        return getFormsForKeysInCustomFields(getCustomFieldKeys(subject));
-    }
-
-    private  List<CustomVariableForm> getFormsInCustomFields(final XnatExperimentdata experiment) {
-        return getFormsForKeysInCustomFields(getCustomFieldKeys(experiment));
-    }
-
-    private  List<CustomVariableForm> getFormsForKeysInCustomFields(final List<String> customFieldKeys) {
-        List<CustomVariableForm> formsByKeys = new ArrayList<>();
-        if (customFieldKeys.isEmpty()) {
-            return formsByKeys;
+    private  List<UUID> getFormUuidsFromCustomFields(final JsonNode customFields) {
+        if (null == customFields || customFields.isNull() || customFields.isEmpty()) {
+            return Collections.emptyList();
         }
-        customFieldKeys.forEach(key -> {
-           CustomVariableForm form =  formService.findByUuid(UUID.fromString(key));
-           if (null != form) {
-               formsByKeys.add(form);
-           }
-        });
-        return formsByKeys;
+
+        final Iterable<String> fieldNamesIterable = customFields::fieldNames;
+        return StreamSupport.stream(fieldNamesIterable.spliterator(), false)
+                .filter(Objects::nonNull)
+                .map(UUID::fromString)
+                .collect(Collectors.toList());
     }
 
-    private List<String> getCustomFieldKeys(final XnatProjectdata project) {
-        if (null == project) {
-            return new ArrayList<>();
-        }
-        return getCustomFieldKeys(project.getCustomFields());
+    private List<CustomVariableForm> getAdditionalFormsFromCustomFieldUuids(final List<UUID> formUuidsFromCustomFields, final List<CustomVariableFormAppliesTo> formsWeAlreadyHave) {
+        final Set<UUID> formUuidsWeAlreadyHave = formsWeAlreadyHave.stream()
+                .map(CustomVariableFormAppliesTo::getCustomVariableForm)
+                .map(CustomVariableForm::getFormUuid)
+                .collect(Collectors.toSet());
+        return formUuidsFromCustomFields.stream()
+                .filter(formUuid -> !formUuidsWeAlreadyHave.contains(formUuid))  // In Java 11+ can use Predicate.not for this instead of constructing a lambda
+                .map(formService::findByUuid)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
-    private List<String> getCustomFieldKeys(final XnatSubjectdata subject) {
-        if (null == subject) {
-            return new ArrayList<>();
-        }
-        return getCustomFieldKeys(subject.getCustomFields());
-    }
-
-    private List<String> getCustomFieldKeys(final XnatExperimentdata experiment) {
-        if (null == experiment) {
-            return new ArrayList<>();
-        }
-        return getCustomFieldKeys(experiment.getCustomFields());
-    }
-
-    private List<String> getCustomFieldKeys(final JsonNode customFields) {
-        List<String> keys = new ArrayList<>();
-        if (null == customFields || customFields.isNull()) {
-            return keys;
-        }
-        Iterator<String> iterator = customFields.fieldNames();
-        iterator.forEachRemaining(e -> keys.add(e));
-        return keys;
-    }
-
-    private List<CustomVariableFormAppliesTo> getFormsToConcatenate(final String projectId, final String xsiType) {
-        List<CustomVariableFormAppliesTo> forms = new ArrayList<CustomVariableFormAppliesTo>();
-
-        List<String> statuses = new ArrayList<String>();
-        statuses.add(CustomFormsConstants.ENABLED_STATUS_STRING);
-        statuses.add(CustomFormsConstants.OPTED_OUT_STATUS_STRING);
-
-        List<CustomVariableAppliesTo> projectForms = formAppliesToService.filterByPossibleStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Project, projectId, xsiType, null, null, null, statuses);
-        List<CustomVariableAppliesTo> siteForms = formAppliesToService.filterByStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Site, null, xsiType, null, null, null, CustomFormsConstants.ENABLED_STATUS_STRING);
-        List<CustomVariableFormAppliesTo> optedInForms = FormsIOJsonUtils.removeSiteFormsOptedOutByProject(siteForms, projectForms);
-        forms.addAll(optedInForms);
-        for (CustomVariableAppliesTo c : projectForms) {
-            forms.addAll(c.getCustomVariableFormAppliesTos());
-        }
-        return forms;
+    private List<CustomVariableFormAppliesTo> getFormsForTypeInProject(final String projectId, final String xsiType) {
+        final List<CustomVariableAppliesTo> siteForms = formAppliesToService.filterByStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Site, null, xsiType, null, null, null, CustomFormsConstants.ENABLED_STATUS_STRING);
+        final List<CustomVariableAppliesTo> projectForms = projectId != null
+                ? formAppliesToService.filterByPossibleStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Project, projectId, xsiType, null, null, null, Arrays.asList(CustomFormsConstants.ENABLED_STATUS_STRING, CustomFormsConstants.OPTED_OUT_STATUS_STRING))
+                : Collections.emptyList();
+        return Stream.concat(
+                FormsIOJsonUtils.removeSiteFormsOptedOutByProject(siteForms, projectForms).stream(),
+                projectForms.stream()
+                        .map(CustomVariableAppliesTo::getCustomVariableFormAppliesTos)
+                        .flatMap(List::stream)
+        ).collect(Collectors.toList());
     }
 
     private XnatProjectdata getProject(final String idOrAlias, final String projectIdQueryParam, final String xsiType, final UserI user) {

@@ -95,8 +95,7 @@ var XNAT = getObject(XNAT || {});
         let customDataComponents = {};
         index = 400;
         [
-            'container',
-            'hidden'
+            'container'
         ].forEach(name => {
             createComponent(name, index++);
             customDataComponents[name] = true;

@@ -609,7 +609,7 @@ XNAT.plugin =
         }, [ spawn('i.fa.fa-pencil') ]);
     }
 
-    function deleteButton(itemObj) {
+    function deleteButton(itemObj, isDataPresent) {
         return spawn('button.btn.btn-sm.edit', {
             onclick: function(e) {
                 e.preventDefault();
@@ -617,6 +617,7 @@ XNAT.plugin =
                    projectFormManager.deleteForm(itemObj);
                 }
             },
+            disabled: isDataPresent,
             title: "Delete the form"
         }, [ spawn('i.fa.fa-trash') ]);
     }
@@ -992,11 +993,7 @@ XNAT.plugin =
             actions = [optInButton(item, title)];
         }else {
             if (isProjectSpecific && !isFormSharedBetweenProjects) {
-                actions = [editButton(item),spacer(4), displayOrderButton(item, title)];
-                if (!item['hasData']) {
-                    actions.push(spacer(4));
-                    actions.push(deleteButton(item, title));
-                }
+                actions = [editButton(item),spacer(4), displayOrderButton(item, title), spacer(4), deleteButton(item, item['hasData'])];
             } else {
                 actions = [optOutButton(item, title)];
             }

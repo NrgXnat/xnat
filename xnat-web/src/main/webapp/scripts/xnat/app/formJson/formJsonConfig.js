@@ -1111,7 +1111,7 @@ var XNAT = getObject(XNAT || {});
         }, [ spawn('i.fa.fa-pencil') ]);
     }
 
-    function deleteButton(itemObj, title) {
+    function deleteButton(itemObj, title, isDataPresent) {
         let status = itemObj['status'];
         return spawn('button.btn.btn-sm.edit', {
             onclick: function (e) {
@@ -1120,6 +1120,7 @@ var XNAT = getObject(XNAT || {});
                     xnatFormManager.deleteForm(itemObj, title);
                 }
             },
+            disabled: isDataPresent,
             title: "Delete the form"
         }, [ spawn('i.fa.fa-trash') ]);
     }
@@ -1443,15 +1444,10 @@ var XNAT = getObject(XNAT || {});
         }
         let actions = [];
         if (isEnabled) {
-            actions = [editButton(item), spacer(4), displayOrderButton(item), spacer(4), manageProjectsButton(item, title)];
-            if (!hasData) {
-                actions.push(spacer(4));
-                actions.push(deleteButton(item, title))
-            }
+            actions = [editButton(item), spacer(4), displayOrderButton(item), spacer(4), manageProjectsButton(item, title), spacer(4), deleteButton(item, title, hasData)];
         }else {
-            if (!hasData) {
-                actions = [deleteButton(item, title)];
-            }
+            actions = [deleteButton(item, title, hasData)];
+
         }
         return actions;
     }

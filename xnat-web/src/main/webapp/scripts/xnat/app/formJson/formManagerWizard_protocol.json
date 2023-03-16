@@ -20,7 +20,7 @@
       "label": "basicInfo",
       "components": [
         {
-          "label": "Title of the form",
+          "label": "Custom Form Title",
           "widget": "choicesjs",
           "placeholder": "Enter a short title for your Form. This will help you identify it later.",
           "tableView": true,
@@ -32,7 +32,8 @@
           "input": true
         },
         {
-          "label": "Form Order: Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker.",
+          "label": "Form Order",
+          "description": "Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker.",
           "mask": false,
           "tableView": false,
           "delimiter": false,
@@ -43,10 +44,11 @@
           "key": "zIndex",
           "type": "number",
           "input": true,
-          "defaultValue": -1
+          "defaultValue": 10
         },
         {
-          "label": "This form applies to the XNAT Datatype?",
+          "label": "Base XNAT Datatype",
+          "description": "Select the datatype that you intend to add custom fields to",
           "widget": "choicesjs",
           "placeholder": "Select",
           "tableView": true,

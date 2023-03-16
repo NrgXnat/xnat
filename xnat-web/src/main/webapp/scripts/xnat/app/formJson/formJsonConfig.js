@@ -844,7 +844,7 @@ var XNAT = getObject(XNAT || {});
         const title = itemObj['title'] || '';
         const dateCreated = new Date(configDefinition['dateCreated']);
         const formId = configDefinition['formUUID'];
-        var info_button = '<div class="info">Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker with more recently created forms shown first.</div>';
+        var info_button = '<div class="info">Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker with earlier forms shown first.</div>';
         xmodal.open({
             title: 'Change Form Order for ' + title,
             content: info_button + '<br><br>Current Form Order: ' + formOrder + '<br><br> Creation Date: ' + dateCreated + '<br><br> New Form Order: <input id="formOrderTxt" value="'+ formOrder + '">',

@@ -1245,7 +1245,7 @@ var XNAT = getObject(XNAT || {});
     xnatFormManager.table = function (container, callback) {
         let tableData = [];
         let definitions = xnatFormManager.sitedefinitions;
-        let DATA_FIELDS = 'title, datatype, status, formCreator, project';
+        let DATA_FIELDS = 'title, datatype, formCreator, project';
         for (let k = 0; k < definitions.length; k++) {
             let item = definitions[k];
             let itemObj = JSON.parse(item['contents']);
@@ -1486,6 +1486,8 @@ var XNAT = getObject(XNAT || {});
         headerTitle.append(xnatFormManager.addNewBtn());
 
         $manager.append(xnatFormManager.table());
+
+        $('div.filter-submit').remove();
 
         return {
             element: $manager[0],

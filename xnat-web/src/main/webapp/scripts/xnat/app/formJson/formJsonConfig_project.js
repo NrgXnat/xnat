@@ -788,7 +788,7 @@ XNAT.plugin =
     projectFormManager.table = function(container, callback) {
         let tableData = [];
         let definitions = projectFormManager.projectdefinitions;
-        let DATA_FIELDS = 'title, datatype, status';
+        let DATA_FIELDS = 'title, datatype, formCreator, status';
         for (let k = 0; k < definitions.length; k++) {
             let item = definitions[k];
             let itemObj = JSON.parse(item['contents']);
@@ -1038,6 +1038,8 @@ XNAT.plugin =
         if (projectFormManager.isProjectOwnerFormCreationEnabled) {
             $manager.append(projectFormManager.addNewBtn());
         }
+
+        $('div.filter-submit').remove();
 
         return {
             element: $manager[0],

@@ -10,11 +10,16 @@
 package org.nrg.xft.utils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.turbine.utils.CSVUtils;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
@@ -37,6 +42,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nullable;
@@ -478,8 +484,24 @@ public  class FileUtils {
         }
     }
 
+
     public static List<List<String>> CSVFileToArrayList(final File file) throws FileNotFoundException, IOException {
         return FileLinesToArrayList(file).stream().map(XftStringUtils::CommaDelimitedStringToArrayList).collect(Collectors.toList());
+    }
+
+    /**
+     * Reads the contents of the specified file and returns the contents in a list of rows and columns.
+     *
+     * @param file The file to be read.
+     *
+     * @return A list rows and columns of strings (one string for each column in the file)
+     */
+    public static List<List<String>> csvFileToArrayListUsingApacheCommons(final File file) throws FileNotFoundException, IOException {
+        try (final Reader in = new FileReader(file)) {
+            return StreamSupport.stream(CSVUtils.DEFAULT_FORMAT.parse(in).spliterator(), false)
+                    .map(CSVRecord::toList)
+                    .collect(Collectors.toList());
+        }
     }
 
     public static int CountFiles(File src, boolean stopAt1) {

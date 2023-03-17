@@ -10,8 +10,13 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
@@ -43,16 +48,22 @@ import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XftStringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Slf4j
 @SuppressWarnings("unused")
 public class CSVUpload2 extends SecureAction {
+
+    public CSVUpload2() {
+        super();
+        objectMapper = XDAT.getContextService().getBeanSafely(ObjectMapper.class);
+    }
 
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
@@ -67,50 +78,49 @@ public class CSVUpload2 extends SecureAction {
         FileItem fi = params.getFileItem("csv_to_store");
 
 
-        String fm_id=TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data)));
+        String fm_id=TurbineUtils.escapeParam(((String)TurbineUtils.GetPassedParameter("fm_id",data)));
         File f = Users.getUserCacheFile(XDAT.getUserDetails(),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
         context.put("fm_id", fm_id);
 
-        if (fi != null)
-        {
+        if (fi != null) {
             File temp = File.createTempFile("xnat", "csv");
             fi.write(temp);
 
-            List<List<String>> rows = FileUtils.CSVFileToArrayList(temp);
+            List<List<String>> rows = FileUtils.csvFileToArrayListUsingApacheCommons(temp);
+            if (rows.size() > 0 && rows.get(0).get(0).equals("ID")) {
+                rows.remove(0);
+            }
+            //This is required as CSV is parsed further downstream and strings need to conform to CSV encoding
+            rows = XftStringUtils.toCsvEncodedListUsingApacheCommons(rows);
 
             temp.delete();
             fi.delete();
-            
-
-            if (rows.size()>0 && rows.get(0).get(0).equals("ID")){
-                rows.remove(0);
-            }
 
             data.getSession().setAttribute("rows", rows);
-            data.setScreenTemplate("XDATScreen_uploadCSV2_Save.vm");
-        }else{
-            data.setScreenTemplate("XDATScreen_uploadCSV2_Save.vm");
         }
+        data.setScreenTemplate("XDATScreen_uploadCSV2_Save.vm");
     }
 
     public void doStore(RunData data,Context context) throws Exception{
         preserveVariables(data,context);
         ArrayList rows = (ArrayList)data.getSession().getAttribute("rows");
 
-        String fm_id=((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
+        String fm_id=((String)TurbineUtils.GetPassedParameter("fm_id",data));
         File f = Users.getUserCacheFile(XDAT.getUserDetails(),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
         context.put("fm_id", fm_id);
+        final String dataType = fm.getElementName();
 
-        String project = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
-        
+        String project = ((String)TurbineUtils.GetPassedParameter("project",data));
         
         ArrayList displaySummary = new ArrayList();
         List fields = fm.getFields();
+        int indexOfCustomField = getIndexOfCustomField(fields, dataType);
         try {
+
             String rootElementName = fm.getElementName();
             GenericWrapperElement.GetElement(rootElementName);
 
@@ -168,16 +178,15 @@ public class CSVUpload2 extends SecureAction {
                                     columnIndex++;
                                     continue;
                                 }
-                            } catch (Exception ignored) {
-                            }
-
+                            } catch (Exception ignored) {}
                         }
-
                         try {
-                            item.setProperty(xmlPath, column);
-                        } catch (FieldNotFoundException e) {
-                            log.error("", e);
-                        } catch (InvalidValueException e) {
+                            if (isEntireCustomField(dataType, xmlPath)) {
+                                item.setProperty(xmlPath, validateJson(StringEscapeUtils.unescapeJson(column)));
+                            } else {
+                                item.setProperty(xmlPath, TurbineUtils.unescapeParam(column));
+                            }
+                        } catch (FieldNotFoundException | InvalidValueException e) {
                             log.error("", e);
                         }
                     }
@@ -315,52 +324,56 @@ public class CSVUpload2 extends SecureAction {
 
     public void doProcess(RunData data, Context context)  {
         preserveVariables(data,context);
-        ArrayList rows = new ArrayList();
-        int i=0;
-        while (data.getParameters().containsKey("row" + i))
-        {
-            String row = TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("row" + i,data)));
-            ArrayList rowAL = XftStringUtils.CommaDelimitedStringToArrayList(row);
-            rows.add(rowAL);
-            i++;
-        }
-        data.getSession().setAttribute("rows", rows);
+        String project = ((String)TurbineUtils.GetPassedParameter("project",data));
 
-        String project = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
-
-        String fm_id=((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
+        String fm_id=((String)TurbineUtils.GetPassedParameter("fm_id",data));
         File f = Users.getUserCacheFile(XDAT.getUserDetails(),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
+        String dataType = fm.getElementName();
         context.put("fm",fm);
         context.put("fm_id", fm_id);
-
-        ArrayList displaySummary = new ArrayList();
         List fields = fm.getFields();
+        int indexOfCustomField = getIndexOfCustomField(fields, dataType);
         try {
+            List rows = buildRows(data, fields, dataType, indexOfCustomField);
+
+            data.getSession().setAttribute("rows", rows);
+
+            ArrayList displaySummary = new ArrayList();
+            Map<String,List<String>> problematicItems = new HashedMap();
+
             String rootElementName = fm.getElementName();
 
             UserI user = XDAT.getUserDetails();
             Iterator iter = rows.iterator();
-            while(iter.hasNext())
-            {
+            while(iter.hasNext()) {
                 ArrayList row = (ArrayList)iter.next();
                 XFTItem item = XFTItem.NewItem(rootElementName, user);
                 Iterator iter2 = row.iterator();
                 int columnIndex = 0;
-                while (iter2.hasNext())
-                {
+                while (iter2.hasNext()) {
+                    List<String> problematicXmlPaths = new ArrayList<>();
                     String column = (String)iter2.next();
                     String xmlPath = (String)fields.get(columnIndex);
                     if (!column.equals("")){
                         try {
-                            item.setProperty(xmlPath, column);
+                            if (columnIndex == indexOfCustomField) {
+                                item.setProperty(xmlPath, validateJson(StringEscapeUtils.unescapeJson(column)));
+                            } else {
+                                item.setProperty(xmlPath, TurbineUtils.unescapeParam(column));
+                            }
                         } catch (FieldNotFoundException e) {
                             log.error("", e);
+                            problematicXmlPaths.add("Field Not Found for " + xmlPath);
                         } catch (InvalidValueException e) {
                             log.error("", e);
+                            problematicXmlPaths.add("Invalid Value passed for " + xmlPath);
                         }
                     }
                     columnIndex++;
+                    if (!problematicXmlPaths.isEmpty()) {
+                        problematicItems.put(item.getIDValue(), problematicXmlPaths);
+                    }
                 }
                 XFTItem dbVersion =null;
                 boolean matchedPK=false;
@@ -420,9 +433,7 @@ public class CSVUpload2 extends SecureAction {
                             Object nValue = item.getProperty(xmlPath);
                             try {
                                 gwf = GenericWrapperElement.GetFieldForXMLPath(xmlPath);
-
-                            } catch (FieldNotFoundException e) {
-                            }
+                            } catch (FieldNotFoundException ignored) {}
 
                             if (gwf!=null && gwf.getBaseElement()!=null && !gwf.getBaseElement().equals("")){
                                 try {
@@ -478,7 +489,11 @@ public class CSVUpload2 extends SecureAction {
                             rowSummary.add(sb.toString());
                         }
                     }
-                    rowSummary.add("NEW");
+                    if (problematicItems.containsKey(item.getIDValue())) {
+                        rowSummary.add("<FONT COLOR='red'><b> ERROR: " + StringUtils.join(problematicItems.get(item.getIDValue()),",") + "</b></font>");
+                    }else {
+                        rowSummary.add("NEW");
+                    }
                 }else{
                     boolean modified = false;
                     Iterator fieldIter = fields.iterator();
@@ -491,8 +506,7 @@ public class CSVUpload2 extends SecureAction {
                         Object nValue=null;
                         try {
                             gwf = GenericWrapperElement.GetFieldForXMLPath(xmlPath);
-                        } catch (FieldNotFoundException e) {
-                        }
+                        } catch (FieldNotFoundException e) {}
 
                         try {
                             oValue = dbVersion.getProperty(xmlPath);
@@ -559,10 +573,14 @@ public class CSVUpload2 extends SecureAction {
 							log.error("", e);
 						}
                     }
-                    if (modified)
-                        rowSummary.add("MODIFIED");
-                    else
-                        rowSummary.add("NO CHANGE");
+                    if (problematicItems.containsKey(item.getIDValue())) {
+                        rowSummary.add("<FONT COLOR='red'><b>ERROR: " + StringUtils.join(problematicItems.get(item.getIDValue()),",") +  "</b></font>");
+                    }else {
+                        if (modified)
+                            rowSummary.add("MODIFIED");
+                        else
+                            rowSummary.add("NO CHANGE");
+                    }
                 }
 
                 displaySummary.add(rowSummary);
@@ -571,12 +589,68 @@ public class CSVUpload2 extends SecureAction {
             context.put("summary", displaySummary);
 
             data.setScreenTemplate("XDATScreen_uploadCSV3.vm");
-        } catch (XFTInitException e) {
-            log.error("", e);
-            data.setScreenTemplate("XDATScreen_uploadCSV2.vm");
-        } catch (ElementNotFoundException e) {
+        } catch (XFTInitException | ElementNotFoundException | IOException e) {
             log.error("", e);
             data.setScreenTemplate("XDATScreen_uploadCSV2.vm");
         }
     }
+
+
+    private List buildRows(RunData data, List fields, String dataType, int indexOfCustomField) throws IOException {
+        ArrayList rows = new ArrayList();
+        if (indexOfCustomField == -1) { //All XML columns, escape all
+            int i=0;
+            while (data.getParameters().containsKey("row" + i)) {
+                String row = ((String)TurbineUtils.GetPassedParameter("row" + i, data));
+                List rowAL = XftStringUtils.commaDelimitedStringToArrayListUsingApacheCommons(TurbineUtils.unescapeParam(row));
+                rows.add(rowAL.stream().map(r->TurbineUtils.escapeParam((String)r)).collect(Collectors.toList()));
+                i++;
+            }
+        }else { //Only escape the non custom-field columns
+            int i=0;
+            while (data.getParameters().containsKey("row" + i)) {
+                String row = data.getParameters().getString("row" + i);
+                List rowAL = XftStringUtils.commaDelimitedStringToArrayListUsingApacheCommons(TurbineUtils.unescapeParam(row));
+
+                for (int ind = 0;  ind < rowAL.size(); ind++) {
+                    if (ind != indexOfCustomField) {
+                        rowAL.set(ind, TurbineUtils.escapeParam(rowAL.get(ind)));
+                    }else {
+                        rowAL.set(ind, StringEscapeUtils.escapeJson((String)rowAL.get(ind)));
+                    }
+                }
+                rows.add(rowAL);
+                i++;
+            }
+        }
+        return rows;
+    }
+
+    private String validateJson(final String value) throws InvalidValueException {
+        try {
+            final JsonNode validatedJson = objectMapper.readTree(value);
+            return objectMapper.writeValueAsString(validatedJson);
+        } catch (Exception e) {
+            throw new InvalidValueException("Invalid json string");
+        }
+    }
+
+    private boolean isEntireCustomField(final String dataType, final String xmlPath) {
+        return  xmlPath.equals(getCustomFieldsPath(dataType));
+    }
+
+    private String getCustomFieldsPath(final String dataType) {
+        return String.format("%s%s%s",dataType, XFT.PATH_SEPARATOR, CUSTOM_FIElDS_NAME);
+    }
+
+    private int getIndexOfCustomField(final List fields, final String dataType) {
+       return IntStream.range(0, fields.size())
+                .filter(i -> isEntireCustomField(dataType,(String)fields.get(i)))
+                .findFirst().orElse(-1);
+    }
+
+    private final String CUSTOM_FIElDS_NAME = "custom_fields";
+    private final String DOT_SEPARATOR = ".";
+    private final ObjectMapper objectMapper;
+
 }

@@ -10,16 +10,26 @@
 package org.nrg.xft.utils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.wml.P;
 import org.nrg.framework.utilities.Patterns;
+import org.nrg.xdat.turbine.utils.CSVUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 public class XftStringUtils {
@@ -394,6 +404,45 @@ public class XftStringUtils {
 
 	/**
 	 * Translates the comma-delimited string to an ArrayList of strings.
+	 * @param str
+	 * @return Returns an ArrayList of the Strings in the specified comma-delimited String
+	 */
+	public static List<String> commaDelimitedStringToArrayListUsingApacheCommons(final String str) throws IOException {
+		try (final Reader in = new StringReader(str)) {
+			return StreamSupport.stream(CSVUtils.DEFAULT_FORMAT.parse(in).spliterator(), false)
+					.map(CSVRecord::toList)
+					.flatMap(Collection::stream)
+					.collect(Collectors.toList());
+		}
+	}
+
+	/**
+	 * Encodes an  Array of rows and columns of strings as CSV formatted rows and columns as per RFC4180 format.
+	 * @param rows
+	 * @return Returns an ArrayList of the Strings which conforms to a CSV input column
+	 */
+	public static List<List<String>> toCsvEncodedListUsingApacheCommons(final List<List<String>> rows) throws IOException {
+			return rows.stream()
+					.map(row -> row.stream()
+							.map(XftStringUtils::csvEncode)
+							.collect(Collectors.toList()))
+					.collect(Collectors.toList());
+	}
+
+	private static String csvEncode(final String str) {
+		try (Writer stringWriter = new StringWriter();
+			 CSVPrinter csvPrinter = new CSVPrinter(stringWriter, CSVUtils.ENCODING_FORMAT)) {
+				csvPrinter.print(str);
+				return stringWriter.toString();
+		} catch(IOException e) {
+			log.error("Could not encode", e);
+			return str;
+		}
+	}
+
+
+	/**
+	 * Translates the comma-delimited string to an ArrayList of strings.
 	 * @param s
 	 * @return Returns an ArrayList of the Strings in the specified comma-delimited String
 	 */
@@ -415,7 +464,7 @@ public class XftStringUtils {
 		return al;
 	}
 
-    /**
+	/**
      * Translates the comma-delimited string to an ArrayList of strings.
      * @param s
      * @return Returns an ArrayList of the Strings in the specified comma-delimited String

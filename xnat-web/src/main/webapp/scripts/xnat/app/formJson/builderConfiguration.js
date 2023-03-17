@@ -111,6 +111,9 @@ var XNAT = getObject(XNAT || {});
 
     function createComponent(name, componentWeight) {
         let component = Formio.Components.components[name].builderInfo;
+        if (name === "container") {
+          component.schema.hideLabel = false;
+        }  
         component.weight = componentWeight;
         Object.defineProperty(Formio.Components.components[name], 'builderInfo', {
             get() {

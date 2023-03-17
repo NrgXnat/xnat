@@ -75,7 +75,7 @@ var XNAT = getObject(XNAT || {});
 
         var username = $(this).data('username') || false;
 
-        xmodal.loading.open({ title: 'Flushing Cache '});
+        xmodal.loading.open({ title: 'Flushing Cache'});
         XNAT.xhr.ajax({
             url: XNAT.app.userCache.flushCacheUrl(username),
             method: 'DELETE',
@@ -85,9 +85,22 @@ var XNAT = getObject(XNAT || {});
             },
             success: function(data){
                 xmodal.loading.close();
-                console.log(data);
-                XNAT.ui.banner.top(3000,'Successfully updated cache','success');
-                XNAT.app.userCache.refresh();
+                xmodal.loading.open({ title: 'Resetting Custom Form Display Docs'});
+                console.log('Successfully updated User Cache', data);
+
+                // add a call to reset the custom form display field cache
+                XNAT.xhr.post({
+                    url: '/xapi/customforms/displayfields/reload',
+                    success: function(data){
+                        xmodal.loading.close();
+                        XNAT.ui.banner.top(3000,'Successfully updated cached data','success');
+                        XNAT.app.userCache.refresh();
+                    },
+                    fail: function(e){
+                        xmodal.loading.close();
+                        errorHandler(e, 'Could Not Reset Custom Form Display Docs');
+                    }
+                });
             }
         })
     });

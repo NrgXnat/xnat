@@ -152,12 +152,14 @@ var XNAT = getObject(XNAT || {});
     function initBuilder(form) {
         let formBuilderElement = document.getElementById("form-builder");
         let builderConfig = xnatFormManager.getBuilderConfiguration();
+        let fieldsToHide = xnatFormManager.defineExcludedFields();
         let builderSchema = !jQuery.isEmptyObject(addNewBuilderObj) && addNewBuilderObj.hasOwnProperty('builderSchema') ?
             addNewBuilderObj.builderSchema :
             defaultFormBuilderSchema(form);
         Formio.builder(formBuilderElement, builderSchema, {
             noDefaultSubmitButton: true,
-            builder: builderConfig
+            builder: builderConfig,
+            editForm: fieldsToHide
         }).then((builder) => {
             setupBuilder(builder);
         });
@@ -346,178 +348,183 @@ var XNAT = getObject(XNAT || {});
         return XNAT.customFormManager.builderConfigManager.getBuilderConfig();
     }
 
+    xnatFormManager.defineExcludedFields = function(){
+        const componentNames = Formio.Components._components;
+        let fieldsToHide = {};
+        for (const component in componentNames) {
+          fieldsToHide = {
+            ...fieldsToHide,
+            [component]: [
+              {
+                key: "display",
+                ignore: false,
+                components: [
+                  {
+                    key: "labelPosition",
+                    ignore: true,
+                  },
+                  {
+                    key: "optionsLabelPosition",
+                    ignore: true,
+                  },
+                  {
+                    key: "displayMask",
+                    ignore: true,
+                  },
+                  {
+                    key: "hideLabel",
+                    ignore: true,
+                  },
+                  {
+                    key: "tableView",
+                    ignore: true,
+                  },
+                  {
+                    key: "editor",
+                    ignore: true,
+                  },
+                  {
+                    key: "uniqueOptions",
+                    ignore: true,
+                  },
+                  {
+                    key: "modalEdit",
+                    ignore: true,
+                  },
+                  {
+                    key: "tableView",
+                    ignore: true,
+                  },
+                  {
+                    key: "inputType",
+                    ignore: true,
+                  },
+                  {
+                    key: "tooltip",
+                    ignore: true,
+                  },
+                  {
+                    key: "prefix",
+                    ignore: true,
+                  },
+                  {
+                    key: "suffix",
+                    ignore: true,
+                  },
+                  { key: "spellcheck", ignore: true },
+                ],
+              },
+              {
+                key: "data",
+                ignore: false,
+                components: [
+                  {
+                    key: "protected",
+                    ignore: true,
+                  },
+                  {
+                    key: "encrypted",
+                    ignore: true,
+                  },
+                  {
+                    key: "persistent",
+                    ignore: true,
+                  },
+                  {
+                    key: "dbIndex",
+                    ignore: true,
+                  },
+                  {
+                    key: "calculateServer",
+                    ignore: true,
+                  },
+                  {
+                    key: "allowCalculateOverride",
+                    ignore: true,
+                  },
+                  {
+                    key: "inputFormat",
+                    ignore: true,
+                  },
+                  {
+                    key: "customDefaultValuePanel",
+                    ignore: false,
+                    components: [
+                      {
+                        key: "customDefaultValue-js",
+                        ignore: true,
+                      },
+                    ],
+                  },
+                  {
+                    key: "calculateValuePanel",
+                    ignore: false,
+                    components: [
+                      {
+                        key: "calculateValue-js",
+                        ignore: true,
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                key: "validation",
+                ignore: false,
+                components: [
+                  { key: "unique", ignore: true },
+                  { key: "validate.pattern", ignore: true },
+                  { key: "kickbox", ignore: true },
+                  { key: "custom-validation-js", ignore: true },
+                  {
+                    key: "validate.onlyAvailableItems",
+                    ignore: true,
+                  },
+                ],
+              },
+              {
+                key: "api",
+                ignore: false,
+                components: [
+                  { key: "tags", ignore: true },
+                  { key: "properties", ignore: true },
+                ],
+              },
+              {
+                key: "conditional",
+                ignore: false,
+                components: [
+                  {
+                    key: "customConditionalPanel",
+                    ignore: false,
+                    components: [
+                      {
+                        key: "customConditional-js",
+                        ignore: true,
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                key: "logic",
+                ignore: true,
+              },
+              {
+                key: "layout",
+                ignore: true,
+              },
+            ],
+          };
+        }
+        return fieldsToHide;
+    }
+
     xnatFormManager.builderDialog = function (configDefinition) {
             let configDefinitionObj = JSON.parse(configDefinition['contents']);
             configDefinitionObj.components = configDefinitionObj.components[0].components;
             let builderConfig = xnatFormManager.getBuilderConfiguration();
-                const componentNames = Formio.Components._components;
-                let fieldsToHide = {};
-                for (const component in componentNames) {
-                  fieldsToHide = {
-                    ...fieldsToHide,
-                    [component]: [
-                      {
-                        key: "display",
-                        ignore: false,
-                        components: [
-                          {
-                            key: "labelPosition",
-                            ignore: true,
-                          },
-                          {
-                            key: "optionsLabelPosition",
-                            ignore: true,
-                          },
-                          {
-                            key: "displayMask",
-                            ignore: true,
-                          },
-                          {
-                            key: "hideLabel",
-                            ignore: true,
-                          },
-                          {
-                            key: "tableView",
-                            ignore: true,
-                          },
-                          {
-                            key: "editor",
-                            ignore: true,
-                          },
-                          {
-                            key: "uniqueOptions",
-                            ignore: true,
-                          },
-                          {
-                            key: "modalEdit",
-                            ignore: true,
-                          },
-                          {
-                            key: "tableView",
-                            ignore: true,
-                          },
-                          {
-                            key: "inputType",
-                            ignore: true,
-                          },
-                          {
-                            key: "tooltip",
-                            ignore: true,
-                          },
-                          {
-                            key: "prefix",
-                            ignore: true,
-                          },
-                          {
-                            key: "suffix",
-                            ignore: true,
-                          },
-                          { key: "spellcheck", ignore: true },
-                        ],
-                      },
-                      {
-                        key: "data",
-                        ignore: false,
-                        components: [
-                          {
-                            key: "protected",
-                            ignore: true,
-                          },
-                          {
-                            key: "encrypted",
-                            ignore: true,
-                          },
-                          {
-                            key: "persistent",
-                            ignore: true,
-                          },
-                          {
-                            key: "dbIndex",
-                            ignore: true,
-                          },
-                          {
-                            key: "calculateServer",
-                            ignore: true,
-                          },
-                          {
-                            key: "allowCalculateOverride",
-                            ignore: true,
-                          },
-                          {
-                            key: "inputFormat",
-                            ignore: true,
-                          },
-                          {
-                            key: "customDefaultValuePanel",
-                            ignore: false,
-                            components: [
-                              {
-                                key: "customDefaultValue-js",
-                                ignore: true,
-                              },
-                            ],
-                          },
-                          {
-                            key: "calculateValuePanel",
-                            ignore: false,
-                            components: [
-                              {
-                                key: "calculateValue-js",
-                                ignore: true,
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                      {
-                        key: "validation",
-                        ignore: false,
-                        components: [
-                          { key: "unique", ignore: true },
-                          { key: "validate.pattern", ignore: true },
-                          { key: "kickbox", ignore: true },
-                          { key: "custom-validation-js", ignore: true },
-                          {
-                            key: "validate.onlyAvailableItems",
-                            ignore: true,
-                          },
-                        ],
-                      },
-                      {
-                        key: "api",
-                        ignore: false,
-                        components: [
-                          { key: "tags", ignore: true },
-                          { key: "properties", ignore: true },
-                        ],
-                      },
-                      {
-                        key: "conditional",
-                        ignore: false,
-                        components: [
-                          {
-                            key: "customConditionalPanel",
-                            ignore: false,
-                            components: [
-                              {
-                                key: "customConditional-js",
-                                ignore: true,
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                      {
-                        key: "logic",
-                        ignore: true,
-                      },
-                      {
-                        key: "layout",
-                        ignore: true,
-                      },
-                    ],
-                  };
-                }
+            let fieldsToHide = xnatFormManager.defineExcludedFields();
             Formio.builder(
               document.getElementById("formio-builder"),
               configDefinitionObj,

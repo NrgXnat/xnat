@@ -189,9 +189,9 @@ function unescapeXML(val) {
           htmlDivElt.innerHTML = '';
           if (components !== undefined && JSON.stringify(components) === "{}") {
               if (htmlDivElementParentId !== undefined) {
-                  document.getElementById(htmlDivElementParentId).style.display = 'none';
+                  document.getElementById(htmlDivElementParentId).style.visibility = 'hidden';
               }
-              htmlDivElt.style.display='none';
+              htmlDivElt.style.visibility='hidden';
           } else if (components !== undefined)  {
               try {
                   let formDataPreFilled = JSON.parse(localStorage.getItem("currentFormIO"));
@@ -231,10 +231,10 @@ function unescapeXML(val) {
               if (htmlDivElementParentId !== undefined) {
                 let htmlDivElementParent = document.getElementById(htmlDivElementParentId);
                 if (htmlDivElementParent !== null) {
-                    htmlDivElementParent.style.display = 'block';
+                    htmlDivElementParent.style.visibility = 'visible';
                 }
                 if (htmlDivElt !== null) {
-                   htmlDivElt.style.display='block';
+                   htmlDivElt.style.visibility='visible';
                 }
               }
           }

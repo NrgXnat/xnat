@@ -31,7 +31,6 @@ import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -73,9 +72,13 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
                                 final String projectIdQueryParam, final String visitId,
                                 final String subType, final boolean appendPreviousNextButtons) throws Exception {
         if ((null == id || id.equalsIgnoreCase("NULL")) && (null == projectIdQueryParam || projectIdQueryParam.equalsIgnoreCase("") || projectIdQueryParam.equalsIgnoreCase("NULL"))) {
-            return FormsIOJsonUtils.concatenate(getFormsForTypeInProject(null, xsiType), null, "Custom Variables", true, appendPreviousNextButtons);
+            // No project, no entity. Just return enabled site forms.
+            final List<CustomVariableAppliesTo> siteAppliesTos = formAppliesToService.filterByStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Site, null, xsiType, null, null, null, CustomFormsConstants.ENABLED_STATUS_STRING);
+            final List<CustomVariableFormAppliesTo> siteFormAppliesTos = FormsIOJsonUtils.pullOutFormAppliesTo(siteAppliesTos);
+            return FormsIOJsonUtils.concatenate(siteFormAppliesTos, null, "Custom Variables", true, appendPreviousNextButtons);
         }
 
+        // Find project id and entity's custom fields
         final XnatProjectdata project = getProject(id, projectIdQueryParam, xsiType, user);
         final String projectId;
         final List<UUID> formUuidsFromCustomFields;
@@ -103,9 +106,26 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
             formUuidsFromCustomFields = getFormUuidsFromCustomFields(experiment);
         }
 
-        final List<CustomVariableFormAppliesTo> forms = getFormsForTypeInProject(projectId, xsiType);
-        final List<CustomVariableForm> additionalForms = getAdditionalFormsFromCustomFieldUuids(formUuidsFromCustomFields, forms);
+        // Get all site forms, even disabled
+        final List<CustomVariableAppliesTo> siteAppliesTos = formAppliesToService.filterByStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Site, null, xsiType, null, null, null, null);
+        final List<CustomVariableFormAppliesTo> siteFormAppliesTos = FormsIOJsonUtils.pullOutFormAppliesTo(siteAppliesTos);
 
+        // Get all project forms, even disabled and opted out
+        final List<CustomVariableAppliesTo> projectAppliesTos = projectId != null
+                ? formAppliesToService.filterByPossibleStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Project, projectId, xsiType, null, null, null, Collections.emptyList())
+                : Collections.emptyList();
+        final List<CustomVariableFormAppliesTo> projectFormAppliesTos = FormsIOJsonUtils.pullOutFormAppliesTo(projectAppliesTos);
+
+        // Find forms that aren't site-wide or on this project, but which we should load given that there is form data in the entity's custom fields.
+        // XNAT-7540 We won't add any disabled or opted-out forms here, because they are still contained in the site and project lists (to be removed later).
+        final List<CustomVariableForm> additionalForms = getAdditionalFormsFromCustomFieldUuids(formUuidsFromCustomFields, siteFormAppliesTos, projectFormAppliesTos);
+
+        // Filter out site forms for which the project has opted out
+        final List<CustomVariableFormAppliesTo> nonOptedOutSiteFormAppliesTos = FormsIOJsonUtils.removeSiteFormOptedOutByProject(siteFormAppliesTos, projectFormAppliesTos);
+
+        // Combine all the forms and return their JSON representation
+        // (This also filters out disabled forms)
+        final List<CustomVariableFormAppliesTo> forms = Stream.concat(nonOptedOutSiteFormAppliesTos.stream(), projectFormAppliesTos.stream()).collect(Collectors.toList());
         return FormsIOJsonUtils.concatenate(forms, additionalForms, "Custom Variables", true, appendPreviousNextButtons);
     }
 
@@ -133,8 +153,8 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
                 .collect(Collectors.toList());
     }
 
-    private List<CustomVariableForm> getAdditionalFormsFromCustomFieldUuids(final List<UUID> formUuidsFromCustomFields, final List<CustomVariableFormAppliesTo> formsWeAlreadyHave) {
-        final Set<UUID> formUuidsWeAlreadyHave = formsWeAlreadyHave.stream()
+    private List<CustomVariableForm> getAdditionalFormsFromCustomFieldUuids(final List<UUID> formUuidsFromCustomFields, final List<CustomVariableFormAppliesTo> siteForms, final List<CustomVariableFormAppliesTo> projectForms) {
+        final Set<UUID> formUuidsWeAlreadyHave = Stream.concat(siteForms.stream(), projectForms.stream())
                 .map(CustomVariableFormAppliesTo::getCustomVariableForm)
                 .map(CustomVariableForm::getFormUuid)
                 .collect(Collectors.toSet());
@@ -143,19 +163,6 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
                 .map(formService::findByUuid)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-    }
-
-    private List<CustomVariableFormAppliesTo> getFormsForTypeInProject(final String projectId, final String xsiType) {
-        final List<CustomVariableAppliesTo> siteForms = formAppliesToService.filterByStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Site, null, xsiType, null, null, null, CustomFormsConstants.ENABLED_STATUS_STRING);
-        final List<CustomVariableAppliesTo> projectForms = projectId != null
-                ? formAppliesToService.filterByPossibleStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Project, projectId, xsiType, null, null, null, Arrays.asList(CustomFormsConstants.ENABLED_STATUS_STRING, CustomFormsConstants.OPTED_OUT_STATUS_STRING))
-                : Collections.emptyList();
-        return Stream.concat(
-                FormsIOJsonUtils.removeSiteFormsOptedOutByProject(siteForms, projectForms).stream(),
-                projectForms.stream()
-                        .map(CustomVariableAppliesTo::getCustomVariableFormAppliesTos)
-                        .flatMap(List::stream)
-        ).collect(Collectors.toList());
     }
 
     private XnatProjectdata getProject(final String idOrAlias, final String projectIdQueryParam, final String xsiType, final UserI user) {

@@ -89,7 +89,7 @@ public class FormsIOJsonUtils {
         );
     }
 
-    private static List<CustomVariableFormAppliesTo> pullOutFormAppliesTo(final List<CustomVariableAppliesTo> appliesTo) {
+    public static List<CustomVariableFormAppliesTo> pullOutFormAppliesTo(final List<CustomVariableAppliesTo> appliesTo) {
         return appliesTo == null || appliesTo.isEmpty() ? Collections.emptyList() :
                 appliesTo.stream()
                         .map(CustomVariableAppliesTo::getCustomVariableFormAppliesTos)

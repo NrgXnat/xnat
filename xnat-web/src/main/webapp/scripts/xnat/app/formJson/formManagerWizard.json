@@ -20,7 +20,7 @@
                         "required": true
                     },
                     "tableView": true,
-                    "placeholder": "Enter a short title for your Form. This will help you identify it later."
+                    "placeholder": "Enter a short title for your form. Use only alpha-numeric characters. This will help you identify it later."
                 },
                 {
                     "label": "Form Order",

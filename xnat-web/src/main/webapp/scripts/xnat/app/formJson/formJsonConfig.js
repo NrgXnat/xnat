@@ -298,7 +298,14 @@ var XNAT = getObject(XNAT || {});
             wizard.nosubmit = true;
             wizard.on('nextPage', function (page) {
                 if (xnatFormManager.siteHasProtocolsPluginDeployed == true) {
-                    if (page.page === 3) {
+                    if (page.page === 1) {
+                        let currentTitle = wizard.data.formTitle;
+                        let cleanedTitle = Formio.Utils.unescapeHTML(wizard.data.formTitle);
+                        if (currentTitle !== cleanedTitle) {
+                            XNAT.dialog.message('ERROR ', 'Please enter a title using only alpha-numeric characters');
+                            wizard.prevPage();
+                        }
+                    } else if (page.page === 3) {
                         if (wizard.data.isThisASiteWideConfiguration === 'no' && (wizard.data.xnatProject == undef || wizard.data.xnatProject.length == 0)) {
                             XNAT.dialog.message('ERROR ', 'Please select at least one' + projectDataTypeSingularName +'.');
                             wizard.prevPage();
@@ -306,7 +313,14 @@ var XNAT = getObject(XNAT || {});
                         initBuilder(wizard);
                     }
                 } else {
-                    if (page.page === 2) {
+                    if (page.page === 1) {
+                        let currentTitle =  wizard.data.formTitle;
+                        let cleanedTitle  =  Formio.Utils.unescapeHTML(wizard.data.formTitle);
+                        if (currentTitle !== cleanedTitle) {
+                            XNAT.dialog.message('ERROR ', 'Please enter a title using only alpha-numeric characters');
+                            wizard.prevPage();
+                        }
+                    } else if (page.page === 2) {
                         if (wizard.data.isThisASiteWideConfiguration === 'no' && (wizard.data.xnatProject == undef || wizard.data.xnatProject.length == 0)) {
                             XNAT.dialog.message('ERROR ', 'Please select at least one' + projectDataTypeSingularName +'.');
                             wizard.prevPage();

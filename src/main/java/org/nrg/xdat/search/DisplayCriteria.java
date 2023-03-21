@@ -128,7 +128,7 @@ public class DisplayCriteria implements SQLClause {
             StringBuilder where = new StringBuilder();
             where.append("(");
             where.append(sqlContent);
-            where.append(getComparisonType());
+            where.append(getComparisonType() + " ");
             if (needsQuotes) {
                 where.append("'").append(value).append("'");
             } else {

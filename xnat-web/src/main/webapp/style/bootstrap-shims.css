@@ -4,6 +4,11 @@ a:visited { color: var(--link-color); }
 a:hover,
 a:active { color: var(--link-color-hover); }
 
+/* Ensure icon font rendering */
+.fa {
+    font-family: "Font Awesome",FontAwesome !important;
+}
+
 /* Fix pagination display */
 .xnat-bootstrap .pagination {
     border-bottom: 5px solid var(--XNAT-blue-500);

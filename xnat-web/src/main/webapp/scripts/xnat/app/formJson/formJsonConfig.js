@@ -379,6 +379,14 @@ var XNAT = getObject(XNAT || {});
                     ignore: true,
                   },
                   {
+                    key: "labelWidth",
+                    ignore: true,
+                  },
+                  {
+                    key: "labelMargin",
+                    ignore: true,
+                  },
+                  {
                     key: "optionsLabelPosition",
                     ignore: true,
                   },
@@ -387,7 +395,19 @@ var XNAT = getObject(XNAT || {});
                     ignore: true,
                   },
                   {
+                    key: "mask",
+                    ignore: true,
+                  },
+                  {
                     key: "hideLabel",
+                    ignore: true,
+                  },
+                  {
+                    key: "hidden",
+                    ignore: true,
+                  },
+                  {
+                    key: "disabled",
                     ignore: true,
                   },
                   {

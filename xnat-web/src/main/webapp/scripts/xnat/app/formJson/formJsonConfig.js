@@ -173,7 +173,8 @@ var XNAT = getObject(XNAT || {});
             'submission': addNewBuilderObj.submission,
             'builder': builderSchema
         };
-
+        //XNAT-7668
+        submission.builder['title'] = submission.submission.data['formTitle'];
         var url = restUrl('xapi/customforms/save', {}, false, true);
 
         XNAT.xhr.put({

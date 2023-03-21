@@ -408,7 +408,8 @@ XNAT.plugin =
 
         submissionJson['submission'] = submission;
         submissionJson['builder'] = builderJson;
-
+        //XNAT-7668
+        submissionJson.builder['title'] = submissionJson.submission.data['formTitle'];
         var url = restUrl('xapi/customforms/save', {}, false, true);
 
         XNAT.xhr.put({

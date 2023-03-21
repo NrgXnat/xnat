@@ -98,8 +98,7 @@ var XNAT = getObject(XNAT || {});
             'container',
             'datagrid',
             'datamap',
-            'editgrid',
-            'tree'
+            'editgrid'
         ].forEach(name => {
             createComponent(name, index++);
             customNonSearchableComponents[name] = true;

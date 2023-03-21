@@ -545,7 +545,7 @@ public class RESTHTMLPresenter extends PresentationA {
                             {
                                 vS= StringUtils.replace(vS, "<", "&#60;");
                             }
-							sb.append(vS);
+							sb.append(TurbineUtils.escapeParam(TurbineUtils.unescapeParam(vS)));
 					    }
 					}
 

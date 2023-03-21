@@ -522,21 +522,21 @@ var XNAT = getObject(XNAT || {});
     }
 
     xnatFormManager.builderDialog = function (configDefinition) {
-            let configDefinitionObj = JSON.parse(configDefinition['contents']);
-            configDefinitionObj.components = configDefinitionObj.components[0].components;
-            let builderConfig = xnatFormManager.getBuilderConfiguration();
-            let fieldsToHide = xnatFormManager.defineExcludedFields();
-            Formio.builder(
-              document.getElementById("formio-builder"),
-              configDefinitionObj,
-              {
-                noDefaultSubmitButton: true,
-                builder: builderConfig,
-                editForm: fieldsToHide,
-              }
-            ).then((form) => {
-              Formio.Builders.addBuilder("wysiwyg", form);
-            });
+        let configDefinitionObj = JSON.parse(configDefinition['contents']);
+        configDefinitionObj.components = configDefinitionObj.components[0].components;
+        let builderConfig = xnatFormManager.getBuilderConfiguration();
+        let fieldsToHide = xnatFormManager.defineExcludedFields();
+        Formio.builder(
+          document.getElementById("formio-builder"),
+          configDefinitionObj,
+          {
+            noDefaultSubmitButton: true,
+            builder: builderConfig,
+            editForm: fieldsToHide,
+          }
+        ).then((form) => {
+          Formio.Builders.addBuilder("wysiwyg", form);
+        });
     };
 
 
@@ -606,7 +606,8 @@ var XNAT = getObject(XNAT || {});
                 action: function(obj) {
                     let $thisModal = obj.$modal;
                     xmodal.confirm({
-                        content: 'Are you sure you want to abandon?',
+                        title: 'Unsaved JSON Edits',
+                        content: 'There may be unsaved edits to this JSON configuration. Are you sure you want to close without saving?',
                         okAction: function(){
                             // close 'parent' modal
                             xmodal.close($thisModal);
@@ -689,9 +690,9 @@ var XNAT = getObject(XNAT || {});
     xnatFormManager.disable = function (configDefinition, title, formElement) {
         let appliesTo = configDefinition['appliesToList'];
         xmodal.open({
-            title: 'Disable?',
+            title: 'Confirm Form Disable',
             content: 'Are you sure you want to disable the form?',
-            width: 200,
+            width: 400,
             height: 200,
             overflow: 'auto',
             buttons: {
@@ -730,10 +731,10 @@ var XNAT = getObject(XNAT || {});
     xnatFormManager.deleteForm = function (configDefinition, title) {
         let appliesTo = configDefinition['appliesToList'];
         xmodal.open({
-            title: 'Delete form?',
-            content: 'Are you sure you want to delete the form? <br><br><p>In case data has been acquired using the form, form will be disabled. This allows access to data in the future.</p>',
-            width: 300,
-            height: 300,
+            title: 'Confirm Form Deletion',
+            content: 'Are you sure you want to delete the form definition? This operation cannot be undone.',
+            width: 400,
+            height: 200,
             overflow: 'auto',
             buttons: {
                 ok: {
@@ -772,8 +773,8 @@ var XNAT = getObject(XNAT || {});
 
     xnatFormManager.warnUserDataExists = function () {
         XNAT.dialog.open({
-            width: 450,
-            title: "Form deletion not possible",
+            width: 400,
+            title: "Cannot Delete Form",
             content: "Form has been disabled as data has been acquired using the form.",
             buttons: [{
                 label: 'OK',
@@ -788,9 +789,9 @@ var XNAT = getObject(XNAT || {});
 
     xnatFormManager.warnUserDataLossOnClosing = function () {
         XNAT.dialog.open({
-            width: 450,
-            title: "Are you sure you want to abandon form creation?",
-            content: "You you sure you want to abandon form creation? All data will be lost.",
+            width: 400,
+            title: "Unsaved Form Definition",
+            content: "Your form has not been saved. Are you sure you want to close this dialog without saving?",
             buttons: [{
                 label: 'OK',
                 isDefault: true,
@@ -974,11 +975,14 @@ var XNAT = getObject(XNAT || {});
                     classes: 'xnat-bootstrap',
                     template: $('#addFormVariable'),
                     width: 1600,
-                    height: 2400,
+                    height: 1200,
                     closeBtn: false,
-                    scroll: false,
+                    scroll: true,
                     beforeShow: function (obj) {
                        displayFormWizard();
+                    },
+                    afterShow: function(obj) {
+                        obj.$modal.find('.formio-form').css('min-height','600px');
                     },
                     buttons: {
                         save: {
@@ -995,7 +999,8 @@ var XNAT = getObject(XNAT || {});
                             action: function(obj) {
                                 let $thisModal = obj.$modal;
                                 xmodal.confirm({
-                                    content: 'Are you sure you want to abandon?',
+                                    title: 'Unsaved Form',
+                                    content: 'You have not saved this form yet. Are you sure you want to close this dialog?',
                                     okAction: function(){
                                         // close 'parent' modal
                                         xmodal.close($thisModal);
@@ -1041,9 +1046,9 @@ var XNAT = getObject(XNAT || {});
 
     }
 
-    function editWindow(itemObj) {
+    function editWindow(itemObj,formTitle) {
         xmodal.open({
-        title: 'Edit Custom Form',
+        title: 'Edit Custom Form: '+formTitle,
         classes: 'xnat-bootstrap',
         template: $('#editForm'),
         width: 1600,
@@ -1106,7 +1111,8 @@ var XNAT = getObject(XNAT || {});
                 action: function(obj) {
                     let $thisModal = obj.$modal;
                     xmodal.confirm({
-                        content: 'Are you sure you want to abandon?',
+                        title: 'Unsaved Edits',
+                        content: 'There may be unsaved edits to this form. Are you sure you want to close without saving?',
                         okAction: function(){
                             // close 'parent' modal
                             xmodal.close($thisModal);
@@ -1119,26 +1125,32 @@ var XNAT = getObject(XNAT || {});
     }
 
     function editLink(itemObj, text){
-        return spawn('a.link|href=#!', {
-            onclick: function(e){
-                e.preventDefault();
-                editWindow(itemObj)
-            }
-        }, [['b', text]]);
+        return spawn('!', [
+            spawn('a.link|href=#!', {
+                onclick: function(e){
+                    e.preventDefault();
+                    editWindow(itemObj,text)
+                }
+            }, [['b', text]]),
+            spawn('br'),
+            spawn('small',{style: {color: "#a0a0a0" }},itemObj['formUUID'])
+        ]);
     }
 
-    function editButton(itemObj) {
+    function editButton(itemObj,formTitle) {
         return spawn('button.btn.btn-sm.edit', {
             onclick: function (e) {
                 e.preventDefault();
-                editWindow(itemObj)
+                editWindow(itemObj,formTitle)
             },
             title: "Edit the form definition"
         }, [ spawn('i.fa.fa-pencil') ]);
     }
 
     function deleteButton(itemObj, title, isDataPresent) {
-        let status = itemObj['status'];
+        let status = itemObj['status'],
+            disableStatus = (isDataPresent) ? 'disabled' : false,
+            tooltipText = (isDataPresent) ? 'Cannot delete: Form data is present' : 'Delete the form';
         return spawn('button.btn.btn-sm.edit', {
             onclick: function (e) {
                 e.preventDefault();
@@ -1146,8 +1158,8 @@ var XNAT = getObject(XNAT || {});
                     xnatFormManager.deleteForm(itemObj, title);
                 }
             },
-            disabled: isDataPresent,
-            title: "Delete the form"
+            disabled: disableStatus,
+            title: tooltipText
         }, [ spawn('i.fa.fa-trash') ]);
     }
 
@@ -1170,7 +1182,7 @@ var XNAT = getObject(XNAT || {});
                 if (itemObj) {
                     let projects = getProjects(itemObj);
                     let rowId = getPK(itemObj);
-                    let title = itemObj.title || '';
+//                    let title = itemObj.title || '';
                     let isSiteWide = itemObj.scope === "Site";
                     XNAT.customFormManager.assignDialog.assignProject(itemObj, title, rowId, isSiteWide, projects);
                 }
@@ -1272,7 +1284,8 @@ var XNAT = getObject(XNAT || {});
             tableDataRow['actions'] = item;
             tableData.push(tableDataRow);
         }
-
+        // sort forms alphabetically by name
+        tableData.sort((a,b) => (a.title > b.title) ? 1 : -1);
 
     let columns = {
         title: {
@@ -1457,8 +1470,9 @@ var XNAT = getObject(XNAT || {});
     xnatFormManager.getActionButtons = function(item) {
         let isProjectSpecific = item.scope === "Project";
         let isFormSharedBetweenProjects = item['doProjectsShareForm'];
+        let parsedItem = JSON.parse(item.contents);
 
-        let title = item['title'] || '';
+        let title = parsedItem['title'] || '';
         let status = item['appliesToList'][0]['status'];
         let isEnabled = false;
         if (status === 'enabled') {
@@ -1470,7 +1484,7 @@ var XNAT = getObject(XNAT || {});
         }
         let actions = [];
         if (isEnabled) {
-            actions = [editButton(item), spacer(4), displayOrderButton(item), spacer(4), manageProjectsButton(item, title), spacer(4), deleteButton(item, title, hasData)];
+            actions = [editButton(item,title), spacer(4), displayOrderButton(item), spacer(4), manageProjectsButton(item, title), spacer(4), deleteButton(item, title, hasData)];
         }else {
             actions = [deleteButton(item, title, hasData)];
 

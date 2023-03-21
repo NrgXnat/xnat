@@ -318,7 +318,7 @@ var XNAT = getObject(XNAT || {});
         let selectedProjects = [];
 
         var modal = {
-            title: 'Select ' + projectDataTypePluralName + ':',
+            title: 'Select ' + projectDataTypePluralName + ' for ' + title,
             content: projectSelectorContent,
             width: 550,
             scroll: true,

@@ -218,7 +218,7 @@ public class XnatProviderManager extends ProviderManager {
         final Map<String, XnatAuthenticationProvider> configured = enabled.stream()
                                                                           .map(_xnatAuthenticationProviders::get)
                                                                           .filter(Objects::nonNull)
-                                                                          .collect(Collectors.toMap(XnatAuthenticationProvider::getProviderId, Function.identity()));
+                                                                          .collect(Collectors.toMap(XnatAuthenticationProvider::getProviderId, Function.identity(), (k1, k2) -> k2, LinkedHashMap::new));
         if (enabled.size() > configured.size()) {
             final Sets.SetView<String> difference = Sets.difference(new HashSet<>(enabled), configured.keySet());
             log.warn("{} provider IDs are enabled, but don't have configured definitions: {}", difference.size(), String.join(", ", difference));

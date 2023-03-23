@@ -26,7 +26,7 @@ public interface CustomFormManagerService {
 
     String deleteForm(UserI user, String formAppliesId) throws Exception;
 
-    boolean optProjectsIntoForm(UserI user, RowIdentifier rowIdentifier, List<String> projects) throws Exception;
+    boolean optProjectsIntoForm(UserI user, RowIdentifier rowIdentifier, List<String> projects) throws IllegalArgumentException;
 
     boolean promoteForm(UserI user, List<FormAppliesToPoJo> formAppliesToPoJos) throws NotFoundException, CustomVariableNameClashException;
 

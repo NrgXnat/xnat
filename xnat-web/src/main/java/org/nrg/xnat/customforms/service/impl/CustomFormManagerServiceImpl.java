@@ -15,8 +15,11 @@ import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -87,6 +90,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
     private final DataLocateService dataLocateService;
     private final CustomFormsFeatureFlags featureFlags;
     private final XnatPluginBeanManager xnatPluginBeanManager;
+    private final XnatUserProvider userProvider;
 
     private final CustomFormFetcherI formFetcher;
 
@@ -100,6 +104,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                                         final DataLocateService dataLocateService,
                                         final List<CustomFormFetcherI> customFormFetchers,
                                         final CustomFormsFeatureFlags featureFlags,
+                                        final XnatUserProvider userProvider,
                                         final XnatPluginBeanManager xnatPluginBeanManager) {
         this.selectionService = selectionService;
         this.formService = formService;
@@ -109,6 +114,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         this.dataLocateService = dataLocateService;
         this.featureFlags = featureFlags;
         this.xnatPluginBeanManager = xnatPluginBeanManager;
+        this.userProvider = userProvider;
 
         formFetcher = getCustomFormFetcher(customFormFetchers);
     }
@@ -481,23 +487,20 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
      * @return - boolean - success status
      * @throws Exception
      */
-    @Override public boolean optProjectsIntoForm(final UserI user, final RowIdentifier rowIdentifier, final List<String> projects) throws Exception {
+    @Override public boolean optProjectsIntoForm(final UserI user, final RowIdentifier rowIdentifier, final List<String> projects) throws IllegalArgumentException {
         CustomVariableFormAppliesTo formAppliesTo = customVariableFormAppliesToService.findByRowIdentifier(rowIdentifier);
         boolean savedAll = true;
-        final String formStatus = formAppliesTo.getStatus();
         if (formAppliesTo == null) {
-            throw new NotFoundException("Form with id: " + rowIdentifier + " not found");
+            throw new IllegalArgumentException("Form with id: " + rowIdentifier + " not found");
         }
-        boolean projectsExist = true;
+        final String formStatus = formAppliesTo.getStatus();
+        //Custom Form Manager may not have access to the project
+        final UserI authorizedUser = getAuthorizedUser(user);
         for (String project : projects) {
-            XnatProjectdata projectdata = XnatProjectdata.getXnatProjectdatasById(project, user, false);
+            XnatProjectdata projectdata = AutoXnatProjectdata.getXnatProjectdatasById(project, authorizedUser, false);
             if (projectdata == null) {
-                projectsExist = false;
-                break;
+                throw new IllegalArgumentException("All projects not found");
             }
-        }
-        if (!projectsExist) {
-            throw new NotFoundException("All projects not found");
         }
         final String dataType = formAppliesTo.getCustomVariableAppliesTo().getDataType();
         final String protocol = formAppliesTo.getCustomVariableAppliesTo().getProtocol();
@@ -630,9 +633,13 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
             RowIdentifier rowId = RowIdentifier.Unmarshall(formAppliesToId);
             long formId = rowId.getFormId();
             boolean userAuthorized = true;
+            final UserI authorizedUser = getAuthorizedUser(user);
             for (String projectId : projectIds ) {
-                XnatProjectdata projectdata = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
-                userAuthorized = userAuthorized &&  customFormPermissionsService.isUserAdminOrDataManager(user) || customFormPermissionsService.isUserProjectOwner(user, projectdata.getId());
+                XnatProjectdata projectdata = AutoXnatProjectdata.getXnatProjectdatasById(projectId, authorizedUser, false);
+                if (null == projectdata) {
+                  throw new InsufficientPermissionsException("Invalid project");
+                }
+                userAuthorized = userAuthorized && customFormPermissionsService.isUserAdminOrDataManager(user) || customFormPermissionsService.isUserProjectOwner(user, projectdata.getId());
             }
             if (userAuthorized) {
                     CustomVariableFormAppliesTo customVariableFormAppliesTo = customVariableFormAppliesToService.findByRowIdentifier(rowId);
@@ -695,7 +702,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                     } else {
                         throw new IllegalArgumentException("Form identified by " + formAppliesToId + " not found");
                     }
-                }else {
+                } else {
                     throw new InsufficientPermissionsException("User " + user.getUsername() + " does not have sufficient permissions to perform the Opt Out operation");
                 }
 
@@ -895,49 +902,51 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         if (null != customVariableForms) {
             for (CustomVariableForm form : customVariableForms) {
                 List<CustomVariableFormAppliesTo> formAppliesTos = form.getCustomVariableFormAppliesTos();
-                PseudoConfiguration configuration = setBasicElements(form, form.getCustomVariableFormAppliesTos().get(0));
-                Scope scope = Scope.Project;
-                if (projectId != null) {
-                    boolean projectInvolved = false;
-                    List<FormAppliesToPoJo> appliesToPoJos = new ArrayList<>();
-                    List<FormAppliesToPoJo> projectFormAppliesTos = new ArrayList<>();
-                    for (CustomVariableFormAppliesTo formAppliesTo : formAppliesTos) {
-                        CustomVariableAppliesTo appliesTo = formAppliesTo.getCustomVariableAppliesTo();
-                        FormAppliesToPoJo formAppliesToPoJo = new FormAppliesToPoJo(formAppliesTo, formAppliesTo.getStatus());
-                        if (appliesTo.getScope().equals(Scope.Site)) {
-                            formAppliesToPoJo.setEntityId("Site");
-                            appliesToPoJos.add(formAppliesToPoJo);
-                            projectInvolved = true;
-                            scope = Scope.Site;
-                        } else if (appliesTo.getScope().equals(Scope.Project) && appliesTo.getEntityId().equals(projectId)) {
-                            projectFormAppliesTos.add(formAppliesToPoJo);
-                            projectInvolved = true;
+                if (!formAppliesTos.isEmpty()) {
+                    PseudoConfiguration configuration = setBasicElements(form, formAppliesTos.get(0));
+                    Scope scope = Scope.Project;
+                    if (projectId != null) {
+                        boolean projectInvolved = false;
+                        List<FormAppliesToPoJo> appliesToPoJos = new ArrayList<>();
+                        List<FormAppliesToPoJo> projectFormAppliesTos = new ArrayList<>();
+                        for (CustomVariableFormAppliesTo formAppliesTo : formAppliesTos) {
+                            CustomVariableAppliesTo appliesTo = formAppliesTo.getCustomVariableAppliesTo();
+                            FormAppliesToPoJo formAppliesToPoJo = new FormAppliesToPoJo(formAppliesTo, formAppliesTo.getStatus());
+                            if (appliesTo.getScope().equals(Scope.Site)) {
+                                formAppliesToPoJo.setEntityId("Site");
+                                appliesToPoJos.add(formAppliesToPoJo);
+                                projectInvolved = true;
+                                scope = Scope.Site;
+                            } else if (appliesTo.getScope().equals(Scope.Project) && appliesTo.getEntityId().equals(projectId)) {
+                                projectFormAppliesTos.add(formAppliesToPoJo);
+                                projectInvolved = true;
+                            }
                         }
-                    }
-                    if (projectInvolved == false) {
-                        continue;
-                    }
-                    appliesToPoJos.addAll(projectFormAppliesTos);
-                    configuration.setScope(scope);
-                    configuration.setAppliesToList(appliesToPoJos);
-                } else{
-                    List<FormAppliesToPoJo> appliesToPoJos = new ArrayList<>();
-                    List<FormAppliesToPoJo> projectFormAppliesTos = new ArrayList<>();
-                    for (CustomVariableFormAppliesTo formAppliesTo : formAppliesTos) {
-                        FormAppliesToPoJo formAppliesToPoJo = new FormAppliesToPoJo(formAppliesTo, formAppliesTo.getStatus());
-                        if (formAppliesTo.getCustomVariableAppliesTo().getScope().equals(Scope.Site)) {
-                            scope = Scope.Site;
-                            formAppliesToPoJo.setEntityId("Site");
-                            appliesToPoJos.add(formAppliesToPoJo);
-                        } else {
-                            projectFormAppliesTos.add(formAppliesToPoJo);
+                        if (projectInvolved == false) {
+                            continue;
                         }
+                        appliesToPoJos.addAll(projectFormAppliesTos);
+                        configuration.setScope(scope);
+                        configuration.setAppliesToList(appliesToPoJos);
+                    } else{
+                        List<FormAppliesToPoJo> appliesToPoJos = new ArrayList<>();
+                        List<FormAppliesToPoJo> projectFormAppliesTos = new ArrayList<>();
+                        for (CustomVariableFormAppliesTo formAppliesTo : formAppliesTos) {
+                            FormAppliesToPoJo formAppliesToPoJo = new FormAppliesToPoJo(formAppliesTo, formAppliesTo.getStatus());
+                            if (formAppliesTo.getCustomVariableAppliesTo().getScope().equals(Scope.Site)) {
+                                scope = Scope.Site;
+                                formAppliesToPoJo.setEntityId("Site");
+                                appliesToPoJos.add(formAppliesToPoJo);
+                            } else {
+                                projectFormAppliesTos.add(formAppliesToPoJo);
+                            }
+                        }
+                        appliesToPoJos.addAll(projectFormAppliesTos);
+                        configuration.setAppliesToList(appliesToPoJos);
+                        configuration.setScope(scope);
                     }
-                    appliesToPoJos.addAll(projectFormAppliesTos);
-                    configuration.setAppliesToList(appliesToPoJos);
-                    configuration.setScope(scope);
+                    configurations.add(configuration);
                 }
-                configurations.add(configuration);
             }
         }
         return configurations;
@@ -1154,6 +1163,16 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         containerizedParentComponentsNode.add(containerdNode);
         containerizedParentNode.set(COMPONENTS_KEY, containerizedParentComponentsNode);
         return containerizedParentNode;
+    }
+
+    private UserI getAuthorizedUser(final UserI user) {
+        UserI authorizedUser = user;
+        try {
+            if (Roles.checkRole(user, CustomFormsConstants.FORM_MANAGER_ROLE)) {
+                authorizedUser = Users.getUser(userProvider.getLogin());
+            }
+        } catch (Exception ignored) {}
+        return authorizedUser;
     }
 
     private JsonNode getFormUUIDInfoInContainer(final ObjectMapper objectMapper, final UUID formUUID) {

@@ -53,9 +53,11 @@ public class CustomFormPermissionsServiceImpl implements CustomFormPermissionsSe
             final String projectId = selection.getEntityId();
             if (selection.getScope().equals(Scope.Project) && projectId != null) {
                 isUserProjectOwner(user, projectId);
+            } else {
+                throw new InsufficientPermissionsException("User is not an Admin/Form Data Manager or Owner of the Project");
             }
         }
-        return true;
+        return false;
     }
 
     public boolean isUserProjectOwner(final UserI user, final String projectId) throws InsufficientPermissionsException {

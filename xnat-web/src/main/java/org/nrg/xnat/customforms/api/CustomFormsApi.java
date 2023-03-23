@@ -195,6 +195,9 @@ public class CustomFormsApi extends AbstractXapiRestController {
         final UserI user = getSessionUser();
         try {
             List<String> projects = objectMapper.readValue(jsonbody, new TypeReference<List<String>>() {});
+            if (projects.isEmpty()) {
+                return new ResponseEntity<>("Projects not passed", HttpStatus.BAD_REQUEST);
+            }
             RowIdentifier rowIdentifier = RowIdentifier.Unmarshall(rowId);
             boolean success = formManagerService.optProjectsIntoForm(user, rowIdentifier, projects);
             if (success) {
@@ -202,9 +205,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
             } else {
                 return new ResponseEntity<>("Projects could not be opted into form", HttpStatus.BAD_REQUEST);
             }
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             log.error("Could not opt project into form ", e);
-            return new ResponseEntity<>("Could not opt project into form:" + e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Could not opt projects into form: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (JsonProcessingException jpe) {
+            log.error("Could not parse json", jpe);
+            return new ResponseEntity<>("Could not opt projects into form: " + jpe.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -213,12 +219,21 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/optout/{formId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> optOutCustomForm(final @PathVariable String formId, final @RequestBody String jsonbody) {
         final UserI user = getSessionUser();
+        List<String> projectIds = new ArrayList<>();
         try {
-            List<String> projectIds = objectMapper.readValue(jsonbody, new TypeReference<List<String>>() {});
+            try {
+                projectIds = objectMapper.readValue(jsonbody, new TypeReference<List<String>>() {});
+                if (projectIds.isEmpty()) {
+                    return new ResponseEntity<>("Projects not passed", HttpStatus.BAD_REQUEST);
+                }
+            } catch (Exception e) {
+                return new ResponseEntity<>("Projects not passed", HttpStatus.BAD_REQUEST);
+            }
             boolean success = formManagerService.optOutOfForm(user, formId, projectIds);
             if (success) {
                 return new ResponseEntity<>("Projects  have opted out", HttpStatus.OK);
@@ -227,6 +242,8 @@ public class CustomFormsApi extends AbstractXapiRestController {
             }
         } catch (InsufficientPermissionsException ie) {
             return new ResponseEntity<>("Not enough permissions to opt out of form", HttpStatus.FORBIDDEN);
+        } catch (IllegalArgumentException ia) {
+            return new ResponseEntity<>("Invalid data", HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             log.error("Could not opt out of form ", e);
             return new ResponseEntity<>("Custom Form could not be opted out of: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -320,6 +337,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> deleteCustomForm(final @RequestBody String jsonbody) {
@@ -363,6 +381,7 @@ public class CustomFormsApi extends AbstractXapiRestController {
             }
             return new ResponseEntity<>(configurations, HttpStatus.OK);
         } catch (Exception e) {
+            log.error("Could not fetch forms ", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

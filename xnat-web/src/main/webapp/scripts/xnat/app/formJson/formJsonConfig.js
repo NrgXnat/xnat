@@ -28,6 +28,7 @@ var XNAT = getObject(XNAT || {});
 
     var projectDataTypeSingularName = XNAT.app.displayNames.singular.project;
     var projectDataTypePluralName = XNAT.app.displayNames.plural.project;
+    var projectDataTypePluralNameLC = projectDataTypePluralName.toLowerCase();
     var addNewBuilderObj = {};
 
     var onAddNewBuilderChange = function (build) {
@@ -1221,7 +1222,7 @@ var XNAT = getObject(XNAT || {});
                     XNAT.customFormManager.assignDialog.assignProject(itemObj, title, rowId, isSiteWide, projects);
                 }
             },
-            title: "Manage which " + projectDataTypePluralName + " are associated with this form"
+            title: "Manage which " + projectDataTypePluralNameLC + " are associated with this form"
         }, [ spawn('i.fa.fa-list') ]);
     }
 
@@ -1230,7 +1231,7 @@ var XNAT = getObject(XNAT || {});
         var returnItems = []
         if (item.scope === "Site") {
             let projectsArray = getProjects(item, 'optedout');
-            returnItems.push(spawn('p', 'All Projects'));
+            returnItems.push(spawn('p', 'All ' + projectDataTypePluralName));
             if (projectsArray.length > 0) {
                 returnItems.push(spacer(2));
                 let title = " Opted Out of Form";

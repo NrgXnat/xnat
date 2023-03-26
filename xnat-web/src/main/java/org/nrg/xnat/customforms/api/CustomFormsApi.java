@@ -57,6 +57,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.zip.DataFormatException;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Role;
@@ -250,18 +251,24 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Set display order of a form", notes = "Set display order of a form", response = String.class)
+    @ApiOperation(value = "Set display order of a form", notes = "The order must be within the range [-11000000, 1000000]", response = String.class)
     @ApiResponses({
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/formId/{formId}", method = RequestMethod.POST)
     public ResponseEntity<String> modifyFormDisplayOrder(final @PathVariable String formId, final @RequestParam Integer displayOrder) {
-        if (displayOrder == null) {
-            return new ResponseEntity<>("The display order you have entered is empty.", HttpStatus.BAD_REQUEST);
+        if (displayOrder == null || displayOrder < -1000000 || displayOrder > 1000000) {
+            return new ResponseEntity<>("The display order you have entered is empty or outside the allowed range.", HttpStatus.BAD_REQUEST);
         }
-            final UserI user = getSessionUser();
+        try {
+            UUID.fromString(formId);
+        } catch (IllegalArgumentException iae) {
+            return new ResponseEntity<>("Invalid Form Id", HttpStatus.BAD_REQUEST);
+        }
+        final UserI user = getSessionUser();
         try {
             boolean success = formManagerService.modifyDisplayOrder(user, displayOrder, formId);
             if (success) {
@@ -271,6 +278,9 @@ public class CustomFormsApi extends AbstractXapiRestController {
             }
         } catch (Exception e) {
             log.error("Could not modify display order of form {}", formId, e);
+            if (e instanceof  InsufficientPermissionsException) {
+                return new ResponseEntity<>("Forbidden", HttpStatus.FORBIDDEN);
+            }
             return new ResponseEntity<>("Display order of Custom Form could not be modified: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

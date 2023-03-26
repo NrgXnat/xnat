@@ -43,7 +43,11 @@
           "key": "zIndex",
           "type": "number",
           "input": true,
-          "defaultValue": -1
+          "defaultValue": 10,
+          "validate": {
+            "min": -1000000,
+            "max": 1000000
+          }
         },
         {
           "label": "This form applies to the XNAT Datatype?",

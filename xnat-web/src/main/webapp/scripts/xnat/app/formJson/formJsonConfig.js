@@ -900,7 +900,7 @@ var XNAT = getObject(XNAT || {});
         const title = itemObj['title'] || '';
         const dateCreated = new Date(configDefinition['dateCreated']);
         const formId = configDefinition['formUUID'];
-        var info_button = '<div class="info">Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker with earlier forms shown first.</div>';
+        var info_button = '<div class="info">Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker with latest forms shown first.</div>';
         xmodal.open({
             title: 'Change Form Order for ' + title,
             content: info_button + '<br><br>Current Form Order: ' + formOrder + '<br><br> Creation Date: ' + dateCreated + '<br><br> New Form Order: <input id="formOrderTxt" value="'+ formOrder + '">',
@@ -917,11 +917,11 @@ var XNAT = getObject(XNAT || {});
                     action: function () {
                         let desiredFormOrder = document.getElementById('formOrderTxt').value;
                         let desiredFormOrderInt = parseInt(desiredFormOrder);
-                        if (desiredFormOrderInt > 1000000 || desiredFormOrderInt < -1000000) {
+                        if (Number.isNaN(desiredFormOrderInt) || desiredFormOrderInt > 1000000 || desiredFormOrderInt < -1000000) {
                             XNAT.dialog.open({
                                 width: 450,
                                 title: "Invalid Value for Form Order",
-                                content: "Form Order cannot exceed 1000000.",
+                                content: "Form Order should be between -1000000 and 1000000.",
                                 buttons: [{
                                     label: 'OK',
                                     isDefault: true,

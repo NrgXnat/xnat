@@ -408,18 +408,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         try {
             CustomVariableForm form = formService.findByUuid(UUID.fromString(formIdStr));
             if (form != null && form.getCustomVariableFormAppliesTos().size() > 0) {
-                boolean isAuthorized = false;
-                if (customFormPermissionsService.isUserAdminOrDataManager(user)) {
-                    isAuthorized = true;
-                }else {
-                    CustomVariableAppliesTo appliesTo = form.getCustomVariableFormAppliesTos().get(0).getCustomVariableAppliesTo();
-                    if (appliesTo.getScope().equals(Scope.Project)) {
-                        String projId = appliesTo.getEntityId();
-                        if (customFormPermissionsService.isUserProjectOwner(user, projId)) {
-                            isAuthorized = true;
-                        }
-                    }
-                }
+                boolean isAuthorized = customFormPermissionsService.isUserAuthorized(user, form.getCustomVariableFormAppliesTos());
                 if (isAuthorized) {
                     form.setzIndex(displayOrder);
                     formService.saveOrUpdate(form);
@@ -430,7 +419,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                 }
             }
         } catch (Exception e) {
-            log.error("Display ordermodification request for " + formIdStr + " encountered exception", e);
+            log.error("Display order modification request for " + formIdStr + " encountered exception", e);
             throw e;
         }
         return modified;

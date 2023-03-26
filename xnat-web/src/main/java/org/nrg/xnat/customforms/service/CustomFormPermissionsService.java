@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface CustomFormPermissionsService {
 
+    boolean isUserAuthorized(final UserI user, final List<CustomVariableFormAppliesTo> customVariableFormAppliesTos) throws InsufficientPermissionsException;
+
     boolean isUserAuthorized(final UserI user, final CustomVariableFormAppliesTo customVariableFormAppliesTo) throws InsufficientPermissionsException;
 
     boolean isUserProjectOwner(final UserI user, final String projectId) throws InsufficientPermissionsException;

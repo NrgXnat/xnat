@@ -257,11 +257,11 @@ XNAT.plugin =
                     action: function () {
                         let desiredFormOrder = document.getElementById('formOrderTxt').value;
                         let desiredFormOrderInt = parseInt(desiredFormOrder);
-                        if (desiredFormOrderInt > 1000000 || desiredFormOrderInt < -1000000) {
+                        if (Number.isNaN(desiredFormOrderInt) || desiredFormOrderInt > 1000000 || desiredFormOrderInt < -1000000) {
                             XNAT.dialog.open({
                                 width: 450,
                                 title: "Invalid Value for Form Order",
-                                content: "Form Order cannot exceed 1000000.",
+                                content: "Form Order should be between -1000000 and 1000000.",
                                 buttons: [{
                                     label: 'OK',
                                     isDefault: true,

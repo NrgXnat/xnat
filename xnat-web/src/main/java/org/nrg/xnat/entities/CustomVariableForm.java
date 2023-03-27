@@ -11,7 +11,7 @@ import org.hibernate.annotations.Type;
 import org.nrg.xnat.customforms.utils.CustomFormsConstants;
 
 @Entity
-@Table
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"formUuid"})})
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomVariableForm extends AbstractHibernateEntity{
@@ -23,8 +23,7 @@ public class CustomVariableForm extends AbstractHibernateEntity{
     private String formCreator;
 
     @Type(type="pg-uuid")
-    //Just in case imported UUID's clash
-    @Column(unique=true)
+    @Column(nullable=false)
     private java.util.UUID formUuid;
 
 

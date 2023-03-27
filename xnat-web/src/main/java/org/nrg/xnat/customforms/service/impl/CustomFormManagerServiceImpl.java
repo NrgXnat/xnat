@@ -57,6 +57,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -774,6 +775,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
 
         //Is it a new form?
         boolean newForm = existingFormPrimaryKey.getFormId() == -1;
+        boolean formSavedSuccessfully;
         if (newForm) {
             final UUID formUUID = UUID.randomUUID();
             CustomVariableForm form = new CustomVariableForm();
@@ -790,7 +792,10 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                             userOptionsPojo.getVisit(), userOptionsPojo.getSubType(), null, true);
                     if (customVariableAppliesTo != null && customVariableAppliesTo.size() > 0) {
                         CustomVariableAppliesTo projectAppliesTo = customVariableAppliesTo.get(0);
-                        objectSaver.saveOnlyFormAndAssign(projectAppliesTo, form, user, CustomFormsConstants.ENABLED_STATUS_STRING);
+                        boolean formSaved = objectSaver.saveOnlyFormAndAssign(projectAppliesTo, form, user, CustomFormsConstants.ENABLED_STATUS_STRING);
+                        if (!formSaved) {
+                            throw new IllegalArgumentException("UUID of entered form overlaps with a form already in the system.");
+                        }
                     } else {
                         createNew(form, user, userOptionsPojo, projectId, CustomFormsConstants.ENABLED_STATUS_STRING);
                     }
@@ -809,7 +814,10 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                         userOptionsPojo.getVisit(), userOptionsPojo.getSubType(), null, true);
                 if (customVariableAppliesTo != null && customVariableAppliesTo.size() > 0) {
                     CustomVariableAppliesTo projectAppliesTo = customVariableAppliesTo.get(0);
-                    objectSaver.saveOnlyFormAndAssign(projectAppliesTo, form, user, CustomFormsConstants.ENABLED_STATUS_STRING);
+                    formSavedSuccessfully = objectSaver.saveOnlyFormAndAssign(projectAppliesTo, form, user, CustomFormsConstants.ENABLED_STATUS_STRING);
+                    if (!formSavedSuccessfully) {
+                        throw new IllegalArgumentException("UUID of entered form overlaps with a form already in the system.");
+                    }
                 } else {
                     createNew(form, user, userOptionsPojo, null, CustomFormsConstants.ENABLED_STATUS_STRING);
                 }
@@ -838,7 +846,10 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                                 userOptionsPojo.getVisit(), userOptionsPojo.getSubType(), null, true);
                         if (customVariableAppliesTo != null && customVariableAppliesTo.size() > 0) {
                             CustomVariableAppliesTo projectAppliesTo = customVariableAppliesTo.get(0);
-                            objectSaver.saveOnlyFormAndAssign(projectAppliesTo, form, user, CustomFormsConstants.ENABLED_STATUS_STRING);
+                            boolean formSaved = objectSaver.saveOnlyFormAndAssign(projectAppliesTo, form, user, CustomFormsConstants.ENABLED_STATUS_STRING);
+                            if (!formSaved) {
+                                throw new IllegalArgumentException("UUID of entered form overlaps with a form already in the system.");
+                            }
                         } else {
                             createNew(form, user, userOptionsPojo, projectId, CustomFormsConstants.ENABLED_STATUS_STRING);
                         }
@@ -857,7 +868,10 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                             userOptionsPojo.getVisit(), userOptionsPojo.getSubType(), null, true);
                     if (customVariableAppliesTo != null && customVariableAppliesTo.size() > 0) {
                         CustomVariableAppliesTo appliesTo = customVariableAppliesTo.get(0);
-                        objectSaver.saveOnlyFormAndAssign(appliesTo, form, user, CustomFormsConstants.ENABLED_STATUS_STRING);
+                        formSavedSuccessfully = objectSaver.saveOnlyFormAndAssign(appliesTo, form, user, CustomFormsConstants.ENABLED_STATUS_STRING);
+                        if (!formSavedSuccessfully) {
+                            throw new IllegalArgumentException("UUID of entered form overlaps with a form already in the system.");
+                        }
                     } else {
                         createNew(form, user, userOptionsPojo, null, CustomFormsConstants.ENABLED_STATUS_STRING);
                     }

@@ -37,6 +37,7 @@ public class DisplayCriteria implements SQLClause {
     private String where_value    = null;
 
     private boolean overrideDataFormatting = false;
+    private static final String TIME_DATATYPE = "TIME";
 
     public String getSQLClause() throws Exception {
         StringBuilder where = new StringBuilder(" (");
@@ -106,18 +107,19 @@ public class DisplayCriteria implements SQLClause {
             if (!getComparisonType().contains("LIKE")) {
                 where.append(handleValues(v, df, qo, df.needsSQLQuotes()));
             } else {
-                where.append("LOWER(").append(getSQLContent(df, qo)).append(")");
-                where.append(getComparisonType());
-                where.append("'").append(getValue().toString().toLowerCase()).append("'");
+                    where.append("LOWER(").append(getSQLContent(df, qo)).append(")");
+                    where.append(" ").append(getComparisonType()).append(" ");
+                    where.append("'").append(getValue().toString().toLowerCase()).append("'");
             }
         }
         where.append(")");
         return where.toString();
     }
 
-    private String handleValues(final String value, final DisplayField displayField, final QueryOrganizerI organizer, final boolean needsQuotes) throws Exception {
+    private String handleValues(final String valuePassed, final DisplayField displayField, final QueryOrganizerI organizer, final boolean needsQuotes) throws Exception {
         final String comparisonType = getComparisonType().trim();
         final String sqlContent     = getSQLContent(displayField, organizer);
+        final String value = castValue(displayField.getDataType(), valuePassed, needsQuotes);
         if (StringUtils.isBlank(value) && StringUtils.equals(comparisonType, "=")) {
             final String where = sqlContent + " IS NULL";
             return displayField.needsSQLEmptyQuotes()
@@ -128,7 +130,7 @@ public class DisplayCriteria implements SQLClause {
             StringBuilder where = new StringBuilder();
             where.append("(");
             where.append(sqlContent);
-            where.append(getComparisonType() + " ");
+            where.append(" ").append(getComparisonType()).append(" ");
             if (needsQuotes) {
                 where.append("'").append(value).append("'");
             } else {
@@ -150,22 +152,23 @@ public class DisplayCriteria implements SQLClause {
                     values.append(",");
                 }
                 if (!PoolDBUtils.HackCheck(t)) {
+                    final String tCasted = castValue(displayField.getDataType(), t, needsQuotes);
                     if (needsQuotes) {
                         values.append("'").append(t).append("'");
                     } else {
-                        values.append(t);
+                        values.append(tCasted);
                     }
                 }
             }
             return " (" + sqlContent + " IN (" + values + "))";
         } else if (comparisonType.equals("BETWEEN")) {
-            int and = value.toUpperCase().indexOf(" AND ");
+            int and = valuePassed.toUpperCase().indexOf(" AND ");
             if (and == -1) {
                 throw new InvalidValueException("BETWEEN clauses require an AND to separate values");
             }
 
-            final String v1 = StringUtils.strip(value.substring(0, and), "'\"");
-            final String v2 = StringUtils.strip(value.substring(and + 5), "'\"");
+            final String v1 = StringUtils.strip(valuePassed.substring(0, and), "'\"");
+            final String v2 = StringUtils.strip(valuePassed.substring(and + 5), "'\"");
 
             if (PoolDBUtils.HackCheck(v1) || PoolDBUtils.HackCheck(v2)) {
                 throw new InvalidValueException("Invalid BETWEEN values");
@@ -177,6 +180,17 @@ public class DisplayCriteria implements SQLClause {
             }
             return String.join(" ", sqlContent, getComparisonType(), needsQuotes ? "'" + value + "'" : value);
         }
+    }
+
+    private String castValue(final String displayFieldType, final String userValue, final boolean needsQuotes) {
+        if (StringUtils.isBlank(userValue) || needsQuotes) {
+            return userValue;
+        }
+        String adjustedValue = userValue;
+        if (displayFieldType.equalsIgnoreCase(TIME_DATATYPE) && userValue.toUpperCase().indexOf("::"+TIME_DATATYPE) == -1) {
+            adjustedValue = String.format("%s%s%s", "'", userValue, "'::"+TIME_DATATYPE);
+        }
+        return adjustedValue;
     }
 
     List<Object[]> schemaFields = null;

@@ -1280,21 +1280,26 @@ xdat_criteria_set.prototype.renderFilters=function(containerDIV){
 		this.newComparisonBox.options[3]=new Option(">=",">=");
 		this.newComparisonBox.options[4]=new Option("<","<");
 		this.newComparisonBox.options[5]=new Option("<=","<=");
-    this.newComparisonBox.options[6]=new Option("!=","!=");
-    this.newComparisonBox.options[7]=new Option("IN","IN");
+        this.newComparisonBox.options[6]=new Option("!=","!=");
+        this.newComparisonBox.options[7]=new Option("IN","IN");
 	}else if(column.type=="date"){
-    this.newComparisonBox.options[1]=new Option(">",">");
+        this.newComparisonBox.options[1]=new Option(">",">");
 		this.newComparisonBox.options[2]=new Option(">=",">=");
 		this.newComparisonBox.options[3]=new Option("<","<");
 		this.newComparisonBox.options[4]=new Option("<=","<=");
-  }else{
+	}else{
 		this.newComparisonBox.options[2]=new Option(">",">");
 		this.newComparisonBox.options[3]=new Option(">=",">=");
 		this.newComparisonBox.options[4]=new Option("<","<");
 		this.newComparisonBox.options[5]=new Option("<=","<=");
-		this.newComparisonBox.options[6]=new Option("LIKE","LIKE");
-    this.newComparisonBox.options[7]=new Option("!=","!=");
-    this.newComparisonBox.options[8]=new Option("IN","IN");
+		if(column.type != "time" && column.type != "timestamp") {
+			this.newComparisonBox.options[6] = new Option("LIKE", "LIKE");
+			this.newComparisonBox.options[7]=new Option("!=","!=");
+			this.newComparisonBox.options[8]=new Option("IN","IN");
+		} else {
+			this.newComparisonBox.options[6]=new Option("!=","!=");
+			this.newComparisonBox.options[7]=new Option("IN","IN");
+		}
 	}
 	this.newComparisonBox.options[this.newComparisonBox.options.length]=new Option("BETWEEN","BETWEEN");
 	this.newComparisonBox.options[this.newComparisonBox.options.length]=new Option("IS NULL","IS NULL");

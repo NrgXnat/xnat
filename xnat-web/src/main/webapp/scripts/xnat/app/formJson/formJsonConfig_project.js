@@ -852,7 +852,15 @@ XNAT.plugin =
                     }
                 },
                 apply: function (title) {
-                    return truncCell.call(this, title, '');
+                    return spawn('!',[
+                        spawn('strong',[
+                            truncCell.call(this, title, '')
+                        ]),
+                        '<br>',
+                        spawn('small',{style: {color: "#a0a0a0" }},[
+                            truncCell.call(this, this.actions.formUUID, '')
+                        ])
+                    ])
                 }
             },
             datatype: {

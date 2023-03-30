@@ -149,7 +149,16 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
         final Iterable<String> fieldNamesIterable = customFields::fieldNames;
         return StreamSupport.stream(fieldNamesIterable.spliterator(), false)
                 .filter(Objects::nonNull)
-                .map(UUID::fromString)
+                .map(fieldName -> {
+                    try {
+                        return UUID.fromString(fieldName);
+                    } catch (IllegalArgumentException ignored) {
+                        // They have some custom field which isn't keyed by a form UUID.
+                        // This is not a problem.
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

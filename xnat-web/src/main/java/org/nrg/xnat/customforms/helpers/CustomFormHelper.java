@@ -31,12 +31,10 @@ public class CustomFormHelper {
             return Collections.emptyList();
         }
         final UUID formUUID = form.getFormUuid();
+        // This is the root component, underneath which lies all the form elements
         final JsonNode rootComponent = form.getFormIOJsonDefinition().get(COMPONENTS_KEY);
-        //This is the root component. Underneath which lies a container with key formUUID.
-        //This container has all the form elements
         try {
-            final JsonNode formComponents = rootComponent.get(0).get(COMPONENTS_KEY);
-            return getFormObjects(formUUID, formComponents, skipNonSearchable);
+            return getFormObjects(formUUID, rootComponent, skipNonSearchable);
         } catch(Exception e) {
             log.error("Could not extract form components", e);
         }

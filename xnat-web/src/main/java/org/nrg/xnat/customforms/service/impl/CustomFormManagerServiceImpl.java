@@ -3,8 +3,6 @@ package org.nrg.xnat.customforms.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import javassist.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -68,15 +66,6 @@ import java.util.stream.Collectors;
 import static org.nrg.xnat.customforms.events.CustomFormEventI.CREATE;
 import static org.nrg.xnat.customforms.events.CustomFormEventI.DELETE;
 import static org.nrg.xnat.customforms.events.CustomFormEventI.UPDATE;
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.COMPONENTS_KEY;
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.COMPONENTS_KEY_FIELD;
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.COMPONENTS_TYPE_FIELD;
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.COMPONENT_CONTENT_TYPE;
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.CONTAINER_KEY;
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.DISPLAY_KEY;
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.LABEL_KEY;
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.SETTINGS_KEY;
-import static org.nrg.xnat.customforms.utils.CustomFormsConstants.TITLE_KEY;
 
 
 @Service
@@ -779,8 +768,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         if (newForm) {
             final UUID formUUID = UUID.randomUUID();
             CustomVariableForm form = new CustomVariableForm();
-            JsonNode containerizedNode = appendContainerToForm(formUUID, formDefinition);
-            form.setFormIOJsonDefinition(containerizedNode);
+            form.setFormIOJsonDefinition(formDefinition);
             form.setzIndex(userOptionsPojo.getZIndex());
             form.setFormUuid(formUUID);
             form.setFormCreator(user.getUsername());
@@ -1134,40 +1122,6 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         return customVariableAppliesTo;
     }
 
-    private JsonNode appendContainerToForm(UUID formUUID, JsonNode formDefinition) throws NullPointerException {
-        //Extract the title, display and setting from the form created
-        //Add a container layer whose key is the UUID
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode containerizedParentNode = objectMapper.createObjectNode();
-        JsonNode titleNode = formDefinition.path(TITLE_KEY);
-        JsonNode displayType = formDefinition.path(DISPLAY_KEY);
-        final String title = titleNode.asText();
-        final String display = displayType.asText();
-        final JsonNode settingsNode = formDefinition.path(SETTINGS_KEY);
-        containerizedParentNode.put("display", display);
-        containerizedParentNode.put("title", title);
-        containerizedParentNode.set("settings", settingsNode);
-        ArrayNode containerizedParentComponentsNode = objectMapper.createArrayNode();
-        ObjectNode containerdNode = objectMapper.createObjectNode();
-        containerdNode.put(COMPONENTS_KEY_FIELD, formUUID.toString());
-        containerdNode.put(COMPONENTS_TYPE_FIELD, CONTAINER_KEY);
-        containerdNode.put("input", true);
-        containerdNode.put(LABEL_KEY, formUUID.toString());
-        containerdNode.put("tableView", false);
-        ArrayNode componentsArrayNode = objectMapper.createArrayNode();
-        componentsArrayNode.add(getFormUUIDInfoInContainer(objectMapper, formUUID));
-        JsonNode existingComponentNode = formDefinition.at("/" + COMPONENTS_KEY);
-        if (existingComponentNode != null && existingComponentNode.isArray()) {
-            for (final JsonNode eComp : existingComponentNode) {
-                componentsArrayNode.add(eComp);
-            }
-        }
-        containerdNode.set(COMPONENTS_KEY, componentsArrayNode);
-        containerizedParentComponentsNode.add(containerdNode);
-        containerizedParentNode.set(COMPONENTS_KEY, containerizedParentComponentsNode);
-        return containerizedParentNode;
-    }
-
     private UserI getAuthorizedUser(final UserI user) {
         UserI authorizedUser = user;
         try {
@@ -1177,18 +1131,4 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         } catch (Exception ignored) {}
         return authorizedUser;
     }
-
-    private JsonNode getFormUUIDInfoInContainer(final ObjectMapper objectMapper, final UUID formUUID) {
-        ObjectNode formInfodNode = objectMapper.createObjectNode();
-        formInfodNode.put(COMPONENTS_KEY_FIELD, COMPONENT_CONTENT_TYPE);
-        String htmlText = "<p><span class=\"text-tiny\" style=\"font-family:Arial, Helvetica, sans-serif;\"><b>Form UUID:" + formUUID + "</b></span></p>";
-        formInfodNode.put("html", htmlText);
-        formInfodNode.put(COMPONENTS_TYPE_FIELD, COMPONENT_CONTENT_TYPE);
-        formInfodNode.put("input", false);
-        formInfodNode.put(LABEL_KEY, COMPONENT_CONTENT_TYPE);
-        formInfodNode.put("tableView", false);
-        formInfodNode.put("refreshOnChange", false);
-        return formInfodNode;
-    }
-
 }

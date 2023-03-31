@@ -558,7 +558,6 @@ var XNAT = getObject(XNAT || {});
 
     xnatFormManager.builderDialog = function (configDefinition) {
         let configDefinitionObj = JSON.parse(configDefinition['contents']);
-        configDefinitionObj.components = configDefinitionObj.components[0].components;
         let builderConfig = xnatFormManager.getBuilderConfiguration();
         let fieldsToHide = xnatFormManager.defineExcludedFields();
         Formio.builder(
@@ -678,19 +677,8 @@ var XNAT = getObject(XNAT || {});
 
     xnatFormManager.dialog = function (configDefinition,  newCommand, parentModal) {
         let formJsonFromDB = JSON.parse(configDefinition['contents']);
-
-        let wysiygBuilder = Formio.Builders.getBuilder("wysiwyg");
-        let formJsonCurrent = wysiygBuilder.schema;
-
-        let formItemObj = JSON.parse(configDefinition['contents']).components;
-        let resultForm = wysiygBuilder.schema.components;
-        formItemObj[0].components = resultForm;
-
-        formJsonCurrent.components = formItemObj;
-
-        let currentFormState = JSON.stringify(formJsonCurrent);
-
-        let showWarningUnsavedChanges = xnatFormManager.changesHaveBeenMadeToTheForm(formJsonFromDB, currentFormState);
+        let formJsonCurrentStr = xnatFormManager.getCurrentFormState();
+        let showWarningUnsavedChanges = xnatFormManager.changesHaveBeenMadeToTheForm(formJsonFromDB, formJsonCurrentStr);
         if (!newCommand) {
             if (showWarningUnsavedChanges) {
                 XNAT.dialog.open({
@@ -703,7 +691,7 @@ var XNAT = getObject(XNAT || {});
                         close: true,
                         action: function () {
                             xmodal.close(parentModal);
-                            xnatFormManager.showEditDialog(configDefinition, currentFormState, showWarningUnsavedChanges);
+                            xnatFormManager.showEditDialog(configDefinition, formJsonCurrentStr, showWarningUnsavedChanges);
                         }
                     },
                         {
@@ -716,7 +704,7 @@ var XNAT = getObject(XNAT || {});
                 });
             }else {
                 xmodal.close(parentModal);
-                xnatFormManager.showEditDialog(configDefinition, currentFormState, showWarningUnsavedChanges);
+                xnatFormManager.showEditDialog(configDefinition, formJsonCurrentStr, showWarningUnsavedChanges);
             }
         }
     };
@@ -1053,12 +1041,6 @@ var XNAT = getObject(XNAT || {});
     function saveWYSIWYGContent(itemObj) {
         let wysiygBuilder = Formio.Builders.getBuilder("wysiwyg");
         let editorContent = wysiygBuilder.schema;
-
-        let formItemObj = JSON.parse(itemObj['contents']).components;
-        let resultForm = wysiygBuilder.schema.components;
-        formItemObj[0].components = resultForm;
-
-        editorContent.components = formItemObj;
 
         let submissionJson = getSubmissionObjectForRow(itemObj);
         submissionJson['builder'] = editorContent;

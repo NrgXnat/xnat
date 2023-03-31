@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import groovy.util.logging.Slf4j;
-import net.sf.json.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.customforms.exceptions.CustomVariableNameClashException;
 import org.nrg.xnat.entities.CustomVariableAppliesTo;
@@ -28,6 +27,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.nrg.xnat.customforms.utils.CustomFormsConstants.COMPONENTS_COLUMNS_TYPE;
@@ -36,7 +36,9 @@ import static org.nrg.xnat.customforms.utils.CustomFormsConstants.COMPONENTS_KEY
 import static org.nrg.xnat.customforms.utils.CustomFormsConstants.COMPONENTS_TYPE_FIELD;
 import static org.nrg.xnat.customforms.utils.CustomFormsConstants.COMPONENT_CONTENT_TYPE;
 import static org.nrg.xnat.customforms.utils.CustomFormsConstants.COMPONENT_PANEL_TYPE;
+import static org.nrg.xnat.customforms.utils.CustomFormsConstants.CONTAINER_KEY;
 import static org.nrg.xnat.customforms.utils.CustomFormsConstants.DISPLAY_KEY;
+import static org.nrg.xnat.customforms.utils.CustomFormsConstants.LABEL_KEY;
 import static org.nrg.xnat.customforms.utils.CustomFormsConstants.OPTED_OUT_STATUS_STRING;
 import static org.nrg.xnat.customforms.utils.CustomFormsConstants.TITLE_KEY;
 
@@ -191,13 +193,15 @@ public class FormsIOJsonUtils {
                         if (type.asText().equals(COMPONENT_PANEL_TYPE)) {
                             ObjectNode panelNode   = getObjectnode(panelTitle, ++index);
                             JsonNode compNodes = comp.get(COMPONENTS_KEY);
-                            wizardPages.put(panelNode, compNodes);
+                            final JsonNode formContainerNode = createUuidComponentAndNestForm(objectMapper, compNodes, form.getFormUuid());
+                            wizardPages.put(panelNode, formContainerNode);
                         }
                     }
                 }
             }else {
                 ObjectNode panelNode   = getObjectnode(pageTitle, index);
-                wizardPages.put(panelNode, componentNode);
+                final JsonNode formContainerNode = createUuidComponentAndNestForm(objectMapper, componentNode, form.getFormUuid());
+                wizardPages.put(panelNode, formContainerNode);
             }
         }
         Set<ObjectNode> wizardPageSet = wizardPages.keySet();
@@ -235,6 +239,42 @@ public class FormsIOJsonUtils {
         concatenatedNode.set("components", rootComponentsNode);
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(concatenatedNode);
     }
+
+    private static JsonNode createUuidComponentAndNestForm(final ObjectMapper objectMapper, final JsonNode components, final UUID formUuid) {
+
+        // Create an outer "container" input node, under which the rest of the form will be nested.
+        // This is how the uuid keys get set in custom_fields.
+        ObjectNode containerNode = objectMapper.createObjectNode();
+        containerNode.put(COMPONENTS_KEY_FIELD, formUuid.toString());
+        containerNode.put(COMPONENTS_TYPE_FIELD, CONTAINER_KEY);
+        containerNode.put("input", true);
+        containerNode.put(LABEL_KEY, formUuid.toString());
+        containerNode.put("tableView", false);
+
+        if (components == null || !components.isArray() || components.isEmpty()) {
+            return containerNode;
+        }
+
+        // Create a display element to show the uuid to the user
+        ObjectNode formInfoNode = objectMapper.createObjectNode();
+        formInfoNode.put(COMPONENTS_KEY_FIELD, COMPONENT_CONTENT_TYPE);
+        String htmlText = "<p><span class=\"text-tiny\" style=\"font-family:Arial, Helvetica, sans-serif;\"><b>Form UUID:" + formUuid + "</b></span></p>";
+        formInfoNode.put("html", htmlText);
+        formInfoNode.put(COMPONENTS_TYPE_FIELD, COMPONENT_CONTENT_TYPE);
+        formInfoNode.put("input", false);
+        formInfoNode.put(LABEL_KEY, COMPONENT_CONTENT_TYPE);
+        formInfoNode.put("tableView", false);
+        formInfoNode.put("refreshOnChange", false);
+
+        // Add the uuid display to the front of the form inputs
+        final ArrayNode arrayComponents = (ArrayNode) components;
+        arrayComponents.insert(0, formInfoNode);
+
+        // Set the uuid display + form inputs onto the outer container's components
+        containerNode.set(COMPONENTS_KEY, arrayComponents);
+        return containerNode;
+    }
+
 
     private static ObjectNode getObjectnode(final String panelTitle, final int index) {
         ObjectMapper objectMapper = new ObjectMapper();

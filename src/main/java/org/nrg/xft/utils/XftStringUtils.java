@@ -537,6 +537,16 @@ public class XftStringUtils {
 		return temp;
 	}
 
+	public static String CleanForJsonbSQLValue(String temp) {
+		temp = StringUtils.replace(temp, "''", "#3939#");
+		temp = StringUtils.replace(temp, "\'", "#\39#");
+		temp = StringUtils.replace(temp, "'", "#39#");
+		temp = StringUtils.replace(temp, "#39#", "''");
+		temp = StringUtils.replace(temp, "#\39#", "''");
+		temp = StringUtils.replace(temp, "#3939#", "''");
+		return temp;
+	}
+
 	public static int GetEndingInt(String next)
 	{
 		int index = next.length()-1;

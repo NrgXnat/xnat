@@ -2098,7 +2098,7 @@ public class DBAction {
             } else if (type.equalsIgnoreCase("LONGVARCHAR")) {
                 return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
             } else if (type.equalsIgnoreCase("jsonb")) {
-                return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'::jsonb";
+                return "'" + XftStringUtils.CleanForJsonbSQLValue(object.toString()) + "'::jsonb";
             }  else {
                 if (type.equalsIgnoreCase("string")) {
                     if (field.getWrapped().getRule().getBaseType().equals("xs:anyURI")) {

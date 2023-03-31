@@ -10,6 +10,7 @@
 package org.nrg.xnat.customforms.interfaces.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
@@ -47,11 +48,13 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
 
     private final CustomVariableAppliesToService formAppliesToService;
     private final CustomVariableFormService formService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public DefaultCustomFormFetcherImpl(final CustomVariableAppliesToService formAppliesToService, final CustomVariableFormService formService) {
+    public DefaultCustomFormFetcherImpl(final CustomVariableAppliesToService formAppliesToService, final CustomVariableFormService formService, final ObjectMapper objectMapper) {
         this.formAppliesToService = formAppliesToService;
         this.formService = formService;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -75,7 +78,7 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
             // No project, no entity. Just return enabled site forms.
             final List<CustomVariableAppliesTo> siteAppliesTos = formAppliesToService.filterByStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(Scope.Site, null, xsiType, null, null, null, CustomFormsConstants.ENABLED_STATUS_STRING);
             final List<CustomVariableFormAppliesTo> siteFormAppliesTos = FormsIOJsonUtils.pullOutFormAppliesTo(siteAppliesTos);
-            return FormsIOJsonUtils.concatenate(siteFormAppliesTos, null, "Custom Variables", true, appendPreviousNextButtons);
+            return FormsIOJsonUtils.concatenate(siteFormAppliesTos, null, "Custom Variables", true, appendPreviousNextButtons, objectMapper);
         }
 
         // Find project id and entity's custom fields
@@ -126,7 +129,7 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
         // Combine all the forms and return their JSON representation
         // (This also filters out disabled forms)
         final List<CustomVariableFormAppliesTo> forms = Stream.concat(nonOptedOutSiteFormAppliesTos.stream(), projectFormAppliesTos.stream()).collect(Collectors.toList());
-        return FormsIOJsonUtils.concatenate(forms, additionalForms, "Custom Variables", true, appendPreviousNextButtons);
+        return FormsIOJsonUtils.concatenate(forms, additionalForms, "Custom Variables", true, appendPreviousNextButtons, objectMapper);
     }
 
     private  List<UUID> getFormUuidsFromCustomFields(final XnatProjectdata project) {

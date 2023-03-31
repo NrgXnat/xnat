@@ -126,13 +126,14 @@ public class FormsIOJsonUtils {
 
     /**
      * Concatenate forms
-     * @param forms - List of forms to concatenate
-     * @param title - the title of the concatenated form
-     * @param onlyEnabled - boolean - if only enabled forms are to be concatenated
+     * @param forms        - List of forms to concatenate
+     * @param title        - the title of the concatenated form
+     * @param onlyEnabled  - boolean - if only enabled forms are to be concatenated
+     * @param objectMapper
      * @return - String - the concatenated form JSON
      * @throws JsonProcessingException
      */
-    public static String concatenate(final List<CustomVariableFormAppliesTo> forms, final List<CustomVariableForm> appendForms, final String title, final boolean onlyEnabled, final boolean appendPreviousNextButtons) throws JsonProcessingException {
+    public static String concatenate(final List<CustomVariableFormAppliesTo> forms, final List<CustomVariableForm> appendForms, final String title, final boolean onlyEnabled, final boolean appendPreviousNextButtons, final ObjectMapper objectMapper) throws JsonProcessingException {
         if (forms.isEmpty() && (null != appendForms) && appendForms.isEmpty()) {
             return "{}";
         }
@@ -150,11 +151,10 @@ public class FormsIOJsonUtils {
         if (appendForms != null && !appendForms.isEmpty()) {
             applicableForms.addAll(appendForms);
         }
-        return concatenate(applicableForms, title, appendPreviousNextButtons);
+        return concatenate(applicableForms, title, appendPreviousNextButtons, objectMapper);
     }
 
-    public static String concatenate(final List<CustomVariableForm> forms,  final String title, final boolean appendPreviousNextButtons) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
+    public static String concatenate(final List<CustomVariableForm> forms, final String title, final boolean appendPreviousNextButtons, final ObjectMapper objectMapper) throws JsonProcessingException {
         ObjectNode concatenatedNode = objectMapper.createObjectNode();
         concatenatedNode.put("title", title);
         concatenatedNode.put("display", "wizard");
@@ -191,7 +191,7 @@ public class FormsIOJsonUtils {
                         }
 
                         if (type.asText().equals(COMPONENT_PANEL_TYPE)) {
-                            ObjectNode panelNode   = getObjectnode(panelTitle, ++index);
+                            ObjectNode panelNode   = getObjectnode(panelTitle, ++index, objectMapper);
                             JsonNode compNodes = comp.get(COMPONENTS_KEY);
                             final JsonNode formContainerNode = createUuidComponentAndNestForm(objectMapper, compNodes, form.getFormUuid());
                             wizardPages.put(panelNode, formContainerNode);
@@ -199,7 +199,7 @@ public class FormsIOJsonUtils {
                     }
                 }
             }else {
-                ObjectNode panelNode   = getObjectnode(pageTitle, index);
+                ObjectNode panelNode   = getObjectnode(pageTitle, index, objectMapper);
                 final JsonNode formContainerNode = createUuidComponentAndNestForm(objectMapper, componentNode, form.getFormUuid());
                 wizardPages.put(panelNode, formContainerNode);
             }
@@ -237,7 +237,7 @@ public class FormsIOJsonUtils {
             return "{}";
         }
         concatenatedNode.set("components", rootComponentsNode);
-        return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(concatenatedNode);
+        return objectMapper.writeValueAsString(concatenatedNode);
     }
 
     private static JsonNode createUuidComponentAndNestForm(final ObjectMapper objectMapper, final JsonNode components, final UUID formUuid) {
@@ -276,8 +276,7 @@ public class FormsIOJsonUtils {
     }
 
 
-    private static ObjectNode getObjectnode(final String panelTitle, final int index) {
-        ObjectMapper objectMapper = new ObjectMapper();
+    private static ObjectNode getObjectnode(final String panelTitle, final int index, final ObjectMapper objectMapper) {
         ObjectNode panelNode  = objectMapper.createObjectNode();
         panelNode.put("key", "page"+index);
         panelNode.put("type", "panel");

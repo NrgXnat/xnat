@@ -55,7 +55,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
-import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +80,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
     private final CustomFormsFeatureFlags featureFlags;
     private final XnatPluginBeanManager xnatPluginBeanManager;
     private final XnatUserProvider userProvider;
+    private final ObjectMapper objectMapper;
 
     private final CustomFormFetcherI formFetcher;
 
@@ -95,7 +95,8 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                                         final List<CustomFormFetcherI> customFormFetchers,
                                         final CustomFormsFeatureFlags featureFlags,
                                         final XnatUserProvider userProvider,
-                                        final XnatPluginBeanManager xnatPluginBeanManager) {
+                                        final XnatPluginBeanManager xnatPluginBeanManager,
+                                        final ObjectMapper objectMapper) {
         this.selectionService = selectionService;
         this.formService = formService;
         this.customVariableFormAppliesToService = customVariableFormAppliesToService;
@@ -105,6 +106,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         this.featureFlags = featureFlags;
         this.xnatPluginBeanManager = xnatPluginBeanManager;
         this.userProvider = userProvider;
+        this.objectMapper = objectMapper;
 
         formFetcher = getCustomFormFetcher(customFormFetchers);
     }
@@ -946,10 +948,8 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
     private PseudoConfiguration setBasicElements(CustomVariableForm form, CustomVariableFormAppliesTo formAppliesTo) {
         PseudoConfiguration configuration = new PseudoConfiguration();
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jNode = form.getFormIOJsonDefinition();
-            String pretty = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jNode);
-            configuration.setContents(pretty);
+            configuration.setContents(objectMapper.writeValueAsString(jNode));
         } catch (JsonProcessingException jpe) {
             log.debug("Could not process json", jpe);
         }
@@ -989,17 +989,6 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
     @Override public boolean checkCustomFormForData(final RowIdentifier rowId) throws Exception {
         CustomVariableFormAppliesTo formAppliesTo = customVariableFormAppliesToService.findByRowIdentifier(rowId);
         return dataLocateService.hasDataBeenAcquired(formAppliesTo);
-    }
-
-    private List<String> toProjectIds(final List<ComponentPojo> entityIds) {
-        List<String> projectIds = new ArrayList<String>();
-        if (entityIds == null || entityIds.isEmpty()) {
-            return null;
-        }
-        entityIds.forEach(entityId -> {
-            projectIds.add(toProjectId(entityId));
-        });
-        return projectIds;
     }
 
     private String toProjectId(final ComponentPojo entityId) {

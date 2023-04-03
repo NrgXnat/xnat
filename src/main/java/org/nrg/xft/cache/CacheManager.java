@@ -9,109 +9,54 @@
 
 package org.nrg.xft.cache;
 
-import org.nrg.xft.event.XftItemEventI;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.services.cache.XnatCache;
 
-import java.util.Hashtable;
-import java.util.Map;
-
-import static org.nrg.xft.event.XftItemEventI.*;
-
-public class CacheManager {
-
-    private Map<String, Map<Object, Object>> cache = new Hashtable<>();
-
-    private static CacheManager cm = null;
-
-    public synchronized static CacheManager GetInstance() {
-        if (cm == null) {
-            cm = new CacheManager();
-        }
-
-        return cm;
+public interface CacheManager extends XnatCache {
+    static CacheManager GetInstance() {
+        return XDAT.getContextService().getBeanSafely(CacheManager.class);
     }
 
-    public void clearAll() {
-        for (Map<Object, Object> m : cache.values()) {
-            m.clear();
-        }
-        cache.clear();
-    }
 
-    public Object retrieve(String xsiType, Object id) {
-        // Fixes issue where null ID causes NPE inside of Hashtable code.
-        if (id == null) {
-            return null;
-        }
-        Map<Object, Object> items = cache.get(xsiType);
-        if (items == null) {
-            return null;
-        }
-        return items.get(id);
-    }
+    /**
+     * Clears all entries in the cache.
+     */
+    void clearAll();
 
-    public synchronized void put(String xsiType, Object id, Object i) {
-        if (i == null) {
-            throw new NullPointerException();
-        }
-        if (id == null) {
-            throw new NullPointerException();
-        }
-        if (xsiType == null) {
-            throw new NullPointerException();
-        }
+    /**
+     * Clears all objects cached with the given XSI type.
+     *
+     * @param xsiType The XSI type of the cached objects to be cleared
+     */
+    void clearXsiType(String xsiType);
 
-        Map<Object, Object> items = cache.get(xsiType);
-        if (items == null) {
-            items = new Hashtable<>();
-            cache.put(xsiType, items);
-        }
+    /**
+     * Retrieves the object cached with the given XSI type and object ID.
+     *
+     * @param xsiType The XSI type of the cached object
+     * @param id      The ID of the cached object
+     *
+     * @return The cached object if it exists in the cache, <pre>null</pre> otherwise.
+     */
+    Object retrieve(String xsiType, Object id);
 
-        items.put(id, i);
-    }
+    /**
+     * Puts the item into the cache with the specified XSI type and ID.
+     *
+     * @param xsiType The XSI type of the object to be cached
+     * @param id      The ID of the object to be cached
+     * @param item    The object to be cached
+     */
+    Object put(String xsiType, Object id, Object item);
 
-    public synchronized Object remove(String xsiType, Object id) {
-        Map<Object, Object> items = cache.get(xsiType);
-        if (items == null) {
-            items = cache.put(xsiType, new Hashtable<>());
-        }
-
-        return items != null ? items.remove(id) : null;
-    }
-
-    public void handleXftItemEvent(final XftItemEventI e) {
-        if (e.getXsiType() == null) {
-            return;
-        }
-
-        Map<Object, Object> items = cache.get(e.getXsiType());
-
-        if (items == null) {
-            return;//if null, then we aren't listening to this type yet.
-        }
-
-        switch (e.getAction()) {
-            case CREATE:
-                if (e.getId() != null && e.getItem() != null) {
-                    items.put(e.getId(), e.getItem());
-                }
-                break;
-            case UPDATE:
-                if (e.getId() != null && e.getItem() != null) {
-                    items.put(e.getId(), e.getItem());
-                } else if (e.getId() != null) {
-                    items.remove(e.getId());
-                } else {
-                    items.clear();
-                }
-                break;
-            case DELETE:
-                if (e.getId() != null) {
-                    items.remove(e.getId());
-                } else {
-                    items.clear();
-                }
-                break;
-        }
-    }
-
+    /**
+     * Removes the item cached with the specified XSI type and ID from the cache. This returns the object if it exists in
+     * the cache.
+     *
+     * @param xsiType The XSI type of the object to be cached
+     * @param id      The ID of the object to be cached
+     *
+     * @return The cached object if it exists
+     */
+    Object remove(String xsiType, Object id);
 }

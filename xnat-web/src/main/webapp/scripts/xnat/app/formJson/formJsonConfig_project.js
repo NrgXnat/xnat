@@ -40,8 +40,6 @@ XNAT.plugin =
         getObject(XNAT.customFormManager.projectOwner.projectFormManager || {});
 
     projectFormManager.projectdefinitions = [];
-    var addNewBuilderObj = {};
-
 
     var projectDataTypeSingularName = XNAT.app.displayNames.singular.project;
 
@@ -51,31 +49,6 @@ XNAT.plugin =
     projectFormManager.isCustomVariableMigrationEnabled = false;
 
     const PRIMARY_KEY_FIELDNAME = "idCustomVariableFormAppliesTo";
-
-    var onAddNewBuilderChange = function (build) {
-        try {
-            let modalId = 'addNewModal';
-            let button_id = modalId + '-save-button';
-            let saveBtn = document.getElementById(button_id);
-            saveBtn.removeAttribute('disabled');
-            saveBtn.classList.remove("disabled");
-        }catch(err) {console.log(err);}
-        addNewBuilderObj.builderSchema = build;
-    };
-
-    function setupBuilder(builder) {
-        builder.on('change',onAddNewBuilderChange);
-        Formio.Builders.addBuilder("addNew",builder);
-        let formComponentDivs = document.getElementsByClassName('formcomponents');
-        let formAreaDivs = document.getElementsByClassName('formarea');
-        try {
-            let formComponentDiv = formComponentDivs[0];
-            let formAreaDiv = formAreaDivs[0];
-            formComponentDiv.setAttribute('style','height:65vh; overflow-y:scroll');
-            formAreaDiv.setAttribute('style','height:60vh; overflow-y:scroll');
-        }catch(err){console.log("Could not add scroll bar");}
-
-    }
 
     function spacer(width) {
         return spawn('i.spacer', {
@@ -117,39 +90,6 @@ XNAT.plugin =
         if (XNAT.data.context.projectID.length > 0) return XNAT.data.context.projectID;
     }
 
-    projectFormManager.getBuilderConfiguration = function () {
-        return XNAT.customFormManager.builderConfigManager.getBuilderConfig();
-    }
-
-    function initBuilder(form) {
-        let formType = "form";
-        let formTitle = form.data.formTitle;
-        let formBuilderElement = document.getElementById("form-builder");
-        let builderConfig = projectFormManager.getBuilderConfiguration();
-        if (jQuery.isEmptyObject(addNewBuilderObj) || !addNewBuilderObj.hasOwnProperty('builderSchema')) {
-            Formio.builder(formBuilderElement, {
-                display: formType,
-                title: formTitle,
-                components: [],
-                settings: {}
-            }, {
-                noDefaultSubmitButton: true,
-                builder: builderConfig
-            }).then((builder) => {
-                setupBuilder(builder);
-            });
-        }else {
-            let builderSchema = addNewBuilderObj.builderSchema;
-            Formio.builder(formBuilderElement, builderSchema, {
-                noDefaultSubmitButton: true,
-                builder: builderConfig
-            }).then((builder) => {
-                setupBuilder(builder);
-            });
-        }
-    }
-
-
     // get the list of Site wide Configs
     projectFormManager.getCustomFormConfigs = projectFormManager.getAllCustomFormConfigs = function (callback) {
         callback = isFunction(callback) ? callback : function () {};
@@ -174,47 +114,6 @@ XNAT.plugin =
 
         });
     };
-
-    projectFormManager.builderDialog = function (configDefinition) {
-        let configDefinitionObj = JSON.parse(configDefinition['contents']);
-        let builderConfig = projectFormManager.getBuilderConfiguration();
-        Formio.builder(document.getElementById("formio-project-builder"), configDefinitionObj, {
-            noDefaultSubmitButton: true,
-            builder: builderConfig
-        }).then((form) => {
-            Formio.Builders.addBuilder("wysiwyg", form);
-        });
-    };
-
-    projectFormManager.warnUserDataExists = function () {
-        XNAT.dialog.open({
-            width: 450,
-            title: "Form deletion not possible",
-            content: "Form has been disabled as data has been acquired using the form.",
-            buttons: [{
-                label: 'OK',
-                isDefault: true,
-                close: true,
-                action: function () {
-                    xmodal.closeAll();
-                }
-            }]
-        });
-    }
-
-    projectFormManager.warnUserDataLossOnClosing = function () {
-        XNAT.dialog.open({
-            width: 450,
-            title: "Are you sure you want to abandon form creation?",
-            content: "You you sure you want to abandon form creation? All data will be lost.",
-            buttons: [{
-                label: 'OK',
-                isDefault: true,
-                close: true
-            }]
-        });
-    }
-
 
     function filterDisplayOrderInput(textbox, originalFormOrder) {
       ["input", "keydown", "keyup", "select", "contextmenu", "drop"].forEach(function(event) {
@@ -301,219 +200,6 @@ XNAT.plugin =
         }
     }
 
-    projectFormManager.addNewBtn = function (container, callback) {
-        return spawn('button.btn1.btn-sm', {
-            onclick: function (e) {
-                e.preventDefault();
-                xmodal.open({
-                    id: 'addNewModal',
-                    title: 'Custom Form Generation',
-                    classes: 'xnat-bootstrap',
-                    template: $('#addFormVariable'),
-                    width: 1600,
-                    height: 2400,
-                    closeBtn: false,
-                    scroll: false,
-                    beforeShow: function (obj) {
-                        displayFormWizard();
-                    },
-                    buttons: {
-                        save: {
-                            label: 'Save',
-                            isDefault: true,
-                            disabled: true,
-                            action: function () {
-                                saveConfiguration();
-                            }
-                        },
-                        cancel: {
-                            label: 'Cancel',
-                            close: false,
-                            action: function(obj) {
-                                let $thisModal = obj.$modal;
-                                xmodal.confirm({
-                                    content: 'Are you sure you want to abandon?',
-                                    okAction: function(){
-                                        // close 'parent' modal
-                                        xmodal.close($thisModal);
-                                    }
-                                });
-                            }
-                        }
-                    }
-                });
-            }
-        }, 'Add New');
-    }
-
-    function displayFormWizard() {
-        addNewBuilderObj = {};
-        projectFormManager.getWizard();
-    }
-
-
-    // prepare to display the wizard for form creation
-    projectFormManager.getWizard =  function (callback) {
-        callback = isFunction(callback) ? callback : function () {};
-        let url = XNAT.url.scriptUrl('/xnat/app/formJson/formManagerWizard_project.json');
-        if (projectFormManager.siteHasProtocolsPluginDeployed == true) {
-            url = XNAT.url.scriptUrl('/xnat/app/formJson/formManagerWizard_protocol_project.json');
-        }
-        let formWizardJson = undefined;
-        XNAT.xhr.get({
-            url: url,
-            dataType: 'json',
-            async: false,
-            success: function (data) {
-                formWizardJson = data;
-            }
-        });
-        Formio.createForm(document.getElementById('formio'), formWizardJson, {
-            breadcrumbSettings: {clickable:false},
-            buttonSettings: {
-                showCancel: false,
-                showSubmit: false
-            }
-        }).then(function (wizard) {
-            addNewBuilderObj.submission = wizard.submission;
-            // Prevent the submission from going to the form.io server.
-            wizard.nosubmit = true;
-            wizard.on('nextPage', function (page) {
-                if (projectFormManager.siteHasProtocolsPluginDeployed == true) {
-                    if (page.page === 2) {
-                        initBuilder(wizard);
-                    }
-                } else {
-                    if (page.page === 1) {
-                        initBuilder(wizard);
-                    }
-                }
-            });
-        });
-    };
-
-    function saveConfiguration() {
-        let builder = Formio.Builders.getBuilder("addNew");
-        let builderJson = builder.schema;
-        let submission = addNewBuilderObj.submission;
-
-        let submissionJson = {};
-        let projectId = getProjectId();
-        let xnatProject = {};
-        xnatProject['label'] = projectId ;
-        xnatProject['value'] = projectId;
-        submission['data']['xnatProject'] = [];
-        submission['data']['xnatProject'].push(xnatProject);
-        submission['data']['isThisASiteWideConfiguration'] = "no";
-
-        submissionJson['submission'] = submission;
-        submissionJson['builder'] = builderJson;
-        //XNAT-7668
-        submissionJson.builder['title'] = submissionJson.submission.data['formTitle'];
-        var url = restUrl('xapi/customforms/save', {}, false, true);
-
-        XNAT.xhr.put({
-            url: url,
-            contentType: 'application/json',
-            data: JSON.stringify(submissionJson),
-            success: function () {
-                xmodal.closeAll();
-                XNAT.ui.banner.top(2000, 'Configuration saved.', 'success');
-                projectFormManager.refreshTable();
-            },
-            fail: function (e) {
-                errorHandler(e, 'Could Not save the form', false);
-            }
-        });
-    }
-
-    function saveWYSIWYGContent(itemObj) {
-        let wysiygBuilder = Formio.Builders.getBuilder("wysiwyg");
-        let editorContent = wysiygBuilder.schema;
-
-        let submissionJson = getSubmissionObjectForRow(itemObj);
-        submissionJson['builder'] = editorContent;
-
-        let url = restUrl('xapi/customforms/save', {}, false, true);
-
-        XNAT.xhr.put({
-            url: url,
-            contentType: 'application/json',
-            data: JSON.stringify(submissionJson),
-            success: function () {
-                xmodal.closeAll();
-                XNAT.ui.banner.top(2000, 'Form  updated.', 'success');
-                projectFormManager.refreshTable();
-            },
-            fail: function (e) {
-                errorHandler(e, 'Could Not save the form', false);
-            }
-        });
-    }
-
-    function getSubmissionObjectForRow(configItem) {
-        let dbRowId = getPK(configItem);
-        let path = configItem.path;
-        let zIndex = configItem.formDisplayOrder;
-        let submissionJson = {};
-        let submissionObj = {};
-        let submissionDataObj = {};
-        if (dbRowId == undef) {
-            submissionDataObj[PRIMARY_KEY_FIELDNAME] = '-1_-1';
-        }else {
-            submissionDataObj[PRIMARY_KEY_FIELDNAME] = dbRowId;
-        }
-        submissionDataObj['formType'] = "form";
-        submissionDataObj['formTitle'] = configItem['contents']['title'];
-        let dataXsiType = extractParts(path, 1);
-        let dataSingular = XNAT.customFormManager.datatypeManager.getDatatypeByXsiType(dataXsiType).label;
-        let xnatDataTypeObj = {};
-        xnatDataTypeObj['label'] = dataSingular;
-        xnatDataTypeObj['value'] = dataXsiType;
-        submissionDataObj['xnatDatatype'] = xnatDataTypeObj;
-        submissionDataObj['xnatProject'] = [];
-        submissionDataObj['xnatProtocol'] = [];
-        submissionDataObj['xnatVisit'] = [];
-        submissionDataObj['xnatSubtype'] = [];
-
-        let project = getProjectId();
-        submissionDataObj.zIndex = zIndex;
-        let rowProtocol = extractParts(configItem['path'], 3);
-        submissionDataObj['isThisASiteWideConfiguration'] = 'no';
-        var xnatProject = {};
-        if (rowProtocol === '--') {
-            xnatProject['label'] = project;
-            xnatProject['value'] = project;
-        } else {
-            xnatProject['label'] = project + "[" + rowProtocol + "]";
-            xnatProject['value'] = rowProtocol + ":" + project;
-        }
-        submissionDataObj['xnatProject'].push(xnatProject);
-        if (rowProtocol != '--') {
-            let xnatProtocol = {};
-            xnatProtocol['label'] = rowProtocol;
-            xnatProtocol['value'] = rowProtocol;
-            submissionDataObj['xnatProtocol'].push(xnatProtocol);
-            let visit = extractParts(configItem['path'], 5);
-            if (visit != '--') {
-                let xnatVisit = {};
-                xnatVisit['label'] = rowProtocol + ":" + visit;
-                xnatVisit['value'] = rowProtocol + ":" + visit;
-                submissionDataObj['xnatVisit'].push(xnatVisit);
-                let subType = extractParts(configItem['path'], 7);
-                if (subType != '--') {
-                    let xnatSubType = {};
-                    xnatSubType['label'] = rowProtocol + ":" + visit + ":" + subType;
-                    xnatSubType['value'] = rowProtocol + ":" + visit + ":" + subType;
-                    submissionDataObj['xnatSubtype'].push(xnatSubType);
-                }
-            }
-        }
-        submissionObj['data'] = submissionDataObj;
-        submissionObj['state'] = 'submitted';
-        submissionJson['submission'] = submissionObj;
-        return submissionJson;
-    }
 
     function waitForElementInDOM(selector) {
         return new Promise(resolve => {
@@ -535,135 +221,6 @@ XNAT.plugin =
         });
     }
 
-    function editButton(itemObj) {
-        return spawn('button.btn.btn-sm.edit', {
-            onclick: function (e) {
-                e.preventDefault();
-                xmodal.open({
-                    title: 'Edit Custom Form',
-                    classes: 'xnat-bootstrap',
-                    template: $('#editForm'),
-                    width: 1600,
-                    height: 1600,
-                    scroll: false,
-                    closeBtn: false,
-                    beforeShow: function (obj) {
-                        var has_data = false;
-                        XNAT.xhr.get({
-                            url: customFormUrl( 'hasdata/' + itemObj['appliesToList'][0]['idCustomVariableFormAppliesTo']),
-                            dataType: 'json',
-                            async: false,
-                            success: function (data) {
-                                has_data = data;
-                            }
-                        });
-                        if (has_data) {
-                            let $thisModal = obj.$modal;
-                            xmodal.confirm({
-                                content: 'This form already has data associated with it. Use caution when editing this form as it may affect the functioning of the previously collected data.',
-                                okAction: function(){
-                                },
-                                cancelAction: function() {
-                                   // close 'parent' modal
-                                   xmodal.close($thisModal);
-                                }
-                            });
-                        }
-                        projectFormManager.builderDialog(itemObj);
-                    },
-                    afterShow: function(o) {
-                        waitForElementInDOM('.formcomponents').then((formComponentDiv) => {
-                            formComponentDiv.setAttribute('style','height:75vh; overflow-y:scroll');
-                        });
-
-                        waitForElementInDOM('.formarea').then((formAreaDiv) => {
-                            formAreaDiv.setAttribute('style','height:80vh; overflow-y:scroll');
-                        });
-
-                    },
-                    buttons: {
-                        update: {
-                            label: 'Save',
-                            isDefault: true,
-                            action: function () {
-                                saveWYSIWYGContent(itemObj);
-                            }
-                        },
-                        cancel: {
-                            label: 'Cancel',
-                            close: false,
-                            action: function(obj) {
-                                let $thisModal = obj.$modal;
-                                xmodal.confirm({
-                                    content: 'Are you sure you want to abandon?',
-                                    okAction: function(){
-                                        // close 'parent' modal
-                                        xmodal.close($thisModal);
-                                    }
-                                });
-                            }
-                        }
-                    }
-                });
-            },
-            title: "Edit the form definition"
-        }, [ spawn('i.fa.fa-pencil') ]);
-    }
-
-    function deleteButton(itemObj, isDataPresent) {
-        return spawn('button.btn.btn-sm.edit', {
-            onclick: function(e) {
-                e.preventDefault();
-                if (itemObj) {
-                   projectFormManager.deleteForm(itemObj);
-                }
-            },
-            disabled: isDataPresent,
-            title: "Delete the form"
-        }, [ spawn('i.fa.fa-trash') ]);
-    }
-
-    projectFormManager.deleteForm = function (configDefinition, title) {
-        let appliesTo = configDefinition['appliesToList'];
-        xmodal.open({
-            title: 'Delete form?',
-            content: 'Are you sure you want to delete the form? <br><br><p>In case data has been acquired using the form, form will be disabled. This allows access to data in the future.</p>',
-            width: 300,
-            height: 300,
-            overflow: 'auto',
-            buttons: {
-                ok: {
-                    label: 'Proceed',
-                    isDefault: true,
-                    action: function () {
-                        let url = customFormUrl('');
-                        XNAT.xhr.delete({
-                            url: url,
-                            contentType: 'application/json',
-                            data: JSON.stringify(appliesTo),
-                            success: function (resp) {
-                                xmodal.closeAll();
-                                const regex = /\: disabled$/;
-                                const found = resp.match(regex);
-                                if (found != null) {
-                                    projectFormManager.warnUserDataExists();
-                                } else {
-                                    XNAT.ui.banner.top(4000, resp, 'success');
-                                }
-                                projectFormManager.refreshTable();
-                            },
-                            fail: function (e) {
-                                errorHandler(e, 'Could not delete form ' + title);
-                            }
-                        });
-                    }
-                },
-                close: {
-                    label: 'Cancel'
-                }
-            }
-        });
-   }
 
     function displayOrderButton(itemObj) {
         return spawn('button.btn.btn-sm.edit', {
@@ -941,7 +498,8 @@ XNAT.plugin =
             label: 'Actions',
             td: {
                 style: {
-                    verticalAlign: 'middle'
+                    verticalAlign: 'middle',
+                    width: '130px'
                 }
             },
             apply: function (actions) {
@@ -978,7 +536,6 @@ XNAT.plugin =
     }
 
     function getPK(item) {
-        console.log(item['appliesToList']);
         return item['appliesToList'][0][PRIMARY_KEY_FIELDNAME];
     }
 
@@ -1002,9 +559,9 @@ XNAT.plugin =
             actions = [optInButton(item, title)];
         }else {
             if (isProjectSpecific && !isFormSharedBetweenProjects) {
-                actions = [editButton(item),spacer(4), displayOrderButton(item, title), spacer(4), deleteButton(item, item['hasData'])];
+                actions = [displayOrderButton(item, title)];
             } else {
-                actions = [optOutButton(item, title)];
+                actions = [optOutButton(item, title), spacer(4), displayOrderButton(item, title)];
             }
 
         }
@@ -1044,9 +601,6 @@ XNAT.plugin =
         projectFormManager.$container = $manager;
 
         $manager.append(projectFormManager.table());
-        if (projectFormManager.isProjectOwnerFormCreationEnabled) {
-            $manager.append(projectFormManager.addNewBtn());
-        }
 
         $('div.filter-submit').remove();
 

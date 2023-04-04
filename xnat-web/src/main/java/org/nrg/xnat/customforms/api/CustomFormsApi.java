@@ -99,7 +99,8 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, method = RequestMethod.PUT)
+    @XapiRequestMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, method = RequestMethod.PUT, restrictTo = Role)
+    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> addCustomFormsToProtocolsAndProjects(final @RequestBody String jsonbody)
             throws JsonProcessingException {
         final UserI user = getSessionUser();
@@ -172,7 +173,8 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/enable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @XapiRequestMapping(value = "/enable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
+    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> enableCustomForm(final @RequestBody String jsonbody) {
         final UserI user = getSessionUser();
         try {
@@ -330,7 +332,8 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/disable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @XapiRequestMapping(value = "/disable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
+    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> disableCustomForm(final @RequestBody String jsonbody) {
         final UserI user = getSessionUser();
         try {
@@ -359,7 +362,8 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 403, message = "Forbidden"),
             @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @XapiRequestMapping(method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
+    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> deleteCustomForm(final @RequestBody String jsonbody) {
         final UserI user = getSessionUser();
         try {

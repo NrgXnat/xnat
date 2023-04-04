@@ -261,7 +261,7 @@ function unescapeXML(val) {
           } else {
               if (formComponentTypesToSanitize.includes(formComponent.type)) {
                   // Sanitize!
-                  if (formData.hasOwnProperty(formComponent.key)) {
+                  if (formData != undefined && formData.hasOwnProperty(formComponent.key)) {
                      formData[formComponent.key] = escapeHtml(formData[formComponent.key]);
                   }
               }

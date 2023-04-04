@@ -72,6 +72,8 @@ public class CustomFormsApi extends AbstractXapiRestController {
     private final CustomFormPermissionsService permissionsService;
     private final ObjectMapper objectMapper;
     private final ObjectMapper objectMapperNoFailOnUnknown;
+    private static final String[] STRINGS_FORBIDDEN_CHARS = new String[] {"<", "&lt;", ">", "&gt;"};
+
 
     @Autowired
     public CustomFormsApi(final UserManagementServiceI userManagementService,
@@ -108,6 +110,14 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
         final SubmissionPojo submission = clientPojo.getSubmission().getData();
         final JsonNode proposedFormDefinition = objectMapper.readTree(clientPojo.getBuilder());
+        try {
+            final String formTitle = proposedFormDefinition.get("title").asText();
+            if (StringUtils.isBlank(formTitle) || StringUtils.containsAny(formTitle, STRINGS_FORBIDDEN_CHARS)) {
+                return new ResponseEntity<>("Invalid characters in form title", HttpStatus.BAD_REQUEST);
+            }
+        } catch(Exception e) {
+            return new ResponseEntity<>("Missing form title", HttpStatus.BAD_REQUEST);
+        }
 
         final String formId;
         try {

@@ -617,21 +617,27 @@ var XNAT = getObject(XNAT || {});
                 close: false,
                 action: function (obj) {
                     let editorContent = _editor.getValue().code;
-                    let submissionJson = getSubmissionObjectForRow(configDefinition);
-                    try {
-                        submissionJson['builder'] = JSON.parse(editorContent);
-                        xnatFormManager.submitJson(submissionJson);
-                        obj.close();
-                    } catch (error) {
-                        console.error(error);
-                        XNAT.dialog.confirm({
-                            title: 'Invalid JSON',
-                            content: 'Please fix the errors in the JSON.',
-                            okAction: function(){
-                            }
-                        });
+                    let formSchema = JSON.parse(editorContent);
+                    let currentTitle = formSchema.title;
+                    let cleanedTitle = Formio.Utils.unescapeHTML(currentTitle);
+                    if (currentTitle !== cleanedTitle) {
+                        XNAT.dialog.message('ERROR ', 'Please enter a title using only alpha-numeric characters');
+                    }else {
+                        let submissionJson = getSubmissionObjectForRow(configDefinition);
+                        try {
+                            submissionJson['builder'] = JSON.parse(editorContent);
+                            xnatFormManager.submitJson(submissionJson);
+                            obj.close();
+                        } catch (error) {
+                            console.error(error);
+                            XNAT.dialog.confirm({
+                                title: 'Invalid JSON',
+                                content: 'Please fix the errors in the JSON.',
+                                okAction: function(){
+                                }
+                            });
+                        }
                     }
-
                 }
             },
             cancel: {

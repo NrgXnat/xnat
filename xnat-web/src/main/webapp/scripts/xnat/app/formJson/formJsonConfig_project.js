@@ -115,82 +115,6 @@ XNAT.plugin =
         });
     };
 
-    function filterDisplayOrderInput(textbox, originalFormOrder) {
-      ["input", "keydown", "keyup", "select", "contextmenu", "drop"].forEach(function(event) {
-        textbox.addEventListener(event, function() {
-            let value = this.value;
-            let test = /^-?\d*$/.test(this.value);
-            if (/^-?\d*$/.test(this.value)) {
-                this.oldValue = this.value;
-            } else {
-                if (this.hasOwnProperty("oldValue")) {
-                    this.value = this.oldValue;
-                } else {
-                    this.value = originalFormOrder;
-                }
-            }
-        });
-      });
-    }
-
-    modifyDisplayOrder = function (configDefinition) {
-        let formOrder = configDefinition['formDisplayOrder'];
-        let itemObj = JSON.parse(configDefinition['contents']);
-        const title = itemObj['title'] || '';
-        const dateCreated = new Date(configDefinition['dateCreated']);
-        const formId = configDefinition['formUUID'];
-        var info_button = '<div class="info">Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker.</div>';
-        xmodal.open({
-            title: 'Change Form Order for ' + title,
-            content: info_button + '<br><br>Current Form Order: ' + formOrder + '<br><br> Creation Date: ' + dateCreated + '<br><br> New Form Order: <input id="formOrderTxt" value="'+ formOrder + '">',
-            width: 500,
-            height: 350,
-            overflow: 'auto',
-            afterShow: function () {
-                filterDisplayOrderInput(document.getElementById("formOrderTxt"), formOrder)
-            },
-            buttons: {
-                ok: {
-                    label: 'Ok',
-                    isDefault: true,
-                    action: function () {
-                        let desiredFormOrder = document.getElementById('formOrderTxt').value;
-                        let desiredFormOrderInt = parseInt(desiredFormOrder);
-                        if (Number.isNaN(desiredFormOrderInt) || desiredFormOrderInt > 1000000 || desiredFormOrderInt < -1000000) {
-                            XNAT.dialog.open({
-                                width: 450,
-                                title: "Invalid Value for Form Order",
-                                content: "Form Order should be between -1000000 and 1000000.",
-                                buttons: [{
-                                    label: 'OK',
-                                    isDefault: true,
-                                    close: true
-                                }]
-                            });
-                            return;
-                        }
-                        let url = customFormUrl( 'formId/' + formId + '?displayOrder=' + desiredFormOrder );
-                        XNAT.xhr.post({
-                            url: url,
-                            success: function () {
-                                xmodal.closeAll();
-                                XNAT.ui.banner.top(2000, 'Form Order updated.', 'success');
-                                projectFormManager.refreshTable();
-                            },
-                            fail: function (e) {
-                                errorHandler(e, 'Could not update Form Order ' + title);
-                            }
-                        });
-                    }
-                },
-                close: {
-                    label: 'Close'
-                }
-            }
-        });
-    }
-
-
     function extractParts(path, partIndex) {
         let pathParts = path.split('/');
         if (partIndex > pathParts.length) {
@@ -220,20 +144,6 @@ XNAT.plugin =
             });
         });
     }
-
-
-    function displayOrderButton(itemObj) {
-        return spawn('button.btn.btn-sm.edit', {
-            onclick: function (e) {
-                e.preventDefault();
-                if (itemObj) {
-                    modifyDisplayOrder(itemObj);
-                }
-            },
-            title: "Change the order of the form relative to others"
-        }, [ spawn('i.fa.fa-exchange') ]);
-    }
-
 
     function optOutButton(itemObj, title) {
         let selectedProjects = [];
@@ -558,12 +468,9 @@ XNAT.plugin =
         if (status === 'optedout') {
             actions = [optInButton(item, title)];
         }else {
-            if (isProjectSpecific && !isFormSharedBetweenProjects) {
-                actions = [displayOrderButton(item, title)];
-            } else {
-                actions = [optOutButton(item, title), spacer(4), displayOrderButton(item, title)];
+            if (!isProjectSpecific || isFormSharedBetweenProjects) {
+                actions = [optOutButton(item, title)];
             }
-
         }
         return actions;
     }

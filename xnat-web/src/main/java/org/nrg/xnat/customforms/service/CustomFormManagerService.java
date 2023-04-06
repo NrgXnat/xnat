@@ -26,13 +26,13 @@ public interface CustomFormManagerService {
 
     String deleteForm(UserI user, String formAppliesId) throws Exception;
 
-    boolean optProjectsIntoForm(UserI user, RowIdentifier rowIdentifier, List<String> projects) throws IllegalArgumentException;
+    boolean optProjectsIntoForm(UserI user, RowIdentifier rowIdentifier, List<String> projects) throws NotFoundException, InsufficientPermissionsException, IllegalArgumentException;
 
     boolean promoteForm(UserI user, List<FormAppliesToPoJo> formAppliesToPoJos) throws NotFoundException, CustomVariableNameClashException;
 
     boolean promoteForm(UserI user, String formAppliesToId) throws NotFoundException, CustomVariableNameClashException;
 
-    boolean optOutOfForm(UserI user, String formAppliesToId, List<String> projectIds) throws InsufficientPermissionsException, IllegalArgumentException;
+    boolean optOutOfForm(UserI user, String formAppliesToId, List<String> projectIds) throws NotFoundException, InsufficientPermissionsException, IllegalArgumentException;
 
     String save(SubmissionPojo data, final JsonNode formDefinition, final UserI user) throws InsufficientPermissionsException;
     String save(UserI user,

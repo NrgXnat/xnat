@@ -74,7 +74,6 @@ public class CustomFormsApi extends AbstractXapiRestController {
     private final ObjectMapper objectMapperNoFailOnUnknown;
     private static final String[] STRINGS_FORBIDDEN_CHARS = new String[] {"<", "&lt;", ">", "&gt;"};
 
-
     @Autowired
     public CustomFormsApi(final UserManagementServiceI userManagementService,
                           final CustomFormManagerService formManagerService,
@@ -201,14 +200,15 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
+            @ApiResponse(code = 404, message = "Not Found"),
             @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/optin/{rowId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
-    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
+    @XapiRequestMapping(value = "/optin/{rowId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> optInCustomForm(final @PathVariable String rowId, final @RequestBody String jsonbody) {
         final UserI user = getSessionUser();
         try {
             List<String> projects = objectMapper.readValue(jsonbody, new TypeReference<List<String>>() {});
-            if (projects.isEmpty()) {
+            if (projects.isEmpty() || projects.stream().anyMatch(StringUtils::isBlank)) {
                 return new ResponseEntity<>("Projects not passed", HttpStatus.BAD_REQUEST);
             }
             RowIdentifier rowIdentifier = RowIdentifier.Unmarshall(rowId);
@@ -218,12 +218,16 @@ public class CustomFormsApi extends AbstractXapiRestController {
             } else {
                 return new ResponseEntity<>("Projects could not be opted into form", HttpStatus.BAD_REQUEST);
             }
-        } catch (IllegalArgumentException e) {
-            log.error("Could not opt project into form ", e);
+        } catch (NotFoundException ie) {
+            return new ResponseEntity<>("Not found", HttpStatus.NOT_FOUND);
+        } catch (InsufficientPermissionsException ie) {
+            return new ResponseEntity<>("Not enough permissions to opt into form", HttpStatus.FORBIDDEN);
+        } catch (IllegalArgumentException | NullPointerException | JsonProcessingException e) {
+            log.error("Could not opt  project into form ", e);
             return new ResponseEntity<>("Could not opt projects into form: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (JsonProcessingException jpe) {
+        } catch (Exception jpe) {
             log.error("Could not parse json", jpe);
-            return new ResponseEntity<>("Could not opt projects into form: " + jpe.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Could not opt projects into form: " + jpe.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -233,18 +237,15 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 403, message = "Forbidden"),
+            @ApiResponse(code = 404, message = "Not Found"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/optout/{formId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> optOutCustomForm(final @PathVariable String formId, final @RequestBody String jsonbody) {
         final UserI user = getSessionUser();
         List<String> projectIds = new ArrayList<>();
         try {
-            try {
-                projectIds = objectMapper.readValue(jsonbody, new TypeReference<List<String>>() {});
-                if (projectIds.isEmpty()) {
-                    return new ResponseEntity<>("Projects not passed", HttpStatus.BAD_REQUEST);
-                }
-            } catch (Exception e) {
+            projectIds = objectMapper.readValue(jsonbody, new TypeReference<List<String>>() {});
+            if (projectIds.isEmpty() || projectIds.stream().anyMatch(StringUtils::isBlank)) {
                 return new ResponseEntity<>("Projects not passed", HttpStatus.BAD_REQUEST);
             }
             boolean success = formManagerService.optOutOfForm(user, formId, projectIds);
@@ -253,9 +254,11 @@ public class CustomFormsApi extends AbstractXapiRestController {
             } else {
                 return new ResponseEntity<>("Failed to opt out", HttpStatus.BAD_REQUEST);
             }
+        } catch (NotFoundException ie) {
+            return new ResponseEntity<>("Data not found", HttpStatus.NOT_FOUND);
         } catch (InsufficientPermissionsException ie) {
             return new ResponseEntity<>("Not enough permissions to opt out of form", HttpStatus.FORBIDDEN);
-        } catch (IllegalArgumentException ia) {
+        } catch (IllegalArgumentException | NullPointerException | JsonProcessingException ia) {
             return new ResponseEntity<>("Invalid data", HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             log.error("Could not opt out of form ", e);

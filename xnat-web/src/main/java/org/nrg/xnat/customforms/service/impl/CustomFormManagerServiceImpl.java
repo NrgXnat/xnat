@@ -468,19 +468,25 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
      * @return - boolean - success status
      * @throws Exception
      */
-    @Override public boolean optProjectsIntoForm(final UserI user, final RowIdentifier rowIdentifier, final List<String> projects) throws IllegalArgumentException {
+    @Override public boolean optProjectsIntoForm(final UserI user, final RowIdentifier rowIdentifier, final List<String> projects) throws NotFoundException, InsufficientPermissionsException, IllegalArgumentException {
         CustomVariableFormAppliesTo formAppliesTo = customVariableFormAppliesToService.findByRowIdentifier(rowIdentifier);
         boolean savedAll = true;
         if (formAppliesTo == null) {
             throw new IllegalArgumentException("Form with id: " + rowIdentifier + " not found");
         }
         final String formStatus = formAppliesTo.getStatus();
+        boolean isUserAuthorized = customFormPermissionsService.isUserAdminOrDataManager(user);
         //Custom Form Manager may not have access to the project
         final UserI authorizedUser = getAuthorizedUser(user);
         for (String project : projects) {
             XnatProjectdata projectdata = AutoXnatProjectdata.getXnatProjectdatasById(project, authorizedUser, false);
             if (projectdata == null) {
-                throw new IllegalArgumentException("All projects not found");
+                throw new NotFoundException("Data not found");
+            }
+            if (!isUserAuthorized) {
+                if (!customFormPermissionsService.isUserProjectOwner(user, projectdata.getId())) {
+                    throw new InsufficientPermissionsException("User " + user.getUsername() + " does not have sufficient permissions to perform the Opt In operation");
+                }
             }
         }
         final String dataType = formAppliesTo.getCustomVariableAppliesTo().getDataType();
@@ -499,8 +505,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                 deleteSafely(overlappingAppliesTo.getRowIdentifier(), overlappingAppliesTo);
             } else {
                 CustomVariableAppliesTo customVariableAppliesTo = getCustomVariableAppliesTo(userOptionsPojo, project);
-                objectSaver.saveOnlyAppliesToAndAssign(customVariableAppliesTo, formAppliesTo.getCustomVariableForm(), user, formStatus);
-                savedAll = true;
+                savedAll = objectSaver.saveOnlyAppliesToAndAssign(customVariableAppliesTo, formAppliesTo.getCustomVariableForm(), user, formStatus);
             }
             createWorkFlowEntry(user, project, rowIdentifier.getFormId(), "Form Added");
         }
@@ -608,85 +613,84 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
      * @throws IllegalArgumentException
      */
 
-    @Override public boolean optOutOfForm(final UserI user, final String formAppliesToId, final List<String> projectIds) throws InsufficientPermissionsException, IllegalArgumentException {
+    @Override public boolean optOutOfForm(final UserI user, final String formAppliesToId, final List<String> projectIds) throws NotFoundException, InsufficientPermissionsException, IllegalArgumentException {
         boolean successStatus = false;
         try {
             RowIdentifier rowId = RowIdentifier.Unmarshall(formAppliesToId);
             long formId = rowId.getFormId();
-            boolean userAuthorized = true;
+            boolean isUserAuthorized = customFormPermissionsService.isUserAdminOrDataManager(user);
             final UserI authorizedUser = getAuthorizedUser(user);
             for (String projectId : projectIds ) {
                 XnatProjectdata projectdata = AutoXnatProjectdata.getXnatProjectdatasById(projectId, authorizedUser, false);
                 if (null == projectdata) {
-                  throw new InsufficientPermissionsException("Invalid project");
+                  throw new NotFoundException("Data not found");
                 }
-                userAuthorized = userAuthorized && customFormPermissionsService.isUserAdminOrDataManager(user) || customFormPermissionsService.isUserProjectOwner(user, projectdata.getId());
+                if (!isUserAuthorized) {
+                    if (!customFormPermissionsService.isUserProjectOwner(user, projectdata.getId())) {
+                        throw new InsufficientPermissionsException("User " + user.getUsername() + " does not have sufficient permissions to perform the Opt In operation");
+                    }
+                }
             }
-            if (userAuthorized) {
-                    CustomVariableFormAppliesTo customVariableFormAppliesTo = customVariableFormAppliesToService.findByRowIdentifier(rowId);
-                    //Is the form already associated with the project? If so, just change the status
-                    if (null != customVariableFormAppliesTo) {
-                        CustomVariableAppliesTo appliesTo = customVariableFormAppliesTo.getCustomVariableAppliesTo();
-                        if (null != appliesTo) {
-                            if (appliesTo.getScope().equals(Scope.Site)) {
-                                //Look for any project specific form with the same formId
-                                for (String projectId : projectIds ) {
-                                    CustomVariableFormAppliesTo formAppliesToProject = customVariableFormAppliesToService.findForProject(projectId, formId);
-                                    if (formAppliesToProject != null) {
-                                        if (formAppliesToProject.getStatus().equals(CustomFormsConstants.OPTED_OUT_STATUS_STRING)) {
-                                            continue;
-                                        }
-                                        formAppliesToProject.setStatus(CustomFormsConstants.OPTED_OUT_STATUS_STRING);
-                                        objectSaver.saveCustomVariableFormAppliesTo(formAppliesToProject);
-                                        createWorkFlowEntry(user, customVariableFormAppliesTo, formId,"Form opted out" );
-                                        continue;
-                                    }else {
-                                        List<CustomVariableAppliesTo> projectAppliesTos =  selectionService.filterByPossibleStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(
-                                                Scope.Project, projectId, appliesTo.getDataType(), appliesTo.getProtocol(),
-                                                appliesTo.getVisit(), appliesTo.getSubType(),null
-                                        );
-                                        if (projectAppliesTos != null && projectAppliesTos.size() > 0) {
-                                            CustomVariableAppliesTo projectAppliesTo = projectAppliesTos.get(0);
-                                            createNew(formId, user, projectAppliesTo, CustomFormsConstants.OPTED_OUT_STATUS_STRING);
-                                        }else {
-                                            //Create a new formSelection
-                                            createNew(formId, user, UserOptionsPojo.Get(appliesTo), projectId, CustomFormsConstants.OPTED_OUT_STATUS_STRING);
-                                        }
-                                        createWorkFlowEntry(user, projectId, formId,"Form opted out" );
-                                    }
+            CustomVariableFormAppliesTo customVariableFormAppliesTo = customVariableFormAppliesToService.findByRowIdentifier(rowId);
+            //Is the form already associated with the project? If so, just change the status
+            if (null != customVariableFormAppliesTo) {
+                CustomVariableAppliesTo appliesTo = customVariableFormAppliesTo.getCustomVariableAppliesTo();
+                if (null != appliesTo) {
+                    if (appliesTo.getScope().equals(Scope.Site)) {
+                        //Look for any project specific form with the same formId
+                        for (String projectId : projectIds ) {
+                            CustomVariableFormAppliesTo formAppliesToProject = customVariableFormAppliesToService.findForProject(projectId, formId);
+                            if (formAppliesToProject != null) {
+                                if (formAppliesToProject.getStatus().equals(CustomFormsConstants.OPTED_OUT_STATUS_STRING)) {
+                                    continue;
                                 }
-                                return true;
-                            } else {
-                                // A form that is shared between projects
-                                //Just remove the association between the form and the project
-                                //Be safe - get the correct association
+                                formAppliesToProject.setStatus(CustomFormsConstants.OPTED_OUT_STATUS_STRING);
+                                objectSaver.saveCustomVariableFormAppliesTo(formAppliesToProject);
+                                createWorkFlowEntry(user, customVariableFormAppliesTo, formId,"Form opted out" );
+                                continue;
+                            }else {
                                 List<CustomVariableAppliesTo> projectAppliesTos =  selectionService.filterByPossibleStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(
-                                        Scope.Project, null, appliesTo.getDataType(), appliesTo.getProtocol(),
+                                        Scope.Project, projectId, appliesTo.getDataType(), appliesTo.getProtocol(),
                                         appliesTo.getVisit(), appliesTo.getSubType(),null
                                 );
-                                //If the form is associated to only one project. OptOut is not allowed
-                                if (projectAppliesTos != null && projectAppliesTos.size() == 1) {
-                                    throw new IllegalArgumentException("Opt Out operation is not allowed for a form associated with single project");
+                                if (projectAppliesTos != null && projectAppliesTos.size() > 0) {
+                                    CustomVariableAppliesTo projectAppliesTo = projectAppliesTos.get(0);
+                                    createNew(formId, user, projectAppliesTo, CustomFormsConstants.OPTED_OUT_STATUS_STRING);
+                                }else {
+                                    //Create a new formSelection
+                                    createNew(formId, user, UserOptionsPojo.Get(appliesTo), projectId, CustomFormsConstants.OPTED_OUT_STATUS_STRING);
                                 }
-                                UserOptionsPojo optionsPojo = UserOptionsPojo.Get(appliesTo);
-                                List<CustomVariableFormAppliesTo> customVariableFormAppliesTos = customVariableFormAppliesToService.findAllSpecificProjectForm(optionsPojo, projectIds, formId);
-                                if (null != customVariableFormAppliesTos) {
-                                    for (CustomVariableFormAppliesTo c: customVariableFormAppliesTos) {
-                                        deleteSafely(c.getRowIdentifier(), c);
-                                        createWorkFlowEntry(user, c, formId,"Form opted out and detached" );
-                                    }
-                                    setFormAsSiteWideDisabled(user,formId, optionsPojo);
-                                    return true;
-                                }
+                                createWorkFlowEntry(user, projectId, formId,"Form opted out" );
                             }
                         }
+                        return true;
                     } else {
-                        throw new IllegalArgumentException("Form identified by " + formAppliesToId + " not found");
+                        // A form that is shared between projects
+                        //Just remove the association between the form and the project
+                        //Be safe - get the correct association
+                        List<CustomVariableAppliesTo> projectAppliesTos =  selectionService.filterByPossibleStatusFindByScopeEntityIdDataTypeProtocolVisitSubtype(
+                                Scope.Project, null, appliesTo.getDataType(), appliesTo.getProtocol(),
+                                appliesTo.getVisit(), appliesTo.getSubType(),null
+                        );
+                        //If the form is associated to only one project. OptOut is not allowed
+                        if (projectAppliesTos != null && projectAppliesTos.size() == 1) {
+                            throw new IllegalArgumentException("Opt Out operation is not allowed for a form associated with single project");
+                        }
+                        UserOptionsPojo optionsPojo = UserOptionsPojo.Get(appliesTo);
+                        List<CustomVariableFormAppliesTo> customVariableFormAppliesTos = customVariableFormAppliesToService.findAllSpecificProjectForm(optionsPojo, projectIds, formId);
+                        if (null != customVariableFormAppliesTos) {
+                            for (CustomVariableFormAppliesTo c: customVariableFormAppliesTos) {
+                                deleteSafely(c.getRowIdentifier(), c);
+                                createWorkFlowEntry(user, c, formId,"Form opted out and detached" );
+                            }
+                            setFormAsSiteWideDisabled(user,formId, optionsPojo);
+                            return true;
+                        }
                     }
-                } else {
-                    throw new InsufficientPermissionsException("User " + user.getUsername() + " does not have sufficient permissions to perform the Opt Out operation");
                 }
-
+            } else {
+                throw new IllegalArgumentException("Form identified by " + formAppliesToId + " not found");
+            }
         } catch (Exception e) {
             log.error("Could not find the form to opt out of", e);
             throw e;

@@ -14,7 +14,6 @@ import org.nrg.xdat.services.Initializing;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.cache.CacheManager;
-import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
@@ -22,7 +21,6 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.cache.Cache;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
@@ -35,6 +33,7 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +62,7 @@ public class DefaultCacheManager implements CacheManager, Initializing {
     private static final String                           PARAM_ELEMENT_NAMES                = "elementNames";
     private static final String                           QUERY_GET_META_ELEMENT_NAMES       = "SELECT " + XDAT_META_ELEMENT_NAME + " FROM xdat_meta_element";
     private static final String                           QUERY_GET_META_ELEMENTS            = "SELECT " + XDAT_META_ELEMENT_ID + ", " + XDAT_META_ELEMENT_NAME + " FROM xdat_meta_element WHERE " + XDAT_META_ELEMENT_NAME + " IN (:" + PARAM_ELEMENT_NAMES + ")";
+    private static final String                           QUERY_INSERT_META_ELEMENT          = "INSERT INTO xdat_meta_element (" + XDAT_META_ELEMENT_NAME + ") VALUES (:" + XDAT_META_ELEMENT_NAME + ")";
 
     private final AtomicBoolean _initialized = new AtomicBoolean();
 
@@ -182,10 +182,10 @@ public class DefaultCacheManager implements CacheManager, Initializing {
     @Override
     public void clearAll() {
         if (isInitialized()) {
-            log.info("I'm being asked to clear all cached data");
+            log.debug("I'm being asked to clear all cached data");
             _cache.clear();
         } else {
-            log.warn("I'm being asked to clear all cached data but I haven't completed initialization yet so I'm not going to do that");
+            log.info("I'm being asked to clear all cached data but I haven't completed initialization yet so I'm not going to do that");
         }
     }
 
@@ -332,7 +332,7 @@ public class DefaultCacheManager implements CacheManager, Initializing {
         }
 
         final Map<Boolean, Map<String, ItemI>> results = unprovisioned.stream()
-                                                                      .map(elementName -> Pair.of(elementName, createXdatMetaElement(user, metaElement, elementName)))
+                                                                      .map(elementName -> Pair.of(elementName, createXdatMetaElement(user, elementName)))
                                                                       .collect(Collectors.partitioningBy(pair -> pair.getValue() != null,
                                                                                                          Collectors.toMap(Pair::getKey, Pair::getValue)));
 
@@ -340,6 +340,11 @@ public class DefaultCacheManager implements CacheManager, Initializing {
         if (!failed.isEmpty()) {
             log.warn("Failed to create {} xdat:meta_element objects: {}", failed.size(), String.join(", ", failed));
             // TODO: Check and retry here...
+        }
+
+        if (existing.isEmpty()) {
+            log.info("Created and cached {} xdat:meta_element items, found no previously existing xdat:meta_element items to return for caching", results.get(true).size());
+            return Optional.of(Collections.emptyList());
         }
 
         log.info("Created and cached {} xdat:meta_element items, returning {} previously existing xdat:meta_element items", results.get(true).size(), existing.size());
@@ -373,12 +378,11 @@ public class DefaultCacheManager implements CacheManager, Initializing {
     }
 
     @Nullable
-    private ItemI createXdatMetaElement(final UserI user, final GenericWrapperElement metaElement, final String elementName) {
+    private ItemI createXdatMetaElement(final UserI user, final String elementName) {
+        final int affected = _template.update(QUERY_INSERT_META_ELEMENT, new MapSqlParameterSource(XDAT_META_ELEMENT_NAME, elementName));
+        log.info("Created xdat:meta_element entry for datatype {}, {} rows affected", elementName, affected);
         try {
-            XFTItem item = XFTItem.NewItem(metaElement, ImmutableMap.of(XML_PATH_XDAT_META_ELEMENT_NAME, elementName), false, user);
-            SaveItemHelper.authorizedSave(item, user, false, false, EventUtils.ADMIN_EVENT(user));
-            log.info("Created xdat:meta_element object for datatype {}", elementName);
-            return item;
+            return ItemSearch.GetItem(XML_PATH_XDAT_META_ELEMENT_NAME, elementName, user, false);
         } catch (Exception e) {
             log.error("Got an error trying to create the xdat:meta_element object for datatype {}", elementName, e);
             return null;

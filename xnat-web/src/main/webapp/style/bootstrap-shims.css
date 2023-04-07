@@ -118,6 +118,15 @@ a:active { color: var(--link-color-hover); }
     content: "";
 }
 
+/* Nonstandard row class shims */
+#pResource_form .row {
+    display: inherit;
+    margin: 5px 0;
+}
+#pResource_form .rowTitle {
+    padding-right: 10px;
+}
+
 /* Button Shims */
 
 .xnat-bootstrap .btn {

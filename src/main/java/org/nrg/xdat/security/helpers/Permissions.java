@@ -48,11 +48,15 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 @SuppressWarnings("RedundantThrows")
 @Slf4j
 public class Permissions {
+
+    private static final int QUERY_GROUP_SIZE = 10000;
+
     /**
      * Returns the currently configured permissions service. You can customize the implementation returned by adding a
      * new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured package). You
@@ -1039,8 +1043,16 @@ public class Permissions {
         if (sessions.isEmpty()) {
             return projectSessionMap;
         }
-
-        final List<Map<String, Object>> located = template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new MapSqlParameterSource("sessionIds", sessions));
+        List<Map<String, Object>> located;
+        if (sessions.size() < QUERY_GROUP_SIZE) {
+            located = template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new MapSqlParameterSource("sessionIds", sessions));
+        } else {
+            located = new ArrayList<>();
+            for (int i = 0; i < sessions.size(); i += QUERY_GROUP_SIZE) {
+                Set<String> inGroup = sessions.stream().skip(i).limit(QUERY_GROUP_SIZE).collect(Collectors.toSet());
+                located.addAll(template.queryForList(QUERY_GET_PROJECTS_FROM_EXPTS, new MapSqlParameterSource("sessionIds", inGroup)));
+            }
+        }
         if (located.isEmpty()) {
             throw new InvalidSearchException("The submitted sessions are not associated with any projects:\n * Sessions: " + Joiner.on(", ").join(sessions));
         }

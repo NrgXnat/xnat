@@ -545,7 +545,7 @@ public class RESTHTMLPresenter extends PresentationA {
                             {
                                 vS= StringUtils.replace(vS, "<", "&#60;");
                             }
-							final String escapedString = dfr.isHtmlContent() ? vS : TurbineUtils.escapeParam(TurbineUtils.unescapeParam(vS))
+							final String escapedString = dfr.isHtmlContent() ? vS : TurbineUtils.escapeParam(TurbineUtils.unescapeParam(vS));
 							sb.append(escapedString);
 					    }
 					}

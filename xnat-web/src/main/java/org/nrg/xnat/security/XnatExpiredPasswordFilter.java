@@ -82,8 +82,6 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         response.addCookie(cookie);
         log.debug("Updated session expiration time cookie '{}' to value '{}'.", cookie.getName(), cookie.getValue());
 
-        // MIGRATION: Need to remove arcspec.
-        final ArcArchivespecification arcSpec         = ArcSpecManager.GetInstance();
         final String                  referer         = request.getHeader("Referer");
         final Object                  passwordExpired = session.getAttribute("expired");
 
@@ -109,7 +107,7 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         } else if (passwordExpired != null && !(Boolean) passwordExpired) {
             //If the date of password change was checked earlier in the session and found to be not expired, do not send them to the expired password page.
             chain.doFilter(request, response);
-        } else if (arcSpec == null || !arcSpec.isComplete()) {
+        } else if (!ArcSpecManager.isComplete()) {
             //If the arc spec has not yet been set, have the user configure the arc spec before changing their password. This prevents a negative interaction with the arc spec filter.
             chain.doFilter(request, response);
         } else {

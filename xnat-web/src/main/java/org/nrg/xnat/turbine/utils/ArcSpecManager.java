@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.utils;
 
 import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
 
+import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
@@ -31,6 +32,9 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -39,7 +43,9 @@ import java.util.List;
  */
 @Slf4j
 public class ArcSpecManager {
-    public static Date lastModified = null;
+    public static Date lastModified=null;
+    public static Long lastChecked= Calendar.getInstance().getTimeInMillis();
+    public static Long lastCheckedInterval =  60000L;
 
     private static ArcArchivespecification arcSpec = null;
 
@@ -52,14 +58,19 @@ public class ArcSpecManager {
     public synchronized static ArcArchivespecification GetInstance() {
     	return GetInstance(true);
     }
-
-    public synchronized static ArcArchivespecification GetInstance(final boolean dbInit) {
-        final Date currentModDate;
+    
+    public synchronized static  ArcArchivespecification GetInstance(boolean dbInit){
+        Date currentModDate=null;
         try {
-            currentModDate = (Date) PoolDBUtils.ReturnStatisticQuery("SELECT MAX(last_modified) AS last_modified FROM arc_archivespecification_meta_data", "last_modified", null, null);
-        } catch (Exception e) {
-            log.error("An error occurred trying to query the last modified date for the ArcSpec", e);
-            return arcSpec;
+            if((lastChecked+lastCheckedInterval<Calendar.getInstance().getTimeInMillis())) {
+                //rapid rechecking of this is expenseive and unnecessary.  Sometimes dozens of times per request.  Allow it to be cached for a bit.
+                currentModDate = (Date) PoolDBUtils.ReturnStatisticQuery("SELECT MAX(last_modified) AS last_modified FROM arc_archivespecification_meta_data", "last_modified", null, null);
+                lastChecked=Calendar.getInstance().getTimeInMillis();
+            }
+        } catch (SQLException e1) {
+            log.error("",e1);
+        } catch (Exception e1) {
+            log.error("",e1);
         }
 
         if (arcSpec == null || (lastModified != null && currentModDate != null && DateUtils.before(lastModified, currentModDate))) {
@@ -99,8 +110,24 @@ public class ArcSpecManager {
         return arcSpec;
     }
 
-    public synchronized static void Reset() {
-        arcSpec = null;
+    private static boolean _isComplete=false;
+    private static Object _lock = new Object();
+    public static boolean isComplete(){
+        if(!_isComplete){
+            synchronized (_lock){
+                if(!_isComplete){
+                    ArcArchivespecification spec = ArcSpecManager.GetInstance();
+                    if(spec!=null && spec.isComplete()){
+                        _isComplete=true;
+                    }
+                }
+            }
+        }
+        return _isComplete;
+    }
+
+    public synchronized static  void Reset(){
+        arcSpec=null;
     }
 
     public synchronized static ArcArchivespecification initialize(final UserI user) throws Exception {

@@ -75,6 +75,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static java.lang.Long.max;
 import static org.nrg.framework.exceptions.NrgServiceError.ConfigurationError;
 import static org.nrg.xapi.rest.users.DataAccessApi.*;
 import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
@@ -86,6 +87,7 @@ import static org.nrg.xft.event.XftItemEventI.*;
 @Service("groupsAndPermissionsCache")
 @Slf4j
 public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
+
     @Autowired
     public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate, final DatabaseHelper helper) throws SQLException {
         super(cacheManager,
@@ -97,7 +99,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         _template        = template;
         _jmsTemplate     = jmsTemplate;
         _helper          = helper;
-        _totalCounts     = new HashMap<>();
+        _totalCounts     = new ConcurrentHashMap<>();
         _missingElements = new HashMap<>();
         _userChecks      = new ConcurrentHashMap<>();
         _initialized     = new AtomicBoolean(false);
@@ -652,6 +654,15 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
     }
 
+    private void incrementCount(final String xsiType) {
+        _totalCounts.merge(xsiType, 1L, Long::sum);
+    }
+
+    private void decrementCount(final String xsiType) {
+        // decrement, but don't go below zero
+        _totalCounts.merge(xsiType, 1L, (a, b) -> max(a - b,0L));
+    }
+
     private boolean handleProjectEvents(final XftItemEventI event) {
         final String         xsiType    = event.getXsiType();
         final String         id         = event.getId();
@@ -686,6 +697,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                 break;
                         }
                     }
+                    incrementCount(xsiType);
                     return created;
 
                 case UPDATE:
@@ -724,7 +736,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     });
                     resetGuestBrowseableElementDisplays();
                     initReadableCountsForUsers(getCachedSet(cacheId));
-                    resetTotalCounts();
+                    decrementCount(xsiType);
                     return true;
 
                 default:
@@ -771,7 +783,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         switch (action) {
             case CREATE:
                 projectIds.add(_template.queryForObject(QUERY_GET_SUBJECT_PROJECT, new MapSqlParameterSource("subjectId", event.getId()), String.class));
-                resetTotalCounts();
+                incrementCount(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
                 break;
 
             case SHARE:
@@ -786,7 +798,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             case DELETE:
                 projectIds.add((String) event.getProperties().get("target"));
                 handleGroupRelatedEvents(event);
-                resetTotalCounts();
+                decrementCount(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
                 break;
 
             default:
@@ -905,6 +917,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 target = _template.queryForObject(QUERY_GET_EXPERIMENT_PROJECT, new MapSqlParameterSource("experimentId", event.getId()), String.class);
                 origin = null;
                 projectIds.add(target);
+                incrementCount(xsiType);
                 break;
 
             case SHARE:
@@ -912,6 +925,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 target = (String) event.getProperties().get("target");
                 origin = null;
                 projectIds.add(target);
+                decrementCount(xsiType);
                 break;
 
             case MOVE:
@@ -959,9 +973,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
         initReadableCountsForProjectUsers(projectIds,action,event.getXsiType());
 
-        if(StringUtils.equalsAny(action, CREATE, DELETE)) {
-            resetTotalCounts();
-        }
         return true;
     }
 
@@ -1020,17 +1031,25 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return Collections.emptyMap();
         }
 
-        final String cacheId = getCacheIdForUserElements(username, READABLE);
+        String cacheId = getCacheIdForUserElements(username, READABLE);
 
-        // Check whether the element types are cached and, if so, return that.
         log.trace("Retrieving readable counts for user {} through cache ID {}", username, cacheId);
-        final Map<String, Long> cachedReadableCounts = getCachedMap(cacheId);
+        Map<String, Long> cachedReadableCounts = getCachedMap(cacheId);
         if(cachedReadableCounts != null) {
             log.debug("Found cached readable counts entry for user '{}' with cache ID '{}' containing {} entries", username, cacheId, cachedReadableCounts.size());
             return cachedReadableCounts;
         }
 
-        return initReadableCountsForUser(cacheId, username);
+        synchronized (this){
+            //check if another thread set the counts
+            cachedReadableCounts = getCachedMap(cacheId);
+            if(cachedReadableCounts != null) {
+                log.debug("Found cached readable counts entry for user '{}' with cache ID '{}' containing {} entries", username, cacheId, cachedReadableCounts.size());
+                return cachedReadableCounts;
+            }
+
+            return initReadableCountsForUser(cacheId, username);
+        }
     }
 
     private ListMultimap<String, ElementDisplay> getActionElementDisplays(final String username) {
@@ -1136,18 +1155,20 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private Map<String, Long> initReadableCountsForUser(final String cacheId, final String username) {
         log.info("Initializing readable counts for user '{}' with cache entry '{}'", username, cacheId);
         try {
-            if(!StringUtils.equalsIgnoreCase("guest", username)) {
+            if (!StringUtils.equalsIgnoreCase("guest", username)) {
                 initProjectMember(cacheId, username);
             }
 
-            final Map<String, Long> readableCounts   = new HashMap<>();
-            final List<String>      readableProjects = getUserReadableProjects(username);
+            final Map<String, Long> readableCounts = new HashMap<>();
+            final List<String> readableProjects = getUserReadableProjects(username);
             readableCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, (long) readableProjects.size());
+
             readableCounts.put(WrkWorkflowdata.SCHEMA_ELEMENT_NAME, getUserReadableWorkflowCount(username));
-            readableCounts.putAll(getUserReadableSubjectsAndExperiments(readableProjects));
+
+            readableCounts.putAll(getUserReadableSubjectsAndExperiments(readableProjects, Arrays.asList(Users.getUserId(username), Users.getUserId("guest"))));
 
             cacheObject(cacheId, readableCounts);
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug("Caching the following readable element counts for user '{}' with cache ID '{}': '{}'", username, cacheId, getDisplayForReadableCounts(readableCounts));
             }
             return ImmutableMap.copyOf(readableCounts);
@@ -1420,7 +1441,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         resetProjectCount();
         resetSubjectCount();
         resetImageSessionCount();
-        final List<Map<String, Object>> elementCounts = _template.queryForList("SELECT element_name, COUNT(ID) AS count FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", EmptySqlParameterSource.INSTANCE);
+        final List<Map<String, Object>> elementCounts = _template.queryForList(EXPT_COUNTS_BY_TYPE, EmptySqlParameterSource.INSTANCE);
         for (final Map<String, Object> elementCount : elementCounts) {
             final String elementName = (String) elementCount.get("element_name");
             final Long   count       = (Long) elementCount.get("count");
@@ -1438,15 +1459,15 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private void resetProjectCount() {
-        _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject("SELECT count(*) FROM xnat_projectdata", EmptySqlParameterSource.INSTANCE, Long.class));
+        _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject(PROJECT_COUNTS, EmptySqlParameterSource.INSTANCE, Long.class));
     }
 
     private void resetSubjectCount() {
-        _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject("SELECT count(*) FROM xnat_subjectdata", EmptySqlParameterSource.INSTANCE, Long.class));
+        _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject(SUBJECT_COUNTS, EmptySqlParameterSource.INSTANCE, Long.class));
     }
 
     private void resetImageSessionCount() {
-        _totalCounts.put(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, _template.queryForObject("SELECT count(*) FROM xnat_imagesessiondata", EmptySqlParameterSource.INSTANCE, Long.class));
+        _totalCounts.put(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, _template.queryForObject(SESSION_COUNTS, EmptySqlParameterSource.INSTANCE, Long.class));
     }
 
     private Map<String, ElementDisplay> resetGuestBrowseableElementDisplays() {
@@ -1461,15 +1482,22 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return ImmutableMap.copyOf(initBrowseableElementDisplaysForUser(getCacheIdForUserElements(username, BROWSEABLE), user));
     }
 
-    private Map<String, Long> getUserReadableSubjectsAndExperiments(final List<String> readableProjectIds) {
+    private Map<String, Long> getUserReadableSubjectsAndExperiments(final List<String> readableProjectIds, final List<Integer> userIds) {
         if(readableProjectIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        final MapSqlParameterSource parameters               = new MapSqlParameterSource("projectIds", readableProjectIds);
-        final Map<String, Long>     readableExperimentCounts = _template.query(QUERY_USER_READABLE_EXPERIMENT_COUNT, parameters, ELEMENT_COUNT_EXTRACTOR);
-        final Map<String, Long>     readableScanCounts       = _template.query(QUERY_USER_READABLE_SCAN_COUNT, parameters, ELEMENT_COUNT_EXTRACTOR);
+
+        final MapSqlParameterSource userIdParameters               = new MapSqlParameterSource("userIds", userIds);
+        final Map<String, Long>     readableExperimentCounts = _template.query(QUERY_USER_READABLE_EXPERIMENT_COUNT, userIdParameters, ELEMENT_COUNT_EXTRACTOR);
+
+
+        final MapSqlParameterSource projectParameters               = new MapSqlParameterSource("projectIds", readableProjectIds);
+        final Map<String, Long>     readableScanCounts       = _template.query(QUERY_USER_READABLE_SCAN_COUNT, projectParameters, ELEMENT_COUNT_EXTRACTOR);
+
+
         readableExperimentCounts.putAll(readableScanCounts);
-        final Long readableSubjectCount = _template.queryForObject(QUERY_USER_READABLE_SUBJECT_COUNT, parameters, Long.class);
+        final Long readableSubjectCount = _template.queryForObject(QUERY_USER_READABLE_SUBJECT_COUNT, userIdParameters, Long.class);
+
         readableExperimentCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, readableSubjectCount);
         return readableExperimentCounts;
     }
@@ -1894,44 +1922,32 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final String QUERY_HAS_ALL_DATA_ACCESS            = String.format(QUERY_HAS_ALL_DATA_PRIVILEGES, "read_element");
     private static final String QUERY_HAS_ALL_DATA_ADMIN             = String.format(QUERY_HAS_ALL_DATA_PRIVILEGES, "edit_element");
     private static final String QUERY_ALL_DATA_ACCESS_PROJECTS       = "SELECT id AS project FROM xnat_projectdata ORDER BY project";
-    private static final String QUERY_USER_READABLE_WORKFLOW_COUNT   = "SELECT COUNT(*) FROM wrk_workflowData wrk_workflowData";
-    private static final String QUERY_USER_READABLE_SUBJECT_COUNT    = "SELECT  " +
-                                                                       "  COUNT(*) " +
-                                                                       "FROM  " +
-                                                                       "  (SELECT SEARCH.*  " +
-                                                                       "   FROM  " +
-                                                                       "     (SELECT DISTINCT ON (subjectId) *  " +
-                                                                       "      FROM  " +
-                                                                       "        (SELECT xnat_subjectData.id AS subjectId, xnat_subjectData.project AS subjectProject, sharedSubjects.project AS sharedProject  " +
-                                                                       "         FROM  " +
-                                                                       "           xnat_subjectData xnat_subjectData  " +
-                                                                       "           LEFT JOIN xnat_projectParticipant sharedSubjects ON xnat_subjectData.id = sharedSubjects.subject_id) SECURITY  " +
-                                                                       "      WHERE  " +
-                                                                       "        subjectProject IN (:projectIds) OR  " +
-                                                                       "        sharedProject IN (:projectIds)) SECURITY  " +
-                                                                       "     LEFT JOIN xnat_subjectData SEARCH ON SECURITY.subjectId = SEARCH.id) xnat_subjectData";
-    private static final String QUERY_USER_READABLE_EXPERIMENT_COUNT = "SELECT " +
-                                                                       "  element_name, " +
-                                                                       "  COUNT(*) AS element_count " +
-                                                                       "FROM " +
-                                                                       "  (SELECT xnat_experimentData.id AS id " +
-                                                                       "   FROM " +
-                                                                       "     (SELECT SEARCH.* " +
-                                                                       "      FROM " +
-                                                                       "        (SELECT DISTINCT ON (id) * " +
-                                                                       "         FROM " +
-                                                                       "           (SELECT xnat_experimentData.id AS id, xnat_experimentData.project AS experimentProject, sharedExperiments.project AS experimentSharedProject " +
-                                                                       "            FROM " +
-                                                                       "              xnat_experimentData xnat_experimentData " +
-                                                                       "              LEFT JOIN xnat_experimentData_share sharedExperiments ON xnat_experimentData.id = sharedExperiments.sharing_share_xnat_experimentda_id) SECURITY " +
-                                                                       "         WHERE " +
-                                                                       "           experimentProject IN (:projectIds) OR " +
-                                                                       "           experimentSharedProject IN (:projectIds)) SECURITY " +
-                                                                       "        LEFT JOIN xnat_experimentData SEARCH ON SECURITY.id = SEARCH.id) xnat_experimentData) SEARCH " +
-                                                                       "  LEFT JOIN xnat_experimentData expt ON search.id = expt.id " +
-                                                                       "  LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
-                                                                       "GROUP BY " +
-                                                                       "  element_name";
+    private static final String QUERY_USER_READABLE_WORKFLOW_COUNT   = "SELECT reltuples::bigint AS COUNT FROM   pg_class WHERE  oid = 'public.wrk_workflowdata'::regclass";
+    private static final String QUERY_USER_READABLE_SUBJECT_COUNT    = "SELECT SUM(subjs.COUNT) AS ELEMENT_COUNT\n"
+                                                                        + "FROM xdat_element_access xea \n"
+                                                                        + "LEFT JOIN xdat_usergroup grp ON xea.xdat_usergroup_xdat_usergroup_id=grp.xdat_usergroup_id\n"
+                                                                        + "LEFT JOIN xdat_user_groupid gid ON grp.id=gid.groupid\n"
+                                                                        + "LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id=fms.permissions_allow_set_xdat_elem_xdat_element_access_id\n"
+                                                                        + "LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.read_element=1 AND 'xnat:subjectData/project'=xfm.field\n"
+                                                                        + "JOIN (\n"
+                                                                        + "\tSELECT project, COUNT(id) FROM xnat_subjectData GROUP BY project UNION SELECT project, COUNT(subject_id) FROM xnat_projectParticipant GROUP BY project\n"
+                                                                        + ") subjs ON xfm.field_value=subjs.project\n"
+                                                                        + "WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds) OR xea.xdat_user_xdat_user_id IN (:userIds)";
+    private static final String QUERY_USER_READABLE_EXPERIMENT_COUNT = "SELECT xea.element_name, SUM(expts.SUM) AS ELEMENT_COUNT\n"
+                                                                        + "FROM xdat_user_groupid gid\n"
+                                                                        + "LEFT JOIN xdat_usergroup grp ON gid.groupid=grp.id\n"
+                                                                        + "LEFT JOIN xdat_element_access xea ON grp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id\n"
+                                                                        + "LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id=fms.permissions_allow_set_xdat_elem_xdat_element_access_id\n"
+                                                                        + "LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.read_element=1 AND xea.element_name || '/project'=xfm.field\n"
+                                                                        + "JOIN (\n"
+                                                                        + "\tSELECT project, element_name, SUM(COUNT) FROM (\n"
+                                                                        + "\t\tSELECT project, element_name, COUNT(id) FROM xnat_experimentData LEFT JOIN xdat_meta_element xme ON xnat_experimentData.extension=xme.xdat_meta_element_id GROUP BY project, element_name\n"
+                                                                        + "  \t\tUNION \n"
+                                                                        + "  \t\tSELECT shr.project, element_name, COUNT(expt.id) FROM xnat_experimentData_share shr LEFT JOIN xnat_experimentData expt ON shr.sharing_share_xnat_experimentda_id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY shr.project, element_name\n"
+                                                                        + "  \t) SRCH GROUP BY project,element_name\n"
+                                                                        + ") expts ON xfm.field_value=expts.project AND xea.element_name=expts.element_name\n"
+                                                                        + "WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds)\n"
+                                                                        + "GROUP BY xea.element_name";
     private static final String QUERY_USER_READABLE_SCAN_COUNT       = "SELECT " +
                                                                        "  element_name, " +
                                                                        "  COUNT(*) AS element_count " +
@@ -1966,6 +1982,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                      "    original_data_type\n" +
                                                                      "FROM\n" +
                                                                      "    data_type_fns_correct_experiment_extension()";
+
+
+    private static final String EXPT_COUNTS_BY_TYPE                = "SELECT element_name, COUNT(ID) AS count FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name";
+    private static final String PROJECT_COUNTS                     = "SELECT COUNT(*) FROM xnat_projectdata";
+    private static final String SUBJECT_COUNTS                     = "SELECT COUNT(*) FROM xnat_subjectdata";
+    private static final String SESSION_COUNTS                     = "SELECT COUNT(*) FROM xnat_experimentdata";
     private static final String ACTIONS_PREFIX                     = "actions";
     private static final String TAG_PREFIX                         = "tag";
     private static final String PROJECT_PREFIX                     = "project";

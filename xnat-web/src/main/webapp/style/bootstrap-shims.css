@@ -1,3 +1,10 @@
+/* XNAT Header Tag Shims */
+.xnat-bootstrap h1, .xnat-bootstrap .h1 { font-size: 1.75em; }
+.xnat-bootstrap h2, .xnat-bootstrap .h2 { font-size: 1.5em; }
+.xnat-bootstrap h3, .xnat-bootstrap .h3 { font-size: 1.17em; font-weight: 700; }
+.xnat-bootstrap h4, .xnat-bootstrap .h4 { font-size: 1em; font-weight: 700; }
+.xnat-bootstrap h5, .xnat-bootstrap .h5 { font-size: 0.88em; font-weight: 700; }
+
 /* XNAT Color Scheme Shims */
 a,
 a:visited { color: var(--link-color); }

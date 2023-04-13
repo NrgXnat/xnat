@@ -303,16 +303,7 @@ public class CSVUpload2 extends SecureAction {
 
             data.setScreenTemplate("XDATScreen_uploadCSV4.vm");
 
-            Users.clearCache(user);
-            try {
-                MaterializedView.deleteByUser(user);
-            } catch (DBPoolException e) {
-                log.error("", e);
-            } catch (SQLException e) {
-                log.error("", e);
-            } catch (Exception e) {
-                log.error("", e);
-            }
+			Users.clearCache(user);
         } catch (XFTInitException e) {
             log.error("", e);
             data.setScreenTemplate("XDATScreen_uploadCSV3.vm");

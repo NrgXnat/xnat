@@ -181,7 +181,6 @@ public class ModifyItem  extends SecureAction {
                     save(first,data,context,c);
                     PersistentWorkflowUtils.confirmID(first, wrk);
                     PersistentWorkflowUtils.complete(wrk,c);
-                    MaterializedView.deleteByUser(XDAT.getUserDetails());
         		} catch (Exception e) {
                     PersistentWorkflowUtils.confirmID(first, wrk);
                     PersistentWorkflowUtils.fail(wrk,c);

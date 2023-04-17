@@ -986,6 +986,12 @@ public class XFTTable implements XFTTableI {
             }
         }
 
+        if(indexes.size()==0){
+            //sorted by a column which is no longer in the table.
+            //this happens in the search listings if you sort on a column, then remove a column, then refresh the table
+            return;
+        }
+
         Collections.sort(rows, new Comparator<Object[]>() {
             public int compare(Object[] o1, Object[] o2) {
                 for (final Integer i : indexes) {

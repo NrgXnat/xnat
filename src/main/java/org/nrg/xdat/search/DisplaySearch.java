@@ -11,6 +11,7 @@ package org.nrg.xdat.search;
 
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.collections.DisplayFieldWrapperCollection;
 import org.nrg.xdat.display.*;
@@ -319,6 +320,7 @@ public class DisplaySearch implements TableSearchI {
 
 //		build ORDER BY clause
         if ((sortBy == null || sortBy.equalsIgnoreCase("")) && (customSortBy.equalsIgnoreCase(""))) {
+            if(XDAT.getBoolSiteConfigurationProperty("defaultToSortedListings",Boolean.TRUE)) {
             if (dv == null) {
                 DisplayFieldWrapper dfw = ((DisplayFieldWrapper) this.getFields().getSortedFields().get(0));
                 sortBy = dfw.getId();
@@ -326,6 +328,7 @@ public class DisplaySearch implements TableSearchI {
                 sortBy = dv.getDefaultOrderBy();
                 sortOrder = dv.getDefaultSortOrder();
             }
+        }
         }
 
         if (sortBy != null && !sortBy.equalsIgnoreCase("")) {
@@ -362,7 +365,7 @@ public class DisplaySearch implements TableSearchI {
                     String s = (String) o[0];
                     qo.addField(s);
                 }
-            } else {
+            } else if(StringUtils.isNotEmpty(sortBy)) {
                 DisplayField df = rootElement.getDisplayField(sortBy);
                 for (final Object[] o : df.getSchemaFields()) {
                     String s = (String) o[0];
@@ -537,6 +540,7 @@ public class DisplaySearch implements TableSearchI {
             select.append(keyCol).append(" AS KEY ");
         }
 
+        if(StringUtils.isNotEmpty(sortBy)) {
         orderBy.append(" ORDER BY ");
         if (this.getCustomSortBy().equalsIgnoreCase("")) {
             if (sortBy.contains(".")) {
@@ -586,6 +590,7 @@ public class DisplaySearch implements TableSearchI {
             }
         } else {
             orderBy.append(this.getCustomSortBy());
+            }
         }
 
         if (!hasSchemaOnlyCriteria()) {

@@ -209,7 +209,8 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 				cc.addClause("xnat:subjectData/sharing/share/project", proj.getId());
 				qo.setWhere(cc);
 
-				final String query = qo.buildQuery();
+				//inject paging
+				final String query = qo.buildQuery() + " " + this.buildOffsetFromParams(false);
 
 				table = XFTTable.Execute(query, user.getDBName(), userName);
 

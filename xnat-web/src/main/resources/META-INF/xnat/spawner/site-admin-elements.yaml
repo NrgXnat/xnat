@@ -1343,6 +1343,21 @@ searchPerformance:
                     options:
                         true: True
                         false: False
+        pagedRestLists:
+            kind: panel.element
+            label: "Default to paged results in /data/experiments and /data/subjects results"
+            info: >
+                <p>Listing all experiments or subjects (site-wide) while preserving secured access can be quite expensive on larger servers</p>
+                <p>Using paged results is much more performant and prevents unintential Denial-of-service requests</p>
+                <p>It defaults to false for backwards consistency, but should be set to true on larger servers (>100,000 experiments)</p>
+                <p>Default: False</p>
+            contents:
+                defaultToPagedRestfulLists:
+                    kind: select.single
+                    name: defaultToPagedRestfulLists
+                    options:
+                        true: True
+                        false: False
 
 ## THEMES
 

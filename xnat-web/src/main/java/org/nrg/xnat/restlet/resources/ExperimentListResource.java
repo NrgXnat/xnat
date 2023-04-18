@@ -213,7 +213,8 @@ public class ExperimentListResource  extends QueryOrganizerResource {
                 qo.addField("xnat:experimentData/project");
             }
 
-            String query=qo.buildQuery();
+            //inject paging
+            final String query = qo.buildQuery() + " " + resource.buildOffsetFromParams(true);
 
             table=XFTTable.Execute(query, user.getDBName(), resource.userName);
 

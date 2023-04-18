@@ -124,6 +124,7 @@ import static org.nrg.xft.event.XftItemEventI.DELETE;
 
 @SuppressWarnings("deprecation")
 public abstract class SecureResource extends Resource {
+
     private static final String COMPRESSION = "compression";
 
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
@@ -133,6 +134,8 @@ public abstract class SecureResource extends Resource {
     public static final String HANDLER = "handler";
 
     public static final Logger logger = Logger.getLogger(SecureResource.class);
+    public static final long DEFAULT_PAGE_SIZE = 100;
+    public static final long DEFAULT_PAGE_NUM = 0;
 
     public static List<Variant> STANDARD_VARIANTS = Arrays.asList(new Variant(MediaType.APPLICATION_JSON), new Variant(MediaType.TEXT_HTML), new Variant(MediaType.TEXT_XML));
 
@@ -987,7 +990,7 @@ public abstract class SecureResource extends Resource {
             try {
             	final String path = reference.getPath();
             	final String remainingPart = reference.getRemainingPart(false,false);
-            	final String basePath = (remainingPart.length()>0 && path.contains(remainingPart)) ? path.substring(0,path.lastIndexOf(remainingPart)) : path; 
+            	final String basePath = (remainingPart.length()> 0 && path.contains(remainingPart)) ? path.substring(0,path.lastIndexOf(remainingPart)) : path;
                 final URL siteUrl = new URL(siteUrlProperty);
                 reference.setProtocol(new Protocol(siteUrl.getProtocol()));
                 reference.setAuthority(siteUrl.getAuthority());
@@ -2006,6 +2009,38 @@ public abstract class SecureResource extends Resource {
 
     private XnatProjectdata getProjectById(final String projectId) throws NotFoundException {
         return Optional.ofNullable(XnatProjectdata.getXnatProjectdatasById(projectId, getUser(), false)).orElseThrow(() -> new NotFoundException(projectId));
+    }
+
+    protected String buildOffsetFromParams(final boolean defaultToPaged){
+        final Boolean allowDefaultPaging = XDAT.getBoolSiteConfigurationProperty("defaultToPagedRestfulLists",false);
+        //inject paging
+        Long page = (allowDefaultPaging && defaultToPaged)? DEFAULT_PAGE_NUM :null;
+        Long rows = (allowDefaultPaging && defaultToPaged)? DEFAULT_PAGE_SIZE :null;
+        if(this.hasQueryVariable("page") || this.hasQueryVariable("rows")) {
+            final String pageS = this.getQueryVariable("page");
+            if (pageS == null) {
+                page = DEFAULT_PAGE_NUM;
+            }else if (StringUtils.equals("*", pageS)) {
+                page = null;
+            }else{
+                page = Long.valueOf(pageS);
+            }
+
+            final String rowsS= this.getQueryVariable("rows");
+            if(rowsS == null){
+                rows = DEFAULT_PAGE_SIZE;
+            }else if (StringUtils.equals("*", rowsS)) {
+                rows = null;
+            }else{
+                rows = Long.valueOf(rowsS);
+            }
+        }
+
+        if(page != null && rows != null){
+            return " LIMIT "+ rows + " OFFSET " + page;
+        }else{
+            return "";
+        }
     }
 
     private static final Class<?>[] OBJECT_REPRESENTATION_CTOR_PARAM_TYPES = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};

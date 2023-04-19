@@ -359,21 +359,13 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
     private static final String  SQL_WARNING_TABLE                = "The requested table";
     private static final Pattern COMPOUND_KEY                     = Pattern.compile("^(?<prefix>[^:]+)\\.\\.(?<payload>[^:]+)$");
     private static final Pattern COLUMNS_KEY                      = Pattern.compile("^columns-(?<columns>[a-z\\d_-]+)$");
-    private static final String  QUERY_GET_COLUMN_TYPE            = "SELECT "
-                                                                    + "    CASE "
-                                                                    + "        WHEN data_type = 'bigint' THEN 'long' "
-                                                                    + "        WHEN data_type = 'character varying' THEN 'string' "
-                                                                    + "        WHEN data_type = 'double precision' THEN 'float' "
-                                                                    + "        WHEN data_type = 'text' THEN 'string' "
-                                                                    + "        WHEN data_type = 'time without time zone' THEN 'time' "
-                                                                    + "        WHEN data_type = 'timestamp without time zone' THEN 'dateTime' "
+    private static final String  QUERY_GET_COLUMN_TYPE            = "SELECT CASE "
+                                                                    + "        WHEN data_type = 'character varying' THEN 'varchar(' || character_maximum_length || ')' "
                                                                     + "        ELSE data_type "
                                                                     + "        END "
-                                                                    + "FROM "
-                                                                    + "    information_schema.columns "
-                                                                    + "WHERE "
-                                                                    + "    table_name = :table AND "
-                                                                    + "    column_name = :column";
+                                                                    + "FROM information_schema.columns "
+                                                                    + "WHERE table_name = :table "
+                                                                    + "  AND column_name = :column; ";
     private static final String  GET_TYPES_AND_TABLES             = "SELECT "
                                                                     + "    lower(regexp_replace(element_name, ':', '_')) AS table_name,"
                                                                     + "    element_name "

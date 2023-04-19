@@ -9,10 +9,9 @@
 
 package org.nrg.xnat.restlet.extensions;
 
-import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.StudyRouting;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
@@ -33,6 +32,8 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 @XnatRestlet(value = {"/routing", "/routing/{STUDY_INSTANCE_UID}"})
 public class StudyRoutingRestlet extends SecureResource {
@@ -100,44 +101,38 @@ public class StudyRoutingRestlet extends SecureResource {
         final MediaType mediaType = overrideVariant(variant);
         final UserI     user      = getUser();
         if (StringUtils.isNotBlank(_studyInstanceUid)) {
-            final Map<String, String> routing = _routingService.findStudyRouting(_studyInstanceUid);
-            if (routing == null || routing.size() == 0) {
+            final StudyRouting routing = _routingService.getStudyRouting(_studyInstanceUid);
+            if (routing == null) {
                 getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Couldn't find a routing for the study instance UID: " + _studyInstanceUid);
                 _log.info("Request made for routing for study instance UID {}, but nothing was found for that value.", _studyInstanceUid);
                 return null;
-            } else {
-                try {
-                    if (!UserHelper.getUserHelperService(user).hasEditAccessToSessionDataByTag(getRoutingAttribute(routing, StudyRoutingService.PROJECT))) {
-                        getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "You do not have sufficient privileges to view the routing for this study instance UID.");
-                        return null;
-                    }
-                } catch (Exception e) {
-                    final String message = "An error occurred trying to resolve privileges on the study routing for study instance UID: " + _studyInstanceUid;
-                    _log.error(message, e);
-                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, message);
+            }
+            try {
+                if (!UserHelper.getUserHelperService(user).hasEditAccessToSessionDataByTag(routing.getProjectId())) {
+                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "You do not have sufficient privileges to view the routing for this study instance UID.");
                     return null;
                 }
-                final XFTTable table = new XFTTable();
-                table.initTable(COLUMNS);
-                table.insertRowItems(_studyInstanceUid, getRoutingAttribute(routing, StudyRoutingService.PROJECT), getRoutingAttribute(routing, StudyRoutingService.SUBJECT), getRoutingAttribute(routing, StudyRoutingService.USER), getRoutingAttribute(routing, StudyRoutingService.CREATED), getRoutingAttribute(routing, StudyRoutingService.ACCESSED), getRoutingAttribute(routing, StudyRoutingService.LABEL));
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Request made for routing for study instance UID {}, found routing: {}", _studyInstanceUid, routing.toString());
-                }
-                return representTable(table, mediaType, null);
+            } catch (Exception e) {
+                final String message = "An error occurred trying to resolve privileges on the study routing for study instance UID: " + _studyInstanceUid;
+                _log.error(message, e);
+                getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, message);
+                return null;
             }
+            final XFTTable table = new XFTTable();
+            table.initTable(COLUMNS);
+            table.insertRowItems(routing.properties());
+            _log.debug("Request made for routing for study instance UID {}, found routing: {}", _studyInstanceUid, routing);
+            return representTable(table, mediaType, null);
         } else {
             final XFTTable table = new XFTTable();
             table.initTable(COLUMNS);
-            Map<String, Map<String, String>> routings = _routingService.findAllRoutings();
+            List<StudyRouting> routings = _routingService.getAll();
             if (routings != null && routings.size() > 0) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Request made for all system routings, found {} results", routings.size());
-                }
-                for (final String studyInstanceUid : routings.keySet()) {
-                    final Map<String, String> routing = routings.get(studyInstanceUid);
+                _log.debug("Request made for all system routings, found {} results", routings.size());
+                for (final StudyRouting routing : routings) {
                     try {
-                        if (UserHelper.getUserHelperService(user).hasEditAccessToSessionDataByTag(getRoutingAttribute(routing, StudyRoutingService.PROJECT))) {
-                            table.insertRowItems(studyInstanceUid, getRoutingAttribute(routing, StudyRoutingService.PROJECT), getRoutingAttribute(routing, StudyRoutingService.SUBJECT), getRoutingAttribute(routing, StudyRoutingService.USER), getRoutingAttribute(routing, StudyRoutingService.CREATED), getRoutingAttribute(routing, StudyRoutingService.ACCESSED), getRoutingAttribute(routing, StudyRoutingService.LABEL));
+                        if (UserHelper.getUserHelperService(user).hasEditAccessToSessionDataByTag(routing.getProjectId())) {
+                            table.insertRowItems(routing.properties());
                         }
                     } catch (Exception e) {
                         final String message = "An error occurred trying to resolve privileges on the study routing for study instance UID: " + _studyInstanceUid;
@@ -146,7 +141,7 @@ public class StudyRoutingRestlet extends SecureResource {
                         return null;
                     }
                 }
-            } else if (_log.isDebugEnabled()) {
+            } else {
                 _log.debug("Request made for all system routings, found no results!");
             }
             return representTable(table, mediaType, null);
@@ -161,23 +156,19 @@ public class StudyRoutingRestlet extends SecureResource {
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "You do not have sufficient privileges to modify study routings for this project.");
                 return;
             }
-            final Map<String, String> routing = _routingService.findStudyRouting(_studyInstanceUid);
+            final StudyRouting routing = _routingService.getStudyRouting(_studyInstanceUid);
             if (routing == null) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Creating new study routing assignment for study instance UID {} to project {}, created by user {}", _studyInstanceUid, _projectId, user.getLogin());
-                }
+                _log.debug("Creating new study routing assignment for study instance UID {} to project {}, created by user {}", _studyInstanceUid, _projectId, user.getLogin());
                 _routingService.assign(_studyInstanceUid, _projectId, user.getLogin());
-            } else if (!StringUtils.equals(routing.get(StudyRoutingService.PROJECT), _projectId)) {
-                final String existing = routing.get(StudyRoutingService.PROJECT);
+            } else if (!StringUtils.equals(routing.getProjectId(), _projectId)) {
+                final String existing = routing.getProjectId();
                 if (!Permissions.can(user,"xnat:mrSessionData/project", existing, SecurityManager.EDIT)) {
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "You are trying to reassign study instance UID " + _studyInstanceUid + " from project " + existing + " but do not have sufficient privileges to modify study routings for this project.");
                     return;
                 }
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Updating routing assignment for study instance UID {} to project {}, updated by user {}", _studyInstanceUid, _projectId, user.getLogin());
-                }
-                routing.put(StudyRoutingService.PROJECT, _projectId);
-                _routingService.update(_studyInstanceUid, routing);
+                _log.debug("Updating routing assignment for study instance UID {} to project {}, updated by user {}", _studyInstanceUid, _projectId, user.getLogin());
+                routing.setProjectId(_projectId);
+                _routingService.update(routing);
             }
         } catch (Exception e) {
             _log.error("An error occurred checking user permissions", e);
@@ -197,12 +188,12 @@ public class StudyRoutingRestlet extends SecureResource {
             _routingService.closeAll();
         } else {
             try {
-                Map<String, String> routing = _routingService.findStudyRouting(_studyInstanceUid);
+                StudyRouting routing = _routingService.getStudyRouting(_studyInstanceUid);
                 if (routing == null) {
                     getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Couldn't find a routing for the study instance UID: " + _studyInstanceUid);
                     return;
                 }
-                if (!Permissions.can(user,"xnat:mrSessionData/project", routing.get(StudyRoutingService.PROJECT), SecurityManager.EDIT)) {
+                if (!Permissions.can(user,"xnat:mrSessionData/project", routing.getProjectId(), SecurityManager.EDIT)) {
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "You do not have sufficient privileges to delete study routings for this project.");
                     return;
                 }
@@ -213,9 +204,5 @@ public class StudyRoutingRestlet extends SecureResource {
                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "An error occurred checking user permissions");
             }
         }
-    }
-
-    private String getRoutingAttribute(final Map<String, String> routing, final String attribute) {
-        return routing.containsKey(attribute) ? routing.get(attribute) : "";
     }
 }

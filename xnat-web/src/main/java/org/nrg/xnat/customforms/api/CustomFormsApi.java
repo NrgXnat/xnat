@@ -270,7 +270,8 @@ public class CustomFormsApi extends AbstractXapiRestController {
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 403, message = "Forbidden"),
             @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/formId/{formId}", method = RequestMethod.POST)
+    @XapiRequestMapping(value = "/formId/{formId}", method = RequestMethod.POST, restrictTo = Role)
+    @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> modifyFormDisplayOrder(final @PathVariable String formId, final @RequestParam Integer displayOrder) {
         if (displayOrder == null || displayOrder < -1000000 || displayOrder > 1000000) {
             return new ResponseEntity<>("The display order you have entered is empty or outside the allowed range.", HttpStatus.BAD_REQUEST);

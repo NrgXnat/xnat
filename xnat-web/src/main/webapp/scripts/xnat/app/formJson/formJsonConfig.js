@@ -448,6 +448,7 @@ var XNAT = getObject(XNAT || {});
                     ignore: true,
                   },
                   { key: "spellcheck", ignore: true },
+                  { key: "tabindex", ignore: true }
                 ],
               },
               {

@@ -198,6 +198,9 @@ div.xmodal button.close {
 .xnat-bootstrap input, .xnat-bootstrap button, .xnat-bootstrap select, .xnat-bootstrap optgroup, .xnat-bootstrap textarea {
     margin: revert;
 }
+.xnat-bootstrap .form-check-input {
+    margin-top: 1px;
+}
 
 /* Transition Shims */
 .xmodal.loader,

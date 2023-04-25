@@ -651,7 +651,8 @@ var XNAT = getObject(XNAT || {});
                         content: 'There may be unsaved edits to this JSON configuration. Are you sure you want to close without saving?',
                         okAction: function(){
                             // close 'parent' modal
-                            xmodal.close($thisModal);
+                            xmodal.closeAll()
+                            XNAT.dialog.closeAll();
                         }
                     });
                 }

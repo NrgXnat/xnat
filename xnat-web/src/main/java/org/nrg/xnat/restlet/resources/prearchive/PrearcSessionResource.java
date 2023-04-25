@@ -21,6 +21,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.actions.postArchive.ClearStudyRoutingAction;
 import org.nrg.xnat.archive.QueueBasedImageCommit;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase.SyncFailedException;
@@ -307,7 +308,11 @@ public final class PrearcSessionResource extends SecureResource {
                 getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Unable to modify session data for destination project.");
                 return;
             }
+            final SessionData sd = PrearcDatabase.getSessionIfExists(session, timestamp, project);
             PrearcDatabase.deleteSession(session, timestamp, project);
+            if (sd != null) {
+                ClearStudyRoutingAction.doClear(sd.getTag());
+            }
         } catch (SessionException e) {
             log.warn("An error occurred trying to access the prearchive session {}/{}/{}: [{}] {}", project, timestamp, session, e.getError(), e.getMessage());
             getResponse().setStatus(getStatusForSessionException(e.getError()), e.getMessage());

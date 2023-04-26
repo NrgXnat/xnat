@@ -21,6 +21,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.actions.postArchive.ClearStudyRemappingAction;
 import org.nrg.xnat.actions.postArchive.ClearStudyRoutingAction;
 import org.nrg.xnat.archive.QueueBasedImageCommit;
 import org.nrg.xnat.helpers.prearchive.*;
@@ -308,10 +309,16 @@ public final class PrearcSessionResource extends SecureResource {
                 getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Unable to modify session data for destination project.");
                 return;
             }
+
+            // In addition to the prearchive database entry, there may be state in the study routing
+            // and study remapping tables. Clear those if present; see also PrearchiveDeleteHandler::execute(...)
+            // which does essentially the same thing from a different context.
             final SessionData sd = PrearcDatabase.getSessionIfExists(session, timestamp, project);
             PrearcDatabase.deleteSession(session, timestamp, project);
             if (sd != null) {
-                ClearStudyRoutingAction.doClear(sd.getTag());
+                final String uid = sd.getTag();
+                ClearStudyRoutingAction.doClear(uid);
+                new ClearStudyRemappingAction().execute(user, null, Collections.singletonMap("studyInstanceUid", uid));
             }
         } catch (SessionException e) {
             log.warn("An error occurred trying to access the prearchive session {}/{}/{}: [{}] {}", project, timestamp, session, e.getError(), e.getMessage());

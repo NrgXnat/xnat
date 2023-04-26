@@ -13,6 +13,9 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,6 +47,7 @@ import org.nrg.xft.utils.XftStringUtils;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -51,6 +55,50 @@ import java.util.*;
 @SuppressWarnings({"unchecked", "rawtypes", "UnusedReturnValue"})
 @Slf4j
 public class DBAction {
+
+    public static final String YYYY_MM_DD_HH_MM_SS_SSS = "yyyy-MM-dd HH:mm:ss.SSS";
+    public static final String NOW = "NOW()";
+    public static final String TIME = "time";
+    public static final String NULL = "NULL";
+    public static final String QUOTED_NEGATIVE_INFINITY = "'-Infinity'";
+    public static final String QUOTED_INFINITY = "'Infinity'";
+    public static final String NAN = "nan";
+    public static final String UNSIGNED_LONG = "unsignedLong";
+    public static final String NON_NEGATIVE_INTEGER = "nonNegativeInteger";
+    public static final String BYTE = "byte";
+    public static final String SHORT = "short";
+    public static final String INFINITY_ABR = "inf";
+    public static final String NEGATIVE_INFINITY_ABR = "-inf";
+    public static final String INFINITY = "Infinity";
+    public static final String NEGATIVE_INFINITY = "-Infinity";
+    public static final String NEGATIVE_INTEGER = "negativeInteger";
+    public static final String NON_POSITIVE_INTEGER = "nonPositiveInteger";
+    public static final String INTEGER = "integer";
+    public static final String DECIMAL = "decimal";
+    public static final String DOUBLE = "double";
+    public static final String FLOAT = "float";
+    public static final String BOOLEAN = "boolean";
+    public static final String ONE = "1";
+    public static final String ZERO = "0";
+    public static final String TRUE = "true";
+    public static final String ID = "ID";
+    public static final String STRING = "string";
+    public static final String UNSIGNED_INT = "unsignedInt";
+    public static final String UNSIGNED_SHORT = "unsignedShort";
+    public static final String UNSIGNED_BYTE = "unsignedByte";
+    public static final String POSITIVE_INTEGER = "positiveInteger";
+    public static final String DATE = "date";
+    public static final String DATE_TIME = "dateTime";
+    public static final String LONG = "long";
+    public static final String INT = "int";
+    public static final String ANY_URI = "anyURI";
+    public static final String NOT_A_NUMBER = "NaN";
+    public static final String QUOTED_NOT_A_NUMBER = "'NaN'";
+    public static final String QUOTED_INFINITY_ABBR_CAPS = "'INF'";
+    public static final String INFINITY_ABBR_CAPS = "INF";
+    public static final String NEGATIVE_INFINITY_ABBR_CAPS = "-INF";
+    public static final String EQUALS_NULL = "= NULL";
+
     /**
      * This method is used to insert/update an item into the database.
      *
@@ -755,7 +803,7 @@ public class DBAction {
                             return true;
                         }
                     } else {
-                        if (!(newObject.toString().equals("NULL") || newObject.toString().equals(""))) {
+                        if (!(newObject.toString().equals(NULL) || newObject.toString().equals(""))) {
                             log.info("OLD:NULL NEW: {}", newObject);
                             return true;
                         }
@@ -869,7 +917,7 @@ public class DBAction {
                     return true;
                 }
             } else {
-                if (type.equalsIgnoreCase("integer")) {
+                if (type.equalsIgnoreCase(INTEGER)) {
                     Integer o1 = Integer.valueOf(oldValue);
                     Integer o2 = Integer.valueOf(newValue);
 
@@ -877,17 +925,17 @@ public class DBAction {
                         log.info("OLD: {} NEW: {}", oldValue, newValue);
                         return true;
                     }
-                } else if (type.equalsIgnoreCase("boolean")) {
+                } else if (type.equalsIgnoreCase(BOOLEAN)) {
                     Boolean o1;
                     Boolean o2;
 
-                    if (oldValue.equalsIgnoreCase("true") || oldValue.equalsIgnoreCase("1")) {
+                    if (oldValue.equalsIgnoreCase(TRUE) || oldValue.equalsIgnoreCase(ONE)) {
                         o1 = Boolean.TRUE;
                     } else {
                         o1 = Boolean.FALSE;
                     }
 
-                    if (newValue.equalsIgnoreCase("true") || newValue.equalsIgnoreCase("1")) {
+                    if (newValue.equalsIgnoreCase(TRUE) || newValue.equalsIgnoreCase(ONE)) {
                         o2 = Boolean.TRUE;
                     } else {
                         o2 = Boolean.FALSE;
@@ -897,28 +945,28 @@ public class DBAction {
                         log.info("OLD: {} NEW: {}", oldValue, newValue);
                         return true;
                     }
-                } else if (type.equalsIgnoreCase("float")) {
-                    if (oldValue.equalsIgnoreCase("NaN")) {
-                        oldValue = "'NaN'";
+                } else if (type.equalsIgnoreCase(FLOAT)) {
+                    if (oldValue.equalsIgnoreCase(NOT_A_NUMBER)) {
+                        oldValue = QUOTED_NOT_A_NUMBER;
                     }
-                    if (newValue.equalsIgnoreCase("NaN")) {
-                        newValue = "'NaN'";
+                    if (newValue.equalsIgnoreCase(NOT_A_NUMBER)) {
+                        newValue = QUOTED_NOT_A_NUMBER;
                     }
-                    if (oldValue.equalsIgnoreCase("INF")) {
-                        oldValue = "'Infinity'";
+                    if (oldValue.equalsIgnoreCase(INFINITY_ABBR_CAPS)) {
+                        oldValue = QUOTED_INFINITY;
                     }
-                    if (oldValue.equalsIgnoreCase("-INF")) {
-                        oldValue = "'-Infinity'";
+                    if (oldValue.equalsIgnoreCase(NEGATIVE_INFINITY_ABBR_CAPS)) {
+                        oldValue = QUOTED_NEGATIVE_INFINITY;
                     }
-                    if (newValue.equalsIgnoreCase("-INF")) {
-                        newValue = "'-Infinity'";
+                    if (newValue.equalsIgnoreCase(NEGATIVE_INFINITY_ABBR_CAPS)) {
+                        newValue = QUOTED_NEGATIVE_INFINITY;
                     }
-                    if (oldValue.equals("'NaN'") || newValue.equals("'NaN'")) {
+                    if (oldValue.equals(QUOTED_NOT_A_NUMBER) || newValue.equals(QUOTED_NOT_A_NUMBER)) {
                         if (!oldValue.equals(newValue)) {
                             log.info("OLD: {} NEW: {}", oldValue, newValue);
                             return true;
                         }
-                    } else if (oldValue.equals("'INF'") || newValue.equals("'INF'")) {
+                    } else if (oldValue.equals(DBAction.QUOTED_INFINITY_ABBR_CAPS) || newValue.equals(DBAction.QUOTED_INFINITY_ABBR_CAPS)) {
                         if (!oldValue.equals(newValue)) {
                             log.info("OLD: {} NEW: {}", oldValue, newValue);
                             return true;
@@ -932,31 +980,31 @@ public class DBAction {
                             return true;
                         }
                     }
-                } else if (type.equalsIgnoreCase("double")) {
-                    if (oldValue.equalsIgnoreCase("NaN")) {
-                        oldValue = "'NaN'";
+                } else if (type.equalsIgnoreCase(DOUBLE)) {
+                    if (oldValue.equalsIgnoreCase(NOT_A_NUMBER)) {
+                        oldValue = QUOTED_NOT_A_NUMBER;
                     }
-                    if (newValue.equalsIgnoreCase("NaN")) {
-                        newValue = "'NaN'";
+                    if (newValue.equalsIgnoreCase(NOT_A_NUMBER)) {
+                        newValue = QUOTED_NOT_A_NUMBER;
                     }
-                    if (oldValue.equalsIgnoreCase("INF")) {
-                        oldValue = "'Infinity'";
+                    if (oldValue.equalsIgnoreCase(INFINITY_ABBR_CAPS)) {
+                        oldValue = QUOTED_INFINITY;
                     }
-                    if (newValue.equalsIgnoreCase("INF")) {
-                        newValue = "'Infinity'";
+                    if (newValue.equalsIgnoreCase(INFINITY_ABBR_CAPS)) {
+                        newValue = QUOTED_INFINITY;
                     }
-                    if (oldValue.equalsIgnoreCase("-INF")) {
-                        oldValue = "'-Infinity'";
+                    if (oldValue.equalsIgnoreCase(NEGATIVE_INFINITY_ABBR_CAPS)) {
+                        oldValue = QUOTED_NEGATIVE_INFINITY;
                     }
-                    if (newValue.equalsIgnoreCase("-INF")) {
-                        newValue = "'-Infinity'";
+                    if (newValue.equalsIgnoreCase(NEGATIVE_INFINITY_ABBR_CAPS)) {
+                        newValue = QUOTED_NEGATIVE_INFINITY;
                     }
-                    if (oldValue.equals("'NaN'") || newValue.equals("'NaN'")) {
+                    if (oldValue.equals(QUOTED_NOT_A_NUMBER) || newValue.equals(QUOTED_NOT_A_NUMBER)) {
                         if (!oldValue.equals(newValue)) {
                             log.info("OLD: {} NEW: {}", oldValue, newValue);
                             return true;
                         }
-                    } else if (oldValue.contains("Infinity") || newValue.contains("Infinity")) {
+                    } else if (oldValue.contains(QUOTED_INFINITY) || newValue.contains(QUOTED_INFINITY)) {
                         if (!oldValue.equals(newValue)) {
                             log.info("OLD: {} NEW: {}", oldValue, newValue);
                             return true;
@@ -970,28 +1018,28 @@ public class DBAction {
                             return true;
                         }
                     }
-                } else if (type.equalsIgnoreCase("decimal")) {
-                    if (oldValue.equalsIgnoreCase("NaN")) {
-                        oldValue = "'NaN'";
+                } else if (type.equalsIgnoreCase(DECIMAL)) {
+                    if (oldValue.equalsIgnoreCase(NOT_A_NUMBER)) {
+                        oldValue = QUOTED_NOT_A_NUMBER;
                     }
-                    if (newValue.equalsIgnoreCase("NaN")) {
-                        newValue = "'NaN'";
+                    if (newValue.equalsIgnoreCase(NOT_A_NUMBER)) {
+                        newValue = QUOTED_NOT_A_NUMBER;
                     }
-                    if (oldValue.equalsIgnoreCase("INF")) {
-                        oldValue = "'Infinity'";
+                    if (oldValue.equalsIgnoreCase(INFINITY_ABBR_CAPS)) {
+                        oldValue = QUOTED_INFINITY;
                     }
-                    if (oldValue.equalsIgnoreCase("-INF")) {
-                        oldValue = "'-Infinity'";
+                    if (oldValue.equalsIgnoreCase(NEGATIVE_INFINITY_ABBR_CAPS)) {
+                        oldValue = QUOTED_NEGATIVE_INFINITY;
                     }
-                    if (newValue.equalsIgnoreCase("-INF")) {
-                        newValue = "'-Infinity'";
+                    if (newValue.equalsIgnoreCase(NEGATIVE_INFINITY_ABBR_CAPS)) {
+                        newValue = QUOTED_NEGATIVE_INFINITY;
                     }
-                    if (oldValue.equals("'NaN'") || newValue.equals("'NaN'")) {
+                    if (oldValue.equals(QUOTED_NOT_A_NUMBER) || newValue.equals(QUOTED_NOT_A_NUMBER)) {
                         if (!oldValue.equals(newValue)) {
                             log.info("OLD: {} NEW: {}", oldValue, newValue);
                             return true;
                         }
-                    } else if (oldValue.equals("'INF'") || newValue.equals("'INF'")) {
+                    } else if (oldValue.equals(DBAction.QUOTED_INFINITY_ABBR_CAPS) || newValue.equals(DBAction.QUOTED_INFINITY_ABBR_CAPS)) {
                         if (!oldValue.equals(newValue)) {
                             log.info("OLD: {} NEW: {}", oldValue, newValue);
                             return true;
@@ -1005,7 +1053,7 @@ public class DBAction {
                             return true;
                         }
                     }
-                } else if (type.equalsIgnoreCase("date")) {
+                } else if (type.equalsIgnoreCase(DATE)) {
                     try {
                         Date o1 = DateUtils.parseDate(oldValue);
                         Date o2 = DateUtils.parseDate(newValue);
@@ -1015,11 +1063,11 @@ public class DBAction {
                             return true;
                         }
                     } catch (ParseException e) {
-                        log.error("", e);
+                        log.error(StringUtils.EMPTY, e);
                         log.info("OLD: {} NEW: {}", oldValue, newValue);
                         return true;
                     }
-                } else if (type.equalsIgnoreCase("dateTime")) {
+                } else if (type.equalsIgnoreCase(DATE_TIME)) {
                     try {
                         Date o1 = DateUtils.parseDateTime(oldValue);
                         Date o2 = DateUtils.parseDateTime(newValue);
@@ -1029,11 +1077,11 @@ public class DBAction {
                             return true;
                         }
                     } catch (ParseException e) {
-                        log.error("", e);
+                        log.error(StringUtils.EMPTY, e);
                         log.info("OLD: {} NEW: {}", oldValue, newValue);
                         return true;
                     }
-                } else if (type.equalsIgnoreCase("time")) {
+                } else if (type.equalsIgnoreCase(TIME)) {
                     try {
                         Date o1 = DateUtils.parseTime(oldValue);
                         Date o2 = DateUtils.parseTime(newValue);
@@ -1043,7 +1091,7 @@ public class DBAction {
                             return true;
                         }
                     } catch (ParseException e) {
-                        log.error("", e);
+                        log.error(StringUtils.EMPTY, e);
                         log.info("OLD: {} NEW: {}", oldValue, newValue);
                         return true;
                     }
@@ -1079,7 +1127,7 @@ public class DBAction {
                                         isNoIdentifierTable = true;
                                     }
                                 } catch (FieldNotFoundException e1) {
-                                    log.error("", e1);
+                                    log.error(StringUtils.EMPTY, e1);
                                 }
                             }
 
@@ -1131,7 +1179,7 @@ public class DBAction {
                 }
             }
         } catch (ElementNotFoundException e) {
-            log.error("", e);
+            log.error(StringUtils.EMPTY, e);
         }
         return item;
     }
@@ -1150,7 +1198,7 @@ public class DBAction {
                     //check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
                     // a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
                     boolean isNoIdentifierTable = false;
-                    String  keyName             = "";
+                    String  keyName             = StringUtils.EMPTY;
                     if (temp.getPossibleFieldNames().size() == 1) {
                         keyName = (String) temp.getPossibleFieldNames().get(0)[0];
                         if (temp.getProperty(keyName) == null) {
@@ -1254,7 +1302,7 @@ public class DBAction {
                 //check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
                 // a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
                 boolean isNoIdentifierTable = false;
-                String  keyName             = "";
+                String  keyName             = StringUtils.EMPTY;
                 if (temp.getPossibleFieldNames().size() == 1) {
                     keyName = (String) temp.getPossibleFieldNames().get(0)[0];
                     if (temp.getProperty(keyName) == null) {
@@ -1836,7 +1884,7 @@ public class DBAction {
             if (metaDataId != null) {
                 XFTItem oldMeta = XFTItem.NewItem(oldI.getGenericSchemaElement().getFullXMLName() + "_meta_data", null);
                 oldMeta.setFieldValue("meta_data_id", metaDataId);
-                oldMeta.setFieldValue("modified", "1");
+                oldMeta.setFieldValue("modified", ONE);
                 oldMeta.setFieldValue("last_modified", Calendar.getInstance().getTime());
 
                 boolean q;
@@ -1879,7 +1927,7 @@ public class DBAction {
             }
 
             if (meta != null) {
-                meta.setFieldValue("modified", "1");
+                meta.setFieldValue("modified", ONE);
                 meta.setFieldValue("last_modified", cache.getModTime());//other processes may change this as well, like modifications to a child element
                 meta.setFieldValue("row_last_modified", cache.getModTime());//added to track specific changes to this row
                 meta.setFieldValue("xft_version", cache.getChangeId());//added to track specific changes to this row
@@ -1997,16 +2045,16 @@ public class DBAction {
 
                                     if (e.getAddin().equals("")) {
                                         if (counter++ == 0) {
-                                            query.append(key).append("= NULL");
+                                            query.append(key).append(EQUALS_NULL);
                                         } else {
-                                            query.append(", ").append(key).append("= NULL");
+                                            query.append(", ").append(key).append(EQUALS_NULL);
                                         }
                                     }
                                 } else {
                                     if (counter++ == 0) {
-                                        query.append(key).append("= NULL");
+                                        query.append(key).append(EQUALS_NULL);
                                     } else {
-                                        query.append(", ").append(key).append("= NULL");
+                                        query.append(", ").append(key).append(EQUALS_NULL);
                                     }
                                 }
                             }
@@ -2091,8 +2139,8 @@ public class DBAction {
             String type = buildType(field);
             if (type.equalsIgnoreCase("")) {
                 if (object instanceof String) {
-                    if (object.toString().equalsIgnoreCase("NULL")) {
-                        return "NULL";
+                    if (object.toString().equalsIgnoreCase(NULL)) {
+                        return NULL;
                     } else {
                         return "'" + object.toString() + "'";
                     }
@@ -2113,8 +2161,8 @@ public class DBAction {
             }
         } else {
             if (object instanceof String) {
-                if (object.toString().equalsIgnoreCase("NULL")) {
-                    return "NULL";
+                if (object.toString().equalsIgnoreCase(NULL)) {
+                    return NULL;
                 } else {
                     return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
                 }
@@ -2123,6 +2171,32 @@ public class DBAction {
             }
         }
     }
+
+    private static final Map<String, Integer> TYPE_MAPPING = Stream.of(
+        new SimpleEntry<>(STRING.toLowerCase(),Types.VARCHAR),
+        new SimpleEntry<>(ANY_URI.toLowerCase(),Types.VARCHAR),
+        new SimpleEntry<>(ID.toLowerCase().toLowerCase(),Types.VARCHAR),
+        new SimpleEntry<>(BOOLEAN.toLowerCase(),Types.BOOLEAN),
+        new SimpleEntry<>(FLOAT.toLowerCase(),Types.FLOAT),
+        new SimpleEntry<>(DOUBLE.toLowerCase(),Types.FLOAT),
+        new SimpleEntry<>(DECIMAL.toLowerCase(),Types.NUMERIC),
+        new SimpleEntry<>(INTEGER.toLowerCase(),Types.INTEGER),
+        new SimpleEntry<>(NON_POSITIVE_INTEGER.toLowerCase(),Types.INTEGER),
+        new SimpleEntry<>(NEGATIVE_INTEGER.toLowerCase(),Types.INTEGER),
+        new SimpleEntry<>(LONG.toLowerCase(),Types.BIGINT),
+        new SimpleEntry<>(INT.toLowerCase(),Types.INTEGER),
+        new SimpleEntry<>(SHORT.toLowerCase(),Types.SMALLINT),
+        new SimpleEntry<>(BYTE.toLowerCase(),Types.TINYINT),
+        new SimpleEntry<>(NON_NEGATIVE_INTEGER.toLowerCase(),Types.INTEGER),
+        new SimpleEntry<>(UNSIGNED_LONG.toLowerCase(),Types.FLOAT),
+        new SimpleEntry<>(UNSIGNED_INT.toLowerCase(),Types.INTEGER),
+        new SimpleEntry<>(UNSIGNED_SHORT.toLowerCase(),Types.SMALLINT),
+        new SimpleEntry<>(UNSIGNED_BYTE.toLowerCase(),Types.TINYINT),
+        new SimpleEntry<>(POSITIVE_INTEGER.toLowerCase(),Types.INTEGER),
+        new SimpleEntry<>(TIME.toLowerCase(),Types.TIME),
+        new SimpleEntry<>(DATE.toLowerCase(),Types.DATE),
+        new SimpleEntry<>(DATE_TIME.toLowerCase(),Types.TIMESTAMP))
+        .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
 
     /**
      * Formats the object to a string for SQL interaction based on the submitted type.
@@ -2135,16 +2209,93 @@ public class DBAction {
      *
      * @throws InvalidValueException When an invalid value is specified for item properties.
      */
-    public static String ValueParser(Object object, String type, boolean allowInvalidValues) throws InvalidValueException {
+    public static int TypeParser(final Object object, final String type, final boolean allowInvalidValues) throws InvalidValueException {
         if (object != null) {
-            if (object.toString().equalsIgnoreCase("NULL")) {
-                return "NULL";
+            if (object.toString().equalsIgnoreCase(NULL)) {
+                return Types.OTHER;
             }
         } else {
-            return "";
+            return Types.OTHER;
         }
 
-        if (type.equalsIgnoreCase("string")) {
+        final Integer match = TYPE_MAPPING.get(type.toLowerCase());
+        if(match!=null){
+            return match;
+        }else{
+            return Types.OTHER;
+        }
+    }
+
+    private static String toStringWrap(final Object o){
+        return String.format("'%s'",o);
+    }
+
+    private static String numericValueParser(final String object){
+        if (StringUtils.equalsIgnoreCase(object,NAN)) {
+            return toStringWrap(object);
+        } else if (StringUtils.equalsIgnoreCase(object,INFINITY_ABR) || StringUtils.equalsIgnoreCase(object,QUOTED_INFINITY)) {
+            return QUOTED_INFINITY;
+        } else if (StringUtils.equalsIgnoreCase(object,NEGATIVE_INFINITY_ABR) || StringUtils.equalsIgnoreCase(object,NEGATIVE_INFINITY)) {
+            return QUOTED_NEGATIVE_INFINITY;
+        } else if (StringUtils.equals(object,StringUtils.EMPTY)) {
+            return NULL;
+        } else {
+            return object;
+        }
+    }
+
+    private static String textValueParser(final String s, final boolean allowInvalidValues) throws InvalidValueException{
+        String upper = s.toUpperCase();
+        if (s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))) {
+            if (!allowInvalidValues) {
+                if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
+                    String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
+                    String typeMessage = s;
+                    body = body.replaceAll("TYPE", typeMessage);
+                    body = body.replaceAll("USER_DETAILS", "");
+                    AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", body);
+                }
+                throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");
+            }
+        }
+        return toStringWrap(XftStringUtils.CleanForSQLValue(s));
+    }
+
+    private static final Set<String> NUMERIC_TYPES = Stream.of(FLOAT,DOUBLE,DECIMAL,INTEGER,NON_POSITIVE_INTEGER,NEGATIVE_INTEGER,LONG,INT,NON_NEGATIVE_INTEGER,UNSIGNED_LONG,UNSIGNED_INT,POSITIVE_INTEGER)
+        .map(String::toLowerCase)
+        .collect(Collectors.toSet());
+
+    private static final Set<String> NO_CHANGE_TYPES = Stream.of(SHORT,BYTE,UNSIGNED_SHORT,UNSIGNED_BYTE)
+        .map(String::toLowerCase)
+        .collect(Collectors.toSet());
+
+    private static final Set<String> STRING_WRAP_TYPES = Stream.of(TIME,DATE,ID)
+        .map(String::toLowerCase)
+        .collect(Collectors.toSet());
+
+    /**
+     * Formats the object to a string for SQL interaction based on the submitted type.
+     *
+     * @param object             The The object containing the value to be parsed.
+     * @param type               The type to be used for conversion.
+     * @param allowInvalidValues Indicates whether an invalid value show trigger an exception and possible email to the site administrator.
+     *
+     * @return The string parsed from the object.
+     *
+     * @throws InvalidValueException When an invalid value is specified for item properties.
+     */
+    public static String ValueParser(final Object object, final String type, final boolean allowInvalidValues) throws InvalidValueException {
+        if (object != null) {
+            if (object.toString().equalsIgnoreCase(NULL)) {
+                return NULL;
+            }
+        } else {
+            return StringUtils.EMPTY;
+        }
+
+        final String typeLower=type.toLowerCase();
+
+        if (StringUtils.equals(typeLower,STRING)) {
             if (object.getClass().getName().equalsIgnoreCase("[B")) {
                 byte[]                        b    = (byte[]) object;
                 java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
@@ -2153,47 +2304,19 @@ public class DBAction {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                if (baos.toString().equalsIgnoreCase("NULL")) {
-                    return "NULL";
+                if (baos.toString().equalsIgnoreCase(NULL)) {
+                    return NULL;
                 } else {
-                    String s     = baos.toString();
-                    String upper = s.toUpperCase();
-                    if (s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))) {
-                        if (!allowInvalidValues) {
-                            if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
-                                String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
-                                String typeMessage = s;
-                                body = body.replaceAll("TYPE", typeMessage);
-                                body = body.replaceAll("USER_DETAILS", "");
-                                AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", body);
-                            }
-                            throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");
-                        }
-                    }
-                    return "'" + XftStringUtils.CleanForSQLValue(s) + "'";
+                    return textValueParser(baos.toString(),allowInvalidValues);
                 }
-            } else if (object.toString().equalsIgnoreCase("NULL")) {
-                return "NULL";
+            } else if (object.toString().equalsIgnoreCase(NULL)) {
+                return NULL;
             } else {
-                String s     = object.toString();
-                String upper = s.toUpperCase();
-                if (s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))) {
-                    if (!allowInvalidValues) {
-                        if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {
-                            String body = XDAT.getNotificationsPreferences().getEmailMessageUnauthorizedDataAttempt();
-                            String typeMessage = s;
-                            body = body.replaceAll("TYPE", typeMessage);
-                            body = body.replaceAll("USER_DETAILS", "");
-                            AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", body);
-                        }
-                        throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");
-                    }
-                }
-                return "'" + XftStringUtils.CleanForSQLValue(s) + "'";
+                return textValueParser(object.toString(),allowInvalidValues);
             }
-        } else if (type.equalsIgnoreCase("anyURI")) {
-            if (object.toString().equalsIgnoreCase("NULL")) {
-                return "NULL";
+        } else if (type.equalsIgnoreCase(ANY_URI)) {
+            if (object.toString().equalsIgnoreCase(NULL)) {
+                return NULL;
             } else {
                 final String uri = object.toString().replace('\\', '/');
                 if (uri.contains("..")) {
@@ -2206,173 +2329,21 @@ public class DBAction {
                     }
 
                 }
-                return "'" + XftStringUtils.CleanForSQLValue(uri) + "'";
+                return toStringWrap(XftStringUtils.CleanForSQLValue(uri));
             }
-        } else if (type.equalsIgnoreCase("ID")) {
-            return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
-        } else if (type.equalsIgnoreCase("boolean")) {
-            if (object.toString().equalsIgnoreCase("true") || object.toString().equalsIgnoreCase("1")) {
-                return "1";
+        } else if (StringUtils.equals(typeLower,BOOLEAN)) {
+            if (object.toString().equalsIgnoreCase(TRUE) || object.toString().equalsIgnoreCase(ONE)) {
+                return ONE;
             } else {
-                return "0";
+                return ZERO;
             }
-        } else if (type.equalsIgnoreCase("float")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("double")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("decimal")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("integer")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("nonPositiveInteger")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("negativeInteger")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("long")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("int")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("short")) {
+        } else if(NUMERIC_TYPES.contains(typeLower)){
+            return numericValueParser(object.toString());
+        }  else if(NO_CHANGE_TYPES.contains(typeLower)){
             return object.toString();
-        } else if (type.equalsIgnoreCase("byte")) {
-            return object.toString();
-        } else if (type.equalsIgnoreCase("nonNegativeInteger")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("unsignedLong")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("unsignedInt")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("unsignedShort")) {
-            return object.toString();
-        } else if (type.equalsIgnoreCase("unsignedByte")) {
-            return object.toString();
-        } else if (type.equalsIgnoreCase("positiveInteger")) {
-            if (object.toString().equalsIgnoreCase("nan")) {
-                return "'" + object.toString() + "'";
-            } else if (object.toString().equalsIgnoreCase("inf") || object.toString().equalsIgnoreCase("Infinity")) {
-                return "'Infinity'";
-            } else if (object.toString().equalsIgnoreCase("-inf") || object.toString().equalsIgnoreCase("-Infinity")) {
-                return "'-Infinity'";
-            } else if (object.toString().equals("")) {
-                return "NULL";
-            } else {
-                return object.toString();
-            }
-        } else if (type.equalsIgnoreCase("time")) {
-            return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
-        } else if (type.equalsIgnoreCase("date")) {
-            return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
-        } else if (type.equalsIgnoreCase("dateTime")) {
+        }  else if(STRING_WRAP_TYPES.contains(typeLower)){
+            return toStringWrap(XftStringUtils.CleanForSQLValue(object.toString()));
+        } else if (type.equalsIgnoreCase(DATE_TIME)) {
             Date d;
             if (object instanceof Date) {
                 d = (Date) object;
@@ -2380,20 +2351,20 @@ public class DBAction {
                 try {
                     d = DateUtils.parseDateTime(object.toString());
                 } catch (ParseException e) {
-                    if (object.toString().trim().equals("NOW()")) {
-                        return "NOW()";
+                    if (object.toString().trim().equals(NOW)) {
+                        return NOW;
                     } else {
-                        return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
+                        return toStringWrap(XftStringUtils.CleanForSQLValue(object.toString()));
                     }
                 }
             }
 
             if (d != null) {
-                SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+                SimpleDateFormat df = new SimpleDateFormat(YYYY_MM_DD_HH_MM_SS_SSS);
 
-                return "'" + df.format(d) + "'";
+                return toStringWrap(df.format(d));
             } else {
-                return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
+                return toStringWrap(XftStringUtils.CleanForSQLValue(object.toString()));
             }
         } else {
             return object.toString();
@@ -2562,7 +2533,7 @@ public class DBAction {
                                 refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext()) {
                                     XFTRelationSpecification spec = (XFTRelationSpecification) refsCols.next();
-                                    updateItem.setProperty(updateItem.getXSIType() + "." + spec.getLocalCol(), "NULL");
+                                    updateItem.setProperty(updateItem.getXSIType() + "." + spec.getLocalCol(), NULL);
                                 }
 
                                 //UPDATE ITEM
@@ -2645,7 +2616,7 @@ public class DBAction {
                                 refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext()) {
                                     XFTRelationSpecification spec = (XFTRelationSpecification) refsCols.next();
-                                    updateItem.setProperty(updateItem.getXSIType() + "." + spec.getLocalCol(), "NULL");
+                                    updateItem.setProperty(updateItem.getXSIType() + "." + spec.getLocalCol(), NULL);
                                 }
 
 
@@ -2691,7 +2662,7 @@ public class DBAction {
                                 refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext()) {
                                     XFTRelationSpecification spec = (XFTRelationSpecification) refsCols.next();
-                                    updateItem.setProperty(updateItem.getXSIType() + "." + spec.getLocalCol(), "NULL");
+                                    updateItem.setProperty(updateItem.getXSIType() + "." + spec.getLocalCol(), NULL);
                                 }
 
 
@@ -2784,7 +2755,7 @@ public class DBAction {
                             refsCols = ref.getKeyRelations().iterator();
                             while (refsCols.hasNext()) {
                                 XFTRelationSpecification spec = (XFTRelationSpecification) refsCols.next();
-                                updateItem.setProperty(updateItem.getXSIType() + "." + spec.getLocalCol(), "NULL");
+                                updateItem.setProperty(updateItem.getXSIType() + "." + spec.getLocalCol(), NULL);
                             }
 
 
@@ -2998,7 +2969,7 @@ public class DBAction {
                     }
                 }
             } catch (Exception e) {
-                log.error("", e);
+                log.error(StringUtils.EMPTY, e);
             }
 
             //DELETE
@@ -3165,7 +3136,7 @@ public class DBAction {
                         adjustSequence(input.getSequenceName(), input.getAllPrimaryKeys().get(0).getSQLName(), input.getSQLName(), input.getDbName());
                     }
                 } catch (Exception e) {
-                    log.error("", e);
+                    log.error(StringUtils.EMPTY, e);
                 }
             }
 
@@ -3174,11 +3145,11 @@ public class DBAction {
                     final XFTManyToManyReference map = (XFTManyToManyReference) object;
                     adjustSequence(DBAction.getSequenceName(map.getMappingTable(), map.getMappingTable() + "_id", map.getElement1().getDbName()), map.getMappingTable() + "_id", map.getMappingTable(), map.getElement1().getDbName());
                 } catch (Exception e) {
-                    log.error("", e);
+                    log.error(StringUtils.EMPTY, e);
                 }
             }
         } catch (Exception e) {
-            log.error("", e);
+            log.error(StringUtils.EMPTY, e);
         }
         log.info("Finished db sequence check {} ms", Calendar.getInstance().getTimeInMillis() - startTime);
     }
@@ -3288,7 +3259,7 @@ public class DBAction {
                 }), Predicates.notNull()), ", ");
 
                 PoolDBUtils.CreateCache(dbname = item.getDBName(), username);
-                commands.add(String.format("SELECT update_ls_%s(%s,%s)", schemaElement.getFormattedName(), ids, ObjectUtils.defaultIfNull(userId, "NULL").toString()));
+                commands.add(String.format("SELECT update_ls_%s(%s,%s)", schemaElement.getFormattedName(), ids, ObjectUtils.defaultIfNull(userId, NULL).toString()));
             } catch (ElementNotFoundException e) {
                 log.error("Element not found while trying to process item of type {}", e.ELEMENT, e);
             }

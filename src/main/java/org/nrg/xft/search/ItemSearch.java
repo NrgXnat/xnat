@@ -10,31 +10,34 @@
 
 package org.nrg.xft.search;
 
+import com.google.common.collect.Maps;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidValueException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.XftStringUtils;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
+import org.python.apache.commons.compress.utils.Lists;
 
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.*;
 
 @Slf4j
 public class ItemSearch implements SearchI {
+	public static final String $_USER_ID = "${USER_ID}";
+	public static final String VAR_OPEN = "${";
+	public static final String SEARCH_SEQ = "}";
+	public static final String QUESTION = "?";
 	private UserI                  user               = null;
 	private GenericWrapperElement  element            = null;
 	private CriteriaCollection     criteriaCollection = new CriteriaCollection("AND");
@@ -148,22 +151,31 @@ public class ItemSearch implements SearchI {
 		return exec();
 	}
 
-	public ItemCollection execute() throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
-	{
+	private ExecutionResult internalExeToTable(Boolean showMetaFields) throws Exception 
+    {
 		QueryOrganizer qo = new QueryOrganizer(element,user,this.level);
-	    Iterator iter = ViewManager.GetFieldNames(element,level,allowMultiples,rootItem).iterator();
-	    while(iter.hasNext())
-	    {
-	        String s = (String)iter.next();
-	        qo.addDirectField(s);
-	    }
+        for (String fieldName : ViewManager.GetFieldNames(element, level, allowMultiples, rootItem)) {
+			if(showMetaFields==null){
+				qo.addDirectField(fieldName);
+			}else{
+				if(showMetaFields || (!fieldName.contains("/meta/") && !fieldName.endsWith("_info")))
+					qo.addDirectField(fieldName);
+			}
+		}
 
-	    if (criteriaCollection != null && criteriaCollection.size() > 0)
-	    {
-		    qo.setWhere(criteriaCollection);
-	    }
+		SQLClause.ValueTracker mapper = new SQLClause.ValueTracker();
 
-	    query = qo.buildQuery();
+		if (criteriaCollection != null && criteriaCollection.size() > 0)
+	    {
+			qo.setWhere(criteriaCollection);
+		}
+
+		if (criteriaCollection != null && criteriaCollection.size() > 0)
+	    {
+			criteriaCollection = (CriteriaCollection) criteriaCollection.templatizeQuery(mapper);
+		}
+
+        query = qo.buildQuery();
 
 		String login = null;
 		if (user != null)
@@ -171,84 +183,40 @@ public class ItemSearch implements SearchI {
 		    login = user.getUsername();
 		}
 
-		if (StringUtils.isNotBlank(login) && log.isTraceEnabled()) {
-			try {
-				log.trace("Running query for user '{}' on element '{}':\nQuery: '{}'\nResults: {}", login, element, query, XDAT.getNamedParameterJdbcTemplate().queryForMap(query, EmptySqlParameterSource.INSTANCE));
-			} catch (EmptyResultDataAccessException e) {
-				log.trace("Running query for user '{}' on element '{}':\nQuery: '{}'\nResults: No results were found.", login, element, query);
-			}
+
+		if(user!=null){
+			mapper.getValues().put($_USER_ID, new SQLClause.ParamValue(user.getID(), Types.INTEGER));
 		}
-		final XFTTable table = TableSearch.Execute(query, element.getDbName(), login);
-		final ItemCollection items = populateItems(element, table, qo, extend, this.allowMultiples);
-		log.debug("Got {} results for user '{}' query '{}'", items.size(), StringUtils.defaultIfBlank(login, "<no user>"), query);
-	    query = null;
-		return items;
+
+		//build ordered list of parameters for the Prepared Statement
+		List<SQLClause.ParamValue> params= Lists.newArrayList();
+		int lastVarIndex = 0;
+		while((StringUtils.indexOf(query, VAR_OPEN,lastVarIndex))> -1){
+			lastVarIndex=StringUtils.indexOf(query, VAR_OPEN,lastVarIndex);
+			final String var = StringUtils.substring(query,lastVarIndex,StringUtils.indexOf(query,SEARCH_SEQ,lastVarIndex)+1);
+			params.add(mapper.getValues().get(var));
+			query=StringUtils.replaceOnce(query,var,QUESTION);
+		}
+
+		XFTTable table=XFTTable.ExecutePS(query, params.toArray(new SQLClause.ParamValue[0]));
+		return new ExecutionResult(login, qo,table);
 	}
 
 	public XFTTable executeToTable(boolean showMetaFields) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception{
-		final QueryOrganizer qo = new QueryOrganizer(element,user,this.level);
-		final Map<String,String> fieldNames = ViewManager.GetFieldMap(element,level,allowMultiples,rootItem);
-	    for(final String fieldName: fieldNames.keySet())
-	    {
-	        if(showMetaFields || (!fieldName.contains("/meta/") && !fieldName.endsWith("_info")))
-	        	qo.addDirectField(fieldName);
-	    }
+		final ExecutionResult result=internalExeToTable(showMetaFields);
 
-
-	    if (criteriaCollection != null && criteriaCollection.size() > 0)
-	    {
-		    qo.setWhere(criteriaCollection);
-	    }
-
-	    query = qo.buildQuery();
-
-		String login = null;
-		if (user != null)
-		{
-		    login = user.getUsername();
-		}
-//
-//	    if (criteriaCollection != null && criteriaCollection.size() > 0)
-//			query = "SELECT * FROM (" + query + ") SEARCH WHERE " + criteriaCollection.getSQLClause(qo);
-//		query += ";";
-
-	    final XFTTable table = TableSearch.Execute(query,element.getDbName(),login);
-
-		for (final Object o : qo.getAllFields()) {
+		for (final Object o : result.qo.getAllFields()) {
 			final String key = (String) o;
-			final String colName = qo.translateXMLPath(key).toLowerCase();
+			final String colName = result.qo.translateXMLPath(key).toLowerCase();
 
-			final Integer i = table.getColumnIndex(colName);
+			final Integer i = result.table.getColumnIndex(colName);
 			if (i != null) {
-				table.getColumns()[i] = !key.contains("/") ? key : key.substring(key.indexOf("/") + 1);
+				result.table.getColumns()[i] = !key.contains("/") ? key : key.substring(key.indexOf("/") + 1);
 			}
 		}
 
-	    return table;
+		return result.table;
 	}
-
-//    public List<Object> getKeys() throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception{
-//        long startTime = Calendar.getInstance().getTimeInMillis();
-//	    String login = null;
-//		if (user != null)
-//		{
-//		    login = user.getUsername();
-//		}
-//
-//		List<List<IdentifierResults>> matches = this.getIdentifierResults(login);
-//        
-//	    if (!allowMultipleMatches && matches.size()>1)
-//	    {
-//	        throw new MultipleMatchException();
-//	    }
-//
-//		List<Object> al= new ArrayList<Object>();
-//		for (List<IdentifierResults> item:matches)
-//		{
-//		    al.add(item.get(0).value);
-//		}
-//        return al;
-//    }
     
     public List<List<IdentifierResults>> getIdentifiers() throws Exception{
         String login = null;
@@ -259,55 +227,77 @@ public class ItemSearch implements SearchI {
         return getIdentifierResults(login);
     }
     
-    public List<List<IdentifierResults>> getIdentifierResults(String login) throws Exception{
-    	QueryOrganizer qo = new QueryOrganizer(element,null,this.level);
-        ArrayList keys = element.getAllPrimaryKeys();
-        Iterator keyIter = keys.iterator();
-        String pk = null;
-        while (keyIter.hasNext())
-        {
-            GenericWrapperField sf = (GenericWrapperField)keyIter.next();
-            pk = sf.getXMLPathString(element.getXSIType());
-            qo.addField(pk);
-        }
+    private List<List<IdentifierResults>> getIdentifierResults(String login) throws Exception{
+		SQLClause.ValueTracker mapper = new SQLClause.ValueTracker();
+
+		if (criteriaCollection != null && criteriaCollection.size() > 0) {
+			criteriaCollection = (CriteriaCollection) criteriaCollection.templatizeQuery(mapper);
+		}
 
 
-        if (criteriaCollection != null && criteriaCollection.size() > 0)
-        {
-            Iterator iter = criteriaCollection.getSchemaFields().iterator();
-            while(iter.hasNext())
+			QueryOrganizer qo = new QueryOrganizer(element,null,this.level);
+			ArrayList keys = element.getAllPrimaryKeys();
+			Iterator keyIter = keys.iterator();
+			String pk = null;
+            while (keyIter.hasNext())
             {
-                Object[] o=(Object[])iter.next();
-                String s = (String)o[0];
-                qo.addField(s);
-            }
-        }
-
-        query = qo.buildQuery();
+				GenericWrapperField sf = (GenericWrapperField) keyIter.next();
+				pk = sf.getXMLPathString(element.getXSIType());
+				qo.addField(pk);
+			}
 
 
-        String distinct = "DISTINCT ON (";
-        ArrayList<Object[]> keyColumns = new ArrayList<Object[]>();
-        keyIter = keys.iterator();
-        int count=0;
-        while (keyIter.hasNext())
-        {
-            GenericWrapperField sf = (GenericWrapperField)keyIter.next();
-            pk = sf.getXMLPathString(element.getXSIType());
-            String colname =qo.translateXMLPath(pk);
-            Object[] o = new Object[]{colname,sf};
-            keyColumns.add(o);
-            if (count++>0)distinct+=",";
-            distinct+=colname;
-        }
-        distinct +=") ";
+            if (criteriaCollection != null && criteriaCollection.size() > 0)
+            {
+                Iterator iter = criteriaCollection.getSchemaFields().iterator();
+                while(iter.hasNext())
+                {
+					Object[] o = (Object[]) iter.next();
+					String s = (String) o[0];
+					qo.addField(s);
+				}
+			}
 
-        if (criteriaCollection != null && criteriaCollection.size() > 0)
-            query = "SELECT " + distinct +" * FROM (SELECT * FROM (" + query + ") SEARCH  WHERE " + criteriaCollection.getSQLClause(qo) + ") SEARCH";
-        query += ";";
+			query = qo.buildQuery();
 
 
-        XFTTable table= TableSearch.Execute(query,element.getDbName(),login);
+			String distinct = "DISTINCT ON (";
+			ArrayList<Object[]> keyColumns = new ArrayList<Object[]>();
+			keyIter = keys.iterator();
+			int count = 0;
+            while (keyIter.hasNext())
+            {
+				GenericWrapperField sf = (GenericWrapperField) keyIter.next();
+				pk = sf.getXMLPathString(element.getXSIType());
+				String colname = qo.translateXMLPath(pk);
+				Object[] o = new Object[]{colname, sf};
+				keyColumns.add(o);
+				if (count++ > 0) distinct += ",";
+				distinct += colname;
+			}
+			distinct += ") ";
+
+			if (criteriaCollection != null && criteriaCollection.size() > 0)
+				query = "SELECT " + distinct + " * FROM (SELECT * FROM (" + query + ") SEARCH  WHERE " + criteriaCollection.getSQLClause(qo) + ") SEARCH";
+			query += ";";
+
+
+
+		if(user!=null){
+			mapper.getValues().put($_USER_ID, new SQLClause.ParamValue(user.getID(), Types.INTEGER));
+		}
+
+		//build ordered list of parameters for the Prepared Statement
+		List<SQLClause.ParamValue> params= Lists.newArrayList();
+		int lastVarIndex = 0;
+		while((StringUtils.indexOf(query, VAR_OPEN,lastVarIndex))> -1){
+			lastVarIndex=StringUtils.indexOf(query, VAR_OPEN,lastVarIndex);
+			final String var = StringUtils.substring(query,lastVarIndex,StringUtils.indexOf(query,SEARCH_SEQ,lastVarIndex)+1);
+			params.add(mapper.getValues().get(var));
+			query=StringUtils.replaceOnce(query,var,QUESTION);
+		}
+
+		XFTTable table=XFTTable.ExecutePS(query, params.toArray(new SQLClause.ParamValue[0]));
         
         List<List<IdentifierResults>> items=new ArrayList<List<IdentifierResults>>();
                 
@@ -329,6 +319,28 @@ public class ItemSearch implements SearchI {
         
         return items;
     }
+
+	public ItemCollection execute() throws Exception
+	{
+		final ExecutionResult result=internalExeToTable(null);
+
+		final ItemCollection items = populateItems(element, result.table, result.qo, extend, this.allowMultiples);
+		log.debug("Got {} results for user '{}' query '{}'", items.size(), StringUtils.defaultIfBlank(result.login, "<no user>"), query);
+		query = null;
+		return items;
+	}
+
+	private class ExecutionResult{
+		public QueryOrganizer qo;
+		public XFTTable table;
+		public String login;
+
+		public ExecutionResult(String login, QueryOrganizer qo, XFTTable table){
+			this.login=login;
+			this.qo=qo;
+			this.table=table;
+		}
+	}
     
     public String getFunctionName(){
     	String functionName= element.getTextFunctionName();
@@ -401,21 +413,110 @@ public class ItemSearch implements SearchI {
 		return items;
     }
 
-	public ItemCollection exec() throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
-	{
-        if (!allowMultiples && ALLOW_OLD_SEARCH && !element.isExtended() && !element.getName().endsWith("_history")){
-            return execute();
-        }else{
-            String login = null;
-            if (user != null)
-            {
-                login = user.getUsername();
-            }
-            
-            List<List<IdentifierResults>> matches=this.getIdentifierResults(login);
-                	    
-            return this.getItemsFromKeys(matches,login);
-        }
+		private boolean instanceOf(final GenericWrapperElement gwe, final String dataType){
+			return (StringUtils.equalsIgnoreCase(gwe.getFullXMLName(),dataType) || gwe.instanceOf(dataType));
+		}
+
+		@Nullable
+		private List<List<IdentifierResults>> getIdMatch(final String query, SQLClause.ParamValue... params) throws DBPoolException, SQLException {
+			final XFTTable table = XFTTable.ExecutePS(query, params);
+			if (table.getNumRows() > 0 && table.getNumCols()>0) {
+				final List<IdentifierResults> inner = new ArrayList<IdentifierResults>();
+				inner.add(new IdentifierResults(table.rows().get(0)[0], "string"));
+				final List<List<IdentifierResults>> matches = Lists.newArrayList();
+				matches.add(inner);
+				return matches;
+			}
+			return null;
+		}
+
+		public enum PROJECT_MATCH{
+			NONE,
+			PRIMARY,
+			SHARED
+		}
+
+		private PROJECT_MATCH isLabelSearch(CriteriaCollection cc){
+			if(cc.size()!=2){
+				return PROJECT_MATCH.NONE;
+			}
+
+			if((cc.containsXMLPathEndingWith("/project") && cc.containsXMLPathEndingWith("/label"))){
+				if((cc.containsXMLPathEndingWith("/sharing/share/project") && cc.containsXMLPathEndingWith("/sharing/share/label"))){
+					return PROJECT_MATCH.SHARED;
+				}else{
+					return PROJECT_MATCH.PRIMARY;
+				}
+			}
+
+			return PROJECT_MATCH.NONE;
+		}
+
+
+	public ItemCollection exec() throws Exception {
+		String login = null;
+		if (user != null) {
+			login = user.getUsername();
+		}
+
+		List<List<IdentifierResults>> matches = null;
+		final PROJECT_MATCH isLabelSearch= isLabelSearch(this.getCriteriaCollection());
+
+		if (instanceOf(getElement(),"xnat:experimentData")){
+			//streamline experiment query if possible
+			if (this.getCriteriaCollection().size() == 1 &&
+					this.getCriteriaCollection().containsXMLPathEndingWith("/ID")) {
+				//searching by ID
+				final String query = "SELECT ID FROM xnat_experimentData WHERE ID=?";
+				final Object id = this.getCriteriaCollection().getValueEndingWith("/ID");
+				matches= getIdMatch(query,new SQLClause.ParamValue(id, Types.VARCHAR));
+			} else if(isLabelSearch==PROJECT_MATCH.PRIMARY){
+				final String query = "SELECT ID FROM xnat_experimentData WHERE project=? AND label=?";
+				final Object project = getCriteriaCollection().getValueEndingWith("/project");
+				final Object label = getCriteriaCollection().getValueEndingWith("/label");
+
+				matches= getIdMatch(query,new SQLClause.ParamValue(project, Types.VARCHAR),new SQLClause.ParamValue(label, Types.VARCHAR));
+			}else if(isLabelSearch==PROJECT_MATCH.SHARED){
+				final String query = "SELECT sharing_share_xnat_experimentda_id AS ID FROM xnat_experimentData_share WHERE project=? AND label=?";
+				final Object project = getCriteriaCollection().getValueEndingWith("/project");
+				final Object label = getCriteriaCollection().getValueEndingWith("/label");
+
+				matches= getIdMatch(query,new SQLClause.ParamValue(project, Types.VARCHAR),new SQLClause.ParamValue(label, Types.VARCHAR));
+			}else {
+				matches = this.getIdentifierResults(login);
+			}
+		}else	if (instanceOf(getElement(),"xnat:subjectData")) {
+			if (this.getCriteriaCollection().size() == 1 &&
+					this.getCriteriaCollection().toArrayList().get(0) instanceof SearchCriteria &&
+					"xnat:subjectData/ID".equals(((SearchCriteria) this.getCriteriaCollection().toArrayList().get(0)).getXMLPath())) {
+				String query = "SELECT ID FROM xnat_subjectData WHERE ID=?";
+				String id = (String) ((SearchCriteria) this.getCriteriaCollection().toArrayList().get(0)).getValue();
+				matches= getIdMatch(query,new SQLClause.ParamValue(id, Types.VARCHAR));
+			}else if(isLabelSearch==PROJECT_MATCH.PRIMARY){
+				final String query = "SELECT ID FROM xnat_subjectData WHERE project=? AND label=?";
+				final Object project = getCriteriaCollection().getValueEndingWith("/project");
+				final Object label = getCriteriaCollection().getValueEndingWith("/label");
+
+				matches= getIdMatch(query,new SQLClause.ParamValue(project, Types.VARCHAR),new SQLClause.ParamValue(label, Types.VARCHAR));
+			}else if(isLabelSearch==PROJECT_MATCH.SHARED){
+				final String query = "SELECT subject_id AS ID FROM xnat_projectParticipant WHERE project=? AND label=?";
+				final Object project = getCriteriaCollection().getValueEndingWith("/project");
+				final Object label = getCriteriaCollection().getValueEndingWith("/label");
+
+				matches= getIdMatch(query,new SQLClause.ParamValue(project, Types.VARCHAR),new SQLClause.ParamValue(label, Types.VARCHAR));
+			}else {
+				matches = this.getIdentifierResults(login);
+			}
+		} else {
+			matches = this.getIdentifierResults(login);
+		}
+
+
+		if (matches == null || matches.size() == 0) {
+			return new ItemCollection();
+		} else {
+			return this.getItemsFromKeys(matches, login);
+		}
 	}
 
 

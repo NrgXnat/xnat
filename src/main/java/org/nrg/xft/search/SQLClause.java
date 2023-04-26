@@ -9,21 +9,26 @@
 
 package org.nrg.xft.search;
 
+import java.util.ArrayList;
+import java.util.Map;
+
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.RegExUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.db.PoolDBUtils;
 
-import java.util.ArrayList;
-
 /**
  * @author Tim
  */
 public interface SQLClause {
+
+		public static final String _CLOSE = "}";
+	  public static final String _OPEN = "${";
+
     String getElementName();
 
-    //public String getSQLClause() throws Exception;
     String getSQLClause(QueryOrganizerI qo) throws Exception;
 
     @SuppressWarnings("rawtypes")
@@ -32,7 +37,6 @@ public interface SQLClause {
     ArrayList<DisplayCriteria> getSubQueries() throws Exception;
 
     int numClauses();
-
     default void hackCheck(final String value) throws Exception {
         hackCheck(value, true);
     }
@@ -51,5 +55,45 @@ public interface SQLClause {
             throw new Exception("Invalid search value (" + value + ")");
         }
     }
+
+    class ParamValue
+	{
+		private Object value;
+		private int type;
+
+		public ParamValue(Object v, int t){
+			value=v;
+			type=t;
+		}
+
+		public Object getValue(){
+			return value;
+		}
+
+		public int getType(){
+			return type;
+		}
+	}
+
+	class ValueTracker
+	{
+		private Map<String,ParamValue> values= Maps.newHashMap();
+
+		public Map<String,ParamValue> getValues(){
+			return values;
+		}
+
+		public String trackValue(Object v, int type){
+			return trackValue(new ParamValue(v,type));
+		}
+
+		public String trackValue(ParamValue pv){
+			String key= _OPEN +values.size()+ _CLOSE;
+			values.put(key,pv);
+			return key;
+		}
+	}
+	    
+	public SQLClause templatizeQuery(ValueTracker tracker) throws Exception;
 }
 

@@ -10,6 +10,8 @@
 
 package org.nrg.xft.search;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -62,7 +64,13 @@ public class SearchCriteria implements SQLClause {
     }
 
     public String getSQLClause() throws Exception {
-        return " (" + Stream.of(getField_name(), getComparison_type(), overrideFormatting ? (String) getValue() : valueToDB()).map(String::trim).collect(Collectors.joining(" ")) + ")";
+        final boolean comparisonContainsLike = StringUtils.containsIgnoreCase(getComparison_type().trim(), "like");
+        if(comparisonContainsLike){
+            //Necessary to support PreparedStatement execution
+            return String.join(""," (", "LOWER(",getField_name(),") ", getComparison_type(), " LOWER(", (overrideFormatting ? (String) getValue() : valueToDB()), ") ", ")");
+        }else{
+            return String.join(""," (" ,getField_name(), getComparison_type(), (overrideFormatting ? (String) getValue() : valueToDB()), ")");
+        }
     }
 
     public String getSQLClause(QueryOrganizerI qo) throws Exception {
@@ -75,7 +83,7 @@ public class SearchCriteria implements SQLClause {
         if (overrideFormatting) {
             final String value = Optional.ofNullable(getValue()).orElseThrow(NO_VALUE_SET_EXCEPTION_SUPPLIER).toString().trim();
             if (comparisonContainsLike) {
-                return " (" + Stream.of(translatedXMLPath, comparisonType, value).map(String::trim).collect(Collectors.joining(" ")) + ")";
+                return " (" + Stream.of(" LOWER(",translatedXMLPath,") ", comparisonType, " LOWER(",value,") ").map(String::trim).collect(Collectors.joining(" ")) + ")";
             }
             if (StringUtils.equalsIgnoreCase(comparisonType, "IS NULL") ||
                 StringUtils.equalsIgnoreCase(comparisonType, "IS") && StringUtils.equalsIgnoreCase(value, "NULL")) {
@@ -95,7 +103,7 @@ public class SearchCriteria implements SQLClause {
         final String value = StringUtils.trim(valueToDB());
         if (comparisonContainsLike) {
             final String comparisonValue = StringUtils.lowerCase("'%" + StringUtils.stripEnd(StringUtils.stripStart(StringUtils.replace(valueToDB(), "*", "%"), "'%"), "'%") + "%'");
-            return " (LOWER(" + translatedXMLPath + ") " + comparisonType + " " + comparisonValue + ")";
+            return " (LOWER(" + translatedXMLPath + ") " + comparisonType + " LOWER(" + comparisonValue + "))";
         }
         if (StringUtils.isBlank(value) && comparisonType.equals("=")) {
             return translatedXMLPath + " IS NULL OR " + translatedXMLPath + " " + comparisonType + "''";
@@ -218,9 +226,14 @@ public class SearchCriteria implements SQLClause {
         if (value == null) {
             this.value = null;
         } else {
-            temp = value instanceof String ? (String) value : value.toString();
-            hackCheck(temp);
-            this.value = temp.contains("'") ? XftStringUtils.CleanForSQLValue(temp) : temp;
+            if(value instanceof Date){
+                //Timestamp type must be hardcoded for PrepraredStatement execution
+                this.value = new Timestamp(((Date)value).getTime());
+            }else{
+                temp = value instanceof String ? (String) value : value.toString();
+                hackCheck(temp);
+                this.value = temp.contains("'") ? XftStringUtils.CleanForSQLValue(temp) : temp;
+            }
         }
     }
 
@@ -375,6 +388,28 @@ public class SearchCriteria implements SQLClause {
         }
 
         return newC;
+    }
+
+    /*****************************************
+     * Used to parse out parameters for Prepared Statement execution
+     *
+     * @param tracker
+     * @return
+     * @throws InvalidValueException
+     */
+    public SQLClause templatizeQuery(ValueTracker tracker) throws InvalidValueException {
+        SearchCriteria copy = new SearchCriteria();
+        copy.comparison_type=(this.comparison_type);
+        copy.cleanedType=(this.cleanedType);
+        copy.elementName=(elementName);
+        copy.field=(field);
+        copy.field_name=(field_name);
+        copy.overrideFormatting=(true);
+        copy.xmlPath=this.xmlPath;
+
+        copy.value=tracker.trackValue(value,DBAction.TypeParser(value,this.getCleanedType(),false));
+
+        return copy;
     }
 }
 

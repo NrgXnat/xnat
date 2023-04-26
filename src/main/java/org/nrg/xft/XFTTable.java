@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.search.SQLClause;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,13 @@ public class XFTTable implements XFTTableI {
     public static XFTTable Execute(String query, String dbName, String userName) throws SQLException, DBPoolException {
         final PoolDBUtils con = new PoolDBUtils();
         final XFTTable table = con.executeSelectQuery(query, dbName, userName);
+        table.resetRowCursor();
+        return table;
+    }
+
+    public static XFTTable ExecutePS(String query, SQLClause.ParamValue... params) throws SQLException, DBPoolException {
+        final PoolDBUtils con = new PoolDBUtils();
+        final XFTTable table = con.executeSelectPS(query, params);
         table.resetRowCursor();
         return table;
     }

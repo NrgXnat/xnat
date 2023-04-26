@@ -9,12 +9,16 @@
 
 package org.nrg.xft.search;
 
+import com.google.common.collect.Lists;
+import java.util.Collections;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xdat.search.DisplayCriteria;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Tim
@@ -80,6 +84,10 @@ public class CriteriaCollection implements SQLClause {
      */
     public Iterator getClauses() {
         return collection.iterator();
+    }
+
+    public List<SQLClause> getCriteriaCollection(){
+        return collection;
     }
 
     public ArrayList toArrayList() {
@@ -232,5 +240,66 @@ public class CriteriaCollection implements SQLClause {
             return "error";
         }
     }
+
+    /***********************
+     * Used for templatizing query paramaters for use in Prepared Statements
+     * @param tracker
+     * @return
+     * @throws Exception
+     */
+    public SQLClause templatizeQuery(ValueTracker tracker) throws Exception {
+        CriteriaCollection copy = new CriteriaCollection(this.joinType);
+        for (SQLClause c: collection) {
+            copy.collection.add(c.templatizeQuery(tracker));
+        }
+        return copy;
+    }
+
+    /*****************************
+     * if this collection contains a SearchCriteria with a field path ending with 'suffix', then true, else false
+     *
+     * @param suffix
+     * @return
+     */
+    public boolean containsXMLPathEndingWith(final String suffix){
+        for(SQLClause clause: this.getCriteriaCollection()){
+            if(clause instanceof SearchCriteria && ((SearchCriteria)clause).getXMLPath().endsWith(suffix)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /*******************
+     * if this collection contains a SearchCriteria with a field path ending with 'suffix' then the corresponding vaue is returned
+     *
+     * @param suffix
+     * @return
+     */
+    @Nullable
+    public Object getValueEndingWith(final String suffix){
+        for(final SQLClause clause: this.getCriteriaCollection()) {
+            if (clause instanceof SearchCriteria && ((SearchCriteria) clause).getXMLPath().endsWith(suffix)) {
+                return ((SearchCriteria) clause).getValue();
+            }
+        }
+
+        return null;
+    }
+
+    /*****************************
+     * if this collection contains another sub-collection, then true, else false
+     *
+     * @return
+     */
+    public boolean containsNestedQuery(){
+        for (final SQLClause c: collection) {
+            if(c instanceof CriteriaCollection){
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
 

@@ -18,6 +18,7 @@ import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -410,6 +411,35 @@ public class PoolDBUtils {
 		this._connection =null;
 	}
 
+	private XFTTable resultSetToTable(ResultSet rs) throws SQLException {
+		XFTTable results = new XFTTable();
+
+		final String[] columns = new String[rs.getMetaData().getColumnCount()];
+		for (int i=1;i<=columns.length;i++)
+		{
+			columns[i-1]= rs.getMetaData().getColumnName(i);
+		}
+
+		results.initTable(columns);
+
+		while (rs.next())
+		{
+			Object [] row = new Object[columns.length];
+			for (int i=1;i<=columns.length;i++)
+			{
+				try {
+					Object o = rs.getObject(i);
+					row[i-1]= o;
+				} catch (Exception e1) {
+					logger.error("",e1);
+				}
+			}
+			results.insertRow(row);
+		}
+
+		return results;
+	}
+
 	/**
 	 * Executes the selected query and transfers the data from a ResultSet to
 	 * a XFTTable.
@@ -427,28 +457,7 @@ public class PoolDBUtils {
 		try {
 		    rs=executeQuery(db, query, userName);
 
-			final String[] columns = new String[rs.getMetaData().getColumnCount()];
-			for (int i=1;i<=columns.length;i++)
-			{
-				columns[i-1]= rs.getMetaData().getColumnName(i);
-			}
-
-			results.initTable(columns);
-
-			while (rs.next())
-			{
-				Object [] row = new Object[columns.length];
-				for (int i=1;i<=columns.length;i++)
-				{
-					try {
-                        Object o = rs.getObject(i);
-                        row[i-1]= o;
-                    } catch (Exception e1) {
-                        logger.error("",e1);
-                    }
-				}
-				results.insertRow(row);
-			}
+			results=resultSetToTable(rs);
 
 			//logger.debug("AFTER XFTTable");
 		}catch (SQLException e) {
@@ -462,6 +471,41 @@ public class PoolDBUtils {
 	   }finally{
 		   closeConnection(rs);
 	   }
+
+		return results;
+	}
+
+	/**
+	 * Executes the selected query and transfers the data from a ResultSet to
+	 * a XFTTable.
+	 * @param query
+	 * @param db
+	 * @return Returns the XFTTable containing the results of the query
+	 * @throws SQLException
+	 * @throws DBPoolException
+	 */
+	public XFTTable executeSelectPS(String query, SQLClause.ParamValue... params) throws SQLException,DBPoolException
+	{
+		ResultSet rs = null;
+		XFTTable results = new XFTTable();
+
+		try {
+			rs=executePS(query, params);
+
+			results=resultSetToTable(rs);
+
+			//logger.debug("AFTER XFTTable");
+		}catch (SQLException e) {
+			if (!StringUtils.containsAny(e.getMessage(), "relation \"xdat_user\" does not exist", "relation \"xdat_element_security\" does not exist")) {
+				logger.error(query);
+			}
+			throw e;
+		} catch (DBPoolException e) {
+			logger.error(query);
+			throw e;
+		}finally{
+			closeConnection(rs);
+		}
 
 		return results;
 	}
@@ -902,9 +946,52 @@ public class PoolDBUtils {
     	return getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
     }
 
-    public PreparedStatement getPreparedStatement(String db, String sql) throws SQLException, DBPoolException {
-    	return getConnection().prepareStatement(sql);
-    }
+
+	public PreparedStatement getPreparedStatement(String db, String sql) throws SQLException, DBPoolException {
+		return getConnection().prepareStatement(sql);
+	}
+
+	public PreparedStatement getPreparedStatement(String sql) throws SQLException, DBPoolException {
+		return getConnection().prepareStatement(sql);
+	}
+
+	private ResultSet executePS(String query, SQLClause.ParamValue... params) throws SQLException, DBPoolException {
+		PreparedStatement statement = getPreparedStatement(query);
+		int paramCount=1;
+		for(SQLClause.ParamValue param: params){
+			statement.setObject(paramCount++,param.getValue(),param.getType());
+		}
+
+		final Date start = Calendar.getInstance().getTime();
+
+		try {
+			return statement.executeQuery();
+		} catch (SQLException e) {
+			final String message = e.getMessage();
+			if (message.contains("Connection reset")) {
+				closeConnection();
+				resetConnections();
+				_statement = getStatement();
+				return _statement.executeQuery(query);
+			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
+				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
+				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+				return null;
+			} else if (StringUtils.containsAny(message, "relation \"xdat_user\" does not exist", "relation \"xdat_element_security\" does not exist")){
+				// Just rethrow and let someone else handle it. This is probably because the system is initializing
+				// and, if it's not, plenty else will go wrong to indicate the problem.
+				throw e;
+			} else {
+				logger.error("An error occurred trying to execute the query: " + query, e);
+				throw e;
+			}
+		} finally {
+			logger.debug(getTimeDiff(start, Calendar.getInstance().getTime()) + " ms" + ": " + StringUtils.replace(query, "\n", " "));
+		}
+
+	}
+
+
 
 	public ResultSet executeQuery(String db, String query, String userName) throws SQLException, DBPoolException {
 		_statement = getStatement();

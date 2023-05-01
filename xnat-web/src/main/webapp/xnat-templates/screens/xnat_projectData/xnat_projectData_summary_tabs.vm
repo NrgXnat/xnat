@@ -1,5 +1,9 @@
 <!-- BEGIN xnat-templates/screens/xnat_projectData/xnat_projectData_summary_tabs.vm -->
 
+#parse('screens/formioJSIncludes.vm')
+#parse('screens/formioIncludesBase.vm')
+
+
 <div ID="project_summary_module" style="display:none">
     <div id="projectSummary" class="yui-navset">
         <ul class="yui-nav">

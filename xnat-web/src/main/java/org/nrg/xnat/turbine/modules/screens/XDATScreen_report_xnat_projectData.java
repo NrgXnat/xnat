@@ -25,6 +25,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.customforms.service.CustomFormManagerService;
 import org.nrg.xnat.preferences.PipelinePreferences;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 
@@ -66,6 +67,16 @@ public class XDATScreen_report_xnat_projectData extends SecureReport {
 
             setDefaultTabs("xnat_projectData_summary_details", "xnat_projectData_summary_management", "xnat_projectData_summary_manage", "xnat_projectData_summary_pipeline", "xnat_projectData_summary_history");
             cacheTabs(context, "xnat_projectData/tabs");
+            //Has Dynamic Variables?
+            CustomFormManagerService formManagerService = XDAT.getContextService().getBeanSafely(CustomFormManagerService.class);
+            if (null != formManagerService) {
+                String customForms = formManagerService.getCustomForm(user, XnatProjectdata.SCHEMA_ELEMENT_NAME,project.getId() ,project.getId(), null, null, true);
+                if (null == customForms || customForms.equals("{}")) {
+                    context.put("dynamicFormsDefinedForProject", false);
+                }else {
+                    context.put("dynamicFormsDefinedForProject", true);
+                }
+            }
         } catch (XFTInitException e) {
             log.error("An error occurred initializing XFT", e);
         } catch (ElementNotFoundException e) {

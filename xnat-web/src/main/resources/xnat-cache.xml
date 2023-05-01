@@ -56,4 +56,11 @@
         <persistence strategy="none"/>
     </cache>
 
+    <cache name="XdatMetaElementCache"
+           maxEntriesLocalHeap="1000"
+           clearOnFlush="true"
+           timeToLiveSeconds="86400">
+        <persistence strategy="none"/>
+    </cache>
+
 </ehcache>

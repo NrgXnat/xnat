@@ -170,6 +170,7 @@ $page.setVlinkColor($ui.vlink)
         #parse("/screens/visit/edit.vm")
         #parse($turbineUtils.getTemplateName("_fields",$om.getXSIType(),$project,"upload"))
     </table>
+    <br>
 
     #parse("/screens/EditProjectSpecificFields.vm")
 

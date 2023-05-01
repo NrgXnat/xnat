@@ -136,9 +136,10 @@ var XNAT = getObject(XNAT || {});
                             },
                             contents:
                             '<div class="message">' +
-                            'The XNAT datatype access cache stores lists of common items that users have access to that seldom change, such as project roles and browseable datatypes. ' +
+                            '<p>The XNAT datatype access cache stores lists of common items that users have access to that seldom change, such as project roles and browseable datatypes. ' +
                             'This increases site performance by reducing the number of server calls required to render the UI. When those items are updated, the cache should be automatically flushed. ' +
-                            'However, users may run across times when cached data appears to be stale. In those instances (or whenever you wish), users can manually refresh their datatype access cache. ' +
+                            'However, users may run across times when cached data appears to be stale. In those instances (or whenever you wish), users can manually refresh their datatype access cache.</p> ' +
+                            '<p>Additionally, you  may need to reset your display cache using this function if you are not seeing updates to custom form defintions.</p>' +
                             '</div>'
                         },
                         userCacheControl: {

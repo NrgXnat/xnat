@@ -1,0 +1,187 @@
+{
+    "display": "wizard",
+    "settings": {},
+    "components": [
+        {
+            "key": "basicInfo",
+            "type": "panel",
+            "input": false,
+            "label": "basicInfo",
+            "title": "Step 1: Basic form information",
+            "tableView": false,
+            "components": [
+                {
+                    "key": "formTitle",
+                    "type": "textfield",
+                    "input": true,
+                    "label": "Custom Form Title",
+                    "widget": "choicesjs",
+                    "validate": {
+                        "required": true
+                    },
+                    "tableView": true,
+                    "placeholder": "Enter a short title for your form. Use only alpha-numeric characters. This will help you identify it later."
+                },
+                {
+                    "label": "Form Order",
+                    "description": "Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker.",
+                    "mask": false,
+                    "tableView": false,
+                    "delimiter": false,
+                    "decimalLimit": 0,
+                    "requireDecimal": false,
+                    "inputFormat": "plain",
+                    "truncateMultipleSpaces": false,
+                    "key": "zIndex",
+                    "type": "number",
+                    "input": true,
+                    "defaultValue": 10,
+                    "validate": {
+                        "min": -1000000,
+                        "max": 1000000
+                    }
+                },
+                {
+                    "key": "xnatDatatype",
+                    "data": {
+                        "custom": "function fetchCreatableDatatypes(){var myValues =  XNAT.customFormManager.datatypeManager.createableElements; return myValues;} values=fetchCreatableDatatypes();"
+                    },
+                    "type": "select",
+                    "input": true,
+                    "label": "Base XNAT Datatype",
+                    "description": "Select the datatype that you intend to add custom fields to",
+                    "widget": "choicesjs",
+                    "dataSrc": "custom",
+                    "validate": {
+                        "required": true
+                    },
+                    "tableView": true,
+                    "placeholder": "Select"
+                }
+            ],
+            "collapsible": false,
+            "saveOnEnter": false,
+            "scrollToTop": false,
+            "buttonSettings": {
+                "next": true,
+                "cancel": false,
+                "previous": false
+            },
+            "navigateOnEnter": false,
+            "breadcrumbSettings": {
+                "clickable": false
+            }
+        },
+        {
+            "key": "projectForm",
+            "type": "panel",
+            "input": false,
+            "label": "Select context",
+            "title": "Step 2: Select Form Context",
+            "tableView": false,
+            "components": [
+                {
+                    "key": "isThisASiteWideConfiguration",
+                    "type": "radio",
+                    "input": true,
+                    "label": "Is this a site wide configuration?",
+                    "inline": false,
+                    "values": [
+                        {
+                            "label": "Yes",
+                            "value": "yes",
+                            "shortcut": ""
+                        },
+                        {
+                            "label": "No",
+                            "value": "no",
+                            "shortcut": ""
+                        }
+                    ],
+                    "validate": {
+                        "required": true
+                    },
+                    "tableView": false,
+                    "defaultValue": "yes",
+                    "optionsLabelPosition": "right"
+                },
+                {
+                    "key": "xnatProject",
+                    "data": {
+                        "custom": "function fetchProjects(){var myValues = XNAT.customFormManager.protocolManager.getProjects(data.xnatProtocol);  return myValues;} values=fetchProjects();"
+                    },
+                    "type": "select",
+                    "input": true,
+                    "label": "This form applies to the project(s)?",
+                    "widget": "choicesjs",
+                    "dataSrc": "custom",
+                    "lazyload": true,
+                    "multiple": true,
+                    "tableView": true,
+                    "customOptions": {
+                        "classNames": {
+                            "listItems": "chosen-choices"
+                        }
+                    },
+                    "conditional": {
+                        "eq": "no",
+                        "show": true,
+                        "when": "isThisASiteWideConfiguration"
+                    },
+                    "placeholder": "Select project(s) here"
+                }
+            ],
+            "collapsible": false,
+            "saveOnEnter": false,
+            "scrollToTop": false,
+            "buttonSettings": {
+                "next": true,
+                "previous": true
+            },
+            "navigateOnEnter": false,
+            "breadcrumbSettings": {
+                "clickable": false
+            }
+        },
+        {
+            "key": "buildForm",
+            "type": "panel",
+            "input": false,
+            "label": "Build Form",
+            "title": "Step 3: Build Form",
+            "tableView": false,
+            "components": [
+                {
+                    "key": "formBuilder",
+                    "tag": "div",
+                    "type": "htmlelement",
+                    "attrs": [
+                        {
+                            "attr": "id",
+                            "value": "form-builder"
+                        },
+                        {
+                            "attr": "class",
+                            "value": "xnat-bootstrap"
+                        }
+                    ],
+                    "input": false,
+                    "label": "Form Builder",
+                    "tableView": false,
+                    "refreshOnChange": false
+                }
+            ],
+            "collapsible": false,
+            "saveOnEnter": false,
+            "scrollToTop": false,
+            "buttonSettings": {
+                "next": true,
+                "previous": true
+            },
+            "navigateOnEnter": false,
+            "breadcrumbSettings": {
+                "clickable": false
+            }
+        }
+    ]
+}

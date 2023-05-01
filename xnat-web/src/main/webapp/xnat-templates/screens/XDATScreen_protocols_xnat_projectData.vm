@@ -2,6 +2,7 @@
 #* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
+<div class="warning">You are strongly advised not to create new custom variable sets. This feature would be deprecated in the future versions of XNAT. Please use the custom form feature</div>
 <DIV><a href='$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$om.getId()")'>$displayManager.getSingularDisplayNameForProject().toUpperCase(): $!om.getDisplayName()</a>&nbsp;&nbsp;>&nbsp;&nbsp;Protocols</DIV><BR>
 <TABLE>
     <TR>

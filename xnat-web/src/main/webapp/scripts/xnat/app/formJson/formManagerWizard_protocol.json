@@ -1,0 +1,276 @@
+{
+  "display": "wizard",
+  "settings": {
+  },
+  "components": [
+    {
+      "title": "Step 1: Basic form information",
+      "breadcrumbClickable": false,
+      "buttonSettings": {
+        "previous": false,
+        "cancel": false,
+        "next": true
+      },
+      "navigateOnEnter": false,
+      "saveOnEnter": false,
+      "scrollToTop": false,
+      "collapsible": false,
+      "key": "basicInfo",
+      "type": "panel",
+      "label": "basicInfo",
+      "components": [
+        {
+          "label": "Custom Form Title",
+          "widget": "choicesjs",
+          "placeholder": "Enter a short title for your Form. This will help you identify it later.",
+          "tableView": true,
+          "key": "formTitle",
+          "type": "textfield",
+          "validate": {
+            "required": true
+          },
+          "input": true
+        },
+        {
+          "label": "Form Order",
+          "description": "Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker.",
+          "mask": false,
+          "tableView": false,
+          "delimiter": false,
+          "decimalLimit": 0,
+          "requireDecimal": false,
+          "inputFormat": "plain",
+          "truncateMultipleSpaces": false,
+          "key": "zIndex",
+          "type": "number",
+          "input": true,
+          "defaultValue": 10,
+          "validate": {
+            "min": -1000000,
+            "max": 1000000
+          }
+        },
+        {
+          "label": "Base XNAT Datatype",
+          "description": "Select the datatype that you intend to add custom fields to",
+          "widget": "choicesjs",
+          "placeholder": "Select",
+          "tableView": true,
+          "dataSrc": "custom",
+          "data": {
+            "values": [
+              {
+                "label": "",
+                "value": ""
+              }
+            ],
+            "custom": "function fetchCreatableDatatypes(){var myValues =  XNAT.customFormManager.datatypeManager.createableElements; return myValues;} values=fetchCreatableDatatypes();"
+          },
+          "selectThreshold": 0.3,
+          "template": "<span>{{ item.label }}</span>",
+          "key": "xnatDatatype",
+          "validate": {
+            "required": true
+          },
+          "type": "select",
+          "input": true
+        }
+      ],
+      "input": false,
+      "tableView": false
+    },
+    {
+      "title": "Step 2: Select Protocol",
+      "breadcrumbClickable": false,
+      "buttonSettings": {
+        "previous": true,
+        "next": true
+      },
+      "navigateOnEnter": false,
+      "saveOnEnter": false,
+      "scrollToTop": false,
+      "collapsible": false,
+      "key": "protocolForm",
+      "type": "panel",
+      "label": "Select Protocol",
+      "input": false,
+      "tableView": false,
+      "components": [
+        {
+          "label": "This form applies to the Protocol?",
+          "widget": "choicesjs",
+          "placeholder": "Select",
+          "tableView": true,
+          "dataSrc": "custom",
+          "data": {
+            "values": [
+              {
+                "label": "",
+                "value": ""
+              }
+            ],
+            "custom": "function fetchProtocols(){var myValues = []; XNAT.customFormManager.protocolManager.filterProtocolsByDatatype(data.xnatDatatype.value).forEach(function(item){var o={}; o['label'] = item.name; o['value']=item.protocolId;myValues.push(o);}); return myValues;} values=fetchProtocols();"
+          },
+          "template": "<span>{{ item.label }}</span>",
+          "selectThreshold": 0.3,
+          "key": "xnatProtocol",
+          "lazyLoad": true,
+          "multiple": true,
+          "type": "select",
+          "input": true
+        },
+        {
+          "label": "This form applies to the Visit(s)?",
+          "widget": "choicesjs",
+          "placeholder": "Select",
+          "tableView": true,
+          "dataSrc": "custom",
+          "data": {
+            "values": [
+              {
+                "label": "",
+                "value": ""
+              }
+            ],
+            "custom": "function fetchVisits(){var myValues = []; var myVisits = XNAT.customFormManager.protocolManager.getVisitsForProtocol(data.xnatProtocol); myVisits.forEach(function(item){var o={}; o['label'] = item.label; o['value']=item.value;myValues.push(o);});  return myValues;} values=fetchVisits();"
+          },
+          "template": "<span>{{ item.label }}</span>",
+          "selectThreshold": 0.3,
+          "key": "xnatVisit",
+          "lazyLoad": true,
+          "multiple": true,
+          "type": "select",
+          "input": true
+        },
+        {
+          "label": "This form applies to the SubType(s)?",
+          "widget": "choicesjs",
+          "placeholder": "Select",
+          "tableView": true,
+          "dataSrc": "custom",
+          "data": {
+            "values": [
+              {
+                "label": "",
+                "value": ""
+              }
+            ],
+            "custom": "function fetchVisitSubtypes(){var myValues = []; var myVisits = []; myVisits = XNAT.customFormManager.protocolManager.getSubTypesForVisit(data.xnatDatatype.value,data.xnatVisit); myVisits.forEach(function(item){var o={}; o['label'] = item.label; o['value']=item.value;myValues.push(o);});  return myValues;} values=fetchVisitSubtypes();"
+          },
+          "template": "<span>{{ item.label }}</span>",
+          "selectThreshold": 0.3,
+          "key": "xnatSubtype",
+          "lazyLoad": true,
+          "multiple": true,
+          "type": "select",
+          "input": true
+        }
+
+      ]
+    },
+    {
+      "title": "Step 3: Select Context",
+      "breadcrumbClickable": false,
+      "buttonSettings": {
+        "previous": true,
+        "next": true
+      },
+      "navigateOnEnter": false,
+      "saveOnEnter": false,
+      "scrollToTop": false,
+      "collapsible": false,
+      "key": "projectForm",
+      "type": "panel",
+      "label": "Select Project",
+      "input": false,
+      "tableView": false,
+      "components": [
+        {
+          "label": "Is this a site wide configuration?",
+          "optionsLabelPosition": "right",
+          "inline": false,
+          "tableView": false,
+          "values": [
+            {
+              "label": "Yes",
+              "value": "yes",
+              "shortcut": ""
+            },
+            {
+              "label": "No",
+              "value": "no",
+              "shortcut": ""
+            }
+          ],
+          "key": "isThisASiteWideConfiguration",
+          "type": "radio",
+          "input": true,
+          "defaultValue": "yes"
+        },
+        {
+          "label": "This form applies to the project?",
+          "widget": "choicesjs",
+          "placeholder": "Select project here",
+          "tableView": true,
+          "dataSrc": "custom",
+          "data": {
+            "values": [
+              {
+                "label": "",
+                "value": ""
+              }
+            ],
+            "custom": "function fetchProjects(){var myValues = XNAT.customFormManager.protocolManager.getProjects(data.xnatProtocol);  return myValues;} values=fetchProjects();"
+
+          },
+          "selectThreshold": 0.3,
+          "key": "xnatProject",
+          "lazyload": true,
+          "multiple": true,
+          "conditional": {
+            "show": true,
+            "when": "isThisASiteWideConfiguration",
+            "eq": "no"
+          },
+          "type": "select",
+          "input": true
+        }
+
+      ]
+    },
+    {
+      "title": "Step 4: Build Form",
+      "breadcrumbClickable": false,
+      "buttonSettings": {
+        "previous": true,
+        "next": true
+      },
+      "navigateOnEnter": false,
+      "saveOnEnter": false,
+      "scrollToTop": false,
+      "collapsible": false,
+      "key": "buildForm",
+      "type": "panel",
+      "label": "Build Form",
+      "input": false,
+      "tableView": false,
+      "components": [
+        {
+          "label": "Form Builder",
+          "tag": "div",
+          "attrs": [
+            {
+              "attr": "id",
+              "value": "form-builder"
+            }
+          ],
+          "refreshOnChange": false,
+          "key": "formBuilder",
+          "type": "htmlelement",
+          "input": false,
+          "tableView": false
+        }
+      ]
+    }
+  ]
+}

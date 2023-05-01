@@ -336,6 +336,17 @@
             <fileNamePattern>${xnat.home}/logs/eventservice.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
+    <appender name="customvariablemigration" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <file>${xnat.home}/logs/customvariablemigration.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/customvariablemigration.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+
     <root level="ERROR">
         <appender-ref ref="app"/>
     </root>
@@ -593,5 +604,8 @@
     </logger>
     <logger name="org.nrg.xnat.eventservice" additivity="false" level="ERROR">
         <appender-ref ref="eventservice"/>
+    </logger>
+    <logger name="org.nrg.xnat.customforms.customvariable.migration" additivity="false" level="INFO">
+        <appender-ref ref="customvariablemigration"/>
     </logger>
 </configuration>

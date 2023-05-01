@@ -1,0 +1,119 @@
+{
+  "display": "wizard",
+  "settings": {
+  },
+  "components": [
+    {
+      "title": "Step 1: Basic form information",
+      "breadcrumbClickable": false,
+      "buttonSettings": {
+        "previous": false,
+        "cancel": false,
+        "next": true
+      },
+      "navigateOnEnter": false,
+      "saveOnEnter": false,
+      "scrollToTop": false,
+      "collapsible": false,
+      "key": "basicInfo",
+      "type": "panel",
+      "label": "basicInfo",
+      "components": [
+        {
+          "label": "Title of the form",
+          "widget": "choicesjs",
+          "placeholder": "Enter a short title for your Form. This will help you identify it later.",
+          "tableView": true,
+          "key": "formTitle",
+          "type": "textfield",
+          "validate": {
+            "required": true
+          },
+          "input": true
+        },
+        {
+          "label": "Form Order: Relative form order is a preference set via integer values, where lower numbers reflect higher positions. If multiple forms have the same value, creation date is used as a tie breaker.",
+          "mask": false,
+          "tableView": false,
+          "delimiter": false,
+          "decimalLimit": 0,
+          "requireDecimal": false,
+          "inputFormat": "plain",
+          "truncateMultipleSpaces": false,
+          "key": "zIndex",
+          "type": "number",
+          "input": true,
+          "defaultValue": 10,
+          "validate": {
+            "min": -1000000,
+            "max": 1000000
+          }
+        },
+        {
+          "label": "This form applies to the XNAT Datatype?",
+          "widget": "choicesjs",
+          "placeholder": "Select",
+          "tableView": true,
+          "dataSrc": "custom",
+          "data": {
+            "values": [
+              {
+                "label": "",
+                "value": ""
+              }
+            ],
+            "custom": "function fetchCreatableDatatypes(){var myValues =  XNAT.customFormManager.datatypeManager.createableElements; return myValues;} values=fetchCreatableDatatypes();"
+          },
+          "selectThreshold": 0.3,
+          "template": "<span>{{ item.label }}</span>",
+          "key": "xnatDatatype",
+          "validate": {
+            "required": true
+          },
+          "type": "select",
+          "input": true
+        }
+      ],
+      "input": false,
+      "tableView": false
+    },
+    {
+      "title": "Step 2: Build Form",
+      "breadcrumbClickable": false,
+      "buttonSettings": {
+        "previous": true,
+        "next": true
+      },
+      "navigateOnEnter": false,
+      "saveOnEnter": false,
+      "scrollToTop": false,
+      "collapsible": false,
+      "key": "buildForm",
+      "type": "panel",
+      "label": "Build Form",
+      "input": false,
+      "tableView": false,
+      "components": [
+        {
+          "label": "Form Builder",
+          "tag": "div",
+          "attrs": [
+            {
+              "attr": "id",
+              "value": "form-builder"
+            },
+            {
+              "attr": "class",
+              "value": "xnat-bootstrap"
+            }
+          ],
+          "refreshOnChange": false,
+          "key": "formBuilder",
+          "type": "htmlelement",
+          "input": false,
+          "tableView": false
+        }
+      ]
+    }
+  ]
+}

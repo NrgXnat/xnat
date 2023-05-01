@@ -176,6 +176,9 @@ $page.setVlinkColor($ui.vlink)
             invalid_count++;
         }
 
+        ## Add custom project validation
+        #addCustomScreens("xnat:projectData" "edit/validation")
+
         if (invalid_count > 0) {
             XNAT.dialog.loading.close();
             // load a single form validation dialog. Focus the cursor on the OK button so multiple "enter" keypresses will not try to submit the underlying form again

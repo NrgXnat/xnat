@@ -40,12 +40,18 @@ import org.nrg.xnat.services.PETTracerUtils;
 import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.tracking.services.EventTrackingDataService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
-import org.springframework.context.annotation.*;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean;
@@ -60,7 +66,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -73,7 +84,8 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnat.helpers.merge", "org.nrg.xnat.helpers.processing", "org.nrg.xnat.helpers.resolvers",
                 "org.nrg.xnat.initialization.tasks", "org.nrg.xnat.node", "org.nrg.xnat.preferences", "org.nrg.xnat.processor.dao",
                 "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processors",
-                "org.nrg.xnat.task", "org.nrg.xnat.tracking", "org.nrg.xnat.archive", "org.nrg.xnat.services.customfields.impl"})
+                "org.nrg.xnat.task", "org.nrg.xnat.tracking", "org.nrg.xnat.archive", "org.nrg.xnat.services.customfields.impl",
+                "org.nrg.xnat.features"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @EnableCaching
 @Getter
@@ -144,9 +156,9 @@ public class ApplicationConfig {
 
     @Bean
     public EhCacheManagerFactoryBean ehCacheManagerFactory() {
-        return new EhCacheManagerFactoryBean() {{
-            setConfigLocation(new ClassPathResource("xnat-cache.xml"));
-        }};
+        final EhCacheManagerFactoryBean factory = new EhCacheManagerFactoryBean();
+        factory.setConfigLocation(new DefaultResourceLoader().getResource(_cacheConfiguration));
+        return factory;
     }
 
     @Bean
@@ -226,10 +238,11 @@ public class ApplicationConfig {
     @Bean
     public TriggerTask cleanupEventTracking(final EventTrackingDataService eventTrackingDataService) {
         return new TriggerTask(eventTrackingDataService::cleanupOldEntries,
-                new PeriodicTrigger(1, TimeUnit.DAYS)
-        );
+                               new PeriodicTrigger(1, TimeUnit.DAYS));
     }
 
+    @Value("${ehcache.configuration:xnat-cache.xml}")
+    private String                     _cacheConfiguration;
     private AsyncOperationsPreferences _asyncOperationsPreferences;
     private Path                       _xnatHome;
 }

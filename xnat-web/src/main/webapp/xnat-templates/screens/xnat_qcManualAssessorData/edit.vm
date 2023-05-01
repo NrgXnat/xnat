@@ -143,6 +143,12 @@ $page.setVlinkColor($ui.vlink)
 		</td>
 	</tr>
 	<tr>
+	<td>
+	    #parse("/screens/EditProjectSpecificFields.vm")
+	</td>
+	</tr>
+
+	<tr>
 		<td>
 <!-- BEGIN xnat:qcManualAssessorData -->
 			<table>

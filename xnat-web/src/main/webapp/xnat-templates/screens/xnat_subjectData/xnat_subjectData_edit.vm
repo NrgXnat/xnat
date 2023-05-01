@@ -70,10 +70,13 @@
     #parse("/screens/xnat_subjectData/xnat_subjectData_edit_keyFields.vm")
 </div>
 
+
 <div>
     <!-- EditProjectSpecificFields -->
     #parse("/screens/EditProjectSpecificFields.vm")
 </div>
+
+
 
 #if($subject.getId())
     <table>
@@ -94,17 +97,4 @@
 
 <p><input type="submit" name="eventSubmit_doInsert" id="eventSubmit_doInsert" value="Submit"/></p>
 
-
-
-
-##<script type="text/javascript">
-##    function validateEditForm() {
-##        if (validateKeyFields()) {
-##            return true;
-##        }
-##        else {
-##            return false;
-##        }
-##    }
-##</script>
 <!-- END /screens/xnat_subjectData/xnat_subjectData_edit.vm -->

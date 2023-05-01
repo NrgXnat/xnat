@@ -65,12 +65,12 @@ public class InitializingTasksExecutor {
                             log.debug("Task \"{}\" not yet completed, {} executions attempted, {} incomplete tasks found.", task.getTaskName(), task.executions(), ++incompleteTasks);
                         }
                     } catch (Exception e) {
-                        log.error("An error occurred while running the task " + task.getTaskName() + ", " + ++incompleteTasks + " incomplete tasks found.", e);
+                        log.error("An error occurred while running the task \"{}\", {} incomplete tasks found.", task.getTaskName(), ++incompleteTasks, e);
                     }
                 } else if (task.isCompleted()) {
-                    log.debug("Found task {}, but it is marked as already completed, {} completed tasks found.", task.getTaskName(), ++completedTasks);
+                    log.debug("Found task \"{}\", but it is marked as already completed, {} completed tasks found.", task.getTaskName(), ++completedTasks);
                 } else {
-                    log.debug("Found task {}, but it is marked as maxed out: {} total executions completed, {} completed tasks found.", task.getTaskName(), task.executions(), ++completedTasks);
+                    log.debug("Found task \"{}\", but it is marked as maxed out: {} total executions completed, {} completed tasks found.", task.getTaskName(), task.executions(), ++completedTasks);
                 }
             }
             if (incompleteTasks > 0) {

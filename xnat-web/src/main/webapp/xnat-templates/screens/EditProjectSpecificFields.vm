@@ -1,6 +1,7 @@
 <!-- BEGIN /xnat-templates/screens/EditProjectSpecificFields.vm -->
 #set($groups=$om.getFieldDefinitionGroups($item.getXSIType(), $project))
 #if($groups.size()>0)
+<hr>
 	#foreach($group in $groups)
 		#if($group.getFields_field().size()>0)
             #if(!$hdrAdded)
@@ -51,4 +52,12 @@
   </script>
 
 #end
+<br>
+<div id="customFieldsRow" style="width: 75%; overflow-y:auto">
+
+<h3 style="margin: 1em 0 0.5em;">Custom Field Sets</h3>
+
+#parse($turbineUtils.getTemplateName("parameters.vm",$om.getXSIType(),$project,"edit"))
+</div>
+
 <!-- END /xnat-templates/screens/EditProjectSpecificFields.vm -->

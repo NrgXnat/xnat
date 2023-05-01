@@ -1,4 +1,6 @@
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+
+
 <table>
     <tr>
         <th align="left">ID:</th>
@@ -48,11 +50,60 @@
         </tr>
     #end
 </table>
-#if($canEditOrDeleteProject)
 <br>
+
+#set($canReadSubjects=$data.getSession().getAttribute("userHelper").canRead("xnat:subjectData/project","$project.getId()"))
+#if($canReadSubjects && $dynamicFormsDefinedForProject)
+<a id="moreDetailsBtn" href="#!">View Custom Field(s)</a>
+<script type="text/javascript">
+   var oMoreDetailsBtn = new YAHOO.widget.Button("moreDetailsBtn");
+   var formOptions = { readOnly:true,
+                       renderMode:'html',
+                       buttonSettings: {
+                             showCancel: false,
+                             showSubmit: false,
+                             showNext: false,
+                             showPrevious: false
+                       }
+            };
+    function getFormIOContainer() {
+        let formioContainer = $.spawn('div#moreDetailsFormIO',{className:'xnat-bootstrap'});
+        $$(formioContainer).empty();
+        return formioContainer;
+    }
+
+    var  projectFormComponents = new CustomVariableFormComponents();
+
+    var moreDetailsBtnClick = function (e) {
+        let formIOContainer$ = getFormIOContainer();
+        XNAT.ui.dialog.open({
+                title: 'Additional meta-data',
+                content: formIOContainer$,
+                className: 'xnat-bootstrap',
+                width: 800,
+                height:800,
+                beforeShow: function(obj) {
+                    projectFormComponents.loadCustomFormComponents('null','null','moreDetailsFormIO');
+                },
+                buttons: [
+                    {
+                        label: 'Close',
+                        close: true,
+                        isDefault: true,
+                    }
+                ]
+            });
+    }
+   oMoreDetailsBtn.on("click", moreDetailsBtnClick);
+</script>
+#end
+
+
+
+#if($canEditOrDeleteProject)
 <a id="button1" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Edit Details</a>
     #if($data.getSession().getAttribute("userHelper").canDelete($project) && $siteConfig.uiAllowProjectDelete)
     <a id="button3" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","delete").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Delete</a>
     #end
-<a id="button5" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","protocols").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Manage Custom Variables</a>
+    <a id="button5" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","protocols").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Manage Custom Variables</a>
 #end

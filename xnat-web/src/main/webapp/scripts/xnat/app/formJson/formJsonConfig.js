@@ -303,12 +303,12 @@ var XNAT = getObject(XNAT || {});
                         let currentTitle = wizard.data.formTitle;
                         let cleanedTitle = Formio.Utils.unescapeHTML(wizard.data.formTitle);
                         if (currentTitle !== cleanedTitle) {
-                            XNAT.dialog.message('ERROR ', 'Please enter a title using only alpha-numeric characters');
+                            XNAT.dialog.message('Error ', 'Please enter a title using only alpha-numeric characters');
                             wizard.prevPage();
                         }
                     } else if (page.page === 3) {
                         if (wizard.data.isThisASiteWideConfiguration === 'no' && (wizard.data.xnatProject == undef || wizard.data.xnatProject.length == 0)) {
-                            XNAT.dialog.message('ERROR ', 'Please select at least one' + projectDataTypeSingularName +'.');
+                            XNAT.dialog.message('Error ', 'Please select at least one ' + projectDataTypeSingularName.toLowerCase() +'.');
                             wizard.prevPage();
                         }
                         initBuilder(wizard);
@@ -318,12 +318,12 @@ var XNAT = getObject(XNAT || {});
                         let currentTitle =  wizard.data.formTitle;
                         let cleanedTitle  =  Formio.Utils.unescapeHTML(wizard.data.formTitle);
                         if (currentTitle !== cleanedTitle) {
-                            XNAT.dialog.message('ERROR ', 'Please enter a title using only alpha-numeric characters');
+                            XNAT.dialog.message('Error ', 'Please enter a title using only alpha-numeric characters');
                             wizard.prevPage();
                         }
                     } else if (page.page === 2) {
                         if (wizard.data.isThisASiteWideConfiguration === 'no' && (wizard.data.xnatProject == undef || wizard.data.xnatProject.length == 0)) {
-                            XNAT.dialog.message('ERROR ', 'Please select at least one' + projectDataTypeSingularName +'.');
+                            XNAT.dialog.message('Error ', 'Please select at least one ' + projectDataTypeSingularName.toLowerCase() +'.');
                             wizard.prevPage();
                         }
                         initBuilder(wizard);
@@ -448,6 +448,7 @@ var XNAT = getObject(XNAT || {});
                     ignore: true,
                   },
                   { key: "spellcheck", ignore: true },
+                  { key: "tabindex", ignore: true }
                 ],
               },
               {
@@ -621,7 +622,7 @@ var XNAT = getObject(XNAT || {});
                     let currentTitle = formSchema.title;
                     let cleanedTitle = Formio.Utils.unescapeHTML(currentTitle);
                     if (currentTitle !== cleanedTitle) {
-                        XNAT.dialog.message('ERROR ', 'Please enter a title using only alpha-numeric characters');
+                        XNAT.dialog.message('Error ', 'Please enter a title using only alpha-numeric characters');
                     }else {
                         let submissionJson = getSubmissionObjectForRow(configDefinition);
                         try {
@@ -650,7 +651,8 @@ var XNAT = getObject(XNAT || {});
                         content: 'There may be unsaved edits to this JSON configuration. Are you sure you want to close without saving?',
                         okAction: function(){
                             // close 'parent' modal
-                            xmodal.close($thisModal);
+                            xmodal.closeAll()
+                            XNAT.dialog.closeAll();
                         }
                     });
                 }

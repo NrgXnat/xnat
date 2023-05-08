@@ -12,7 +12,7 @@
  */
 XNAT.app.pResources={
 	configs:new Array(),
-	settingsDialog:new YAHOO.widget.Dialog("pResource_settings_dialog", { fixedcenter:true, visible:false, width:"950px", height:"660px", modal:true, close:true, draggable:true,resizable:true}),
+	settingsDialog:new YAHOO.widget.Dialog("pResource_settings_dialog", { fixedcenter:true, visible:false, width:"950px", modal:true, close:true, draggable:true,resizable:true}),
 	begin:function(){
 		this.load();
 

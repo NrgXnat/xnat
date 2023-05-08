@@ -2,6 +2,7 @@ package org.nrg.xnat.initialization.tasks;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.model.XnatImagescandataShareI;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.om.XnatImagescandata;
@@ -34,26 +35,30 @@ import static org.nrg.xft.event.persist.PersistentWorkflowUtils.ADMIN_EXTERNAL_I
 @Component
 @Slf4j
 public class SharedScanCleanup extends AbstractInitializingTask {
-    private final XnatAppInfo appInfo;
-    private final XnatUserProvider primaryAdminUserProvider;
     private static final String WORKFLOW_ACTION = "Unshare orphaned scans v2";
     private static final String SITE_TYPE = "site";
     private static final String XNAT_IMAGESSCANDATA_ID = "xnat_imagescandata_id";
     private static final String PROJECT = "project";
-    private static final String ORPHANED_SCANS = "SELECT scan.xnat_imagescandata_id, share.project "
-            + "FROM xnat_imageScandata scan "
-            + "LEFT JOIN xnat_imageScandata_share share "
-            + "ON scan.xnat_imagescandata_id = share.sharing_share_xnat_imagescandat_xnat_imagescandata_id "
-            + "LEFT JOIN (SELECT expt.id,share.project FROM xnat_experimentdata expt "
-            + "LEFT JOIN xnat_experimentdata_share share ON expt.id = share.sharing_share_xnat_experimentda_id) expts "
-            + "ON scan.image_session_id=expts.id AND share.project=expts.project "
-            + "WHERE share.project IS NOT NULL AND expts.project IS NULL;";
+    private static final String         ORPHANED_SCANS = "SELECT scan.xnat_imagescandata_id, share.project "
+                                                         + "FROM xnat_imageScandata scan "
+                                                         + "LEFT JOIN xnat_imageScandata_share share "
+                                                         + "ON scan.xnat_imagescandata_id = share.sharing_share_xnat_imagescandat_xnat_imagescandata_id "
+                                                         + "LEFT JOIN (SELECT expt.id,share.project FROM xnat_experimentdata expt "
+                                                         + "LEFT JOIN xnat_experimentdata_share share ON expt.id = share.sharing_share_xnat_experimentda_id) expts "
+                                                         + "ON scan.image_session_id=expts.id AND share.project=expts.project "
+                                                         + "WHERE share.project IS NOT NULL AND expts.project IS NULL;";
+
+    private final XnatAppInfo      appInfo;
+    private final XnatUserProvider primaryAdminUserProvider;
+    private final DatabaseHelper   helper;
 
     @Autowired
     public SharedScanCleanup(final XnatAppInfo appInfo,
-                             final XnatUserProvider primaryAdminUserProvider) {
+                             final XnatUserProvider primaryAdminUserProvider,
+                             final DatabaseHelper helper) {
         this.appInfo = appInfo;
         this.primaryAdminUserProvider = primaryAdminUserProvider;
+        this.helper = helper;
     }
 
     @Override
@@ -67,8 +72,12 @@ public class SharedScanCleanup extends AbstractInitializingTask {
             return;
         }
 
-        if (!XFTManager.isComplete()) {
-            throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
+        try {
+            if (!XFTManager.isComplete() || !helper.tableExists("xdat_user")) {
+                throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "The system is not yet initialized sufficiently to proceed. Deferring execution.");
+            }
+        } catch (SQLException e) {
+            throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database to check for the table 'xdat_user'.", e);
         }
 
         final UserI adminUser = primaryAdminUserProvider.get();
@@ -105,6 +114,7 @@ public class SharedScanCleanup extends AbstractInitializingTask {
         try {
             final XFTTable scans = XFTTable.Execute(ORPHANED_SCANS, null, null);
             while (scans.hasMoreRows()) {
+                //noinspection rawtypes
                 final Map scanRow = scans.nextRowHash();
                 final Integer scanId = (Integer) scanRow.get(XNAT_IMAGESSCANDATA_ID);
                 final String projectId = (String) scanRow.get(PROJECT);
@@ -142,9 +152,9 @@ public class SharedScanCleanup extends AbstractInitializingTask {
         for (final XnatImagescandataShareI sharedScan : scan.getSharing_share()) {
             if (StringUtils.equals(projectId, sharedScan.getProject())) {
                 try {
-                    SaveItemHelper.authorizedRemoveChild(((XnatImagescandata) scan).getItem(),
+                    SaveItemHelper.authorizedRemoveChild(scan.getItem(),
                             XnatImagescandata.SCHEMA_ELEMENT_NAME + "/sharing/share",
-                            ((XnatImagescandataShare) sharedScan).getItem(), user, c);
+                                                         ((XnatImagescandataShare) sharedScan).getItem(), user, c);
                 } catch (Exception e) {
                     log.error("Unable to unshare scan id {} shared id {}", scan.getXnatImagescandataId(),
                             sharedScan.getXnatImagescandataShareId(), e);

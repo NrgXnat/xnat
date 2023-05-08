@@ -17,6 +17,8 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.xft.schema.XFTManager;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -43,9 +45,10 @@ import java.util.regex.Pattern;
 @Slf4j
 public class MigrateDatabaseTables extends AbstractInitializingTask {
     @Autowired
-    public MigrateDatabaseTables(final JdbcTemplate template, final TransactionTemplate transactionTemplate) throws IOException {
+    public MigrateDatabaseTables(final XnatAppInfo appInfo, final JdbcTemplate template, final TransactionTemplate transactionTemplate) throws IOException {
         super();
-        _db = new DatabaseHelper(template, transactionTemplate);
+        _appInfo = appInfo;
+        _db      = new DatabaseHelper(template, transactionTemplate);
         findTransformsAndColumns();
     }
 
@@ -56,6 +59,19 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
 
     @Override
     protected void callImpl() throws InitializingTaskException {
+        if (!_appInfo.isPrimaryNode()) {
+            log.info("This isn't the primary node, so I'm not going to try to migrate the database schema");
+            return;
+        }
+
+        try {
+            if (!XFTManager.isComplete() || !_db.functionsExist(REFERENCED_FUNCTIONS)) {
+                throw new InitializingTaskException(InitializingTaskException.Level.SingleNotice, "Deferring execution because the following functions do not yet all exist: " + String.join(", ", REFERENCED_FUNCTIONS));
+            }
+        } catch (SQLException e) {
+            throw new InitializingTaskException(InitializingTaskException.Level.Error, "An error occurred trying to access the database to check whether the following functions exist: {}", String.join(", ", REFERENCED_FUNCTIONS), e);
+        }
+
         try {
             for (final String table : _columns.keySet()) {
                 final Map<String, String> columns = _columns.get(table);
@@ -343,21 +359,13 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
     private static final String  SQL_WARNING_TABLE                = "The requested table";
     private static final Pattern COMPOUND_KEY                     = Pattern.compile("^(?<prefix>[^:]+)\\.\\.(?<payload>[^:]+)$");
     private static final Pattern COLUMNS_KEY                      = Pattern.compile("^columns-(?<columns>[a-z\\d_-]+)$");
-    private static final String  QUERY_GET_COLUMN_TYPE            = "SELECT "
-                                                                    + "    CASE "
-                                                                    + "        WHEN data_type = 'bigint' THEN 'long' "
-                                                                    + "        WHEN data_type = 'character varying' THEN 'string' "
-                                                                    + "        WHEN data_type = 'double precision' THEN 'float' "
-                                                                    + "        WHEN data_type = 'text' THEN 'string' "
-                                                                    + "        WHEN data_type = 'time without time zone' THEN 'time' "
-                                                                    + "        WHEN data_type = 'timestamp without time zone' THEN 'dateTime' "
+    private static final String  QUERY_GET_COLUMN_TYPE            = "SELECT CASE "
+                                                                    + "        WHEN data_type = 'character varying' THEN 'varchar(' || character_maximum_length || ')' "
                                                                     + "        ELSE data_type "
                                                                     + "        END "
-                                                                    + "FROM "
-                                                                    + "    information_schema.columns "
-                                                                    + "WHERE "
-                                                                    + "    table_name = :table AND "
-                                                                    + "    column_name = :column";
+                                                                    + "FROM information_schema.columns "
+                                                                    + "WHERE table_name = :table "
+                                                                    + "  AND column_name = :column; ";
     private static final String  GET_TYPES_AND_TABLES             = "SELECT "
                                                                     + "    lower(regexp_replace(element_name, ':', '_')) AS table_name,"
                                                                     + "    element_name "
@@ -404,6 +412,9 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
     This seems like a bug in Spring JDBC, so I ended up doing the cheap fix with String.format().
     */
 
+    private static final String[] REFERENCED_FUNCTIONS = new String[] {"dependencies_identify", "dependencies_save_and_drop", "dependencies_restore", "dependencies_clear_cache_entries"};
+
+    private final XnatAppInfo    _appInfo;
     private final DatabaseHelper                                       _db;
     private final Map<String, Constructor<? extends Callable<String>>> _transforms     = new HashMap<>();
     private final Map<String, Map<String, String>>                     _columns        = new HashMap<>();

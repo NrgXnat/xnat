@@ -1,3 +1,10 @@
+/* XNAT Header Tag Shims */
+.xnat-bootstrap h1, .xnat-bootstrap .h1 { font-size: 1.75em; }
+.xnat-bootstrap h2, .xnat-bootstrap .h2 { font-size: 1.5em; }
+.xnat-bootstrap h3, .xnat-bootstrap .h3 { font-size: 1.17em; font-weight: 700; }
+.xnat-bootstrap h4, .xnat-bootstrap .h4 { font-size: 1em; font-weight: 700; }
+.xnat-bootstrap h5, .xnat-bootstrap .h5 { font-size: 0.88em; font-weight: 700; }
+
 /* XNAT Color Scheme Shims */
 a,
 a:visited { color: var(--link-color); }
@@ -118,12 +125,23 @@ a:active { color: var(--link-color-hover); }
     content: "";
 }
 
+/* Nonstandard row class shims */
+#pResource_form .row {
+    display: inherit;
+    margin: 5px 0;
+}
+#pResource_form .rowTitle {
+    padding-right: 10px;
+}
+
 /* Button Shims */
 
+.xnat-bootstrap button,
 .xnat-bootstrap .btn {
 /*    background: var(--default-button-bg); */
     background-color: var(--XNAT-gray-100);
     border: 1px solid var(--XNAT-gray-400);
+    border-radius: 3px;
     box-shadow: 0px 1px 1px rgba(153, 153, 153, 0.4);
     font-size: 13px;
     line-height: inherit;
@@ -176,6 +194,12 @@ div.xmodal button.close {
 }
 .choices__list.chosen-choices .choices__item.choices__item--selectable .choices__button {
     border: none;
+}
+.xnat-bootstrap input, .xnat-bootstrap button, .xnat-bootstrap select, .xnat-bootstrap optgroup, .xnat-bootstrap textarea {
+    margin: revert;
+}
+.xnat-bootstrap .form-check-input {
+    margin-top: 1px;
 }
 
 /* Transition Shims */

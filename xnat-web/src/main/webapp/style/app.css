@@ -1197,31 +1197,6 @@ body [type="submit"] */ {
     box-shadow: 0 1px 1px #a0a0a0;
 }
 
-.btn1:hover,
-.btn.primary:hover,
-.btn.submit:hover,
-.btn.save:hover,
-input.btn1:hover, .btn1[type="button"]:hover, [type="submit"]:hover
-/* body input.btn1:hover,
-body .btn1[type="button"]:hover,
-body [type="submit"]:hover */ {
-    /*background: #096BB7;*/
-    background: #1A75BB;
-    box-shadow: none;
-}
-
-.btn1:active,
-.btn.primary:active,
-.btn.submit:active,
-.btn.save:active,
-input.btn1:active, .btn1[type="button"]:active, [type="submit"]:active
-/* body input.btn1:active,
-body .btn1[type="button"]:active,
-body [type="submit"]:active */ {
-    background: #145b91;
-    box-shadow: none;
-}
-
 .btn.error {
     color: #fff;
     background: #993333 linear-gradient( #bf4040, #993333 );
@@ -1256,6 +1231,31 @@ button:active, [type="button"]:active, [type="reset"]:active,
 .btn:active,
 .btn2:active {
     background: #e0e0e0;
+}
+
+.btn1:hover,
+.btn.primary:hover,
+.btn.submit:hover,
+.btn.save:hover,
+input.btn1:hover, .btn1[type="button"]:hover, [type="submit"]:hover
+/* body input.btn1:hover,
+body .btn1[type="button"]:hover,
+body [type="submit"]:hover */ {
+    /*background: #096BB7;*/
+    background: #1A75BB;
+    box-shadow: none;
+}
+
+.btn1:active,
+.btn.primary:active,
+.btn.submit:active,
+.btn.save:active,
+input.btn1:active, .btn1[type="button"]:active, [type="submit"]:active
+/* body input.btn1:active,
+body .btn1[type="button"]:active,
+body [type="submit"]:active */ {
+    background: #145b91;
+    box-shadow: none;
 }
 
 /* smaller btn */
@@ -1854,7 +1854,7 @@ body.modal-popup #xnat_power {
 .yui-skin-sam .yui-button a,
 .yui-skin-sam .yui-button a:visited {
     border: 1px solid #848484;
-    border-radius: 1px;
+    border-radius: 3px;
     box-shadow: 0 1px 1px #ccc;
     color: #000000;
     font-size: 12px;

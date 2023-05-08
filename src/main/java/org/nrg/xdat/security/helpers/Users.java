@@ -91,7 +91,7 @@ public class Users {
     public static final List<GrantedAuthority> AUTHORITIES_DATA_ADMIN      = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ADMIN, AUTHORITY_USER));
     public static final List<GrantedAuthority> AUTHORITIES_DATA_ACCESS     = new ArrayList<>(Arrays.asList(AUTHORITY_DATA_ACCESS, AUTHORITY_USER));
     public static final List<GrantedAuthority> AUTHORITIES_USER            = Collections.singletonList(AUTHORITY_USER);
-    public static final String                 EXPRESSION_USERNAME         = "[A-Za-z][" + Patterns.ALPHANUMERIC_AND_DASHES + "|.]{0,63}";
+    public static final String                 EXPRESSION_USERNAME         = "[A-Za-z][" + Patterns.ALPHANUMERIC_AND_DASHES + ".]{0,63}";
     public static final String                 EXPRESSION_EMAIL            = "^[A-Za-z0-9_!#$%&'*+/=?`{|}~^-]+(?:\\.[A-Za-z0-9_!#$%&'*+/=?`{|}~^-]+)*@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*$";
     public static final String                 EXPRESSION_COMBINED         = "^(?<username>" + EXPRESSION_USERNAME + ")\\s*<(?<email>" + EXPRESSION_EMAIL + ")>$";
     public static final Pattern                PATTERN_USERNAME            = Pattern.compile("^" + EXPRESSION_USERNAME + "$");

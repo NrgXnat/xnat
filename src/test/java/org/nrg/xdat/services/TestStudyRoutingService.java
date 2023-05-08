@@ -18,7 +18,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import javax.inject.Inject;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestStudyRoutingServiceConfig.class)
@@ -77,9 +80,9 @@ public class TestStudyRoutingService {
         _service.assign(UID3, PRJ1, USR2);
         _service.assign(UID4, PRJ2, USR2);
         _service.assign(UID5, PRJ1, USR1);
-        Map<String, Map<String, String>> assignments = _service.findRoutingsByAttribute(StudyRoutingService.PROJECT, PRJ1);
+        Map<String, Map<String, String>> assignments = _service.findProjectRoutings(PRJ1);
         assertEquals(3, assignments.size());
-        assignments = _service.findRoutingsByAttribute(StudyRoutingService.USER, USR1);
+        assignments = _service.findUserRoutings(USR1);
         assertEquals(2, assignments.size());
     }
 

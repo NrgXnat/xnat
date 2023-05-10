@@ -28,6 +28,7 @@ import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xnat.security.provider.XnatAuthenticationProviderApiPojo;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -40,6 +41,7 @@ import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.security.XnatProviderManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,10 +57,12 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.MediaType.*;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
+
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
 @Api("User Management API")
@@ -75,7 +79,8 @@ public class UsersApi extends AbstractXapiRestController {
                     final PermissionsServiceI permissionsService,
                     final NamedParameterJdbcTemplate jdbcTemplate,
                     final SiteConfigPreferences siteConfig,
-                    final UserChangeRequestService userChangeRequestService) {
+                    final UserChangeRequestService userChangeRequestService,
+                    final XnatProviderManager manager) {
         super(userManagementService, roleHolder);
         _sessionRegistry = sessionRegistry;
         _aliasTokenService = aliasTokenService;
@@ -84,6 +89,7 @@ public class UsersApi extends AbstractXapiRestController {
         _jdbcTemplate = jdbcTemplate;
         _siteConfig = siteConfig;
         _userChangeRequestService = userChangeRequestService;
+        _manager = manager;
     }
 
     @ApiOperation(value = "Get list of users.",
@@ -159,6 +165,18 @@ public class UsersApi extends AbstractXapiRestController {
             throw new DataFormatException("Invalid username");
         }
         return UserAuth.getUserAuths(_jdbcTemplate, username);
+    }
+
+    @ApiOperation(value = "Get configured auth providers.",
+            notes = "Returns info about authentication methods that have been configured")
+    @ApiResponses({@ApiResponse(code = 200, message = "Auth provider info."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @XapiRequestMapping(value = "authProviders", produces = APPLICATION_JSON_VALUE, method = GET)
+    public List<XnatAuthenticationProviderApiPojo> getConfiguredAuthProviders() throws DataFormatException {
+       return  _manager.getVisibleEnabledProviders().entrySet().stream()
+                .map(entry -> new XnatAuthenticationProviderApiPojo(entry.getKey(), entry.getValue().getName(), entry.getValue().getAuthMethod()))
+                .collect(Collectors.toList());
     }
 
     @ApiOperation(value = "Get list of users who are enabled or who have interacted with the site somewhat recently.",
@@ -493,7 +511,7 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/enabled", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
     public boolean usersIdEnabledGet(@ApiParam(value = "The ID of the user to retrieve the enabled status for.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException {
-        return getUserManagementService().getUser(username).isEnabled();
+        return  getUserManagementService().getUser(username).isEnabled();
     }
 
     @ApiOperation(value = "Sets the user's enabled state.",
@@ -934,4 +952,5 @@ public class UsersApi extends AbstractXapiRestController {
     private final NamedParameterJdbcTemplate _jdbcTemplate;
     private final SiteConfigPreferences      _siteConfig;
     private final UserChangeRequestService   _userChangeRequestService;
+    private final XnatProviderManager        _manager;
 }

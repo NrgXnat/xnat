@@ -9,6 +9,7 @@
 
 package org.nrg.xft.utils;
 
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -561,6 +562,38 @@ public class XftStringUtils {
 		}
 	}
 
+	/*************************************
+	 * Whether list contains this string while ignoring the case of the string toMatch
+	 *
+	 * @param list
+	 * @param toMatch
+	 * @return
+	 */
+	public static boolean containsIgnoreCase(final List<String> list, final String toMatch){
+			for(String s : list){
+					if(StringUtils.equalsIgnoreCase(toMatch,s)){
+							return true;
+					}
+			}
+			return false;
+	}
+
+	/*************************************
+	 * add 'toAdd' to 'list' if it doesn't already contain the value (ignoring case)
+	 *
+	 * @param list
+	 * @param toAdd
+	 * @return
+	 */
+	public static boolean addIfMissingIgnoreCase(final List<String> list, final String toAdd){
+			if(!containsIgnoreCase(list,toAdd)){
+					list.add(toAdd);
+					return true;
+			}
+			return false;
+	}
+
+
 	public static String CleanEndingInt(String next)
 	{
 		int index = next.length()-1;
@@ -633,6 +666,11 @@ public class XftStringUtils {
 	    }
 
 	    return fullString;
+	}
+
+	public static Boolean IsRootElementNameEqualTo(final String fullString, final String rootElementName)
+	{
+		return StringUtils.equalsIgnoreCase(GetRootElementName(fullString),rootElementName);
 	}
 
 	public static String GetFieldText(String fullString)

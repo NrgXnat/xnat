@@ -27,6 +27,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XFTDataModel;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.search.QueryOrganizer.CachedRootQuery;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
@@ -833,7 +834,7 @@ public class DisplayManager {
         return views;
     }
 
-    public static String GetArcDefinitionQuery(ArcDefinition arcD, SchemaElement root, SchemaElement foreign, UserI user) throws Exception {
+    public static String GetArcDefinitionQuery(ArcDefinition arcD, SchemaElement root, SchemaElement foreign, UserI user, Map<String, CachedRootQuery> rootQueries) throws Exception {
         StringBuilder select = new StringBuilder("");
         StringBuilder join = new StringBuilder(" FROM ");
         int joinCounter = 0;
@@ -844,8 +845,8 @@ public class DisplayManager {
         Arc rootArc = (Arc) root.getDisplay().getArcs().get(arcD.getName());
         Arc foreignArc = (Arc) foreign.getDisplay().getArcs().get(arcD.getName());
 
-        QueryOrganizer rootQuery = new QueryOrganizer(root, user, ViewManager.DEFAULT_LEVEL);
-        QueryOrganizer foreignQuery = new QueryOrganizer(foreign, user, ViewManager.DEFAULT_LEVEL);
+        QueryOrganizer rootQuery = new QueryOrganizer(root, user, ViewManager.DEFAULT_LEVEL, rootQueries);
+        QueryOrganizer foreignQuery = new QueryOrganizer(foreign, user, ViewManager.DEFAULT_LEVEL, rootQueries);
 
         for (Map.Entry<String, String> cf : arcD.getCommonFields().entrySet()) {
             String id = cf.getKey();

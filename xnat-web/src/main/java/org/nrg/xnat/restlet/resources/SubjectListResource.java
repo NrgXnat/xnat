@@ -14,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.security.UserI;
@@ -87,12 +86,12 @@ public class SubjectListResource extends QueryOrganizerResource {
 				}
 			}
 
-			QueryOrganizer qo = new QueryOrganizer(this.getRootElementName(), user, ViewManager.ALL);
+			QueryOrganizer qo = QueryOrganizer.buildXFTQueryOrganizerWithClause(this.getRootElementName(), user);
 
 			this.populateQuery(qo);
 
 			//inject paging
-			final String query = qo.buildQuery() + " " + this.buildOffsetFromParams(true);
+			final String query = qo.buildFullQuery() + " " + this.buildOffsetFromParams(true);
 
 			table = XFTTable.Execute(query, user.getDBName(), userName);
 

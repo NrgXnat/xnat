@@ -18,7 +18,6 @@ import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.SecurityValues;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.QueryOrganizer;
@@ -201,10 +200,10 @@ public class ExperimentListResource  extends QueryOrganizerResource {
 		@Override
 		public XFTTable build(final ExperimentListResource resource, final Hashtable<String, Object> params) throws Exception {
             final UserI user = resource.getUser();
-			XFTTable table;
-			params.put("title", "Matching experiments");
+            XFTTable table;
+            params.put("title", "Matching experiments");
             String rootElementName=resource.getRootElementName();
-            QueryOrganizer qo = new QueryOrganizer(rootElementName,user,ViewManager.ALL);
+            QueryOrganizer qo = QueryOrganizer.buildXFTQueryOrganizerWithClause(rootElementName, user);
 
             resource.populateQuery(qo);
 
@@ -214,7 +213,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
             }
 
             //inject paging
-            final String query = qo.buildQuery() + " " + resource.buildOffsetFromParams(true);
+            final String query = qo.buildFullQuery() + " " + resource.buildOffsetFromParams(true);
 
             table=XFTTable.Execute(query, user.getDBName(), resource.userName);
 

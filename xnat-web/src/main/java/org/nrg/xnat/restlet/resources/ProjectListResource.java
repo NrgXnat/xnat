@@ -556,7 +556,7 @@ public class ProjectListResource extends QueryOrganizerResource {
             try {
                 final String re = projResource.getRootElementName();
 
-                final QueryOrganizer qo = new QueryOrganizer(re, !allDataOverride ? user : null, ViewManager.ALL);
+                final QueryOrganizer qo = QueryOrganizer.buildXFTQueryOrganizerWithClause(re, !allDataOverride ? user : null);
 
                 projResource.populateQuery(qo);
                 
@@ -589,7 +589,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                 }
 
 
-                final String query = qo.buildQuery();
+                final String query = qo.buildFullQuery();
 
                 table = XFTTable.Execute(query, user.getDBName(), resource.userName);
 

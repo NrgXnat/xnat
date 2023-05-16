@@ -11,6 +11,7 @@ package org.nrg.framework.ajax;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -21,6 +22,7 @@ import org.junit.runner.RunWith;
 import org.nrg.framework.ajax.hibernate.HibernateFilter;
 import org.nrg.framework.services.SerializerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SuppressWarnings("CommentedOutCode")
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = SimpleEntityServiceTestConfiguration.class)
-@Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Slf4j
 public class SimpleEntityServiceTest {
     @Test(expected = ConstraintViolationException.class)
@@ -173,14 +175,14 @@ public class SimpleEntityServiceTest {
     @Test
     public void testPaging() {
         final List<String>       names    = PREFIXES.stream().map(prefix -> IntStream.range(0, ITEMS_PER_PREFIX).boxed().map(suffix -> prefix + "-" + suffix).collect(Collectors.toList())).flatMap(Collection::stream).collect(Collectors.toList());
-        final List<SimpleEntity> entities = names.stream().map(this::getSimpleEntity).collect(Collectors.toList());
+        final List<SimpleEntity> entities = names.stream().map(SimpleEntityServiceTest::getSimpleEntity).map(_service::create).collect(Collectors.toList());
         assertThat(entities).isNotNull().isNotEmpty().hasSize(TOTAL_ITEMS);
 
         final Map<String, Long> expectedCounts = entities.stream().collect(Collectors.groupingBy(SimpleEntity::getUsername, Collectors.counting()));
         assertThat(expectedCounts).isNotNull().isNotEmpty().hasSize(USERNAMES.size()).containsOnlyKeys(USERNAMES);
         assertThat(expectedCounts.values().stream().reduce(0L, Long::sum)).isEqualTo(TOTAL_ITEMS);
 
-        final Map<String, Long> actualCounts = USERNAMES.stream().collect(Collectors.toMap(Function.identity(), username -> _service.getAllForUserCount(username)));
+        final Map<String, Long> actualCounts = USERNAMES.stream().collect(Collectors.toMap(Function.identity(), _service::getAllForUserCount));
         assertThat(actualCounts).isNotNull().isNotEmpty().containsExactlyInAnyOrderEntriesOf(expectedCounts);
         assertThat(actualCounts.values().stream().reduce(0L, Long::sum)).isEqualTo(TOTAL_ITEMS);
 
@@ -190,10 +192,6 @@ public class SimpleEntityServiceTest {
         final SimpleEntityPaginatedRequest request               = SimpleEntityPaginatedRequest.builder().pageSize(200).build();
         final List<SimpleEntity>           first200OrderedByDate = _service.findAllOrderedByTimestamp(request);
         assertThat(first200OrderedByDate).isNotNull().isNotEmpty().hasSize(200).containsAll(orderedByDate.subList(0, 200));
-    }
-
-    private SimpleEntity getSimpleEntity(final String name) {
-        return _service.create(SimpleEntity.builder().name(name).username(USERNAMES.get(RANDOM.nextInt(USERNAMES.size()))).description(RandomStringUtils.randomAscii(10, RANDOM.nextInt(30) + 11)).total(RANDOM.nextInt(1000) + 1).timestamp(getUniqueRandomDate()).build());
     }
 
     @Test
@@ -238,6 +236,20 @@ public class SimpleEntityServiceTest {
         pacs.setDescription(DESCRIPTION);
         pacs.setTotal(TOTAL);
         return pacs;
+    }
+
+    private static SimpleEntity getSimpleEntity(final String name) {
+        return getSimpleEntity(name, null, null, null);
+    }
+
+    private static SimpleEntity getSimpleEntity(final String name, final String username, final String description, final Integer total) {
+        Date uniqueRandomDate = getUniqueRandomDate();
+        return SimpleEntity.builder()
+                           .name(name)
+                           .username(StringUtils.getIfBlank(username, () -> USERNAMES.get(RANDOM.nextInt(USERNAMES.size()))))
+                           .description(StringUtils.getIfBlank(description, () -> RandomStringUtils.randomAscii(10, RANDOM.nextInt(30) + 11)))
+                           .total(ObjectUtils.getIfNull(total, () -> RANDOM.nextInt(1000) + 1))
+                           .build();
     }
 
     private static Date getUniqueRandomDate() {

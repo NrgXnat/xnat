@@ -21,6 +21,17 @@
     var $storedSearches = $('#stored-search-menu');
     var undef;
 
+    function projectListingLink() {
+        return spawn('li',[
+                spawn('a',{
+                    href: '#!',
+                    onclick: function(){ $('#hiddenProjectForm').submit() },
+                    style: {'border-top':'1px solid #dedede','padding-left':'12px'},
+                    html: 'View Project Listing'
+                })
+            ]);
+    }
+
     var displayProjectList = function($parent, projectData){
         if (!projectData.length) return;
         function projectListItem(val, len){
@@ -101,6 +112,7 @@
             }
         });
         $parent.html('').append(_menuItem).parents('li').removeClass('hidden');
+        $parent.append(projectListingLink);
     };
 
     function displayProjectNavFail(){
@@ -137,6 +149,20 @@
 
     var xnatJSON = XNAT.xhr.getJSON;
     var restUrl = XNAT.url.restUrl;
+
+    // append hidden project search form
+    function hiddenProjectSearch(){
+        var hiddenProjectForm = spawn('form#hiddenProjectForm',
+            {method:'POST',action:XNAT.url.rootUrl('/app/action/DisplaySearchAction')},
+            [
+                spawn('input',{type:'hidden',name:'ELEMENT_0',value:'xnat:projectData'}),
+                spawn('input',{type:'hidden',name:'XNAT_CSRF',value:window.csrfToken })
+            ]);
+        $('#page_wrapper').append(hiddenProjectForm);
+    }
+    $(document).ready(function(){
+        hiddenProjectSearch();
+    });
 
     // populate project list
     xnatJSON({

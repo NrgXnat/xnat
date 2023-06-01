@@ -490,6 +490,7 @@ public class DisplayField implements Identifier, SequentialObject {
                         type.equalsIgnoreCase("VARCHAR") ||
                         type.equalsIgnoreCase("STRING") ||
                         type.equalsIgnoreCase("DATE") ||
+                        type.equalsIgnoreCase("DATETIME") ||
                         type.equalsIgnoreCase("TIMESTAMP"));
     }
 

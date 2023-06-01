@@ -10,6 +10,7 @@
 
 package org.nrg.xnat.restlet.presentation;
 
+import java.sql.Time;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.display.*;
@@ -25,6 +26,7 @@ import org.nrg.xft.XFTTableI;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.XftStringUtils;
 
 import java.sql.Timestamp;
@@ -539,7 +541,11 @@ public class RESTHTMLPresenter extends PresentationA {
 					    {
 					       // String s = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ENGLISH).format(DateUtils.parseDateTime(v.toString()));
 							sb.append(v.toString());
-					    }else{
+					    }else if (v instanceof Time)
+							{
+								java.util.Date d = new java.util.Date(((Time)v).getTime());
+								sb.append(DateUtils.format(d,"HH:mm:ss.SSS"));
+							}else{
                             String vS = v.toString();
                             if (vS.indexOf("<")!=-1 && vS.indexOf(">")==-1)
                             {

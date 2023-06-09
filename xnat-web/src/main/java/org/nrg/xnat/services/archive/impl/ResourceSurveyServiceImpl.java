@@ -6,7 +6,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.dcm4che2.io.StopTagInputHandler;
 import org.jetbrains.annotations.NotNull;
@@ -106,13 +105,13 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
                                                                                           + "         JOIN xnat_experimentdata x ON s.image_session_id = x.id "
                                                                                           + "WHERE ar.xnat_abstractresource_id IN (:" + PARAM_RESOURCE_IDS + ")";
 
-    private final        ResourceSurveyRequestEntityService _entityService;
-    private final        SerializerService                  _serializer;
-    private final        DicomFileNamer                     _dicomFileNamer;
-    private final        StopTagInputHandler                _stopTagInputHandler;
-    private final        SiteConfigPreferences              _preferences;
-    private final        NamedParameterJdbcTemplate         _jdbcTemplate;
-    private final        JmsTemplate                        _jmsTemplate;
+    private final ResourceSurveyRequestEntityService _entityService;
+    private final SerializerService                  _serializer;
+    private final DicomFileNamer                     _dicomFileNamer;
+    private final StopTagInputHandler                _stopTagInputHandler;
+    private final SiteConfigPreferences              _preferences;
+    private final NamedParameterJdbcTemplate         _jdbcTemplate;
+    private final JmsTemplate                        _jmsTemplate;
 
     @Autowired
     public ResourceSurveyServiceImpl(final ResourceSurveyRequestEntityService entityService, final SerializerService serializer, final DicomFileNamer dicomFileNamer, final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate jdbcTemplate, final JmsTemplate jmsTemplate) {
@@ -517,8 +516,8 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
             }
         }));
         final Map<Boolean, Map<Integer, ResourceSurveyRequest>> partitioned = requestsById.entrySet().stream()
-                                                                                                .collect(Collectors.partitioningBy(entry -> entry.getValue().isPresent(),
-                                                                                                                                   Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().orElse(null))));
+                                                                                          .collect(Collectors.partitioningBy(entry -> entry.getValue().isPresent(),
+                                                                                                                             Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().orElse(null))));
         final Set<Integer> nonexistent = new HashSet<>(partitioned.get(false).keySet());
         if (!nonexistent.isEmpty()) {
             throw new ConflictedStateException("User " + requester.getUsername() + " tried to queue " + resourceIds.size() + " resources for mitigation but "
@@ -611,8 +610,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
             final ResourceMitigationReport report = helper.call();
             if (report != null) {
                 request.setMitigationReport(report);
-                ResourceSurveyRequest.Status status = report.hasErrors() ? ResourceSurveyRequest.Status.ERROR : ResourceSurveyRequest.Status.CONFORMING;
-                setStatus(request, workflow, status);
+                setStatus(request, workflow);
             } else {
                 log.info("User {} wanted to mitigate resource survey request {} for resource {} but that resource no longer exists. Marking that request as \"ERROR\".", requester.getUsername(), request.getId(), request.getResourceId());
                 setStatus(request, workflow, ResourceSurveyRequest.Status.RESOURCE_DELETED);
@@ -772,8 +770,10 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
                 surveyReport.getTotalBadFiles(),
                 surveyReport.getTotalMismatchedFiles(),
                 surveyReport.getTotalDuplicates(),
+                surveyReport.getTotalNonActionableDuplicates(),
                 Collections.emptyMap(),
                 Collections.emptyList(),
+                Collections.emptyMap(),
                 Collections.emptyMap(),
                 Collections.emptyMap());
     }
@@ -831,7 +831,6 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         log.info("Finished running resource survey helper mitigation for resource survey request {} on resource {}, report says operation handled {} duplicates, {} mismatched files, and {} bad files", request.getId(), request.getResourceId(), report.getTotalDuplicates(), report.getTotalMismatchedFiles(), report.getTotalBadFiles());
 
         request.setSurveyReport(report);
-        request.setRsnStatus(NumberUtils.max(report.getTotalBadFiles(), report.getTotalMismatchedFiles(), report.getTotalDuplicates()) > 0 ? DIVERGENT : ResourceSurveyRequest.Status.CONFORMING);
         _entityService.update(request);
         return request;
     }
@@ -978,6 +977,10 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         final boolean isValid = ArrayUtils.contains(validStatuses, request.getRsnStatus());
         log.debug("Current status for resource survey request {} for resource {} is {}, this is {}, valid statuses are {}", request.getId(), request.getResourceId(), request.getRsnStatus(), isValid ? "valid" : INVALID, validStatusesText);
         return !isValid;
+    }
+
+    private void setStatus(final ResourceSurveyRequest request, final WrkWorkflowdata workflow) {
+        setStatus(request, workflow, request.getRsnStatus());
     }
 
     private void setStatus(final ResourceSurveyRequest request, final WrkWorkflowdata workflow, final ResourceSurveyRequest.Status status) {

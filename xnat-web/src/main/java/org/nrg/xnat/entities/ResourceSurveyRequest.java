@@ -9,6 +9,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.hibernate.annotations.NamedQueries;
 import org.hibernate.annotations.NamedQuery;
 import org.hibernate.annotations.Type;
@@ -35,13 +36,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.nrg.xnat.entities.ResourceSurveyRequest.Status.DIVERGENT;
+
 @Entity
 @Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"projectId", "subjectId", "experimentId", "scanId", "resourceLabel", "closingDate"})})
 @Access(AccessType.FIELD)
 @Getter
 @Setter
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @Builder
 @Slf4j
 @NamedQueries({@NamedQuery(name = "findRequestIdAndProject", query = "SELECT r.id, r.projectId FROM ResourceSurveyRequest r WHERE r.id IN (:requestIds)"),
@@ -76,6 +80,7 @@ public class ResourceSurveyRequest extends AbstractHibernateEntity {
         SURVEYING,
         DIVERGENT,
         CONFORMING,
+        NONCOMPLIANT,
         QUEUED_FOR_MITIGATION,
         MITIGATING,
         RESOURCE_DELETED,
@@ -84,7 +89,7 @@ public class ResourceSurveyRequest extends AbstractHibernateEntity {
 
         public static final String       ALL_VALUES     = Arrays.stream(ResourceSurveyRequest.Status.values()).map(Objects::toString).collect(Collectors.joining(", "));
         public static final List<Status> SURVEY_VALUES  = Arrays.asList(CREATED, QUEUED_FOR_SURVEY, SURVEYING, DIVERGENT);
-        public static final List<Status> CLOSING_VALUES = Arrays.asList(CONFORMING, RESOURCE_DELETED, CANCELED, ERROR);
+        public static final List<Status> CLOSING_VALUES = Arrays.asList(CONFORMING, NONCOMPLIANT, RESOURCE_DELETED, CANCELED, ERROR);
 
         public static Optional<Status> parse(final String status) {
             return Arrays.stream(values())
@@ -122,6 +127,24 @@ public class ResourceSurveyRequest extends AbstractHibernateEntity {
     @Transient
     public boolean isOpen() {
         return closingDate == null;
+    }
+
+    public void setSurveyReport(final ResourceSurveyReport surveyReport) {
+        this.surveyReport = surveyReport;
+        setRsnStatus(NumberUtils.max(surveyReport.getTotalBadFiles(), surveyReport.getTotalMismatchedFiles(), surveyReport.getTotalDuplicates()) > 0
+                     ? DIVERGENT
+                     : (surveyReport.getTotalNonActionableDuplicates() > 0
+                        ? ResourceSurveyRequest.Status.NONCOMPLIANT
+                        : ResourceSurveyRequest.Status.CONFORMING));
+    }
+
+    public void setMitigationReport(final ResourceMitigationReport mitigationReport) {
+        this.mitigationReport = mitigationReport;
+        setRsnStatus(mitigationReport.hasErrors()
+                     ? ResourceSurveyRequest.Status.ERROR
+                     : surveyReport.getTotalNonActionableDuplicates() > 0
+                       ? Status.NONCOMPLIANT
+                       : ResourceSurveyRequest.Status.CONFORMING);
     }
 
     public void setRsnStatus(final Status status) {

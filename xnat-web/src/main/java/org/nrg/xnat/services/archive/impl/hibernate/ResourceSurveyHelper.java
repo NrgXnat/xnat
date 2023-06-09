@@ -30,6 +30,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -88,7 +91,16 @@ public class ResourceSurveyHelper implements Callable<ResourceSurveyReport> {
                 log.info("Searched catalog at {} for resource ID {} and found {} entries for the catalog with {} UIDs total. There are no UIDs with duplicated files.", resourceUri, _request.getResourceId(), entries.size(), groupedByClassAndInstanceUid.size());
             } else {
                 log.info("Searched catalog at {} for resource ID {} and found {} entries for the catalog with {} UIDs total and {} UIDs with duplicated files", resourceUri, _request.getResourceId(), entries.size(), groupedByClassAndInstanceUid.size(), duplicates.size());
-                builder.duplicates(ResourceSurveyReport.unflattenDuplicateMaps(duplicates));
+                final Map<String, Map<String, Map<File, String>>> actionable    = new HashMap<>();
+                final Map<String, Map<String, Map<File, String>>> nonactionable = new HashMap<>();
+                ResourceSurveyReport.unflattenDuplicateMaps(duplicates).forEach((classUid, instanceUidMap) -> instanceUidMap.forEach((instanceUid, fileStringMap) -> addFileStringMap(new HashSet<>(fileStringMap.values()).size() == 1 ? actionable : nonactionable, classUid, instanceUid, fileStringMap)));
+                if (!actionable.isEmpty()) {
+                    builder.duplicates(actionable);
+                }
+                if (!nonactionable.isEmpty()) {
+                    log.warn("Found {} non-actionable duplicates, files with the same SOP instance UID but different generated file names, indicating they are not the same DICOM instance (most likely different instance numbers):\n{}", nonactionable.values().stream().map(Map::values).flatMap(Collection::stream).mapToInt(Map::size).sum(), _serializer.toJson(nonactionable));
+                    builder.nonActionableDuplicates(nonactionable);
+                }
             }
         } catch (IOException | SAXException | ParserConfigurationException e) {
             try {
@@ -211,5 +223,11 @@ public class ResourceSurveyHelper implements Callable<ResourceSurveyReport> {
                 }
             }
         }
+    }
+
+    private static void addFileStringMap(final Map<String, Map<String, Map<File, String>>> map, final String classUid, final String instanceUid, final Map<File, String> fileStringMap) {
+        final Map<String, Map<File, String>> embeddedInstanceUidMap = map.computeIfAbsent(classUid, key -> new HashMap<>());
+        final Map<File, String>              embeddedFileStringMap  = embeddedInstanceUidMap.computeIfAbsent(instanceUid, key -> new HashMap<>());
+        embeddedFileStringMap.putAll(fileStringMap);
     }
 }

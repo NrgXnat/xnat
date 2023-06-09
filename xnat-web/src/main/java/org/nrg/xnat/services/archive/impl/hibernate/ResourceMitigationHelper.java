@@ -131,7 +131,7 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
                 duplicates.forEach((uid, map) -> {
                     final Set<String> calculatedNames = new HashSet<>(map.values());
                     if (calculatedNames.size() > 1) {
-                        writer.format(" * There are %d calculated names for SOP class UID %s and instance UID %s, I can't fix this myself.", calculatedNames.size(), uid.getKey(), uid.getValue());
+                        writer.format(" * There are %d calculated names for SOP class UID %s and instance UID %s, I can't fix this myself.\n", calculatedNames.size(), uid.getKey(), uid.getValue());
                     } else {
                         backupGatherer.putAll(map.keySet().stream().collect(Collectors.toMap(File::toPath, backupMapper)));
                         map.keySet().stream().max(FILES_BY_DATE).ifPresent(file -> moveGatherer.put(file.toPath(), sourcePath.resolve(map.get(file))));

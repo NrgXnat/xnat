@@ -1491,8 +1491,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         final Map<String, Long>     readableExperimentCounts = _template.query(QUERY_USER_READABLE_EXPERIMENT_COUNT, userIdParameters, ELEMENT_COUNT_EXTRACTOR);
 
 
-        final MapSqlParameterSource projectParameters               = new MapSqlParameterSource("projectIds", readableProjectIds);
-        final Map<String, Long>     readableScanCounts       = _template.query(QUERY_USER_READABLE_SCAN_COUNT, projectParameters, ELEMENT_COUNT_EXTRACTOR);
+        final Map<String, Long>     readableScanCounts       = _template.query(QUERY_USER_READABLE_SCAN_COUNT, userIdParameters, ELEMENT_COUNT_EXTRACTOR);
 
 
         readableExperimentCounts.putAll(readableScanCounts);
@@ -1948,28 +1947,21 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                                                         + ") expts ON xfm.field_value=expts.project AND xea.element_name=expts.element_name\n"
                                                                         + "WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds)\n"
                                                                         + "GROUP BY xea.element_name";
-    private static final String QUERY_USER_READABLE_SCAN_COUNT       = "SELECT " +
-                                                                       "  element_name, " +
-                                                                       "  COUNT(*) AS element_count " +
-                                                                       "FROM " +
-                                                                       "  (SELECT xnat_imageScanData.xnat_imagescandata_id" +
-                                                                       "   FROM " +
-                                                                       "     (SELECT SEARCH.* " +
-                                                                       "      FROM " +
-                                                                       "        (SELECT DISTINCT ON (xnat_imagescandata_id) * " +
-                                                                       "         FROM " +
-                                                                       "           (SELECT xnat_imageScanData.xnat_imagescandata_id, xnat_imageScanData.project AS scanProject, sharedScans.project AS scanSharedProject " +
-                                                                       "            FROM " +
-                                                                       "              xnat_imageScanData xnat_imageScanData " +
-                                                                       "              LEFT JOIN xnat_imageScanData_share sharedScans ON xnat_imageScanData.xnat_imagescandata_id = sharedScans.sharing_share_xnat_imagescandat_xnat_imagescandata_id) SECURITY " +
-                                                                       "         WHERE " +
-                                                                       "           scanProject IN (:projectIds) OR " +
-                                                                       "           scanSharedProject IN (:projectIds)) SECURITY " +
-                                                                       "        LEFT JOIN xnat_imageScanData SEARCH ON SECURITY.xnat_imagescandata_id = SEARCH.xnat_imagescandata_id) xnat_imageScanData) SEARCH " +
-                                                                       "  LEFT JOIN xnat_imageScanData scan ON search.xnat_imagescandata_id = scan.xnat_imagescandata_id " +
-                                                                       "  LEFT JOIN xdat_meta_element xme ON scan.extension = xme.xdat_meta_element_id " +
-                                                                       "GROUP BY " +
-                                                                       "  element_name";
+    private static final String QUERY_USER_READABLE_SCAN_COUNT       = "SELECT xea.element_name, SUM(expts.SUM) AS ELEMENT_COUNT "
+                                                                        + " FROM xdat_user_groupid gid"
+                                                                        + " LEFT JOIN xdat_usergroup grp ON gid.groupid=grp.id"
+                                                                        + " LEFT JOIN xdat_element_access xea ON grp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id"
+                                                                        + " LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id=fms.permissions_allow_set_xdat_elem_xdat_element_access_id"
+                                                                        + " LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.read_element=1 AND xea.element_name || '/project'=xfm.field"
+                                                                        + " JOIN ("
+                                                                        + "  SELECT project, element_name, SUM(COUNT) FROM ("
+                                                                        + "   SELECT project, element_name, COUNT(id) FROM xnat_imageScandata LEFT JOIN xdat_meta_element xme ON xnat_imageScandata.extension=xme.xdat_meta_element_id GROUP BY project, element_name"
+                                                                        + "   UNION "
+                                                                        + "   SELECT shr.project, element_name, COUNT(expt.id) FROM xnat_imageScandata_share shr LEFT JOIN xnat_imageScandata expt ON shr.sharing_share_xnat_imagescandat_xnat_imagescandata_id=expt.xnat_imagescandata_id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY shr.project, element_name"
+                                                                        + "  ) SRCH GROUP BY project,element_name"
+                                                                        + " ) expts ON xfm.field_value=expts.project AND xea.element_name=expts.element_name"
+                                                                        + " WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds)"
+                                                                        + " GROUP BY xea.element_name";
 
     private static final String QUERY_ORPHANED_EXPERIMENTS         = "SELECT " +
                                                                      "    experiment_id, " +

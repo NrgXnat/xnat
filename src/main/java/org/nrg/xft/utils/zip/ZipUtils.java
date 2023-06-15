@@ -27,7 +27,10 @@ import org.nrg.xnat.srb.XNATDirectory;
 import org.nrg.xnat.srb.XNATSrbFile;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -335,7 +338,6 @@ public class ZipUtils implements ZipI {
         }
 
         // Loop over all of the entries in the zip file
-        final byte[] data = new byte[FileUtils.LARGE_DOWNLOAD];
         //  Create a ZipInputStream to read the zip file
         try (final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
             ZipEntry entry;
@@ -351,15 +353,11 @@ public class ZipUtils implements ZipI {
                             FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
                         }
                         f.getParentFile().mkdirs();
+                        File absolute = f.getAbsoluteFile();
+                        Path filePath = absolute.toPath();
+                        Files.copy(zis, filePath, StandardCopyOption.REPLACE_EXISTING);
 
-                        // Write the file to the file system
-                        try (final BufferedOutputStream dest = new BufferedOutputStream(new FileOutputStream(f), FileUtils.LARGE_DOWNLOAD)) {
-                            int count;
-                            while ((count = zis.read(data, 0, FileUtils.LARGE_DOWNLOAD)) != -1) {
-                                dest.write(data, 0, count);
-                            }
-                        }
-                        extractedFiles.put(name, new File(f.getAbsolutePath()));
+                        extractedFiles.put(name, absolute);
                     }
                 } else {
                     final File subfolder = new File(destination, name);
@@ -369,6 +367,7 @@ public class ZipUtils implements ZipI {
                     extractedFiles.put(name, subfolder);
                 }
             }
+            zis.closeEntry();
         }
         return extractedFiles;
     }

@@ -307,11 +307,12 @@ public class FileList extends XNATCatalogTemplate {
                             }
                         }
                     }
-
-                    final boolean skipUpdateStats = isQueryVariableFalse("update-stats");
+                    //By default, stats are to be updated, unless overridden
+                    final String updateStatsQueryVariableValue = getQueryVariable("update-stats", "TRUE");
+                    final boolean updateStats = StringUtils.equalsAnyIgnoreCase(updateStatsQueryVariableValue, "true", "1");
 
                     boolean isNew = false;
-                    if (workflow == null && !skipUpdateStats) {
+                    if (workflow == null && updateStats) {
                         isNew = true;
                         workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, getSecurityItem().getItem(), newEventInstance(EventUtils.CATEGORY.DATA, (getAction() != null) ? getAction() : EventUtils.UPLOAD_FILE));
                     }
@@ -323,7 +324,7 @@ public class FileList extends XNATCatalogTemplate {
                         eventMeta = workflow.buildEvent();
                     }
 
-                    final UpdateMeta updateMeta = new UpdateMeta(eventMeta, !(skipUpdateStats));
+                    final UpdateMeta updateMeta = new UpdateMeta(eventMeta, updateStats);
 
                     try {
                         final List<FileWriterWrapperI> writers = getFileWriters();

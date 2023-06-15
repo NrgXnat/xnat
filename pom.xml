@@ -144,7 +144,7 @@
         <commons-digester.version>1.8.1</commons-digester.version>
         <commons-discovery.version>0.5</commons-discovery.version>
         <commons-email.version>1.4</commons-email.version>
-        <commons-fileupload.version>1.3.1</commons-fileupload.version>
+        <commons-fileupload.version>1.5</commons-fileupload.version>
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
@@ -184,6 +184,7 @@
         <hibernate.version>4.3.11.Final</hibernate.version>
         <httpcomponents-client.version>4.5.13</httpcomponents-client.version>
         <httpcomponents-core.version>4.4.6</httpcomponents-core.version>
+        <httpcomponents-mime.version>4.5.14</httpcomponents-mime.version>
         <imagej.version>1.53c</imagej.version>
         <jai_imageio.version>1.1</jai_imageio.version>
         <itext.version>2.1.7</itext.version>
@@ -868,6 +869,11 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${httpcomponents-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpmime</artifactId>
+                <version>${httpcomponents-mime.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>

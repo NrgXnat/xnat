@@ -153,6 +153,7 @@ public class XnatProviderManager extends ProviderManager {
         return buildUPToken(findAuthenticationProviderByAuthMethod(authMethod), username, password);
     }
 
+    //This is actually looking up by providerId
     public UsernamePasswordAuthenticationToken buildUPTokenForProviderName(final String providerName, final String username, final String password) {
         return buildUPToken(findAuthenticationProviderByProviderName(providerName), username, password);
     }
@@ -213,6 +214,11 @@ public class XnatProviderManager extends ProviderManager {
         return getFilteredEnabledProviders(XnatAuthenticationProvider::hasLink);
     }
 
+    public int countAuthenticatorsWithAuthMethod(final String authMethod) {
+        Map<String, XnatAuthenticationProvider> providers = getFilteredEnabledProviders(provider -> provider.getAuthMethod().equalsIgnoreCase(authMethod));
+        return providers.size();
+    }
+
     private Map<String, XnatAuthenticationProvider> getFilteredEnabledProviders(final Predicate<XnatAuthenticationProvider> filter) {
         final List<String> enabled = _preferences.getEnabledProviders();
         final Map<String, XnatAuthenticationProvider> configured = enabled.stream()
@@ -262,9 +268,12 @@ public class XnatProviderManager extends ProviderManager {
         return findAuthenticationProvider(provider -> provider.getAuthMethod().equalsIgnoreCase(authMethod));
     }
 
+    // This method is looking up providers by provider id, the providerName is misleading; probably,
+    // due to progressive additions to auth provider properties file
     private XnatAuthenticationProvider findAuthenticationProviderByProviderName(final String providerName) {
         return findAuthenticationProvider(provider -> providerName.equalsIgnoreCase(provider.getProviderId()));
     }
+
 
     private XnatAuthenticationProvider findAuthenticationProvider(final XnatAuthenticationProviderMatcher matcher) {
         for (final XnatAuthenticationProvider xnatAuthenticationProvider : _xnatAuthenticationProviders.values()) {

@@ -49,7 +49,8 @@ import java.util.*;
  *
  */
 @SuppressWarnings({"unchecked","rawtypes"})
-public abstract class BaseElement extends ItemWrapper implements ItemI {
+public abstract class BaseElement extends ItemWrapper implements ItemI, Serializable {
+  private static final long serialVersionUID = 2338626292552177495L;
 	static org.apache.log4j.Logger logger = Logger.getLogger(BaseElement.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -467,6 +468,10 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
         }
 	}
 
+    private void readObject(ObjectInputStream in)	throws IOException, ClassNotFoundException{
+      in.defaultReadObject();
+      readExternal(in);
+    }
 
     /* (non-Javadoc)
      * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
@@ -475,6 +480,12 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
             ClassNotFoundException {
         getItem().readExternal(in);
     }
+
+    private void writeObject(ObjectOutputStream out) throws IOException{
+      out.defaultWriteObject();
+      writeExternal(out);
+    }
+
     /* (non-Javadoc)
      * @see java.io.Externalizable#writeExternal(java.io.ObjectOutput)
      */

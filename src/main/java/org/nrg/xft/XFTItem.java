@@ -69,7 +69,8 @@ import java.util.*;
 
 @SuppressWarnings({"unchecked","rawtypes"})
 @Slf4j
-public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
+public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Serializable  {
+	private static final long serialVersionUID = 2338626292552137495L;
     public static final String EQUALS                          = "=";
     public static final String XDAT_META_ELEMENT               = "xdat:meta_element";
     public static final String XDAT_META_ELEMENT_ID               = "xdat_meta_element_id";
@@ -7022,6 +7023,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		return isMeta.booleanValue();
 	}
 
+	private void readObject(ObjectInputStream in)	throws IOException, ClassNotFoundException{
+		in.defaultReadObject();
+		readExternal(in);
+	}
 
     /* (non-Javadoc)
      * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
@@ -7037,6 +7042,12 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             log.error("",e);
         }
     }
+
+	private void writeObject(ObjectOutputStream out) throws IOException{
+		out.defaultWriteObject();
+		writeExternal(out);
+	}
+
     /* (non-Javadoc)
      * @see java.io.Externalizable#writeExternal(java.io.ObjectOutput)
      */

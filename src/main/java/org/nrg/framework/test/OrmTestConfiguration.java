@@ -48,7 +48,8 @@ public class OrmTestConfiguration {
     public DataSource dataSource() {
         final SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
         dataSource.setDriverClass(Driver.class);
-        dataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+        // Note: if MODE=PostgreSQL is in the URL, the dialect must be a PostgreSQL dialect or some operations will fail.
+        dataSource.setUrl("jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         return dataSource;
@@ -62,7 +63,8 @@ public class OrmTestConfiguration {
     @Bean
     public PropertiesFactoryBean hibernateProperties() {
         final Properties properties = new Properties();
-        properties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
+        // Note: if MODE=PostgreSQL is in the URL, the dialect must be a PostgreSQL dialect or some operations will fail.
+        properties.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect");
         properties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
         properties.setProperty("hibernate.show_sql", "false");
         properties.setProperty("hibernate.cache.use_second_level_cache", "true");

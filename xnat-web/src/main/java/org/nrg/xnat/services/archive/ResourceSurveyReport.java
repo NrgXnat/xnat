@@ -54,7 +54,7 @@ public class ResourceSurveyReport implements Serializable {
         _totalBadFiles                = totalBadFiles == -1 ? _badFiles.size() : totalBadFiles;
         _totalMismatchedFiles         = totalMismatchedFiles == -1 ? _mismatchedFiles.size() : totalMismatchedFiles;
         _totalDuplicates              = totalDuplicates == -1 ? _duplicates.values().stream().map(Map::values).flatMap(Collection::stream).mapToInt(Map::size).sum() : totalDuplicates;
-        _totalNonActionableDuplicates = totalNonActionableDuplicates == -1 ? _nonActionableDuplicates.values().stream().map(Map::values).flatMap(Collection::stream).mapToInt(Map::size).sum() : totalDuplicates;
+        _totalNonActionableDuplicates = totalNonActionableDuplicates == -1 ? _nonActionableDuplicates.values().stream().map(Map::values).flatMap(Collection::stream).mapToInt(Map::size).sum() : totalNonActionableDuplicates;
     }
 
     /**

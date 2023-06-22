@@ -157,7 +157,6 @@ public class ProtocolResource extends ItemResource {
                 }
                 XDAT.triggerXftItemEvent(_project, XftItemEvent.UPDATE);
                 PersistentWorkflowUtils.complete(workflow, workflow.buildEvent());
-                MaterializedView.deleteByUser(user);
                 returnXML(protocol.getItem());
             } catch (Exception e) {
                 PersistentWorkflowUtils.fail(workflow, workflow.buildEvent());
@@ -199,7 +198,6 @@ public class ProtocolResource extends ItemResource {
                 throw e;
             }
             Users.clearCache(user);
-            MaterializedView.deleteByUser(user);
         } catch (Exception e) {
             log.error("", e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);

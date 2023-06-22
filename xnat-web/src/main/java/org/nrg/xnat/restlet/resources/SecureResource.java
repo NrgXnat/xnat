@@ -1420,7 +1420,6 @@ public abstract class SecureResource extends Resource {
         }
 
         Users.clearCache(user);
-        MaterializedView.deleteByUser(user);
     }
 
     public void delete(ArchivableItem parent, ItemI item, EventDetails event) throws Exception {
@@ -1437,7 +1436,6 @@ public abstract class SecureResource extends Resource {
         }
 
         Users.clearCache(user);
-        MaterializedView.deleteByUser(user);
     }
 
     @SuppressWarnings("unused")
@@ -1450,7 +1448,6 @@ public abstract class SecureResource extends Resource {
             if (SaveItemHelper.authorizedSave(sub, user, false, false, meta)) {
                 WorkflowUtils.complete(workflow, meta);
                 Users.clearCache(user);
-                MaterializedView.deleteByUser(user);
                 return true;
             }
             return false;
@@ -1989,7 +1986,6 @@ public abstract class SecureResource extends Resource {
                 }
                 WorkflowUtils.complete(workflow, meta);
                 Users.clearCache(user);
-                MaterializedView.deleteByUser(user);
                 return true;
             }
             return false;

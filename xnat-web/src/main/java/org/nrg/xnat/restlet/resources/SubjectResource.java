@@ -333,7 +333,6 @@ public class SubjectResource extends ItemResource {
                             XDAT.triggerXftItemEvent(sub, CREATE);
                             WorkflowUtils.complete(wrk, c);
         					Users.clearCache(user);
-                            MaterializedView.deleteByUser(user);
 
                             // If the label was changed, re apply the anonymization script on all the subject's imaging sessions.
                             boolean applyAnonScript = (null != existing && !existing.getLabel().equals(sub.getLabel()));

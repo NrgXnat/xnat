@@ -190,7 +190,6 @@ public class DeleteProjectData extends SecureAction {
                 }
 
                 Users.clearCache(user);
-                MaterializedView.deleteByUser(user);
 
                 if (deleteProject && !preventProjectDelete && !preventProjectDeleteByP) {
                     SaveItemHelper.authorizedDelete(project.getItem().getCurrentDBVersion(), user, ci);

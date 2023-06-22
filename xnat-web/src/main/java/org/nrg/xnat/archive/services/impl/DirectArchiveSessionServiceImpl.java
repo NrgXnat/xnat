@@ -337,11 +337,6 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
         XDAT.triggerXftItemEvent(session, CREATE);
         Users.clearCache(user);
-        try {
-            MaterializedView.deleteByUser(user);
-        } catch (Exception e) {
-            log.error("Unable to delete user materialized views", e);
-        }
     }
 
     private void setupScans(XnatImagesessiondata session, String root) {

@@ -26,7 +26,7 @@
                 #if(!$siteConfig.getBooleanValue("uiHideProjectActionsAddBrowseableElements"))
                     #foreach($dataType in $exptCounts.keySet())
                         #set($ed=$!userHelper.getBrowseableElementDisplay($dataType))
-                        #if ($ed)
+                        #if ($ed.getSQLName())
                             <li class="yuimenuitem">
                                 <a class="yuimenuitemlabel"
                                     href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
@@ -37,7 +37,7 @@
                     #set($key="xnat:mrSessionData")
                     #if(!$exptCounts.containsKey($key))
                         #set($ed=$!userHelper.getBrowseableElementDisplay($key))
-                        #if($ed)
+                        #if($ed.getSQLName())
                             <li class="yuimenuitem">
                                 <a class="yuimenuitemlabel"
                                     href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(

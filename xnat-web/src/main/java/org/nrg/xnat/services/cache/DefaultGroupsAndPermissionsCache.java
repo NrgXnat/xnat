@@ -654,13 +654,30 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
     }
 
+    private boolean isImageSession(String xsiType){
+        try {
+            return SchemaElement.GetElement(xsiType).instanceOf(XnatImagesessiondata.SCHEMA_ELEMENT_NAME);
+        } catch (XFTInitException|ElementNotFoundException e) {
+            log.error("Failed to parse passed xsiType in event handler",e);
+            return false;
+        }
+    }
+
     private void incrementCount(final String xsiType) {
-        _totalCounts.merge(xsiType, 1L, Long::sum);
+        if(isImageSession(xsiType)){
+            _totalCounts.merge(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, 1L, Long::sum);
+        }else{
+            _totalCounts.merge(xsiType, 1L, Long::sum);
+        }
     }
 
     private void decrementCount(final String xsiType) {
         // decrement, but don't go below zero
-        _totalCounts.merge(xsiType, 1L, (a, b) -> max(a - b,0L));
+        if(isImageSession(xsiType)){
+            _totalCounts.merge(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, 1L, (a, b) -> max(a - b,0L));
+        }else{
+            _totalCounts.merge(xsiType, 1L, (a, b) -> max(a - b,0L));
+        }
     }
 
     private boolean handleProjectEvents(final XftItemEventI event) {
@@ -684,7 +701,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     if(StringUtils.isNotBlank(access)) {
                         switch (access) {
                             case "private":
-                                resetProjectCount();
                                 break;
 
                             case "public":
@@ -697,7 +713,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                 break;
                         }
                     }
-                    incrementCount(xsiType);
+                    resetProjectCount();
                     return created;
 
                 case UPDATE:
@@ -736,7 +752,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     });
                     resetGuestBrowseableElementDisplays();
                     initReadableCountsForUsers(getCachedSet(cacheId));
-                    decrementCount(xsiType);
+                    resetTotalCounts();//adding this because project deletes often effect other data types too (subjects, expts)
                     return true;
 
                 default:
@@ -763,14 +779,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             for (final String cacheId : readableCountCacheIds) {
                 evict(cacheId);
             }
-            resetTotalCounts();
         } else {
             // Update existing user element displays
             final List<String> cacheIds = getCacheIdsForActions();
             cacheIds.addAll(getCacheIdsForUserElements());
             clearAllUserProjectAccess();
             initReadableCountsForUsers(cacheIds.stream().map(DefaultGroupsAndPermissionsCache::getUsernameFromCacheId).filter(StringUtils::isNotBlank).collect(Collectors.toSet()));
-            resetProjectCount();
         }
 
         return cachedRelatedGroups;
@@ -921,6 +935,11 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 break;
 
             case SHARE:
+                target = (String) event.getProperties().get("target");
+                origin = null;
+                projectIds.add(target);
+                break;
+
             case DELETE:
                 target = (String) event.getProperties().get("target");
                 origin = null;

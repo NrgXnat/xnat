@@ -257,6 +257,7 @@ dependencies {
     implementation "org.apache.httpcomponents:httpclient"
     implementation "org.apache.httpcomponents:httpcore"
     implementation "org.apache.httpcomponents:httpcore-nio"
+    implementation "org.apache.httpcomponents:httpmime"
     implementation "org.apache.commons:commons-pool2"
 
     implementation "org.codehaus.groovy:groovy-all"

@@ -32,6 +32,7 @@ public class XFTTable implements XFTTableI {
 
     private int rowCursor = 0;
     public ArrayList quarantineIndexs = new ArrayList();
+    private boolean isSorted = false;
 
     public static XFTTable Execute(String query, String dbName, String userName) throws SQLException, DBPoolException {
         final PoolDBUtils con = new PoolDBUtils();
@@ -55,6 +56,26 @@ public class XFTTable implements XFTTableI {
         t.setNumRows(numRows);
 
         return t;
+    }
+
+    /**
+     * Sets the flag that this table is already sorted
+     * Ref: XNAT-7798
+     *
+     * @param sorted Flag to set the sorted status of the XFTTable
+     */
+    public void isSorted(final boolean sorted) {
+        isSorted = sorted;
+    }
+
+
+    /**
+     * Gets the table sorted status
+     * Ref: XNAT-7798
+     * @return boolean - False(default): Table is not sorted; True: Table is sorted
+     */
+    public boolean isSorted() {
+        return isSorted;
     }
 
     /**

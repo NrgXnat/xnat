@@ -506,7 +506,7 @@ public abstract class SecureResource extends Resource {
 
     public Representation representTable(XFTTable table, MediaType mt, Hashtable<String, Object> params, Map<String, Map<String, String>> columnProperties) {
         if (table != null) {
-            if (getQueryVariable("sortBy") != null) {
+            if (getQueryVariable("sortBy") != null && !table.isSorted()) {
                 final String sortBy = getQueryVariable("sortBy");
                 table.sort(Arrays.asList(StringUtils.split(sortBy, ',')));
                 if (isQueryVariable("sortOrder", "DESC", false) && !mt.equals(APPLICATION_XLIST)) {

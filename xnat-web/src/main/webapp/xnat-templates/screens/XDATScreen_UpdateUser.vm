@@ -5,6 +5,10 @@
 #* @vtlvariable name="unathenticated" type="java.lang.Boolean" *#
 #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="login_methods" type="java.util.Collection" *#
+#* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+
+
 #if ($expired || $forgot || $unathenticated)
     $!data.getTemplateInfo().setLayoutTemplate("Noninteractive.vm")
 #end
@@ -18,6 +22,7 @@
 #elseif ($data.message)
 <div class="$msgClass">$data.message</div><br>
 #end
+
 
 #if($expired)
     <div class="alert">Your password has expired. Please create a new one.</div>
@@ -37,6 +42,9 @@
     <div id="user-change-password" class="html-template">
         #parse("screens/XDATScreen_password.vm")
     </div>
+    <div id="user-change-password-not-allowed">
+    </div>
+
 
     #addGlobalCustomScreens("userProfile")
         
@@ -48,8 +56,6 @@
         XNAT.app.userCache.init();
     </script>
     <div class="clearfix clear"></div>
-##    #parse("screens/XDATScreen_aliasTokens.vm")
-
 
 #end
 

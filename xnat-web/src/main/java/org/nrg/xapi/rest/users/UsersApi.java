@@ -157,10 +157,13 @@ public class UsersApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user profile."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
-    @XapiRequestMapping(value = "authDetails/{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Admin)
-    @AuthDelegate(UserResourceXapiAuthorization.class)
+    @XapiRequestMapping(value = "authDetails/{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
     @ResponseBody
-    public List<UserAuth> usersAuthDetailsGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws DataFormatException {
+    public List<UserAuth> usersAuthDetailsGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws InsufficientPrivilegesException, DataFormatException {
+        final UserI user = getSessionUser();
+        if (!Roles.isSiteAdmin(user) && !StringUtils.equalsIgnoreCase(username, user.getUsername())) {
+            throw new InsufficientPrivilegesException(user.getUsername(), username, "The user " + user.getUsername() + " attempted to get authentication details  for user " + username + ". This requires administrator privileges.");
+        }
         if (!Users.isValidUsername(username)) {
             throw new DataFormatException("Invalid username");
         }

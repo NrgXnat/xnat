@@ -168,13 +168,27 @@ var XNAT = getObject(XNAT || {});
         userProfile.tabSet = XNAT.spawner.spawn({ userProfileSettings: userProfileTabSet });
         userProfile.tabSet.render($container);
 
-        var emailForm = $('#user-change-email').detach();
+        let emailForm = $('#user-change-email').detach();
         emailForm.removeClass('html-template').appendTo($('#user-email-container'));
+        let username = window.username || XNAT.data.username || 'false';
 
-        var passwordForm = $('#user-change-password').detach();
-        passwordForm.removeClass('html-template').appendTo($('#user-password-container'));
-
-        // userProfile.showSubscriptionList();
+        XNAT.xhr.get({
+            url: XNAT.url.restUrl('xapi/users/authDetails/'+username),
+            async: false,
+            fail: function(e){
+                errorHandler(e, 'Could not fetch authentication method');
+            },
+            success: function(data){
+                const hasLocalDB = data.some(el => el.authMethod === 'localdb');
+                let passwordForm = $('#user-change-password').detach();
+                if (hasLocalDB) {
+                    passwordForm.removeClass('html-template').appendTo($('#user-password-container'));
+                }else {
+                    passwordForm.hide();
+                    $('#user-change-password-not-allowed').html('Configured authentication provider for this user account does not allow password change through this interface. Please contact your site administrator for assistance.').appendTo($('#user-password-container'));
+                }
+            }
+        })
 
         XNAT.ui.tab.activate('user-profile-tab');
     };

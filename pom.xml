@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.8.8.2-RC-SNAPSHOT</version>
+    <version>1.8.8.2</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -65,7 +65,7 @@
         <signing.tsa>https://timestamp.digicert.com</signing.tsa>
 
         <xnat.version>1.8.8</xnat.version>
-        <xnatfix.version>1.8.8.2-RC-SNAPSHOT</xnatfix.version>
+        <xnatfix.version>1.8.8.2</xnatfix.version>
 
         <!-- XNAT core library versions -->
         <xnat-web.version>${xnatfix.version}</xnat-web.version>

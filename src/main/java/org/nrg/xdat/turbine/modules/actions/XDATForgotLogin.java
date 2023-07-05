@@ -196,12 +196,16 @@ public class XDATForgotLogin extends VelocitySecureAction {
     }
 
     private boolean userAccountIsManagedExternally(final String username, final RunData data) {
-        final List<XdatUserAuth> userAuths = _userAuthService.getUsersByName(username);
+        List<XdatUserAuth> userAuths = _userAuthService.getUsersByName(username);
+        //The OpenID Plugin will create a user with auth_user which contains a | character
+        //XNAT would replace the | character with _ and display the xdat_username in all screens
+        if (userAuths == null || userAuths.isEmpty()) {
+            userAuths = _userAuthService.getUsersByXdatUsername(username);
+        }
         if (userAuths == null) {
             // let this fall through to downstream check for user existence
             return false;
         }
-
         // As long as there's a localdb login with the specified username, we're good.
         if (userAuths.stream().anyMatch(auth -> auth.getAuthMethod().equals(XdatUserAuthService.LOCALDB))) {
             return false;

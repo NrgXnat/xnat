@@ -79,7 +79,7 @@ public class ReportIssue extends SecureAction {
 
     private Map<String, File> getAttachmentMap(final String sessionId, final ParameterParser parameters) {
         final FileItem fileItem = parameters.getFileItem("upload");
-        if (fileItem == null || ((!(fileItem instanceof DiskFileItem) || !((DiskFileItem) fileItem).getStoreLocation().exists()) && fileItem.getSize() <= 0)) {
+        if (fileItem == null || ((!(fileItem instanceof DiskFileItem) || ((DiskFileItem) fileItem).getStoreLocation() == null) && fileItem.getSize() <= 0)) {
             return Collections.emptyMap();
         }
 

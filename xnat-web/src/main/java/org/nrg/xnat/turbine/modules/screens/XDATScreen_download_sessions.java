@@ -172,7 +172,12 @@ public class XDATScreen_download_sessions extends SecureScreen {
     }
 
     private List<List<String>> mapToList(Map<String, Integer> source) {
-        return source.entrySet().stream().map(e -> Arrays.asList(e.getKey(), e.getValue().toString())).collect(Collectors.toList());
+        return source.entrySet().stream().map(e -> {
+            List<String> item = new ArrayList<>();
+            item.add(e.getKey());
+            item.add(e.getValue().toString());
+            return item;
+        }).collect(Collectors.toList());
     }
 
     private String getPrimaryProject(final UserI user, final String experimentId) {

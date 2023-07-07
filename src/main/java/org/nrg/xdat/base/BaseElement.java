@@ -12,6 +12,8 @@ package org.nrg.xdat.base;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -122,7 +124,8 @@ public abstract class BaseElement extends ItemWrapper implements ItemI, Serializ
     }
 
     public JsonNode getJSONProperty(String xmlPath) throws Exception {
-        return objectMapper.readTree(getItem().getStringProperty(xmlPath));
+        final String value = getItem().getStringProperty(xmlPath);
+        return StringUtils.isNotBlank(value) ? objectMapper.readTree(value) : null;
     }
 
 	public void setBooleanProperty(String xmlPath,boolean value) throws Exception
@@ -507,7 +510,7 @@ public abstract class BaseElement extends ItemWrapper implements ItemI, Serializ
     public UserI getInsertUser(){
         return this.getItem().getInsertUser();
     }
-    
+
 	public SecurityValues getSecurityTags(){
 		return new SecurityValues();
 	}

@@ -11,19 +11,35 @@
 #* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
 <!-- BEGIN xnat-templates/screens/Login.vm -->
 
+#macro (displayForgotLogin $providers)
+   #* @vtlvariable name="providers" type="java.util.Collection" *#
+   #* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+<!-- BEGIN xnat-templates/screens/Login.vm@displayForgotLogin -->
+   #set($showForgotLogin = 0)
+   #if ($providers)
+          #if(!$providers.isEmpty())
+            #foreach ($provider in $providers)
+               #if ($provider.getAuthMethod().equals("localdb"))
+                 #set($showForgotLogin = 1)
+               #end
+            #end
+          #end
+   #end
+   #if ($showForgotLogin == 1)
+      <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
+   #end
+<!-- END xnat-templates/screens/Login.vm@displayForgotLogin -->
+#end
+
 #macro (showProviders $providers)
     #* @vtlvariable name="providers" type="java.util.Collection" *#
     #* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
 <!-- BEGIN xnat-templates/screens/Login.vm@showProviders -->
-    #if($providers)
-        #if($providers.isEmpty())
-        <!-- THERE ARE PROVIDERS BUT NONE WOW!! -->
-        <input type="hidden" id="login_method" name="login_method" value="localdb">
-        #elseif($providers.size() == 1)
+    #if($providers.size() == 1)
         <!-- THERE IS ONE PROVIDER!! -->
-            #set($provider = $providers.iterator().next())
+         #set($provider = $providers.iterator().next())
         <input type="hidden" id="login_method" name="login_method" value="$provider.providerId"/>
-        #else
+    #else
         <!-- THERE ARE $providers.size() PROVIDERS!! -->
         <label for="login_method">Login</label>
         <select id="login_method" class="xnat-menu" data-menu-opts="width:160px" name="login_method">
@@ -31,33 +47,87 @@
                 <option value="$provider.providerId">$provider.name</option>
             #end
         </select>
-        #end
-    #else
-    <!-- THERE ARE NO PROVIDERS!! -->
     #end
 <!-- END xnat-templates/screens/Login.vm@showProviders -->
 #end
-#macro (displayLoginLinks $providers)
+
+#macro (displayLoginLinks $providers $linked_providers)
     #* @vtlvariable name="providers" type="java.util.Collection" *#
+    #* @vtlvariable name="linked_providers" type="java.util.Collection" *#
     #* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
     <!-- BEGIN xnat-templates/screens/Login.vm@displayLoginLinks -->
-    #if($providers)
-        #if(!$providers.isEmpty())
-        <div id="login_auth_providers">
-            #foreach ($provider in $providers)
-                #if($provider.hasLink())
-                    <div id="auth-provider-$provider.providerId">
-                        $provider.link
-                    </div>
+    #if($linked_providers)
+        #if(!$linked_providers.isEmpty())
+            <div id="login_auth_providers">
+                #foreach ($provider in $linked_providers)
+                    #if($provider.hasLink())
+                        <div id="auth-provider-$provider.providerId">
+                            $provider.link
+                        </div>
+                    #end
                 #end
-            #end
-            <fieldset class="divider">
-                <legend>OR</legend>
-            </fieldset>
-        </div>
+            </div>
         #end
     #end
+    #if ($linked_providers and !$linked_providers.isEmpty() and $providers and !$providers.isEmpty())
+        <fieldset class="divider">
+            <legend>OR</legend>
+        </fieldset>
+    #end
     <!-- END xnat-templates/screens/Login.vm@displayLoginLinks -->
+#end
+
+#macro (displayLoginForm $providers $linked_providers)
+    #* @vtlvariable name="providers" type="java.util.Collection" *#
+    #* @vtlvariable name="linked_providers" type="java.util.Collection" *#
+    #* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+    #displayLoginLinks($providers $linked_providers)
+    #if ($providers and !$providers.isEmpty())
+                <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
+                    #showProviders($providers)
+                    <p>
+                        <label for="username">User</label>
+                        <input type="text"
+                               id="username"
+                               name="username"
+                               title="User"
+                               data-validate="not-empty"
+                               data-message="Username cannot be blank.">
+                    </p>
+                    <p>
+                        <label for="password">Password</label>
+                        <input type="password"
+                               id="password"
+                               name="password"
+                               autocomplete="off"
+                               title="Password"
+                               data-validate="not-empty"
+                               data-message="Password cannot be blank.">
+                    </p>
+
+                    <p class="form-submit">
+                <span id="register_forgot" style="float:left">
+                    #if(!$siteConfig.securityNewUserRegistrationDisabled)
+                    <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
+                    #end
+                    #displayForgotLogin($login_methods)
+                    <a href="#" id="loginBoxMoreOptionsBtn" onclick="$('#loginBoxMoreOptions').slideToggle('fast')">More Options</a>
+                </span>
+                        <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
+                    </p>
+                    <input type="hidden" name="XNAT_CSRF" value="">
+                </form>
+            </div>
+            <div id="loginBoxMoreOptions">
+                <ul>
+                    #foreach($screenProps in $turbineUtils.getTemplates("loginBoxMoreOptions"))
+                        #set($templateFileName=$screenProps.getProperty("path"))
+                        #parse("/screens/$templateFileName")
+                    #end
+                </ul>
+            </div>
+        </div>
+    #end
 #end
 
 #set ($siteId = $siteConfig.siteId)
@@ -132,7 +202,7 @@ $page.addAttribute("onLoad", "document.getElementById('username').focus();")
             </div>
             <div class="clear" style="margin:2em 0;"></div>
             <div id="login_box">
-                #displayLoginLinks($linked_logins)
+                #displayLoginLinks($login_methods $linked_logins)
                 <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
                     #showProviders($login_methods)
                     <p>
@@ -207,52 +277,8 @@ $page.addAttribute("onLoad", "document.getElementById('username').focus();")
                         <strong>Note: </strong> $data.getMessage()
                     </div>
                 #end
-                #displayLoginLinks($linked_logins)
-                <form name="form1" method="post" action="$content.getURI("/login")" class="noHide friendlyForm validate" id="login_form">
-                    #showProviders($login_methods)
-                    <p>
-                        <label for="username">User</label>
-                        <input type="text"
-                               id="username"
-                               name="username"
-                               title="User"
-                               data-validate="not-empty"
-                               data-message="Username cannot be blank.">
-                    </p>
-                    <p>
-                        <label for="password">Password</label>
-                        <input type="password"
-                               id="password"
-                               name="password"
-                               autocomplete="off"
-                               title="Password"
-                               data-validate="not-empty"
-                               data-message="Password cannot be blank.">
-                    </p>
-
-                    <p class="form-submit">
-                <span id="register_forgot" style="float:left">
-                    #if(!$siteConfig.securityNewUserRegistrationDisabled)
-                    <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
-                    #end
-                <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
-                    <a href="#" id="loginBoxMoreOptionsBtn" onclick="$('#loginBoxMoreOptions').slideToggle('fast')">More Options</a>
-                </span>
-                        <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
-                    </p>
-                    <input type="hidden" name="XNAT_CSRF" value="">
-                </form>
-            </div>
-            <div id="loginBoxMoreOptions">
-                <ul>
-                    #foreach($screenProps in $turbineUtils.getTemplates("loginBoxMoreOptions"))
-                        #set($templateFileName=$screenProps.getProperty("path"))
-                        #parse("/screens/$templateFileName")
-                    #end
-                </ul>
-            </div>
-        </div>
-        <div class="clear"></div>
+                #displayLoginForm($login_methods $linked_logins)
+                 <div class="clear"></div>
     #end
 </div>
 

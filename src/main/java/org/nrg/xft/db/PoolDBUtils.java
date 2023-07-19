@@ -621,22 +621,24 @@ public class PoolDBUtils {
 	 * @param login  The login name of the user creating the cache.
 	 */
 	public static void CreateCache(String dbName, String login) {
-		try {
-			synchronized (ITEM_CACHE_MUTEX) {
-				final boolean exists = (boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_EXISTS, "cache_exists", dbName, login);
-				if (exists) {
-					if (!(boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_HAS_ID, "cache_has_id", dbName, login)) {
-						PoolDBUtils.ExecuteNonSelectQuery(QUERY_ITEM_CACHE_ADD_ID, dbName, login);
+		if(!ITEM_CACHE_EXISTS) {
+			try {
+				synchronized (ITEM_CACHE_MUTEX) {
+					final boolean exists = (boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_EXISTS, "cache_exists", dbName, login);
+					if (exists) {
+						if (!(boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_HAS_ID, "cache_has_id", dbName, login)) {
+							PoolDBUtils.ExecuteNonSelectQuery(QUERY_ITEM_CACHE_ADD_ID, dbName, login);
+						}
+					} else {
+						PoolDBUtils.ExecuteNonSelectQuery(QUERY_CREATE_ITEM_CACHE, dbName, login);
 					}
-				} else {
-					PoolDBUtils.ExecuteNonSelectQuery(QUERY_CREATE_ITEM_CACHE, dbName, login);
+					ITEM_CACHE_EXISTS = true;
 				}
-				ITEM_CACHE_EXISTS = true;
+			} catch (SQLException e) {
+				logger.error("An database or SQL error occurred trying to validate or create the XNAT item cache.", e);
+			} catch (Exception e) {
+				logger.error("An unknown error occurred trying to create the XNAT item cache.", e);
 			}
-		} catch (SQLException e) {
-			logger.error("An database or SQL error occurred trying to validate or create the XNAT item cache.", e);
-		} catch (Exception e) {
-			logger.error("An unknown error occurred trying to create the XNAT item cache.", e);
 		}
 	}
 

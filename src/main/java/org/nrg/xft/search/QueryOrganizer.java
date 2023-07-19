@@ -104,14 +104,14 @@ public class QueryOrganizer implements QueryOrganizerI{
         + "\tFROM xnat_imageScanData table20 \n"
         + "              LEFT JOIN xnat_imageScanData_meta_data meta ON table20.imageScanData_info = meta.meta_data_id \n"
         + "              LEFT JOIN xnat_imageScanData_share table40 ON table20.xnat_imagescandata_id = table40.sharing_share_xnat_imagescandat_xnat_imagescandata_id \n"
-        + "              RIGHT JOIN %1$s root ON table20.xnat_imagescandata_id=root.xnat_imagescandata_id\n"
+        + "              JOIN %1$s root ON table20.xnat_imagescandata_id=root.xnat_imagescandata_id\n"
         + "              WHERE (table20.project IN (SELECT field_value FROM P_%1$s) OR table40.project IN (SELECT field_value FROM P_%1$s))";
 
     static final String EXPERIMENT_QUERY = " SELECT root.*\n"
         + "\tFROM xnat_experimentData table20 \n"
         + "              LEFT JOIN xnat_experimentData_meta_data meta ON table20.experimentData_info=meta.meta_data_id \n"
         + "              LEFT JOIN xnat_experimentData_share table40 ON table20.id = table40.sharing_share_xnat_experimentDa_id \n"
-        + "              RIGHT JOIN %1$s root ON table20.id=root.id\n"
+        + "              JOIN %1$s root ON table20.id=root.id\n"
         + "              WHERE (table20.project IN (SELECT field_value FROM P_%1$s) OR table40.project IN (SELECT field_value FROM P_%1$s))";
 
     static final String SUBJECT_QUERY="SELECT xnat_subjectData.* \n"
@@ -129,26 +129,26 @@ public class QueryOrganizer implements QueryOrganizerI{
         + "     LEFT JOIN xnat_subjectData_meta_data meta ON xnat_subjectData.subjectData_info = meta.meta_data_id \n"
         + "     WHERE (xpp.project IN (SELECT field_value FROM P_XNAT_SUBJECTDATA))";
 
-    static final String PROJ_SUBJ_QUERY="SELECT DISTINCT ON (id) xnat_subjectData.* \n"
+    static final String PROJ_SUBJ_QUERY="SELECT xnat_subjectData.* \n"
         + "\tFROM xnat_subjectData\n"
         + "        LEFT JOIN xnat_subjectData_meta_data meta ON xnat_subjectData.subjectData_info = meta.meta_data_id \n"
-        + "\tLEFT JOIN xnat_projectParticipant xpp ON xnat_subjectData.id=xpp.subject_id\n"
+        + "\tLEFT JOIN xnat_projectParticipant xpp ON xnat_subjectData.id=xpp.subject_id AND xpp.project='%1$s'\n"
         + "\tWHERE (xnat_subjectData.project='%1$s' OR xpp.project='%1$s')";
     private static final String PROJ_SUBJ_QUERY1 ="SELECT xnat_subjectData.* FROM xnat_subjectData WHERE project = '%1$s'";
     private static final String PROJ_SUBJ_QUERY2 ="SELECT xnat_subjectData.* FROM xnat_projectParticipant xpp LEFT JOIN xnat_subjectdata ON xpp.subject_id=xnat_subjectdata.id WHERE xpp.project = '%1$s'";
 
-    static  final String PROJ_EXPT_QUERY="SELECT DISTINCT ON (id) root.* \n"
+    static  final String PROJ_EXPT_QUERY="SELECT root.* \n"
         + "\tFROM xnat_experimentData expt\n"
         + "              LEFT JOIN xnat_experimentData_meta_data meta ON expt.experimentData_info=meta.meta_data_id \n"
-        + "\tLEFT JOIN xnat_experimentData_share xpp ON expt.id=xpp.sharing_share_xnat_experimentda_id\n"
-        + " RIGHT JOIN %2$s root ON expt.id=root.id"
+        + "\tLEFT JOIN xnat_experimentData_share xpp ON expt.id=xpp.sharing_share_xnat_experimentda_id AND xpp.project='%1$s'\n"
+        + " JOIN %2$s root ON expt.id=root.id"
         + "\tWHERE (expt.project='%1$s' OR xpp.project='%1$s')";
 
-    static final String PROJ_SCAN_QUERY="SELECT DISTINCT ON (id) root.* \n"
+    static final String PROJ_SCAN_QUERY="SELECT root.* \n"
         + "\tFROM xnat_imageScanData\n"
         + "              LEFT JOIN xnat_imageScanData_meta_data meta ON xnat_imageScanData.imageScanData_info = meta.meta_data_id \n"
-        + "\tLEFT JOIN xnat_imageScanData_share xpp ON xnat_imageScanData.xnat_imagescandata_id=xpp.sharing_share_xnat_imagescandat_xnat_imagescandata_id\n"
-        + " RIGHT JOIN %2$s root ON xnat_imageScanData.xnat_imagescandata_id=root.xnat_imagescandata_id"
+        + "\tLEFT JOIN xnat_imageScanData_share xpp ON xnat_imageScanData.xnat_imagescandata_id=xpp.sharing_share_xnat_imagescandat_xnat_imagescandata_id AND xpp.project='%1$s'\n"
+        + " JOIN %2$s root ON xnat_imageScanData.xnat_imagescandata_id=root.xnat_imagescandata_id"
         + "\tWHERE (xnat_imageScanData.project='%1$s' OR xpp.project='%1$s')";
 
     static final String EXPT_NON_ROOT_PERMS="SELECT field_value, xme.xdat_meta_element_id FROM xdat_element_access xea \n"
@@ -203,7 +203,7 @@ public class QueryOrganizer implements QueryOrganizerI{
     static final String PROJ_EXPT_NON_ROOT_QUERY="SELECT DISTINCT ON (id) root.* "
         + "        FROM xnat_experimentData expt"
         + "        LEFT JOIN xnat_experimentData_meta_data meta ON expt.experimentData_info=meta.meta_data_id "
-        + "        LEFT JOIN xnat_experimentData_share xpp ON expt.id=xpp.sharing_share_xnat_experimentda_id"
+        + "        LEFT JOIN xnat_experimentData_share xpp ON expt.id=xpp.sharing_share_xnat_experimentda_id AND xpp.project='%1$s'"
         + "        JOIN %2$s root ON expt.id=root.id"
         + "        WHERE (expt.project='%1$s' OR xpp.project='%1$s') AND expt.extension IN (SELECT xdat_meta_element_id FROM P_%2$s) ";
     static final String PROJ_EXPT_NON_ROOT_QUERY1="SELECT DISTINCT ON (id) root.* "
@@ -644,7 +644,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     return withClause.toString();
                 }
             }
-        }else if (getRootQueries().containsKey(permROOTName) && project==null){
+        }else if ((!ElementSecurity.IsSecureElement(getRootElement().getFullXMLName())) && getRootQueries().containsKey(permROOTName) && project==null && (this.getWhere() == null || this.getWhere().numClauses()==0)){
             boolean modified = false;
             if(getRootQueries().containsKey(rootDatatype) && query.indexOf(origROOTName)>-1){
                 if(getRootElement().instanceOf(XNAT_SUBJECT_DATA)){
@@ -1373,15 +1373,8 @@ public class QueryOrganizer implements QueryOrganizerI{
             }
         }
 
-        //now we need to wrap query for distinct rows
-        StringBuilder securityQuery = new StringBuilder("SELECT DISTINCT ON (");
-        //distinct on each primary key field
-        for (int i=0;i<keyXMLFields.size();i++){
-            if (i>0) securityQuery.append(", ");
-            securityQuery.append(securityQO.getFieldAlias((String) keyXMLFields.get(i)));
-        }
-
-        securityQuery.append(") * FROM (").append(subQuery).append(") SECURITY");
+            //now we need to wrap query for distinct rows
+            StringBuilder securityQuery = new StringBuilder("SELECT * FROM (").append(subQuery).append(") SECURITY");
         return securityQuery;
     }
 

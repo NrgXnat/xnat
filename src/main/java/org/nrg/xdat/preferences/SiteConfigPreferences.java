@@ -2031,6 +2031,45 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "true")
+    public boolean getDefaultToSortedListings() {
+        return getBooleanValue("defaultToSortedListings");
+    }
+
+    public void setDefaultToSortedListings(final boolean defaultToSortedListings) {
+        try {
+            setBooleanValue(defaultToSortedListings, "defaultToSortedListings");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'defaultToSortedListings': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true")
+    public boolean getAddCountFieldsToProjectListings() {
+        return getBooleanValue("addCountFieldsToProjectListings");
+    }
+
+    public void setAddCountFieldsToProjectListings(final boolean addCountFieldsToProjectListings) {
+        try {
+            setBooleanValue(addCountFieldsToProjectListings, "addCountFieldsToProjectListings");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'addCountFieldsToProjectListings': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getDefaultToPagedRestfulLists() {
+        return getBooleanValue("defaultToPagedRestfulLists");
+    }
+
+    public void setDefaultToPagedRestfulLists(final boolean defaultToPagedRestfulLists) {
+        try {
+            setBooleanValue(defaultToPagedRestfulLists, "defaultToPagedRestfulLists");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'defaultToPagedRestfulLists': something is very wrong here.", e);
+        }
+    }
+
     public boolean isComplete() {
         return getMissingInitSettings().size() == 0;
     }

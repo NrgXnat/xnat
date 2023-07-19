@@ -422,7 +422,7 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 			}
 
 		Hashtable<String,Object> params= new Hashtable<>();
-		if (table != null)
+		if (table != null && !hasOffset)
 			params.put("totalRecords", table.size());
 		return this.representTable(table, overrideVariant(variant), params);
 	}

@@ -1316,48 +1316,35 @@ searchPerformance:
     contentType: json
     contents:
         sortedListing:
-            kind: panel.element
+            kind: panel.input.switchbox
+            name: defaultToSortedListings
+            onText: Enabled
+            offText: Disabled
+            checked: true
             label: "Search Listings should be sorted by default"
-            info: >
-                <p>Sorting of tables can add several seconds onto larger queries.  On small instances, this isn't an issue.  But on servers with millions of entries, this can impact performance</p>
-                <p>This setting determines whether all site listings are sorted by default (on initial access).  Set to 'False' on large instances.</p>
-                <p>Default: True</p>
-            contents:
-                defaultToSortedListings:
-                    kind: select.single
-                    name: defaultToSortedListings
-                    options:
-                        true: True
-                        false: False
+            description: >
+                <p>Sorting of tables can add several seconds onto larger queries.  On small instances, this isn't an issue.  But on servers with millions of entries, this can impact performance. This setting determines whether all data listings are sorted by default (on initial access).  Set to 'Disabled' on large instances.</p>
+                <p>Default: Enabled</p>
         countsOnProject:
-            kind: panel.element
-            label: "Project level listings should include summary counts for child objects"
-            info: >
-                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Disabling count fields can improve performance</p>
-                <p>This setting determines whether count fields (like MR Count) should be included in project level listings (like Subjects).</p>
-                <p>Default: True</p>
-            contents:
-                addCountFieldsToProjectListings:
-                    kind: select.single
-                    name: addCountFieldsToProjectListings
-                    options:
-                        true: True
-                        false: False
+            kind: panel.input.switchbox
+            label: "Project data listings include summary counts"
+            name: addCountFieldsToProjectListings
+            onText: Enabled
+            offText: Disabled
+            checked: true
+            description: >
+                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Disabling count fields can improve performance.  This setting determines whether count fields (like MR Count) should be included in project level listings (like Subjects). If Enabled, counts of child objects will be automatically included in project data listings. If Disabled, counts of child objects will only be available if display documents are manually configured to add them. Note: This doesn't effect site-wide listings, which are managed entirely by display documents.</p>
+                <p>Default: Enabled</p>
         pagedRestLists:
-            kind: panel.element
-            label: "Default to paged results in /data/experiments and /data/subjects results"
-            info: >
-                <p>Listing all experiments or subjects (site-wide) while preserving secured access can be quite expensive on larger servers</p>
-                <p>Using paged results is much more performant and prevents unintential Denial-of-service requests</p>
-                <p>It defaults to false for backwards consistency, but should be set to true on larger servers (>100,000 experiments)</p>
-                <p>Default: False</p>
-            contents:
-                defaultToPagedRestfulLists:
-                    kind: select.single
-                    name: defaultToPagedRestfulLists
-                    options:
-                        true: True
-                        false: False
+            kind: panel.input.switchbox
+            label: "Default to paged results in RESTful APIs"
+            name: defaultToPagedRestfulLists
+            onText: Enabled
+            offText: Disabled
+            checked: false
+            description: >
+                <p>Listing all experiments (/data/experiments) or subjects (/data/subjects) in the database while preserving secured access can be quite expensive on larger servers.  Using paged results is much more performant and prevents unintentional Denial-of-service requests.  It defaults to false for backwards consistency, but should be set to true on larger servers (>100,000 experiments)</p>
+                <p>Default: Disabled</p>
 
 ## THEMES
 

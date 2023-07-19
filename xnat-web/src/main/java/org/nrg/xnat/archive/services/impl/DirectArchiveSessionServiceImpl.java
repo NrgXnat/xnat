@@ -75,6 +75,10 @@ import static org.nrg.xnat.archive.Operation.Separate;
 public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionService {
     private static final Map<String, Object> EMPTY_MAP = Collections.emptyMap();
 
+    private final Object subjectLock = new Object();
+
+    private final Object createLock = new Object();
+
     @Autowired
     public DirectArchiveSessionServiceImpl(final DirectArchiveSessionHibernateService directArchiveSessionHibernateService,
                                            final JmsTemplate jmsTemplate,
@@ -117,16 +121,18 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     @Override
     public SessionData getOrCreate(SessionData incoming, AtomicBoolean isNew) throws ArchivingException {
         boolean     created = false;
-        SessionData session;
-        synchronized (this) {
-            session = directArchiveSessionHibernateService.findBySessionData(incoming);
-            if(session == null) {
-                if(Files.exists(Paths.get(incoming.getUrl()))) {
-                    throw new ArchivingException("Cannot direct archive session " + incoming.getSessionDataTriple() +
-                                                 " because data already exists in " + incoming.getUrl());
+        SessionData session = directArchiveSessionHibernateService.findBySessionData(incoming);
+        if(session == null) {
+            synchronized (createLock) {
+                session = directArchiveSessionHibernateService.findBySessionData(incoming);
+                if (session == null) {
+                    if (Files.exists(Paths.get(incoming.getUrl()))) {
+                        throw new ArchivingException("Cannot direct archive session " + incoming.getSessionDataTriple() +
+                            " because data already exists in " + incoming.getUrl());
+                    }
+                    session = directArchiveSessionHibernateService.create(incoming);
+                    created = true;
                 }
-                session = directArchiveSessionHibernateService.create(incoming);
-                created = true;
             }
         }
         if(!created) {
@@ -300,27 +306,26 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         UserI  user             = c.getUser();
         String project          = session.getProject();
         String subjectLabelOrId = StringUtils.firstNonBlank(session.getSubjectId(), session.getDcmpatientname());
-        synchronized (this) {
-            // try by ID
-            XnatSubjectdata existing = XnatSubjectdata.getXnatSubjectdatasById(subjectLabelOrId, user, false);
-            if(existing == null) {
-                // try by label
-                existing = XnatSubjectdata.GetSubjectByProjectIdentifierCaseInsensitive(session.getProject(),
-                                                                                        subjectLabelOrId, user, false);
-            }
-            if(existing != null) {
-                session.setSubjectId(existing.getId());
-                return;
-            }
-            final XnatSubjectdata subject = new XnatSubjectdata(user);
-            subject.setProject(project);
-            subject.setLabel(subjectLabelOrId);
+        XnatSubjectdata subject = XnatSubjectdata.GetSubjectByIdOrProjectlabelCaseInsensitive(project,subjectLabelOrId,user,false);
 
-            subject.setId(XnatSubjectdata.CreateNewID());
-            SaveItemHelper.authorizedSave(subject, user, false, false, c);
-            XDAT.triggerXftItemEvent(subject, CREATE);
-            session.setSubjectId(subject.getId());
+        if(subject == null) {
+            synchronized (subjectLock) {
+                //recheck for subject
+                subject = XnatSubjectdata.GetSubjectByIdOrProjectlabelCaseInsensitive(project,subjectLabelOrId,user,false);
+
+                if(subject == null) {
+                    subject = new XnatSubjectdata(user);
+                    subject.setProject(project);
+                    subject.setLabel(subjectLabelOrId);
+
+                    subject.setId(XnatSubjectdata.CreateNewID());
+                    SaveItemHelper.authorizedSave(subject, user, false, false, c);
+                    XDAT.triggerXftItemEvent(subject, CREATE);
+                }
+            }
         }
+
+        session.setSubjectId(subject.getId());
     }
 
     private void setSessionId(XnatImagesessiondata session) throws Exception {

@@ -105,7 +105,7 @@ public class SubjectListResource extends QueryOrganizerResource {
 
 		MediaType mt = overrideVariant(variant);
 		Hashtable<String, Object> params = new Hashtable<>();
-		if (table != null)
+		if (table != null && !hasOffset)
 			params.put("totalRecords", table.size());
 		return this.representTable(table, mt, params);
 	}

@@ -119,7 +119,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
         }
 
         MediaType mt = overrideVariant(variant);
-        if(table!=null) {
+        if(table!=null && !hasOffset) {
             params.put("totalRecords", table.size());
         }
         return representTable(table, mt, params);

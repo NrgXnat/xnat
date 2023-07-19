@@ -1708,7 +1708,10 @@ public abstract class SecureResource extends Resource {
                     WorkflowUtils.fail(wrk, c);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                 } else {
-                    XDAT.triggerXftItemEvent(item, DELETE, ImmutableMap.of("target", project.getId()));
+                    if(StringUtils.equals(project.getId(),((ArchivableItem) item).getProject())) {
+                        //only issue DELETE event if it was being deleted from the root projecct
+                        XDAT.triggerXftItemEvent(item, DELETE, ImmutableMap.of("target", project.getId()));
+                    }
                     WorkflowUtils.complete(wrk, c);
                 }
             } catch (Exception e) {
@@ -2004,36 +2007,37 @@ public abstract class SecureResource extends Resource {
     }
 
     private XnatProjectdata getProjectById(final String projectId) throws NotFoundException {
-        return Optional.ofNullable(XnatProjectdata.getXnatProjectdatasById(projectId, getUser(), false)).orElseThrow(() -> new NotFoundException(projectId));
+        return Optional.ofNullable(XnatProjectdata.getXnatProjectdatasById(projectId, getUser(),false)).orElseThrow(() -> new NotFoundException(projectId));
     }
 
-    protected String buildOffsetFromParams(final boolean defaultToPaged){
-        final Boolean allowDefaultPaging = XDAT.getBoolSiteConfigurationProperty("defaultToPagedRestfulLists",false);
+    protected String buildOffsetFromParams(final boolean allowDefaultPaging){
+        final Boolean defaultToPaged = XDAT.getBoolSiteConfigurationProperty("defaultToPagedRestfulLists",false);
         //inject paging
-        Long page = (allowDefaultPaging && defaultToPaged)? DEFAULT_PAGE_NUM :null;
-        Long rows = (allowDefaultPaging && defaultToPaged)? DEFAULT_PAGE_SIZE :null;
-        if(this.hasQueryVariable("page") || this.hasQueryVariable("rows")) {
-            final String pageS = this.getQueryVariable("page");
-            if (pageS == null) {
-                page = DEFAULT_PAGE_NUM;
-            }else if (StringUtils.equals("*", pageS)) {
-                page = null;
+        Long offset = (allowDefaultPaging && defaultToPaged)? DEFAULT_PAGE_NUM :null;
+        Long limit = (allowDefaultPaging && defaultToPaged)? DEFAULT_PAGE_SIZE :null;
+        if(this.hasQueryVariable("limit") || this.hasQueryVariable("offset")) {
+            final String offsetS = this.getQueryVariable("offset");
+            if (offsetS == null) {
+                offset = DEFAULT_PAGE_NUM;
+            }else if (StringUtils.equals("*", offsetS)) {
+                offset = null;
             }else{
-                page = Long.valueOf(pageS);
+                offset = Long.valueOf(offsetS);
             }
 
-            final String rowsS= this.getQueryVariable("rows");
+            final String rowsS= this.getQueryVariable("limit");
             if(rowsS == null){
-                rows = DEFAULT_PAGE_SIZE;
+                limit = DEFAULT_PAGE_SIZE;
             }else if (StringUtils.equals("*", rowsS)) {
-                rows = null;
+                limit = null;
             }else{
-                rows = Long.valueOf(rowsS);
+                limit = Long.valueOf(rowsS);
             }
         }
 
-        if(page != null && rows != null){
-            return " LIMIT "+ rows + " OFFSET " + page;
+        if(offset != null && limit != null && (offset > 0 || limit > 0)){
+            hasOffset=true;
+            return " LIMIT "+ limit + " OFFSET " + offset;
         }else{
             return "";
         }
@@ -2041,6 +2045,7 @@ public abstract class SecureResource extends Resource {
 
     private static final Class<?>[] OBJECT_REPRESENTATION_CTOR_PARAM_TYPES = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};
 
+    protected boolean hasOffset = false;
     private final UserI                      _user;
     private final SerializerService          _serializer;
     private final NamedParameterJdbcTemplate _template;

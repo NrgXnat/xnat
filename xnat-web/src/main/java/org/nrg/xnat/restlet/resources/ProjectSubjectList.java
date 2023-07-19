@@ -259,7 +259,7 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 
 			final MediaType mt = overrideVariant(variant);
 			final Hashtable<String, Object> params = new Hashtable<String, Object>();
-			if (table != null)
+			if (table != null && !hasOffset)
 				params.put("totalRecords", table.size());
 			return this.representTable(table, mt, params);
 		}

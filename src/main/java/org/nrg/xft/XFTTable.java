@@ -9,12 +9,14 @@
 
 package org.nrg.xft;
 
+import java.sql.Time;
 import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.search.SQLClause;
+import org.nrg.xft.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -930,7 +932,13 @@ public class XFTTable implements XFTTableI {
             for (int i = 0; i < this.numCols; i++) {
                 ArrayList<String> columnSpec = columnsWType.get(i);
                 try {
-                    json.put(columnSpec.get(0), ValueParser(row[i]));
+                    if(row[i] instanceof Time){
+                        //XNAT-7784 conversion to capture milliseconds in output
+                        java.util.Date d = new java.util.Date(((Time)row[i]).getTime());
+                        json.put(columnSpec.get(0), DateUtils.format(d,"HH:mm:ss.SSS"));
+                    }else{
+                        json.put(columnSpec.get(0), ValueParser(row[i]));
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

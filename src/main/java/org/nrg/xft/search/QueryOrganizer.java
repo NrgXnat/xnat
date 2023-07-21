@@ -851,18 +851,18 @@ public class QueryOrganizer implements QueryOrganizerI{
                 return _rootQueries.get(e.getXSIType()).getAlias();
             }
 
+            if(skipSecurity){
+                return rootElement.getSQLName();
+            }
+
             if(_rootQueries==null || user==null || user.isGuest()){
                 return getLegacyRootQuery(e,sql_name,level);
             }else if( !(e.instanceOf(XNAT_SUBJECT_DATA) || StringUtils.equals(XNAT_PROJECT_DATA,e.getXSIType()) || StringUtils.equals(XNAT_SUBJECT_DATA,e.getXSIType()) || e.instanceOf(XNAT_EXPERIMENT_DATA) || e.instanceOf(XNAT_IMAGE_SCAN_DATA))) {
                 return getLegacyRootQuery(e,sql_name,level);
             }else {
-                if(this.skipSecurity){
-                    return rootElement.getSQLName();
-                }else{
-                    CachedRootQuery cachedQ = new CachedRootQuery("S_"+e.getSQLName(),getRootQuery(e,sql_name,level));
-                    _rootQueries.put(e.getXSIType(),cachedQ);
-                    return cachedQ.getAlias();
-                }
+                CachedRootQuery cachedQ = new CachedRootQuery("S_"+e.getSQLName(),getRootQuery(e,sql_name,level));
+                _rootQueries.put(e.getXSIType(),cachedQ);
+                return cachedQ.getAlias();
             }
         } catch (XFTInitException e) {
             log.error("An error occurred accessing XFT", e);

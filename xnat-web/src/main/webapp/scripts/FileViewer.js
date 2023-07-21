@@ -970,6 +970,7 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
 		 		var callback={
 			      success:function(oResponse){
 			        oResponse.argument.catNode.cat.files = (eval("(" + oResponse.responseText + ")")).ResultSet.Result;
+			        oResponse.argument.catNode.cat.files = oResponse.argument.catNode.cat.files.sort(function(a,b){ return (a.Name.toLowerCase() < b.Name.toLowerCase()) ? -1 : 1 });
 			        oResponse.argument.catNode.renderFiles();
 			        oResponse.argument.fnLoadComplete();
 			      },

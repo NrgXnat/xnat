@@ -7,9 +7,17 @@
 
 /* XNAT Color Scheme Shims */
 a,
-a:visited { color: var(--link-color); }
+a:visited,
+.xnat-bootstrap a,
+.xnat-bootstrap a:visited,
+.xnat-bootstrap a:not([href]):not([class]),
+.xnat-bootstrap a:not([href]):not([class]):visited { color: var(--link-color); }
 a:hover,
-a:active { color: var(--link-color-hover); }
+a:active,
+.xnat-bootstrap a:hover,
+.xnat-bootstrap a:active,
+.xnat-bootstrap a:not([href]):not([class]):hover,
+.xnat-bootstrap a:not([href]):not([class]):active { color: var(--link-color-hover); text-decoration: none; }
 
 /* Ensure icon font rendering */
 .fa {

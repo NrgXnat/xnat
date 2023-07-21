@@ -31,8 +31,7 @@
     border: 1px solid #848484;
     border-radius: 5px;
     cursor: pointer;
-    height: 18px; width: 105px;
-    margin-left:10px;
+    width: 105px;
     padding: 3px 0;
     text-align:center;
 }

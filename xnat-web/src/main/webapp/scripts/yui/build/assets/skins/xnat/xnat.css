@@ -387,7 +387,7 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-panel .hd { border-bottom: solid 1px #ccc ; }
 
-.yui-skin-sam .yui-panel .bd, .yui-skin-sam .yui-panel .ft { background-color: #F2F2F2 ; }
+.yui-skin-sam .yui-panel .bd, .yui-skin-sam .yui-panel .ft { background-color: #F2F2F2 ; box-sizing: unset; }
 
 .yui-skin-sam .yui-panel .hd { padding: 0 10px ; font-size: /* 93% */ 100% ; line-height: 2 ; *line-height: 1.9 ; font-weight: bold ; color: #000 ; background: url(../images/sprite.png) repeat-x 0 -200px ; }
 

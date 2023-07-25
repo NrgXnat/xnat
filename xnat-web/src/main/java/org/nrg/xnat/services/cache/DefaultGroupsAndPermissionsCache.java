@@ -1516,7 +1516,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         readableExperimentCounts.putAll(readableScanCounts);
         final Long readableSubjectCount = _template.queryForObject(QUERY_USER_READABLE_SUBJECT_COUNT, userIdParameters, Long.class);
 
-        readableExperimentCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, readableSubjectCount);
+        readableExperimentCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, Optional.ofNullable(readableSubjectCount).orElse(0L));
         return readableExperimentCounts;
     }
 

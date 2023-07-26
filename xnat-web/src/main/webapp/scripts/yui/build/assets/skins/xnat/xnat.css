@@ -381,13 +381,13 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-panel-container { padding: 0 1px ; *padding: 2px ; }
 
-.yui-skin-sam .yui-panel { position: relative ; left: 0 ; top: 0 ; border-style: solid ; border-width: 1px 0 ; border-color: #808080 ; z-index: 1 ; *border-width: 1px ; *zoom: 1 ; _zoom: normal ; }
+.yui-skin-sam .yui-panel { position: relative ; left: 0 ; top: 0 ; border-style: solid ; border-width: 1px 0 ; border-color: #808080 ; z-index: 1 ; *border-width: 1px ; *zoom: 1 ; _zoom: normal ; height: fit-content !important; }
 
 .yui-skin-sam .yui-panel .hd, .yui-skin-sam .yui-panel .bd, .yui-skin-sam .yui-panel .ft { border-style: solid ; border-width: 0 1px ; border-color: #808080 ; margin: 0 -1px ; *margin: 0 ; *border: 0 ; }
 
 .yui-skin-sam .yui-panel .hd { border-bottom: solid 1px #ccc ; }
 
-.yui-skin-sam .yui-panel .bd, .yui-skin-sam .yui-panel .ft { background-color: #F2F2F2 ; box-sizing: unset; }
+.yui-skin-sam .yui-panel .bd, .yui-skin-sam .yui-panel .ft { background-color: #F2F2F2 ; box-sizing: unset; height: unset !important; }
 
 .yui-skin-sam .yui-panel .hd { padding: 0 10px ; font-size: /* 93% */ 100% ; line-height: 2 ; *line-height: 1.9 ; font-weight: bold ; color: #000 ; background: url(../images/sprite.png) repeat-x 0 -200px ; }
 

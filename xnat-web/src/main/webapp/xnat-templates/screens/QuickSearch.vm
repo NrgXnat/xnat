@@ -2,10 +2,26 @@
 #set($quickSearchConfig = $siteConfig.getMainPageSearchDatatypeOptions())
 
 <div>
-    $!systemName currently contains $proj_count $displayManager.getPluralDisplayNameForProject().toLowerCase(),
-    $sub_count $displayManager.getPluralDisplayNameForSubject().toLowerCase(),
-    and $isd_count imaging $displayManager.getPluralDisplayNameForImageSession().toLowerCase().
+    <div id="systemCounts" style="display: inline">$nbsp;</div>
+    <div style="display: inline">
+      <i class="fa fa-refresh wf-refresh" title="Recalculate site counts" data-id="755247" data-curstatus="pending" style="cursor:pointer" onclick="XNAT.app.updateTotalCounts();"></i>
+    </div>
 </div>
+<script type="text/javascript">
+  XNAT.app.displayTotalCounts = function (projs, subjs, expts){
+    $("#systemCounts").html("$!systemName currently contains " + projs + " $displayManager.getPluralDisplayNameForProject().toLowerCase(), " + subjs + " $displayManager.getPluralDisplayNameForSubject().toLowerCase(),  and " + expts + " imaging $displayManager.getPluralDisplayNameForImageSession().toLowerCase().");
+  }
+
+  XNAT.app.updateTotalCounts = function () {
+    openModalPanel("totalCountReset","Recalculating counts");
+    jq.getJSON(serverRoot + '/xapi/totalCounts/reset', function(obj){
+      closeModalPanel("totalCountReset")
+      XNAT.app.displayTotalCounts(obj['xnat:projectData'],obj['xnat:subjectData'],obj['xnat:imageSessionData']);
+    })
+  }
+
+  XNAT.app.displayTotalCounts($proj_count, $sub_count, $isd_count);
+</script>
 <br/>
 ## this "spacer" thing is not good
 ## let's make it go away

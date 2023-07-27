@@ -88,6 +88,8 @@ import static org.nrg.xft.event.XftItemEventI.*;
 @Slf4j
 public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
 
+    public static final int SMALL_SERVER_SUBJ_COUNT = 10000;
+
     @Autowired
     public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate, final DatabaseHelper helper) throws SQLException {
         super(cacheManager,
@@ -509,6 +511,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
     }
 
+    private boolean isSmallServer(){
+        return getTotalCounts().get(XnatSubjectdata.SCHEMA_ELEMENT_NAME) < SMALL_SERVER_SUBJ_COUNT;
+    }
+
     /**
      * Finds all user element cache IDs for the specified user and evicts them from the cache.
      *
@@ -713,7 +719,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                 break;
                         }
                     }
-                    resetProjectCount();
+                    resetProjectCount(_totalCounts);
                     return created;
 
                 case UPDATE:
@@ -797,7 +803,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         switch (action) {
             case CREATE:
                 projectIds.add(_template.queryForObject(QUERY_GET_SUBJECT_PROJECT, new MapSqlParameterSource("subjectId", event.getId()), String.class));
-                incrementCount(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
+                resetTotalCounts(() -> incrementCount(XnatSubjectdata.SCHEMA_ELEMENT_NAME));
                 break;
 
             case SHARE:
@@ -812,7 +818,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             case DELETE:
                 projectIds.add((String) event.getProperties().get("target"));
                 handleGroupRelatedEvents(event);
-                decrementCount(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
+                resetTotalCounts(() -> decrementCount(XnatSubjectdata.SCHEMA_ELEMENT_NAME));
                 break;
 
             default:
@@ -931,7 +937,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 target = _template.queryForObject(QUERY_GET_EXPERIMENT_PROJECT, new MapSqlParameterSource("experimentId", event.getId()), String.class);
                 origin = null;
                 projectIds.add(target);
-                incrementCount(xsiType);
+                resetTotalCounts(() -> incrementCount(xsiType));
                 break;
 
             case SHARE:
@@ -944,7 +950,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 target = (String) event.getProperties().get("target");
                 origin = null;
                 projectIds.add(target);
-                decrementCount(xsiType);
+                resetTotalCounts(() -> decrementCount(xsiType));
                 break;
 
             case MOVE:
@@ -1455,38 +1461,49 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return groups;
     }
 
-    private void resetTotalCounts() {
-        _totalCounts.clear();
-        resetProjectCount();
-        resetSubjectCount();
-        resetImageSessionCount();
-        final List<Map<String, Object>> elementCounts = _template.queryForList(EXPT_COUNTS_BY_TYPE, EmptySqlParameterSource.INSTANCE);
-        for (final Map<String, Object> elementCount : elementCounts) {
-            final String elementName = (String) elementCount.get("element_name");
-            final Long   count       = (Long) elementCount.get("count");
-            if(StringUtils.isBlank(elementName)) {
-                log.warn("Found {} elements that are not associated with a valid data type:\n\n{}\n\nYou can correct some of these orphaned experiments by running the query:\n\n{}\n\nAny experiment IDs and data types returned from that query indicate data types that can not be resolved on the system (i.e. they don't exist in the primary data-type table).", count, _template.queryForList(QUERY_ORPHANED_EXPERIMENTS, EmptySqlParameterSource.INSTANCE).stream().map(experiment -> {
-                    final String experimentId = (String) experiment.get("experiment_id");
-                    final String dataType     = (String) experiment.get("data_type");
-                    final int    extensionId  = (Integer) experiment.get("xdat_meta_element_id");
-                    return " * " + experimentId + " was a " + dataType + ", " + (extensionId >= 0 ? "should be extension ID " + extensionId : "data type doesn't appear in xdat_meta_element table");
-                }).collect(Collectors.joining("\n")), QUERY_CORRECT_ORPHANED_EXPERIMENTS);
-            } else {
-                _totalCounts.put(elementName, count);
-            }
+    private void resetTotalCounts(Runnable runnable) {
+        if (isSmallServer()) {
+            resetTotalCounts();
+        } else {
+            runnable.run();
         }
     }
 
-    private void resetProjectCount() {
-        _totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject(PROJECT_COUNTS, EmptySqlParameterSource.INSTANCE, Long.class));
+    public synchronized void resetTotalCounts() {
+        //modified this to be a bit more safe to being re-run.  i.e. don't clear the _totalCounts until the new values have been calculated.
+        final Map<String, Long> tempCounts = new ConcurrentHashMap<>();
+        resetProjectCount(tempCounts);
+        resetSubjectCount(tempCounts);
+        resetImageSessionCount(tempCounts);
+        final List<Map<String, Object>> elementCounts = _template.queryForList(EXPT_COUNTS_BY_TYPE, EmptySqlParameterSource.INSTANCE);
+        for (final Map<String, Object> elementCount : elementCounts) {
+            final String elementName = (String) elementCount.get("element_name");
+            final Long count = (Long) elementCount.get("count");
+            if (StringUtils.isBlank(elementName)) {
+                log.warn("Found {} elements that are not associated with a valid data type:\n\n{}\n\nYou can correct some of these orphaned experiments by running the query:\n\n{}\n\nAny experiment IDs and data types returned from that query indicate data types that can not be resolved on the system (i.e. they don't exist in the primary data-type table).", count, _template.queryForList(QUERY_ORPHANED_EXPERIMENTS, EmptySqlParameterSource.INSTANCE).stream().map(experiment -> {
+                    final String experimentId = (String) experiment.get("experiment_id");
+                    final String dataType = (String) experiment.get("data_type");
+                    final int extensionId = (Integer) experiment.get("xdat_meta_element_id");
+                    return " * " + experimentId + " was a " + dataType + ", " + (extensionId >= 0 ? "should be extension ID " + extensionId : "data type doesn't appear in xdat_meta_element table");
+                }).collect(Collectors.joining("\n")), QUERY_CORRECT_ORPHANED_EXPERIMENTS);
+            } else {
+                tempCounts.put(elementName, count);
+            }
+        }
+
+        _totalCounts = tempCounts;
     }
 
-    private void resetSubjectCount() {
-        _totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject(SUBJECT_COUNTS, EmptySqlParameterSource.INSTANCE, Long.class));
+    private void resetProjectCount(final Map<String, Long> totalCounts) {
+        totalCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject(PROJECT_COUNTS, EmptySqlParameterSource.INSTANCE, Long.class));
     }
 
-    private void resetImageSessionCount() {
-        _totalCounts.put(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, _template.queryForObject(SESSION_COUNTS, EmptySqlParameterSource.INSTANCE, Long.class));
+    private void resetSubjectCount(final Map<String, Long> totalCounts) {
+        totalCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, _template.queryForObject(SUBJECT_COUNTS, EmptySqlParameterSource.INSTANCE, Long.class));
+    }
+
+    private void resetImageSessionCount(final Map<String, Long> totalCounts) {
+        totalCounts.put(XnatImagesessiondata.SCHEMA_ELEMENT_NAME, _template.queryForObject(SESSION_COUNTS, EmptySqlParameterSource.INSTANCE, Long.class));
     }
 
     private Map<String, ElementDisplay> resetGuestBrowseableElementDisplays() {
@@ -2023,7 +2040,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private final NamedParameterJdbcTemplate _template;
     private final JmsTemplate                _jmsTemplate;
     private final DatabaseHelper             _helper;
-    private final Map<String, Long>          _totalCounts;
+    private Map<String, Long>          _totalCounts;
     private final Map<String, Long>          _missingElements;
     private final Map<String, Boolean>       _userChecks;
     private final AtomicBoolean              _initialized;

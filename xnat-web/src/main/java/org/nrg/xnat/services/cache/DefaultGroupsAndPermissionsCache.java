@@ -2021,7 +2021,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final String EXPT_COUNTS_BY_TYPE                = "SELECT element_name, COUNT(ID) AS count FROM xnat_experimentData expt LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name";
     private static final String PROJECT_COUNTS                     = "SELECT COUNT(*) FROM xnat_projectdata";
     private static final String SUBJECT_COUNTS                     = "SELECT COUNT(*) FROM xnat_subjectdata";
-    private static final String SESSION_COUNTS                     = "SELECT COUNT(*) FROM xnat_experimentdata";
+    private static final String SESSION_COUNTS                     = "SELECT COUNT(*) FROM xnat_imagesessiondata";
     private static final String ACTIONS_PREFIX                     = "actions";
     private static final String TAG_PREFIX                         = "tag";
     private static final String PROJECT_PREFIX                     = "project";

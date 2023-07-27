@@ -245,4 +245,9 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * @param username The name of the user whose cache should be cleared.
      */
     void clearUserCache(final String username);
+
+    /**
+     * Resets the overall system counts (expensive on uber-large servers)
+     */
+    void resetTotalCounts();
 }

@@ -10,9 +10,14 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.automation.runners.ScriptRunnerOutputAdapter;
+import org.nrg.automation.services.AutomationEventIdsIdsService;
+import org.nrg.automation.services.AutomationEventIdsService;
+import org.nrg.automation.services.AutomationFiltersService;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.ScriptTriggerService;
+import org.nrg.automation.services.impl.AutomationService;
+import org.nrg.automation.services.impl.AutomationServiceImpl;
 import org.nrg.automation.services.impl.DefaultScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
@@ -34,6 +39,13 @@ public class AutomationConfig {
         final DefaultScriptRunnerService service = new DefaultScriptRunnerService(scriptService, triggerService);
         service.setRunnerPackages(Collections.singletonList("org.nrg.automation.runners"));
         return service;
+    }
+
+    @Bean
+    public AutomationService automationService(final AutomationEventIdsService eventIdsService,
+                                               final AutomationEventIdsIdsService eventIdsIdsService,
+                                               final AutomationFiltersService filtersService) {
+        return new AutomationServiceImpl(eventIdsService, eventIdsIdsService, filtersService);
     }
 
     @Bean

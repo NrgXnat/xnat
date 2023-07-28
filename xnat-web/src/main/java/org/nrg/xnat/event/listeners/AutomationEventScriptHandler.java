@@ -9,21 +9,14 @@
 
 package org.nrg.xnat.event.listeners;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.event.AutomationEventImplementerI;
-import org.nrg.automation.event.entities.AutomationEventIdsIds;
-import org.nrg.automation.event.entities.AutomationFilters;
 import org.nrg.automation.event.entities.PersistentEvent;
-import org.nrg.automation.services.AutomationEventIdsIdsService;
-import org.nrg.automation.services.AutomationEventIdsService;
-import org.nrg.automation.services.AutomationFiltersService;
 import org.nrg.automation.services.PersistentEventService;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptTriggerService;
+import org.nrg.automation.services.impl.AutomationService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.event.Filterable;
@@ -54,9 +47,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static reactor.bus.selector.Selectors.type;
 
@@ -71,6 +70,7 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
      * The Constant logger.
      */
     private static final Logger logger = LoggerFactory.getLogger(AutomationEventScriptHandler.class);
+    private static final Map<Class<? extends AutomationEventImplementerI>, Map<String, Method>> FILTERABLE_METHODS = new ConcurrentHashMap<>();
 
     /**
      * The _service.
@@ -88,20 +88,11 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
     private DataSource _dataSource;
 
     /**
-     * Automation filters service.
-     */
-    private AutomationFiltersService _filtersService;
-
-    /**
      * Persistent event service.
      */
     private PersistentEventService _persistentEventService;
-    
-    /** The _ids service. */
-    private AutomationEventIdsService _idsService;
-    
-    /** The _ids ids service. */
-    private AutomationEventIdsIdsService _idsIdsService;
+
+    private final AutomationService automationService;
 
     /**
      * Instantiates a new automation event script handler.
@@ -110,23 +101,42 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
      * @param service the service
      * @param scriptTriggerService the script trigger service
      * @param dataSource the data source
-     * @param filtersService the filters service
      * @param persistentEventService the persistent event service
-     * @param idsService the ids service
-     * @param idsIdsService the ids ids service
      */
     @Autowired
     public AutomationEventScriptHandler(EventBus eventBus, ScriptRunnerService service, ScriptTriggerService scriptTriggerService,
-    		DataSource dataSource, AutomationFiltersService filtersService, PersistentEventService persistentEventService,
-    		AutomationEventIdsService idsService, AutomationEventIdsIdsService idsIdsService) {
+                                        DataSource dataSource, PersistentEventService persistentEventService,
+                                        final AutomationService automationService) {
         eventBus.on(type(AutomationEventImplementerI.class), this);
         this._service = service;
         this._scriptTriggerService = scriptTriggerService;
         this._dataSource = dataSource;
-        this._filtersService = filtersService;
         this._persistentEventService = persistentEventService;
-        this._idsService = idsService;
-        this._idsIdsService = idsIdsService;
+        this.automationService = automationService;
+    }
+
+    public static Map<String, Method> getFilterableMethods(final Class<? extends AutomationEventImplementerI> clazz) {
+        return FILTERABLE_METHODS.computeIfAbsent(clazz, AutomationEventScriptHandler::computeFilterableMethods);
+    }
+
+    private static Map<String, Method> computeFilterableMethods(final Class<? extends AutomationEventImplementerI> clazz) {
+        final String get = "get";
+        final int getLength = get.length();
+        return Arrays.stream(clazz.getMethods())
+                .filter(method -> method.isAnnotationPresent(Filterable.class))
+                .filter(method -> method.getName().startsWith(get))
+                .collect(Collectors.toMap(method -> StringUtils.uncapitalize(method.getName().substring(getLength)), Function.identity()));
+    }
+
+    private static String invokeMethod(final AutomationEventImplementerI eventData, final Method method) {
+        Object result;
+        try {
+            result = method.invoke(eventData);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            logger.error("Error invoking method \"{}\" on eventData", method.getName(), e);
+            result = null;
+        }
+        return result == null ? null : result.toString();
     }
 
     /**
@@ -167,81 +177,65 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
      */
     @Override
     public void accept(Event<AutomationEventImplementerI> event) {
-        try {
-            handleAsPersistentEventIfMarkedPersistent(event);
-            updateAutomationTables(event);
-        } catch (Throwable t) {
-            logger.error("Unexpected error persisting Persistent/Automation event information", t);
-        } finally {
-            handleEvent(event);
-        }
-    }
-
-    /**
-     * Update automation tables.
-     *
-     * @param event the event
-     */
-    // Made this method synchronized to avoid some constraint violation exceptions that were occasionally being thrown.
-    private synchronized void updateAutomationTables(Event<AutomationEventImplementerI> event) {
         final AutomationEventImplementerI eventData = event.getData();
-        if (eventData.getEventId() == null || eventData.getClass() == null) {
+
+        if (shouldSkipEvent(eventData)) {
             return;
         }
-        final List<AutomationEventIdsIds> autoIds = _idsIdsService.getEventIds(eventData.getExternalId(), eventData.getSrcEventClass(), eventData.getEventId(), true);
-        if (autoIds.size() < 1) {
-            final AutomationEventIdsIds idsids = new AutomationEventIdsIds(eventData, _idsService);
-            _idsIdsService.saveOrUpdate(idsids);
-        } else {
-            for (final AutomationEventIdsIds ids : autoIds) {
-                if (ids.getEventId().equals(eventData.getEventId())) {
-                	ids.setCounter(ids.getCounter()+1);
-                    _idsIdsService.saveOrUpdate(ids);
-                }
-            }
-        }
-        final Class<? extends AutomationEventImplementerI> clazz = eventData.getClass();
-        for (final Method method : Arrays.asList(clazz.getMethods())) {
-            if (method.isAnnotationPresent(Filterable.class) && method.getName().substring(0, 3).equalsIgnoreCase("get")) {
-                final char c[] = method.getName().substring(3).toCharArray();
-                c[0] = Character.toLowerCase(c[0]);
-                final String column = new String(c);
-                AutomationFilters filters = _filtersService.getAutomationFilters(eventData.getExternalId(), eventData.getSrcEventClass(), column, true);
-                if (filters == null) {
-                    filters = new AutomationFilters(eventData, column);
-                    try {
-                        _filtersService.saveOrUpdate(filters);
-                    } catch (ConstraintViolationException e) {
-                        logger.warn("A constraint violation error on {} occurred saving a filters entity: {}\n{}", e.getConstraintName(), filters.toString(), e.getMessage());
-                    }
-                } else {
-                    try {
-                        final String value = method.invoke(eventData).toString();
-                        final List<String> values = filters.getValues();
-                        if (!values.contains(value)) {
-                            values.add(value);
-                            filters.setValues(values);
-                            _filtersService.saveOrUpdate(filters);
-                        }
-                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                        logger.error("Error invoking method on eventData", e);
-                    }
-                }
-            }
+
+        handleAsPersistentEventIfMarkedPersistent(eventData);
+
+        final Map<String, String> methodInvocationResults = invokeMethods(eventData);
+
+        automationService.incrementEventId(eventData.getExternalId(), eventData.getSrcEventClass(), eventData.getEventId());
+
+        for (final Map.Entry<String, String> entry : methodInvocationResults.entrySet()) {
+            automationService.addValueToStoredFilters(eventData.getExternalId(), eventData.getSrcEventClass(), entry.getKey(), entry.getValue());
         }
 
+        launchScripts(eventData, methodInvocationResults);
+    }
+
+    private boolean shouldSkipEvent(final AutomationEventImplementerI eventData) {
+        if (eventData == null) {
+            logger.debug("Automation script will not be launched because applicationEvent object is null");
+            return true;
+        }
+        try {
+            final UserI user = Users.getUser(eventData.getUserId());
+        } catch (UserNotFoundException | UserInitException e) {
+            // User is required to launch script
+            logger.debug("Automation not launching because user object is null");
+            return true;
+        }
+        if (eventData.getSrcEventClass() == null) {
+            logger.debug("Automation not launching because eventClass is null");
+            return true;
+        }
+        if (eventData.getEventId() == null) {
+            logger.debug("Automation not launching because eventID is null");
+            return true;
+        }
+        return false;
+    }
+
+    private Map<String, String> invokeMethods(final AutomationEventImplementerI eventData) {
+        return getFilterableMethods(eventData.getClass()).entrySet().stream()
+                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), invokeMethod(eventData, entry.getValue())))
+                .filter(entry -> Objects.nonNull(entry.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     /**
      * Handle as persistent event if marked persistent.
      *
-     * @param event the event
+     * @param eventData the event data
      */
-    private void handleAsPersistentEventIfMarkedPersistent(Event<AutomationEventImplementerI> event) {
+    private void handleAsPersistentEventIfMarkedPersistent(AutomationEventImplementerI eventData) {
         // Persist the event if this is a PersistentEventImplementerI
-        if (event.getData() instanceof PersistentEventImplementerI) {
+        if (eventData instanceof PersistentEventImplementerI) {
             try {
-                _persistentEventService.create((PersistentEvent) event.getData());
+                _persistentEventService.create((PersistentEvent) eventData);
             } catch (SecurityException | IllegalArgumentException e) {
                 logger.error("Exception persisting event", e);
             }
@@ -251,74 +245,48 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
     /**
      * Handle event.
      *
-     * @param event the event
+     * @param eventData the event data
      */
-    public void handleEvent(Event<AutomationEventImplementerI> event) {
-        final AutomationEventImplementerI automationEvent = event.getData();
-        if (automationEvent == null) {
-            logger.debug("Automation script will not be launched because applicationEvent object is null");
-            return;
-        }
+    public void launchScripts(final AutomationEventImplementerI eventData, final Map<String, String> filterMap) {
+        logger.debug("Handling event {}", eventData);
+
         final UserI user;
         try {
-            user = Users.getUser(automationEvent.getUserId());
+            user = Users.getUser(eventData.getUserId());
         } catch (UserNotFoundException | UserInitException e) {
-            // User is required to launch script
+            // This would have been caught earlier
             logger.debug("Automation not launching because user object is null");
             return;
         }
-        final String eventClass = automationEvent.getSrcEventClass();
-        if (eventClass == null) {
-            logger.debug("Automation not launching because eventClass is null");
-            return;
-        }
-        final String eventID = automationEvent.getEventId();
-        if (eventID == null) {
-            logger.debug("Automation not launching because eventID is null");
-            return;
-        }
-        final Map<String, String> filterMap = Maps.newHashMap();
-        final Class<? extends AutomationEventImplementerI> clazz = automationEvent.getClass();
-        for (final Method method : Arrays.asList(clazz.getMethods())) {
-            if (method.isAnnotationPresent(Filterable.class) && method.getName().substring(0, 3).equalsIgnoreCase("get")) {
-                final char c[] = method.getName().substring(3).toCharArray();
-                c[0] = Character.toLowerCase(c[0]);
-                final String column = new String(c);
-                String value;
-                try {
-                    final Object rtValue = method.invoke(automationEvent);
-                    if (rtValue != null) {
-                        value = rtValue.toString();
-                        filterMap.put(column, value);
-                    }
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                    logger.error("ERROR calling method on filterable field in event object", e);
-                    // Let's let this pass for now.
-                }
-            }
-        }
+
+        final String srcEventClass = eventData.getSrcEventClass();
+
+        final String eventID = eventData.getEventId();
         final String eventName = eventID.replaceAll("\\*OPEN\\*", "(").replaceAll("\\*CLOSE\\*", ")");
-        //check to see if this has been handled before
-        for (final Script script : getScripts(automationEvent.getExternalId(), eventClass, eventID, filterMap)) {
+
+        // Build justification if possible
+        Method justMethod = null;
+        try {
+            justMethod = eventData.getClass().getMethod("getJustification");
+        } catch (NoSuchMethodException | NullPointerException | SecurityException e) {
+            // Do nothing for now
+        }
+        String justification = justMethod != null ? invokeMethod(eventData, justMethod) : null;
+        justification = justification != null ? justification : "";
+
+        // Iterate through scripts + launch
+        for (final Script script : getScripts(eventData.getExternalId(), srcEventClass, eventID, filterMap)) {
             try {
                 final String action = "Executed script " + script.getScriptId();
-                Method justMethod = null;
-                try {
-                    justMethod = automationEvent.getClass().getMethod("getJustification");
-                } catch (NoSuchMethodException | NullPointerException | SecurityException e) {
-                    // Do nothing for now
-                }
-                final Object justObject = (justMethod != null) ? justMethod.invoke(automationEvent) : null;
-                final String justification = (justObject != null) ? justObject.toString() : "";
-                final String comment = "Executed script " + script.getScriptId() + " triggered by event " + eventID;
-                final PersistentWorkflowI scriptWrk = PersistentWorkflowUtils.buildOpenWorkflow(user, automationEvent.getEntityType(), automationEvent.getEntityId(), automationEvent.getExternalId(),
+                final String comment = action + " triggered by event " + eventID;
+                final PersistentWorkflowI scriptWrk = PersistentWorkflowUtils.buildOpenWorkflow(user, eventData.getEntityType(), eventData.getEntityId(), eventData.getExternalId(),
                                                                                                 EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS, action,
                                                                                                                             StringUtils.isNotBlank(justification) ? justification : "Automated execution: " + comment, comment));
                 assert scriptWrk != null;
                 scriptWrk.setStatus(PersistentWorkflowUtils.QUEUED);
                 WorkflowUtils.save(scriptWrk, scriptWrk.buildEvent());
 
-                final AutomatedScriptRequest request = new AutomatedScriptRequest(automationEvent, eventName, user, script, scriptWrk);
+                final AutomatedScriptRequest request = new AutomatedScriptRequest(eventData, eventName, user, script, scriptWrk);
                 XDAT.sendJmsRequest(request);
             } catch (Exception e1) {
                 logger.error("Script launch exception", e1);
@@ -338,11 +306,11 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
      */
     private List<Script> getScripts(final String projectId, String eventClass, String event, Map<String, String> filterMap) {
 
-        final List<Script> scripts = Lists.newArrayList();
+        final List<Script> scripts = new ArrayList<>();
 
         //project level scripts
         if (StringUtils.isNotBlank(projectId)) {
-        	scripts.addAll(_service.getScripts(Scope.Project, projectId, eventClass, event, filterMap));
+            scripts.addAll(_service.getScripts(Scope.Project, projectId, eventClass, event, filterMap));
         }
         scripts.addAll(_service.getScripts(Scope.Site, null, eventClass, event, filterMap));
         return scripts;

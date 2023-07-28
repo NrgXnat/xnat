@@ -9,26 +9,21 @@
 
 package org.nrg.automation.event.entities;
 
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CollectionTable;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
-
-import com.google.common.base.Joiner;
-
-import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import org.nrg.automation.event.AutomationEventImplementerI;
-import org.nrg.framework.event.Filterable;
-
-import com.google.common.collect.Lists;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * The Class AutomationFilters.
@@ -56,7 +51,7 @@ public class AutomationFilters extends AbstractHibernateEntity implements Serial
     /**
      * The values.
      */
-    private List<String> values;
+    private Set<String> values;
 
     /**
      * Instantiates a new automation filters.
@@ -65,38 +60,12 @@ public class AutomationFilters extends AbstractHibernateEntity implements Serial
         super();
     }
 
-    /**
-     * Instantiates a new automation filters.
-     *
-     * @param eventData the event data
-     * @param field     the field
-     */
-    public AutomationFilters(AutomationEventImplementerI eventData, String field) {
+    public AutomationFilters(final String externalId, final String srcEventClass, String field) {
         this();
-        this.externalId = eventData.getExternalId();
-        this.srcEventClass = eventData.getSrcEventClass();
-        final Class<? extends AutomationEventImplementerI> clazz = eventData.getClass();
-        for (final Method method : Arrays.asList(clazz.getMethods())) {
-            if (method.isAnnotationPresent(Filterable.class) && method.getName().substring(0, 3).equalsIgnoreCase("get")) {
-                final char c[] = method.getName().substring(3).toCharArray();
-                c[0] = Character.toLowerCase(c[0]);
-                final String column = new String(c);
-                if (!column.equalsIgnoreCase(field)) {
-                    continue;
-                }
-                try {
-                    final String value = method.invoke(eventData).toString();
-                    if (value != null && value.length() > 0) {
-                        final List<String> values = Lists.newArrayList();
-                        values.add(value);
-                        this.setField(column);
-                        this.setValues(values);
-                    }
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                    // Do nothing for now
-                }
-            }
-        }
+        this.externalId = externalId;
+        this.srcEventClass = srcEventClass;
+        this.field = field;
+        this.values = new HashSet<>();
     }
 
     /**
@@ -161,7 +130,7 @@ public class AutomationFilters extends AbstractHibernateEntity implements Serial
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable
     public List<String> getValues() {
-        return values;
+        return new ArrayList<>(values);
     }
 
     /**
@@ -169,16 +138,21 @@ public class AutomationFilters extends AbstractHibernateEntity implements Serial
      *
      * @param values the new values
      */
-    public void setValues(List<String> values) {
+    public void setValues(Set<String> values) {
         this.values = values;
+    }
+
+    @Transient
+    public boolean addValue(final String value) {
+        return values.add(value);
     }
 
     @Override
     public String toString() {
         return "AutomationFilters{" +
-               "externalId='" + externalId + '\'' +
-               ", srcEventClass='" + srcEventClass + '\'' +
-               ", field='" + field + '\'' +
-               ", values=" + Joiner.on(", ").join(values) + '}';
+               "externalId='" + externalId + "'" +
+               ", srcEventClass='" + srcEventClass + "'" +
+               ", field='" + field + "'" +
+               ", values=" + StringUtils.join(values, ", ") + "}";
     }
 }

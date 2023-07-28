@@ -9,19 +9,15 @@
 
 package org.nrg.automation.event.entities;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
-
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.nrg.automation.event.AutomationEventImplementerI;
-import org.nrg.automation.services.AutomationEventIdsService;
-import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
+import java.io.Serializable;
+import java.util.List;
 
 
 /**
@@ -37,38 +33,14 @@ public class AutomationEventIdsIds extends AbstractHibernateEntity implements Se
 	public AutomationEventIdsIds() {
 		super();
 	}
-	
-	/**
-	 * Instantiates a new automation event ids ids.
-	 *
-	 * @param externalId the external id
-	 * @param srcEventClass the src event class
-	 * @param eventId the event id
-	 * @param idsService the ids service
-	 */
-	public AutomationEventIdsIds(String externalId, String srcEventClass, String eventId, AutomationEventIdsService idsService) {
-		List<AutomationEventIds> idsList = idsService .getEventIds(externalId, srcEventClass, true);
-		AutomationEventIds autoEventIds;
-		if (idsList.size()>0) {
-			autoEventIds = idsList.get(0); 
-		} else {
-			autoEventIds = new AutomationEventIds(externalId, srcEventClass);
-		}
+
+	public AutomationEventIdsIds(String externalId, String srcEventClass, String eventId, final List<AutomationEventIds> idsList) {
+		final AutomationEventIds autoEventIds = idsList.size() > 0 ? idsList.get(0) : new AutomationEventIds(externalId, srcEventClass);
 		this.setParentAutomationEventIds(autoEventIds);
 		this.setEventId(eventId);
 		this.setCounter(1L);
 	}
-    
-	/**
-	 * Instantiates a new automation event ids ids.
-	 *
-	 * @param eventData the event data
-	 * @param idsService the ids service
-	 */
-	public AutomationEventIdsIds(AutomationEventImplementerI eventData, AutomationEventIdsService idsService) {
-		this(eventData.getExternalId(), eventData.getSrcEventClass(), eventData.getEventId(), idsService);
-	}
-	
+
     /**
      * Gets the event id.
      *

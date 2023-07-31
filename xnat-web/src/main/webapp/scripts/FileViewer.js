@@ -1337,7 +1337,7 @@ function UploadFileForm(_obj){
 
    	  td=document.createElement("td");
    	  input=document.createElement("input");
-   	  input.size=50;
+   	  input.size=45;
    	  input.id="file_name";
    	  //input.style.fontSize = "99%";
    	  input.manager=this;

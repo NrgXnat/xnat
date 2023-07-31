@@ -270,3 +270,19 @@ div.xnat-dialog-shell.loader {
     max-height: 250px;
     overflow-y: auto;
 }
+
+/* YUI display shims */
+
+.xnat-bootstrap .yui-panel h3 {
+    line-height: 20px;
+    margin-bottom: 0;
+}
+.xnat-bootstrap .yui-panel table {
+    border-collapse: inherit;
+}
+.xnat-bootstrap .yui-panel fieldset {
+    margin: 1em 0;
+}
+.xnat-bootstrap .yui-panel input {
+    font-size: 13px;
+}

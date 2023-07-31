@@ -91,7 +91,7 @@ public class SubjectListResource extends QueryOrganizerResource {
 			this.populateQuery(qo);
 
 			//inject paging
-			final String query = qo.buildFullQuery() + " " + this.buildOffsetFromParams(true);
+			final String query = qo.buildFullQuery() + " " + this.buildOffsetFromParams();
 
 			table = XFTTable.Execute(query, user.getDBName(), userName);
 

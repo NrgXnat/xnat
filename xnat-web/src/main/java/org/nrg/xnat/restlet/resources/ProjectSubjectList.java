@@ -229,7 +229,7 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 				qo.addWhere(cc);
 
 				//inject paging
-				final String query = qo.buildFullQuery() + " " + this.buildOffsetFromParams(false);
+				final String query = qo.buildFullQuery() + " " + this.buildOffsetFromParams();
 
 				table = XFTTable.Execute(query, user.getDBName(), userName);
 

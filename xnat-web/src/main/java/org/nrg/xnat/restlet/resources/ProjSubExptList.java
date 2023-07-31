@@ -329,7 +329,7 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 
 
 			//inject paging
-			final String query = qo.buildFullQuery() + " " + this.buildOffsetFromParams(false);
+			final String query = qo.buildFullQuery() + " " + this.buildOffsetFromParams();
 
 			table=XFTTable.Execute(query, user.getDBName(), userName);
 

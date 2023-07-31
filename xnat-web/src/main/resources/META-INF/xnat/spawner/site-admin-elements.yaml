@@ -1335,16 +1335,6 @@ searchPerformance:
             description: >
                 <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Disabling count fields can improve performance.  This setting determines whether count fields (like MR Count) should be included in project level listings (like Subjects). If Enabled, counts of child objects will be automatically included in project data listings. If Disabled, counts of child objects will only be available if display documents are manually configured to add them. Note: This doesn't effect site-wide listings, which are managed entirely by display documents.</p>
                 <p>Default: Enabled</p>
-        pagedRestLists:
-            kind: panel.input.switchbox
-            label: "Default to paged results in RESTful APIs"
-            name: defaultToPagedRestfulLists
-            onText: Enabled
-            offText: Disabled
-            checked: false
-            description: >
-                <p>Listing all experiments (/data/experiments) or subjects (/data/subjects) in the database while preserving secured access can be quite expensive on larger servers.  Using paged results is much more performant and prevents unintentional Denial-of-service requests.  It defaults to false for backwards consistency, but should be set to true on larger servers (>100,000 experiments)</p>
-                <p>Default: Disabled</p>
 
 ## THEMES
 

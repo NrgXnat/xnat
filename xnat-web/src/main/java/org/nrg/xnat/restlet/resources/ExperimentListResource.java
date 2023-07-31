@@ -213,7 +213,7 @@ public class ExperimentListResource  extends QueryOrganizerResource {
             }
 
             //inject paging
-            final String query = qo.buildFullQuery() + " " + resource.buildOffsetFromParams(true);
+            final String query = qo.buildFullQuery() + " " + resource.buildOffsetFromParams();
 
             table=XFTTable.Execute(query, user.getDBName(), resource.userName);
 

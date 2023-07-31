@@ -2010,11 +2010,10 @@ public abstract class SecureResource extends Resource {
         return Optional.ofNullable(XnatProjectdata.getXnatProjectdatasById(projectId, getUser(),false)).orElseThrow(() -> new NotFoundException(projectId));
     }
 
-    protected String buildOffsetFromParams(final boolean allowDefaultPaging){
-        final Boolean defaultToPaged = XDAT.getBoolSiteConfigurationProperty("defaultToPagedRestfulLists",false);
+    protected String buildOffsetFromParams(){
         //inject paging
-        Long offset = (allowDefaultPaging && defaultToPaged)? DEFAULT_PAGE_NUM :null;
-        Long limit = (allowDefaultPaging && defaultToPaged)? DEFAULT_PAGE_SIZE :null;
+        Long offset = null;
+        Long limit = null;
         if(this.hasQueryVariable("limit") || this.hasQueryVariable("offset")) {
             final String offsetS = this.getQueryVariable("offset");
             if (offsetS == null) {

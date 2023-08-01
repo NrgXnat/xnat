@@ -1,6 +1,6 @@
 <!-- BEGIN ProjectSelector.vm -->
 #set($create_projects= $data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","create"))
-		#set($projectMap = $data.getSession().getAttribute("userHelper").getCachedItemValuesHash("xnat:projectData","read",false,"xnat:projectData/ID","xnat:projectData/secondary_ID"))
+		#set($projectMap = $data.getSession().getAttribute("userHelper").getCachedItemValuesHash("xnat:projectData",null,false,"xnat:projectData/ID","xnat:projectData/secondary_ID"))
 #if($project)
   #if($item.getProperty("project"))
   

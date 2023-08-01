@@ -49,7 +49,7 @@ public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
         // Redirect to Index.vm if the user is already logged in
         UserI u = XDAT.getUserDetails();
         if(null != u && !u.getUsername().equalsIgnoreCase("guest")){
-            data.setScreenTemplate("Index.vm");
+            doRedirect(data,"Index.vm");
         }
         
         context.put("featureService", Features.getFeatureService());

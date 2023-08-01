@@ -5,7 +5,7 @@ $page.setTitle("Email Verified")
 
 <div id="login_area">
     #if($data.getMessage())
-        <div class="message" style="border-bottom: 0">
+        <div class="message">
             <p><strong>Note: </strong><br />$data.getMessage()</p>
         </div>
     #end

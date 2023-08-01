@@ -4,6 +4,8 @@ import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xft.XFTTable;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.ItemNotFoundException;
 import org.nrg.xft.security.UserI;
 
@@ -250,4 +252,13 @@ public interface GroupsAndPermissionsCache extends XnatCache {
      * Resets the overall system counts (expensive on uber-large servers)
      */
     void resetTotalCounts();
+
+    /**
+     * Get the projects (id and secondary_id) that this user has permissions to modify data of the given type
+     * @param user
+     * @param dataType
+     * @return
+     * @throws ElementNotFoundException
+     */
+    XFTTable getProjectsForDatatypeAction(final UserI user, final String dataType, final String action) throws Exception;
 }

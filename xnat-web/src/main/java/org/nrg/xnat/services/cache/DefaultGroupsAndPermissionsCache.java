@@ -9,10 +9,12 @@
 
 package org.nrg.xnat.services.cache;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
+import java.sql.Types;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.CacheException;
 import net.sf.ehcache.Ehcache;
@@ -29,6 +31,7 @@ import org.nrg.xdat.om.*;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.*;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -37,14 +40,17 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.Initializing;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xdat.servlet.XDATServlet;
+import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xft.event.methods.XftItemEventCriteria;
+import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.ItemNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.search.SQLClause.ParamValue;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.cache.jms.InitializeGroupRequest;
 import org.slf4j.event.Level;
@@ -89,6 +95,7 @@ import static org.nrg.xft.event.XftItemEventI.*;
 public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
 
     public static final int SMALL_SERVER_SUBJ_COUNT = 10000;
+    public static final List<String> PERMISSIONS = Arrays.asList(SecurityManager.ACTIVATE, SecurityManager.CREATE, SecurityManager.DELETE, SecurityManager.EDIT, SecurityManager.READ);
 
     @Autowired
     public DefaultGroupsAndPermissionsCache(final CacheManager cacheManager, final NamedParameterJdbcTemplate template, final JmsTemplate jmsTemplate, final DatabaseHelper helper) throws SQLException {
@@ -1831,6 +1838,47 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
         return elementCounts;
     };
+
+
+
+    public XFTTable getProjectsForDatatypeAction(final UserI user, final String dataType, final String action) throws Exception {
+        final ParamValue userId = new ParamValue(Users.getUserId(user.getUsername()), Types.INTEGER);
+        final ParamValue guestId = new ParamValue(Users.getUserId("guest"), Types.INTEGER);
+        if (StringUtils.isBlank(action)) {
+            throw new Exception("You must specify a value for the permissions parameter.");
+        } else if (!DefaultGroupsAndPermissionsCache.PERMISSIONS.contains(action)) {
+            //this is very important since we are injecting it straight into the sql
+            throw new Exception("You must specify one of the following values for the permissions parameter: " + Joiner.on(", ").join(DefaultGroupsAndPermissionsCache.PERMISSIONS));
+        }
+        try {
+            final ParamValue dataTypeParam = new ParamValue(SchemaElement.GetElement(dataType).getFullXMLName(),Types.VARCHAR);
+
+            XFTTable t;
+            if(Groups.isDataAdmin(user)){
+                t= XFTTable.Execute("SELECT ID,secondary_ID FROM xnat_projectData ",null,null);
+            }else{
+                t= XFTTable.ExecutePS(String.format(PERMS_SQL, action),dataTypeParam,userId,guestId);
+            }
+            t.sort("secondary_id", "ASC");
+            return t;
+        } catch (XFTInitException | SQLException | DBPoolException e) {
+            log.error("Error checking permissions for datatype",e);
+            return null;
+        }
+    }
+
+    private static final String PERMS_SQL = "WITH PERMS AS ("
+        + " SELECT "
+        + " xfm.field_value "
+        + " FROM xdat_element_access xea "
+        + " LEFT JOIN xdat_usergroup grp ON xea.xdat_usergroup_xdat_usergroup_id=grp.xdat_usergroup_id "
+        + " LEFT JOIN xdat_user_groupid gid ON grp.id=gid.groupid "
+        + " LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id=fms.permissions_allow_set_xdat_elem_xdat_element_access_id "
+        + " LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.%s_element=1 AND ? || '/project'=xfm.field "
+        + " WHERE  (field_value IS NOT NULL AND field_value NOT IN ('','*')) AND (gid.groups_groupid_xdat_user_xdat_user_id IN (?) OR xea.xdat_user_xdat_user_id IN (?)) "
+        + " GROUP BY xfm.field_value) "
+        + " SELECT ID,secondary_ID FROM xnat_projectData "
+        + " WHERE ID IN (SELECT field_value FROM PERMS)";
 
     private static final DateFormat   DATE_FORMAT   = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.getDefault());

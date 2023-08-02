@@ -81,38 +81,37 @@ public class AuthenticationRestlet extends Resource {
 
         Authentication authentication = null;
 
-        if (!StringUtils.isEmpty(authenticatorId)) {
-            Map<String, XnatAuthenticationProvider> visibleProviders = manager.getVisibleEnabledProviders();
-            if (!visibleProviders.containsKey(authenticatorId)) {
-                visibleProviders = manager.getLinkedEnabledProviders(); //openId is a linked provider
-                if (!visibleProviders.containsKey(authenticatorId)) {
-                    fail(Status.CLIENT_ERROR_BAD_REQUEST, String.format("No authentication provider identified by id %s found.", authenticatorId));
-                    return;
-                }
-            }
-            authentication = manager.authenticate(manager.buildUPTokenForProviderName(authenticatorId, username, password));
-        } else {
-            if (!StringUtils.isEmpty(authMethod)) {
-                //Are there multiple authentication providers with the same authMethod
-                int countOfProvidersByAuthMethod = manager.countAuthenticatorsWithAuthMethod(authMethod);
-                if (countOfProvidersByAuthMethod > 1) {
-                    fail(Status.CLIENT_ERROR_BAD_REQUEST, "Multiple authentication providers with identical authMethod exist. Use query parameter authenticatorId to specify a particular provider.");
-                    return;
-                } else if (countOfProvidersByAuthMethod == 0) {
-                    fail();
-                    return;
-                }
-            } else if (!StringUtils.isEmpty(username)) {
-                //try to guess the auth method
-                authMethod = manager.retrieveAuthMethod(username);
-                if (StringUtils.isEmpty(authMethod)) {
-                    fail();
-                }
-            }
-            authentication = manager.authenticate(manager.buildUPTokenForAuthMethod(authMethod, username, password));
-        }
-
         try {
+            if (!StringUtils.isEmpty(authenticatorId)) {
+                Map<String, XnatAuthenticationProvider> visibleProviders = manager.getVisibleEnabledProviders();
+                if (!visibleProviders.containsKey(authenticatorId)) {
+                    visibleProviders = manager.getLinkedEnabledProviders(); //openId is a linked provider
+                    if (!visibleProviders.containsKey(authenticatorId)) {
+                        fail(Status.CLIENT_ERROR_BAD_REQUEST, String.format("No authentication provider identified by id %s found.", authenticatorId));
+                        return;
+                    }
+                }
+                authentication = manager.authenticate(manager.buildUPTokenForProviderName(authenticatorId, username, password));
+            } else {
+                if (!StringUtils.isEmpty(authMethod)) {
+                    //Are there multiple authentication providers with the same authMethod
+                    int countOfProvidersByAuthMethod = manager.countAuthenticatorsWithAuthMethod(authMethod);
+                    if (countOfProvidersByAuthMethod > 1) {
+                        fail(Status.CLIENT_ERROR_BAD_REQUEST, "Multiple authentication providers with identical authMethod exist. Use query parameter authenticatorId to specify a particular provider.");
+                        return;
+                    } else if (countOfProvidersByAuthMethod == 0) {
+                        fail();
+                        return;
+                    }
+                } else if (!StringUtils.isEmpty(username)) {
+                    //try to guess the auth method
+                    authMethod = manager.retrieveAuthMethod(username);
+                    if (StringUtils.isEmpty(authMethod)) {
+                        fail();
+                    }
+                }
+                authentication = manager.authenticate(manager.buildUPTokenForAuthMethod(authMethod, username, password));
+            }
             if (null != authentication && authentication.isAuthenticated()) {
                 succeed(authentication);
                 getResponse().setEntity(ServletCall.getRequest(getRequest()).getSession().getId(), MediaType.TEXT_PLAIN);

@@ -139,7 +139,7 @@ public class PoolDBUtils {
 		return o;
 	}
 
-	public static synchronized Object GetNextID(String db,String table, String pk, String sequence) throws SQLException, Exception{
+	public static Object GetNextID(String db,String table, String pk, String sequence) throws SQLException, Exception{
 		return (new PoolDBUtils()).getNextID(db, table, pk, sequence);
 	}
 

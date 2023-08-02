@@ -44,7 +44,8 @@ public class DBItemCache {
     private String comment;
     private Object event_id;
 
-    private static String dbName = null, table = null, pk = null, sequence = null;
+    private static volatile String dbName = null, table = null, pk = null, sequence = null;
+    private static final Object NEXT_CHANGE_ID_MUTEX = new Object();
 
     private final UserI user;
 
@@ -72,16 +73,20 @@ public class DBItemCache {
         return change_id;
     }
 
-    private synchronized static Object getNextChangeID() throws Exception {
+    private static Object getNextChangeID() throws Exception {
         if (dbName == null) {
-            try {
-                GenericWrapperElement element = GenericWrapperElement.GetElement("xdat:change_info");
-                dbName = element.getDbName();
-                table = element.getSQLName();
-                pk = "xdat_change_info_id";
-                sequence = element.getSequenceName();
-            } catch (XFTInitException | ElementNotFoundException e) {
-                logger.error("", e);
+            synchronized (NEXT_CHANGE_ID_MUTEX) {
+                if (dbName == null) {
+                    try {
+                        GenericWrapperElement element = GenericWrapperElement.GetElement("xdat:change_info");
+                        dbName = element.getDbName();
+                        table = element.getSQLName();
+                        pk = "xdat_change_info_id";
+                        sequence = element.getSequenceName();
+                    } catch (XFTInitException | ElementNotFoundException e) {
+                        logger.error("", e);
+                    }
+                }
             }
         }
         return PoolDBUtils.GetNextID(dbName, table, pk, sequence);

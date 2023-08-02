@@ -84,8 +84,11 @@ public class AuthenticationRestlet extends Resource {
         if (!StringUtils.isEmpty(authenticatorId)) {
             Map<String, XnatAuthenticationProvider> visibleProviders = manager.getVisibleEnabledProviders();
             if (!visibleProviders.containsKey(authenticatorId)) {
-                fail(Status.CLIENT_ERROR_BAD_REQUEST, String.format("No authentication provider identified by id %s found.", authenticatorId));
-                return;
+                visibleProviders = manager.getLinkedEnabledProviders(); //openId is a linked provider
+                if (!visibleProviders.containsKey(authenticatorId)) {
+                    fail(Status.CLIENT_ERROR_BAD_REQUEST, String.format("No authentication provider identified by id %s found.", authenticatorId));
+                    return;
+                }
             }
             authentication = manager.authenticate(manager.buildUPTokenForProviderName(authenticatorId, username, password));
         } else {
@@ -103,7 +106,7 @@ public class AuthenticationRestlet extends Resource {
                 //try to guess the auth method
                 authMethod = manager.retrieveAuthMethod(username);
                 if (StringUtils.isEmpty(authMethod)) {
-                    throw new BadCredentialsException("Missing login method parameter.");
+                    fail();
                 }
             }
             authentication = manager.authenticate(manager.buildUPTokenForAuthMethod(authMethod, username, password));

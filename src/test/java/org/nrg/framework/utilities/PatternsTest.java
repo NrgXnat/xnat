@@ -12,8 +12,8 @@ import java.util.List;
 public class PatternsTest {
     @Test
     public void testUsernamePattern() {
-        assertThat(VALID_USERNAMES.stream().allMatch(email -> Patterns.USERNAME.matcher(email).matches())).isTrue();
-        assertThat(INVALID_USERNAMES.stream().noneMatch(email -> Patterns.USERNAME.matcher(email).matches())).isTrue();
+        assertThat(VALID_USERNAMES.stream().allMatch(username -> Patterns.USERNAME.matcher(username).matches())).isTrue();
+        assertThat(INVALID_USERNAMES.stream().noneMatch(username -> Patterns.USERNAME.matcher(username).matches())).isTrue();
     }
 
     @Test
@@ -22,8 +22,8 @@ public class PatternsTest {
         assertThat(INVALID_EMAIL_ADDRESSES.stream().noneMatch(email -> Patterns.EMAIL.matcher(email).matches())).isTrue();
     }
 
-    private static final List<String> VALID_USERNAMES   = Arrays.asList("foo", "harmitage", "fooBar", "foo1", "foo12345", "foo_bar", "foo'bar", "foo.bar", "foo-bar", "foo0-9_'.-");
-    private static final List<String> INVALID_USERNAMES = Arrays.asList("1foo", "_bar", "'bar", ".bar", "-bar", "foo$", "foo#", "abcdefghijklmnopqrstuvwxy", "xnatselenium@gmail.com", "firstname.lastname@med.uni-goettingen.de");
+    private static final List<String> VALID_USERNAMES   = Arrays.asList("foo", "harmitage", "fooBar", "foo1", "foo12345", "foo_bar", "foo'bar", "foo.bar", "foo-bar", "foo0-9_'.-", "abcdefghijklmnopqrstuvwxy");
+    private static final List<String> INVALID_USERNAMES = Arrays.asList("1foo", "_bar", "'bar", ".bar", "-bar", "foo$", "foo#", "xnatselenium@gmail.com", "firstname.lastname@med.uni-goettingen.de");
 
     // Many examples here taken from https://en.wikipedia.org/wiki/Email_address#Examples
     private static final List<String> VALID_EMAIL_ADDRESSES   = Arrays.asList("xnatselenium@gmail.com", "firstname.lastname@med.uni-goettingen.de", "harmitage@miskatonic.edu", "A-Za-z0-9!#$%&'*+/=?^_`{|}~-@aol.com", "simple@example.com", "very.common@example.com", "disposable.style.email.with+symbol@example.com", "other.email-with-hyphen@example.com", "fully-qualified-domain@example.com", "user.name+tag+sorting@example.com", "x@example.com", "example-indeed@strange-example.com", "example@s.example");

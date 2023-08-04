@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 public class Patterns {
     public static final String ALPHANUMERIC_AND_DASHES = "A-Za-z0-9-_";
 
-    public static final String EXPR_USERNAME            =  "^[a-zA-Z][\\w-'.]+$";
+    public static final String EXPR_USERNAME            = "[a-zA-Z][" + ALPHANUMERIC_AND_DASHES + "'.]{0,254}";
     public static final String EXPR_VALID_MAILBOX_CHARS = "A-Za-z0-9!#\\$%&'*+/=?^_`{|}~-";
     public static final String EXPR_EMAIL               = "(?<mailbox>[" + EXPR_VALID_MAILBOX_CHARS + "][." + EXPR_VALID_MAILBOX_CHARS + "]{0,63})@(?<domain>[A-Za-z0-9][A-Za-z0-9.-]*\\.[A-Za-z]{2,})";
     public static final String EXPR_COMBINED            = "(" + EXPR_USERNAME + ")[\\s]*<(" + EXPR_EMAIL + ")>";

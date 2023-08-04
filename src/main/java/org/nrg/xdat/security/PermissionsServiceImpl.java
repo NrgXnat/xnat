@@ -268,7 +268,8 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 final SecurityValues      securityValues = item.getItem().getSecurityValues();
                 final Map<String, String> hash           = securityValues.getHash();
                 if (hash.size() == 1 && hash.containsKey("xnat:projectData/ID")) {
-                    return can(user.getUsername(), action, null, hash.get("xnat:projectData/ID"));
+                    //old code passed in the project ID as an 'entityId', this caused much slower code to be used because the code inside had to figure out what kind of entity it was
+                    return can(user,"xnat:projectData/ID",hash.get("xnat:projectData/ID"),action);
                 }
                 if (!securityCheckByXMLPath(user, action, schemaElement, securityValues)) {
                     log.info("User {} doesn't have permission to {} the schema element {} for XSI type {}. The security values are: {}.",

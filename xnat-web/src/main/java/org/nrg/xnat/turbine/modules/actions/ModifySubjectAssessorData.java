@@ -193,12 +193,6 @@ public class ModifySubjectAssessorData extends ModifyItem {
                     WorkflowUtils.complete(wrk, c);
                     XDAT.triggerXftItemEvent(found, isCreate ? CREATE : UPDATE);
 
-                    try {
-            			MaterializedView.deleteByUser(XDAT.getUserDetails());
-            		} catch (DBPoolException e) {
-                        logger.error("",e);
-            		}
-
                     found = found.getCurrentDBVersion(false);
 
 					postProcessing(found, data, context);

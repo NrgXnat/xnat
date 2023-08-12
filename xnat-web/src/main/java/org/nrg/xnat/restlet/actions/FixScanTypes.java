@@ -39,7 +39,6 @@ public class FixScanTypes {
             if (!SaveItemHelper.authorizedSave(getExperiment(), getUser(), false, false, getEventMeta())) {
                 return Boolean.FALSE;
             }
-            MaterializedView.deleteByUser(getUser());
             final Integer quarantineCode = getProject().getArcSpecification().getQuarantineCode();
             if (quarantineCode != null && quarantineCode.equals(1)) {
                 _experiment.quarantine(getUser());

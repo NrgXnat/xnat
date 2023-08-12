@@ -337,8 +337,6 @@ public class EditSubjectAction extends SecureAction {
             		PersistentWorkflowUtils.complete(wrk,ci);
                     XDAT.triggerXftItemEvent(sub, isNew ? XftItemEventI.CREATE : XftItemEventI.UPDATE);
 
-					MaterializedView.deleteByUser(user);
-					
             		ItemI temp1 =found.getCurrentDBVersion(false);
             		if (temp1 != null)
             		{

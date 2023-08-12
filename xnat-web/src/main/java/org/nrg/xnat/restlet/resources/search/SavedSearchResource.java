@@ -109,11 +109,18 @@ public class SavedSearchResource extends ItemResource {
                 }
             } else {
                 xss = XdatStoredSearch.getXdatStoredSearchsById(sID, user, true);
+
+                //if we find a matching stored search confirm this user has access to it.
+                if (xss!=null && !xss.hasAllowedUser(user.getLogin()) ) {
+                    getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
+                    return null;
+                }
             }
         }
 
         if (xss != null) {
-            if (!xss.hasAllowedUser(user.getLogin()) && !Permissions.canQuery(user, xss.getRootElementName())) {
+            //check that the user has access to data of this type
+            if (!Permissions.canQuery(user, xss.getRootElementName())) {
                 getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
                 return null;
             }

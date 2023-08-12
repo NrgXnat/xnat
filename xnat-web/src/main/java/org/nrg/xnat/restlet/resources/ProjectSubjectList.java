@@ -15,10 +15,11 @@ import org.nrg.xdat.model.XnatProjectparticipantI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatProjectparticipant;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.SecurityValues;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -39,6 +40,11 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 
 public class ProjectSubjectList extends QueryOrganizerResource {
+
+	public static final String SUBJ_OWNED_PROJECT = XnatSubjectdata.SCHEMA_ELEMENT_NAME + "/project";
+	public static final String SUBJ_SHARED_PROJECT = XnatSubjectdata.SCHEMA_ELEMENT_NAME + "/sharing/share/project";
+	public static final String SUBJ_ID_PATH = XnatSubjectdata.SCHEMA_ELEMENT_NAME + "/ID";
+
 	XnatProjectdata proj=null;
 	
 	public ProjectSubjectList(Context context, Request request, Response response) {
@@ -199,21 +205,35 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 			
 			try {
 				final UserI user = getUser();
-				final QueryOrganizer qo = new QueryOrganizer(this.getRootElementName(), user,
-															 ViewManager.ALL);
+
+				final SecurityValues values = new SecurityValues();
+				values.put(SUBJ_OWNED_PROJECT, proj.getId());
+				values.put(SUBJ_SHARED_PROJECT, proj.getId());
+
+				final SchemaElement se= SchemaElement.GetElement(XnatSubjectdata.SCHEMA_ELEMENT_NAME);
+
+				if (!Permissions.canRead(user,se,values))
+				{
+					this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Unable to read subjects for Project: " + proj.getId());
+					return null;
+				}
+
+				final QueryOrganizer qo = QueryOrganizer.buildXFTQueryOrganizerWithClause(this.getRootElementName(), user);
 	            
 				this.populateQuery(qo);
 
 				final CriteriaCollection cc= new CriteriaCollection("OR");
-				cc.addClause("xnat:subjectData/project", proj.getId());
-				cc.addClause("xnat:subjectData/sharing/share/project", proj.getId());
-				qo.setWhere(cc);
+				cc.addClause(SUBJ_OWNED_PROJECT, proj.getId());
+				cc.addClause(SUBJ_SHARED_PROJECT, proj.getId());
 
-				final String query = qo.buildQuery();
+				qo.addWhere(cc);
+
+				//inject paging
+				final String query = qo.buildFullQuery() + " " + this.buildOffsetFromParams();
 
 				table = XFTTable.Execute(query, user.getDBName(), userName);
 
-				table = formatHeaders(table, qo, "xnat:subjectData/ID",
+				table = formatHeaders(table, qo, SUBJ_ID_PATH,
 						"/data/subjects/");
 				
 				final Integer labelI=table.getColumnIndex("label");
@@ -239,7 +259,7 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 
 			final MediaType mt = overrideVariant(variant);
 			final Hashtable<String, Object> params = new Hashtable<String, Object>();
-			if (table != null)
+			if (table != null && !hasOffset)
 				params.put("totalRecords", table.size());
 			return this.representTable(table, mt, params);
 		}

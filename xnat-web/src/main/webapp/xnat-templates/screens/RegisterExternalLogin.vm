@@ -53,7 +53,7 @@ $!template.setLayoutTemplate("Login.vm")
 
         <div id="login_box">
             #if($message.startsWith("Authentication failed"))
-                <div class="message" style="border-bottom: 0">
+                <div class="message">
                     <strong>Note:</strong> $message
                 </div>
             #end
@@ -148,7 +148,6 @@ $!template.setLayoutTemplate("Login.vm")
                 .prepend(
                     spawn(
                         'div.message',
-                        {style: {'border-bottom': 'none'}},
                         'XNAT usernames cannot contain punctuation. You will still be able to log in using your ${authMethod} credentials upon account creation and verification.'
         ));
     })

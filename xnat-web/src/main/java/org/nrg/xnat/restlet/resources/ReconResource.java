@@ -276,7 +276,6 @@ public class ReconResource extends ItemResource {
 				WorkflowUtils.complete(workflow, ci);
 
 				Users.clearCache(user);
-				MaterializedView.deleteByUser(user);
 			} catch (Exception e) {
 				WorkflowUtils.fail(workflow, ci);
 				throw e;

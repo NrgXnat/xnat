@@ -16,7 +16,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.html.Base;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -37,12 +36,20 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 @Slf4j
 public class XDATScreen_download_sessions extends SecureScreen {
+    private static final int QUERY_GROUP_SIZE = 10000;
 
     public XDATScreen_download_sessions() {
         _parameterized = XDAT.getContextService().getBean(NamedParameterJdbcTemplate.class);
@@ -112,22 +119,65 @@ public class XDATScreen_download_sessions extends SecureScreen {
                 }
 
                 final Set<String>           projectIds = projectSessionMap.keySet();
-                final MapSqlParameterSource parameters = new MapSqlParameterSource("sessionIds", sessionsUserCanDownload)
-                                                                                .addValue("projectIds", projectIds)
-                                                                                .addValue("userId", user.getUsername());
-
-                context.put("projectIds", projectIds);
-                context.put("sessionSummary", _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, parameters, SESSION_SUMMARY_ROW_MAPPER));
-                context.put("scans", _parameterized.query(QUERY_GET_SESSION_SCANS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
-                context.put("recons", _parameterized.query(QUERY_GET_SESSION_RECONS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
-                context.put("assessors", Lists.transform(_parameterized.query(Groups.hasAllDataAccess(user) || Permissions.isProjectPublic(projectId) ? QUERY_GET_SESSION_ASSESSORS_ADMIN : QUERY_GET_SESSION_ASSESSORS, parameters, ASSESSOR_ROW_MAPPER), ASSESSOR_DESCRIPTION_FUNCTION));
-                context.put("scan_formats", _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
-                context.put("resources", _parameterized.query(QUERY_GET_SESSION_RESOURCES, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
+                final String accessorsQuery = Groups.hasAllDataAccess(user) || Permissions.isProjectPublic(projectId) ? QUERY_GET_SESSION_ASSESSORS_ADMIN : QUERY_GET_SESSION_ASSESSORS;
+                if (sessionsUserCanDownload.size() <= QUERY_GROUP_SIZE) {
+                    final MapSqlParameterSource parameters = new MapSqlParameterSource("sessionIds", sessionsUserCanDownload)
+                            .addValue("projectIds", projectIds)
+                            .addValue("userId", user.getUsername());
+                    context.put("projectIds", projectIds);
+                    context.put("sessionSummary", _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, parameters, SESSION_SUMMARY_ROW_MAPPER));
+                    context.put("scans", _parameterized.query(QUERY_GET_SESSION_SCANS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
+                    context.put("recons", _parameterized.query(QUERY_GET_SESSION_RECONS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
+                    context.put("assessors", Lists.transform(_parameterized.query(accessorsQuery, parameters, ASSESSOR_ROW_MAPPER), ASSESSOR_DESCRIPTION_FUNCTION));
+                    context.put("scan_formats", _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
+                    context.put("resources", _parameterized.query(QUERY_GET_SESSION_RESOURCES, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
+                } else {
+                    List<List<String>> sessionSummary = new ArrayList<>();
+                    Map<String, Integer> scans = new HashMap<>();
+                    Map<String, Integer> recons = new HashMap<>();
+                    Map<String, Integer> assessors = new HashMap<>();
+                    Map<String, Integer> scan_formats = new HashMap<>();
+                    Map<String, Integer> resources = new HashMap<>();
+                    for (int i = 0; i < sessionsUserCanDownload.size(); i += QUERY_GROUP_SIZE) {
+                        Collection<String> subSessions = sessionsUserCanDownload.stream().skip(i).limit(QUERY_GROUP_SIZE).collect(Collectors.toList());
+                        final MapSqlParameterSource parameters = new MapSqlParameterSource("sessionIds", subSessions)
+                                .addValue("projectIds", projectIds)
+                                .addValue("userId", user.getUsername());
+                        sessionSummary.addAll(_parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, parameters, SESSION_SUMMARY_ROW_MAPPER));
+                        scans = mergeMap(scans, _parameterized.query(QUERY_GET_SESSION_SCANS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
+                        recons = mergeMap(recons, _parameterized.query(QUERY_GET_SESSION_RECONS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
+                        assessors = mergeMap(assessors, _parameterized.query(accessorsQuery, parameters, ASSESSOR_ROW_MAPPER));
+                        scan_formats = mergeMap(scan_formats, _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
+                        resources = mergeMap(resources, _parameterized.query(QUERY_GET_SESSION_RESOURCES, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
+                    }
+                    context.put("projectIds", projectIds);
+                    context.put("sessionSummary", sessionSummary);
+                    context.put("scans", mapToList(scans));
+                    context.put("recons", mapToList(recons));
+                    context.put("assessors", Lists.transform(mapToList(assessors), ASSESSOR_DESCRIPTION_FUNCTION));
+                    context.put("scan_formats", mapToList(scan_formats));
+                    context.put("resources", mapToList(resources));
+                }
             }
         } catch (InsufficientPrivilegesException e) {
             data.setMessage(e.getMessage());
             data.setScreenTemplate("Error.vm");
         }
+    }
+
+    private Map<String, Integer> mergeMap(Map<String, Integer> source, List<List<String>> newResults) {
+        Map<String, Integer> newResultsMap = newResults.stream().collect(Collectors.toMap(value -> value.get(0), value -> Integer.valueOf(value.get(1))));
+        newResultsMap.forEach((k, v) -> source.merge(k, v, Integer::sum));
+        return source;
+    }
+
+    private List<List<String>> mapToList(Map<String, Integer> source) {
+        return source.entrySet().stream().map(e -> {
+            List<String> item = new ArrayList<>();
+            item.add(e.getKey());
+            item.add(e.getValue().toString());
+            return item;
+        }).collect(Collectors.toList());
     }
 
     private String getPrimaryProject(final UserI user, final String experimentId) {

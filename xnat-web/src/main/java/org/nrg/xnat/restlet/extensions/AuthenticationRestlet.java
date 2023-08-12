@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnat.restlet.XnatRestlet;
 import org.nrg.xnat.security.XnatProviderManager;
+import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.resource.Resource;
@@ -26,6 +27,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Map;
 
 @XnatRestlet(value = "/services/auth", secure = false)
 @Slf4j
@@ -70,24 +72,47 @@ public class AuthenticationRestlet extends Resource {
     private void runAuthenticate() {
         log.debug("Passing a representation of the verify extensions restlet.");
 
-        if (XDAT.getSiteConfigPreferences().getRequireLogin() && StringUtils.isAnyBlank(_username, _password)) {
+        if (XDAT.getSiteConfigPreferences().getRequireLogin() && StringUtils.isAnyBlank(username, password)) {
             fail();
             return;
         }
 
         final XnatProviderManager manager = XDAT.getContextService().getBean(XnatProviderManager.class);
 
-        if (StringUtils.isEmpty(_authMethod) && !StringUtils.isEmpty(_username)) {
-            //try to guess the auth method
-            _authMethod = manager.retrieveAuthMethod(_username);
-            if (StringUtils.isEmpty(_authMethod)) {
-                throw new BadCredentialsException("Missing login method parameter.");
-            }
-        }
+        Authentication authentication = null;
 
         try {
-            final Authentication authentication = manager.authenticate(manager.buildUPTokenForAuthMethod(_authMethod, _username, _password));
-            if (authentication.isAuthenticated()) {
+            if (!StringUtils.isEmpty(authenticatorId)) {
+                Map<String, XnatAuthenticationProvider> visibleProviders = manager.getVisibleEnabledProviders();
+                if (!visibleProviders.containsKey(authenticatorId)) {
+                    visibleProviders = manager.getLinkedEnabledProviders(); //openId is a linked provider
+                    if (!visibleProviders.containsKey(authenticatorId)) {
+                        fail(Status.CLIENT_ERROR_BAD_REQUEST, String.format("No authentication provider identified by id %s found.", authenticatorId));
+                        return;
+                    }
+                }
+                authentication = manager.authenticate(manager.buildUPTokenForProviderName(authenticatorId, username, password));
+            } else {
+                if (!StringUtils.isEmpty(authMethod)) {
+                    //Are there multiple authentication providers with the same authMethod
+                    int countOfProvidersByAuthMethod = manager.countAuthenticatorsWithAuthMethod(authMethod);
+                    if (countOfProvidersByAuthMethod > 1) {
+                        fail(Status.CLIENT_ERROR_BAD_REQUEST, "Multiple authentication providers with identical authMethod exist. Use query parameter authenticatorId to specify a particular provider.");
+                        return;
+                    } else if (countOfProvidersByAuthMethod == 0) {
+                        fail();
+                        return;
+                    }
+                } else if (!StringUtils.isEmpty(username)) {
+                    //try to guess the auth method
+                    authMethod = manager.retrieveAuthMethod(username);
+                    if (StringUtils.isEmpty(authMethod)) {
+                        fail();
+                    }
+                }
+                authentication = manager.authenticate(manager.buildUPTokenForAuthMethod(authMethod, username, password));
+            }
+            if (null != authentication && authentication.isAuthenticated()) {
                 succeed(authentication);
                 getResponse().setEntity(ServletCall.getRequest(getRequest()).getSession().getId(), MediaType.TEXT_PLAIN);
             } else {
@@ -107,6 +132,11 @@ public class AuthenticationRestlet extends Resource {
         getResponse().setStatus(Status.CLIENT_ERROR_UNAUTHORIZED, "Authentication failed.");
     }
 
+    private void fail(final Status status, final String message) {
+        log.debug("Authentication failed: {}", message);
+        getResponse().setStatus(status, "Authentication failed: " + message);
+    }
+
     private void extractCredentials(String text) {
         for (String entry : text.split("&")) {
             final String[] atoms = entry.split("=", 2);
@@ -118,16 +148,18 @@ public class AuthenticationRestlet extends Resource {
                     switch (atoms[0]) {
                         case "username":
                         case "j_username":
-                            _username = URLDecoder.decode(atoms[1], "UTF-8");
+                            username = URLDecoder.decode(atoms[1], "UTF-8");
                             break;
                         case "password":
                         case "j_password":
-                            _password = URLDecoder.decode(atoms[1], "UTF-8");
+                            password = URLDecoder.decode(atoms[1], "UTF-8");
                             break;
                         case "provider":
                         case "login_method":
-                            _authMethod = URLDecoder.decode(atoms[1], "UTF-8");
+                            authMethod = URLDecoder.decode(atoms[1], "UTF-8");
                             break;
+                        case "authenticatorId":
+                            authenticatorId = URLDecoder.decode(atoms[1], "UTF-8");
                         default:
                             // TODO: Just ignoring for now, should we do something here?
                             log.warn("Unknown credential property: " + atoms[0]);
@@ -147,7 +179,8 @@ public class AuthenticationRestlet extends Resource {
         }
     }
 
-    private String _authMethod;
-    private String _username;
-    private String _password;
+    private String authMethod;
+    private String authenticatorId;
+    private String username;
+    private String password;
 }

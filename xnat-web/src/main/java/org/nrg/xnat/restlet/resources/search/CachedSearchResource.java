@@ -105,22 +105,19 @@ public class CachedSearchResource extends SecureResource {
 			MaterializedViewI mv = MaterializedView.retrieveView(tableName, user);
 			if(mv.getUser_name().equals(user.getLogin())){
 				MediaType mt = this.getRequestedMediaType();
+				final String sortOptions = (sortBy!=null) ? sortBy + " " + sortOrder : null;
+				table=mv.getData(sortOptions, offset, rowsPerPage);
+				if (null != sortOptions) {
+					table.isSorted(true);
+				}
 				if (mt!=null && (mt.equals(SecureResource.APPLICATION_XLIST))){
 					DisplaySearch ds = mv.getDisplaySearch(user);
-			    	
-					//table=(XFTTable)ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletCall.getRequest(this.getRequest())),null),user.getLogin());
-			    	table=mv.getData((sortBy!=null)?sortBy + " " + sortOrder:null, offset, rowsPerPage);
-					
 			    	RESTHTMLPresenter presenter= new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletCall.getRequest(this.getRequest())),null,user,sortBy);
-			    	ds.getSQLQuery(presenter);
-			    	
 			    	presenter.setRootElement(ds.getRootElement());
 					presenter.setDisplay(ds.getDisplay());
 					presenter.setAdditionalViews(ds.getAdditionalViews());
 					table = (XFTTable)presenter.formatTable(table,ds,ds.allowDiffs);
-			    }else{
-			    	table=mv.getData((sortBy!=null)?sortBy + " " + sortOrder:null, offset, rowsPerPage);
-				}
+			    }
 			}
 		} catch (SQLException e) {
 			logger.error("",e);

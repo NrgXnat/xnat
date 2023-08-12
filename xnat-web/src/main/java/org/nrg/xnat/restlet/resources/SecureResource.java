@@ -124,6 +124,7 @@ import static org.nrg.xft.event.XftItemEventI.DELETE;
 
 @SuppressWarnings("deprecation")
 public abstract class SecureResource extends Resource {
+
     private static final String COMPRESSION = "compression";
 
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
@@ -133,6 +134,8 @@ public abstract class SecureResource extends Resource {
     public static final String HANDLER = "handler";
 
     public static final Logger logger = Logger.getLogger(SecureResource.class);
+    public static final long DEFAULT_PAGE_SIZE = 100;
+    public static final long DEFAULT_PAGE_NUM = 0;
 
     public static List<Variant> STANDARD_VARIANTS = Arrays.asList(new Variant(MediaType.APPLICATION_JSON), new Variant(MediaType.TEXT_HTML), new Variant(MediaType.TEXT_XML));
 
@@ -503,7 +506,7 @@ public abstract class SecureResource extends Resource {
 
     public Representation representTable(XFTTable table, MediaType mt, Hashtable<String, Object> params, Map<String, Map<String, String>> columnProperties) {
         if (table != null) {
-            if (getQueryVariable("sortBy") != null) {
+            if (getQueryVariable("sortBy") != null && !table.isSorted()) {
                 final String sortBy = getQueryVariable("sortBy");
                 table.sort(Arrays.asList(StringUtils.split(sortBy, ',')));
                 if (isQueryVariable("sortOrder", "DESC", false) && !mt.equals(APPLICATION_XLIST)) {
@@ -987,7 +990,7 @@ public abstract class SecureResource extends Resource {
             try {
             	final String path = reference.getPath();
             	final String remainingPart = reference.getRemainingPart(false,false);
-            	final String basePath = (remainingPart.length()>0 && path.contains(remainingPart)) ? path.substring(0,path.lastIndexOf(remainingPart)) : path; 
+            	final String basePath = (remainingPart.length()> 0 && path.contains(remainingPart)) ? path.substring(0,path.lastIndexOf(remainingPart)) : path;
                 final URL siteUrl = new URL(siteUrlProperty);
                 reference.setProtocol(new Protocol(siteUrl.getProtocol()));
                 reference.setAuthority(siteUrl.getAuthority());
@@ -1417,7 +1420,6 @@ public abstract class SecureResource extends Resource {
         }
 
         Users.clearCache(user);
-        MaterializedView.deleteByUser(user);
     }
 
     public void delete(ArchivableItem parent, ItemI item, EventDetails event) throws Exception {
@@ -1434,7 +1436,6 @@ public abstract class SecureResource extends Resource {
         }
 
         Users.clearCache(user);
-        MaterializedView.deleteByUser(user);
     }
 
     @SuppressWarnings("unused")
@@ -1447,7 +1448,6 @@ public abstract class SecureResource extends Resource {
             if (SaveItemHelper.authorizedSave(sub, user, false, false, meta)) {
                 WorkflowUtils.complete(workflow, meta);
                 Users.clearCache(user);
-                MaterializedView.deleteByUser(user);
                 return true;
             }
             return false;
@@ -1708,7 +1708,10 @@ public abstract class SecureResource extends Resource {
                     WorkflowUtils.fail(wrk, c);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                 } else {
-                    XDAT.triggerXftItemEvent(item, DELETE, ImmutableMap.of("target", project.getId()));
+                    if(StringUtils.equals(project.getId(),((ArchivableItem) item).getProject())) {
+                        //only issue DELETE event if it was being deleted from the root projecct
+                        XDAT.triggerXftItemEvent(item, DELETE, ImmutableMap.of("target", project.getId()));
+                    }
                     WorkflowUtils.complete(wrk, c);
                 }
             } catch (Exception e) {
@@ -1986,7 +1989,6 @@ public abstract class SecureResource extends Resource {
                 }
                 WorkflowUtils.complete(workflow, meta);
                 Users.clearCache(user);
-                MaterializedView.deleteByUser(user);
                 return true;
             }
             return false;
@@ -2005,11 +2007,44 @@ public abstract class SecureResource extends Resource {
     }
 
     private XnatProjectdata getProjectById(final String projectId) throws NotFoundException {
-        return Optional.ofNullable(XnatProjectdata.getXnatProjectdatasById(projectId, getUser(), false)).orElseThrow(() -> new NotFoundException(projectId));
+        return Optional.ofNullable(XnatProjectdata.getXnatProjectdatasById(projectId, getUser(),false)).orElseThrow(() -> new NotFoundException(projectId));
+    }
+
+    protected String buildOffsetFromParams(){
+        //inject paging
+        Long offset = null;
+        Long limit = null;
+        if(this.hasQueryVariable("limit") || this.hasQueryVariable("offset")) {
+            final String offsetS = this.getQueryVariable("offset");
+            if (offsetS == null) {
+                offset = DEFAULT_PAGE_NUM;
+            }else if (StringUtils.equals("*", offsetS)) {
+                offset = null;
+            }else{
+                offset = Long.valueOf(offsetS);
+            }
+
+            final String rowsS= this.getQueryVariable("limit");
+            if(rowsS == null){
+                limit = DEFAULT_PAGE_SIZE;
+            }else if (StringUtils.equals("*", rowsS)) {
+                limit = null;
+            }else{
+                limit = Long.valueOf(rowsS);
+            }
+        }
+
+        if(offset != null && limit != null && (offset > 0 || limit > 0)){
+            hasOffset=true;
+            return " LIMIT "+ limit + " OFFSET " + offset;
+        }else{
+            return "";
+        }
     }
 
     private static final Class<?>[] OBJECT_REPRESENTATION_CTOR_PARAM_TYPES = {XFTTable.class, Map.class, Hashtable.class, MediaType.class};
 
+    protected boolean hasOffset = false;
     private final UserI                      _user;
     private final SerializerService          _serializer;
     private final NamedParameterJdbcTemplate _template;

@@ -12,7 +12,6 @@ package org.nrg.xnat.restlet.resources;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.xhtml.table;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatStoredSearch;
@@ -22,10 +21,9 @@ import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.*;
-import org.nrg.xdat.security.services.UserHelperServiceI;
+import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
@@ -35,6 +33,7 @@ import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
+import org.nrg.xnat.services.cache.DefaultGroupsAndPermissionsCache;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -52,7 +51,6 @@ public class ProjectListResource extends QueryOrganizerResource {
     private static final String DATA_ACCESSIBILITY = "data";
     private static final String DATA_READABLE = "readable";
     private static final String DATA_WRITABLE = "writable";
-    private static final List<String> PERMISSIONS = Arrays.asList(SecurityManager.ACTIVATE, SecurityManager.CREATE, SecurityManager.DELETE, SecurityManager.EDIT, SecurityManager.READ);
 
     public ProjectListResource(Context context, Request request, Response response) {
         super(context, request, response);
@@ -507,35 +505,16 @@ public class ProjectListResource extends QueryOrganizerResource {
 
         @Override
         public Representation handle(SecureResource resource, Variant variant) throws Exception {
-            final ArrayList<String> columns = new ArrayList<>();
-            columns.add("id");
-            columns.add("secondary_id");
-
-            final XFTTable table = new XFTTable();
-            table.initTable(columns);
-
             final String permissions = resource.getQueryVariable("permissions");
-            if (StringUtils.isBlank(permissions)) {
-                throw new Exception("You must specify a value for the permissions parameter.");
-            } else if (!PERMISSIONS.contains(permissions)) {
-                throw new Exception("You must specify one of the following values for the permissions parameter: " + Joiner.on(", ").join(PERMISSIONS));
+            final String dataType    = resource.getQueryVariable("dataType");
+            final UserI  user        = resource.getUser();
+
+            final GroupsAndPermissionsCache cache = XDAT.getContextService().getBeanSafely(GroupsAndPermissionsCache.class);
+            final XFTTable table= cache.getProjectsForDatatypeAction(user,dataType, permissions);
+            if(table==null){
+                throw new Exception("Failed to identify projects");
             }
 
-            final String              dataType          = resource.getQueryVariable("dataType");
-            final UserI               user              = resource.getUser();
-            final UserHelperServiceI  userHelperService = UserHelper.getUserHelperService(user);
-            final Map<Object, Object> projects          = userHelperService.getCachedItemValuesHash("xnat:projectData", null, false, "xnat:projectData/ID", "xnat:projectData/secondary_ID");
-
-            for (final Object key : projects.keySet()) {
-                final String projectId = (String) key;
-                // If no data type is specified, we check both MR and PET session data permissions. This is basically
-                // tailored for checking for projects to which the user can upload imaging data.
-                final boolean canEdit = StringUtils.isBlank(dataType) ? userHelperService.hasEditAccessToSessionDataByTag(projectId) : Permissions.can(user, dataType + "/project", projectId, permissions);
-                if (canEdit) {
-                    table.insertRowItems(projectId, projects.get(projectId));
-                }
-            }
-            table.sort("secondary_id", "ASC");
             return resource.representTable(table, resource.overrideVariant(variant), null);
         }
     }
@@ -556,7 +535,7 @@ public class ProjectListResource extends QueryOrganizerResource {
             try {
                 final String re = projResource.getRootElementName();
 
-                final QueryOrganizer qo = new QueryOrganizer(re, !allDataOverride ? user : null, ViewManager.ALL);
+                final QueryOrganizer qo = QueryOrganizer.buildXFTQueryOrganizerWithClause(re, !allDataOverride ? user : null);
 
                 projResource.populateQuery(qo);
                 
@@ -589,7 +568,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                 }
 
 
-                final String query = qo.buildQuery();
+                final String query = qo.buildFullQuery();
 
                 table = XFTTable.Execute(query, user.getDBName(), resource.userName);
 

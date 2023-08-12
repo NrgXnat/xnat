@@ -21,7 +21,6 @@ import org.nrg.xdat.security.SecurityValues;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.search.CriteriaCollection;
@@ -308,31 +307,29 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 
 		try {
 			final String rootElementName=this.getRootElementName();
-			final QueryOrganizer qo = new QueryOrganizer(rootElementName,user,ViewManager.ALL);
+			final QueryOrganizer qo = QueryOrganizer.buildXFTQueryOrganizerWithClause(this.getRootElementName(), user);
 
 			this.populateQuery(qo);
-
-			CriteriaCollection where=new CriteriaCollection("AND");
 
 			CriteriaCollection cc= new CriteriaCollection("OR");
 			cc.addClause(rootElementName+"/project", proj.getId());
 			cc.addClause(rootElementName+"/sharing/share/project", proj.getId());
-			where.addClause(cc);
+			qo.addWhere(cc);
 
 			if(subID!=null){
 				CriteriaCollection cc2= new CriteriaCollection("AND");
 				cc2.addClause("xnat:subjectAssessorData/subject_id", subID);
-				where.addClause(cc2);
+				qo.addWhere(cc2);
 			}
 
-            if(!ElementSecurity.IsSecureElement(rootElementName)){
-                qo.addField("xnat:experimentData/extension_item/element_name");
-                qo.addField("xnat:experimentData/project");
-            }
+			if(!ElementSecurity.IsSecureElement(rootElementName)){
+					qo.addField("xnat:experimentData/extension_item/element_name");
+					qo.addField("xnat:experimentData/project");
+			}
 
-			qo.setWhere(where);
 
-			String query=qo.buildQuery();
+			//inject paging
+			final String query = qo.buildFullQuery() + " " + this.buildOffsetFromParams();
 
 			table=XFTTable.Execute(query, user.getDBName(), userName);
 
@@ -425,7 +422,7 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 			}
 
 		Hashtable<String,Object> params= new Hashtable<>();
-		if (table != null)
+		if (table != null && !hasOffset)
 			params.put("totalRecords", table.size());
 		return this.representTable(table, overrideVariant(variant), params);
 	}

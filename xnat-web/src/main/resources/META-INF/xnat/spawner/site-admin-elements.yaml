@@ -1304,6 +1304,37 @@ dateFormatting:
         dateFormatScript:
             tag: script|src=/scripts/xnat/admin/datetimeManagement.js
 
+## SEARCH PERFORMANCE MANAGEMENT
+
+searchPerformance:
+    kind: panel.form
+    name: searchPerformance
+    id: admin-search-performance-panel
+    label: Search Performance
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        sortedListing:
+            kind: panel.input.switchbox
+            name: defaultToSortedListings
+            onText: Enabled
+            offText: Disabled
+            checked: true
+            label: "Search Listings should be sorted by default"
+            description: >
+                <p>Sorting of tables can add several seconds onto larger queries.  On small instances, this isn't an issue.  But on servers with millions of entries, this can impact performance. This setting determines whether all data listings are sorted by default (on initial access).  Set to 'Disabled' on large instances.</p>
+                <p>Default: Enabled</p>
+        countsOnProject:
+            kind: panel.input.switchbox
+            label: "Project data listings include summary counts"
+            name: addCountFieldsToProjectListings
+            onText: Enabled
+            offText: Disabled
+            checked: true
+            description: >
+                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Disabling count fields can improve performance.  This setting determines whether count fields (like MR Count) should be included in project level listings (like Subjects). If Enabled, counts of child objects will be automatically included in project data listings. If Disabled, counts of child objects will only be available if display documents are manually configured to add them. Note: This doesn't effect site-wide listings, which are managed entirely by display documents.</p>
+                <p>Default: Enabled</p>
 
 ## THEMES
 
@@ -2630,6 +2661,13 @@ root:
                 ${searchTabsHomePage}
                 ${adminControls}
                 ${displayedUserIdentifier}
+        managePerformance:
+            kind: tab
+            name: managePerformance
+            label: Performance
+            group: xnatSetup
+            contents:
+                ${searchPerformance}
         plugins:
             kind: tab
             name: plugins

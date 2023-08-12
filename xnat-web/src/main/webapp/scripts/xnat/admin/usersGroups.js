@@ -737,11 +737,9 @@ var XNAT = getObject(XNAT);
             return form;
         }
 
-        var cpForm$ = null;
-        var updated = false;
-        var formContainer$ = null;
-
-
+        let cpForm$ = null;
+        let updated = false;
+        let formContainer$ = null;
         XNAT.dialog.open({
             title: 'Change Password for '+data.username,
             width: 500,
@@ -787,6 +785,22 @@ var XNAT = getObject(XNAT);
 
         var doEdit = _load && data.username;
 
+        function checkUserAccountIsManagedInternally() {
+            let isUserAccountManagedInternally = false;
+            XNAT.xhr.get({
+                url: XNAT.url.restUrl('xapi/users/authDetails/'+data.username),
+                async: false,
+                fail: function(e){
+                    errorHandler(e, 'Could not fetch authentication method');
+                },
+                success: function(userAuthData){
+                    isUserAccountManagedInternally = userAuthData.some(el => el.authMethod === 'localdb');
+                }
+            });
+            return isUserAccountManagedInternally;
+        }
+
+
         // username could be text or input element
         function usernameField(username){
             var obj = {
@@ -819,14 +833,20 @@ var XNAT = getObject(XNAT);
             var obj = {
                 label: 'Password'
             };
+            let isUserAccountManagedInternally = checkUserAccountIsManagedInternally();
             if (data && data.username) {
+                let disabledBtn = isUserAccountManagedInternally?'':' disabled ';
                 obj.kind = 'panel.element';
                 obj.contents = {
                     changePasswordLink: {
                         kind: 'html',
                         content:
                             '<a href="#!" class="change-password" style="display: inline-block; margin: -4px 0 4px;" data-username="'+data.username+'">' +
-                            '<button class="btn btn-sm">Change User Password</button></a>'
+                            '<button class="btn btn-sm" ' + disabledBtn + '>Change User Password</button></a>'
+                    },
+                    description: {
+                        tag: 'div.description',
+                        content: isUserAccountManagedInternally?'':'Configured authentication provider for this user account does not allow password change through this interface. Please contact your site administrator for assistance.'
                     }
                 }
             }

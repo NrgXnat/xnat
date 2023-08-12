@@ -7,9 +7,17 @@
 
 /* XNAT Color Scheme Shims */
 a,
-a:visited { color: var(--link-color); }
+a:visited,
+.xnat-bootstrap a,
+.xnat-bootstrap a:visited,
+.xnat-bootstrap a:not([href]):not([class]),
+.xnat-bootstrap a:not([href]):not([class]):visited { color: var(--link-color); }
 a:hover,
-a:active { color: var(--link-color-hover); }
+a:active,
+.xnat-bootstrap a:hover,
+.xnat-bootstrap a:active,
+.xnat-bootstrap a:not([href]):not([class]):hover,
+.xnat-bootstrap a:not([href]):not([class]):active { color: var(--link-color-hover); text-decoration: none; }
 
 /* Ensure icon font rendering */
 .fa {
@@ -261,4 +269,20 @@ div.xnat-dialog-shell.loader {
 .is-flipped .choices__list--dropdown {
     max-height: 250px;
     overflow-y: auto;
+}
+
+/* YUI display shims */
+
+.xnat-bootstrap .yui-panel h3 {
+    line-height: 20px;
+    margin-bottom: 0;
+}
+.xnat-bootstrap .yui-panel table {
+    border-collapse: inherit;
+}
+.xnat-bootstrap .yui-panel fieldset {
+    margin: 1em 0;
+}
+.xnat-bootstrap .yui-panel input {
+    font-size: 13px;
 }

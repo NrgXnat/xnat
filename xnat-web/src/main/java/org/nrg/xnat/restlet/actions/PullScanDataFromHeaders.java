@@ -133,7 +133,6 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
 					for (String uri : filesToRemove) {
 						new File(uri).delete();
 					}
-					MaterializedView.deleteByUser(user);
 
 					if(proj.getArcSpecification().getQuarantineCode()!=null && proj.getArcSpecification().getQuarantineCode().equals(1)){
 						mr.quarantine(user);

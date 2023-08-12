@@ -576,11 +576,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                             final Date lastModified = merged.getItem().getLastModified();
                             XDAT.triggerXftItemEvent(merged, lastModified == null || lastModified.getTime() - inserted.getTime() == 0 ? CREATE : UPDATE);
                             Users.clearCache(user);
-                            try {
-                                MaterializedView.deleteByUser(user);
-                            } catch (Exception e) {
-                                log.error("", e);
-                            }
 
                             try {
                                 if (shouldForceQuarantine) {

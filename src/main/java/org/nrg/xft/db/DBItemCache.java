@@ -44,7 +44,8 @@ public class DBItemCache {
     private String comment;
     private Object event_id;
 
-    private static volatile String dbName = null, table = null, pk = null, sequence = null;
+    private static String table = null, pk = null, sequence = null;
+    private static volatile String dbName = null;
     private static final Object NEXT_CHANGE_ID_MUTEX = new Object();
 
     private final UserI user;
@@ -79,10 +80,12 @@ public class DBItemCache {
                 if (dbName == null) {
                     try {
                         GenericWrapperElement element = GenericWrapperElement.GetElement("xdat:change_info");
-                        dbName = element.getDbName();
                         table = element.getSQLName();
                         pk = "xdat_change_info_id";
                         sequence = element.getSequenceName();
+
+                        // Setting volatile variable last means everything above "piggybacks" on volatile consistency guarantee. XNAT-7863
+                        dbName = element.getDbName();
                     } catch (XFTInitException | ElementNotFoundException e) {
                         logger.error("", e);
                     }

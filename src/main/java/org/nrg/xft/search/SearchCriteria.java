@@ -11,6 +11,7 @@
 package org.nrg.xft.search;
 
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +29,7 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.ArrayList;
@@ -406,6 +408,14 @@ public class SearchCriteria implements SQLClause {
         copy.field_name=(field_name);
         copy.overrideFormatting=(true);
         copy.xmlPath=this.xmlPath;
+
+        if(StringUtils.equals(getCleanedType(),"dateTime") && value instanceof String){
+            try {
+                value = DateUtils.parseDateTime((String)value);
+            } catch (ParseException e) {
+                log.error("");
+            }
+        }
 
         copy.value=tracker.trackValue(value,DBAction.TypeParser(value,this.getCleanedType(),false));
 

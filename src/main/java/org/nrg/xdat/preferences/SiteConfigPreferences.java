@@ -1758,6 +1758,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "DICOM-zip")
+    public String getUiDefaultCompressedUploaderImporter() {
+        return getValue("uiDefaultCompressedUploaderImporter");
+    }
+
+    public void setUiDefaultCompressedUploaderImporter(final String uiDefaultCompressedUploaderImporter) {
+        try {
+            set(uiDefaultCompressedUploaderImporter, "uiDefaultCompressedUploaderImporter");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'uiDefaultCompressedUploaderImporter': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true")
     public boolean getUiHideXnatUploadAssistantDownload() {
         return getBooleanValue("uiHideXnatUploadAssistantDownload");

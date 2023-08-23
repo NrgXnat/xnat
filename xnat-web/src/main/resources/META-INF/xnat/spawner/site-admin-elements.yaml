@@ -1548,6 +1548,36 @@ uploadChannels:
             description: >
                 If set to "Hidden", the Compressed Uploader is removed from the "Upload > Images" menu.
                 (The DICOM-zip importer is enabled regardless of this setting.)
+        uiDefaultUploaderImporter:
+            kind: panel.element
+            label: Default Compressed Uploader Importer
+            contents:
+                info:
+                    tag: p
+                    element:
+                        style: "margin: 3px 0 8px 0;"
+                    content: Select the default compressed uploader importer
+                uploaderUploadDicomZip:
+                    kind: input.radio
+                    name: uiDefaultCompressedUploaderImporter
+                    id: uploaderDicomZip
+                    value: DICOM-zip
+                    after: >
+                        <label class="pad5h" for="uploaderDicomZip">DICOM-Zip</label>
+                uploaderUploadSessionImporter:
+                    kind: input.radio
+                    name: uiDefaultCompressedUploaderImporter
+                    id: uploaderSI
+                    value: SI
+                    after: >
+                        <label class="pad5h" for="uploaderSI">Session Importer</label>
+                        <p class="description">
+                        Select the import handler default for the compressed uploader page, but
+                        users will be able to select which handler to use on the compressed uploader page. </p>
+                        <p class="description">DICOM-zip is recommended for consistency with other upload mechanisms (C-STORE, XNAT Desktop Client), 
+                        and despite its name, it does support tar, tar.gz, tgz, as well.</p> 
+                        <p class="description">Session Importer (SI) is deprecated but offered for backward consistency
+                        e.g., if they’re uploading a lot of ECAT. </p>
         uiHideXnatUploadAssistantDownload:
             kind: panel.input.switchbox
             label: "Hide XNAT Upload Assistant"

@@ -16,17 +16,23 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.dcm4che2.io.DicomCodingException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.fileExtraction.Format;
 import org.nrg.xnat.helpers.ArchiveEntryFileWriterWrapper;
 import org.nrg.xnat.helpers.TarEntryFileWriterWrapper;
 import org.nrg.xnat.helpers.ZipEntryFileWriterWrapper;
+import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
+import org.springframework.jms.core.JmsTemplate;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -35,6 +41,8 @@ import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static org.nrg.xnat.archive.Operation.Rebuild;
 
 @ImporterHandler(handler = ImporterHandlerA.DICOM_ZIP_IMPORTER)
 public final class DicomZipImporter extends ImporterHandlerA {
@@ -112,7 +120,35 @@ public final class DicomZipImporter extends ImporterHandlerA {
         if (uris.isEmpty() && nonDcmException != null) {
             throw nonDcmException;
         }
+        if (params.containsKey("isCompressedUploader")) {
+            this.processing("Successfully uploaded "+uris.size()+"  sessions to the prearchive.");
+            xmlBuild(uris);
+            updateStatus(uris);
+        }
         return Lists.newArrayList(uris);
+    }
+
+    private void updateStatus(Set<String> uris) {
+        String message = "DicomZip:"+uris.size()+":prearchive";
+        if (params.containsKey(PREARCHIVE_CODE)) {
+            if ("1".equals((String)params.get(PREARCHIVE_CODE))) {
+                message = "DicomZip:"+uris.size()+":archive:"+(String)params.get("project");
+            }
+        }
+        this.completed(message, true);
+    }
+
+    private void xmlBuild(Set<String> uris) throws ClientException {
+        for (String session : uris) {
+            String[] elements = session.split("/");
+            final SessionData sessionData;
+            try {
+                sessionData = PrearcDatabase.getSession(elements[5], elements[4], elements[3]);
+                XDAT.sendJmsRequest(XDAT.getContextService().getBean(JmsTemplate.class), new PrearchiveOperationRequest(u, Rebuild, sessionData, new File(sessionData.getUrl())));
+            } catch (Exception e) {
+                throw new ClientException("unable to send JMS request for Prearchive session", e);
+            }
+        }
     }
 
     private void importEntry(ArchiveEntryFileWriterWrapper entryFileWriter, Set<String> uris)
@@ -131,4 +167,5 @@ public final class DicomZipImporter extends ImporterHandlerA {
     private final Map<String, Object> params;
     private final Format              format;
     private static final String       IGNORE_UNPARSABLE_PARAM = "Ignore-Unparsable";
+    private static final String       PREARCHIVE_CODE = "prearchive_code";
 }

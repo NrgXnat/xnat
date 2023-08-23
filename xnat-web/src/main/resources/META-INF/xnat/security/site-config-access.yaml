@@ -55,6 +55,7 @@ authenticated:
   - uiExptAllowProjectChange
   - uiExptAllowSubjectChange
   - uiHideCompressedUploaderUploadOption
+  - uiDefaultCompressedUploaderImporter
   - uiHideDesktopClientDownload
   - uiHideXnatUploadAssistantDownload
   - uiLoginFailureMessage

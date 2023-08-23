@@ -15,7 +15,11 @@ import com.google.common.io.ByteStreams;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.dcm4che2.data.*;
+import org.dcm4che2.data.BasicDicomObject;
+import org.dcm4che2.data.DicomObject;
+import org.dcm4che2.data.Tag;
+import org.dcm4che2.data.TransferSyntax;
+import org.dcm4che2.data.VR;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.io.DicomOutputStream;
 import org.dcm4che2.io.StopTagInputHandler;
@@ -56,10 +60,23 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -572,6 +589,12 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     private PrearchiveCode shouldAutoArchive(final XnatProjectdata project, final DicomObject o) {
+        if (_parameters.containsKey("auto-archive")) {
+            if ("true".equalsIgnoreCase((String) _parameters.get("auto-archive"))) {
+                return PrearchiveCode.AutoArchive;
+            }
+            return PrearchiveCode.Manual;
+        }
         if (null == project) {
             return null;
         }

@@ -253,16 +253,20 @@ var XNAT = getObject(XNAT);
     };
 
     function parseFinalMessage(message, succeeded) {
-        const prearchiveLink = '<a target="_blank" href="' +
-            XNAT.url.rootUrl('/app/template/XDATScreen_prearchives.vm') +
-            '">prearchive</a>';
+        if (message.includes('DicomZip')) {
+            return parseDicomZipMessage(message, succeeded);
+        } else {
+            return parseSiMessage(message, succeeded);
+        }
+    }
 
+    function parseSiMessage(message, succeeded) {
         if (succeeded) {
             const dest = message.replace(/:.*/, '');
             const urls = message.replace(/^.*:/, '').split(';');
             let urlsHtml;
             if (dest.toLowerCase().includes('prearchive')) {
-                urlsHtml = 'Visit the ' + prearchiveLink + ' to review.';
+                urlsHtml = 'Visit the ' + getPrearcLink() + ' to review.';
             } else {
                 urlsHtml = $.map(urls, function (url) {
                     var id = url.replace(/.*\//, '');
@@ -273,9 +277,34 @@ var XNAT = getObject(XNAT);
                 ' session(s) successfully uploaded to ' + dest + ': ' + urlsHtml + '</div>';
         } else {
             return '<div class="prog error">Extraction/Review failed: ' + message + '</div>' +
+                '<div class="warning">Check the ' + getPrearcLink() +
+                ', DICOM/ECAT data may be available there for manual review.</div>';
+        }
+    }
+
+    function parseDicomZipMessage(message, succeeded) {
+        if (succeeded) {
+            const messageFields = message.split(":");
+            let returnMessage = '<div class="prog success">' + messageFields[1] +
+                ' session(s) successfully uploaded and scheduled to process, Please visit ';
+            if (messageFields[2].includes("prearchive")) {
+                returnMessage = returnMessage + getPrearcLink();
+            } else {
+                const projectUrl = '<a target="_blank" href="' + XNAT.url.rootUrl('/data/projects/' + messageFields[3]) + '">' + messageFields[3] + '</a>'
+                returnMessage = returnMessage + projectUrl;
+            }
+            return returnMessage + ' to review </div>';
+        } else {
+            return '<div class="prog error">Extraction/Review failed: </div>' +
                 '<div class="warning">Check the ' + prearchiveLink +
                 ', DICOM/ECAT data may be available there for manual review.</div>';
         }
+    }
+
+    function getPrearcLink() {
+        return '<a target="_blank" href="' +
+        XNAT.url.rootUrl('/app/template/XDATScreen_prearchives.vm') +
+        '">prearchive</a> ';
     }
 
     function getCallbackForItem(item) {

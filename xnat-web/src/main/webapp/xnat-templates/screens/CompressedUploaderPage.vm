@@ -1,6 +1,15 @@
 <script type="text/javascript">
     XNAT.app = getObject(XNAT.app || {});
 
+    function getSiteConfig() {
+        XNAT.xhr.getJSON({
+            url: XNAT.url.rootUrl('/xapi/siteConfig'),
+            success: function(siteConfig){
+                document.getElementById('import-handler').value = siteConfig['uiDefaultCompressedUploaderImporter'];
+            }
+        });
+    }
+
     function disableForm(theform) {
         if (document.getElementById) {
             for (i = 0; i < theform.length; i++) {
@@ -24,6 +33,7 @@
     var usrResPathBase = '/user/cache/resources/' + uploadID + '/files/';
     var destArchive = false;
     var prearchiveLinkString = '<a target="_blank" href="$content.getURI("/app/template/XDATScreen_prearchives.vm")">prearchive</a>';
+    this.getSiteConfig();
 
     function evaluateDestination(ele) {
         if (ele.value == '2') {
@@ -182,7 +192,7 @@
 <div>
     $sectionTitle
 
-    <p>Upload zipped (.zip or .tar.gz or .tgz) DICOM or ECAT image files to a specified project.</p>
+    <p>Upload zipped (.zip or .tar.gz or .tgz) DICOM or ECAT (Must use Classic Session Importer) image files to a specified project.</p>
     <p>Selecting 'Prearchive' will place your images into a
         <a target="_blank" href="$content.getURI("/app/template/XDATScreen_prearchives.vm")">temporary holding space</a>,
         which allows you to review the details and match the data to the proper
@@ -211,6 +221,15 @@
                     #end
                 </td>
             </tr>
+            <tr>
+                <th align="left">Importer handler</th>
+                <td>
+                    <select id="import-handler" name="import-handler">
+                        <option value="DICOM-zip">DICOM</option>
+                        <option value="SI">Classic Session Importer (Deprecated)</option>
+                    </select>
+                </td>
+            </tr>
 
             #if($!session)
                 <tr>
@@ -234,6 +253,7 @@
                         <input type="hidden" id="auto-archive" name='auto-archive' value='FALSE'/>
                     #end
                     <input type="hidden" id="quarantine" name='quarantine' value='FALSE'/>
+                    <input type="hidden" id="isCompressedUploader" name='isCompressedUploader' value='true'/>
                 </td>
             </tr>
             <tr>

@@ -20,9 +20,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -129,8 +127,8 @@ public class AutomationFilters extends AbstractHibernateEntity implements Serial
      */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable
-    public List<String> getValues() {
-        return new ArrayList<>(values);
+    public Set<String> getValues() {
+        return new HashSet<>(values);
     }
 
     /**

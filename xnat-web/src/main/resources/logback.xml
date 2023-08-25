@@ -301,7 +301,7 @@
     <appender name="RECEIVED" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${xnat.home}/logs/received.log</File>
         <encoder>
-            <pattern>%d - %m%n</pattern>
+            <pattern>%d [%t] - %m%n</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${xnat.home}/logs/received.log.%d{yyyy-MM-dd}</fileNamePattern>

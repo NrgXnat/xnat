@@ -28,6 +28,7 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.impl.ThemeServiceImpl;
+import org.nrg.xnat.compute.config.ComputeConfig;
 import org.nrg.xnat.helpers.prearchive.handlers.DefaultPrearchiveOperationHandlerResolver;
 import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveOperationHandlerResolver;
 import org.nrg.xnat.initialization.InitializingTask;
@@ -86,7 +87,7 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnat.processor.services.impl", "org.nrg.xnat.processors",
                 "org.nrg.xnat.task", "org.nrg.xnat.tracking", "org.nrg.xnat.archive", "org.nrg.xnat.services.customfields.impl",
                 "org.nrg.xnat.features"})
-@Import({FeaturesConfig.class, ReactorConfig.class})
+@Import({FeaturesConfig.class, ReactorConfig.class, ComputeConfig.class})
 @EnableCaching
 @Getter
 @Accessors(prefix = "_")

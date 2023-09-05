@@ -105,6 +105,17 @@ public class GradualDicomImporter extends ImporterHandlerA {
         _directArchive &= _directArchiveSessionService != null;
     }
 
+    private int getMaxFilterTag(final SeriesImportFilter filter) {
+        if (filter == null || !filter.isEnabled()) {
+            return 0;
+        }
+       List<Integer> tags=filter.getFilterTags();
+       if (tags.isEmpty()) {
+           return 0;
+       }
+       return tags.get(tags.size()-1);
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public List<String> call() throws ClientException {
@@ -112,9 +123,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final DicomObject dicom;
         final XnatProjectdata project;
         final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
+        final SeriesImportFilter siteFilter = getDicomFilterService().getSeriesImportFilter();
+        final int lastTag = Math.max(getMaxFilterTag(siteFilter), Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription))+ 1;
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
              final DicomInputStream dis = null == _transferSyntax ? new DicomInputStream(bis) : new DicomInputStream(bis, _transferSyntax)) {
-            final int lastTag = Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription) + 1;
             log.trace("reading object into memory up to {}", TagUtils.toString(lastTag));
             dis.setHandler(new StopTagInputHandler(lastTag));
             dicom = dis.readDicomObject();
@@ -142,8 +154,16 @@ public class GradualDicomImporter extends ImporterHandlerA {
             }
 
             final String projectId = project != null ? project.getId() : null;
-            final SeriesImportFilter siteFilter = getDicomFilterService().getSeriesImportFilter();
             final SeriesImportFilter projectFilter = StringUtils.isNotBlank(projectId) ? getDicomFilterService().getSeriesImportFilter(projectId) : null;
+            final int maxProjectTag = getMaxFilterTag(projectFilter);
+            final DicomObject filterDicomObject;
+            if (maxProjectTag > lastTag) {
+                bis.reset();
+                dis.setHandler(new StopTagInputHandler(maxProjectTag));
+                filterDicomObject = dis.readDicomObject();
+            } else {
+                filterDicomObject = dicom;
+            }
             if (log.isDebugEnabled()) {
                 if (siteFilter != null) {
                     if (projectFilter != null) {
@@ -157,7 +177,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     log.debug("Found no site-wide series import filter and " + (projectFilter.isEnabled() ? "enabled" : "disabled") + " series import filter for the project " + projectId);
                 }
             }
-            if (!(shouldIncludeDicomObject(siteFilter, dicom) && shouldIncludeDicomObject(projectFilter, dicom))) {
+            if (!(shouldIncludeDicomObject(siteFilter, filterDicomObject) && shouldIncludeDicomObject(projectFilter, filterDicomObject))) {
                 return new ArrayList<>();
                 /* TODO: Return information to user on rejected files. Unfortunately throwing an
                  * exception causes DicomBrowser to display a panicked error message. Some way of

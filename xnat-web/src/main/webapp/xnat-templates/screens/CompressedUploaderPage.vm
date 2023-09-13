@@ -253,7 +253,7 @@
                         <input type="hidden" id="auto-archive" name='auto-archive' value='FALSE'/>
                     #end
                     <input type="hidden" id="quarantine" name='quarantine' value='FALSE'/>
-                    <input type="hidden" id="isCompressedUploader" name='isCompressedUploader' value='true'/>
+                    <input type="hidden" id="action" name='action' value='commit'/>
                 </td>
             </tr>
             <tr>

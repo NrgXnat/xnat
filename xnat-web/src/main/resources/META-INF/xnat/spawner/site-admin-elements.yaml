@@ -1550,13 +1550,13 @@ uploadChannels:
                 (The DICOM-zip importer is enabled regardless of this setting.)
         uiDefaultUploaderImporter:
             kind: panel.element
-            label: Default Compressed Uploader Importer
+            label: Default Uploader Importer
             contents:
                 info:
                     tag: p
                     element:
                         style: "margin: 3px 0 8px 0;"
-                    content: Select the default compressed uploader importer
+                    content: Select the default uploader importer
                 uploaderUploadDicomZip:
                     kind: input.radio
                     name: uiDefaultCompressedUploaderImporter
@@ -1572,8 +1572,8 @@ uploadChannels:
                     after: >
                         <label class="pad5h" for="uploaderSI">Session Importer</label>
                         <p class="description">
-                        Select the import handler default for the compressed uploader page, but
-                        users will be able to select which handler to use on the compressed uploader page. </p>
+                        Select the import handler default. The compressed uploader and the restful import API will use this value by default, but
+                        users will be able to select which handler to use on the compressed uploader page or the url of the API call. </p>
                         <p class="description">DICOM-zip is recommended for consistency with other upload mechanisms (C-STORE, XNAT Desktop Client), 
                         and despite its name, it does support tar, tar.gz, tgz, as well.</p> 
                         <p class="description">Session Importer (SI) is deprecated but offered for backward consistency

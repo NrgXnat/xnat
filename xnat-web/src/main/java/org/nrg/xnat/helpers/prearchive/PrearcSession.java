@@ -92,11 +92,8 @@ public class PrearcSession {
             if (sessionAutoArcSetting == PrearchiveCode.AutoArchive || sessionAutoArcSetting == PrearchiveCode.AutoArchiveOverwrite) {
                 return setArchiveReason(true);
             }
-            if (sessionAutoArcSetting == PrearchiveCode.Manual) {
-                return setArchiveReason(false);
-            }
         }
-
+        
         if (destination instanceof URIManager.ArchiveURI) {
             setArchiveReason(false);
             return true;

@@ -33,6 +33,7 @@ import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.*;
 @Slf4j
 public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler {
     public static final String PARAM_OVERRIDE_LOCK = "overrideLock";
+    private boolean autoArchive = false;
 
     public PrearchiveRebuildHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider, final DicomInboxImportRequestService importRequestService) {
         super(request, eventService, userProvider, importRequestService);
@@ -40,6 +41,13 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
 
     @Override
     public void execute() {
+        rebuild();
+        if (autoArchive) {
+            XDAT.sendJmsRequest(new PrearchiveOperationRequest(getUser().getUsername(), Archive, getSessionData(), getSessionDir(), getParameters()));
+        }
+    }
+
+    public void rebuild() {
         try {
             final PrearcUtils.PrearcStatus status    = getSessionData().getStatus();
             final boolean                  receiving = status != null && status.equals(RECEIVING);
@@ -78,7 +86,7 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
                         // but we still want to autoarchive sessions that just came from RECEIVING STATE
                         final PrearcSession session = new PrearcSession(project, timestamp, folderName, null, getUser());
                         if (receiving && session.isAutoArchive()) {
-                            XDAT.sendJmsRequest(new PrearchiveOperationRequest(getUser().getUsername(), Archive, getSessionData(), getSessionDir(), getParameters()));
+                            autoArchive = true;
                         }
                     }
                 } else {

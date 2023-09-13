@@ -253,11 +253,7 @@ var XNAT = getObject(XNAT);
     };
 
     function parseFinalMessage(message, succeeded) {
-        if (message.includes('DicomZip')) {
-            return parseDicomZipMessage(message, succeeded);
-        } else {
-            return parseSiMessage(message, succeeded);
-        }
+       return parseSiMessage(message, succeeded);
     }
 
     function parseSiMessage(message, succeeded) {
@@ -278,25 +274,6 @@ var XNAT = getObject(XNAT);
         } else {
             return '<div class="prog error">Extraction/Review failed: ' + message + '</div>' +
                 '<div class="warning">Check the ' + getPrearcLink() +
-                ', DICOM/ECAT data may be available there for manual review.</div>';
-        }
-    }
-
-    function parseDicomZipMessage(message, succeeded) {
-        if (succeeded) {
-            const messageFields = message.split(":");
-            let returnMessage = '<div class="prog success">' + messageFields[1] +
-                ' session(s) successfully uploaded and scheduled to process, Please visit ';
-            if (messageFields[2].includes("prearchive")) {
-                returnMessage = returnMessage + getPrearcLink();
-            } else {
-                const projectUrl = '<a target="_blank" href="' + XNAT.url.rootUrl('/data/projects/' + messageFields[3]) + '">' + messageFields[3] + '</a>'
-                returnMessage = returnMessage + projectUrl;
-            }
-            return returnMessage + ' to review </div>';
-        } else {
-            return '<div class="prog error">Extraction/Review failed: </div>' +
-                '<div class="warning">Check the ' + prearchiveLink +
                 ', DICOM/ECAT data may be available there for manual review.</div>';
         }
     }

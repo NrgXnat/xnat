@@ -162,9 +162,24 @@ public class Groups {
     public static boolean isDataAdmin(final UserI user) {
         return Groups.isMember(user, ALL_DATA_ADMIN_GROUP);
     }
+    public static boolean isDataAdmin(final String user) {
+        try {
+            return Groups.isMember(user, ALL_DATA_ADMIN_GROUP);
+        } catch (UserNotFoundException e) {
+            return false;
+        }
+    }
 
     public static boolean isDataAccess(final UserI user) {
         return Groups.isMember(user, ALL_DATA_ACCESS_GROUP);
+    }
+
+    public static boolean isDataAccess(final String user) {
+        try {
+            return Groups.isMember(user, ALL_DATA_ACCESS_GROUP);
+        } catch (UserNotFoundException e) {
+            return false;
+        }
     }
 
     public static boolean hasAllDataAccess(final UserI user) {
@@ -228,6 +243,18 @@ public class Groups {
      * @return Returns true if the user is a member of the indicated group, false otherwise.
      */
     public static boolean isMember(UserI user, String groupId) {
+        return getUserGroupService().isMember(user, groupId);
+    }
+
+    /**
+     * Tests whether the user is assigned to the group with the indicated ID.
+     *
+     * @param user    The username to test for group assignment.
+     * @param groupId The group ID on which to search.
+     *
+     * @return Returns true if the user is a member of the indicated group, false otherwise.
+     */
+    public static boolean isMember(String user, String groupId) throws UserNotFoundException {
         return getUserGroupService().isMember(user, groupId);
     }
 

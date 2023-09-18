@@ -1192,12 +1192,16 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             }
 
             final Map<String, Long> readableCounts = new HashMap<>();
-            final List<String> readableProjects = getUserReadableProjects(username);
-            readableCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, (long) readableProjects.size());
+
+            if(Groups.isDataAccess(username) || Groups.isDataAdmin(username)){
+                readableCounts.putAll(getTotalCounts());
+            }else{
+                final List<String> readableProjects = getUserReadableProjects(username);
+                readableCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, (long) readableProjects.size());
+                readableCounts.putAll(getUserReadableSubjectsAndExperiments(readableProjects, Arrays.asList(Users.getUserId(username), Users.getUserId("guest"))));
+            }
 
             readableCounts.put(WrkWorkflowdata.SCHEMA_ELEMENT_NAME, getUserReadableWorkflowCount(username));
-
-            readableCounts.putAll(getUserReadableSubjectsAndExperiments(readableProjects, Arrays.asList(Users.getUserId(username), Users.getUserId("guest"))));
 
             cacheObject(cacheId, readableCounts);
             if (log.isDebugEnabled()) {

@@ -9,8 +9,6 @@
 
 package org.nrg.xnat.archive;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -55,15 +53,13 @@ public final class DicomZipImporter extends ImporterHandlerA {
     public DicomZipImporter(final Object listenerControl,
                             final UserI u,
                             final FileWriterWrapperI fw,
-                            final Map<String, Object> params)
-            throws ClientException, IOException {
+                            final Map<String, Object> params) {
         super(listenerControl, u);
         this.listenerControl = getControlString();
         this.u = u;
         this.params = params;
         this.fw = fw;
-        this.in = fw.getInputStream();
-        this.format = Format.getFormat(fw.getName());
+        this.ignoreUnparsable = PrearcUtils.parseParam(params, IGNORE_UNPARSABLE_PARAM, false);
     }
 
     /* (non-Javadoc)
@@ -71,65 +67,21 @@ public final class DicomZipImporter extends ImporterHandlerA {
      */
     @Override
     public List<String> call() throws ClientException, ServerException {
-        ClientException nonDcmException = null;
-        boolean ignoreUnparsable = PrearcUtils.parseParam(params, IGNORE_UNPARSABLE_PARAM, false);
         final Set<String> uris = Sets.newLinkedHashSet();
         this.processing("Importing sessions to the prearchive");
-        this.processing("Importing file ("+fw.getName()+" )");
         try {
-            switch (format) {
-                case ZIP:
-                    try (final ZipInputStream zin = new ZipInputStream(in)) {
-                        ZipEntry ze;
-                        while (null != (ze = zin.getNextEntry())) {
-                            if (!ze.isDirectory()) {
-                                try {
-                                    importEntry(new ZipEntryFileWriterWrapper(ze, zin), uris);
-                                } catch (ClientException e) {
-                                    if (ignoreUnparsable && e.getCause() instanceof DicomCodingException) {
-                                        nonDcmException = e;
-                                    } else {
-                                        throw e;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    break;
-                case TAR:
-                case TGZ:
-                    InputStream is = new BufferedInputStream(in);
-                    if (format == Format.TGZ) {
-                        is = new GZIPInputStream(is);
-                    }
-                    try (final TarArchiveInputStream zin = new TarArchiveInputStream(is)) {
-                        TarArchiveEntry ze;
-                        while (null != (ze = zin.getNextTarEntry())) {
-                            if (!ze.isDirectory()) {
-                                try {
-                                    importEntry(new TarEntryFileWriterWrapper(ze, zin), uris);
-                                } catch (ClientException e) {
-                                    if (ignoreUnparsable && e.getCause() instanceof DicomCodingException) {
-                                        nonDcmException = e;
-                                    } else {
-                                        throw e;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    throw new ClientException("Unsupported format " + format);
-            }
-        } catch (IOException e) {
-            throw new ClientException("unable to read data from file", e);
+            importCompressedFile(fw, uris);
+        } catch (ServerException | ClientException e) {
+            this.failed(e.getMessage(), true);
+            throw e;
         }
 
         if (uris.isEmpty() && nonDcmException != null) {
+            this.failed(nonDcmException.getMessage(), true);
             throw nonDcmException;
         }
-        this.processing("Successfully uploaded "+uris.size()+"  sessions to the prearchive.");
+
+        this.processing("Successfully uploaded " + uris.size() + "  sessions to the prearchive.");
         if (params.containsKey("action") && "commit".equals(params.get("action"))) {
             this.processing("Creating XML for DICOM sessions");
             try {
@@ -148,6 +100,79 @@ public final class DicomZipImporter extends ImporterHandlerA {
         return new ArrayList<>(uris);
     }
 
+    private void importCompressedFile(FileWriterWrapperI fw, Set<String> uris) throws ServerException, ClientException {
+        this.processing("Importing file (" + fw.getName() + " )");
+        Format format = Format.getFormat(fw.getName());
+        try {
+            switch (format) {
+                case ZIP:
+                    importZipFile(fw, uris);
+                    break;
+                case TAR:
+                case TGZ:
+                    importTgzFile(fw, uris);
+                    break;
+                default:
+                    throw new ClientException("Unsupported format " + format);
+            }
+        } catch (IOException e) {
+            throw new ClientException("unable to read data from file", e);
+        }
+    }
+
+    private void importZipFile(FileWriterWrapperI fw, Set<String> uris) throws IOException, ServerException, ClientException {
+        try (final ZipInputStream zin = new ZipInputStream(fw.getInputStream())) {
+            ZipEntry ze;
+            while (null != (ze = zin.getNextEntry())) {
+                if (ze.isDirectory()) {
+                    continue;
+                }
+                try {
+                    if (Format.UNKNOWN != Format.getFormat(ze.getName())) {
+                        importCompressedFile(new ZipEntryFileWriterWrapper(ze, zin), uris);
+                        continue;
+                    }
+                    importEntry(new ZipEntryFileWriterWrapper(ze, zin), uris);
+                } catch (ClientException e) {
+                    if (ignoreUnparsable && e.getCause() instanceof DicomCodingException) {
+                        nonDcmException = e;
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+        }
+    }
+
+    private void importTgzFile(FileWriterWrapperI fw, Set<String> uris) throws IOException, ServerException, ClientException {
+        InputStream is = new BufferedInputStream(fw.getInputStream());
+        Format format = Format.getFormat(fw.getName());
+        if (format == Format.TGZ) {
+            is = new GZIPInputStream(is);
+        }
+        try (final TarArchiveInputStream zin = new TarArchiveInputStream(is)) {
+            TarArchiveEntry ze;
+            while (null != (ze = zin.getNextTarEntry())) {
+                if (!ze.isDirectory()) {
+                    try {
+                        if (Format.UNKNOWN != Format.getFormat(ze.getName())) {
+                            importCompressedFile(new TarEntryFileWriterWrapper(ze, zin), uris);
+                            continue;
+                        }
+                        importEntry(new TarEntryFileWriterWrapper(ze, zin), uris);
+                    } catch (ClientException e) {
+                        if (ignoreUnparsable && e.getCause() instanceof DicomCodingException) {
+                            nonDcmException = e;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     private void updateStatus(Set<String> uris) {
         String message = "Prearchive:" + String.join(";", uris);
         if (isAutoArchive()) {
@@ -164,7 +189,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
         for (String session : uris) {
             String[] elements = session.split("/");
             try {
-                final SessionData  sessionData = PrearcDatabase.getSession(elements[5], elements[4], elements[3]);
+                final SessionData sessionData = PrearcDatabase.getSession(elements[5], elements[4], elements[3]);
                 PrearchiveOperationRequest request = new PrearchiveOperationRequest(u, Rebuild, sessionData, new File(sessionData.getUrl()));
                 PrearchiveRebuildHandler handler = (PrearchiveRebuildHandler) resolver.getHandler(request);
                 handler.rebuild();
@@ -220,12 +245,12 @@ public final class DicomZipImporter extends ImporterHandlerA {
         uris.addAll(importer.call());
     }
 
-    private final InputStream         in;
-    private final Object              listenerControl;
-    private final UserI               u;
+    private final Object listenerControl;
+    private final UserI u;
     private final Map<String, Object> params;
-    private final Format              format;
-    private final FileWriterWrapperI  fw;
-    private static final String       IGNORE_UNPARSABLE_PARAM = "Ignore-Unparsable";
-    private static final String       PREARCHIVE_CODE = "prearchive_code";
+    private final FileWriterWrapperI fw;
+    private static final String IGNORE_UNPARSABLE_PARAM = "Ignore-Unparsable";
+    private static final String PREARCHIVE_CODE = "prearchive_code";
+    private final boolean ignoreUnparsable;
+    private ClientException nonDcmException = null;
 }

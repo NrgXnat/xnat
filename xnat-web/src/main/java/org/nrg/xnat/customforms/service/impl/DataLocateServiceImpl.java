@@ -100,10 +100,10 @@ public class DataLocateServiceImpl implements DataLocateService {
         final String fieldsTable = getTableName(dataType);
         final String formUuidStr = formUUID.toString();
 
-        String queryStr = "select count(*) from (SELECT DISTINCT ON (s.id) id, d.key, d.value FROM ";
-        queryStr += fieldsTable + "  s JOIN jsonb_each_text(s.custom_fields -> '" + formUuidStr + "' ) d ON true ";
+        String queryStr = "select count(*) from (SELECT id FROM ";
+        queryStr += fieldsTable;
 
-        String whereClause = " where d.key in  (:fieldNames) ";
+        String whereClause = " where custom_fields -> '" + formUuidStr + "' ??| '{:fieldNames}'";
         if (!isSiteWide) {
             whereClause += " and s.project in (:projectIds)";
         }

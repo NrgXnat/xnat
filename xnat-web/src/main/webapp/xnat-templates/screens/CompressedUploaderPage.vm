@@ -5,9 +5,19 @@
         XNAT.xhr.getJSON({
             url: XNAT.url.rootUrl('/xapi/siteConfig'),
             success: function(siteConfig){
-                document.getElementById('import-handler').value = siteConfig['uiDefaultCompressedUploaderImporter'];
+                handler = siteConfig['uiDefaultCompressedUploaderImporter'];
+                document.getElementById('import-handler').value = handler;
+                hiddenIgnoreUnparsable(handler);
             }
         });
+    }
+
+    function hiddenIgnoreUnparsable(handler) {
+        if (handler === "DICOM-zip") {
+            document.getElementById("ignoreUnparsableTr").hidden = false;
+        } else {
+            document.getElementById("ignoreUnparsableTr").hidden = true;
+        }
     }
 
     function disableForm(theform) {
@@ -96,6 +106,13 @@
         formDataArchive.delete("image_archive");
         formDataArchive.append("src", usrResPath);
         formDataArchive.append("http-session-listener", uploadID);
+        let ignoreUnparsable = document.getElementById("Ignore-UnparsableUI");
+        if (ignoreUnparsable.checked) {
+            formDataArchive.append("Ignore-Unparsable", "true");
+        } else {
+            formDataArchive.append("Ignore-Unparsable", "false");
+        }
+        formDataArchive.delete("Ignore-UnparsableUI");
 
         disableForm(form);
 
@@ -224,10 +241,16 @@
             <tr>
                 <th align="left">Importer handler</th>
                 <td>
-                    <select id="import-handler" name="import-handler">
+                    <select id="import-handler" name="import-handler" onchange="hiddenIgnoreUnparsable(this.value);">
                         <option value="DICOM-zip">DICOM</option>
                         <option value="SI">Classic Session Importer (Deprecated)</option>
                     </select>
+                </td>
+            </tr>
+            <tr id="ignoreUnparsableTr">
+                <th>Ignore unparsable files</th>
+                <td>
+                    <input type="checkbox" name="Ignore-UnparsableUI" id="Ignore-UnparsableUI" checked />
                 </td>
             </tr>
 

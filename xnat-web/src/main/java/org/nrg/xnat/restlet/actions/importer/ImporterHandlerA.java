@@ -66,13 +66,12 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
     private static final Logger logger = Logger.getLogger(ImporterHandlerA.class);
 
     public static final String IMPORT_HANDLER_ATTR = "import-handler";
-
+    public static final String IGNORE_UNPARSABLE_PARAM = "Ignore-Unparsable";
     public static final String SESSION_IMPORTER       = "SI";
     public static final String XAR_IMPORTER           = "XAR";
     public static final String GRADUAL_DICOM_IMPORTER = "gradual-DICOM";
     public static final String DICOM_INBOX_IMPORTER   = "inbox";
     public static final String DICOM_ZIP_IMPORTER     = "DICOM-zip";
-
     private final static Map<String, Class<? extends ImporterHandlerA>> IMPORTERS = new HashMap<>();
 
     private static final String   PROP_OBJECT_IDENTIFIER = "org.nrg.import.handler.impl";
@@ -120,7 +119,6 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
             String defaultUploaderImporter = siteConfigPreferences.getUiDefaultCompressedUploaderImporter();
             if (DICOM_ZIP_IMPORTER.equals(defaultUploaderImporter)) {
                 format = DICOM_ZIP_IMPORTER;
-                params.put("Ignore-Unparsable", true);
             } else {
                 format = SESSION_IMPORTER;
             }

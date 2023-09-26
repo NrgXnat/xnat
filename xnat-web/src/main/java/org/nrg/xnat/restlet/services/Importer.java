@@ -60,6 +60,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class Importer extends SecureResource {
     private static final String CRLF = "\r\n";
+    private static final String COMMIT = "commit";
+    private static final String ACTION = "action";
     private final Logger logger = LoggerFactory.getLogger(Importer.class);
 
     public Importer(Context context, Request request, Response response) {
@@ -160,6 +162,11 @@ public class Importer extends SecureResource {
 
             //maintain parameters
             loadQueryVariables();
+            if (!this.params.containsKey(ImporterHandlerA.IGNORE_UNPARSABLE_PARAM)) {
+                if (this.params.containsKey(ACTION) && COMMIT.equalsIgnoreCase((String) this.params.get(ACTION))) {
+                    this.params.put(ImporterHandlerA.IGNORE_UNPARSABLE_PARAM, "true");
+                }
+            }
 
             if (this.params.containsKey("project")) {
                 this.params.put("PROJECT_ID", this.params.get("project"));

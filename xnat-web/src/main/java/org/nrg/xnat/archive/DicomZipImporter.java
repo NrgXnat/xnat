@@ -249,7 +249,6 @@ public final class DicomZipImporter extends ImporterHandlerA {
     private final UserI u;
     private final Map<String, Object> params;
     private final FileWriterWrapperI fw;
-    private static final String IGNORE_UNPARSABLE_PARAM = "Ignore-Unparsable";
     private static final String PREARCHIVE_CODE = "prearchive_code";
     private final boolean ignoreUnparsable;
     private ClientException nonDcmException = null;

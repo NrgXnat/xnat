@@ -103,7 +103,7 @@ public class DataLocateServiceImpl implements DataLocateService {
         String queryStr = "select count(*) from (SELECT id FROM ";
         queryStr += fieldsTable;
 
-        String whereClause = " where custom_fields -> '" + formUuidStr + "' ??| '{:fieldNames}'";
+        String whereClause = " where custom_fields -> '" + formUuidStr + "' ??| array[ :fieldNames ]";
         if (!isSiteWide) {
             whereClause += " and s.project in (:projectIds)";
         }

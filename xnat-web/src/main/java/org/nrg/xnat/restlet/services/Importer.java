@@ -168,10 +168,6 @@ public class Importer extends SecureResource {
                 }
             }
 
-            if (this.params.containsKey("project")) {
-                this.params.put("PROJECT_ID", this.params.get("project"));
-            }
-
             // Set the overwrite flag if we are uploading directly to the archive (prearchive_code = 1)
             String prearchive_code = (String) params.get("prearchive_code");
             if ("1".equals(prearchive_code)) { // User has selected archive option

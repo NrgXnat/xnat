@@ -55,6 +55,7 @@ import org.nrg.xnat.processors.ArchiveProcessor;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
@@ -114,6 +115,16 @@ public class GradualDicomImporter extends ImporterHandlerA {
            return 0;
        }
        return tags.get(tags.size()-1);
+    }
+
+    public static boolean isAutoArchive(Map<String, Object> params) {
+        if (params.containsKey(RequestUtil.AA) && (RequestUtil.TRUE.equalsIgnoreCase((String) params.get(RequestUtil.AA)))) {
+            return true;
+        }
+        if (params.containsKey(RequestUtil.AUTO_ARCHIVE) && (RequestUtil.TRUE.equalsIgnoreCase((String) params.get(RequestUtil.AUTO_ARCHIVE)))) {
+            return true;
+        }
+        return false;
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -201,11 +212,17 @@ public class GradualDicomImporter extends ImporterHandlerA {
             final String studyInstanceUID = dicom.getString(Tag.StudyInstanceUID);
             log.trace("Looking for study {} in project {}", studyInstanceUID, null == project ? null : project.getId());
 
-            final String sessionLabel;
+            String sessionLabel = null;
+            if (_parameters.containsKey(PrearcUtils.PREARC_SESSION_FOLDER)) {
+                sessionLabel = (String) _parameters.get(PrearcUtils.PREARC_SESSION_FOLDER);
+                log.trace("using provided prearchive session folder {}", _parameters.get(PrearcUtils.PREARC_SESSION_FOLDER));
+            }
             if (_parameters.containsKey(URIManager.EXPT_LABEL)) {
                 sessionLabel = (String) _parameters.get(URIManager.EXPT_LABEL);
                 log.trace("using provided experiment label {}", _parameters.get(URIManager.EXPT_LABEL));
-            } else {
+            }
+
+            if (sessionLabel == null) {
                 sessionLabel = StringUtils.defaultIfBlank(dicomObjectIdentifier.getSessionLabel(dicom), "dicom_upload");
             }
 
@@ -235,7 +252,15 @@ public class GradualDicomImporter extends ImporterHandlerA {
             // Fill a SessionData object in case it is the first upload
             final File root;
             final File prearchiveRoot;
-            final String timestamp = PrearcUtils.makeTimestamp();
+
+            final String timestamp;
+            if (_parameters.containsKey(PrearcUtils.PREARC_TIMESTAMP)) {
+                timestamp = (String) _parameters.get(PrearcUtils.PREARC_TIMESTAMP);
+                log.trace("using provided timestamp {}", _parameters.get(PrearcUtils.PREARC_TIMESTAMP));
+            } else {
+                timestamp = PrearcUtils.makeTimestamp();
+            }
+
             if (null == project) {
                 prearchiveRoot = new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath(), timestamp);
                 _directArchive = false;
@@ -288,7 +313,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 initialize.setSource(_parameters.get(URIManager.SOURCE));
                 initialize.setPreventAnon(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_ANON)));
                 initialize.setPreventAutoCommit(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_AUTO_COMMIT)));
-
+                if (isAutoArchive(_parameters)) {
+                    initialize.setAutoArchive(PrearchiveCode.AutoArchive);
+                }
                 session = eitherGetOrCreateSession(initialize, prearchiveRoot, project, dicom, isNew);
             } catch (Exception e) {
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);

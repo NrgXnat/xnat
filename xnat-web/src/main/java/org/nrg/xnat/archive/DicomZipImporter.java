@@ -12,14 +12,17 @@ package org.nrg.xnat.archive;
 import com.google.common.collect.Sets;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.io.DicomCodingException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.fileExtraction.Format;
 import org.nrg.xnat.helpers.ArchiveEntryFileWriterWrapper;
+import org.nrg.xnat.helpers.PrearcImporterHelper;
 import org.nrg.xnat.helpers.TarEntryFileWriterWrapper;
 import org.nrg.xnat.helpers.ZipEntryFileWriterWrapper;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
@@ -28,16 +31,22 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveOperationHandlerResolver;
 import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveRebuildHandler;
+import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.restlet.actions.SessionImporter;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,10 +55,19 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static org.nrg.xnat.archive.GradualDicomImporter.isAutoArchive;
 import static org.nrg.xnat.archive.Operation.Rebuild;
 
 @ImporterHandler(handler = ImporterHandlerA.DICOM_ZIP_IMPORTER)
 public final class DicomZipImporter extends ImporterHandlerA {
+
+    private static final String ACTION = "action";
+    private static final String COMMIT = "commit";
+    private static final String PROJECT = "project";
+    private static final String PROJECT_ID = "PROJECT_ID";
+    private static final String SLASH = "/";
+    private static final String FALSE = "false";
+
     public DicomZipImporter(final Object listenerControl,
                             final UserI u,
                             final FileWriterWrapperI fw,
@@ -68,6 +86,16 @@ public final class DicomZipImporter extends ImporterHandlerA {
     @Override
     public List<String> call() throws ClientException, ServerException {
         final Set<String> uris = Sets.newLinkedHashSet();
+        this.processing("Determining destination");
+        try {
+            determiningDestination();
+        } catch (Exception e) {
+            this.failed(e.getMessage(), true);
+            throw new ClientException("Parameter dest format error", e);
+        }
+        if (this.params.containsKey(PROJECT)) {
+            this.params.put(PROJECT_ID, this.params.get(PROJECT));
+        }
         this.processing("Importing sessions to the prearchive");
         try {
             importCompressedFile(fw, uris);
@@ -82,11 +110,11 @@ public final class DicomZipImporter extends ImporterHandlerA {
         }
 
         this.processing("Successfully uploaded " + uris.size() + "  sessions to the prearchive.");
-        if (params.containsKey("action") && "commit".equals(params.get("action"))) {
+        if (params.containsKey(ACTION) && COMMIT.equals(params.get(ACTION))) {
             this.processing("Creating XML for DICOM sessions");
             try {
                 Set<String> urls = xmlBuild(uris);
-                if (isAutoArchive()) {
+                if (isAutoArchive(params)) {
                     updateStatus(urls);
                     return new ArrayList<>(urls);
                 } else {
@@ -172,10 +200,9 @@ public final class DicomZipImporter extends ImporterHandlerA {
         }
     }
 
-
     private void updateStatus(Set<String> uris) {
         String message = "Prearchive:" + String.join(";", uris);
-        if (isAutoArchive()) {
+        if (isAutoArchive(params)) {
             message = "Archive:" + String.join(";", uris);
         }
         this.completed(message, true);
@@ -187,13 +214,13 @@ public final class DicomZipImporter extends ImporterHandlerA {
         final boolean appendMerge = isBooleanParameter(PrearchiveOperationRequest.PARAM_ALLOW_SESSION_MERGE);
         PrearchiveOperationHandlerResolver resolver = XDAT.getContextService().getBean(PrearchiveOperationHandlerResolver.class);
         for (String session : uris) {
-            String[] elements = session.split("/");
+            String[] elements = session.split(SLASH);
             try {
                 final SessionData sessionData = PrearcDatabase.getSession(elements[5], elements[4], elements[3]);
-                PrearchiveOperationRequest request = new PrearchiveOperationRequest(u, Rebuild, sessionData, new File(sessionData.getUrl()));
+                PrearchiveOperationRequest request = new PrearchiveOperationRequest(u, Rebuild, sessionData, new File(sessionData.getUrl()), populateAdditionalValues(params));
                 PrearchiveRebuildHandler handler = (PrearchiveRebuildHandler) resolver.getHandler(request);
                 handler.rebuild();
-                if (isAutoArchive()) {
+                if (isAutoArchive(params)) {
                     archiveSession(archiveUrls, override, appendMerge, request);
                 }
             } catch (Exception e) {
@@ -225,16 +252,6 @@ public final class DicomZipImporter extends ImporterHandlerA {
         return Boolean.parseBoolean(value.toString());
     }
 
-    private boolean isAutoArchive() {
-        if (params.containsKey("AA") && ("true".equalsIgnoreCase((String) params.get("AA")))) {
-            return true;
-        }
-        if (params.containsKey("auto-archive") && ("true".equalsIgnoreCase((String) params.get("auto-archive")))) {
-            return true;
-        }
-        return false;
-    }
-
     private void importEntry(ArchiveEntryFileWriterWrapper entryFileWriter, Set<String> uris)
             throws ServerException, ClientException {
         final GradualDicomImporter importer = new GradualDicomImporter(listenerControl, u, entryFileWriter, params);
@@ -245,11 +262,50 @@ public final class DicomZipImporter extends ImporterHandlerA {
         uris.addAll(importer.call());
     }
 
+    private void determiningDestination() throws MalformedURLException {
+        String dest = (String) params.get(RequestUtil.DEST);
+        final URIManager.DataURIA destination = (!StringUtils.isEmpty(dest)) ? UriParserUtils.parseURI(dest) : null;
+        if (destination == null) {
+            return;
+        }
+
+        params.put(ACTION, COMMIT);
+
+        if (destination instanceof URIManager.ArchiveURI) {
+            params.put(RequestUtil.AA, RequestUtil.TRUE);
+            params.put(RequestUtil.AUTO_ARCHIVE, RequestUtil.TRUE);
+        } else {
+            params.put(RequestUtil.AA, FALSE);
+            params.put(RequestUtil.AUTO_ARCHIVE, FALSE);
+        }
+
+        //check for existing session by URI
+        params.putAll(destination.getProps());
+        if (destination instanceof URIManager.PrearchiveURI) {
+            return;
+        }
+
+        String exptId = (String) destination.getProps().get(URIManager.EXPT_ID);
+        if (!StringUtils.isEmpty(exptId)) {
+            XnatImagesessiondata experiment = SessionImporter.getExperimentByIdOrLabel(PrearcImporterHelper.identifyProject(destination.getProps()), exptId, u);
+            if (experiment != null) {
+                params.put(URIManager.EXPT_LABEL, experiment.getLabel());
+            }
+        }
+    }
+
+    private Map<String, Object> populateAdditionalValues(Map<String, Object> parameters) {
+        Map<String, Object> additionalValues = new HashMap<>();
+        if (parameters.containsKey(RequestUtil.OVERWRITE_FILES)) {
+            additionalValues.put(RequestUtil.OVERWRITE_FILES, parameters.get(RequestUtil.OVERWRITE_FILES));
+        }
+        return additionalValues;
+    }
+
     private final Object listenerControl;
     private final UserI u;
     private final Map<String, Object> params;
     private final FileWriterWrapperI fw;
-    private static final String PREARCHIVE_CODE = "prearchive_code";
     private final boolean ignoreUnparsable;
     private ClientException nonDcmException = null;
 }

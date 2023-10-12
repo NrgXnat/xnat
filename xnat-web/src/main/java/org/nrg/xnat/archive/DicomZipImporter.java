@@ -290,6 +290,8 @@ public final class DicomZipImporter extends ImporterHandlerA {
             XnatImagesessiondata experiment = SessionImporter.getExperimentByIdOrLabel(PrearcImporterHelper.identifyProject(destination.getProps()), exptId, u);
             if (experiment != null) {
                 params.put(URIManager.EXPT_LABEL, experiment.getLabel());
+            } else {
+                params.put(URIManager.EXPT_LABEL, exptId);
             }
         }
     }

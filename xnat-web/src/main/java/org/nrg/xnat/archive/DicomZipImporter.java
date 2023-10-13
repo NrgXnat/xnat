@@ -64,9 +64,10 @@ public final class DicomZipImporter extends ImporterHandlerA {
     private static final String ACTION = "action";
     private static final String COMMIT = "commit";
     private static final String PROJECT = "project";
-    private static final String PROJECT_ID = "PROJECT_ID";
     private static final String SLASH = "/";
     private static final String FALSE = "false";
+    private static final String SUBJECT = "subject";
+    private static final String SESSION = "session";
 
     public DicomZipImporter(final Object listenerControl,
                             final UserI u,
@@ -94,7 +95,13 @@ public final class DicomZipImporter extends ImporterHandlerA {
             throw new ClientException("Parameter dest format error", e);
         }
         if (this.params.containsKey(PROJECT)) {
-            this.params.put(PROJECT_ID, this.params.get(PROJECT));
+            this.params.put(URIManager.PROJECT_ID, this.params.get(PROJECT));
+        }
+        if (this.params.containsKey(SUBJECT)) {
+            this.params.put(URIManager.SUBJECT_ID, this.params.get(SUBJECT));
+        }
+        if (this.params.containsKey(SESSION)) {
+            this.params.put(URIManager.EXPT_LABEL, this.params.get(SESSION));
         }
         this.processing("Importing sessions to the prearchive");
         try {

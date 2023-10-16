@@ -258,6 +258,17 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "100000")
+    public int getMaxNumberOfSessionsForJobsWithSharedData() { return getIntegerValue("maxNumberOfSessionsForJobsWithSharedData"); }
+
+    public void setMaxNumberOfSessionsForJobsWithSharedData(final int maxNumberOfSessionsForJobsWithSharedData) {
+        try {
+            setIntegerValue(maxNumberOfSessionsForJobsWithSharedData, "maxNumberOfSessionsForJobsWithSharedData");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'maxNumberOfSessionsForJobsWithSharedData': something is very wrong here", e);
+        }
+    }
+
     @NrgPreference
     public String getTriagePath() {
         return StringUtils.defaultIfBlank(getValue("triagePath"),

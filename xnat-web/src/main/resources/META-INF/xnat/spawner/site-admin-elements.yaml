@@ -2129,6 +2129,12 @@ inboxPath:
     label: Inbox Path
     validation: required onblur
     description: ""
+maxNumberOfSessionsForJobsWithSharedData:
+    kind: panel.input.number
+    name: maxNumberOfSessionsForJobsWithSharedData
+    label: Maximum Number Of Sessions When Running Project Jobs
+    validation: required onblur
+    description: "The maximum number of sessions that can be processed by a job running on a project. Ex: container jobs, Jupyter Notebooks. This maximum is only used in cases where shared data is present within the project."
 zipExtensions:
     kind: panel.input.text
     name: zipExtensions
@@ -2211,6 +2217,7 @@ fileSystem:
         ${pipelinePath}
         ${triagePath}
         ${inboxPath}
+        ${maxNumberOfSessionsForJobsWithSharedData}
 
 fileSystemBehaviors:
     kind: panel.form

@@ -110,6 +110,7 @@ admin:
   - matchSecurityProtocol
   - maxFailedLogins
   - maxFailedLoginsLockoutDuration
+  - maxNumberOfSessionsForJobsWithSharedData
   - par
   - passwordComplexity
   - passwordComplexityMessage

@@ -20,19 +20,34 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImageassessordata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatResource;
+import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xft.XFT;
+import org.nrg.xft.XFTTable;
+import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
+import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @Slf4j
@@ -163,7 +178,136 @@ public class FileUtils {
         }
     }
 
+    private static Map<String, List<String>> convertXFTTableForProjectSharedPathsElements(XFTTable elementsTable) {
+        Map<String, String> elementsMap = elementsTable.convertToMap("label", "origProject", String.class, String.class);
+        return elementsMap.keySet().stream().collect(Collectors.groupingBy(elementsMap::get));
+    }
+
+    private static Map<String, String> getAllChangedElementLabels(XFTTable elementsTable) {
+        Map<String, String> elementsMap = elementsTable.convertToMap("label", "originalLabel", String.class, String.class);
+        return elementsMap.entrySet().stream().filter(f -> !f.getKey().equals(f.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public static Map<Path, Path> getAllSharedPaths(final String projectId, final UserI user, final boolean includeProjectResources,
+                                                      final boolean includeSubjectResources, final boolean removeArcs, final boolean addExperimentLabel)
+            throws DBPoolException, SQLException, IOException, BaseXnatExperimentdata.UnknownPrimaryProjectException, InvalidArchiveStructure {
+        XnatProjectdata projectData = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
+        Map<Path, Path> allPathsMap = new HashMap<>();
+        if (!projectData.getProjectHasSharedExperiments()) {
+            if (!includeSubjectResources || !projectData.getProjectHasSharedSubjects()) {
+                return allPathsMap;
+            }
+        }
+        XFTTable subjectsTable = projectData.getSubjectsByProject();
+        XFTTable experimentsTable = projectData.getExperimentsByProject();
+        Map<String, List<String>> allSubjectsForProject = convertXFTTableForProjectSharedPathsElements(subjectsTable);
+        Map<String, List<String>> allExperimentsForProject = convertXFTTableForProjectSharedPathsElements(experimentsTable);
+        Map<String, String> subjectLabelChanges = getAllChangedElementLabels(subjectsTable);
+        Map<String, String> experimentLabelChanges = getAllChangedElementLabels(experimentsTable);
+        Path archivePath = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath());
+        int totalSessions = 0;
+        for (Map.Entry<String, List<String>> entry : allExperimentsForProject.entrySet()) {
+            String origProject = entry.getKey();
+            Path pathTranslationPath = archivePath.resolve(origProject);
+            List<String> experimentsForProject = entry.getValue();
+            for (String experiment: experimentsForProject) {
+                XnatExperimentdata currentExperiment = XnatExperimentdata.GetExptByProjectIdentifier(origProject, experimentLabelChanges.getOrDefault(experiment, experiment), user, false);
+                Path fullPath;
+                final String assessorFolderString = "ASSESSORS";
+                boolean isAssessor = false;
+                if (currentExperiment instanceof XnatImageassessordata) {
+                    fullPath = currentExperiment.getExpectedSessionDir().toPath().resolve(assessorFolderString).resolve(currentExperiment.getLabel());
+                    isAssessor = true;
+                } else {
+                    fullPath = Paths.get(currentExperiment.getCurrentSessionFolder(true));
+                    totalSessions+=1;
+                }
+                if (Files.exists(fullPath)) {
+                    try (Stream<Path> walk = Files.walk(fullPath)) {
+                        List<Path> collectedExperimentFiles;
+                        if (!isAssessor) {
+                            collectedExperimentFiles = walk.filter(Files::isRegularFile).filter(f -> !fullPath.relativize(f).startsWith(assessorFolderString)).collect(Collectors.toList());
+                        } else {
+                            collectedExperimentFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+                        }
+                        for (Path path : collectedExperimentFiles) {
+                            Path newPath = pathTranslationPath.relativize(path);
+                            if (removeArcs) {
+                                newPath = newPath.getName(0).relativize(newPath);
+                                if(addExperimentLabel) {
+                                    newPath = Paths.get("experiments").resolve(newPath);
+                                }
+                            }
+                            allPathsMap.put(path, newPath);
+                        }
+                    }
+                }
+            }
+        }
+        if (totalSessions > XDAT.getSiteConfigPreferences().getMaxNumberOfSessionsForJobsWithSharedData()) {
+            throw new RuntimeException("With the inclusion of shared data, more than " + XDAT.getSiteConfigPreferences().getMaxNumberOfSessionsForJobsWithSharedData() + " sessions are present in the current project. " +
+                    "Your site administrator has set as the maximum amount of sessions allowed for a job. Please contact them to change this value if you need to continue running jobs on this data.");
+        }
+
+        if (includeSubjectResources) {
+            for (Map.Entry<String, List<String>> entry: allSubjectsForProject.entrySet()) {
+                final String origProject = entry.getKey();
+                final List<String> subjectsForProject = entry.getValue();
+                Path pathTranslationPath = archivePath.resolve(origProject);
+                for (String subject : subjectsForProject) {
+                    XnatSubjectdata currentSubject = XnatSubjectdata.GetSubjectByIdOrProjectlabelCaseInsensitive(origProject, subjectLabelChanges.getOrDefault(subject, subject), user, false);
+                    if (currentSubject == null) {
+                        continue;
+                    }
+                    Path fullPath = currentSubject.getExpectedCurrentDirectory().toPath();
+                    if (Files.exists(fullPath)) {
+                        try (Stream<Path> walk = Files.walk(fullPath)) {
+                            List<Path> collectedSubjectFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+                            for (Path path : collectedSubjectFiles) {
+                                Path newPath = pathTranslationPath.relativize(path);
+                                allPathsMap.put(path, newPath);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (includeProjectResources) {
+           List<XnatResource> projectResources = projectData.getResources_resource();
+           for (XnatResource resource : projectResources) {
+               Path resourcePath = Paths.get(resource.getUri());
+               Path pathTranslationPath = archivePath.resolve(projectData.getId());
+               Path newPath = pathTranslationPath.relativize(resourcePath);
+               allPathsMap.put(resourcePath, newPath);
+           }
+        }
+        return allPathsMap;
+    }
+
+    public static Path createDirectoryForSharedData(Map<Path, Path> pathsMap, final Path inputLinksDirectory) throws IOException {
+        Path hardLinksDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath()).resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(inputLinksDirectory);
+        for (Map.Entry<Path, Path> pathConversion : pathsMap.entrySet()) {
+            Path newHardLinkPath = hardLinksDirectory.resolve(pathConversion.getValue());
+            if (Files.exists(newHardLinkPath)) {
+                continue;
+            }
+            Files.createDirectories(newHardLinkPath.getParent());
+            Files.createLink(newHardLinkPath, pathConversion.getKey());
+        }
+        return hardLinksDirectory;
+    }
+
+    public static void removeCombinedFolder(final Path baseLinksDirectory) throws IOException {
+        Path baseArchiveDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath());
+        Path directoryToRemove = baseArchiveDirectory.resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(baseLinksDirectory);
+        org.apache.commons.io.FileUtils.deleteDirectory(new File(directoryToRemove.toUri()));
+    }
+
+
     private static final Object MUTEX = new Object();
 
     private static String VERSION;
+
+    public static final String SHARED_PROJECT_DIRECTORY_STRING = "SHARED.PROJECT.DATA.STORAGE.DIRECTORY";
 }

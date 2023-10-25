@@ -258,6 +258,17 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "hard_link")
+    public String getFileOperationUsedForJobsWithSharedData() { return getValue("fileOperationUsedForJobsWithSharedData"); }
+
+    public void setFileOperationUsedForJobsWithSharedData( final String fileOperationUsedForJobsWithSharedData) {
+        try {
+            set(fileOperationUsedForJobsWithSharedData, "fileOperationUsedForJobsWithSharedData");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'fileOperationUsedForJobsWithSharedData': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "100000")
     public int getMaxNumberOfSessionsForJobsWithSharedData() { return getIntegerValue("maxNumberOfSessionsForJobsWithSharedData"); }
 
@@ -268,7 +279,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             log.error("Invalid preference name 'maxNumberOfSessionsForJobsWithSharedData': something is very wrong here", e);
         }
     }
-
     @NrgPreference
     public String getTriagePath() {
         return StringUtils.defaultIfBlank(getValue("triagePath"),

@@ -102,6 +102,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
         }
         if (this.params.containsKey(SESSION)) {
             this.params.put(URIManager.EXPT_LABEL, this.params.get(SESSION));
+            this.params.put("PREARC_SESSION_FOLDER", this.params.get(SESSION));
         }
         this.processing("Importing sessions to the prearchive");
         try {

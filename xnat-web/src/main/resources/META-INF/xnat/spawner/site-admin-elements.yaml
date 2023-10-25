@@ -2130,11 +2130,25 @@ inboxPath:
     validation: required onblur
     description: ""
 maxNumberOfSessionsForJobsWithSharedData:
-    kind: panel.input.number
-    name: maxNumberOfSessionsForJobsWithSharedData
-    label: Maximum Number Of Sessions When Running Project Jobs
-    validation: required onblur
-    description: "The maximum number of sessions that can be processed by a job running on a project. Ex: container jobs, Jupyter Notebooks. This maximum is only used in cases where shared data is present within the project."
+    tag: div
+    contents:
+        fileOperationUsedForJobsWithSharedData:
+            kind: panel.select.single
+            name: fileOperationUsedForJobsWithSharedData
+            label: Operation Used For Shared Data Jobs
+            validation: required onblur
+            options:
+                hard_link: "Hard Link"
+                copy: "Copy"
+            description: >
+                The type of operation used to create a new directory in the case that a job is run on a project (Ex- container jobs, Jupyter Notebooks).
+                Only used when project has shared data. For distributed file systems copy must be used. In other cases, we recommend using hard links as it will reduce the size of data requirements.
+        maxNumberOfSessionsForJobsWithSharedData:
+            kind: panel.input.number
+            name: maxNumberOfSessionsForJobsWithSharedData
+            label: Maximum Number Of Sessions When Running Project Jobs
+            validation: required onblur
+            description: "The maximum number of sessions that can be processed by a job running on a project. Ex: container jobs, Jupyter Notebooks. This maximum is only used in cases where shared data is present within the project."
 zipExtensions:
     kind: panel.input.text
     name: zipExtensions

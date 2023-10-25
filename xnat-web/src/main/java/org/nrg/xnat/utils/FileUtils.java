@@ -244,9 +244,10 @@ public class FileUtils {
                 }
             }
         }
-        if (totalSessions > XDAT.getSiteConfigPreferences().getMaxNumberOfSessionsForJobsWithSharedData()) {
-            throw new RuntimeException("With the inclusion of shared data, more than " + XDAT.getSiteConfigPreferences().getMaxNumberOfSessionsForJobsWithSharedData() + " sessions are present in the current project. " +
-                    "Your site administrator has set as the maximum amount of sessions allowed for a job. Please contact them to change this value if you need to continue running jobs on this data.");
+        int maxNumberOfSessions = XDAT.getSiteConfigPreferences().getMaxNumberOfSessionsForJobsWithSharedData();
+        if (totalSessions > maxNumberOfSessions) {
+            throw new RuntimeException("With the inclusion of shared data, more than " + maxNumberOfSessions + " sessions are present in the current project. " +
+                    "Your site administrator has set this as the maximum amount of sessions allowed for a job. Please contact them to change this value if you need to continue running jobs on this data.");
         }
 
         if (includeSubjectResources) {
@@ -286,16 +287,21 @@ public class FileUtils {
     }
 
     public static Path createDirectoryForSharedData(Map<Path, Path> pathsMap, final Path inputLinksDirectory) throws IOException {
-        Path hardLinksDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath()).resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(inputLinksDirectory);
+        Path destinationBaseDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath()).resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(inputLinksDirectory);
         for (Map.Entry<Path, Path> pathConversion : pathsMap.entrySet()) {
-            Path newHardLinkPath = hardLinksDirectory.resolve(pathConversion.getValue());
-            if (Files.exists(newHardLinkPath)) {
+            Path destinationPathForCurrentFile = destinationBaseDirectory.resolve(pathConversion.getValue());
+            if (Files.exists(destinationPathForCurrentFile)) {
                 continue;
             }
-            Files.createDirectories(newHardLinkPath.getParent());
-            Files.createLink(newHardLinkPath, pathConversion.getKey());
+            Files.createDirectories(destinationPathForCurrentFile.getParent());
+            if (XDAT.getSiteConfigPreferences().getFileOperationUsedForJobsWithSharedData().equals("hard_link")) {
+                Files.createLink(destinationPathForCurrentFile, pathConversion.getKey());
+            } else {
+                Files.copy(pathConversion.getKey(), destinationPathForCurrentFile);
+            }
+
         }
-        return hardLinksDirectory;
+        return destinationBaseDirectory;
     }
 
     public static void removeCombinedFolder(final Path baseLinksDirectory) throws IOException {

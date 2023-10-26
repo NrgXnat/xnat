@@ -382,8 +382,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
                 // check to see of this session came in through an application that may have performed anonymization
                 // prior to transfer, e.g. the XNAT Upload Assistant.
-                if (!_doCustomProcessing && !session.getPreventAnon() &&
-                        DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
+                if (!session.getPreventAnon() && DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
                     try {
                         Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
                         if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {

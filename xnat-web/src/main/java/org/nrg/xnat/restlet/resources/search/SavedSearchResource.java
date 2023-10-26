@@ -10,6 +10,7 @@
 package org.nrg.xnat.restlet.resources.search;
 
 import com.noelios.restlet.ext.servlet.ServletCall;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.presentation.CSVPresenter;
@@ -104,6 +105,18 @@ public class SavedSearchResource extends ItemResource {
                     ds.setRootElement(sID.substring(1));
                     xss = ds.convertToStoredSearch(sID);
                     xss.setId(sID);
+
+                    if (XDAT.getBoolSiteConfigurationProperty("removeScanAggregateFields", Boolean.FALSE)) {
+                        int index = 0;
+                        for(XdatSearchField field: xss.getSearchField()){
+                            if(org.apache.commons.lang3.StringUtils.endsWith(field.getFieldId(),"SCAN_COUNT_AGG")){
+                                xss.removeSearchField(index);
+                                break;
+                            }
+                            index++;
+                        }
+                    }
+
                 } catch (XFTInitException | ElementNotFoundException e) {
                     logger.error("", e);
                 }

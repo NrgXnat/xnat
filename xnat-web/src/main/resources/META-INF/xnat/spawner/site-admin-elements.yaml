@@ -1333,8 +1333,18 @@ searchPerformance:
             offText: Disabled
             checked: true
             description: >
-                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Disabling count fields can improve performance.  This setting determines whether count fields (like MR Count) should be included in project level listings (like Subjects). If Enabled, counts of child objects will be automatically included in project data listings. If Disabled, counts of child objects will only be available if display documents are manually configured to add them. Note: This doesn't effect site-wide listings, which are managed entirely by display documents.</p>
+                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Disabling count fields can improve performance.  This setting determines whether count fields (like MR Count) should be included in project level listings (like Subjects). If Enabled, counts of child objects will be automatically included in project data listings. If Disabled, counts of child objects will only be available if display documents are manually configured to add them.</p>
                 <p>Default: Enabled</p>
+        scanCountAgg:
+            kind: panel.input.switchbox
+            label: "Data listings should exclude scan aggregate fields"
+            name: removeScanAggregateFields
+            onText: Enabled
+            offText: Disabled
+            checked: false
+            description: >
+                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Disabling count fields can improve performance.  This setting overrides Display Document configuration to exclude Scan Aggregate Counts if they are otherwise configured to be displayed.</p>
+                <p>Default: Disabled</p>
 
 ## THEMES
 

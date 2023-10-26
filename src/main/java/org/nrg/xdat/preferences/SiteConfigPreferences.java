@@ -2092,6 +2092,20 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "false")
+    public boolean getRemoveScanAggregateFields() {
+        return getBooleanValue("removeScanAggregateFields");
+    }
+
+    public void settRemoveScanAggregateFields(final boolean removeScanAggregateFields) {
+        try {
+            setBooleanValue(removeScanAggregateFields, "removeScanAggregateFields");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'removeScanAggregateFields': something is very wrong here.", e);
+        }
+    }
+
+
+    @NrgPreference(defaultValue = "false")
     public boolean getDefaultToPagedRestfulLists() {
         return getBooleanValue("defaultToPagedRestfulLists");
     }

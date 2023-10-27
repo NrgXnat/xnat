@@ -268,8 +268,9 @@ public class XdatStoredSearch extends BaseXdatStoredSearch {
                 try {
                     DisplayField df = se.getDisplayField(f + "_CSV");
                     f = f + "_CSV";
+                    h=df.getHeader();
                 } catch (DisplayFieldCollection.DisplayFieldNotFoundException e1) {}
-                
+
                 
                 if (h!=null && !h.trim().equals("")){
                     ds.addDisplayField(e,f,h,sf.getValue());

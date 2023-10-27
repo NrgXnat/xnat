@@ -1,6 +1,7 @@
 package org.nrg.xnat.customforms.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayFieldElement;
 import org.nrg.xdat.display.DisplayManager;
@@ -26,6 +27,8 @@ import java.util.stream.Stream;
 @Slf4j
 @Service
 public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
+
+    public static final String CSV = "_CSV";
 
     @Autowired
     public FormDisplayFieldServiceImpl(final FormIOJsonService formIOJsonService,
@@ -136,6 +139,7 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
            try {
                final ElementDisplay elementDisplay  = schemaElement.getDisplay();
                elementDisplay.removeDisplayField(fieldId);
+               elementDisplay.removeDisplayField(fieldId+ CSV);
                displayManager.addElement(elementDisplay);
            } catch (Exception e) {
               log.error("Could not remove display field " + fieldId, e);
@@ -147,30 +151,39 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
         final String dataType = schemaElement.getFullXMLName();
         final String displayFieldId = displayHelper.getCleanFieldId(dataType, field);
         if (!schemaElement.hasDisplayField(displayFieldId)) {
-            final ElementDisplay elementDisplay = schemaElement.getDisplay();
-            final DisplayFieldElement element = new DisplayFieldElement();
-            final DisplayField displayField = new DisplayField(elementDisplay);
-            element.setSchemaElementName(dataType + "." + CUSTOM_FIELDS_COLUMN_NAME);
-            element.setName("Field1");
-            displayField.addDisplayFieldElement(element);
-            displayField.setSearchable(true);
-            final String formioType = field.getType();
-            String type = TypeConversionUtils.mapFormioTypeToXnatType(formioType);
-            displayField.setDataType(type);
-            displayField.setDescription("Custom Field: " + field.getLabel());
-            displayField.setId(displayFieldId);
-            String fieldSql = displayHelper.buildSql("@Field1", field);
-            if (!type.equalsIgnoreCase(CustomFormsConstants.DEFAULT_XNAT_TYPE)) {
-                fieldSql = "CAST (" + fieldSql + " AS " + type + ") ";
-            }
-            displayField.setContent(Collections.singletonMap("sql", fieldSql));
-            displayField.setHeader(displayHelper.getCleanFieldHeader(field));
-            elementDisplay.setAllowReplacement(true);
-            elementDisplay.addDisplayField(displayField);
-            elementDisplay.setAllowReplacement(false);
+
+            displayManager.addElement(initDisplayField(schemaElement,field,dataType,displayFieldId, displayHelper.getCleanFieldHeader(field)));
+
+            //add csv version for full header
+            displayManager.addElement(initDisplayField(schemaElement,field,dataType,displayFieldId+ CSV, displayHelper.getFullFieldHeader(field)));
+        }
+    }
+
+    private ElementDisplay initDisplayField(final SchemaElement schemaElement,  final FormFieldPojo field, final String dataType, final String displayFieldId, final String displayFieldHeader){
+        final ElementDisplay elementDisplay = schemaElement.getDisplay();
+        final DisplayFieldElement element = new DisplayFieldElement();
+        final DisplayField displayField = new DisplayField(elementDisplay);
+        element.setSchemaElementName(dataType + "." + CUSTOM_FIELDS_COLUMN_NAME);
+        element.setName("Field1");
+        displayField.addDisplayFieldElement(element);
+        displayField.setSearchable(true);
+        final String formioType = field.getType();
+        String type = TypeConversionUtils.mapFormioTypeToXnatType(formioType);
+        displayField.setDataType(type);
+        displayField.setDescription("Custom Field: " + field.getLabel());
+        displayField.setId(displayFieldId);
+        String fieldSql = displayHelper.buildSql("@Field1", field);
+        if (!type.equalsIgnoreCase(CustomFormsConstants.DEFAULT_XNAT_TYPE)) {
+            fieldSql = "CAST (" + fieldSql + " AS " + type + ") ";
+        }
+        displayField.setContent(Collections.singletonMap("sql", fieldSql));
+        displayField.setHeader(displayFieldHeader);
+        elementDisplay.setAllowReplacement(true);
+        elementDisplay.addDisplayField(displayField);
+        elementDisplay.setAllowReplacement(false);
             schemaElement.setElementDisplay(elementDisplay);
             displayManager.addElement(elementDisplay);
-        }
+            return elementDisplay;
     }
 
 

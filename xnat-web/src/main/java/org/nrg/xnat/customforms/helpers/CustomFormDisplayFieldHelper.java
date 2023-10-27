@@ -27,8 +27,12 @@ public class CustomFormDisplayFieldHelper {
         return fieldId.startsWith(getFieldIdRoot(dataType.toUpperCase()));
     }
 
-    public String getCleanFieldHeader(final FormFieldPojo field){
+    public String getFullFieldHeader(final FormFieldPojo field){
         return field.getFormUUID() + CustomFormsConstants.DOT_SEPARATOR + field.getKey();
+    }
+
+    public String getCleanFieldHeader(final FormFieldPojo field){
+        return field.getKey();
     }
 
     public String buildSql(final String column,  final FormFieldPojo field) {

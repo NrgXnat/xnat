@@ -782,7 +782,7 @@ public class PrearcUtils {
         } else {
             params.put(SEPARATE_PET_MR, HandlePetMr.getSeparatePetMr().value());
         }
-        params.put(PARAM_LABEL, session);
+        params.put(PARAM_LABEL, StringUtils.defaultIfBlank(sd.getName(), session));
         if (StringUtils.isNotBlank(subject)) {
             params.put(PARAM_SUBJECT_ID, subject);
         }

@@ -213,17 +213,21 @@ public class GradualDicomImporter extends ImporterHandlerA {
             log.trace("Looking for study {} in project {}", studyInstanceUID, null == project ? null : project.getId());
 
             String sessionLabel = null;
-            if (_parameters.containsKey(PrearcUtils.PREARC_SESSION_FOLDER)) {
-                sessionLabel = (String) _parameters.get(PrearcUtils.PREARC_SESSION_FOLDER);
-                log.trace("using provided prearchive session folder {}", _parameters.get(PrearcUtils.PREARC_SESSION_FOLDER));
-            }
             if (_parameters.containsKey(URIManager.EXPT_LABEL)) {
                 sessionLabel = (String) _parameters.get(URIManager.EXPT_LABEL);
                 log.trace("using provided experiment label {}", _parameters.get(URIManager.EXPT_LABEL));
             }
-
             if (sessionLabel == null) {
                 sessionLabel = StringUtils.defaultIfBlank(dicomObjectIdentifier.getSessionLabel(dicom), "dicom_upload");
+            }
+
+            String folderName = null;
+            if (_parameters.containsKey(PrearcUtils.PREARC_SESSION_FOLDER)) {
+                folderName = (String) _parameters.get(PrearcUtils.PREARC_SESSION_FOLDER);
+                log.trace("using provided prearchive session folder {}", _parameters.get(PrearcUtils.PREARC_SESSION_FOLDER));
+            }
+            if (folderName == null) {
+                folderName = sessionLabel;
             }
 
             final String visit;
@@ -287,7 +291,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             final AtomicBoolean isNew = new AtomicBoolean();
             try {
                 final SessionData initialize = new SessionData();
-                initialize.setFolderName(sessionLabel);
+                initialize.setFolderName(folderName);
                 initialize.setName(sessionLabel);
                 initialize.setProject(project == null ? null : project.getId());
                 initialize.setVisit(visit);
@@ -309,7 +313,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 initialize.setStatus(PrearcUtils.PrearcStatus.RECEIVING);
                 initialize.setLastBuiltDate(Calendar.getInstance().getTime());
                 initialize.setSubject(subject);
-                initialize.setUrl((new File(root, sessionLabel)).getAbsolutePath());
+                initialize.setUrl((new File(root, folderName)).getAbsolutePath());
                 initialize.setSource(_parameters.get(URIManager.SOURCE));
                 initialize.setPreventAnon(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_ANON)));
                 initialize.setPreventAutoCommit(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_AUTO_COMMIT)));

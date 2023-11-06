@@ -275,13 +275,16 @@ public class FileUtils {
         }
 
         if (includeProjectResources) {
-           List<XnatResource> projectResources = projectData.getResources_resource();
-           for (XnatResource resource : projectResources) {
-               Path resourcePath = Paths.get(resource.getUri());
-               Path pathTranslationPath = archivePath.resolve(projectData.getId());
-               Path newPath = pathTranslationPath.relativize(resourcePath);
-               allPathsMap.put(resourcePath, newPath);
-           }
+            Path resourcesPath = Paths.get(projectData.getArchiveRootPath(), "resources");
+
+            try(Stream<Path> walk = Files.walk(resourcesPath)) {
+                List<Path> collectedResourceFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+                for (Path resourcePath : collectedResourceFiles) {
+                    Path pathTranslationPath = archivePath.resolve(projectData.getId());
+                    Path newPath = pathTranslationPath.relativize(resourcePath);
+                    allPathsMap.put(resourcePath, newPath);
+                }
+            }
         }
         return allPathsMap;
     }

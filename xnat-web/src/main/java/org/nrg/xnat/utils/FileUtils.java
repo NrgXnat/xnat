@@ -20,17 +20,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatResource;
+import org.nrg.xdat.om.XnatQcmanualassessordata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
+import org.nrg.xdat.om.base.BaseXnatProjectdata;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
+import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,6 +42,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
@@ -178,6 +183,27 @@ public class FileUtils {
         }
     }
 
+    /**
+     * Get the current arc directory of a project.
+     * This is more or less identical to {@link BaseXnatProjectdata#getCurrentArc()}, except static and not requiring
+     * read permission on the base project (as is necessary to obtain the origin location of shared data - for instance
+     * in the case of creating a job directory).
+     * @param projectId The project id
+     * @return The project's current arcXXX directory
+     */
+    private static String getCurrentArc(final String projectId) {
+        final ArcProject arcProject = ArcSpecManager.GetInstance().getProjectArc(projectId);
+        return StringUtils.defaultIfBlank(arcProject != null ? arcProject.getCurrentArc() : null, "arc001");
+    }
+
+    private static Path getExperimentFullPath(final String projectId, final String experimentLabel) {
+        return Paths.get(XDAT.getSiteConfigPreferences().getArchivePath(), projectId, getCurrentArc(projectId), experimentLabel);
+    }
+
+    private static Path getSubjectFullPath(final String projectId, final String subjectLabel) {
+        return Paths.get(XDAT.getSiteConfigPreferences().getArchivePath(), projectId, "subjects", subjectLabel);
+    }
+
     private static Map<String, List<String>> convertXFTTableForProjectSharedPathsElements(XFTTable elementsTable) {
         Map<String, String> elementsMap = elementsTable.convertToMap("label", "origProject", String.class, String.class);
         return elementsMap.keySet().stream().collect(Collectors.groupingBy(elementsMap::get));
@@ -212,6 +238,12 @@ public class FileUtils {
             List<String> experimentsForProject = entry.getValue();
             for (String experiment: experimentsForProject) {
                 XnatExperimentdata currentExperiment = XnatExperimentdata.GetExptByProjectIdentifier(origProject, experimentLabelChanges.getOrDefault(experiment, experiment), user, false);
+                //Check to see if the current experiment is accessible to the user. In the case that it's not - for instance
+                //the user group that the user is a part of does not have read access to that type of element - the current experiment
+                //field will be null and we can move onto the next experiment.
+                if (currentExperiment == null) {
+                    continue;
+                }
                 Path fullPath;
                 final String assessorFolderString = "ASSESSORS";
                 boolean isAssessor = false;
@@ -219,28 +251,36 @@ public class FileUtils {
                     fullPath = currentExperiment.getExpectedSessionDir().toPath().resolve(assessorFolderString).resolve(currentExperiment.getLabel());
                     isAssessor = true;
                 } else {
-                    fullPath = Paths.get(currentExperiment.getCurrentSessionFolder(true));
+                    fullPath = getExperimentFullPath(origProject, currentExperiment.getLabel());
                     totalSessions+=1;
                 }
-                if (Files.exists(fullPath)) {
-                    try (Stream<Path> walk = Files.walk(fullPath)) {
-                        List<Path> collectedExperimentFiles;
-                        if (!isAssessor) {
-                            collectedExperimentFiles = walk.filter(Files::isRegularFile).filter(f -> !fullPath.relativize(f).startsWith(assessorFolderString)).collect(Collectors.toList());
-                        } else {
-                            collectedExperimentFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
-                        }
-                        for (Path path : collectedExperimentFiles) {
-                            Path newPath = pathTranslationPath.relativize(path);
-                            if (removeArcs) {
-                                newPath = newPath.getName(0).relativize(newPath);
-                                if(addExperimentLabel) {
-                                    newPath = Paths.get("experiments").resolve(newPath);
-                                }
-                            }
-                            allPathsMap.put(path, newPath);
-                        }
+                try (Stream<Path> walk = Files.walk(fullPath)) {
+                    List<Path> collectedExperimentFiles;
+                    if (!isAssessor) {
+                        collectedExperimentFiles = walk.filter(Files::isRegularFile).filter(f -> !fullPath.relativize(f).startsWith(assessorFolderString)).collect(Collectors.toList());
+                    } else {
+                        collectedExperimentFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
                     }
+                    for (Path path : collectedExperimentFiles) {
+                        Path newPath;
+                        if (isAssessor) {
+                            //this is a rather large hack but its the only way I could think of to effectively do path translation given that
+                            //assessors need not be made by the home projects that their sessions were created in and the fact
+                            //that those assessors still live *inside* the sessions in the archive.
+                            newPath = path.toAbsolutePath().subpath(pathTranslationPath.getNameCount(), path.getNameCount());
+                        } else {
+                            newPath = pathTranslationPath.relativize(path);
+                        }
+                        if (removeArcs) {
+                            newPath = newPath.getName(0).relativize(newPath);
+                            if(addExperimentLabel) {
+                                newPath = Paths.get("experiments").resolve(newPath);
+                            }
+                        }
+                        allPathsMap.put(path, newPath);
+                    }
+                } catch (NoSuchFileException ignored) {
+
                 }
             }
         }
@@ -260,15 +300,15 @@ public class FileUtils {
                     if (currentSubject == null) {
                         continue;
                     }
-                    Path fullPath = currentSubject.getExpectedCurrentDirectory().toPath();
-                    if (Files.exists(fullPath)) {
-                        try (Stream<Path> walk = Files.walk(fullPath)) {
-                            List<Path> collectedSubjectFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
-                            for (Path path : collectedSubjectFiles) {
-                                Path newPath = pathTranslationPath.relativize(path);
-                                allPathsMap.put(path, newPath);
-                            }
+                    Path fullPath = getSubjectFullPath(origProject, subject);
+                    try (Stream<Path> walk = Files.walk(fullPath)) {
+                        List<Path> collectedSubjectFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+                        for (Path path : collectedSubjectFiles) {
+                            Path newPath = pathTranslationPath.relativize(path);
+                            allPathsMap.put(path, newPath);
                         }
+                    } catch (NoSuchFileException ignored) {
+
                     }
                 }
             }
@@ -276,14 +316,15 @@ public class FileUtils {
 
         if (includeProjectResources) {
             Path resourcesPath = Paths.get(projectData.getArchiveRootPath(), "resources");
-
-            try(Stream<Path> walk = Files.walk(resourcesPath)) {
+            try (Stream<Path> walk = Files.walk(resourcesPath)) {
                 List<Path> collectedResourceFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
                 for (Path resourcePath : collectedResourceFiles) {
                     Path pathTranslationPath = archivePath.resolve(projectData.getId());
                     Path newPath = pathTranslationPath.relativize(resourcePath);
                     allPathsMap.put(resourcePath, newPath);
                 }
+            } catch (NoSuchFileException ignored) {
+
             }
         }
         return allPathsMap;

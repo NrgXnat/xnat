@@ -13,6 +13,8 @@ import static org.nrg.xft.utils.FileUtils.MoveDir;
 import static org.nrg.xft.utils.FileUtils.renameWTimestamp;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
@@ -51,6 +53,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -229,7 +232,7 @@ public class FileUtils {
         Map<String, List<String>> allSubjectsForProject = convertXFTTableForProjectSharedPathsElements(subjectsTable);
         Map<String, List<String>> allExperimentsForProject = convertXFTTableForProjectSharedPathsElements(experimentsTable);
         Map<String, String> subjectLabelChanges = getAllChangedElementLabels(subjectsTable);
-        Map<String, String> experimentLabelChanges = getAllChangedElementLabels(experimentsTable);
+        BiMap<String, String> experimentNewLabelToOriginal = HashBiMap.create(getAllChangedElementLabels(experimentsTable));
         Path archivePath = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath());
         int totalSessions = 0;
         for (Map.Entry<String, List<String>> entry : allExperimentsForProject.entrySet()) {
@@ -237,7 +240,7 @@ public class FileUtils {
             Path pathTranslationPath = archivePath.resolve(origProject);
             List<String> experimentsForProject = entry.getValue();
             for (String experiment: experimentsForProject) {
-                XnatExperimentdata currentExperiment = XnatExperimentdata.GetExptByProjectIdentifier(origProject, experimentLabelChanges.getOrDefault(experiment, experiment), user, false);
+                XnatExperimentdata currentExperiment = XnatExperimentdata.GetExptByProjectIdentifier(origProject, experimentNewLabelToOriginal.getOrDefault(experiment, experiment), user, false);
                 //Check to see if the current experiment is accessible to the user. In the case that it's not - for instance
                 //the user group that the user is a part of does not have read access to that type of element - the current experiment
                 //field will be null and we can move onto the next experiment.
@@ -264,12 +267,24 @@ public class FileUtils {
                     for (Path path : collectedExperimentFiles) {
                         Path newPath;
                         if (isAssessor) {
-                            //this is a rather large hack but its the only way I could think of to effectively do path translation given that
+                            //this is a rather large hack, but it's the only way I could think of to effectively do path translation given that
                             //assessors need not be made by the home projects that their sessions were created in and the fact
                             //that those assessors still live *inside* the sessions in the archive.
                             newPath = path.toAbsolutePath().subpath(pathTranslationPath.getNameCount(), path.getNameCount());
                         } else {
                             newPath = pathTranslationPath.relativize(path);
+                        }
+                        //this is another hack where we're getting the session portion of the path from the assessors path within the archive
+                        //by recognizing that after you've removed the archive base path it will always be in the second position.
+                        //This is kind of the only way I can think of to get it for cases of label change of sessions which have assessors associated
+                        //which is found within the else if statement below.
+                        String sessionNameWithinAssessorPath = newPath.getName(1).toString();
+                        if (experimentNewLabelToOriginal.containsKey(experiment)) {
+                            newPath = Paths.get(newPath.toString().replaceFirst(Objects.requireNonNull(experimentNewLabelToOriginal.get(experiment)), experiment));
+                        }
+                        if (isAssessor && experimentNewLabelToOriginal.inverse().containsKey(sessionNameWithinAssessorPath)) {
+                            String replacementAssessorPath = experimentNewLabelToOriginal.inverse().get(sessionNameWithinAssessorPath);
+                            newPath = Paths.get(newPath.toString().replaceFirst(sessionNameWithinAssessorPath, replacementAssessorPath));
                         }
                         if (removeArcs) {
                             newPath = newPath.getName(0).relativize(newPath);
@@ -300,11 +315,14 @@ public class FileUtils {
                     if (currentSubject == null) {
                         continue;
                     }
-                    Path fullPath = getSubjectFullPath(origProject, subject);
+                    Path fullPath = getSubjectFullPath(origProject, currentSubject.getLabel());
                     try (Stream<Path> walk = Files.walk(fullPath)) {
                         List<Path> collectedSubjectFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
                         for (Path path : collectedSubjectFiles) {
                             Path newPath = pathTranslationPath.relativize(path);
+                            if (subjectLabelChanges.containsKey(subject)) {
+                                newPath = Paths.get(newPath.toString().replaceFirst(subjectLabelChanges.get(subject), subject));
+                            }
                             allPathsMap.put(path, newPath);
                         }
                     } catch (NoSuchFileException ignored) {

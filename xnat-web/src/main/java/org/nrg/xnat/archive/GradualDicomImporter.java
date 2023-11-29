@@ -166,14 +166,13 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
             final String projectId = project != null ? project.getId() : null;
             final SeriesImportFilter projectFilter = StringUtils.isNotBlank(projectId) ? getDicomFilterService().getSeriesImportFilter(projectId) : null;
-            final int maxProjectTag = getMaxFilterTag(projectFilter);
-            final DicomObject filterDicomObject;
+            final int maxProjectTag = getMaxFilterTag(projectFilter)+1;
             if (maxProjectTag > lastTag) {
+                final DicomObject filterDicomObject;
                 bis.reset();
                 dis.setHandler(new StopTagInputHandler(maxProjectTag));
                 filterDicomObject = dis.readDicomObject();
-            } else {
-                filterDicomObject = dicom;
+                filterDicomObject.copyTo(dicom);
             }
             if (log.isDebugEnabled()) {
                 if (siteFilter != null) {
@@ -188,7 +187,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     log.debug("Found no site-wide series import filter and " + (projectFilter.isEnabled() ? "enabled" : "disabled") + " series import filter for the project " + projectId);
                 }
             }
-            if (!(shouldIncludeDicomObject(siteFilter, filterDicomObject) && shouldIncludeDicomObject(projectFilter, filterDicomObject))) {
+            if (!(shouldIncludeDicomObject(siteFilter, dicom) && shouldIncludeDicomObject(projectFilter, dicom))) {
                 return new ArrayList<>();
                 /* TODO: Return information to user on rejected files. Unfortunately throwing an
                  * exception causes DicomBrowser to display a panicked error message. Some way of

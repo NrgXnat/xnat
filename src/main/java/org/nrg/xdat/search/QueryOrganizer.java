@@ -1721,7 +1721,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     }
 
     public final static List<ManualJoin> manualJoins=Lists.newArrayList(
-        new ManualJoin("xnat:subjectData","xnat:demographicData","FROM xnat_demographicData xnat_demographicData", " LEFT JOIN xnat_demographicData ON xnat_subjectData.demographics_xnat_abstractdemographicdata_id=xnat_demographicData.xnat_abstractdemographicdata_id"),
+        new ManualJoin("xnat:subjectData","xnat:demographicData","FROM %1$s %1$s", " LEFT JOIN %1$s ON xnat_subjectData.demographics_xnat_abstractdemographicdata_id=%1$s.xnat_abstractdemographicdata_id"),
         new ManualJoin("xnat:subjectAssessorData","xnat:subjectData", "FROM xnat_subjectData xnat_subjectData", " LEFT JOIN xnat_subjectData ON %2$s.subject_id=xnat_subjectData.id"),
         new ManualJoin("xnat:imageScanData","xnat:imageSessionData", "FROM %1$s %1$s", " LEFT JOIN %1$s ON %2$s.image_session_id=%1$s.id"),
         new ManualJoin("xnat:imageAssessorData","xnat:imageSessionData", "FROM %1$s %1$s", " LEFT JOIN %1$s ON %2$s.imagesession_id=%1$s.id"));

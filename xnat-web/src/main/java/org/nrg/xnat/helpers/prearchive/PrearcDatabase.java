@@ -1001,6 +1001,9 @@ public final class PrearcDatabase {
     }
 
     public static void wrapException(Exception e) throws SyncFailedException {
+        if (e == null ) {
+            throw new SyncFailedException("Operation Failed: status must be archiving" );
+        }
         if ((e instanceof SyncFailedException && e.getCause() != null)) {
             throw new SyncFailedException("Operation Failed: " + e.getCause().getMessage(), e.getCause());
         } else {

@@ -37,7 +37,9 @@ import org.restlet.data.Status;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.nrg.xft.event.XftItemEventI.CREATE;
@@ -54,11 +56,26 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
 
     @Override
     public void execute() throws Exception {
+        List<PrearchiveOperationRequest> requests = separate();
+        if (requests != null) {
+            for (PrearchiveOperationRequest request : requests) {
+                XDAT.sendJmsRequest(request);
+                // XNAT-6106: HACKITY HACKITY HACK HACK HACK!! Sleep for 1 second between queuing each session.
+                // This prevents the same race condition as creating the subject above, except this time with
+                // the experiment ID.
+                Thread.sleep(1000);
+            }
+        }
+    }
+
+    public List<PrearchiveOperationRequest> separate() throws  Exception {
         final boolean receiving  = getSessionData().getStatus() != null && getSessionData().getStatus().equals(PrearcUtils.PrearcStatus.RECEIVING);
         final String  project    = getSessionData().getProject();
         final String  timestamp  = getSessionData().getTimestamp();
         final String  folderName = getSessionData().getFolderName();
         final String  subject    = getSessionData().getSubject();
+        final List<PrearchiveOperationRequest> requestList = new ArrayList<>();
+
         if (!getSessionDir().getParentFile().exists()) {
             final String name = getSessionData().getName();
             try {
@@ -87,7 +104,7 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
                     final Map<String, SessionData> sessions = PrearcDatabase.separatePetMrSession(folderName, timestamp, project, (XnatPetmrsessiondataBean) bean);
                     if (sessions == null) {
                         log.warn("No sessions returned from separate PET/MR session operation, check your logs for errors.");
-                        return;
+                        return requestList;
                     }
                     // Now finish the upload process, including checking for auto-archive.
                     for (final String modality : sessions.keySet()) {
@@ -97,12 +114,8 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
                             final Map<String, Object> parameters = new HashMap<>();
                             parameters.put(HandlePetMr.SEPARATE_PET_MR, HandlePetMr.Separate.value());
                             final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive, session.getSessionData(), session.getSessionDir(), parameters);
-                            XDAT.sendJmsRequest(request);
+                            requestList.add(request);
                         }
-                        // XNAT-6106: HACKITY HACKITY HACK HACK HACK!! Sleep for 1 second between queuing each session.
-                        // This prevents the same race condition as creating the subject above, except this time with
-                        // the experiment ID.
-                        Thread.sleep(1000);
                     }
                 } else {
                     log.debug("Found a session XML for a {} session in the file {}. Not PET/MR so not separating.", bean.getFullSchemaElementName(), sessionXml.getAbsolutePath());
@@ -111,6 +124,7 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
                 log.warn("Tried to separate a PET/MR session from the path {}, but that session XML doesn't exist.", sessionXml.getAbsolutePath());
             }
         }
+        return requestList;
     }
 
     private boolean shouldCreateSubject(final String project, final String idOrLabel) {

@@ -171,7 +171,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
                     }
                     importEntry(new ZipEntryFileWriterWrapper(ze, zin), uris);
                 } catch (ClientException e) {
-                    if (ignoreUnparsable && e.getCause() instanceof DicomCodingException) {
+                    if (ignoreUnparsable) {
                         nonDcmException = e;
                     } else {
                         throw e;
@@ -198,7 +198,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
                         }
                         importEntry(new TarEntryFileWriterWrapper(ze, zin), uris);
                     } catch (ClientException e) {
-                        if (ignoreUnparsable && e.getCause() instanceof DicomCodingException) {
+                        if (ignoreUnparsable) {
                             nonDcmException = e;
                         } else {
                             throw e;

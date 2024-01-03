@@ -48,7 +48,7 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
 
     private static final String USER_REG_EMAIL        = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p> <p>Welcome to the SITE_NAME Web Archive!</p> <p>You can now log on to the SITE_NAME at: SITE_LINK</p><p>Your username is: USER_USERNAME</p> <p>For support, contact the ADMIN_MAIL_LINK</p>";
     private static final String FORGOT_USERNAME_EMAIL = "<p>You requested your username, which is: USER_USERNAME</p>\n <p>Please login to the site for additional user information SITE_LINK.</p>\n";
-    private static final String FORGOT_PASSWORD_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n<p>Please click this link to reset your password: RESET_LINK</p> \n<p>This link will expire in 24 hours.</p>";
+    private static final String FORGOT_PASSWORD_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n<p>Please click this link to reset your password: RESET_LINK</p> \n<p>This link will expire in EXPIRE_PERIOD.</p>";
     private static final String NEW_USER_VERIFICATION_EMAIL = "<p>USER_FIRSTNAME USER_LASTNAME, </p>\n<p>We received a request to register an account for you on XNAT. If you did not make this request, you can safely ignore this email. </p>\n" +
             "<p>If you would like to register, please confirm your email address by clicking this link within the next 24 hours: VERIFY_URL </p>\n" +
             "<p>ENABLED_MESSAGE</p>\n" +

@@ -19,6 +19,7 @@ import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
+import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.event.EventUtils;
@@ -122,7 +123,10 @@ public class ModifyPassword extends ModifyAction {
                 if (se.getGenericXFTElement().getType().getLocalPrefix().equalsIgnoreCase("xdat")) {
                     ElementSecurity.refresh();
                 }
-
+                final String alias = (String) data.getSession().getAttribute("alias");
+                if (StringUtils.isNotEmpty(alias)) {
+                    XDAT.getContextService().getBean(AliasTokenService.class).invalidateToken(alias);
+                }
                 redirect(true, "Password changed.");
             } else {
                 redirect(false, "Password unchanged.");

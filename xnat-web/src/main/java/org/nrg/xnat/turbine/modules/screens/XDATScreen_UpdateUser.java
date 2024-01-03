@@ -167,6 +167,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                                 context.put("user", user);
                                 context.put("forgot", true);
                                 data.getSession().setAttribute("forgot", true);
+                                data.getSession().setAttribute("alias", alias);
                             }
                             else{
                                 invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");

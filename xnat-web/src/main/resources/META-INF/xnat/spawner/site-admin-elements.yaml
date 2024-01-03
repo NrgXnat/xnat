@@ -961,7 +961,8 @@ notificationEmails:
                         Text of message emailed to users upon lost password reset. Link for password reset is auto-populated. Available shortcodes: <br>
                         USER_FIRSTNAME - The first name of the user receiving the password reset. <br>
                         USER_LASTNAME - The last name of the user receiving the password reset. <br>
-                        RESET_LINK - The link used to reset the password.
+                        RESET_LINK - The link used to reset the password. <br>
+                        EXPIRE_PERIOD - The period of time before the password reset link expires.
 
                 emailMessageNewUserVerification:
                     kind: panel.textarea

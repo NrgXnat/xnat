@@ -82,7 +82,20 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @return An {@link AliasToken} issued to the indicated user.
      */
     AliasToken issueTokenForUser(UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses);
-
+    /**
+     * Issues a token to the indicated user.  The <b>isSingleUse</b> parameter indicates whether the issued token should
+     * be disposed of when the token is used.The <b>validIPAddresses</b> parameter indicates which originating IPs
+     * should be permitted to offer the returned alias tokens. Note that there is nothing in the issued token that
+     * indicates the acceptable IP addresses. <b>timeoutInSeconds</b> parameter indicates the issued token will expire
+     * after a specific duration.
+     *
+     * @param xdatUser    The user requesting a token.
+     * @param isSingleUse Indicates whether the token should be disposed of once the token is used once.
+     * @param validIPAddresses    The list of IP addresses from which the alias token will be accepted.
+     * @param timeoutInSeconds    the issued token will expire after a specific duration.
+     * @return An {@link AliasToken} issued to the indicated user.
+     */
+    AliasToken issueTokenForUser(UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses, long timeoutInSeconds);
     /**
      * Locates and returns the token indicated by the alias string. The returned token should not be considered fully
      * validated until the {@link AliasToken#getSecret() token secret} and {@link AliasToken#getValidIPAddresses() IP

@@ -102,10 +102,19 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
     @Override
     @Transactional
     public AliasToken issueTokenForUser(final UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses) {
+        return issueTokenForUser(xdatUser, isSingleUse, validIPAddresses, 0L);
+    }
+
+    @Override
+    @Transactional
+    public AliasToken issueTokenForUser(final UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses, long timeoutInSeconds) {
         AliasToken token = newEntity();
         final Calendar calendar = Calendar.getInstance();
-        final long seconds = convertPGIntervalToSeconds(_preferences.getAliasTokenTimeout());
-        calendar.add(Calendar.SECOND, ((Long) seconds).intValue());
+        if (timeoutInSeconds > 0) {
+            calendar.add(Calendar.SECOND, ((Long) timeoutInSeconds).intValue());
+        } else {
+            calendar.add(Calendar.SECOND, ((Long) convertPGIntervalToSeconds(_preferences.getAliasTokenTimeout())).intValue());
+        }
         token.setEstimatedExpirationTime(calendar.getTime());
         token.setXdatUserId(xdatUser.getLogin());
         token.setSingleUse(isSingleUse);

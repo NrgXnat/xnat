@@ -272,6 +272,15 @@ public class AliasToken extends AbstractHibernateEntity {
         return Patterns.UUID.matcher(candidate).matches();
     }
 
+    /**
+     * Return true if the token is expired. If the expiration time is null or earlier than the current time,
+     * then the token is considered expired.
+     */
+    @Transient
+    public boolean isExpired() {
+        return _estimatedExpirationTime == null || _estimatedExpirationTime.before(new Date());
+    }
+
     private void initializeAddressLists() {
         if (_validIPAddresses == null) {
             return;

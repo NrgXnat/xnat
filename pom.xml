@@ -261,7 +261,6 @@
         <xalan.version>2.7.2</xalan.version>
         <xbean.version>3.17</xbean.version>
         <xmlbeans.version>2.6.0</xmlbeans.version>
-        <xstream.version>1.4.9</xstream.version>
 
         <!-- Gradle plugin versions -->
         <gradle-git.version>0.12.1</gradle-git.version>

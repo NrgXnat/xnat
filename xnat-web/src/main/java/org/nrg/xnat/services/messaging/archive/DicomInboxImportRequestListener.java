@@ -123,7 +123,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                     rebuildParameters.put(PrearcUtils.PREARC_SESSION_FOLDER, session);
                     rebuildParameters.put(DicomInboxImportRequest.IMPORT_REQUEST_ID, request.getId());
 
-                    XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Operation.Rebuild, new PrearcSession(project, timestamp, session, rebuildParameters, user)));
+                    PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(user, Operation.Rebuild, new PrearcSession(project, timestamp, session, rebuildParameters, user)));
                 }
             }
         } catch (FileNotFoundException e) {

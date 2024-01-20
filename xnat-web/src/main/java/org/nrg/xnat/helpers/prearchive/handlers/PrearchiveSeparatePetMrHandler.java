@@ -46,12 +46,14 @@ import static org.nrg.xft.event.XftItemEventI.CREATE;
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 import static org.nrg.xnat.archive.Operation.Archive;
 import static org.nrg.xnat.archive.Operation.Separate;
+import static org.nrg.xnat.helpers.prearchive.handlers.PrearchiveRebuildHandler.PARAM_AUTO_ARCHIVE_BLOCKED;
 
 @Handles(Separate)
 @Slf4j
 public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationHandler {
     public PrearchiveSeparatePetMrHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider, final DicomInboxImportRequestService importRequestService) {
         super(request, eventService, userProvider, importRequestService);
+        autoArchiveBlocked = getBooleanParameter(PARAM_AUTO_ARCHIVE_BLOCKED);
     }
 
     @Override
@@ -59,7 +61,7 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
         List<PrearchiveOperationRequest> requests = separate();
         if (requests != null) {
             for (PrearchiveOperationRequest request : requests) {
-                XDAT.sendJmsRequest(request);
+                PrearcUtils.queuePrearchiveOperation(request);
                 // XNAT-6106: HACKITY HACKITY HACK HACK HACK!! Sleep for 1 second between queuing each session.
                 // This prevents the same race condition as creating the subject above, except this time with
                 // the experiment ID.
@@ -69,7 +71,6 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
     }
 
     public List<PrearchiveOperationRequest> separate() throws  Exception {
-        final boolean receiving  = getSessionData().getStatus() != null && getSessionData().getStatus().equals(PrearcUtils.PrearcStatus.RECEIVING);
         final String  project    = getSessionData().getProject();
         final String  timestamp  = getSessionData().getTimestamp();
         final String  folderName = getSessionData().getFolderName();
@@ -110,7 +111,7 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
                     for (final String modality : sessions.keySet()) {
                         final SessionData   sessionData = sessions.get(modality);
                         final PrearcSession session     = new PrearcSession(sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), null, getUser());
-                        if (receiving && session.isAutoArchive()) {
+                        if (!autoArchiveBlocked && session.isAutoArchive()) {
                             final Map<String, Object> parameters = new HashMap<>();
                             parameters.put(HandlePetMr.SEPARATE_PET_MR, HandlePetMr.Separate.value());
                             final PrearchiveOperationRequest request = new PrearchiveOperationRequest(getUser(), Archive, session.getSessionData(), session.getSessionDir(), parameters);
@@ -182,4 +183,5 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
     }
 
     private static final String QUERY_SUBJECT_EXISTS_IN_PROJECT = "SELECT EXISTS(SELECT TRUE FROM xnat_subjectdata s LEFT JOIN xnat_projectparticipant p ON s.id = p.subject_id WHERE s.project = :project AND :idOrLabel IN (s.id, s.label) OR p.project = :project AND :idOrLabel IN (p.subject_id, p.label)) AS exists";
+    private final boolean autoArchiveBlocked;
 }

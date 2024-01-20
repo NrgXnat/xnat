@@ -22,7 +22,6 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
-import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
@@ -456,11 +455,11 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                                                                                                          prearchivePath.getParentFile(),
                                                                                                          PrearchiveCode.AutoArchive);
             SessionData prearchiveSession = sd.isLeft() ? sd.getLeft() : sd.getRight();
-            if(prearchiveSession != null && prearchiveSession.getStatus() == PrearcUtils.PrearcStatus.RECEIVING) {
-                XDAT.sendJmsRequest(jmsTemplate, new PrearchiveOperationRequest(receivedFileUserProvider.get(),
-                                                                                nextOperation,
-                                                                                prearchiveSession,
-                                                                                new File(prearchiveSession.getUrl())));
+            if (prearchiveSession != null && prearchiveSession.getStatus() == PrearcUtils.PrearcStatus.RECEIVING) {
+                PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(receivedFileUserProvider.get(),
+                                                                                    nextOperation,
+                                                                                    prearchiveSession,
+                                                                                    new File(prearchiveSession.getUrl())));
             }
             directArchiveSessionHibernateService.delete(id);
         } catch (Exception e) {

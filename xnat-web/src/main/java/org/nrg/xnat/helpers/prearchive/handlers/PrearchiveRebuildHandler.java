@@ -11,7 +11,6 @@ package org.nrg.xnat.helpers.prearchive.handlers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.services.NrgEventServiceI;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
 import org.nrg.xdat.bean.reader.XDATXMLReader;
@@ -33,44 +32,40 @@ import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.*;
 @Slf4j
 public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler {
     public static final String PARAM_OVERRIDE_LOCK = "overrideLock";
+    public static final String PARAM_AUTO_ARCHIVE_BLOCKED = "autoArchiveBlocked";
+    private final boolean overrideLock;
+    private final boolean autoArchiveBlocked;
     private boolean autoArchive = false;
-    private boolean isReceiving = false;
 
     public PrearchiveRebuildHandler(final PrearchiveOperationRequest request, final NrgEventServiceI eventService, final XnatUserProvider userProvider, final DicomInboxImportRequestService importRequestService) {
         super(request, eventService, userProvider, importRequestService);
+        overrideLock = getBooleanParameter(PARAM_OVERRIDE_LOCK);
+        autoArchiveBlocked = getBooleanParameter(PARAM_AUTO_ARCHIVE_BLOCKED);
     }
 
     @Override
-    public void execute() {
+    public void execute() throws Exception {
         boolean buildSuccessful = rebuild();
         if (buildSuccessful) {
-            try {
-                final boolean isSeparatePetMr = needToHandleSeparablePetMrSession();
-                if (isSeparatePetMr) {
-                    XDAT.sendJmsRequest(new PrearchiveOperationRequest(getUser(), Separate, getSessionData(), getSessionDir(), getParameters()));
-                } else {
-                    postBuild();
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            final boolean isSeparatePetMr = needToHandleSeparablePetMrSession();
+            if (isSeparatePetMr) {
+                PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(getUser(), Separate, getSessionData(), getSessionDir(), getParameters()));
+            } else {
+                postBuild();
             }
         }
         if (autoArchive) {
-            XDAT.sendJmsRequest(new PrearchiveOperationRequest(getUser().getUsername(), Archive, getSessionData(), getSessionDir(), getParameters()));
+            PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(getUser().getUsername(), Archive, getSessionData(), getSessionDir(), getParameters()));
         }
     }
 
     public boolean rebuild() {
         try {
-            final PrearcUtils.PrearcStatus status    = getSessionData().getStatus();
-            isReceiving = status != null && status.equals(RECEIVING);
             log.info("Received request to process prearchive session at: {}", getSessionData().getExternalUrl());
-
-            final boolean overrideLock = getParameters().containsKey(PARAM_OVERRIDE_LOCK) && ((boolean) getParameters().get(PARAM_OVERRIDE_LOCK));
             final String  folderName   = getSessionData().getFolderName();
             final String  timestamp    = getSessionData().getTimestamp();
             final String  project      = getSessionData().getProject();
-            if (status != QUEUED_BUILDING && !PrearcDatabase.setStatus(folderName, timestamp, project, QUEUED_BUILDING, overrideLock)) {
+            if (getSessionData().getStatus() != QUEUED_BUILDING && !PrearcDatabase.setStatus(folderName, timestamp, project, QUEUED_BUILDING, overrideLock)) {
                 log.warn("Tried to reset the status of the session {} to QUEUED_BUILDING, but failed. This usually means the session is locked and the override lock parameter was false. This might be OK: I checked whether the session was locked before trying to update the status but maybe a new file arrived in the intervening millisecond(s).", getSessionData());
                 return false;
             }
@@ -110,12 +105,13 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
         final String folderName = getSessionData().getFolderName();
         final String timestamp = getSessionData().getTimestamp();
         final String project = getSessionData().getProject();
+
         PrearcUtils.resetStatus(getUser(), project, timestamp, folderName, true);
 
         // we don't want to autoarchive a session that's just being rebuilt
         // but we still want to autoarchive sessions that just came from RECEIVING STATE
         final PrearcSession session = new PrearcSession(project, timestamp, folderName, null, getUser());
-        if (isReceiving && session.isAutoArchive()) {
+        if (!autoArchiveBlocked && session.isAutoArchive()) {
             autoArchive = true;
         }
     }

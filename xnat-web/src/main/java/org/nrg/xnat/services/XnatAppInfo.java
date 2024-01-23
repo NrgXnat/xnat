@@ -76,7 +76,7 @@ public class XnatAppInfo {
         _environment = environment;
         _openUrlsPref = openUrlsPref;
         _serializerService = serializerService;
-        _primaryNode = Boolean.parseBoolean(_environment.getProperty(PROPERTY_XNAT_PRIMARY_MODE, "true"));
+        _primaryNode = Boolean.parseBoolean(_environment.getProperty(PROPERTY_XNAT_PRIMARY_NODE, "true"));
         _node = node;
         _siteAddress = getSiteAddress();
         _hostName = getXnatNodeHostName(nodeInfoService);
@@ -789,7 +789,7 @@ public class XnatAppInfo {
         return false;
     }
 
-    private static final String PROPERTY_XNAT_PRIMARY_MODE = "xnat.is_primary_node";
+    public static final String PROPERTY_XNAT_PRIMARY_NODE = "xnat.is_primary_node";
     private static final String MANIFEST_BUILD_NUMBER      = "Build-Number";
     private static final String MANIFEST_BUILD_DATE        = "Build-Date";
     private static final String MANIFEST_VERSION           = "Implementation-Version";

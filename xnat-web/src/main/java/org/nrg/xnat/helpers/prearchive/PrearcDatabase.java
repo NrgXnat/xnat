@@ -963,26 +963,24 @@ public final class PrearcDatabase {
     }
 
     private static String _archive(Object control, PrearcSession session, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean overwriteFiles, UserI user, Set<StatusListenerI> listeners, boolean waitFor) throws SyncFailedException {
-        log.info("Now archiving the session {} with {} listeners", session, listeners == null ? 0 : listeners.size());
         final String prearcDIR = session.getFolderName();
         final String timestamp = session.getTimestamp();
         final String project = session.getProject();
-
         final PrearcSessionArchiver archiver;
+        final SessionData sd;
+
+        log.info("Now archiving the session {} with {} listeners", session, listeners == null ? 0 : listeners.size());
         try {
             archiver = new PrearcSessionArchiver(control, session, user, session.getAdditionalValues(), overrideExceptions, allowSessionMerge, waitFor, overwriteFiles);
-        } catch (Exception e1) {
-            PrearcUtils.log(project, timestamp, prearcDIR, e1);
-            throw new IllegalStateException(e1);
-        }
-
-        ListenerUtils.addListeners(listeners, archiver);
-
-        final SessionData sd;
-        try {
+            ListenerUtils.addListeners(listeners, archiver);
             sd = session.getSessionData();
         } catch (Exception e) {
             PrearcUtils.log(project, timestamp, prearcDIR, e);
+            try {
+                setStatus(prearcDIR, timestamp, project, PrearcStatus.ERROR);
+            } catch (Exception e2) {
+                log.error("Unable to set status to error for session {} {} {}", project, timestamp, prearcDIR, e2);
+            }
             throw new IllegalStateException(e);
         }
 

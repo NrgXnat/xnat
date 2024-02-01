@@ -389,6 +389,8 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-panel .bd, .yui-skin-sam .yui-panel .ft { background-color: #F2F2F2 ; box-sizing: unset; height: unset !important; }
 
+.yui-skin-sam .yui-panel#rest_deleter .bd { height: 450px !important; } /* Fix project delete dialog */
+
 .yui-skin-sam .yui-panel .hd { padding: 0 10px ; font-size: /* 93% */ 100% ; line-height: 2 ; *line-height: 1.9 ; font-weight: bold ; color: #000 ; background: url(../images/sprite.png) repeat-x 0 -200px ; }
 
 .yui-skin-sam .yui-panel .bd { padding: 10px ; }

@@ -17,7 +17,7 @@
     </parent>
 
     <artifactId>ExtAttr</artifactId>
-    <version>4.3.2-SNAPSHOT</version>
+    <version>1.8.10-SNAPSHOT</version>
 
     <name>External Attribute library</name>
     <description>

@@ -10,6 +10,7 @@
 package org.nrg.xnat.helpers.merge;
 
 import org.nrg.config.entities.Configuration;
+import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 
@@ -27,7 +28,7 @@ public class SingleFileAnonymizer extends AnonymizerA {
 	private final boolean reanonymize;
 	final String path;
 	
-	public SingleFileAnonymizer(File f, String project, String subject, String label, String anonProject, boolean reanonymize) {
+	public SingleFileAnonymizer(File f, String project, String subject, String label, String anonProject, boolean reanonymize, boolean ignoreRejections) {
 		this.f = f;
 		this.project = project;
 		this.subject = subject;
@@ -40,7 +41,7 @@ public class SingleFileAnonymizer extends AnonymizerA {
 		else {
 			this.path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null);	
 		}
-		
+		_ignoreRejections = ignoreRejections;
 	}
 	
 	@Override
@@ -76,7 +77,7 @@ public class SingleFileAnonymizer extends AnonymizerA {
 	}
 
 	@Override
-	public Boolean call () throws Exception {
-		return reanonymize ? super.call() : false;
+	public List<AnonymizationResult> call () throws Exception {
+		return reanonymize ? super.call() : new ArrayList<>();
 	}
 }

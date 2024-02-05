@@ -15,6 +15,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.AnonymizationResultNoOp;
 import org.nrg.framework.status.StatusProducer;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
@@ -264,8 +266,9 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 final File        sessionDir                  = session.getSessionDir();
 
                 this.processing("Performing anonymization");
-                final SiteWideAnonymizer   siteWideAnonymizer = new SiteWideAnonymizer(imageSession, true);
-                if (siteWideAnonymizer.call()) {
+                final SiteWideAnonymizer   siteWideAnonymizer = new SiteWideAnonymizer(imageSession, true, false);
+                List<AnonymizationResult> anonResults = siteWideAnonymizer.call();
+                if (!(anonResults.isEmpty() || anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance))){
                     // rebuild XML
                     XnatSubjectdata s = imageSession.getSubjectData();
                     String subject = s != null ? s.getLabel() : imageSession.getSubjectId();

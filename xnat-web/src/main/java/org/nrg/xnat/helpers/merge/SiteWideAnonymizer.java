@@ -26,15 +26,16 @@ public class SiteWideAnonymizer extends AnonymizerA {
 	final boolean located_in_prearchive;
 	final XnatImagesessiondataI s;
 	final String path;
-	public SiteWideAnonymizer(XnatImagesessiondataI s, boolean located_in_prearchive) {
+	public SiteWideAnonymizer(XnatImagesessiondataI s, boolean located_in_prearchive, boolean ignoreRejections) {
 		this.s = s;
 		this.located_in_prearchive = located_in_prearchive;
 		this.path = DicomEdit.buildScriptPath(ResourceScope.SITE_WIDE, null);
+		_ignoreRejections=ignoreRejections;
 	}
 
 	@SuppressWarnings("unused")
 	public SiteWideAnonymizer(XnatImagesessiondataI s){
-		this(s,false);
+		this(s,false, false);
 	}
 
 	/**
@@ -84,11 +85,11 @@ public class SiteWideAnonymizer extends AnonymizerA {
 	public List<File> getFilesToAnonymize() throws IOException {
 		List<File> fs = new ArrayList<>();
 		if (located_in_prearchive) {
-			PrearcSessionAnonymizer p = new PrearcSessionAnonymizer(s, s.getProject(), s.getPrearchivepath());
+			PrearcSessionAnonymizer p = new PrearcSessionAnonymizer(s, s.getProject(), s.getPrearchivepath(), ignoreRejections());
 			fs.addAll(p.getFilesToAnonymize());
 		}
 		else {
-			ProjectAnonymizer p = new ProjectAnonymizer(this.s, this.getProjectName(), s.getPrearchivepath());
+			ProjectAnonymizer p = new ProjectAnonymizer(this.s, this.getProjectName(), s.getPrearchivepath(), ignoreRejections());
 			fs.addAll(p.getFilesToAnonymize());
 		}
 		return fs;

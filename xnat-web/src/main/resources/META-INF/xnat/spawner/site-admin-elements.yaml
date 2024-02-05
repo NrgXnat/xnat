@@ -1661,6 +1661,23 @@ anonymization:
             description: >
                 This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="https://wiki.xnat.org/display/XTOOLS/DicomEdit" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
 
+rerunProjectAnon:
+    kind: panel.form
+    name: ProjectAnon
+    label: "Re-running project level anonymization"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        rerunProjectAnonOnRename:
+            kind: panel.input.switchbox
+            label: "Rerun project level anonymization on changes to image session's label, subject or project"
+            onText: Enabled
+            offText: Disabled
+            description: >
+                On some systems, the project level anonymization script is used to insert the project, subject and/or label into the DICOM headers. If the these values are changed, the values can become out of sync. This setting controls whether the project level anonymization script is rerun when the image session's label, subject or project is changed to correct the value in the DICOM. Default is Disabled to prevent accidental DICOM modification.
+
+
 seriesImportFilter:
     kind: panel.form
     name: seriesImportFilter
@@ -2796,6 +2813,7 @@ root:
                 ${seriesImportFilter}
                 ${petTracers}
                 ${petMr}
+                ${rerunProjectAnon}
         customRoutingRules:
             kind: tab
             name: customRoutingRules

@@ -22,9 +22,8 @@ import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-public class ProjectAnonymizer extends AnonymizerA implements Callable<Boolean> {
+public class ProjectAnonymizer extends AnonymizerA {
     final String                projectId;
     final String                sessionPath;
     final String                label;
@@ -37,31 +36,34 @@ public class ProjectAnonymizer extends AnonymizerA implements Callable<Boolean> 
      * @param projectId   The project Id, eg. xnat_E*
      * @param sessionPath The root path of this project's session directory
      */
-    public ProjectAnonymizer(XnatImagesessiondataI s, String projectId, String sessionPath) {
+    public ProjectAnonymizer(XnatImagesessiondataI s, String projectId, String sessionPath, boolean ignoreRejections) {
         this.s = s;
         this.projectId = projectId;
         this.sessionPath = sessionPath;
         this.label = s.getLabel();
         this.path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
         this.subjectLabel = null;
+        this._ignoreRejections=ignoreRejections;
     }
 
-    public ProjectAnonymizer(String label, XnatImagesessiondataI s, String projectId, String sessionPath) {
+    public ProjectAnonymizer(String label, XnatImagesessiondataI s, String projectId, String sessionPath, boolean ignoreRejections) {
         this.s = s;
         this.projectId = projectId;
         this.sessionPath = sessionPath;
         this.label = label;
         this.path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
         this.subjectLabel = null;
+        this._ignoreRejections=ignoreRejections;
     }
 
-    public ProjectAnonymizer(XnatImagesessiondataI s, String subjectLabel, String projectId, String sessionPath) {
+    public ProjectAnonymizer(XnatImagesessiondataI s, String subjectLabel, String projectId, String sessionPath, boolean ignoreRejections) {
         this.s = s;
         this.projectId = projectId;
         this.sessionPath = sessionPath;
         this.label = s.getLabel();
         this.path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
         this.subjectLabel = subjectLabel;
+        this._ignoreRejections=ignoreRejections;
     }
 
     /**

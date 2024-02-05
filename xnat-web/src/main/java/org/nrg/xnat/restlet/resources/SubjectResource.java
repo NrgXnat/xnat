@@ -23,11 +23,13 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.EventUtils.CATEGORY;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
@@ -335,16 +337,18 @@ public class SubjectResource extends ItemResource {
         					Users.clearCache(user);
 
                             // If the label was changed, re apply the anonymization script on all the subject's imaging sessions.
-                            boolean applyAnonScript = (null != existing && !existing.getLabel().equals(sub.getLabel()));
+                            boolean applyAnonScript = (null != existing && !existing.getLabel().equals(sub.getLabel())) && XDAT.getBoolSiteConfigurationProperty("rerunProjectAnonOnRename", false);
 
                             if(applyAnonScript){
                                for(final XnatSubjectassessordata expt : sub.getExperiments_experiment("xnat:imageSessionData")){
-                                    try{
+                                   PersistentWorkflowI anonWrk = WorkflowUtils.buildOpenWorkflow(user, expt.getItem(), newEventInstance(CATEGORY.DATA, Rename.ANONYMIZATION_POST_SUBJECT_CHANGE));
+                                   try{
                                         String prId = expt.getProject();
                                         try {
                                             if (DefaultAnonUtils.getService().isProjectScriptEnabled(prId)) {
                                                 // re-apply this project's edit script
-                                                expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, sub.getLabel(), prId, expt.getArchiveRootPath()));
+                                                expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, sub.getLabel(), prId, expt.getArchiveRootPath(),true));
+                                                WorkflowUtils.complete(anonWrk,anonWrk.buildEvent());
                                             }
                                         }
                                         catch(NullPointerException e){
@@ -352,6 +356,7 @@ public class SubjectResource extends ItemResource {
                                         }
                                     }
                                     catch (TransactionException e) {
+                                       WorkflowUtils.fail(anonWrk,anonWrk.buildEvent());
                                        this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
                                     }
                                }

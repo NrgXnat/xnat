@@ -27,7 +27,7 @@ public class MergePrearchiveSessions extends MergeSessionsA<XnatImagesessiondata
 
 	public MergePrearchiveSessions(Object control,final File srcDIR, final XnatImagesessiondataBean src, final String srcRootPath, final File destDIR, final XnatImagesessiondataBean existing, final String destRootPath, boolean allowSessionMerge, boolean overwriteFiles, SaveHandlerI<XnatImagesessiondataBean> saver, final UserI u) {
 		super(control, srcDIR, src, srcRootPath, destDIR, existing, destRootPath, allowSessionMerge, overwriteFiles, saver,u,null);
-		super.setAnonymizer(new SiteWideAnonymizer(src, true));
+		super.setAnonymizer(new SiteWideAnonymizer(src, true, false));
 	}
 
 	public String getCacheBKDirName() { 

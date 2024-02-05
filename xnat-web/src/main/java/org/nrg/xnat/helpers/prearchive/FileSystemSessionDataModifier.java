@@ -9,13 +9,14 @@
 
 package org.nrg.xnat.helpers.prearchive;
 
-import com.google.common.base.Function;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.DicomObject;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
 import org.nrg.dicom.mizer.exceptions.MizerException;
+import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.AnonymizationResultError;
+import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerService;
@@ -71,7 +72,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
 
     static class Move {
         final String basePath, session, uri, subject, newProject;
-        final File f, timestampDir, newTimestampDir, xml;
+        final File fileSetDir, timestampDir, newTimestampDir, xml;
         XnatImagesessiondataBean doc = null;
 
         /**
@@ -147,19 +148,25 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                         catch( MizerException e) {
                             throw new RuntimeException(e);
                         }
-                        final DICOMSessionBuilder db = new DICOMSessionBuilder(f, params,
-                            new Function<DicomObject, DicomObject>() {
-                                public DicomObject apply(final DicomObject o) {
+                        final DICOMSessionBuilder db = new DICOMSessionBuilder(fileSetDir, params,
+                                o -> {
                                     DicomObjectI di = DicomObjectFactory.newInstance(o);
                                     try {
-                                        mizerService.anonymize( di, context);
+                                        AnonymizationResult anonResult = mizerService.anonymize( di, context);
+                                        if (anonResult instanceof AnonymizationResultError) {
+                                            throw new RuntimeException(String.join(" ","Error on DICOM object when anonymizing", fileSetDir.getAbsolutePath(),":",anonResult.getMessage());
+                                        }
+                                        if (anonResult instanceof AnonymizationResultReject) {
+                                            final File f = new File(anonResult.getAbsolutePath());
+                                            FileUtils.deleteQuietly(f);
+                                            throw new RuntimeException(String.join(" ","Rejected DICOM object when anonymizing",fileSetDir.getAbsolutePath(),":",anonResult.getMessage());
+                                        }
                                     }
                                     catch ( MizerException e) {
                                         throw new RuntimeException(e);
                                     }
                                     return di.getDcm4che2Object();
-                                }
-                            });
+                                });
                         doc = db.call();
                         mizerService.removeContext( context);
                     } else {
@@ -221,8 +228,8 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
             this.uri = uri;
             this.subject = subject;
             this.newProject = newProject;
-            this.f = new File(this.uri);
-            this.timestampDir = f.getParentFile();
+            this.fileSetDir = new File(this.uri);
+            this.timestampDir = fileSetDir.getParentFile();
             Path newTimestampDirPath = Paths.get( this.basePath, this.newProject, this.timestampDir.getName());
             this.newTimestampDir = newTimestampDirPath.normalize().toFile();
             this.xml = new File(timestampDir, session + ".xml");
@@ -257,7 +264,7 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
 
             try {
                 this.doc = this.setXml.run();
-            } catch (SyncFailedException e) {
+            } catch (SyncFailedException | RuntimeException e) {
                 this.setXml.rollback();
                 this.copy.rollback();
                 throw e;
@@ -265,15 +272,15 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
 
             try {
                 this.writeXml.run();
-            } catch (SyncFailedException e) {
+            } catch (SyncFailedException | RuntimeException e) {
                 this.writeXml.rollback();
                 this.setXml.rollback();
                 this.copy.rollback();
                 throw e;
             }
             // If everything was moved, we can remove the session and timestamp directories.
-            FileUtils.deleteDirQuietly(f);
-            if (f.exists()) {
+            FileUtils.deleteDirQuietly(fileSetDir);
+            if (fileSetDir.exists()) {
                 logger.warn("moved session " + session + " to " + newProject + ", but unable to delete original directory.");
             }
             // timestamp directory might contain another session, so no warning if deletion fails.

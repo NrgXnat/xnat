@@ -26,6 +26,8 @@ import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.DBItemCache;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.EventUtils.CATEGORY;
+import org.nrg.xft.event.EventUtils.TYPE;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -56,6 +58,8 @@ public class Rename implements Callable<File>{
     public static final String OLD_PATH  = "oldPath";
     public static final String NEW_LABEL = "newLabel";
     public static final String NEW_PATH  = "newPath";
+	public static final String ANONYMIZATION_POST_MODIFICATION = "Anonymization post modification";
+	public static final String ANONYMIZATION_POST_SUBJECT_CHANGE = "Anonymization post subject change";
 
 	enum STEP {PREPARING, PREPARE_SQL, COPY_DIR, ANONYMIZE, EXECUTE_SQL, DELETE_OLD_DIR, COMPLETE}
 	private static final String    SUCCESSFUL_RENAMES = "successful_renames";
@@ -184,16 +188,26 @@ public class Rename implements Callable<File>{
 			try {
 				//Apply anonymization. If an anonymization script exists, this will pull all files into local filesystem,
 				//where they'll be updated and later pushed to remote on cleanup.
-				if (DefaultAnonUtils.getService().isProjectScriptEnabled(projectId)) {
+				if (DefaultAnonUtils.getService().isProjectScriptEnabled(projectId) && XDAT.getBoolSiteConfigurationProperty("rerunProjectAnonOnRename", false)) {
 					eventMeta = updateStep(workflow, setStep(STEP.ANONYMIZE));
 					if (item instanceof XnatImagesessiondata) {
-						new ProjectAnonymizer(newLabel, (XnatImagesessiondata) item, projectId, ((XnatImagesessiondata) item).getArchivePath(item.getArchiveRootPath())).call();
+						PersistentWorkflowI wrk = WorkflowUtils.buildOpenWorkflow(user, item.getItem(), EventUtils.newEventInstance(CATEGORY.DATA, TYPE.WEB_SERVICE, ANONYMIZATION_POST_MODIFICATION));
+
+						try {
+							new ProjectAnonymizer(newLabel, (XnatImagesessiondata) item, projectId, ((XnatImagesessiondata) item).getArchivePath(item.getArchiveRootPath()), true).call();
+							WorkflowUtils.complete(wrk, wrk.buildEvent());
+						} catch (Exception e){
+							WorkflowUtils.fail(wrk, wrk.buildEvent());
+						}
 					} else if (isSubject) {
 						for (final XnatSubjectassessordata expt : ((XnatSubjectdata) item).getExperiments_experiment("xnat:imageSessionData")) {
+							PersistentWorkflowI wrk = WorkflowUtils.buildOpenWorkflow(user, expt.getItem(), EventUtils.newEventInstance(CATEGORY.DATA, TYPE.WEB_SERVICE, ANONYMIZATION_POST_SUBJECT_CHANGE));
 							try {
 								// re-apply this project's edit script
-								expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, newLabel, expt.getProject(), expt.getArchiveRootPath()));
+								expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, newLabel, expt.getProject(), expt.getArchiveRootPath(), true));
+								WorkflowUtils.complete(wrk, wrk.buildEvent());
 							} catch (TransactionException e) {
+								WorkflowUtils.fail(wrk, wrk.buildEvent());
 								throw new AnonException(e);
 							}
 						}

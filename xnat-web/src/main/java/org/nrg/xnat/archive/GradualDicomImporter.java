@@ -29,6 +29,9 @@ import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.Decompress;
 import org.nrg.dcm.Restructurer;
+import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.AnonymizationResultError;
+import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
@@ -143,7 +146,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             dicom = dis.readDicomObject();
 
             if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ, dicom, null)) {
-                return new ArrayList<>();
+                return handleRejectedInstance();
             }
 
             log.trace("handling file with query parameters {}", _parameters);
@@ -161,7 +164,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             tempSession.setSubject("");
             tempSession.setFolderName("");
             if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicom, tempSession)) {
-                return new ArrayList<>();
+                return handleRejectedInstance();
             }
 
             final String projectId = project != null ? project.getId() : null;
@@ -188,12 +191,11 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
             }
             if (!(shouldIncludeDicomObject(siteFilter, dicom) && shouldIncludeDicomObject(projectFilter, dicom))) {
-                return new ArrayList<>();
+                return handleRejectedInstance();
                 /* TODO: Return information to user on rejected files. Unfortunately throwing an
                  * exception causes DicomBrowser to display a panicked error message. Some way of
                  * returning the information that a particular file type was not accepted would be
                  * nice, though. Possibly record the information and display on an admin page.
-                 * Work to be done for 1.7
                  */
             }
             try {
@@ -331,7 +333,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     !customProcessing(NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE,
                             dicom, session, cleanupPrearcDb)
             ) {
-                return new ArrayList<>();
+                return handleRejectedInstance();
             }
 
             // Build the scan label
@@ -390,28 +392,22 @@ public class GradualDicomImporter extends ImporterHandlerA {
                         Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
                         if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
                             final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
-                            service.anonymize(outputFile, session.getProject(), session.getSubject(),
-                                    session.getFolderName(), true, c.getId(), c.getContents());
-
+                            final AnonymizationResult anonResult = service.anonymize(outputFile, session.getProject(), session.getSubject(),
+                                    session.getFolderName(), true, false, c.getId(), c.getContents());
+                            if (anonResult instanceof AnonymizationResultReject) {
+                                handleRejectedInstance();
+                            }
+                            else if (anonResult instanceof AnonymizationResultError) {
+                                // Errors of this type are script evaluation problems.
+                                handleAnonymizationError(isNew, session, outputFile, new ServerException(String.join("\n",anonResult.getMessages())));
+                            }
                         } else {
                             log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without " +
                                     "anonymization.", session.getProject(), session.getSubject(), session.getName());
                         }
                     } catch(Throwable e){
-                        log.debug("Dicom anonymization failed: " + outputFile, e);
-                        try {
-                            // if we created a row in the database table for this session
-                            // delete it.
-                            if (isNew.get()) {
-                                deleteSessionFromDb(session);
-                            } else {
-                                outputFile.delete();
-                            }
-                        } catch (Throwable t) {
-                            log.debug("Unable to delete relevant file: " + outputFile, e);
-                            throw new ServerException(Status.SERVER_ERROR_INTERNAL, t);
-                        }
-                        throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
+                        // Errors of this type are deeper system errors.
+                        handleAnonymizationError(isNew, session, outputFile, e);
                     }
                 } else if (session.getPreventAnon()) {
                     log.debug("The session {} {} {} has already been anonymized by the uploader, proceeding without " +
@@ -436,7 +432,32 @@ public class GradualDicomImporter extends ImporterHandlerA {
         } catch (Throwable t) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);
         }
+    }
 
+    /**
+     * Reject a Dicom instance by simply returning.
+     *
+     * @return empty list of Strings
+     */
+    private List<String> handleRejectedInstance() {
+        return Collections.emptyList();
+    }
+
+    private void handleAnonymizationError(AtomicBoolean isNew, SessionData session,File outputFile, Throwable e) throws ServerException {
+        log.debug("Dicom anonymization failed: {}", outputFile, e);
+        try {
+            // if we created a row in the database table for this session
+            // delete it.
+            if (isNew.get()) {
+                deleteSessionFromDb(session);
+            } else {
+                outputFile.delete();
+            }
+        } catch (Throwable t) {
+            log.debug("Unable to delete relevant file: " + outputFile, e);
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, t);
+        }
+        throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
     }
 
     private void deleteSessionFromDb(SessionData session) throws Exception {
@@ -497,11 +518,28 @@ public class GradualDicomImporter extends ImporterHandlerA {
         return session;
     }
 
+    /**
+     *
+     * @param location
+     * @param dicom
+     * @param session
+     * @return true if processing success, false if the instance is rejected.
+     * @throws Exception
+     */
     private boolean customProcessing(String location, DicomObject dicom, SessionData session)
             throws Exception {
         return customProcessing(location, dicom, session, () -> null);
     }
 
+    /**
+     *
+     * @param location
+     * @param dicom
+     * @param session
+     * @param onException
+     * @return true if processing success, false if the instance is rejected.
+     * @throws Exception
+     */
     private boolean customProcessing(String location, DicomObject dicom, SessionData session, Callable<Void> onException)
             throws Exception {
         try {
@@ -514,7 +552,14 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    // See XNAT-5441 and commit 73538bf for source of this code
+    /**
+     * See XNAT-5441 and commit 73538bf for source of this code
+     * @param location
+     * @param dicom
+     * @param session
+     * @return true if processing success, false if the Dicom instance is rejected.
+     * @throws Exception
+     */
     private boolean iterateOverProcessorsAtLocation(String location, final DicomObject dicom, final SessionData session)
             throws Exception {
         boolean continueProcessingData = true;
@@ -527,6 +572,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                         (Class<? extends ArchiveProcessor>) Class.forName(processorInstance.getProcessorClass());
                 ArchiveProcessor processor = processorsMap.get(processorClass);
                 if (processor.accept(dicom, session, _mizer, processorInstance, _parameters)) {
+                    // processor.process return false if the instance is rejected.
                     if (!processor.process(dicom, session, _mizer, processorInstance, _parameters)) {
                         continueProcessingData = false;
                         break;

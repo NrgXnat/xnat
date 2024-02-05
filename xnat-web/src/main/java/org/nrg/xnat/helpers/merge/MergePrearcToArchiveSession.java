@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.AnonymizationResultError;
+import org.nrg.dicom.mizer.objects.AnonymizationResultNoOp;
 import org.nrg.xdat.model.*;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -20,6 +23,7 @@ import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
@@ -31,6 +35,7 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.Boolean.TRUE;
 import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
 import static org.nrg.xnat.helpers.prearchive.PrearcDatabase.removePrearcVariables;
 
@@ -47,7 +52,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
 
     public MergePrearcToArchiveSession(Object control, final PrearcSession prearcSession, final XnatImagesessiondata src, final String srcRootPath, final File destDIR, final XnatImagesessiondata existing, final String destRootPath, boolean addFilesToExisting, boolean overwrite_files, SaveHandlerI<XnatImagesessiondata> saver, final UserI u, final EventMetaI now) {
         super(control, prearcSession.getSessionDir(), src, srcRootPath, destDIR, existing, destRootPath, addFilesToExisting, overwrite_files, saver, u, now);
-        setAnonymizer(new PrearcSessionAnonymizer(src, src.getProject(), srcDIR.getAbsolutePath()));
+        setAnonymizer(new PrearcSessionAnonymizer(src, src.getProject(), srcDIR.getAbsolutePath(), false));
         _prearcSession = prearcSession;
     }
 
@@ -157,7 +162,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     @Override
     protected XnatImagesessiondata getPostAnonSession() throws Exception {
         // Now that we're at the project level, let's re-anonymize.
-        final boolean wasAnonymized = !_prearcSession.getSessionData().getPreventAnon() && anonymizer.call();
+        boolean wasAnonymized = anonymizeSession();
 
         final File sessionXml = new File(srcDIR.getPath() + XML_EXTENSION);
 
@@ -178,8 +183,9 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
 
         final Map<String, Object> sessionValues = removePrearcVariables(_prearcSession.getAdditionalValues());
-        for (final String key : sessionValues.keySet()) {
-            final Object value = sessionValues.get(key);
+        for (Map.Entry<String, Object> entry : sessionValues.entrySet()) {
+            final String key = entry.getKey();
+            final Object value = entry.getValue();
             if (value == null) {
                 continue;
             }
@@ -187,13 +193,29 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
 
         final Boolean sessionRebuildSuccess = new XNATSessionBuilder(srcDIR, sessionXml, true, params).call();
-        if (!sessionRebuildSuccess || !sessionXml.exists() || sessionXml.length() == 0) {
+        if (Boolean.TRUE.equals(!sessionRebuildSuccess || !sessionXml.exists()) || sessionXml.length() == 0) {
             throw new ServerException("Something went wrong: I anonymized the data in " + srcDIR.getPath() + " but something failed during the session rebuild.");
         }
 
         final XnatImagesessiondata session = new XNATSessionPopulater(user, sessionXml, src.getProject(), false).populate();
         session.setId(src.getId());
         return session;
+    }
+
+    private boolean anonymizeSession() throws Exception {
+        if (TRUE.equals(_prearcSession.getSessionData().getPreventAnon())) {
+            return false;
+        }
+        final List<AnonymizationResult> anonResults = anonymizer.call();
+        if (anonResults.stream().anyMatch(AnonymizationResultError.class::isInstance)) {
+            log.error("Anonymization failed for prearcSession at {} ", _prearcSession.getSessionDir().getAbsolutePath());
+            throw new ArchivingException("Anonymization failed for prearcSession at " + _prearcSession.getSessionDir().getAbsolutePath());
+        }
+        if (anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance)) {
+            return false;
+        }
+        MergeUtils.deleteRejectedFiles(log, anonResults);
+        return true;
     }
 
     private String getSubjectId(final XnatImagesessiondata session) {

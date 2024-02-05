@@ -36,11 +36,12 @@ public class PrearcSessionAnonymizer extends AnonymizerA {
      * @param projectId         The project id, eg. xnat_E*
      * @param sessionPrearcPath The location of the root prearchive directory
      */
-    public PrearcSessionAnonymizer(final XnatImagesessiondataI session, final String projectId, final String sessionPrearcPath) {
+    public PrearcSessionAnonymizer(final XnatImagesessiondataI session, final String projectId, final String sessionPrearcPath, boolean ignoreRejections) {
         _prearchivePath = Paths.get(XDAT.getSiteConfigPreferences().getPrearchivePath());
         _sessionPrearcPath = Paths.get(sessionPrearcPath);
-        _anonymizer = new ProjectAnonymizer(session, projectId, sessionPrearcPath);
+        _anonymizer = new ProjectAnonymizer(session, projectId, sessionPrearcPath, ignoreRejections);
         _session = session;
+        _ignoreRejections=ignoreRejections;
     }
 
     @Override

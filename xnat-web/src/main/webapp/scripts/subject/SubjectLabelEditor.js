@@ -92,7 +92,7 @@ XNAT.app.SubjectLabelEditor = function(project) {"use strict";
 						}
 					}
 
-					if (confirm("Modifying the label of a " + that.header + " will result in the moving of files on the file server within the " + XNAT.app.displayNames.singular.project.toLowerCase() + "'s storage space.  Are you sure you want to make this change?")) {
+					if (confirm("Modifying the label of a " + that.header + " will result in the moving of files on the file server within the " + XNAT.app.displayNames.singular.project.toLowerCase() + "'s storage space.  " + (XNAT.app.rerunProjectAnonOnRename?"If a project level anonymization script is configured, it will result in the re-execution of project level anonymization.":"") + " Are you sure you want to make this change?")) {
 				    	if(showReason){
                 			var justification=new XNAT.app.requestJustification("label_change","Label Modification Justification",that.modifyLabel,that);
                 		}else{

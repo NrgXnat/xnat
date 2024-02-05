@@ -26,12 +26,14 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.EventUtils.CATEGORY;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
+import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.archive.ValidationException;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
@@ -489,12 +491,17 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                         }
 
                         final String subjectId = expt.getSubjectId();
-                        if (previous != null && expt instanceof XnatImagesessiondata && subjectId != null && !subjectId.equals(previous.getSubjectId())) {
+
+                        if (XDAT.getBoolSiteConfigurationProperty("rerunProjectAnonOnRename", false) && previous != null && expt instanceof XnatImagesessiondata && subjectId != null && !subjectId.equals(previous.getSubjectId())) {
+                            PersistentWorkflowI anonWrk = WorkflowUtils.buildOpenWorkflow(user, expt.getItem(), newEventInstance(CATEGORY.DATA, Rename.ANONYMIZATION_POST_SUBJECT_CHANGE));
+                            anonWrk.setPipelineName(Rename.ANONYMIZATION_POST_SUBJECT_CHANGE);
                             try {
                                 // re-apply this project's edit script
-                                expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, currentProjectId, expt.getArchiveRootPath()));
+                                expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, currentProjectId, expt.getArchiveRootPath(), true));
+                                WorkflowUtils.complete(anonWrk, anonWrk.buildEvent());
                             } catch (TransactionException e) {
                                 this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+                                WorkflowUtils.fail(anonWrk,anonWrk.buildEvent());
                             }
                         }
                     }

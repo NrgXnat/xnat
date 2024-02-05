@@ -23,12 +23,17 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.EventUtils.CATEGORY;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils.ActionNameAbsent;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils.IDAbsent;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils.JustificationAbsent;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.XftStringUtils;
+import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.archive.ValidationException;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.restlet.actions.FixScanTypes;
@@ -487,12 +492,24 @@ public class ExperimentResource extends ItemResource {
     }
 
     private void anonymize(final XnatImagesessiondata session, final XnatImagesessiondata previous) throws BaseXnatExperimentdata.UnknownPrimaryProjectException {
-        if (StringUtils.isNotBlank(session.getSubjectId()) && !StringUtils.equalsIgnoreCase(session.getSubjectId(), previous.getSubjectId())) {
+        if (XDAT.getBoolSiteConfigurationProperty("rerunProjectAnonOnRename", false) && StringUtils.isNotBlank(session.getSubjectId()) && !StringUtils.equalsIgnoreCase(session.getSubjectId(), previous.getSubjectId())) {
+            PersistentWorkflowI anonWrk = null;
             try {
                 // re-apply this project's edit script
-                session.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) _experiment, _experiment.getProject(), session.getArchiveRootPath()));
+                anonWrk = WorkflowUtils.buildOpenWorkflow(this.getUser(), session.getItem(), this.newEventInstance(CATEGORY.DATA, Rename.ANONYMIZATION_POST_MODIFICATION));
+                session.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) _experiment, _experiment.getProject(), session.getArchiveRootPath(), true));
+                WorkflowUtils.complete(anonWrk, anonWrk.buildEvent());
             } catch (TransactionException e) {
+                if (anonWrk!=null) {
+                    try {
+                        WorkflowUtils.fail(anonWrk, anonWrk.buildEvent());
+                    } catch (Exception ex) {
+                        logger.error("Error saving workflow entry", ex);
+                    }
+                }
                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+            } catch (Exception e) {
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e);
             }
         }
     }

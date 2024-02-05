@@ -12,12 +12,20 @@ package org.nrg.xnat.helpers.merge;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatResourceI;
 import org.nrg.xdat.model.XnatResourceseriesI;
+import org.nrg.xnat.archive.ArchivingException;
+import org.slf4j.Logger;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MergeUtils {
     @SuppressWarnings("unused")
@@ -75,4 +83,15 @@ public class MergeUtils {
     }
 
 
+    public static void deleteRejectedFiles(Logger log, List<AnonymizationResult> anonResults) throws ArchivingException {
+        List<AnonymizationResult> rejectedList = anonResults.stream().filter(AnonymizationResultReject.class::isInstance).collect(Collectors.toList());
+        for (AnonymizationResult result : rejectedList) {
+            try {
+                Files.delete(Paths.get(result.getAbsolutePath()));
+            } catch (IOException e) {
+                log.error("Failed to delete rejected file", e);
+                throw new ArchivingException("Failed to delete rejected file: " + result.getAbsolutePath(), e);
+            }
+        }
+    }
 }

@@ -65,7 +65,7 @@ public final class CopyOp<A> extends Transaction{
 	}
 	
 	
-	public void run() throws TransactionException {
+	public Void run() throws TransactionException {
 		this.backup = this.copy();
 		try {
 			this.op.call();
@@ -73,6 +73,7 @@ public final class CopyOp<A> extends Transaction{
 		catch (Throwable e){
 			throw new TransactionException(e.getMessage(),e);
 		}
+		return null;
 	}
 	
 	private void rollbackHelper(File backupDIR, File destDIR, boolean overwrite)  throws RollbackException{

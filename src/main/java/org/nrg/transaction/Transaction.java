@@ -10,32 +10,32 @@
 package org.nrg.transaction;
 
 
-public abstract class Transaction {
-	public Transaction prev = null;
-	public Transaction next = null;
+public abstract class Transaction <T> {
+	public Transaction<T> prev = null;
+	public Transaction<T> next = null;
 	
-	public abstract void run() throws TransactionException;
+	public abstract T run() throws TransactionException;
 	public abstract void rollback() throws RollbackException;
 	
-	public Transaction bind(Transaction t) {
+	public Transaction<T> bind(Transaction<T> t) {
 		this.setNext(t);
 		t.setPrev(this);
 		return t;
 	}
 
-	public Transaction getNext() {
+	public Transaction<T> getNext() {
 		return this.next;
 	}
 
-	public Transaction getPrev() {
+	public Transaction<T> getPrev() {
 		return this.prev;
 	}
 	
-	public void setPrev(Transaction p) {
+	public void setPrev(Transaction<T> p) {
 		this.prev = p;
 	}
 	
-	public void setNext(Transaction n) {
+	public void setNext(Transaction<T> n) {
 		this.next = n;
 	}
 }

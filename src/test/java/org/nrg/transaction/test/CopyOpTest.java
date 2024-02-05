@@ -15,7 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.nrg.transaction.OperationI;
 import org.nrg.transaction.RollbackException;
-import org.nrg.transaction.Run;
+import org.nrg.transaction.TransactionRunner;
 import org.nrg.transaction.TransactionException;
 import org.nrg.transaction.operations.CopyOp;
 
@@ -108,7 +108,7 @@ public class CopyOpTest {
 			public void run(Map<String,File> s) throws Exception {}
 		};
 		CopyOp copyOp = new CopyOp(o, backupDir, dirA);
-		Run.runTransaction(copyOp);
+		new TransactionRunner<Void>().runTransaction(copyOp);
 		assertFalse(backupDir.exists());
 	}
 	
@@ -122,7 +122,7 @@ public class CopyOpTest {
 			public void run(Map<String,File> s) throws Exception {}
 		};
 		CopyOp copyOp = new CopyOp(o,backupDir, dirA);
-		Run.runTransaction(copyOp);
+		new TransactionRunner<Void>().runTransaction(copyOp);
 		assertTrue(backupDir.exists());
 		assertTrue(backupDir.list().length == 1);
 		assertTrue(f.exists());
@@ -147,7 +147,7 @@ public class CopyOpTest {
 		CopyOp op = new CopyOp(o,backupDir, dirA);
 		
 		try {
-			Run.runTransaction(op);
+			new TransactionRunner<Void>().runTransaction(op);
 		} catch (RollbackException e) {
 			fail("");
 		} catch (TransactionException e) {
@@ -186,7 +186,7 @@ public class CopyOpTest {
 		CopyOp op = new CopyOp(o,backupDir,fs);
 		
 		try {
-			Run.runTransaction(op);
+			new TransactionRunner<Void>().runTransaction(op);
 			fail();
 		} catch (RollbackException e) {
 			fail(e.getMessage());
@@ -230,7 +230,7 @@ public class CopyOpTest {
 		CopyOp op = new CopyOp(o,backupDir,fs);
 		
 		try {
-			Run.runTransaction(op);
+			new TransactionRunner<Void>().runTransaction(op);
 		} catch (RollbackException e) {
 			fail(e.getMessage());
 		} catch (TransactionException e) {
@@ -270,7 +270,7 @@ public class CopyOpTest {
 		CopyOp op = new CopyOp(o,backupDir,dirA);
 		
 		try {
-			Run.runTransaction(op);
+			new TransactionRunner<Void>().runTransaction(op);
 		} catch (RollbackException e) {
 			fail(e.getMessage());
 		} catch (TransactionException e) {
@@ -309,7 +309,7 @@ public class CopyOpTest {
 		CopyOp op = new CopyOp(o,backupDir,fs);
 		
 		try {
-			Run.runTransaction(op);
+			new TransactionRunner<Void>().runTransaction(op);
 		} catch (RollbackException e) {
 			fail("");
 		} catch (TransactionException e) {
@@ -352,7 +352,7 @@ public class CopyOpTest {
 		CopyOp op = new CopyOp(o,backupDir,fs);
 		
 		try {
-			Run.runTransaction(op);
+			new TransactionRunner<Void>().runTransaction(op);
 		} catch (RollbackException e) {
 			fail(e.getMessage());
 		} catch (TransactionException e) {

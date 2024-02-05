@@ -17,19 +17,19 @@ import java.util.ArrayList;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.nrg.transaction.RollbackException;
-import org.nrg.transaction.Run;
+import org.nrg.transaction.TransactionRunner;
 import org.nrg.transaction.Transaction;
 import org.nrg.transaction.TransactionException;
 
 
 
-public class RunTest {
+public class TransactionRunnerTest {
 	@Test
 	public final void testRollbackA() {
 		final ArrayList<String> s = new ArrayList<String>();
 		Transaction a = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run a");
 				throw new TransactionException();
 			}
@@ -40,8 +40,9 @@ public class RunTest {
 		};
 		Transaction b = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run b");
+				return null;
 			}
 			@Override
 			public void rollback() throws RollbackException {
@@ -51,8 +52,9 @@ public class RunTest {
 		
 		Transaction c = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run c");
+				return null;
 			}
 			@Override
 			public void rollback() throws RollbackException {
@@ -61,7 +63,7 @@ public class RunTest {
 		};
 		a.bind(b).bind(c);
 		try {
-			Run.runTransaction(a);
+			new TransactionRunner<Void>().runTransaction(a);
 		} catch (RollbackException e) {
 			fail("");
 		} catch (TransactionException e) {
@@ -75,8 +77,9 @@ public class RunTest {
 		final ArrayList<String> s = new ArrayList<String>();
 		Transaction a = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run a");
+				return null;
 			}
 			@Override
 			public void rollback() throws RollbackException {
@@ -85,7 +88,7 @@ public class RunTest {
 		};
 		Transaction b = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run b");
 				throw new TransactionException();
 			}
@@ -97,8 +100,9 @@ public class RunTest {
 		
 		Transaction c = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run c");
+				return null;
 			}
 			@Override
 			public void rollback() throws RollbackException {
@@ -107,7 +111,7 @@ public class RunTest {
 		};
 		a.bind(b).bind(c);
 		try {
-			Run.runTransaction(a);
+			new TransactionRunner<Void>().runTransaction(a);
 		} catch (RollbackException e) {
 			fail("");
 		} catch (TransactionException e) {
@@ -121,8 +125,9 @@ public class RunTest {
 		final ArrayList<String> s = new ArrayList<String>();
 		Transaction a = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run a");
+				return null;
 			}
 			@Override
 			public void rollback() throws RollbackException {
@@ -131,8 +136,9 @@ public class RunTest {
 		};
 		Transaction b = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run b");
+				return null;
 			}
 			@Override
 			public void rollback() throws RollbackException {
@@ -142,7 +148,7 @@ public class RunTest {
 		
 		Transaction c = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run c");
 				throw new TransactionException();
 			}
@@ -153,7 +159,7 @@ public class RunTest {
 		};
 		a.bind(b).bind(c);
 		try {
-			Run.runTransaction(a);
+			new TransactionRunner<Void>().runTransaction(a);
 		} catch (RollbackException e) {
 			fail("");
 		} catch (TransactionException e) {
@@ -166,8 +172,9 @@ public class RunTest {
 		final ArrayList<String> s = new ArrayList<String>();
 		Transaction a = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run a");
+				return null;
 			}
 			@Override
 			public void rollback() throws RollbackException {
@@ -176,8 +183,9 @@ public class RunTest {
 		};
 		Transaction b = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run b");
+				return null;
 			}
 			@Override
 			public void rollback() throws RollbackException {
@@ -187,8 +195,9 @@ public class RunTest {
 		
 		Transaction c = new Transaction() {
 			@Override
-			public void run() throws TransactionException {
+			public Void run() throws TransactionException {
 				s.add("Run c");
+				return null;
 			}
 			@Override
 			public void rollback() throws RollbackException {
@@ -197,7 +206,7 @@ public class RunTest {
 		};
 		a.bind(b).bind(c);
 		try {
-			Run.runTransaction(a);
+			new TransactionRunner<Void>().runTransaction(a);
 		} catch (RollbackException e) {
 			fail("");
 		} catch (TransactionException e) {

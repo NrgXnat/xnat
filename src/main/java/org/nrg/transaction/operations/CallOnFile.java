@@ -14,7 +14,7 @@ import java.util.concurrent.Callable;
 public abstract class CallOnFile<A> implements Callable<A> {
     private File _file = null;
 
-    void setFile(final File file) {
+    public void setFile(final File file) {
         final File parent = file.getParentFile();
         if (!file.exists()) {
             parent.mkdirs();
@@ -25,7 +25,7 @@ public abstract class CallOnFile<A> implements Callable<A> {
         _file = file;
     }
 
-    protected File getFile() {
+    public File getFile() {
         return _file;
     }
 }

@@ -17,19 +17,19 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 
-public final class WorkOnCopyOp extends Transaction {
-    public WorkOnCopyOp(File source, File tempDir, CallOnFile<Void> callOnFile) {
+public final class WorkOnCopyOp<T> extends Transaction<T> {
+    public WorkOnCopyOp(File source, File tempDir, CallOnFile<T> callOnFile) {
         _source = source;
         _tempDir = tempDir;
         _callOnFile = callOnFile;
     }
 
     @Override
-    public void run() throws TransactionException {
+    public T run() throws TransactionException {
         try {
             final long ms = Calendar.getInstance().getTimeInMillis();
             _callOnFile.setFile(new File(_tempDir.getAbsolutePath(), ms + _source.getName()));
-            _callOnFile.call();
+            final T result = _callOnFile.call();
 
             String originalPath = _source.getAbsolutePath();
             if (!_source.delete()) {
@@ -46,6 +46,7 @@ public final class WorkOnCopyOp extends Transaction {
             if (!_callOnFile.getFile().delete()) {
                 throw new RollbackException("Unable to delete " + _callOnFile.getFile().getAbsolutePath());
             }
+            return result;
         } catch (Throwable e) {
             throw new TransactionException(e);
         }
@@ -73,5 +74,5 @@ public final class WorkOnCopyOp extends Transaction {
 
     private final File             _source;
     private final File             _tempDir;
-    private final CallOnFile<Void> _callOnFile;
+    private final CallOnFile<T> _callOnFile;
 }

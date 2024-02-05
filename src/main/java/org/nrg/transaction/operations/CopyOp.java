@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public final class CopyOp extends Transaction {
+public final class CopyOp extends Transaction<Void> {
     /**
 	 * The default constructor
 	 * @param operation         The operation to run on a set of files or directories
@@ -84,7 +84,7 @@ public final class CopyOp extends Transaction {
 	}
 	
 	
-	public void run() throws TransactionException {
+	public Void run() throws TransactionException {
 		for (String f : _backups.keySet()) {
 			if (_dirs.get(f) != null && _dirs.get(f).exists()) {
 				_backups.put(f, copy(_dirs.get(f)));
@@ -106,6 +106,7 @@ public final class CopyOp extends Transaction {
 					FileUtils.deleteDirectory(_rootBackup);
 				}
 			}
+			return null;
 		}
 		catch (Throwable e){
 			throw new TransactionException(e.getMessage(),e);

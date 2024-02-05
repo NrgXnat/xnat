@@ -82,11 +82,11 @@
         <nrg.notify.version>${xnat.version}</nrg.notify.version>
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
-        <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.mizer.version>${xnat.version}</nrg.mizer.version>
+        <nrg.transaction.version>1.8.11-SNAPSHOT</nrg.transaction.version>
+        <nrg.mizer.version>1.8.11-SNAPSHOT</nrg.mizer.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>${xnat.version}</nrg.dicom-edit4.version>
+        <nrg.dicom-edit4.version>1.8.11-SNAPSHOT</nrg.dicom-edit4.version>
         <nrg.dicom-edit6.version>6.7.0-SNAPSHOT</nrg.dicom-edit6.version>
         <nrg.dicomdb.version>${xnat.version}</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>

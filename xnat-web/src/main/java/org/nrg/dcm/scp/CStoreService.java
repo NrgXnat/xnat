@@ -24,6 +24,7 @@ import org.dcm4che2.net.service.DicomService;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
+import org.nrg.dcm.utils.StreamWrapper;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
@@ -327,35 +328,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
         }
     }
 
-    private static final class StreamWrapper implements FileWriterWrapperI {
-        private final InputStream in;
 
-        StreamWrapper(final InputStream in) { this.in = in; }
-
-        @Override
-        public void write(File f) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public UPLOAD_TYPE getType() { return UPLOAD_TYPE.INBODY; }
-
-        @Override
-        public String getName() { return null; }
-
-        @Override
-        public String getNestedPath() {
-            return null;
-        }
-
-        @Override
-        public InputStream getInputStream() { return in; }
-
-        @Override
-        public void delete() {
-            throw new UnsupportedOperationException();
-        }
-    }
     
     public static final class Specifier {
         private final String aeTitle;

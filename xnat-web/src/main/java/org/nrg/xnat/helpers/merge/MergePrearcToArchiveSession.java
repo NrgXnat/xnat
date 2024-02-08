@@ -214,7 +214,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         if (anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance)) {
             return false;
         }
-        MergeUtils.deleteRejectedFiles(log, anonResults);
+        MergeUtils.deleteRejectedFiles(log, anonResults, src.getProject());
         return true;
     }
 

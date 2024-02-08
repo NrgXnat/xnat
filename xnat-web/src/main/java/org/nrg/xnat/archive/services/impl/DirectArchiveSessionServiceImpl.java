@@ -192,7 +192,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                 if (anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance)) {
                     anonymized = false;
                 } else {
-                    MergeUtils.deleteRejectedFiles(log, anonResults);
+                    MergeUtils.deleteRejectedFiles(log, anonResults, project);
                     anonymized = true;
                     // rebuild XML and update session
                     PrearcUtils.buildSession(target);

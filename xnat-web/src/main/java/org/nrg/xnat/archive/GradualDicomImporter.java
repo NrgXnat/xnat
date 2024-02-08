@@ -53,6 +53,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.SessionFileLockException;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.plexiviewer.utils.FileUtils;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
 import org.nrg.xnat.processors.ArchiveProcessor;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
@@ -74,7 +75,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -146,7 +146,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             dicom = dis.readDicomObject();
 
             if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ, dicom, null)) {
-                return handleRejectedInstance();
+                return returnEmptyList();
             }
 
             log.trace("handling file with query parameters {}", _parameters);
@@ -164,7 +164,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             tempSession.setSubject("");
             tempSession.setFolderName("");
             if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicom, tempSession)) {
-                return handleRejectedInstance();
+                return returnEmptyList();
             }
 
             final String projectId = project != null ? project.getId() : null;
@@ -191,7 +191,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
             }
             if (!(shouldIncludeDicomObject(siteFilter, dicom) && shouldIncludeDicomObject(projectFilter, dicom))) {
-                return handleRejectedInstance();
+                return returnEmptyList();
                 /* TODO: Return information to user on rejected files. Unfortunately throwing an
                  * exception causes DicomBrowser to display a panicked error message. Some way of
                  * returning the information that a particular file type was not accepted would be
@@ -333,7 +333,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     !customProcessing(NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE,
                             dicom, session, cleanupPrearcDb)
             ) {
-                return handleRejectedInstance();
+                return returnEmptyList();
             }
 
             // Build the scan label
@@ -395,7 +395,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                             final AnonymizationResult anonResult = service.anonymize(outputFile, session.getProject(), session.getSubject(),
                                     session.getFolderName(), true, false, c.getId(), c.getContents());
                             if (anonResult instanceof AnonymizationResultReject) {
-                                handleRejectedInstance();
+                                FileUtils.deleteFile(anonResult.getAbsolutePath());
+                                return returnEmptyList();
                             }
                             else if (anonResult instanceof AnonymizationResultError) {
                                 // Errors of this type are script evaluation problems.
@@ -439,7 +440,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
      *
      * @return empty list of Strings
      */
-    private List<String> handleRejectedInstance() {
+    private List<String> returnEmptyList() {
         return Collections.emptyList();
     }
 

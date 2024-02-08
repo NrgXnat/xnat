@@ -10,15 +10,27 @@
 package org.nrg.xnat.helpers.merge;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.action.ServerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
+import org.nrg.xdat.bean.CatCatalogBean;
+import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatResourceI;
 import org.nrg.xdat.model.XnatResourceseriesI;
+import org.nrg.xdat.om.CatCatalog;
 import org.nrg.xnat.archive.ArchivingException;
+import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.CatalogUtils.CatalogData;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -83,14 +95,65 @@ public class MergeUtils {
     }
 
 
-    public static void deleteRejectedFiles(Logger log, List<AnonymizationResult> anonResults) throws ArchivingException {
-        List<AnonymizationResult> rejectedList = anonResults.stream().filter(AnonymizationResultReject.class::isInstance).collect(Collectors.toList());
-        for (AnonymizationResult result : rejectedList) {
-            try {
-                Files.delete(Paths.get(result.getAbsolutePath()));
-            } catch (IOException e) {
-                log.error("Failed to delete rejected file", e);
-                throw new ArchivingException("Failed to delete rejected file: " + result.getAbsolutePath(), e);
+    public static void deleteRejectedFiles(Logger log, List<AnonymizationResult> anonResults, String project) throws ArchivingException {
+        final List<AnonymizationResult> rejectedList = anonResults.stream().filter(AnonymizationResultReject.class::isInstance).collect(Collectors.toList());
+        if(rejectedList.size()>0) {
+            final Multimap<Path,CatalogData> resourceDirectories = ArrayListMultimap.create();
+            final List<Path> reviewedDirectories = new ArrayList<>(); //just in case we have a directory of dicom that doesn't have any catalog.xml files
+
+            for (final AnonymizationResult result : rejectedList) {
+                try {
+                    final Path path = Paths.get(result.getAbsolutePath());
+                    final Path parent = path.getParent();
+                    Files.delete(path);
+
+                    //parse the available catalog.xml files to know what we have to work with
+                    if(!reviewedDirectories.contains(parent)){
+                        reviewedDirectories.add(parent);
+
+                        for(final File f: parent.toFile().listFiles()){
+                            if(f.getName().endsWith("catalog.xml")){
+                                CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(f, project,false);
+                                resourceDirectories.put(parent, catalogData);
+                            }
+                        }
+                    }
+
+                    //find the corresponding ccatalog and delete the entry for the deleted file
+                    if(resourceDirectories.containsKey(parent)){
+                        resourceDirectories.get(parent).forEach(catalogData -> {
+                            final CatCatalogBean cat = catalogData.catBean;
+                            final CatEntryI catEntry = CatalogUtils.getEntryByURI(cat, path.getFileName().toString());
+                            if(catEntry!=null){
+                                CatalogUtils.removeEntry(cat, catEntry);
+                            }
+                        });
+                    }
+                } catch (IOException e) {
+                    log.error("Failed to delete rejected file", e);
+                    throw new ArchivingException("Failed to delete rejected file: " + result.getAbsolutePath(), e);
+                } catch (ServerException e) {
+                    throw new ArchivingException(e);
+                }
+            }
+
+            //update modified catalogs, delete if its empty and save the xml if it isn't.
+            for(final Path parent : reviewedDirectories){
+                for(final CatalogData catalogData : resourceDirectories.get(parent)){
+                    if (catalogData.catBean.getEntries_entry().size() > 0) {
+                        try {
+                            CatalogUtils.writeCatalogToFile(catalogData.catBean, catalogData.catFile, project);
+                        } catch (Exception e) {
+                            log.error("Failed to write catalog.xml file", e);
+                        }
+                    } else {
+                        try {
+                            Files.delete(catalogData.catFile.toPath());
+                        } catch (IOException e) {
+                            log.error("Failed to delete catalog.xml file", e);
+                        }
+                    }
+                }
             }
         }
     }

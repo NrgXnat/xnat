@@ -156,6 +156,8 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                 }
             }
 
+            deleteEmptyDirectoriesRecursively(srcDIR);
+
             mergeDirectories(srcDIR, destDIR, overwriteFiles);
 
             finalize(this.merged);
@@ -187,6 +189,22 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             }
             failed("Error updating existing metadata for session " + src.getId() + ": " + src.getLabel() + " in project " + src.getProject() + ": " + e.getMessage());
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
+        }
+    }
+
+    private static void deleteEmptyDirectoriesRecursively(final File folder) {
+        if(!folder.isDirectory()){
+            return;
+        }
+        if(folder.isDirectory() && folder.listFiles() != null && folder.listFiles().length > 0){
+            for (final File fileEntry : folder.listFiles()) {
+                if (fileEntry.isDirectory()) {
+                    deleteEmptyDirectoriesRecursively(fileEntry);
+                }
+            }
+        }
+        if(folder.isDirectory() && (folder.listFiles() == null || folder.listFiles().length == 0)){
+            folder.delete();
         }
     }
     

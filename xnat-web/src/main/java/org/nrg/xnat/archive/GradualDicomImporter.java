@@ -13,6 +13,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.dcm4che2.data.BasicDicomObject;
@@ -53,7 +54,6 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.SessionFileLockException;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
-import org.nrg.xnat.plexiviewer.utils.FileUtils;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
 import org.nrg.xnat.processors.ArchiveProcessor;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
@@ -395,7 +395,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                             final AnonymizationResult anonResult = service.anonymize(outputFile, session.getProject(), session.getSubject(),
                                     session.getFolderName(), true, false, c.getId(), c.getContents());
                             if (anonResult instanceof AnonymizationResultReject) {
-                                FileUtils.deleteFile(anonResult.getAbsolutePath());
+                                FileUtils.deleteQuietly(outputFile);
                                 return returnEmptyList();
                             }
                             else if (anonResult instanceof AnonymizationResultError) {

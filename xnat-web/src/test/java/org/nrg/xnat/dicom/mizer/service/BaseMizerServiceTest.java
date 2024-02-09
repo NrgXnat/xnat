@@ -8,6 +8,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.dicom.mizer.exceptions.MizerException;
+import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.*;
@@ -28,9 +29,6 @@ import java.util.Collection;
 
 import static org.junit.Assert.*;
 
-/**
- * Created by davidmaffitt on 4/10/17.
- */
 @SuppressWarnings("Duplicates")
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MizerServiceTestConfig.class)
@@ -69,7 +67,7 @@ public class BaseMizerServiceTest extends BaseMizerTest {
             DicomObjectI pre_dobj = DicomObjectFactory.newInstance(anonTestFile);
             assertTrue(pre_dobj.contains(0x0008103e));
 
-            service.anonymize(anonTestFile, PROJECT, SUBJECT, SESSION, false, scriptId, is);
+            service.anonymize(anonTestFile, PROJECT, SUBJECT, SESSION, false, false, scriptId, is);
 
             DicomObjectI post_dobj = DicomObjectFactory.newInstance(anonTestFile);
             assertFalse(post_dobj.contains(0x0008103e));
@@ -93,7 +91,7 @@ public class BaseMizerServiceTest extends BaseMizerTest {
             DicomObjectI pre_dobj = DicomObjectFactory.newInstance(anonTestFile);
             assertTrue(pre_dobj.contains(0x0008103e));
 
-            service.anonymize(anonTestFile, project, subject, session, false, scriptId, is);
+            service.anonymize(anonTestFile, project, subject, session, false, false, scriptId, is);
 
             DicomObjectI post_dobj = DicomObjectFactory.newInstance(anonTestFile);
             assertFalse(post_dobj.contains(0x0008103e));
@@ -107,7 +105,7 @@ public class BaseMizerServiceTest extends BaseMizerTest {
     public void mizerServiceDE6UpdatesFileDeidentificationMethodCodeSequence() {
         try {
             final File anonTestFile = TestFileUtils.copyTestFileToTemp(TEST_FILE);
-            service.anonymize(anonTestFile, PROJECT, SUBJECT, SESSION, true, 1L, SET_STD_ATTRS_DE6);
+            service.anonymize(anonTestFile, PROJECT, SUBJECT, SESSION, true, false, 1L, SET_STD_ATTRS_DE6);
 
             final DicomObjectI dicomObject = DicomObjectFactory.newInstance(anonTestFile);
 
@@ -163,7 +161,7 @@ public class BaseMizerServiceTest extends BaseMizerTest {
     public void mizerServiceDE4UpdatesFileDeidentificationMethodCodeSequence() {
         try {
             final File anonTestFile = TestFileUtils.copyTestFileToTemp(TEST_FILE);
-            service.anonymize(anonTestFile, PROJECT, SUBJECT, SESSION, true, 1L, SET_STD_ATTRS_DE4);
+            service.anonymize(anonTestFile, PROJECT, SUBJECT, SESSION, true, false, 1L, SET_STD_ATTRS_DE4);
 
             final DicomObjectI dicomObject = DicomObjectFactory.newInstance(anonTestFile);
 

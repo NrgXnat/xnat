@@ -69,6 +69,12 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
                 log.warn("Tried to reset the status of the session {} to QUEUED_BUILDING, but failed. This usually means the session is locked and the override lock parameter was false. This might be OK: I checked whether the session was locked before trying to update the status but maybe a new file arrived in the intervening millisecond(s).", getSessionData());
                 return false;
             }
+            for (int i = 0; i < 10; i++) {
+                if (getSessionDir().getParentFile().exists()) {
+                    break;
+                }
+                Thread.sleep(500); // Account for NFS latency
+            }
             if (!getSessionDir().getParentFile().exists()) {
                 try {
                     log.warn("The parent of the indicated session {} could not be found at the indicated location {}", getSessionData().getName(), getSessionDir().getParentFile().getAbsolutePath());

@@ -1321,13 +1321,13 @@ searchPerformance:
             onText: Enabled
             offText: Disabled
             checked: true
-            label: "Search Listings should be sorted by default"
+            label: "Sort Search Listings By Default"
             description: >
                 <p>Sorting of tables can add several seconds onto larger queries.  On small instances, this isn't an issue.  But on servers with millions of entries, this can impact performance. This setting determines whether all data listings are sorted by default (on initial access).  Set to 'Disabled' on large instances.</p>
                 <p>Default: Enabled</p>
         countsOnProject:
             kind: panel.input.switchbox
-            label: "Project data listings include summary counts"
+            label: "Include Summary Counts in Project Data Listings"
             name: addCountFieldsToProjectListings
             onText: Enabled
             offText: Disabled
@@ -1337,13 +1337,13 @@ searchPerformance:
                 <p>Default: Enabled</p>
         scanCountAgg:
             kind: panel.input.switchbox
-            label: "Data listings should exclude scan aggregate fields"
+            label: "Exclude Scan Aggregate Fields From Data Listings"
             name: removeScanAggregateFields
-            onText: Enabled
-            offText: Disabled
+            onText: Enabled (Scan aggregate fields are excluded)
+            offText: Disabled (Scan aggregate fields are shown)
             checked: false
             description: >
-                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Disabling count fields can improve performance.  This setting overrides Display Document configuration to exclude Scan Aggregate Counts if they are otherwise configured to be displayed.</p>
+                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Excluding count fields can improve performance.  This setting overrides Display Document configuration to exclude Scan Aggregate Counts if they are otherwise configured to be displayed.</p>
                 <p>Default: Disabled</p>
 
 ## THEMES

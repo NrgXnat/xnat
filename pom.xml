@@ -154,7 +154,7 @@
         <commons-text.version>1.10.0</commons-text.version>
         <commons-pool2.version>2.9.0</commons-pool2.version>
         <dcm4che.version>2.0.29</dcm4che.version>
-        <dcm4che5.version>5.22.6</dcm4che5.version>
+        <dcm4che5.version>5.31.0</dcm4che5.version>
         <pixelmed.version>nrg-20200327</pixelmed.version>
         <pixelmed-codec.version>20200328</pixelmed-codec.version>
         <pixelmed-imageio.version>20200328</pixelmed-imageio.version>

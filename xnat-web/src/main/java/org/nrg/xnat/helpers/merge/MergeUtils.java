@@ -105,7 +105,9 @@ public class MergeUtils {
                 try {
                     final Path path = Paths.get(result.getAbsolutePath());
                     final Path parent = path.getParent();
-                    Files.delete(path);
+                    if(Files.exists(path)){
+                        Files.delete(path);
+                    }
 
                     //parse the available catalog.xml files to know what we have to work with
                     if(!reviewedDirectories.contains(parent)){
@@ -119,7 +121,7 @@ public class MergeUtils {
                         }
                     }
 
-                    //find the corresponding ccatalog and delete the entry for the deleted file
+                    //find the corresponding catalog and delete the entry for the deleted file
                     if(resourceDirectories.containsKey(parent)){
                         resourceDirectories.get(parent).forEach(catalogData -> {
                             final CatCatalogBean cat = catalogData.catBean;
@@ -142,7 +144,7 @@ public class MergeUtils {
                 for(final CatalogData catalogData : resourceDirectories.get(parent)){
                     if (catalogData.catBean.getEntries_entry().size() > 0) {
                         try {
-                            CatalogUtils.writeCatalogToFile(catalogData.catBean, catalogData.catFile, project);
+                            CatalogUtils.writeCatalogToFile(catalogData,false);
                         } catch (Exception e) {
                             log.error("Failed to write catalog.xml file", e);
                         }

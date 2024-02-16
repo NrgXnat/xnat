@@ -7,7 +7,7 @@
 <script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/builderConfiguration.js')"></script>
 
 
-<h3> Custom Form Configuration </h3>
+<h3 id="cfConfigManage"> Custom Form Configuration </h3>
 
 <div class="xnat-bootstrap">
     <div class="xnat-bootstrap" id="form-project-json-container"></div>
@@ -20,7 +20,23 @@
     </div>
 
 </div>
-
+<script>
+  var cfProjManagerInitd=false;
+  jq("#cfConfigManage").on('click', function() {
+    if(!cfProjManagerInitd){
+      cfProjManagerInitd=true;
+      openModalPanel("cfConfigModal","Loading form configurations");
+      setTimeout(function() {
+        ##this gives the browser time to finish the cick event before it 'locks up' for the form init.
+        jq("#cfConfigManage").trigger( "loadForms");
+      }, 100);
+    }
+    return true;
+  });
+  jq( "#cfConfigManage" ).on( "loadForms", function( event, param1, param2 ) {
+    XNAT.customFormManager.projectOwner.projectFormManager.init();
+  });
+</script>
 
 
 

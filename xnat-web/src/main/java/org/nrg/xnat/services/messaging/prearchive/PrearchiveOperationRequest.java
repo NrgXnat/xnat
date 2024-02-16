@@ -80,7 +80,7 @@ public class PrearchiveOperationRequest implements Serializable {
         _operation = operation;
         _sessionData = sessionData;
         _sessionDir = sessionDir;
-        _parameters = parameters == null ? new HashMap<String, Object>() : new HashMap<>(parameters);
+        _parameters = parameters == null ? new HashMap<>() : new HashMap<>(parameters);
         _listenerId = listenerId;
     }
 

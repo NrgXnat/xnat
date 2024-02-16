@@ -9,14 +9,11 @@
 
 package org.nrg.xnat.helpers.prearchive;
 
-import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 import static org.nrg.xnat.helpers.prearchive.SessionException.Error.*;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.automation.entities.Script;
@@ -43,7 +40,6 @@ import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.predicates.ProjectAccessPredicate;
 import org.nrg.xnat.archive.PrearcSessionArchiver;
-import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.restlet.XNATApplication;
 import org.nrg.xnat.restlet.util.RequestUtil;
@@ -53,7 +49,6 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.SyncFailedException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
@@ -365,6 +360,33 @@ public final class PrearcDatabase {
         }.run();
     }
 
+    /**
+     * Update the given session in the prearchive table based on the values in the java object. If the session does not exist, it will be added.
+     *
+     * @param sessionData The session java object
+     *
+     * @throws Exception if sessionData does not have required fields or there is an issue executing the update/insert
+     */
+    public static void addOrUpdateSession(final SessionData sessionData) throws Exception {
+        checkArgs(sessionData);
+        new SessionOp<Void>() {
+            public Void op() throws Exception {
+                int rowCount = countOf(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                if (rowCount == 0) {
+                    addSession(sessionData);
+                    return null;
+                }
+
+                final List<String> setStatements = Arrays.stream(DatabaseSession.values())
+                        .map(ds -> ds.sqlToSetColumnToValueInSessionData(sessionData))
+                        .collect(Collectors.toList());
+                PreparedStatement statement = pdb.getPreparedStatement(null, updateSql(setStatements, sessionData));
+                statement.executeUpdate();
+                return null;
+            }
+        }.run();
+    }
+
 
     /**
      * Parse the given uri and return a list of sessions in the database.
@@ -443,6 +465,11 @@ public final class PrearcDatabase {
             ss.add("?");
         }
         return "INSERT INTO " + PrearcDatabase.tableWithSchema + " VALUES(" + StringUtils.join(ss.toArray(), ',') + ")";
+    }
+
+    private static String updateSql(final List<String> setStatements, final SessionData sessionData) {
+        return "UPDATE " + PrearcDatabase.tableWithSchema + " SET " + String.join(", ", setStatements) +
+                " WHERE " + DatabaseSession.sessionSql(sessionData);
     }
 
     /**
@@ -936,26 +963,24 @@ public final class PrearcDatabase {
     }
 
     private static String _archive(Object control, PrearcSession session, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean overwriteFiles, UserI user, Set<StatusListenerI> listeners, boolean waitFor) throws SyncFailedException {
-        log.info("Now archiving the session {} with {} listeners", session, listeners == null ? 0 : listeners.size());
         final String prearcDIR = session.getFolderName();
         final String timestamp = session.getTimestamp();
         final String project = session.getProject();
-
         final PrearcSessionArchiver archiver;
+        final SessionData sd;
+
+        log.info("Now archiving the session {} with {} listeners", session, listeners == null ? 0 : listeners.size());
         try {
             archiver = new PrearcSessionArchiver(control, session, user, session.getAdditionalValues(), overrideExceptions, allowSessionMerge, waitFor, overwriteFiles);
-        } catch (Exception e1) {
-            PrearcUtils.log(project, timestamp, prearcDIR, e1);
-            throw new IllegalStateException(e1);
-        }
-
-        ListenerUtils.addListeners(listeners, archiver);
-
-        final SessionData sd;
-        try {
+            ListenerUtils.addListeners(listeners, archiver);
             sd = session.getSessionData();
         } catch (Exception e) {
             PrearcUtils.log(project, timestamp, prearcDIR, e);
+            try {
+                setStatus(prearcDIR, timestamp, project, PrearcStatus.ERROR);
+            } catch (Exception e2) {
+                log.error("Unable to set status to error for session {} {} {}", project, timestamp, prearcDIR, e2);
+            }
             throw new IllegalStateException(e);
         }
 
@@ -1001,6 +1026,9 @@ public final class PrearcDatabase {
     }
 
     public static void wrapException(Exception e) throws SyncFailedException {
+        if (e == null ) {
+            throw new SyncFailedException("Operation Failed: status must be archiving" );
+        }
         if ((e instanceof SyncFailedException && e.getCause() != null)) {
             throw new SyncFailedException("Operation Failed: " + e.getCause().getMessage(), e.getCause());
         } else {
@@ -1160,6 +1188,19 @@ public final class PrearcDatabase {
      */
     public static boolean setStatus(final String sess, final String timestamp, final String proj, final PrearcUtils.PrearcStatus status) throws Exception {
         return setStatus(sess, timestamp, proj, status, false);
+    }
+
+    /**
+     * Set the status of an existing session. All arguments must be non-null and non-empty. Allows the user to set an inprocess status (i.e a status that begins with '_')
+     *
+     * @param sessionData   The session data pojo.
+     * @param status        Status to be set.
+     *
+     * @throws Exception if SQL transaction fails
+     */
+    public static boolean setStatus(final SessionData sessionData, final PrearcUtils.PrearcStatus status) throws Exception {
+        return setStatus(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject(),
+                status, false);
     }
 
     /**
@@ -2409,7 +2450,7 @@ public final class PrearcDatabase {
         PrearcDatabase.checkUniqueRow(sess, timestamp, proj);
     }
 
-    private static void checkArgs(String sess, String timestamp, String proj) throws SQLException, SessionException {
+    private static void checkArgs(String sess, String timestamp, String proj) throws SessionException {
         if (null == sess || sess.isEmpty()) {
             throw new SessionException(InvalidSession, "Session argument is null or empty");
         }
@@ -2418,7 +2459,7 @@ public final class PrearcDatabase {
         }
     }
 
-    private static void checkArgs(SessionData s) throws SQLException, SessionException {
+    private static void checkArgs(SessionData s) throws SessionException {
         PrearcDatabase.checkArgs(s.getFolderName(), s.getTimestamp(), s.getProject());
     }
 

@@ -55,6 +55,7 @@ authenticated:
   - uiExptAllowProjectChange
   - uiExptAllowSubjectChange
   - uiHideCompressedUploaderUploadOption
+  - uiDefaultCompressedUploaderImporter
   - uiHideDesktopClientDownload
   - uiHideXnatUploadAssistantDownload
   - uiLoginFailureMessage
@@ -109,6 +110,7 @@ admin:
   - matchSecurityProtocol
   - maxFailedLogins
   - maxFailedLoginsLockoutDuration
+  - maxNumberOfSessionsForJobsWithSharedData
   - par
   - passwordComplexity
   - passwordComplexityMessage

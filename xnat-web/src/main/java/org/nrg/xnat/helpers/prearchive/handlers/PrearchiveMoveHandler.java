@@ -11,7 +11,6 @@ package org.nrg.xnat.helpers.prearchive.handlers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.services.NrgEventServiceI;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
 import org.nrg.xdat.bean.XnatPetsessiondataBean;
@@ -90,6 +89,6 @@ public class PrearchiveMoveHandler extends AbstractPrearchiveOperationHandler {
             return;
         }
 
-        XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, operation, PrearcDatabase.getSession(session, getSessionData().getTimestamp(), destination), movedFolder));
+        PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(user, operation, PrearcDatabase.getSession(session, getSessionData().getTimestamp(), destination), movedFolder));
     }
 }

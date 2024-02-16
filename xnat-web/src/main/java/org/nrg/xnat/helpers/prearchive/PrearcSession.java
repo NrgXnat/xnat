@@ -93,7 +93,7 @@ public class PrearcSession {
                 return setArchiveReason(true);
             }
         }
-
+        
         if (destination instanceof URIManager.ArchiveURI) {
             setArchiveReason(false);
             return true;

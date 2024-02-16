@@ -235,6 +235,7 @@ public enum DatabaseSession {
 			s.setTimeZone(o);
 		}
 	};
+
 	/**
 	 * ColType provides a simple mapping from Java objects to java.sql.* objects   
 	 * @author aditya siram
@@ -273,6 +274,9 @@ public enum DatabaseSession {
 			}
 			@Override
 			public String typeToString (Object o) {
+				if (UNASSIGNED.equals(o)) {
+					return null;
+				}
 				return ColType.VARCHAR.typeToString(o);
 			}
 		},
@@ -558,6 +562,15 @@ public enum DatabaseSession {
 			return this.eqSql(obj);
 		}
 	}
+
+	/**
+	 * Generate SQL SET sub-clause to set this column to the value in the session data object.
+	 * @param sessionData the session data object
+	 * @return the SQL SET sub-clause, "column=value". For example, "status = 'Ready'".
+	 */
+	public String sqlToSetColumnToValueInSessionData(final SessionData sessionData) {
+		return updateSql(readSession(sessionData));
+	}
 	
 	/**
 	 * Generate <column selection> SQL for all columns 
@@ -600,8 +613,17 @@ public enum DatabaseSession {
 			return this.columnType.toString();
 		}
 	}
-	
-	
+
+	/**
+	 * SQL to update prearchive session row identified by sess, timestamp, proj to the newVal value
+	 *
+	 * @param sess the session label
+	 * @param timestamp the prearchive timestamp
+	 * @param proj the prearchive project
+	 * @param newVal the new value for this column
+	 *
+	 * @return the SQL UPDATE statement
+	 */
 	public String updateSessionSql (String sess, String timestamp, String proj, Object newVal) {
 		return "UPDATE " + PrearcDatabase.tableWithSchema + " SET " + 
 		       this.updateSql(newVal) + " WHERE " +
@@ -687,11 +709,31 @@ public enum DatabaseSession {
 		           + " AND " + DatabaseSession.TAG.searchSql(suid);
 		return s;
 	}
-	
-	private static String sessionSql (String sess, String timestamp, String proj) {
+
+	/**
+	 * The SQL to identify the prearchive session row that matches the given session, timestamp, project triple
+	 *
+	 * @param sess the session label
+	 * @param timestamp the prearchive timestamp
+	 * @param proj the prearchive project
+	 *
+	 * @return the SQL clause
+	 */
+	public static String sessionSql(String sess, String timestamp, String proj) {
 		return DatabaseSession.FOLDER_NAME.searchSql(sess) + " AND " + 
                DatabaseSession.TIMESTAMP.searchSql(timestamp) + " AND " +
                DatabaseSession.PROJECT.searchSql(proj);
+	}
+
+	/**
+	 * The SQL to identify the prearchive session row that matches the given session, timestamp, project triple for the provided session data object
+	 *
+	 * @param sessionData the session data object
+	 *
+	 * @return the SQL clause
+	 */
+	public static String sessionSql(final SessionData sessionData) {
+		return sessionSql(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
 	}
 	
 	/**

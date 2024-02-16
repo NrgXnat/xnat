@@ -253,16 +253,16 @@ var XNAT = getObject(XNAT);
     };
 
     function parseFinalMessage(message, succeeded) {
-        const prearchiveLink = '<a target="_blank" href="' +
-            XNAT.url.rootUrl('/app/template/XDATScreen_prearchives.vm') +
-            '">prearchive</a>';
+       return parseSiMessage(message, succeeded);
+    }
 
+    function parseSiMessage(message, succeeded) {
         if (succeeded) {
             const dest = message.replace(/:.*/, '');
             const urls = message.replace(/^.*:/, '').split(';');
             let urlsHtml;
             if (dest.toLowerCase().includes('prearchive')) {
-                urlsHtml = 'Visit the ' + prearchiveLink + ' to review.';
+                urlsHtml = 'Visit the ' + getPrearcLink() + ' to review.';
             } else {
                 urlsHtml = $.map(urls, function (url) {
                     var id = url.replace(/.*\//, '');
@@ -273,9 +273,15 @@ var XNAT = getObject(XNAT);
                 ' session(s) successfully uploaded to ' + dest + ': ' + urlsHtml + '</div>';
         } else {
             return '<div class="prog error">Extraction/Review failed: ' + message + '</div>' +
-                '<div class="warning">Check the ' + prearchiveLink +
+                '<div class="warning">Check the ' + getPrearcLink() +
                 ', DICOM/ECAT data may be available there for manual review.</div>';
         }
+    }
+
+    function getPrearcLink() {
+        return '<a target="_blank" href="' +
+        XNAT.url.rootUrl('/app/template/XDATScreen_prearchives.vm') +
+        '">prearchive</a> ';
     }
 
     function getCallbackForItem(item) {

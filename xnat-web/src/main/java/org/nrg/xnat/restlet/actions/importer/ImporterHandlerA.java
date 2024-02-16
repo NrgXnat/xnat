@@ -20,6 +20,7 @@ import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
@@ -65,13 +66,12 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
     private static final Logger logger = Logger.getLogger(ImporterHandlerA.class);
 
     public static final String IMPORT_HANDLER_ATTR = "import-handler";
-
+    public static final String IGNORE_UNPARSABLE_PARAM = "Ignore-Unparsable";
     public static final String SESSION_IMPORTER       = "SI";
     public static final String XAR_IMPORTER           = "XAR";
     public static final String GRADUAL_DICOM_IMPORTER = "gradual-DICOM";
     public static final String DICOM_INBOX_IMPORTER   = "inbox";
     public static final String DICOM_ZIP_IMPORTER     = "DICOM-zip";
-
     private final static Map<String, Class<? extends ImporterHandlerA>> IMPORTERS = new HashMap<>();
 
     private static final String   PROP_OBJECT_IDENTIFIER = "org.nrg.import.handler.impl";
@@ -116,7 +116,12 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
 
     public static ImporterHandlerA buildImporter(String format, final Object uID, final UserI u, final FileWriterWrapperI fi, Map<String, Object> params) throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException, SecurityException, NoSuchMethodException, ImporterNotFoundException {
         if (StringUtils.isEmpty(format)) {
-            format = SESSION_IMPORTER;
+            String defaultUploaderImporter = siteConfigPreferences.getUiDefaultCompressedUploaderImporter();
+            if (DICOM_ZIP_IMPORTER.equals(defaultUploaderImporter)) {
+                format = DICOM_ZIP_IMPORTER;
+            } else {
+                format = SESSION_IMPORTER;
+            }
         }
 
         Class<? extends ImporterHandlerA> importerImpl = IMPORTERS.get(format);
@@ -150,4 +155,5 @@ public abstract class ImporterHandlerA extends ArchiveStatusProducer implements 
 
     private DicomObjectIdentifier _identifier;
     private DicomFileNamer        _namer;
+    private static final SiteConfigPreferences siteConfigPreferences = XDAT.getSiteConfigPreferences();
 }

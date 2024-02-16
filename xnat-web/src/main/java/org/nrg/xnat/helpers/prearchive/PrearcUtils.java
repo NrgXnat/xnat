@@ -38,16 +38,19 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
+import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder.Session;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.RequestUtil;
+import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.resource.ResourceException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -466,30 +469,58 @@ public class PrearcUtils {
         }
     };
 
+    /**
+     * Read session metadata from XML file and update prearchive session status accordingly. If a prearchive session
+     * for the provided triple (project, timestamp, session) already exists, ensure its config is applied to the
+     * metadata read from XML
+     *
+     * @param user the user
+     * @param project the project for identifying the prearchive session
+     * @param timestamp the timestamp for identifying the prearchive session
+     * @param session the session (foldername) for identifying the prearchive session
+     * @param allowUnassigned if project can be unassigned
+     *
+     * @throws Exception if an error occurs (will also attempt to set prearchive session status to ERROR before throwing)
+     */
     public static void resetStatus(final UserI user, final String project, final String timestamp, final String session, final boolean allowUnassigned) throws Exception {
-        SessionData deleted = null;
-        try {
-            deleted = PrearcDatabase.getSession(session, timestamp, project);
-            PrearcDatabase.unsafeSetStatus(session, timestamp, project, PrearcStatus._DELETING);
-            PrearcDatabase.deleteCacheRow(session, timestamp, project);
-        } catch (SessionException ignored) {
-        }
-
-        addSession(user, project, timestamp, session, allowUnassigned);
-        cleanUpDeletedSession(project, timestamp, session, deleted);
+        resetStatus(user, project, timestamp, session, null, allowUnassigned);
     }
 
-    public static void resetStatus(final UserI user, final String project, final String timestamp, final String session, final String uID, final boolean allowUnassigned) throws Exception {
-        SessionData deleted = null;
+    /**
+     * Read session metadata from XML file and update prearchive session status accordingly. If a prearchive session
+     * for the provided triple (project, timestamp, session) already exists, ensure its config is applied to the
+     * metadata read from XML
+     *
+     * @param user the user
+     * @param project the project for identifying the prearchive session
+     * @param timestamp the timestamp for identifying the prearchive session
+     * @param session the session (foldername) for identifying the prearchive session
+     * @param uID the study instance UID. If provided, this will override what is read from the XML.
+     * @param allowUnassigned if project can be unassigned
+     *
+     * @throws Exception if an error occurs (will also attempt to set prearchive session status to ERROR before throwing)
+     */
+    public static void resetStatus(final UserI user, final String project, final String timestamp, final String session, @Nullable final String uID, final boolean allowUnassigned) throws Exception {
+        final SessionData updatedSession;
         try {
-            deleted = PrearcDatabase.getSession(session, timestamp, project);
-            PrearcDatabase.unsafeSetStatus(session, timestamp, project, PrearcStatus._DELETING);
-            PrearcDatabase.deleteCacheRow(session, timestamp, project);
-        } catch (SessionException ignored) {
+            updatedSession = makeSessionFromXml(user, project, timestamp, session, uID, allowUnassigned);
+        } catch (Exception e) {
+            log.error("Error reading xml for session {} {} {}", project, timestamp, session, e);
+            log(project, timestamp, session, e);
+            PrearcDatabase.setStatus(session, timestamp, project, PrearcStatus.ERROR);
+            throw e;
         }
 
-        addSession(user, project, timestamp, session, uID, allowUnassigned);
-        cleanUpDeletedSession(project, timestamp, session, deleted);
+        updateNewSessionMetadataWithExistingObject(updatedSession, project, timestamp, session);
+
+        try {
+            PrearcDatabase.addOrUpdateSession(updatedSession);
+        } catch (Exception e) {
+            log.error("Error updating prearchive session {} {} {}", project, timestamp, session, e);
+            log(project, timestamp, session, e);
+            PrearcDatabase.setStatus(session, timestamp, project, PrearcStatus.ERROR);
+            throw e;
+        }
     }
 
     public static void addSession(final UserI user, final String project, final String timestamp, final String session, final boolean allowUnassigned) throws Exception {
@@ -497,6 +528,11 @@ public class PrearcUtils {
     }
 
     public static void addSession(final UserI user, final String project, final String timestamp, final String session, final String uID, final boolean allowUnassigned) throws Exception {
+        final SessionData sessionData = makeSessionFromXml(user, project, timestamp, session, uID, allowUnassigned);
+        PrearcDatabase.addSession(sessionData);
+    }
+
+    public static SessionData makeSessionFromXml(final UserI user, final String project, final String timestamp, final String session, final String uID, final boolean allowUnassigned) throws Exception {
         final Session     s  = PrearcTableBuilder.buildSessionObject(PrearcUtils.getPrearcSessionDir(user, project, timestamp, session, allowUnassigned), timestamp, project);
         final SessionData sd = s.getSessionData(PrearcDatabase.projectPath(project));
         if (s.getSessionXML() != null) {
@@ -505,7 +541,7 @@ public class PrearcUtils {
         if (StringUtils.isNotEmpty(uID)) {
             sd.setTag(uID);
         }
-        PrearcDatabase.addSession(sd);
+        return sd;
     }
 
     public static String makeUri(final String urlBase, final String timestamp, final String folderName) {
@@ -782,7 +818,7 @@ public class PrearcUtils {
         } else {
             params.put(SEPARATE_PET_MR, HandlePetMr.getSeparatePetMr().value());
         }
-        params.put(PARAM_LABEL, session);
+        params.put(PARAM_LABEL, StringUtils.defaultIfBlank(sd.getName(), session));
         if (StringUtils.isNotBlank(subject)) {
             params.put(PARAM_SUBJECT_ID, subject);
         }
@@ -862,13 +898,37 @@ public class PrearcUtils {
         CatalogUtils.populateStats(resource, root);
     }
 
-    private static void cleanUpDeletedSession(final String project, final String timestamp, final String session, final SessionData deleted) throws Exception {
-        if (deleted != null) {
-            PrearcDatabase.setAutoArchive(session, timestamp, project, deleted.getAutoArchive());
-            PrearcDatabase.setPreventAnon(session, timestamp, project, deleted.getPreventAnon());
-            PrearcDatabase.setSource(session, timestamp, project, deleted.getSource());
-            PrearcDatabase.setPreventAutoCommit(session, timestamp, project, deleted.getPreventAutoCommit());
+    private static void updateNewSessionMetadataWithExistingObject(final SessionData updatedSession,
+                                                                   final String project,
+                                                                   final String timestamp,
+                                                                   final String session) {
+        final SessionData currentSession;
+        try {
+            currentSession = PrearcDatabase.getSession(session, timestamp, project);
+
+            // If tag (study instance uid) is not set, this session doesn't exist: Don't attempt to persist its config.
+            if (currentSession == null || StringUtils.isBlank(currentSession.getTag())) {
+                return;
+            }
+
+            // Ensure study instance uid is set
+            if (StringUtils.isBlank(updatedSession.getTag())) {
+                updatedSession.setTag(currentSession.getTag());
+            }
+
+            // Update config fields to match existing session
+            populatePrearchiveSessionConfigFields(updatedSession, currentSession);
+        } catch (Exception e) {
+            log.error("Error updating session {} with data from existing prearchive row", updatedSession, e);
         }
+    }
+
+    private static void populatePrearchiveSessionConfigFields(final SessionData newSession,
+                                                              final SessionData existingSession) {
+        newSession.setAutoArchive(existingSession.getAutoArchive());
+        newSession.setPreventAnon(existingSession.getPreventAnon());
+        newSession.setSource(existingSession.getSource());
+        newSession.setPreventAutoCommit(existingSession.getPreventAutoCommit());
     }
 
     private final static Object syncLock = new Object();
@@ -1036,6 +1096,37 @@ public class PrearcUtils {
         } else {
             log.error("{} is not a valid value for {}, using default {}", value, paramName, defaultValue);
             return defaultValue;
+        }
+    }
+
+    /**
+     * Update the prearchive session status to queued for the operation and queue the JMS request. If sending the JMS
+     * request throws an exception, attempt to restore the prearchive session status to its prior state.
+     *
+     * @param request The request to be queued.
+     *
+     * @return true if the operation was queued, false otherwise.
+     *
+     * @throws Exception When an error occurs setting the prearchive session status or sending the JMS request.
+     */
+    public static boolean queuePrearchiveOperation(final PrearchiveOperationRequest request) throws Exception {
+        final SessionData sessionData = request.getSessionData();
+        final Operation operation = request.getOperation();
+        final PrearcStatus originalStatus = sessionData.getStatus();
+
+        if (!PrearcDatabase.setStatus(sessionData, operation.getQueuedStatus())) {
+            log.warn("Unable to set prearchive status to {} for {} due to another active operation on the prearchive row",
+                    operation.getQueuedStatus(), sessionData.getSessionDataTriple());
+            return false;
+        }
+
+        try {
+            XDAT.sendJmsRequest(request);
+            return true;
+        } catch (Exception e) {
+            log.error("Unable to queue prearchive operation {} for {}", operation, sessionData, e);
+            PrearcDatabase.setStatus(sessionData, originalStatus);
+            throw e;
         }
     }
 

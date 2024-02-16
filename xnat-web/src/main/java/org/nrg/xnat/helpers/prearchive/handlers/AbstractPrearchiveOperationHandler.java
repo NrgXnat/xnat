@@ -160,6 +160,11 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
         return annotation.value();
     }
 
+    boolean getBooleanParameter(final String parameterName) {
+        final Object parameterValue = getParameters().get(parameterName);
+        return parameterValue instanceof Boolean && (Boolean) parameterValue;
+    }
+
     @Getter(PRIVATE)
     private final NrgEventServiceI _eventService;
     @Getter(PRIVATE)

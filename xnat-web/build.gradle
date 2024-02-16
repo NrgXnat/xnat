@@ -9,7 +9,7 @@
 
 buildscript {
     ext {
-        vXnat = "1.8.9.2"
+        vXnat = "1.8.10-RC-SNAPSHOT"
     }
 }
 
@@ -239,7 +239,6 @@ dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
     implementation "com.jayway.jsonpath:json-path"
     implementation "org.json:json"
-    implementation "com.thoughtworks.xstream:xstream"
 
     implementation "commons-beanutils:commons-beanutils"
     implementation "commons-codec:commons-codec"

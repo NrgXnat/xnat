@@ -15,6 +15,7 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserChangeRequest;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Roles;
@@ -32,6 +33,7 @@ import org.nrg.xft.security.UserI;
 import org.springframework.mail.MailException;
 
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class XDATScreen_UpdateUser extends SecureScreen {
 
@@ -160,16 +162,21 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                         String userID = null;
                         try
                         {
-                            userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,secret);
-                            if(userID!=null){
+                            AliasTokenService tokenService = XDAT.getContextService().getBean(AliasTokenService.class);
+                            AliasToken token = tokenService.locateToken(alias);
+                            if (Objects.nonNull(token) && !token.isExpired()) {
+                                userID = tokenService.validateToken(alias, secret);
+                            }
+                            if (userID != null) {
                                 user = Users.getUser(userID);
                                 XDAT.loginUser(data, user, true);
                                 context.put("user", user);
                                 context.put("forgot", true);
                                 data.getSession().setAttribute("forgot", true);
+                                data.getSession().setAttribute("alias", alias);
                             }
                             else{
-                                invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");
+                                invalidInformation(data, context, "Change password opportunity expired. Password has been changed successfully or the request has expired after 2 hours. Please restart the change password process.");
                             }
                         }
                         catch (Exception e)

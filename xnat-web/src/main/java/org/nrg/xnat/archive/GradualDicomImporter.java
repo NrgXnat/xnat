@@ -15,7 +15,11 @@ import com.google.common.io.ByteStreams;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.dcm4che2.data.*;
+import org.dcm4che2.data.BasicDicomObject;
+import org.dcm4che2.data.DicomObject;
+import org.dcm4che2.data.Tag;
+import org.dcm4che2.data.TransferSyntax;
+import org.dcm4che2.data.VR;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.io.DicomOutputStream;
 import org.dcm4che2.io.StopTagInputHandler;
@@ -51,15 +55,29 @@ import org.nrg.xnat.processors.ArchiveProcessor;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -88,6 +106,27 @@ public class GradualDicomImporter extends ImporterHandlerA {
         _directArchive &= _directArchiveSessionService != null;
     }
 
+    private int getMaxFilterTag(final SeriesImportFilter filter) {
+        if (filter == null || !filter.isEnabled()) {
+            return 0;
+        }
+       List<Integer> tags=filter.getFilterTags();
+       if (tags.isEmpty()) {
+           return 0;
+       }
+       return tags.get(tags.size()-1);
+    }
+
+    public static boolean isAutoArchive(Map<String, Object> params) {
+        if (params.containsKey(RequestUtil.AA) && (RequestUtil.TRUE.equalsIgnoreCase((String) params.get(RequestUtil.AA)))) {
+            return true;
+        }
+        if (params.containsKey(RequestUtil.AUTO_ARCHIVE) && (RequestUtil.TRUE.equalsIgnoreCase((String) params.get(RequestUtil.AUTO_ARCHIVE)))) {
+            return true;
+        }
+        return false;
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public List<String> call() throws ClientException {
@@ -95,9 +134,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final DicomObject dicom;
         final XnatProjectdata project;
         final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
+        final SeriesImportFilter siteFilter = getDicomFilterService().getSeriesImportFilter();
+        final int lastTag = Math.max(getMaxFilterTag(siteFilter), Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription))+ 1;
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
              final DicomInputStream dis = null == _transferSyntax ? new DicomInputStream(bis) : new DicomInputStream(bis, _transferSyntax)) {
-            final int lastTag = Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription) + 1;
             log.trace("reading object into memory up to {}", TagUtils.toString(lastTag));
             dis.setHandler(new StopTagInputHandler(lastTag));
             dicom = dis.readDicomObject();
@@ -125,8 +165,15 @@ public class GradualDicomImporter extends ImporterHandlerA {
             }
 
             final String projectId = project != null ? project.getId() : null;
-            final SeriesImportFilter siteFilter = getDicomFilterService().getSeriesImportFilter();
             final SeriesImportFilter projectFilter = StringUtils.isNotBlank(projectId) ? getDicomFilterService().getSeriesImportFilter(projectId) : null;
+            final int maxProjectTag = getMaxFilterTag(projectFilter)+1;
+            if (maxProjectTag > lastTag) {
+                final DicomObject filterDicomObject;
+                bis.reset();
+                dis.setHandler(new StopTagInputHandler(maxProjectTag));
+                filterDicomObject = dis.readDicomObject();
+                filterDicomObject.copyTo(dicom);
+            }
             if (log.isDebugEnabled()) {
                 if (siteFilter != null) {
                     if (projectFilter != null) {
@@ -164,12 +211,22 @@ public class GradualDicomImporter extends ImporterHandlerA {
             final String studyInstanceUID = dicom.getString(Tag.StudyInstanceUID);
             log.trace("Looking for study {} in project {}", studyInstanceUID, null == project ? null : project.getId());
 
-            final String sessionLabel;
+            String sessionLabel = null;
             if (_parameters.containsKey(URIManager.EXPT_LABEL)) {
                 sessionLabel = (String) _parameters.get(URIManager.EXPT_LABEL);
                 log.trace("using provided experiment label {}", _parameters.get(URIManager.EXPT_LABEL));
-            } else {
+            }
+            if (sessionLabel == null) {
                 sessionLabel = StringUtils.defaultIfBlank(dicomObjectIdentifier.getSessionLabel(dicom), "dicom_upload");
+            }
+
+            String folderName = null;
+            if (_parameters.containsKey(PrearcUtils.PREARC_SESSION_FOLDER)) {
+                folderName = (String) _parameters.get(PrearcUtils.PREARC_SESSION_FOLDER);
+                log.trace("using provided prearchive session folder {}", _parameters.get(PrearcUtils.PREARC_SESSION_FOLDER));
+            }
+            if (folderName == null) {
+                folderName = sessionLabel;
             }
 
             final String visit;
@@ -198,7 +255,15 @@ public class GradualDicomImporter extends ImporterHandlerA {
             // Fill a SessionData object in case it is the first upload
             final File root;
             final File prearchiveRoot;
-            final String timestamp = PrearcUtils.makeTimestamp();
+
+            final String timestamp;
+            if (_parameters.containsKey(PrearcUtils.PREARC_TIMESTAMP)) {
+                timestamp = (String) _parameters.get(PrearcUtils.PREARC_TIMESTAMP);
+                log.trace("using provided timestamp {}", _parameters.get(PrearcUtils.PREARC_TIMESTAMP));
+            } else {
+                timestamp = PrearcUtils.makeTimestamp();
+            }
+
             if (null == project) {
                 prearchiveRoot = new File(ArcSpecManager.GetInstance().getGlobalPrearchivePath(), timestamp);
                 _directArchive = false;
@@ -225,7 +290,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             final AtomicBoolean isNew = new AtomicBoolean();
             try {
                 final SessionData initialize = new SessionData();
-                initialize.setFolderName(sessionLabel);
+                initialize.setFolderName(folderName);
                 initialize.setName(sessionLabel);
                 initialize.setProject(project == null ? null : project.getId());
                 initialize.setVisit(visit);
@@ -247,11 +312,13 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 initialize.setStatus(PrearcUtils.PrearcStatus.RECEIVING);
                 initialize.setLastBuiltDate(Calendar.getInstance().getTime());
                 initialize.setSubject(subject);
-                initialize.setUrl((new File(root, sessionLabel)).getAbsolutePath());
+                initialize.setUrl((new File(root, folderName)).getAbsolutePath());
                 initialize.setSource(_parameters.get(URIManager.SOURCE));
                 initialize.setPreventAnon(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_ANON)));
                 initialize.setPreventAutoCommit(Boolean.valueOf((String) _parameters.get(URIManager.PREVENT_AUTO_COMMIT)));
-
+                if (isAutoArchive(_parameters)) {
+                    initialize.setAutoArchive(PrearchiveCode.AutoArchive);
+                }
                 session = eitherGetOrCreateSession(initialize, prearchiveRoot, project, dicom, isNew);
             } catch (Exception e) {
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);

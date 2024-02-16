@@ -10,7 +10,6 @@
 package org.nrg.xnat.restlet.services.prearchive;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
@@ -79,7 +78,7 @@ public class PrearchiveBatchMove extends BatchPrearchiveActionsA {
                     final Map<String, Object> parameters = new HashMap<>();
                     parameters.put(PrearchiveOperationRequest.PARAM_DESTINATION, newProject);
 
-                    XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Move, session, sessionDir, parameters));
+                    PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(user, Move, session, sessionDir, parameters));
                 }
             } catch (SessionException e) {
                 switch (e.getError()) {

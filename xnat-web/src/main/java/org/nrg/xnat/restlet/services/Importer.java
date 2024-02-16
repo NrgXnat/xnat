@@ -32,9 +32,14 @@ import org.nrg.xnat.restlet.actions.importer.ImporterNotFoundException;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.status.StatusList;
 import org.restlet.Context;
-import org.restlet.data.*;
+import org.restlet.data.ClientInfo;
+import org.restlet.data.MediaType;
+import org.restlet.data.Request;
+import org.restlet.data.Response;
+import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
@@ -46,11 +51,17 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class Importer extends SecureResource {
     private static final String CRLF = "\r\n";
+    private static final String COMMIT = "commit";
+    private static final String ACTION = "action";
     private final Logger logger = LoggerFactory.getLogger(Importer.class);
 
     public Importer(Context context, Request request, Response response) {
@@ -151,6 +162,11 @@ public class Importer extends SecureResource {
 
             //maintain parameters
             loadQueryVariables();
+            if (!this.params.containsKey(ImporterHandlerA.IGNORE_UNPARSABLE_PARAM)) {
+                if (this.params.containsKey(ACTION) && COMMIT.equalsIgnoreCase((String) this.params.get(ACTION))) {
+                    this.params.put(ImporterHandlerA.IGNORE_UNPARSABLE_PARAM, "true");
+                }
+            }
 
             // Set the overwrite flag if we are uploading directly to the archive (prearchive_code = 1)
             String prearchive_code = (String) params.get("prearchive_code");
@@ -178,7 +194,7 @@ public class Importer extends SecureResource {
                     }
                 }
             }
-
+            parseOverrideValue();
             ImporterHandlerA importer;
             if (fw.size() == 0 && handler != null && !HANDLERS_ALLOWING_CALLS_WITHOUT_FILES.contains(handler)) {
 
@@ -226,7 +242,6 @@ public class Importer extends SecureResource {
                     handler = ImporterHandlerA.GRADUAL_DICOM_IMPORTER;
                 }
             }
-
             try {
                 importer = ImporterHandlerA.buildImporter(handler, listenerControl, user, fw.get(0), params);
             } catch (SecurityException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
@@ -433,5 +448,31 @@ public class Importer extends SecureResource {
         }
 
         return sb.toString();
+    }
+
+    private void parseOverrideValue() {
+        String overwriteV = (String) params.get("overwrite");
+        Boolean overrideExceptions;
+        Boolean allowSessionMerge;
+        if (overwriteV == null) {
+            overrideExceptions = false;
+            allowSessionMerge = false;
+        } else {
+            if (overwriteV.equalsIgnoreCase(PrearcUtils.APPEND)) {
+                overrideExceptions = false;
+                allowSessionMerge = true;
+            } else if (overwriteV.equalsIgnoreCase(PrearcUtils.DELETE)) {//leaving this for backwards compatibility... deprecated by 'override' setting
+                overrideExceptions = true;
+                allowSessionMerge = true;
+            } else if (overwriteV.equalsIgnoreCase("override")) {
+                overrideExceptions = true;
+                allowSessionMerge = true;
+            } else {
+                overrideExceptions = false;
+                allowSessionMerge = true;
+            }
+        }
+        params.put(PrearchiveOperationRequest.PARAM_OVERRIDE_EXCEPTIONS, overrideExceptions);
+        params.put(PrearchiveOperationRequest.PARAM_ALLOW_SESSION_MERGE, allowSessionMerge);
     }
 }

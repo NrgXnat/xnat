@@ -1,11 +1,8 @@
 package org.nrg.xnat.customforms.daos;
 
-import com.gs.collections.impl.block.factory.HashingStrategies;
-import com.gs.collections.impl.utility.ListIterate;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.NonUniqueObjectException;
-import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.generics.GenericUtils;
@@ -21,6 +18,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,12 +84,6 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
     }
 
 
-
-
-
-
-
-
     /**
      * Find rows of the join table  after filtering out form identified by excludedFormId
      * @param userOptionsPojo - the details of the appliesTo
@@ -104,7 +96,7 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         criteria.add(Restrictions.ne("cvf.id", excludedFormId));
         List<CustomVariableFormAppliesTo> results = criteria.list();
         initializeList(results);
-        return results;
+        return results == null ? Collections.emptyList() : results;
     }
 
     /**
@@ -123,7 +115,7 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         criteria.add(Restrictions.eq("cvf.id", formId));
         List<CustomVariableFormAppliesTo> results = criteria.list();
         initializeList(results);
-        return results;
+        return results == null ? Collections.emptyList() : results;
     }
 
     public List<CustomVariableForm> findAllDistinctFormsByDatatype(final String dataType, final String status) {
@@ -135,8 +127,10 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         List<CustomVariableFormAppliesTo> results = criteria.list();
         initializeList(results);
         List<CustomVariableForm> forms = new ArrayList<CustomVariableForm>();
-        for (CustomVariableFormAppliesTo ca: results) {
-            forms.add(ca.getCustomVariableForm());
+        if (null != results) {
+            for (CustomVariableFormAppliesTo ca: results) {
+                forms.add(ca.getCustomVariableForm());
+            }
         }
        forms.stream()
                 .filter(DistinctByKey(f -> f.getFormUuid()))
@@ -178,7 +172,7 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         criteria.add(Restrictions.eq("cvf.id", formId));
         List<CustomVariableFormAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
         initializeList(results);
-        return results;
+        return results == null ? Collections.emptyList() : results;
     }
 
     /**
@@ -194,7 +188,7 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         criteria.add(Restrictions.eq("cvf.id", formId));
         List<CustomVariableFormAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
         initializeList(results);
-        return results;
+        return results == null ? Collections.emptyList(): results;
     }
 
     /**
@@ -213,7 +207,7 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
             }
         }
         initializeList(results);
-        return results;
+        return results == null ? Collections.emptyList() : results;
     }
 
     /**
@@ -227,7 +221,7 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         criteria.add(Restrictions.eq("cvat.id", appliesToId));
         List<CustomVariableFormAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
         initializeList(results);
-        return results;
+        return results == null ? Collections.emptyList() : results;
     }
 
     /**

@@ -13,6 +13,8 @@ import static org.nrg.xft.utils.FileUtils.MoveDir;
 import static org.nrg.xft.utils.FileUtils.renameWTimestamp;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
@@ -20,19 +22,40 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.ArcProject;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImageassessordata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatQcmanualassessordata;
+import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
+import org.nrg.xdat.om.base.BaseXnatProjectdata;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFT;
+import org.nrg.xft.XFTTable;
+import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
+import org.nrg.xnat.exceptions.InvalidArchiveStructure;
+import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @Slf4j
@@ -163,7 +186,196 @@ public class FileUtils {
         }
     }
 
+    /**
+     * Get the current arc directory of a project.
+     * This is more or less identical to {@link BaseXnatProjectdata#getCurrentArc()}, except static and not requiring
+     * read permission on the base project (as is necessary to obtain the origin location of shared data - for instance
+     * in the case of creating a job directory).
+     * @param projectId The project id
+     * @return The project's current arcXXX directory
+     */
+    private static String getCurrentArc(final String projectId) {
+        final ArcProject arcProject = ArcSpecManager.GetInstance().getProjectArc(projectId);
+        return StringUtils.defaultIfBlank(arcProject != null ? arcProject.getCurrentArc() : null, "arc001");
+    }
+
+    private static Path getExperimentFullPath(final String projectId, final String experimentLabel) {
+        return Paths.get(XDAT.getSiteConfigPreferences().getArchivePath(), projectId, getCurrentArc(projectId), experimentLabel);
+    }
+
+    private static Path getSubjectFullPath(final String projectId, final String subjectLabel) {
+        return Paths.get(XDAT.getSiteConfigPreferences().getArchivePath(), projectId, "subjects", subjectLabel);
+    }
+
+    private static Map<String, List<String>> convertXFTTableForProjectSharedPathsElements(XFTTable elementsTable) {
+        Map<String, String> elementsMap = elementsTable.convertToMap("label", "origProject", String.class, String.class);
+        return elementsMap.keySet().stream().collect(Collectors.groupingBy(elementsMap::get));
+    }
+
+    private static Map<String, String> getAllChangedElementLabels(XFTTable elementsTable) {
+        Map<String, String> elementsMap = elementsTable.convertToMap("label", "originalLabel", String.class, String.class);
+        return elementsMap.entrySet().stream().filter(f -> !f.getKey().equals(f.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public static Map<Path, Path> getAllSharedPaths(final String projectId, final UserI user, final boolean includeProjectResources,
+                                                      final boolean includeSubjectResources, final boolean removeArcs, final boolean addExperimentLabel)
+            throws DBPoolException, SQLException, IOException, BaseXnatExperimentdata.UnknownPrimaryProjectException, InvalidArchiveStructure {
+        XnatProjectdata projectData = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
+        Map<Path, Path> allPathsMap = new HashMap<>();
+        if (!projectData.getProjectHasSharedExperiments()) {
+            if (!includeSubjectResources || !projectData.getProjectHasSharedSubjects()) {
+                return allPathsMap;
+            }
+        }
+        XFTTable subjectsTable = projectData.getSubjectsByProject();
+        XFTTable experimentsTable = projectData.getExperimentsByProject();
+        Map<String, List<String>> allSubjectsForProject = convertXFTTableForProjectSharedPathsElements(subjectsTable);
+        Map<String, List<String>> allExperimentsForProject = convertXFTTableForProjectSharedPathsElements(experimentsTable);
+        Map<String, String> subjectLabelChanges = getAllChangedElementLabels(subjectsTable);
+        BiMap<String, String> experimentNewLabelToOriginal = HashBiMap.create(getAllChangedElementLabels(experimentsTable));
+        Path archivePath = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath());
+        int totalSessions = 0;
+        for (Map.Entry<String, List<String>> entry : allExperimentsForProject.entrySet()) {
+            String origProject = entry.getKey();
+            Path pathTranslationPath = archivePath.resolve(origProject);
+            List<String> experimentsForProject = entry.getValue();
+            for (String experiment: experimentsForProject) {
+                XnatExperimentdata currentExperiment = XnatExperimentdata.GetExptByProjectIdentifier(origProject, experimentNewLabelToOriginal.getOrDefault(experiment, experiment), user, false);
+                //Check to see if the current experiment is accessible to the user. In the case that it's not - for instance
+                //the user group that the user is a part of does not have read access to that type of element - the current experiment
+                //field will be null and we can move onto the next experiment.
+                if (currentExperiment == null) {
+                    continue;
+                }
+                Path fullPath;
+                final String assessorFolderString = "ASSESSORS";
+                boolean isAssessor = false;
+                if (currentExperiment instanceof XnatImageassessordata) {
+                    fullPath = currentExperiment.getExpectedSessionDir().toPath().resolve(assessorFolderString).resolve(currentExperiment.getLabel());
+                    isAssessor = true;
+                } else {
+                    fullPath = getExperimentFullPath(origProject, currentExperiment.getLabel());
+                    totalSessions+=1;
+                }
+                try (Stream<Path> walk = Files.walk(fullPath)) {
+                    List<Path> collectedExperimentFiles;
+                    if (!isAssessor) {
+                        collectedExperimentFiles = walk.filter(Files::isRegularFile).filter(f -> !fullPath.relativize(f).startsWith(assessorFolderString)).collect(Collectors.toList());
+                    } else {
+                        collectedExperimentFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+                    }
+                    for (Path path : collectedExperimentFiles) {
+                        Path newPath;
+                        if (isAssessor) {
+                            //this is a rather large hack, but it's the only way I could think of to effectively do path translation given that
+                            //assessors need not be made by the home projects that their sessions were created in and the fact
+                            //that those assessors still live *inside* the sessions in the archive.
+                            newPath = path.toAbsolutePath().subpath(pathTranslationPath.getNameCount(), path.getNameCount());
+                        } else {
+                            newPath = pathTranslationPath.relativize(path);
+                        }
+                        //this is another hack where we're getting the session portion of the path from the assessors path within the archive
+                        //by recognizing that after you've removed the archive base path it will always be in the second position.
+                        //This is kind of the only way I can think of to get it for cases of label change of sessions which have assessors associated
+                        //which is found within the else if statement below.
+                        String sessionNameWithinAssessorPath = newPath.getName(1).toString();
+                        if (experimentNewLabelToOriginal.containsKey(experiment)) {
+                            newPath = Paths.get(newPath.toString().replaceFirst(Objects.requireNonNull(experimentNewLabelToOriginal.get(experiment)), experiment));
+                        }
+                        if (isAssessor && experimentNewLabelToOriginal.inverse().containsKey(sessionNameWithinAssessorPath)) {
+                            String replacementAssessorPath = experimentNewLabelToOriginal.inverse().get(sessionNameWithinAssessorPath);
+                            newPath = Paths.get(newPath.toString().replaceFirst(sessionNameWithinAssessorPath, replacementAssessorPath));
+                        }
+                        if (removeArcs) {
+                            newPath = newPath.getName(0).relativize(newPath);
+                            if(addExperimentLabel) {
+                                newPath = Paths.get("experiments").resolve(newPath);
+                            }
+                        }
+                        allPathsMap.put(path, newPath);
+                    }
+                } catch (NoSuchFileException ignored) {
+
+                }
+            }
+        }
+        int maxNumberOfSessions = XDAT.getSiteConfigPreferences().getMaxNumberOfSessionsForJobsWithSharedData();
+        if (totalSessions > maxNumberOfSessions) {
+            throw new RuntimeException("With the inclusion of shared data, more than " + maxNumberOfSessions + " sessions are present in the current project. " +
+                    "Your site administrator has set this as the maximum amount of sessions allowed for a job. Please contact them to change this value if you need to continue running jobs on this data.");
+        }
+
+        if (includeSubjectResources) {
+            for (Map.Entry<String, List<String>> entry: allSubjectsForProject.entrySet()) {
+                final String origProject = entry.getKey();
+                final List<String> subjectsForProject = entry.getValue();
+                Path pathTranslationPath = archivePath.resolve(origProject);
+                for (String subject : subjectsForProject) {
+                    XnatSubjectdata currentSubject = XnatSubjectdata.GetSubjectByIdOrProjectlabelCaseInsensitive(origProject, subjectLabelChanges.getOrDefault(subject, subject), user, false);
+                    if (currentSubject == null) {
+                        continue;
+                    }
+                    Path fullPath = getSubjectFullPath(origProject, currentSubject.getLabel());
+                    try (Stream<Path> walk = Files.walk(fullPath)) {
+                        List<Path> collectedSubjectFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+                        for (Path path : collectedSubjectFiles) {
+                            Path newPath = pathTranslationPath.relativize(path);
+                            if (subjectLabelChanges.containsKey(subject)) {
+                                newPath = Paths.get(newPath.toString().replaceFirst(subjectLabelChanges.get(subject), subject));
+                            }
+                            allPathsMap.put(path, newPath);
+                        }
+                    } catch (NoSuchFileException ignored) {
+
+                    }
+                }
+            }
+        }
+
+        if (includeProjectResources) {
+            Path resourcesPath = Paths.get(projectData.getArchiveRootPath(), "resources");
+            try (Stream<Path> walk = Files.walk(resourcesPath)) {
+                List<Path> collectedResourceFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+                for (Path resourcePath : collectedResourceFiles) {
+                    Path pathTranslationPath = archivePath.resolve(projectData.getId());
+                    Path newPath = pathTranslationPath.relativize(resourcePath);
+                    allPathsMap.put(resourcePath, newPath);
+                }
+            } catch (NoSuchFileException ignored) {
+
+            }
+        }
+        return allPathsMap;
+    }
+
+    public static Path createDirectoryForSharedData(Map<Path, Path> pathsMap, final Path inputLinksDirectory) throws IOException {
+        Path destinationBaseDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath()).resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(inputLinksDirectory);
+        for (Map.Entry<Path, Path> pathConversion : pathsMap.entrySet()) {
+            Path destinationPathForCurrentFile = destinationBaseDirectory.resolve(pathConversion.getValue());
+            if (Files.exists(destinationPathForCurrentFile)) {
+                continue;
+            }
+            Files.createDirectories(destinationPathForCurrentFile.getParent());
+            if (XDAT.getSiteConfigPreferences().getFileOperationUsedForJobsWithSharedData().equals("hard_link")) {
+                Files.createLink(destinationPathForCurrentFile, pathConversion.getKey());
+            } else {
+                Files.copy(pathConversion.getKey(), destinationPathForCurrentFile);
+            }
+
+        }
+        return destinationBaseDirectory;
+    }
+
+    public static void removeCombinedFolder(final Path baseLinksDirectory) throws IOException {
+        Path baseArchiveDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath());
+        Path directoryToRemove = baseArchiveDirectory.resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(baseLinksDirectory);
+        org.apache.commons.io.FileUtils.deleteDirectory(new File(directoryToRemove.toUri()));
+    }
+
+
     private static final Object MUTEX = new Object();
 
     private static String VERSION;
+
+    public static final String SHARED_PROJECT_DIRECTORY_STRING = "SHARED.PROJECT.DATA.STORAGE.DIRECTORY";
 }

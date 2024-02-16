@@ -99,6 +99,7 @@ XNAT.plugin =
             dataType: 'json',
             async: false,
             success: function (data) {
+                closeModalPanel("cfConfigModal");
                 projectFormManager.projectdefinitions = [];
                 data.forEach(function (item) {
                     projectFormManager.projectdefinitions.push(item);
@@ -109,6 +110,7 @@ XNAT.plugin =
                 callback.apply(this, arguments);
             },
             fail: function (e) {
+                closeModalPanel("cfConfigModal");
                 errorHandler(e, 'Could not retrieve forms');
             }
 
@@ -531,8 +533,6 @@ XNAT.plugin =
         let $manager = $('div#form-project-json-container');
         $manager.prepend(projectFormManager.table());
     };
-
-    projectFormManager.init();
 
     //We need the following code snippet to force the xnat-bootstrap onto the
     //dynamically added div elements of the form builder

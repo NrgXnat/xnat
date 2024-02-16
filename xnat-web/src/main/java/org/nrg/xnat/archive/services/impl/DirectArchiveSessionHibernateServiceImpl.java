@@ -80,13 +80,13 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public SessionData setStatusToBuildingAndReturn(long id) throws NotFoundException, ArchivingException {
-        return setStatusAndReturn(id, PrearcUtils.PrearcStatus.BUILDING, PrearcUtils.PrearcStatus._BUILDING,
+        return setStatusAndReturn(id, PrearcUtils.PrearcStatus.QUEUED_BUILDING, PrearcUtils.PrearcStatus.BUILDING,
                 "buildable");
     }
 
     @Override
     public SessionData setStatusToArchivingAndReturn(long id) throws NotFoundException, ArchivingException {
-        return setStatusAndReturn(id, PrearcUtils.PrearcStatus.ARCHIVING, PrearcUtils.PrearcStatus._ARCHIVING,
+        return setStatusAndReturn(id, PrearcUtils.PrearcStatus.QUEUED_ARCHIVING, PrearcUtils.PrearcStatus.ARCHIVING,
                 "archivable");
     }
 
@@ -97,14 +97,14 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public void setStatusToQueuedBuilding(long id) throws NotFoundException {
-        setStatus(id, PrearcUtils.PrearcStatus.BUILDING);
+        setStatus(id, PrearcUtils.PrearcStatus.QUEUED_BUILDING);
     }
 
     @Override
     public void setStatusToQueuedArchiving(long id) throws NotFoundException {
         DirectArchiveSession das = get(id);
         das.setUploadDate(new Date());
-        setStatus(das, PrearcUtils.PrearcStatus.ARCHIVING, null);
+        setStatus(das, PrearcUtils.PrearcStatus.QUEUED_ARCHIVING, null);
     }
 
     @Override

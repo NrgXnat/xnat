@@ -15,7 +15,6 @@ import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.task.XnatTask;
 import org.nrg.framework.task.services.XnatTaskService;
-import org.nrg.xdat.XDAT;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -100,7 +99,7 @@ public class SessionXMLRebuilder extends AbstractXnatTask {
                             if (diff >= _interval && !PrearcUtils.isSessionReceiving(triple)) {
                                 updatedSessionCount++;
                                 log.info("Update #{}: prearchive session {} is {} minutes old, greater than configured interval {}, creating JMS queue entry for {} to archive {}", updatedSessionCount, sessionData, diff, _interval, user.getUsername(), sessionData.getExternalUrl());
-                                XDAT.sendJmsRequest(_jmsTemplate, new PrearchiveOperationRequest(user, Rebuild, sessionData, sessionDir));
+                                PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(user, Rebuild, sessionData, sessionDir));
                             } else if (diff >= (_interval * 10)) {
                                 log.error(String.format("Prearchive session locked for an abnormally large time within CACHE_DIR/prearc_locks/%1$s/%2$s/%3$s", sessionData.getProject(), sessionData.getTimestamp(), sessionData.getName()));
                             } else if (diff < _interval) {

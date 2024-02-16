@@ -23,8 +23,10 @@ import org.restlet.data.Response;
 import org.restlet.data.Status;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.nrg.xnat.archive.Operation.Rebuild;
+import static org.nrg.xnat.helpers.prearchive.handlers.PrearchiveRebuildHandler.PARAM_AUTO_ARCHIVE_BLOCKED;
 import static org.nrg.xnat.helpers.prearchive.handlers.PrearchiveRebuildHandler.PARAM_OVERRIDE_LOCK;
 
 @Slf4j
@@ -57,11 +59,11 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
 		final UserI   user         = getUser();
 		for (final SessionDataTriple triple : triples) {
 			try {
-				if (PrearcDatabase.setStatus(triple.getFolderName(), triple.getTimestamp(), triple.getProject(), PrearcUtils.PrearcStatus.QUEUED_BUILDING, _overrideLock)) {
-					XDAT.sendJmsRequest(new PrearchiveOperationRequest(user, Rebuild, triple, getAdditionalValues()));
-				} else {
-					log.warn("Tried to reset the status of the session {} to QUEUED_BUILDING, but failed. This usually means the session is locked and the override lock parameter was false. This might be OK: I checked whether the session was locked before trying to update the status but maybe a new file arrived in the intervening millisecond(s).", triple);
-				}
+				final Map<String, Object> additionalValues = getAdditionalValues();
+				additionalValues.put(PARAM_AUTO_ARCHIVE_BLOCKED, true);
+				final PrearchiveOperationRequest request = new PrearchiveOperationRequest(user, Rebuild, triple,
+						additionalValues);
+				PrearcUtils.queuePrearchiveOperation(request);
             } catch (IllegalArgumentException e) {
 				getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e);
             } catch (InvalidPermissionException e) {

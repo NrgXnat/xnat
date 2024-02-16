@@ -15,7 +15,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>parent</artifactId>
-    <version>1.8.9.2</version>
+    <version>1.8.10-RC-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>
@@ -64,9 +64,7 @@
         <signing.keypass>keypass</signing.keypass>
         <signing.tsa>https://timestamp.digicert.com</signing.tsa>
 
-        <xnat.version>1.8.9</xnat.version>
-        <xnatfix2.version>1.8.9.2</xnatfix2.version>
-        <xnatfix.version>1.8.9.1</xnatfix.version>
+        <xnat.version>1.8.10-RC-SNAPSHOT</xnat.version>
 
         <!-- XNAT core library versions -->
         <xnat-web.version>${xnatfix2.version}</xnat-web.version>
@@ -85,16 +83,16 @@
         <nrg.prefs.version>${xnat.version}</nrg.prefs.version>
         <nrg.test.version>${xnat.version}</nrg.test.version>
         <nrg.transaction.version>${xnat.version}</nrg.transaction.version>
-        <nrg.mizer.version>1.2.5</nrg.mizer.version>
+        <nrg.mizer.version>${xnat.version}</nrg.mizer.version>
         <nrg.dicomtools.version>${xnat.version}</nrg.dicomtools.version>
         <nrg.dicomimageutils.version>${xnat.version}</nrg.dicomimageutils.version>
-        <nrg.dicom-edit4.version>1.1.0</nrg.dicom-edit4.version>
-        <nrg.dicom-edit6.version>6.5.1</nrg.dicom-edit6.version>
-        <nrg.dicomdb.version>5.2</nrg.dicomdb.version>
+        <nrg.dicom-edit4.version>${xnat.version}</nrg.dicom-edit4.version>
+        <nrg.dicom-edit6.version>6.6.0-RC-SNAPSHOT</nrg.dicom-edit6.version>
+        <nrg.dicomdb.version>${xnat.version}</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${xnat.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${xnat.version}</nrg.ecat4xnat.version>
-        <nrg.ecat.version>1.1.0</nrg.ecat.version>
-        <nrg.extattr.version>4.3.1</nrg.extattr.version>
+        <nrg.ecat.version>${xnat.version}</nrg.ecat.version>
+        <nrg.extattr.version>${xnat.version}</nrg.extattr.version>
         <nrg.prearcimporter.version>${xnat.version}</nrg.prearcimporter.version>
         <nrg.sessionbuilders.version>${xnat.version}</nrg.sessionbuilders.version>
         <nrg.plexiviewer.version>${xnat.version}</nrg.plexiviewer.version>
@@ -263,7 +261,6 @@
         <xalan.version>2.7.2</xalan.version>
         <xbean.version>3.17</xbean.version>
         <xmlbeans.version>2.6.0</xmlbeans.version>
-        <xstream.version>1.4.9</xstream.version>
 
         <!-- Gradle plugin versions -->
         <gradle-git.version>0.12.1</gradle-git.version>
@@ -1140,6 +1137,11 @@
             </dependency>
             <dependency>
                 <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-mime</artifactId>
+                <version>${dcm4che5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcm4che</groupId>
                 <artifactId>dcm4che-net</artifactId>
                 <version>${dcm4che5.version}</version>
             </dependency>
@@ -1391,6 +1393,11 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-csv</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>

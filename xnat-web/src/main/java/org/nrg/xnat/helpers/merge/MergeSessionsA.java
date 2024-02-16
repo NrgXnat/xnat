@@ -156,7 +156,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                 }
             }
 
-            deleteEmptyDirectoriesRecursively(srcDIR);
+            MergeUtils.deleteEmptyDirectoriesRecursively(srcDIR);
 
             mergeDirectories(srcDIR, destDIR, overwriteFiles);
 
@@ -192,23 +192,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
         }
     }
 
-    private static void deleteEmptyDirectoriesRecursively(final File folder) {
-        if(!folder.isDirectory()){
-            return;
-        }
-        if(folder.isDirectory() && folder.listFiles() != null && folder.listFiles().length > 0){
-            for (final File fileEntry : folder.listFiles()) {
-                if (fileEntry.isDirectory()) {
-                    deleteEmptyDirectoriesRecursively(fileEntry);
-                }
-            }
-        }
-        if(folder.isDirectory() && (folder.listFiles() == null || folder.listFiles().length == 0)){
-            folder.delete();
-        }
-    }
-    
-	public A getMerged() {
+    public A getMerged() {
 		return merged;
 	}
 

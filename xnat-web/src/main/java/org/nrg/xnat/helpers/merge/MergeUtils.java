@@ -156,7 +156,29 @@ public class MergeUtils {
                         }
                     }
                 }
+
+                MergeUtils.deleteEmptyDirectoriesRecursively(parent.toFile());
             }
+        }
+    }
+
+    public static void deleteEmptyDirectoriesRecursively(final File folder) {
+        if(!folder.isDirectory()){
+            return;
+        }
+        
+        File[] children = folder.listFiles();
+        if(children != null && children.length > 0){
+            for (final File fileEntry : children) {
+                if (fileEntry.isDirectory()) {
+                    deleteEmptyDirectoriesRecursively(fileEntry);
+                }
+            }
+        }
+
+        children = folder.listFiles();
+        if((children == null || children.length == 0)){
+            folder.delete();
         }
     }
 }

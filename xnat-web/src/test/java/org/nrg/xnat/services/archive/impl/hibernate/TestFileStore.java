@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
@@ -35,7 +36,7 @@ import java.nio.file.Paths;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
 @PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*", "org.xml.sax.*"})
-@ContextConfiguration(classes = TestFileStoreConfig.class)
+@ContextConfiguration(classes = {TestFileStoreConfig.class, SerializerConfig.class})
 public class TestFileStore {
     @After
     public void cleanup() throws IOException {

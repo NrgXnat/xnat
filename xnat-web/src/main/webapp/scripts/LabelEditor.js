@@ -103,7 +103,7 @@ XNAT.app._label.LabelEditorP=function(_config,uri,currentLabel){
 			        	        this.selector.onModification.fire();
 			        	        this.cancel();
 					}else{
-					    if(confirm("Modifying the " + this.selector.config.header + " of an imaging " + XNAT.app.displayNames.singular.imageSession.toLowerCase() + " will result in the moving of files on the file server within the " + XNAT.app.displayNames.singular.project.toLowerCase() + "'s storage space.  " + (XNAT.app.rerunProjectAnonOnRename?"If a project level anonymization script is configured, it will result in the re-execution of project level anonymization.":"") + " Are you sure you want to make this change?")){
+					    if(confirm("Modifying the " + this.selector.config.header + " of an imaging " + XNAT.app.displayNames.singular.imageSession.toLowerCase() + " will result in the moving of files on the file server within the " + XNAT.app.displayNames.singular.project.toLowerCase() + "'s storage space.  " + (XNAT.app.rerunProjectAnonOnRename?"If a project level anonymization script is configured, it will result in the re-execution of project level anonymization (though reject statements will be ignored).":"") + " Are you sure you want to make this change?")){
 					    	if(showReason){
                     			var justification=new XNAT.app.requestJustification("label_change","Label Modification Justification",XNAT.app.modifyLabel,this);
                     		}else{

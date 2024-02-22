@@ -622,7 +622,7 @@ function SubjectEditor(_config) {
                                 content: "<p>Modifying the " + XNAT.app.displayNames.singular.subject.toLowerCase() + 
                                          " of an experiment may result in the moving of files on the file server into the new " + 
                                          XNAT.app.displayNames.singular.subject.toLowerCase() + 
-                                         "'s storage space.  " + (XNAT.app.rerunProjectAnonOnRename?" If a project level anonymization script is configured, it will result in the re-execution of project level anonymization (though reject statements will be ignored).":"") + " Are you sure you want to make this change?</p>",
+                                         "'s storage space." + (XNAT.app.rerunProjectAnonOnRename?" If a project level anonymization script is configured, it will result in the re-execution of project level anonymization (though reject statements will be ignored).":"") + " Are you sure you want to make this change?</p>",
                                 okAction: function(){
                                     if(showReason){
                                         var justification=new XNAT.app.requestJustification("file",XNAT.app.displayNames.singular.subject + " Modification Justification",XNAT.app._modifySubject,this);
@@ -790,7 +790,7 @@ function LabelEditor(_config) {
                                      XNAT.app.displayNames.singular.imageSession.toLowerCase() + 
                                      " will result in the moving of files on the file server within the " + 
                                      XNAT.app.displayNames.singular.project.toLowerCase() + 
-                                     "'s storage space. If a project level anonymization script is configured, it will result in the re-execution of project level anonymization (though reject statements will be ignored). Are you sure you want to make this change?</p>",
+                                     "'s storage space." + (XNAT.app.rerunProjectAnonOnRename?" If a project level anonymization script is configured, it will result in the re-execution of project level anonymization (though reject statements will be ignored).":"") + " Are you sure you want to make this change?</p>",
                             okAction: function(){
                                 if(showReason){
                                     var justification=new XNAT.app.requestJustification("file",XNAT.app.displayNames.singular.imageSession + " Modification Justification",XNAT.app._modifyLabel,this);

@@ -1686,6 +1686,10 @@ seriesImportFilter:
     contentType: json
     url: /xapi/siteConfig
     contents:
+        cautionMessage:
+            tag: div.warning.bold
+            content: >
+                Caution: This feature has been deprecated as of XNAT 1.8.10 and will be removed from future versions. Series filtering and rejection can now be managed natively within DicomEdit anonymization scripts. See <a href="https://wiki.xnat.org/documentation/how-to-write-a-series-import-filter" target="_blank">documentation for details</a>. (Note: Support for modality maps will not be preserved.)
         enableSitewideSeriesImportFilter:
             kind: panel.input.switchbox
             name: enableSitewideSeriesImportFilter
@@ -1696,8 +1700,6 @@ seriesImportFilter:
             kind: panel.select.single
             name: sitewideSeriesImportFilterMode
             label: Filter Mode
-            description: >
-                Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload assistant. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
             options:
                 whitelist: Whitelist
                 blacklist: Blacklist

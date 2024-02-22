@@ -379,6 +379,13 @@
     <div>
         <table id="series_import_filter_table">
             <tr>
+                <td>
+                    <div class="alert warning bold">
+                        Caution: This feature has been deprecated as of XNAT 1.8.10 and will be removed from future versions. Series filtering and rejection can now be managed natively within DicomEdit anonymization scripts. See <a href="https://wiki.xnat.org/documentation/how-to-write-a-series-import-filter" target="_blank">documentation for details</a>. (Note: Support for modality maps will not be preserved.)
+                    </div>
+                </td>
+            </tr>
+            <tr>
                 <td colspan="2" class="highlighted" id="series_import_filter_container">
                 ## WHY IS THIS IN A TABLE? C'MON MAN, IT'S 2015
                     <table cellspacing="8">
@@ -400,20 +407,6 @@
                                     <option value="blacklist">Blacklist</option>
                                     <option value="modalityMap">Modality Map</option>
                                 </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="info">
-                                    Creating a whitelist means that <i>only</i> DICOM series with a series description
-                                    that matches one of series filter patterns will be considered by XNAT import tools
-                                    such as the <a href="$link.setPage("UploadAssistantPage.vm")">XNAT Desktop Applications</a>.
-                                    Creating a blacklist means that all DICOM series will be considered
-                                    <i>except</i> for series that have one of the specified series filter patterns. A
-                                    modality map lets you specify boolean expressions in JavaScript that can use DICOM
-                                    header values from incoming DICOM objects to decide the appropriate modality for the
-                                    destination session.
-                                </div>
                             </td>
                         </tr>
                         <tr>

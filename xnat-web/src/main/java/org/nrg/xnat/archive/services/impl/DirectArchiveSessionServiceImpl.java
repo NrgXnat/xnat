@@ -193,13 +193,14 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                     anonymized = false;
                 } else {
                     MergeUtils.deleteRejectedFiles(log, anonResults, project);
-                    MergeUtils.deleteEmptyDirectoriesRecursively(new File(location));
                     anonymized = true;
                     // rebuild XML and update session
                     PrearcUtils.buildSession(target);
                     session = populateSession(user, location, project);
                 }
             }
+
+            MergeUtils.deleteEmptyDirectoriesRecursively(new File(location));
 
             setSessionId(session);
             // TODO get rid of this check once XNAT-6889 is fixed

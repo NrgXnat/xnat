@@ -1195,6 +1195,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
             if(Groups.isDataAccess(username) || Groups.isDataAdmin(username)){
                 readableCounts.putAll(getTotalCounts());
+                readableCounts.putAll(getAllScanCounts());
             }else{
                 final List<String> readableProjects = getUserReadableProjects(username);
                 readableCounts.put(XnatProjectdata.SCHEMA_ELEMENT_NAME, (long) readableProjects.size());
@@ -1546,6 +1547,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
         readableExperimentCounts.put(XnatSubjectdata.SCHEMA_ELEMENT_NAME, Optional.ofNullable(readableSubjectCount).orElse(0L));
         return readableExperimentCounts;
+    }
+
+    private Map<String,Long> getAllScanCounts(){
+        return _template.query(QUERY_ALL_SCAN_COUNT, EmptySqlParameterSource.INSTANCE, ELEMENT_COUNT_EXTRACTOR);
     }
 
     private List<UserGroupI> getGroups(final String type, final String id) throws ItemNotFoundException {
@@ -2086,6 +2091,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final Pattern REGEX_USER_READABLE_COUNTS         = Pattern.compile("^(?<prefix>" + USER_ELEMENT_PREFIX + "):(?<username>[^:]+):" + READABLE + "$");
     private static final Pattern REGEX_USER_PROJECT_ACCESS_CACHE_ID = Pattern.compile("^" + USER_ELEMENT_PREFIX + ":(?<username>[A-z0-9_]+):" + XnatProjectdata.SCHEMA_ELEMENT_NAME + ":(?<access>[A-z]+)$");
     private static final String  GUEST_CACHE_ID                     = getCacheIdForUserElements(DEFAULT_GUEST_USERNAME, BROWSEABLE);
+
+    private static final String QUERY_ALL_SCAN_COUNT = "SELECT element_name, COUNT(ID) AS element_count FROM xnat_imageScanData scan LEFT JOIN xdat_meta_element xme ON scan.extension=xme.xdat_meta_element_id GROUP BY element_name";
 
     private static final Predicate<ElementDisplay> CONTAINS_MR_SESSION = display -> StringUtils.equalsIgnoreCase(XnatMrsessiondata.SCHEMA_ELEMENT_NAME, display.getElementName());
 

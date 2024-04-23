@@ -11,6 +11,9 @@ page](https://download.xnat.org).
 
 If you would like to build a virtual machine that can run XNAT, try using the [XNAT Vagrant project](https://bitbucket.org/xnatdev/xnat-vagrant).
 
+If you would like to contribute to `xnat-web`, please see the
+[contributing guide](./contributing.md).
+
 # Building #
 
 ## Configuring ##

@@ -94,7 +94,7 @@ RestSharer = function(_array,_config) {
 		var header=_div.appendChild(document.createElement("div"));
         header.innerHTML='<p style="margin-top:10px;margin-bottom:20px;font-size:14px;">Share the following resources into <b>' + this.config.project.label + '</b></p>' +
             '<input id="checkAll" type="button" value="Uncheck All" onclick="toggleShareCheckboxes(this);" style="width:110px;margin-bottom:10px;font-size:12px;"/>' +
-            '<style>div.yui-dt table{ width:100%; }</style>';
+            '<style>div.yui-dt table{ width:100%; } </style>';
         header.style.width = 100+'%';
 		var t=_div.appendChild(document.createElement("div"));
 		var dataSource = new YAHOO.util.DataSource(this.a);

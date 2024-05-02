@@ -46,6 +46,7 @@ targetCompatibility = 1.8
 
 war.archiveBaseName.set hasProperty("archiveName") ? (archiveName.endsWith(".war") ? archiveName : "${archiveName}.war") : "xnat-web"
 
+
 configurations {
     javadocCoverage
 
@@ -281,6 +282,8 @@ dependencies {
     implementation "org.apache.activemq:activemq-spring"
     implementation "org.apache.activemq:activemq-kahadb-store"
     implementation "org.apache.activemq:activemq-jdbc-store"
+    implementation "io.micrometer:micrometer-core"
+    implementation "io.micrometer:micrometer-registry-prometheus"
 
     implementation "org.slf4j:slf4j-api"
     implementation "org.slf4j:jul-to-slf4j"

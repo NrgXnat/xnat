@@ -10,9 +10,8 @@
 package org.nrg.xnat.utils;
 
 import java.io.IOException;
-import java.util.Optional;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,7 +32,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.codec.Base64;
 
 import javax.annotation.Nonnull;
@@ -44,6 +42,11 @@ import java.text.ParseException;
 
 @Slf4j
 public class XnatHttpUtils {
+
+    public static final String HTTP_SERVER_REQUESTS_METRIC_NAME = "http.server.requests";
+    public static final String HTTP_SERVER_REQUESTS_ERROR_METRIC_NAME = "http.server.requests.error";
+
+    public static final String REQUEST_START_INSTANT      = "start_time";
     private static final String PARAM_LOGIN_METHOD      = "login_method";
     private static final String PARAM_USERNAME          = "username";
     private static final String PARAM_PASSWORD          = "password";

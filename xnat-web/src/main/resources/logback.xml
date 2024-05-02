@@ -346,6 +346,16 @@
             <fileNamePattern>${xnat.home}/logs/customvariablemigration.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
+    <appender name="observation" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <file>${xnat.home}/logs/observation.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/observation.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
 
     <root level="ERROR">
         <appender-ref ref="app"/>
@@ -607,5 +617,8 @@
     </logger>
     <logger name="org.nrg.xnat.customforms.customvariable.migration" additivity="false" level="INFO">
         <appender-ref ref="customvariablemigration"/>
+    </logger>
+    <logger name="org.nrg.xnat.micrometer" additivity="false" level="INFO">
+        <appender-ref ref="observation"/>
     </logger>
 </configuration>

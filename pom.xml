@@ -288,6 +288,10 @@
         <maven-war-plugin.version>3.3.1</maven-war-plugin.version>
         <javadoc-coverage.version>1.1.1</javadoc-coverage.version>
 
+        <!-- Micrometer Dependency versions -->
+        <micrometer-core.version>1.12.4</micrometer-core.version>
+        <datasource-micrometer.version>1.0.3</datasource-micrometer.version>
+
     </properties>
 
     <dependencyManagement>
@@ -2186,6 +2190,21 @@
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>${jayway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${micrometer-core.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>net.ttddyy.observation</groupId>
+                <artifactId>datasource-micrometer</artifactId>
+                <version>${datasource-micrometer.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

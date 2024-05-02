@@ -11,6 +11,7 @@ package org.nrg.xapi.rest.settings;
 
 import com.google.common.collect.ImmutableSet;
 import io.swagger.annotations.*;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -37,7 +38,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,6 +51,10 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 import static org.springframework.http.MediaType.*;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
+
 
 @Api
 @XapiRestController
@@ -55,12 +62,16 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @Slf4j
 public class SiteConfigApi extends AbstractXapiRestController {
     @Autowired
-    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo, final SiteConfigAccess access, final NamedParameterJdbcTemplate template) {
+    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService,
+                         final RoleHolder roleHolder, final XnatAppInfo appInfo, final SiteConfigAccess access,
+                         final NamedParameterJdbcTemplate template,
+                         final MeterRegistry meterRegistry){
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
         _access = access;
         _template = template;
+        _meterRegistry = meterRegistry;
     }
 
     @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -100,6 +111,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
         // Is this call initializing the system?
         final boolean isInitialized  = _appInfo.isInitialized();
         final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && getInitializedValue(properties.get("initialized"));
+        final Hashtable<String, String> filePaths = extractFilePaths();
 
         // First try to handle any submitted preferences that should be handled as a group.
         final List<? extends Set<String>> includedPrefsGroups = findPrefsGroups(properties.keySet());
@@ -157,6 +169,17 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 // Now make the initialized setting true. This will kick off the initialized event handler.
                 _preferences.setInitialized(true);
             }
+            final Hashtable<String, String> updatedFilePaths = extractFilePaths();
+            filePaths.forEach((k,v) -> {
+                final String updatedValue = updatedFilePaths.get(k);
+                if (updatedValue != null && updatedValue != v) {
+                    File file = new File(updatedValue);
+                    if (file.exists()) {
+                        new DiskSpaceMetrics(file, Collections.singletonList(Tag.of(k, updatedValue))).bindTo(_meterRegistry);
+                    }
+                }
+            });
+
         }
     }
 
@@ -282,11 +305,42 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return BooleanUtils.toBoolean(initialized.toString());
     }
 
+    private Hashtable<String, String> extractFilePaths() {
+        Hashtable<String, String> filePaths = new Hashtable<>();
+        if (_preferences.getArchivePath() != null) {
+            filePaths.put("archivePath", _preferences.getArchivePath());
+        }
+        if (_preferences.getPrearchivePath() != null) {
+            filePaths.put("prearchivePath", _preferences.getPrearchivePath());
+        }
+        if (_preferences.getCachePath() != null) {
+            filePaths.put("cachePath", _preferences.getCachePath());
+        }
+        if (_preferences.getFtpPath() != null) {
+            filePaths.put("ftpPath", _preferences.getFtpPath());
+        }
+        if (_preferences.getBuildPath() != null) {
+            filePaths.put("buildPath", _preferences.getBuildPath());
+        }
+        if (_preferences.getPipelinePath() != null) {
+            filePaths.put("pipelinePath", _preferences.getPipelinePath());
+        }
+        if (_preferences.getInboxPath() != null) {
+            filePaths.put("inboxPath", _preferences.getInboxPath());
+        }
+        if (_preferences.getTriagePath() != null) {
+            filePaths.put("triagePath", _preferences.getTriagePath());
+        }
+        return filePaths;
+    }
+
+
     private static final String                      EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
     private static final List<? extends Set<String>> PREFS_GROUPS = Collections.singletonList(ImmutableSet.of("enableSitewideSeriesImportFilter", "sitewideSeriesImportFilterMode", "sitewideSeriesImportFilter"));
 
-    private final SiteConfigPreferences      _preferences;
-    private final XnatAppInfo                _appInfo;
-    private final SiteConfigAccess           _access;
+    private final SiteConfigPreferences _preferences;
+    private final XnatAppInfo _appInfo;
+    private final SiteConfigAccess _access;
     private final NamedParameterJdbcTemplate _template;
+    private final MeterRegistry _meterRegistry;
 }

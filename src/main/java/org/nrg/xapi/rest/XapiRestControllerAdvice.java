@@ -9,6 +9,12 @@
 
 package org.nrg.xapi.rest;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.transport.RequestReplyReceiverContext;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.action.ClientException;
@@ -31,6 +37,7 @@ import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.exception.XftItemException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.micrometer.observation.handler.RequestObservationHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpHeaders;
@@ -46,14 +53,19 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.Instant;
 
 import static org.apache.commons.lang3.StringUtils.contains;
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.nrg.xnat.utils.XnatHttpUtils.HTTP_SERVER_REQUESTS_ERROR_METRIC_NAME;
+import static org.nrg.xnat.utils.XnatHttpUtils.HTTP_SERVER_REQUESTS_METRIC_NAME;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -66,9 +78,11 @@ import static org.springframework.http.HttpStatus.valueOf;
 @ControllerAdvice(annotations = XapiRestController.class)
 @Slf4j
 public class XapiRestControllerAdvice {
+
     @Autowired
-    public XapiRestControllerAdvice(final SiteConfigPreferences preferences) {
-        _realm = XapiUtils.getWwwAuthenticateBasicHeaders(preferences.getSiteId());
+    public XapiRestControllerAdvice(final SiteConfigPreferences preferences, final ObservationRegistry observationRegistry) {
+        realm = XapiUtils.getWwwAuthenticateBasicHeaders(preferences.getSiteId());
+        this.observationRegistry = observationRegistry;
     }
 
     @ExceptionHandler(DICOMReceiverWithDuplicateTitleAndPortException.class)
@@ -205,8 +219,15 @@ public class XapiRestControllerAdvice {
 
         final ResponseEntity.BodyBuilder builder = ResponseEntity.status(resolvedStatus);
         if (status == UNAUTHORIZED) {
-            builder.headers(_realm);
+            builder.headers(realm);
         }
+        //Observations
+        new RequestObservationHandler(observationRegistry)
+                .doObserveError(requestUri, request.getMethod(), resolvedStatus, username,
+                                throwable != null ? throwable.getClass().getName() : null,
+                                request.getHeader("User-Agent"),
+                                resolvedMessage);
+
         return isBlank(resolvedMessage) ? builder.contentLength(0).build() : builder.contentType(MediaType.TEXT_PLAIN).contentLength(resolvedMessage.length()).body(resolvedMessage);
     }
 
@@ -217,5 +238,6 @@ public class XapiRestControllerAdvice {
 
     private static final HttpStatus DEFAULT_ERROR_STATUS = INTERNAL_SERVER_ERROR;
 
-    private final HttpHeaders _realm;
+    private final HttpHeaders realm;
+    private final ObservationRegistry observationRegistry;
 }

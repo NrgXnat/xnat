@@ -103,7 +103,7 @@ public class AsyncLifecycleMonitor implements CallableProcessingInterceptor {
         return StringUtils.join(superclasses, "->");
     }
 
-    private static String getSessionUsername(final HttpSession session) {
+    public static String getSessionUsername(final HttpSession session) {
         final Object contextCandidate = session.getAttribute(SPRING_SECURITY_CONTEXT_KEY);
         if (contextCandidate instanceof SecurityContext) {
             final SecurityContext context        = (SecurityContext) contextCandidate;

@@ -6,3 +6,5 @@
  */
 
 rootProject.name = 'xnat'
+
+include 'web'

@@ -480,7 +480,7 @@ task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {
 }
 
 task sourceJar(type: Jar, dependsOn: classes) {
-    classifier "sources"
+    archiveClassifier = "sources"
     manifest {
         from gitManifest
     }
@@ -488,7 +488,7 @@ task sourceJar(type: Jar, dependsOn: classes) {
 }
 
 task javadocJar(type: Jar) {
-    classifier "javadoc"
+    archiveClassifier = "javadoc"
     manifest {
         from gitManifest
     }

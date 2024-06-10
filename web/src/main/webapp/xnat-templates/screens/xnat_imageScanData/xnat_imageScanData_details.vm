@@ -1,0 +1,86 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
+#* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+<!-- BEGIN xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->
+#macro(escapeProperty $prop)#escapeCleanHTML("$!scan.getProperty($prop)")#end
+<table class="xnat-table alt1 compact rows-only scan-details scan-details-table" style="border: none;">
+        <tr>
+            <th>Image</th>
+            <td align="left">
+                <span>#scanSnapshotImage($content $om $scan)</span>
+            </td>
+        </tr>
+	#if($scan.getProperty("quality"))
+        <tr>
+            <th>Quality</th>
+            <td align="left"><span>#escapeProperty("quality")</span></td>
+        </tr>
+	#end
+	#if($scan.getProperty("startTime"))
+        <tr>
+            <th>Start Time</th>
+            <td align="left"><span>#escapeProperty("startTime")</span></td>
+        </tr>
+	#end
+	#if($scan.getProperty("condition"))
+        <tr>
+            <th>Condition</th>
+            <td align="left"><span>#escapeProperty("condition")</span></td>
+        </tr>
+	#end
+	#if($scan.getProperty("series_description"))
+        <tr>
+            <th>Series Desc</th>
+            <td align="left"><span>#escapeProperty("series_description")</span></td>
+        </tr>
+	#end
+	#if($scan.getProperty("modality"))
+        <tr>
+            <th>Modality</th>
+            <td align="left"><span>#escapeProperty("modality")</span></td>
+        </tr>
+	#end
+	#if($scan.getProperty("frames"))
+        <tr>
+            <th>Frames</th>
+            <td align="left"><span>#escapeProperty("frames")</span></td>
+        </tr>
+	#end
+    #if($scan.getProperty("note"))
+        <tr>
+            <th>Note</th>
+            <td align="left"><span>#escapeProperty("note")</span></td>
+        </tr>
+    #end
+    #foreach($addP in $turbineUtils.sortByName($scan.getParameters_addparam()))
+        <tr>
+            <th>$!addP.getName()</th>
+            <td align="left"><span class="truncate">#escapeCleanHTML($!addP.getAddfield())</span></td>
+        </tr>
+    #end
+
+	#if($scan.getUid())
+    <tr>
+        <td></td>
+        <td>
+			<a target="_blank" class="view-dicom-headers" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">
+                View DICOM Headers
+            </a>
+		</td>
+	</tr>
+	#end
+	
+	#if ($scan.getParameters_ecatcalibrationfactor())
+	<tr>
+		<td></td>
+		<td>
+			<a target="_blank" class="view-dicom-headers" href="$content.getURI("/REST/services/ecatdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=EcatScanTable.vm")">
+					View ECAT Headers
+			</a>
+		</td>
+	</tr>
+	#end
+	
+</table>
+<!-- END xnat-templates/screens/xnat_imageScanData/xnat_imageScanData_details.vm -->

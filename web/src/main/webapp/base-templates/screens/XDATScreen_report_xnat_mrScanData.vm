@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("MRScan Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>MRScan Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>image_session_ID</TD><TD>$!item.getStringProperty("xnat:mrScanData/image_session_ID")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:mrScanData/note")</TD></TR>
+							<TR><TD>quality</TD><TD>$!item.getStringProperty("xnat:mrScanData/quality")</TD></TR>
+							<TR><TD>condition</TD><TD>$!item.getStringProperty("xnat:mrScanData/condition")</TD></TR>
+							<TR><TD>series_description</TD><TD>$!item.getStringProperty("xnat:mrScanData/series_description")</TD></TR>
+							<TR><TD>documentation</TD><TD>$!item.getStringProperty("xnat:mrScanData/documentation")</TD></TR>
+							<TR><TD>scanner</TD><TD>$!item.getStringProperty("xnat:mrScanData/scanner")</TD></TR>
+							<TR><TD>scanner/manufacturer</TD><TD>$!item.getStringProperty("xnat:mrScanData/scanner/manufacturer")</TD></TR>
+							<TR><TD>scanner/model</TD><TD>$!item.getStringProperty("xnat:mrScanData/scanner/model")</TD></TR>
+							<TR><TD>modality</TD><TD>$!item.getStringProperty("xnat:mrScanData/modality")</TD></TR>
+							<TR><TD>frames</TD><TD>$!item.getIntegerProperty("xnat:mrScanData/frames")</TD></TR>
+							<TR><TD>operator</TD><TD>$!item.getStringProperty("xnat:mrScanData/operator")</TD></TR>
+							<TR><TD>startTime</TD><TD>$!item.getProperty("xnat:mrScanData/startTime")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:mrScanData/ID")</TD></TR>
+							<TR><TD>type</TD><TD>$!item.getStringProperty("xnat:mrScanData/type")</TD></TR>
+							<TR><TD>UID</TD><TD>$!item.getStringProperty("xnat:mrScanData/UID")</TD></TR>
+							<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:mrScanData/project")</TD></TR>
+							<TR><TD>coil</TD><TD>$!item.getStringProperty("xnat:mrScanData/coil")</TD></TR>
+							<TR><TD>fieldStrength</TD><TD>$!item.getStringProperty("xnat:mrScanData/fieldStrength")</TD></TR>
+							<TR><TD>marker</TD><TD>$!item.getStringProperty("xnat:mrScanData/marker")</TD></TR>
+							<TR><TD>stabilization</TD><TD>$!item.getStringProperty("xnat:mrScanData/stabilization")</TD></TR>
+							<TR><TD>parameters/voxelRes/units</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/voxelRes/units")</TD></TR>
+							<TR><TD>parameters/voxelRes/x</TD><TD>$!item.getDoubleProperty("xnat:mrScanData/parameters/voxelRes/x")</TD></TR>
+							<TR><TD>parameters/voxelRes/y</TD><TD>$!item.getDoubleProperty("xnat:mrScanData/parameters/voxelRes/y")</TD></TR>
+							<TR><TD>parameters/voxelRes/z</TD><TD>$!item.getDoubleProperty("xnat:mrScanData/parameters/voxelRes/z")</TD></TR>
+							<TR><TD>parameters/orientation</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/orientation")</TD></TR>
+							<TR><TD>parameters/fov/x</TD><TD>$!item.getIntegerProperty("xnat:mrScanData/parameters/fov/x")</TD></TR>
+							<TR><TD>parameters/fov/y</TD><TD>$!item.getIntegerProperty("xnat:mrScanData/parameters/fov/y")</TD></TR>
+							<TR><TD>parameters/matrix/x</TD><TD>$!item.getIntegerProperty("xnat:mrScanData/parameters/matrix/x")</TD></TR>
+							<TR><TD>parameters/matrix/y</TD><TD>$!item.getIntegerProperty("xnat:mrScanData/parameters/matrix/y")</TD></TR>
+							<TR><TD>parameters/partitions</TD><TD>$!item.getIntegerProperty("xnat:mrScanData/parameters/partitions")</TD></TR>
+							<TR><TD>parameters/tr</TD><TD>$!item.getDoubleProperty("xnat:mrScanData/parameters/tr")</TD></TR>
+							<TR><TD>parameters/te</TD><TD>$!item.getDoubleProperty("xnat:mrScanData/parameters/te")</TD></TR>
+							<TR><TD>parameters/ti</TD><TD>$!item.getDoubleProperty("xnat:mrScanData/parameters/ti")</TD></TR>
+							<TR><TD>parameters/flip</TD><TD>$!item.getIntegerProperty("xnat:mrScanData/parameters/flip")</TD></TR>
+							<TR><TD>parameters/sequence</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/sequence")</TD></TR>
+							<TR><TD>parameters/origin</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/origin")</TD></TR>
+							<TR><TD>parameters/imageType</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/imageType")</TD></TR>
+							<TR><TD>parameters/scanSequence</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/scanSequence")</TD></TR>
+							<TR><TD>parameters/seqVariant</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/seqVariant")</TD></TR>
+							<TR><TD>parameters/scanOptions</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/scanOptions")</TD></TR>
+							<TR><TD>parameters/acqType</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/acqType")</TD></TR>
+							<TR><TD>parameters/coil</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/coil")</TD></TR>
+							<TR><TD>parameters/dtiAcqCount</TD><TD>$!item.getIntegerProperty("xnat:mrScanData/parameters/dtiAcqCount")</TD></TR>
+							<TR><TD>parameters/pixelBandwidth</TD><TD>$!item.getDoubleProperty("xnat:mrScanData/parameters/pixelBandwidth")</TD></TR>
+							<TR><TD>parameters/diffusion/bValues</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/diffusion/bValues")</TD></TR>
+							<TR><TD>parameters/diffusion/directionality</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/diffusion/directionality")</TD></TR>
+							<TR><TD>parameters/diffusion/orientations</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/diffusion/orientations")</TD></TR>
+							<TR><TD>parameters/diffusion/anisotropyType</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/diffusion/anisotropyType")</TD></TR>
+							<TR><TD>dcmValidation</TD><TD>$!item.getStringProperty("xnat:mrScanData/dcmValidation")</TD></TR>
+							<TR><TD>dcmValidation/status</TD><TD>$!item.getBooleanProperty("xnat:mrScanData/dcmValidation/status")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:mrScanData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_imageScanData_share_1_NUM_ROWS=$item.getChildItems("xnat:mrScanData/sharing/share").size() - 1)
+							#if($xnat_imageScanData_share_1_NUM_ROWS>=0)
+								#foreach($xnat_imageScanData_share_1_COUNTER in [0..$xnat_imageScanData_share_1_NUM_ROWS])
+<!-- BEGIN xnat:mrScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:mrScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>share</TD><TD>$!item.getStringProperty("xnat:mrScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/share")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:mrScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/label")</TD></TR>
+													<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:mrScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/project")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:mrScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_2_NUM_ROWS=$item.getChildItems("xnat:mrScanData/file").size() - 1)
+							#if($xnat_abstractResource_2_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_2_COUNTER in [0..$xnat_abstractResource_2_NUM_ROWS])
+<!-- BEGIN xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_3_NUM_ROWS=$item.getChildItems("xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_3_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_3_COUNTER in [0..$xnat_abstractResource_tag_3_NUM_ROWS])
+<!-- BEGIN xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:mrScanData/file[$xnat_abstractResource_2_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:mrScanData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:mrScanData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>$!item.getStringProperty("xnat:mrScanData/validation/method")</TD></TR>
+										<TR><TD>date</TD><TD>$!item.getProperty("xnat:mrScanData/validation/date")</TD></TR>
+										<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat:mrScanData/validation/notes")</TD></TR>
+										<TR><TD>validated_by</TD><TD>$!item.getStringProperty("xnat:mrScanData/validation/validated_by")</TD></TR>
+										<TR><TD>status</TD><TD>$!item.getStringProperty("xnat:mrScanData/validation/status")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:mrScanData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_addField_5_NUM_ROWS=$item.getChildItems("xnat:mrScanData/parameters/addParam").size() - 1)
+							#if($xnat_addField_5_NUM_ROWS>=0)
+								#foreach($xnat_addField_5_COUNTER in [0..$xnat_addField_5_NUM_ROWS])
+<!-- BEGIN xnat:mrScanData/parameters/addParam[$xnat_addField_5_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:mrScanData/parameters/addParam[$xnat_addField_5_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>addField</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/addParam[$xnat_addField_5_COUNTER]/addField")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:mrScanData/parameters/addParam[$xnat_addField_5_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:mrScanData/parameters/addParam[$xnat_addField_5_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:mrScanData -->
+		</TD>
+	</TR>
+</TABLE>

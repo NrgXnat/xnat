@@ -1,0 +1,39 @@
+#* @vtlmacrolibrary path="../../../xdat-templates/macros/TurbineMacros.vm" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatExperimentdata" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+<!-- BEGIN xnat-templates/screens/xnat_experimentData/xnat_experimentData_keyFields.vm -->
+<tr>
+    #formLabel("Accession #:")
+    <TD>$!om.getId()</TD>
+</tr>
+<tr>
+    #formLabel("Date Added:")
+    <TD>
+        #if($om.getInsertDate())
+            $turbineUtils.formatDateTime($!om.InsertDate) ($!om.InsertUser.Login)
+        #end
+    </TD>
+</tr>
+#if($!item.getProperty("date"))
+<tr>
+    <th align="left">Date:</th>
+    <td>$turbineUtils.formatDate($!item.getDateProperty("date"))</td>
+</tr>
+#end
+#if($!item.getProperty("time"))
+<tr>
+    <th align="left">Time:</th>
+    <td>$!item.getProperty("time")</td>
+</tr>
+#end
+#if($!item.getProperty("investigator.firstname"))
+<tr>
+    <th align="left">Investigator:</th>
+    <td>#escapeCleanHTML(
+        "$!item.getProperty('investigator.firstname') $!item.getProperty('investigator.lastname')")</td>
+</tr>
+#end
+
+#parse("/screens/visit/visit_details.vm")
+<!-- END xnat-templates/screens/xnat_experimentData/xnat_experimentData_keyFields.vm -->

@@ -1,0 +1,13 @@
+
+public class StoreXML{
+
+    public String store(String _file,Boolean _quarantine,Boolean _allowDataDeletion) throws java.rmi.RemoteException
+    {
+        return org.nrg.xdat.services.StoreXML.Store(_file,_quarantine,_allowDataDeletion);
+    }
+    
+    public String store(String _session_id,String _file,Boolean _quarantine,Boolean _allowDataDeletion) throws java.rmi.RemoteException
+    {
+        return org.nrg.xdat.services.StoreXML.Store(_session_id,_file,_quarantine,_allowDataDeletion);
+    }
+}

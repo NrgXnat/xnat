@@ -1,0 +1,82 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$data.setLayoutTemplate("/Popup.vm")
+#set ($popup=$turbineUtils.GetPassedParameter("popup",$data))
+<script type="text/javascript">
+
+<!--
+
+function popup(mylink, windowname)
+
+{
+
+if (! window.focus)return true;
+
+var href;
+
+if (typeof(mylink) == 'string')
+
+   href=mylink;
+
+else
+
+   href=mylink.href;
+
+window.open(href, windowname, 'width=500,height=400,status=yes,resizable=yes,scrollbars=yes');
+
+return false;
+
+}
+
+//-->
+
+</script>
+
+$page.setTitle("Functional Connectivity Database")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+##<font face="$ui.sansSerifFonts">
+
+<form name="BuildOptions" method="post" action="$link.setAction("BuildPipelineActions")" >
+<br>
+<br>
+<br>
+<b>
+  ##<font face="$ui.sansSerifFonts">
+	      Please choose a build to launch
+  ##</font>
+</b>
+
+<table border=0 bodercolor="#CC3333">
+<tr> 
+	 <td> </td> <td> <b>Pipeline Name</b> </td> <td> <b>Description</b> </td> <td> <b>Pipeline Status</b> </td>
+</tr>
+#foreach( $pipeline in $pipelines.keySet() )
+	 <tr>
+	 				    <td><input type="radio" name="pipelineName" value="$pipeline.Name"/> </td>
+	 				    			<input type="hidden" name="${pipeline.Name}_ProjectType" value="$pipelines.get($pipeline)">
+	 				    <td> $pipeline.DisplayText </td>
+		    	 <td> $pipeline.Description </td>
+	 </tr> 
+#end
+	 			<input type="hidden" name="sessions" value="$sessions">       
+	</table>
+    <input type="submit" name="eventSubmit_doContinue" value="Continue" />
+    			&nbsp;&nbsp;
+   	#if ($popup=="false")
+	    	<input type="button" ONCLICK="javascript:history.go(-1)" value="Back"/>
+			&nbsp;&nbsp;
+	    	<input type="button" ONCLICK="javascript:self.close()" value="Close"/>
+       	#else
+	    	<input type="button" ONCLICK="javascript:self.close()" value="Close"/>
+    	#end
+    <p>&nbsp;</p>
+</form>
+
+<script type="text/javascript">
+</script>
+
+

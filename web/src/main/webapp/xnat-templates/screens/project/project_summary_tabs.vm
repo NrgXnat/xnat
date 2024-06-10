@@ -1,0 +1,83 @@
+<!-- BEGIN xnat-templates/screens/project/project_summary_tabs.vm -->
+<div ID="project_summary_module" style="display:none">
+    <DIV id="projectSummary" class="yui-navset">
+        <ul class="yui-nav" style="">
+            <li class="selected"><a href="#tab1"><em>Details</em></a></li>
+            <li><a href="#tab7"><em>Publications</em></a></li>
+            #if($data.getSession().getAttribute("userHelper").canCreate($project))
+                <li><a href="#tab3"><em>Manage Access</em></a></li>
+                <li><a href="#tab4"><em>Manage Pipelines</em></a></li>
+            #end
+            <li><a href="#tab5"><em>Status</em></a></li>
+
+            <li><a href="#tab6"><em>History</em></a></li>
+        </ul>
+        <div class="yui-content">
+            <div id="tab1" class="pad10"><p>
+                <!-- BEGIN DETAILS TAB -->
+                #parse("/screens/project/widgets/project_summary_details.vm")
+                <!-- END DETAILS TAB -->
+            </p></div>
+
+            <div id="tab7" class="pad10"><p>
+                <!-- BEGIN PUBLICATIONS TAB -->
+                #parse("/screens/project/widgets/project_summary_publications.vm")
+                <!-- END PUBLICATIONS TAB -->
+            </p></div>
+
+
+            #if($data.getSession().getAttribute("userHelper").canCreate($project))
+                <div id="tab3" class="pad10"><p>
+                    <!-- BEGIN MANAGEMENT TAB -->
+                    #parse("/screens/project/widgets/project_summary_management.vm")
+                    <!-- END MANAGEMENT TAB -->
+                </p></div>
+            #end
+
+            #if($data.getSession().getAttribute("userHelper").canCreate($project))
+                <div id="tab4" class="pad10"><p>
+                    <!-- BEGIN PIPELINE TAB -->
+                    #parse("/screens/project/widgets/project_summary_pipeline.vm")
+                    <!-- END PIPELINE TAB -->
+                </p></div>
+            #end
+
+
+            <div id="tab5" class="pad10"><p>
+                <!-- BEGIN STATUS TAB -->
+                #parse("/screens/project/widgets/project_summary_status.vm")
+                <!-- END STATUS TAB -->
+            </p></div>
+
+            <div id="tab6" class="pad10"><p>
+                <!-- BEGIN HISTORY TAB -->
+                #parse("/screens/project/widgets/project_summary_history.vm")
+                <!-- END HISTORY TAB -->
+            </p></div>
+
+
+        </div>
+    </DIV>
+</div>
+<script type="text/javascript">
+    function SummaryTabManagerInit(){
+        var tabView = new YAHOO.widget.TabView('projectSummary');
+        //var headerMenuBar = new YAHOO.widget.Menu("headerMenuBar", {});   
+        //headerMenuBar.render(); 
+        var oButton1 = new YAHOO.widget.Button("button1");
+        var oButton2 = new YAHOO.widget.Button("button2");
+        #if($canEditOrDeleteProject)
+            var oButton3 = new YAHOO.widget.Button("button3");
+        #end
+        #if($canEditOrDeleteProject)
+            var oButton4 = new YAHOO.widget.Button("button4");
+            var oButton5 = new YAHOO.widget.Button("button5");
+        #end
+
+        window.project_summary_module = new YAHOO.widget.Module("project_summary_module", { visible: false });
+        window.project_summary_module.show();
+    }
+
+    YAHOO.util.Event.onDOMReady(SummaryTabManagerInit);
+</script>
+<!-- END xnat-templates/screens/project/project_summary_tabs.vm -->

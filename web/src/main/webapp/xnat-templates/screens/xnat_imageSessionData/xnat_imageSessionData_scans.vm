@@ -1,0 +1,249 @@
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
+#* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
+#* @vtlvariable name="resource" type="org.nrg.xdat.om.XnatAbstractresource" *#
+<!-- BEGIN xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->
+#macro(renderEmptyResourceCount)
+    #if ($data.getSession().getAttribute("userHelper").canEdit($item))
+    <a onclick="window.viewer.init(true);">Show Counts</a>
+    #else
+        #displayListAsTipText(["File Count Unknown", "No files were found associated with this scan. Contact a member or owner of this project to generate the file count data."])
+    #end
+#end
+
+<link rel="stylesheet" href="$content.getURI("scripts/xnat/app/scanTable/scanTable.css")"></link>
+<div class="data-table-container" style="width: #if($siteConfig.uiDisplaySeriesDescription) 1089px #else 889px #end" id="selectable-table-scans">
+    <div class="data-table-titlerow">
+        <h3 class="data-table-title">Scans</h3>
+        <div class="data-table-actionsrow">
+            <span class="textlink-sm data-table-action">
+                Bulk Actions:
+            </span>
+            #if($user.checkRestrictedFeature("$!om.getProject()","data_download"))
+                <button class="btn btn-sm data-table-action do-scan-download disabled">
+                    Download
+                </button>
+            #end
+            #addGlobalCustomScreens("xnat_imageScanData/scanActions")
+        </div>
+    </div>
+
+    #set($scanAssessors =$!om.getScanAssessors())
+    <script type="text/javascript">
+        var XNAT                = getObject(XNAT || {});
+        XNAT.data               = getObject(XNAT.data || {});
+        XNAT.data.context       = getObject(XNAT.data.context || {});
+        XNAT.data.context.scans = [];
+    </script>
+
+
+    <div class="data-table-wrapper" style="padding-right: 0">
+        <table class="xnat-table clean fixed-header selectable" id="scan-data-table">
+            <thead>
+            <tr>
+                <th class="toggle-all" style="width: 45px;">
+                    <input type="checkbox" class="selectable-select-all" id="toggle-all-scans" title="Toggle All Scans" />
+                </th>
+                <th class="left">Scan</th>
+                <th class="left">Type</th>
+                #if($siteConfig.uiDisplaySeriesClass)
+                    <th class="left">Series Class</th>
+                #end
+                #if($siteConfig.uiDisplayScanModality)
+                     <th class="left">Modality</th>
+                #end
+                #if($siteConfig.uiDisplaySeriesDescription)
+                    <th class="left">Series Desc</th>
+                    #set($fileIndex="4")
+                #else
+                    #set($fileIndex="3")
+                #end
+                <th class="left">Usability</th>
+                <th class="left">Files</th>
+                <th class="left">Note</th>
+                <th style="width: 45px;"><span class="run-menu" style="display: none;">Run</span></th>
+            </tr>
+            </thead>
+
+            <tbody>
+
+            #set ($scanWFiles = 0)
+            #if ($om.getSortedScans().isEmpty())
+                <tr valign="top">
+                    <td>
+                        #if ($item.canEdit($user))
+                            <span class="inline-actions">
+                                <a class="uploadImages" data-project="$om.getProject()" data-session="$om.getLabel()"
+                                   data-overwrite="append" data-datatype="$om.getXSIType()"
+                                   data-modal="$!siteConfig.getBooleanValue("uploadDicomViaModal")">
+                                    <i class="fa fa-upload" title="Upload images"></i>
+                                </a>
+                            </span>
+                        #end
+                    </td>
+                    <td colspan="5">
+                        <em>No scans found in this session.</em>
+                    </td>
+                </tr>
+            #else
+                <script>
+                    #foreach($scan in $om.getSortedScans())
+                    XNAT.data.context.scans.push({
+                        id: '#escapeAll("$!scan.getProperty('ID')")',
+                        series_description: '#escapeAll("$!scan.getProperty('series_description')")',
+                        modality: '#escapeAll("$!scan.getProperty('modality')")',
+                        xsitype: '#escapeAll("$!scan.getXSIType()")'
+                    });
+                    #end
+                </script>
+
+                #foreach($scan in $om.getSortedScans())
+                    #set ($scanID =$!scan.getProperty("ID"))
+                    <tr valign="top" id="scan-${scanID}" data-scan="${scanID}">
+                        <td class="scan-actions-controls scan-selector center" style="width: 45px;">
+                            <input type="checkbox" class="selectable-select-one" name="scanAction" value="$scanID" />
+                        </td>
+                        <td class="scan-${scanID}-id" style="width: 120px;">
+                            <span class="inline-actions">
+                                <i class="fa fa-list-alt view-scan-details" data-id="${scanID}" title="View Details"></i>
+                                #if($user.checkRestrictedFeature("$!om.getProject()","data_download"))
+                                    <a href="#!download" data-id="${scanID}" data-xsitype="${om.getXSIType()}" data-expt="$!{om.getId()}" class="download-scan" title="Download: ${scanID}">
+                                        <i class="fa fa-download"></i>
+                                    </a>
+                                #end
+                                #if ($item.canEdit($user))
+                                    <i class="fa fa-upload uploadLink" title="Upload Resource" data-type="xnat:imageScanData" data-props="$!scan.getType()" data-uri="$content.getURI("/data/experiments/$om.getId()/scans/$scan.getId()")"></i>
+                                #end
+                                #if($item.getStatus()!="obsolete" && $item.getStatus()!="locked")
+                                    #if(!$turbineUtils.toBoolean($siteConfig.getProperty("security.prevent-data-deletion","false")) || $siteConfig.getProperty("security.prevent-data-deletion-override","[]").contains($om.getItem().getStatus()))
+                                        #if ($data.getSession().getAttribute("userHelper").canDelete($item))
+                                            <a href="#!delete" data-id="${scanID}" class="delete-scan" title="Delete Scan: ${scanID}">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        #end
+                                    #end
+                                #end
+                            </span>
+                            <a href="#!" class="view-scan-details" data-id="${scanID}">
+                                #escapeCleanHTML(${scanID})
+                            </a>
+                        </td>
+                        <td class="scan-${scanID}-type" style="width: 200px;">
+                            #if($!scan.getProperty("type"))
+                                #escapeCleanHTML($!scan.getProperty("type"))
+                            #end
+                        </td>
+                        #if($siteConfig.uiDisplaySeriesClass)
+                            <td class="scan-${scanID}-series_class" style="width: 200px;">
+                                #if($!scan.getProperty("series_class"))
+                                    #escapeCleanHTML($!scan.getProperty("series_class"))
+                                #end
+                            </td>
+                        #end
+                        #if($siteConfig.uiDisplayScanModality)
+                            <td class="scan-${scanID}-modality" style="width: 200px;">
+                                #if($!scan.getProperty("modality"))
+                                    #escapeCleanHTML($!scan.getProperty("modality"))
+                                #end
+                            </td>
+                        #end
+                        #if($siteConfig.uiDisplaySeriesDescription)
+                            <td class="scan-${scanID}-description" style="width: 200px;">
+                                #if($!scan.getProperty("series_description"))
+                                    #escapeCleanHTML($!scan.getProperty("series_description"))
+                                #end
+                            </td>
+                        #end
+                        <td class="scan-${scanID}-quality left quality-$!scan.getProperty("quality")" style="font-weight:bold; width: 125px" >
+                            #if($!scan.getProperty("quality"))
+                                #escapeCleanHTML($!scan.getProperty("quality"))
+                            #end
+                        </td>
+
+                        <td class="scan-${scanID}-files" style="width: 160px;">
+                            #if($scan.getFile().size()>0)
+
+                                #set($stats = $!scan.getReadableFileStats())
+                                #if("$!stats.get(0)" == "" || $stats.size() == 0 || $stats.get(0).equals("0 B in 0 files"))
+                                    #renderEmptyResourceCount()
+                                #elseif($stats.size() == 1)
+                                    $stats.get(0)
+                                #else
+                                    #displayListAsTipText($stats)
+                                #end
+
+                                #set ($scanWFiles = $scanWFiles+1)
+                            #else
+                                #renderEmptyResourceCount()
+                            #end
+                        </td>
+                        <td id="scan-${scanID}-note">
+                            <div class="scan-note-content pull-left text-left" style="width:85%;" title="$!scan.getProperty("note")">
+                                <span class="truncate">
+                                #if($!scan.getProperty("note"))
+                                    #escapeCleanHTML($!scan.getProperty("note"))
+                                #end
+                                </span>
+                            </div>
+                            #if($item.getStatus()!="obsolete")
+                                #if(!$turbineUtils.toBoolean($siteConfig.getProperty("security.prevent-data-deletion","false")) || $siteConfig.getProperty("security.prevent-data-deletion-override","[]").contains($om.getItem().getStatus()))
+                                    #if ($item.canEdit($user))
+                                        <div class="inline-actions pull-right text-right" style="width:15%;">
+                                            <i class="fa fa-edit edit-scan-note" data-scan-id="${scanID}" title="Edit Note"></i>
+                                        </div>
+                                    #end
+                                #end
+                            #end
+                        </td>
+                        <td class="run-menu inline-actions-menu-container" style="position: relative; width: 24px; display: none;">
+                            <div class="inline-actions-menu-toggle"></div>
+                            <ul class="inline-actions-menu single-scan-actions-menu" style="display:none;"></ul>
+                        </td>
+                    </tr>
+                #end
+
+
+            #end
+            </tbody>
+
+        </table>
+    </div>
+
+    <script src="$content.getURI("/scripts/xnat/app/scanTable/scanTable.js")"></script>
+    <script src="$content.getURI("/scripts/xnat/app/scanTable/selectableTableBehavior.js")"></script>
+
+    #if($scanWFiles>0)
+    <div class="data-table-footer">
+        <span id="total_dicom_files">
+            <b>Total:</b>
+            #set($sessionStats = $om.getSessionReadableScanStats())
+            #if("$!sessionStats.get(0)" == "" || $sessionStats.size() == 0 || $sessionStats.get(0).equals("0 B in 0 files"))
+                #renderEmptyResourceCount()
+            #else
+                #displayListAsTipText($sessionStats)
+            #end
+        </span>
+    </div>
+    #end
+</div>
+
+<!-- hidden: scan details -->
+
+#foreach($scan in $om.getSortedScans())
+    #set ($scanID =$!scan.getProperty("ID"))
+    <div class="html-template" id="scan-${scanID}-details-template">
+        #parse($turbineUtils.getTemplateName("_details",$scan.getXSIType(),$project))
+    </div>
+#end
+
+<BR/>
+<BR/>
+
+
+
+#set ($qcXsiType = "xnat:qcAssessmentData")
+#parse($turbineUtils.getTemplateName("report_summary",$qcXsiType,$project))
+<!-- END xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->

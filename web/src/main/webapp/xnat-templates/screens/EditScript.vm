@@ -1,0 +1,97 @@
+<!-- BEGIN plugin-resources/webapp/xnat-templates/screens/EditScript.vm -->
+#* @vtlvariable name="XNAT_CSRF" type="java.lang.String" *#
+#* @vtlvariable name="error" type="java.lang.String" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="script" type="org.nrg.automation.entities.Script" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+<style type="text/css" media="screen">
+    #editor {
+        min-width: 500px;
+        min-height: 500px;
+        max-width: 100%;
+        max-height: 100%;
+        padding: 5px;
+        border: 3px ridge cornflowerblue;
+    }
+</style>
+<script type="text/javascript">
+    jq(function(){
+        jq('body').addClass('administer configuration no_left_bar');
+
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/eclipse");
+        editor.getSession().setMode("ace/mode/groovy");
+    });
+
+    function saveScript() {
+        // TODO: check script ID, warn and stop if blank or invalid.
+        var url = serverRoot + "/data/automation/scripts/" + jq('#scriptId').val() + "?XNAT_CSRF=$!XNAT_CSRF";
+        var data = { scriptLabel: jq('#scriptLabel').val(),
+                content: ace.edit("editor").getSession().getValue(),
+                description: jq('#description').val() };
+        jQuery.ajax({
+            type: 'PUT',
+            url: url,
+            cache: false,
+            data: data,
+            dataType: "json",
+            success: function() {
+                xmodal.message('Success', 'Your script was successfully saved.');
+            },
+            error: function(request, status, error) {
+                xmodal.message('Error', 'An error occurred: [' + status + '] ' + error);
+            }
+        });
+    }
+</script>
+<div class="yui-skin-sam">
+##<div id="tp_fm" style="display:none"></div>
+<table style="width:98%">
+    <tr>
+        <td valign="top" style="width:680px;">
+            <div class="edit_header1">Scripts</div><br/>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+
+#if($turbineUtils.isSiteAdmin($user))
+    #if($error)
+        <div id="error" class="error">There was an error, which isn't so good: $error.</div>
+    #else
+    <div id="scriptContainer" class="container" style="width:98%; margin:5px; background-color: #797979; padding: 10px;">
+        <div id="scriptBody" class="containerBody">
+            <table border="0">
+                <tr>
+                    <td><label for="scriptId"><strong>Script ID:</strong></label></td><td><input type="text" name="scriptId" id="scriptId" value="$!script.scriptId"/></td>
+                </tr>
+                <tr>
+                    <td><label for="scriptLabel"><strong>Script Label:</strong></label></td><td><input type="text" name="scriptLabel" id="scriptLabel" size="80" value="$!script.scriptLabel"/></td>
+                </tr>
+                <tr>
+                    <td><label for="scriptVersion"><strong>Version:</strong></label></td><td><input type="text" name="scriptVersion" id="scriptVersion" size="80" value="$!script.scriptVersion" readonly/></td>
+                </tr>
+                <tr>
+                    <td><label for="description"><strong>Description:</strong></label></td><td><input type="text" name="description" id="description" size="80" value="$!script.description"/></td>
+                </tr>
+                <tr>
+                    <td colspan="2"><div id="editor">$!script.content</div></td>
+                </tr>
+            </table>
+            <a id="save_button" class="btn1" href="javascript:void(0);" onClick="saveScript();">Save</a> <a id="scripts_button" class="btn1" href="$link.setPage("Scripts.vm")">Return</a>
+        </div>
+    </div>
+    #end
+#else
+    <div class="clearfix clear"></div>
+    <div class="error">
+        <p><strong>Security Warning</strong></p>
+        <p>You do not have administrator access and can't access this page.</p>
+    </div>
+#end
+        </td>
+    </tr>
+</table>
+<!-- END plugin-resources/webapp/xnat-templates/screens/EditScript.vm -->

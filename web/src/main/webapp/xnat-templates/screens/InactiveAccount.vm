@@ -1,0 +1,204 @@
+#* @vtlvariable name="topMessage" type="java.lang.String" *#
+#* @vtlvariable name="hideReactivateAccount" type="java.lang.Boolean" *#
+#* @vtlvariable name="email" type="java.lang.String" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="key" type="java.lang.String" *#
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("Noninteractive.vm")
+$page.setTitle("XDAT -- Account Disabled")
+$page.setBgColor($ui.bgcolor)
+<style type="text/css">
+    #email-request-form > table th {
+        padding: 0;
+        vertical-align: baseline;
+    }
+
+    #email-request-form > table td {
+        vertical-align: baseline;
+    }
+
+    #email-request-form h3 {
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #ccc;
+    }
+</style>
+<div style="width:100%;">
+    <div id="email-request-form" name="email-request-form">
+        <table valign="top" align="center">
+            #if ( $data.getMessage() )
+                <tr>
+                    <td colspan="2"><div class="error">$data.getMessage()</div></td>
+                </tr>
+            #end
+            #if (!$!hideReactivateAccount)
+            <tr>
+                <th align="left">
+                    $!topMessage
+                </th>
+            </tr>
+            <tr>
+                <td>
+                    <a href="#" class="nolink" id="send-activation-email-link" style="text-decoration:underline;font-weight:bold;">Send Activation Email</a>
+                </td>
+            </tr>
+            #end
+        </table>
+        #foreach($key in $data.getParameters().getKeys())
+            #if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception")
+                <input type="hidden" name="$!turbineUtils.escapeParam($key)"
+                       value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+            #end
+        #end
+    </div>
+</div>
+
+<div id="send-activation-email-template" class="html-template">
+    <div id="send-activation-email-form">
+        <p style="font-size:13px;line-height:17px;"><label for="requestEmail">Enter your email address to send the
+            reactivation email:</label></p>
+        <input id="requestEmail" type="text" name="email" value="$!email" size="30" maxlength="255" style="width:210px">
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(function () {
+
+        function validEmailFormat(email) {
+            var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(email);
+        }
+
+        // set a 'master' position for all modals on this page
+        var modal_top = '20%';
+
+        function requestVerificationEmail(email) {
+
+            xmodal.loading.open('Please Wait...');
+
+            var msg = {};
+            msg.buttonLabel = 'OK';
+            msg.top = modal_top;
+
+            var requestURL = serverRoot + '/data/services/sendEmailVerification?email=' + encodeURIComponent(email);
+
+            var request = jQuery.ajax({
+                type: 'POST',
+                url: requestURL
+            });
+
+            request.done(function (data, status) {
+                xmodal.loading.close();
+                msg.title = 'Email Sent';
+                msg.content = 'A verification email has been sent to ' + email + '.';
+                msg.action = function () {
+                    if (window.requestModal) {
+                        xmodal.close(window.requestModal);
+                    }
+                    else {
+                        xmodal.closeAll();
+                    }
+                    jQuery.ajax({
+                        type: 'GET',
+                        async: false,
+                        url: '$link.setAction("LogoutUser")'
+                    }).done(window.location = serverRoot + '/app/template/Login.vm');
+                };
+                xmodal.message(msg)
+            });
+
+            request.fail(function (data, status, error) {
+                xmodal.loading.close();
+                //xmodal.closeAll();
+
+                var _status = data.status;
+
+                msg.title = 'Error';
+
+                if (_status === 503) {
+                    msg.content = 'You have exceeded the allowed number of email requests. Please try again later.';
+                    xmodal.message(msg);
+                }
+                else if (_status === 400) {
+                    msg.content = 'Unknown email address.';
+                    xmodal.message(msg);
+                }
+                else {
+                    msg.content = 'An unexpected error has occurred. Please contact your administrator.';
+                    xmodal.message(msg);
+                }
+                jQuery.ajax({
+                    type: 'GET',
+                    url: '$link.setAction("LogoutUser")'
+                }).done();
+            });
+        }
+
+        jQuery('#send-activation-email-link').click(function (e) {
+            e.preventDefault();
+
+            var requestModal, __modal, __emailInput;
+
+            window.requestModal = requestModal = {};
+            //requestModal.id = 'request-modal'
+            requestModal.width = 400;
+            requestModal.height = 200;
+            requestModal.title = 'Send Activation Email';
+            requestModal.top = modal_top;
+            requestModal.template = jQuery('#send-activation-email-template');
+            requestModal.afterShow = function (modal) {
+                __modal = jQuery('#' + modal.id);
+                __emailInput = __modal.find('#requestEmail');
+                __emailInput.focus();
+            };
+            requestModal.buttons = {
+                ok: {
+                    label: 'Go',
+                    close: false,
+                    isDefault: true,
+                    action: function (modal) {
+                        var email = __emailInput.val();
+                        if (!email) {
+
+                            xmodal.message({
+                                title: 'Missing Email Address',
+                                content: 'Please enter an email address and try again.',
+                                top: modal_top,
+                                action: function () {
+                                    __emailInput.focus().select();
+                                }
+                            });
+
+                            return false;
+                        }
+                        if (!validEmailFormat(email)) {
+
+                            xmodal.message({
+                                title: 'Invalid Email Address',
+                                content: 'Please enter a valid email address in the format "name@domain.com" and try again.',
+                                top: modal_top,
+                                action: function () {
+                                    __emailInput.focus().select();
+                                }
+                            });
+
+                            return false;
+                        }
+                        window.requestModal = modal.id;
+                        requestVerificationEmail(email);
+                    }
+                },
+                close: {
+                    label: 'Close'
+                }
+            }
+            xmodal.open(requestModal);
+        });
+
+    });
+</script>

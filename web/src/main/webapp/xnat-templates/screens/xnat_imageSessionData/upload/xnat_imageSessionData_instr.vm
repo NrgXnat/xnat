@@ -1,0 +1,5 @@
+<div class="withColor withThinBorder" style="padding-bottom:3px;margin-bottom:3px;width:600px">
+ <h2 style="margin-top:0px;margin-left:3px;margin-bottom:2px;">Instructions</h2>
+ <div style="margin-left:3px;">Please prepare your imaging data for archiving by assigning it to a $displayManager.getSingularDisplayNameForProject().toLowerCase() and $displayManager.getSingularDisplayNameForSubject().toLowerCase(), and completing the pertinent additional details.
+ </div>
+</div>

@@ -1,0 +1,215 @@
+
+<div class="advanced-search-fields autogen"><div class="search-group by-criteria"><h3><label>Search by Criteria <input type="checkbox" class="search-method by-criteria" value="by-criteria"></label></h3>
+<div class="search-item">
+<h5>image_session_ID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("IMAGE_SESSION_ID"))
+</div>
+<div class="search-item">
+<h5>note:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("NOTE"))
+</div>
+<div class="search-item">
+<h5>quality:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("QUALITY"))
+</div>
+<div class="search-item">
+<h5>condition:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("CONDITION"))
+</div>
+<div class="search-item">
+<h5>series_description:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SERIES_DESCRIPTION"))
+</div>
+<div class="search-item">
+<h5>documentation:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DOCUMENTATION"))
+</div>
+<div class="search-item">
+<h5>scanner:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SCANNER"))
+</div>
+<div class="search-item">
+<h5>manufacturer:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SCANNER_MANUFACTURER"))
+</div>
+<div class="search-item">
+<h5>model:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SCANNER_MODEL"))
+</div>
+<div class="search-item">
+<h5>modality:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MODALITY"))
+</div>
+<div class="search-item">
+<h5>frames:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("FRAMES"))
+</div>
+<div class="search-item">
+<h5>operator:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("OPERATOR"))
+</div>
+<div class="search-item">
+<h5>startTime:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("STARTTIME"))
+</div>
+<div class="search-item">
+<h5>ID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ID"))
+</div>
+<div class="search-item">
+<h5>type:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("TYPE"))
+</div>
+<div class="search-item">
+<h5>UID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("UID"))
+</div>
+<div class="search-item">
+<h5>project:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PROJECT"))
+</div>
+<div class="search-item">
+<h5>Inserted:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("INSERT_DATE"))
+</div>
+<div class="search-item">
+<h5>Creator:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("INSERT_USER"))
+</div>
+<div class="search-item">
+<h5>coil:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("COIL"))
+</div>
+<div class="search-item">
+<h5>fieldStrength:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("FIELDSTRENGTH"))
+</div>
+<div class="search-item">
+<h5>marker:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MARKER"))
+</div>
+<div class="search-item">
+<h5>stabilization:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("STABILIZATION"))
+</div>
+<div class="search-item">
+<h5>units:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_VOXELRES_UNITS"))
+</div>
+<div class="search-item">
+<h5>x:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_VOXELRES_X"))
+</div>
+<div class="search-item">
+<h5>y:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_VOXELRES_Y"))
+</div>
+<div class="search-item">
+<h5>z:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_VOXELRES_Z"))
+</div>
+<div class="search-item">
+<h5>orientation:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_ORIENTATION"))
+</div>
+<div class="search-item">
+<h5>x:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_FOV_X"))
+</div>
+<div class="search-item">
+<h5>y:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_FOV_Y"))
+</div>
+<div class="search-item">
+<h5>x:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_MATRIX_X"))
+</div>
+<div class="search-item">
+<h5>y:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_MATRIX_Y"))
+</div>
+<div class="search-item">
+<h5>partitions:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_PARTITIONS"))
+</div>
+<div class="search-item">
+<h5>tr:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_TR"))
+</div>
+<div class="search-item">
+<h5>te:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_TE"))
+</div>
+<div class="search-item">
+<h5>ti:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_TI"))
+</div>
+<div class="search-item">
+<h5>flip:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_FLIP"))
+</div>
+<div class="search-item">
+<h5>sequence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_SEQUENCE"))
+</div>
+<div class="search-item">
+<h5>origin:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_ORIGIN"))
+</div>
+<div class="search-item">
+<h5>imageType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_IMAGETYPE"))
+</div>
+<div class="search-item">
+<h5>scanSequence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_SCANSEQUENCE"))
+</div>
+<div class="search-item">
+<h5>seqVariant:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_SEQVARIANT"))
+</div>
+<div class="search-item">
+<h5>scanOptions:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_SCANOPTIONS"))
+</div>
+<div class="search-item">
+<h5>acqType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_ACQTYPE"))
+</div>
+<div class="search-item">
+<h5>coil:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_COIL"))
+</div>
+<div class="search-item">
+<h5>dtiAcqCount:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_DTIACQCOUNT"))
+</div>
+<div class="search-item">
+<h5>pixelBandwidth:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_PIXELBANDWIDTH"))
+</div>
+<div class="search-item">
+<h5>bValues:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_DIFFUSION_BVALUES"))
+</div>
+<div class="search-item">
+<h5>directionality:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_DIFFUSION_DIRECTIONALITY"))
+</div>
+<div class="search-item">
+<h5>orientations:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_DIFFUSION_ORIENTATIONS"))
+</div>
+<div class="search-item">
+<h5>anisotropyType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_DIFFUSION_ANISOTROPYTYPE"))
+</div>
+<div class="search-item">
+<h5>dcmValidation:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DCMVALIDATION"))
+</div>
+<div class="search-item">
+<h5>status:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DCMVALIDATION_STATUS"))
+</div>
+<div class="clear"></div></div></div>

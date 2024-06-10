@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("PVisit Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>PVisit Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>date</TD><TD>$!item.getProperty("xnat:pVisitData/date")</TD></TR>
+							<TR><TD>time</TD><TD>$!item.getProperty("xnat:pVisitData/time")</TD></TR>
+							<TR><TD>duration</TD><TD>$!item.getProperty("xnat:pVisitData/duration")</TD></TR>
+							<TR><TD>delay</TD><TD>$!item.getIntegerProperty("xnat:pVisitData/delay")</TD></TR>
+							<TR><TD>delay/ref_expt_id</TD><TD>$!item.getStringProperty("xnat:pVisitData/delay/ref_expt_id")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:pVisitData/note")</TD></TR>
+							<TR><TD>acquisition_site</TD><TD>$!item.getStringProperty("xnat:pVisitData/acquisition_site")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:pVisitData/ID")</TD></TR>
+							<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:pVisitData/project")</TD></TR>
+							<TR><TD>visit_id</TD><TD>$!item.getStringProperty("xnat:pVisitData/visit_id")</TD></TR>
+							<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat:pVisitData/visit")</TD></TR>
+							<TR><TD>version</TD><TD>$!item.getIntegerProperty("xnat:pVisitData/version")</TD></TR>
+							<TR><TD>original</TD><TD>$!item.getStringProperty("xnat:pVisitData/original")</TD></TR>
+							<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat:pVisitData/protocol")</TD></TR>
+							<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:pVisitData/label")</TD></TR>
+							<TR><TD>subject_ID</TD><TD>$!item.getStringProperty("xnat:pVisitData/subject_ID")</TD></TR>
+							<TR><TD>visit_type</TD><TD>$!item.getStringProperty("xnat:pVisitData/visit_type")</TD></TR>
+							<TR><TD>visit_name</TD><TD>$!item.getStringProperty("xnat:pVisitData/visit_name")</TD></TR>
+							<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat:pVisitData/notes")</TD></TR>
+							<TR><TD>start_date</TD><TD>$!item.getProperty("xnat:pVisitData/start_date")</TD></TR>
+							<TR><TD>end_date</TD><TD>$!item.getProperty("xnat:pVisitData/end_date")</TD></TR>
+							<TR><TD>closed</TD><TD>$!item.getBooleanProperty("xnat:pVisitData/closed")</TD></TR>
+							<TR><TD>terminal</TD><TD>$!item.getBooleanProperty("xnat:pVisitData/terminal")</TD></TR>
+							<TR><TD>status</TD><TD>$!item.getStringProperty("xnat:pVisitData/status")</TD></TR>
+							<TR><TD>protocolVersion</TD><TD>$!item.getIntegerProperty("xnat:pVisitData/protocolVersion")</TD></TR>
+							<TR><TD>protocolId</TD><TD>$!item.getStringProperty("xnat:pVisitData/protocolId")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:pVisitData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_share_1_NUM_ROWS=$item.getChildItems("xnat:pVisitData/sharing/share").size() - 1)
+							#if($xnat_experimentData_share_1_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_share_1_COUNTER in [0..$xnat_experimentData_share_1_NUM_ROWS])
+<!-- BEGIN xnat:pVisitData/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:pVisitData/sharing/share[$xnat_experimentData_share_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>share</TD><TD>$!item.getStringProperty("xnat:pVisitData/sharing/share[$xnat_experimentData_share_1_COUNTER]/share")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:pVisitData/sharing/share[$xnat_experimentData_share_1_COUNTER]/label")</TD></TR>
+													<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:pVisitData/sharing/share[$xnat_experimentData_share_1_COUNTER]/project")</TD></TR>
+													<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat:pVisitData/sharing/share[$xnat_experimentData_share_1_COUNTER]/visit")</TD></TR>
+													<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat:pVisitData/sharing/share[$xnat_experimentData_share_1_COUNTER]/protocol")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:pVisitData/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:pVisitData/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:pVisitData/investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>$!item.getStringProperty("xnat:pVisitData/investigator/title")</TD></TR>
+										<TR><TD>firstname</TD><TD>$!item.getStringProperty("xnat:pVisitData/investigator/firstname")</TD></TR>
+										<TR><TD>lastname</TD><TD>$!item.getStringProperty("xnat:pVisitData/investigator/lastname")</TD></TR>
+										<TR><TD>institution</TD><TD>$!item.getStringProperty("xnat:pVisitData/investigator/institution")</TD></TR>
+										<TR><TD>department</TD><TD>$!item.getStringProperty("xnat:pVisitData/investigator/department")</TD></TR>
+										<TR><TD>email</TD><TD>$!item.getStringProperty("xnat:pVisitData/investigator/email")</TD></TR>
+										<TR><TD>phone</TD><TD>$!item.getStringProperty("xnat:pVisitData/investigator/phone")</TD></TR>
+										<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:pVisitData/investigator/ID")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:pVisitData/investigator -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:pVisitData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:pVisitData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>$!item.getStringProperty("xnat:pVisitData/validation/method")</TD></TR>
+										<TR><TD>date</TD><TD>$!item.getProperty("xnat:pVisitData/validation/date")</TD></TR>
+										<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat:pVisitData/validation/notes")</TD></TR>
+										<TR><TD>validated_by</TD><TD>$!item.getStringProperty("xnat:pVisitData/validation/validated_by")</TD></TR>
+										<TR><TD>status</TD><TD>$!item.getStringProperty("xnat:pVisitData/validation/status")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:pVisitData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_4_NUM_ROWS=$item.getChildItems("xnat:pVisitData/resources/resource").size() - 1)
+							#if($xnat_abstractResource_4_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_4_COUNTER in [0..$xnat_abstractResource_4_NUM_ROWS])
+<!-- BEGIN xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_5_NUM_ROWS=$item.getChildItems("xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_5_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_5_COUNTER in [0..$xnat_abstractResource_tag_5_NUM_ROWS])
+<!-- BEGIN xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:pVisitData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_field_6_NUM_ROWS=$item.getChildItems("xnat:pVisitData/fields/field").size() - 1)
+							#if($xnat_experimentData_field_6_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_field_6_COUNTER in [0..$xnat_experimentData_field_6_NUM_ROWS])
+<!-- BEGIN xnat:pVisitData/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:pVisitData/fields/field[$xnat_experimentData_field_6_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>field</TD><TD>$!item.getStringProperty("xnat:pVisitData/fields/field[$xnat_experimentData_field_6_COUNTER]/field")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:pVisitData/fields/field[$xnat_experimentData_field_6_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:pVisitData/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:pVisitData -->
+		</TD>
+	</TR>
+</TABLE>

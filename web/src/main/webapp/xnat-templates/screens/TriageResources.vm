@@ -1,0 +1,94 @@
+
+##Developer: James Dickson james@radiologics.com
+<!-- ignore: false -->
+<!-- Sequence: 40 -->
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/ScreenOnly.vm")
+
+<style type="text/css">
+	.button1 {
+		font:11px Arial, Helvetica, sans-serif;	 
+		margin-bottom: 2px;
+		width: 100%;
+	}
+	.triageTable {
+		font:11px Arial, Helvetica, sans-serif;
+		width:100%;
+	}
+	
+	.triageTable tr td{
+		padding:5px;
+	}
+	
+	.triageTable th{
+		background-color: #ccc;
+		font-weight: bold;
+		padding: 4px;
+	}
+	
+	.triageTable tr.resItem:hover {
+		background-color:#fe9;
+	}
+</style>
+
+<!-- include only if not defined elsewhere -->
+##<script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_fileDialog.js")"></script>
+##<tr class="x_rs_tr_head"><th>Resource</th><th>URI</th><th>TARGET</th><th>USER</th><th>DATE</th><th>OVERWRITE</th><th>EVENT_REASON</th></tr>
+
+<table class="triageTable" cellspacing="0" cellpadding="0">
+    <tr>
+       <th>ID</th>
+       <th>Details</th>
+       <th>User</th>
+       <th>Date</th>
+       <th>Overwrite</th>
+       <th>Actions</th>
+</tr>
+#set($base=$content.getURI(''))
+#foreach($row in $table.toArrayListOfLists())
+	#set($resource=$!row.get(0))
+	#set($src=$!row.get(1))
+	#set($url="$base$src")
+	#set($target=$!row.get(2))
+	#set($theuser=$!row.get(3))
+	#set($date=$!row.get(4))
+	#set($overwrite=$!row.get(5))
+	#set($event_reason=$!row.get(6))
+	#set($ftarget=$!row.get(7))
+	#set($format=$!row.get(8))
+	#set($content=$!row.get(9))
+	#set($fsource=$!row.get(10))
+
+	#if($user.checkFeature($project,"QuarantineReview") || $user.getUsername().equals($theuser))
+		<tr id="resItem${velocityCount}" class="resItem">
+			<td>$resource</td>
+			<td>
+				<b>Source: </b><span>$fsource</span>
+				<b>Target: </b><br/><span>$ftarget</span>
+			</td>
+			<td>$theuser</td>
+			<td>$date</td>
+			<td>$overwrite</td>	
+			<td>	
+				<button class="button1" onclick="window.location='${url}/files?format=zip';return false;">Download</button><br>
+				#if($user.checkFeature($project,"QuarantineReview"))
+					<button class="button1" onclick="XNAT.app.TriageResourceApprover.requestMove('$velocityCount','$resource','${src}/files','$target','$overwrite','$event_reason','$!format','$!content','$fsource','$date','$theuser');return false;">Approve</button><br>
+				#end
+				<button class="button1" onclick="XNAT.app.TriageResourceDeleter.requestDelete('$velocityCount','$resource','$url','$fsource','$date','$theuser');return false;">Remove</button>
+			</td>
+		</tr>
+	#end
+		
+	#set($resource="")
+	#set($src="")
+	#set($target="")
+	#set($theuser="")
+	#set($date="")
+	#set($overwrite="")
+	#set($event_reason="")
+	#set($ftarget="")
+	#set($format="")
+	#set($content="")
+	#set($fsource="")
+#end
+</div>

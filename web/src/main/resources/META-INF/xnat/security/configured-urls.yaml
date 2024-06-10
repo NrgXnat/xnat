@@ -1,0 +1,70 @@
+setupPath: /setup
+
+nonAdminErrorPath: /app/template/Unconfigured.vm
+
+initUrls:
+  - /xapi/siteConfig
+  - /xapi/siteConfig/initialized
+  - /xapi/notifications/smtp
+  - /xapi/spawner/resolve/siteAdmin/siteSetup
+  - /style/
+
+openUrls:
+  - /REST/JSESSION
+  - /REST/services/auth
+  - /REST/services/sendemailverification
+  - /app/action/AcceptProjectAccess/par/
+  - /app/action/InactiveAccountEmail
+  - /app/action/ModifyPassword
+  - /app/action/RegisterExternalLogin
+  - /app/action/XDATForgotLogin
+  - /app/action/XDATRegisterUser
+  - /app/template/Error.vm
+  - /app/template/ForgotLogin.vm
+  - /app/template/InactiveAccount.vm
+  - /app/template/Login.vm
+  - /app/template/PostRegister.vm
+  - /app/template/Register.vm
+  - /app/template/RegisterExternalLogin.vm
+  - /app/template/ResendEmail.vm
+  - /app/template/ResendVerification.vm
+  - /app/template/VerificationSent.vm
+  - /app/template/VerifyEmail.vm
+  - /app/template/XDATScreen_UpdateUser.vm
+  - /data/JSESSION
+  - /data/services/auth
+  - /data/services/sendemailverification
+  - /favicon.ico
+  - /files/
+  - /images/
+  - /login
+  - /page/
+  - /pages/view/
+  - /scripts/
+  - /style/
+  - /themes/
+  - /xapi/siteConfig/buildInfo
+  - /xapi/siteConfig/siteHome
+  - /xapi/siteConfig/siteId
+  - /xapi/siteConfig/siteLogoPath
+  - /xapi/siteConfig/siteUrl
+
+adminUrls:
+  - /app/template/AdminSummary.vm
+  - /app/template/XDATScreen_EditScript.vm/user/Test
+  - /app/template/XDATScreen_active_sessions.vm
+  - /app/template/XDATScreen_admin.vm
+  - /app/template/XDATScreen_admin_options.vm
+  - /app/template/XDATScreen_admin_projectAccess.vm
+  - /app/template/XDATScreen_bundles.vm
+  - /app/template/XDATScreen_dataTypes.vm
+  - /app/template/XDATScreen_email.vm
+  - /app/template/XDATScreen_emailSpecifications.vm
+  - /app/template/XDATScreen_groups.vm
+  - /app/template/XDATScreen_manage_info.vm
+  - /app/template/XDATScreen_manage_news.vm
+  - /app/template/XDATScreen_manage_pipeline.vm
+  - /app/template/XDATScreen_roles.vm
+  - /monitoring
+  - /setup/
+  - /log4j/

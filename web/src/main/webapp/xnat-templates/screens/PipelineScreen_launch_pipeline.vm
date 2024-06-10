@@ -1,0 +1,56 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+$data.setLayoutTemplate("Popup.vm")
+$page.setTitle("Laucnh Pipeline")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ManagePipeline")">
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+
+
+#set ($disabled = "")
+
+
+#if ($isQueuedOrRunning)
+#set ($disabled = "disabled")
+<font color="red"> A pipeline is currently queued or running for this data. Please wait for the pipeline to complete. </font> 
+#end
+
+<TABLE>
+<TR>
+<TD><b>Please select a pipeline to launch for  $item.getProperty("label") </b></TD>
+</TR>
+#foreach ($pipeline in $pipelines)
+<TR>
+<TD><input type="radio" name="pipeline" value="$pipeline.getLocation()" $disabled> $pipeline.getName() </TD>
+</TR>
+<TR>
+<TD>Description: $pipeline.getDescription()</td>
+</TR>
+#end
+
+
+
+<TR>
+#if ($isQueuedOrRunning)
+<TD align="center"><input type="button" ONCLICK="javascript:window.close()" value="Close"/></TD>
+#else
+<TD align="center"><input type="button" ONCLICK="javascript:window.close()" value="Close"/>&nbsp;&nbsp;&nbsp;<input type="submit"  name="eventSubmit_doRedirect" value="Submit"/></TD>
+#end
+</TR>
+</TABLE>
+
+<input type="hidden" name="schema_type" value="$item.getXSIType()">
+
+#xdatPassItemFormFields($search_element $search_field $search_value $project) 
+
+
+</form>
+

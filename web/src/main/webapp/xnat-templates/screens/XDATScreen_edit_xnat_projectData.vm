@@ -1,0 +1,211 @@
+<!-- BEGIN xnat-templates/screens/XDATScreen_edit_xnat_projectData.vm -->
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#set($PROJECT_DISPLAY_NAME = $displayManager.getSingularDisplayNameForProject())
+#set($PROJECT_DISPLAY_LOWER = $PROJECT_DISPLAY_NAME.toLowerCase())
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+<form class="optOutOfXnatDefaultFormValidation" id="edit-project-form" name="form1" method="post" action="$link.setAction("ModifyProject")">
+    #if($vr)
+        <div class="error">Invalid parameters:<br>$vr.toHTML()</div>
+        <hr>
+    #end
+
+    <div class="edit_title">$page_title</div>
+
+    <div class="container">
+        <div class="withColor containerTitle">Step 1: Enter ${PROJECT_DISPLAY_LOWER} details</div>
+        <div class="containerBody">
+            <div class="containerItem">
+                Define the details of this ${PROJECT_DISPLAY_LOWER}. The '${PROJECT_DISPLAY_NAME} ID' should be a
+                single word or acronym which will identify your ${PROJECT_DISPLAY_LOWER}. It will be
+                used on the file system to name directories and files, so it shouldn't contain any wild characters or spaces. The 'Running Title'
+                will be used throughout the website to identify your ${PROJECT_DISPLAY_LOWER}.<br>
+            </div>
+            <hr>
+            <div class="containerItem">
+                #set($parentTemplate='edit')
+                #parse("/screens/xnat_projectData/edit/details.vm")
+            </div>
+        </div>
+    </div>
+
+    <br>
+
+    <style type="text/css">
+        #project-accessibility .panel .panel-subhead { margin-top: 0; }
+        #access-selector { margin: 15px; padding: 0; background: #f0f0f0; border: 1px solid #ccc; }
+        #access-buttons,
+        #access-description { float: left; padding: 15px; }
+        #access-buttons { max-width: 24%; border-right: 1px solid #ccc; }
+        #access-buttons .access-label { display: block; margin-bottom: 5px; white-space: nowrap; }
+        #access-description { max-width: 74%; }
+    </style>
+
+    #if($siteConfig.securityAllowNonPrivateProjects)
+    ## this div will eventually be created by Spawner
+    <div id="project-accessibility" class="container">
+        <div class="withColor containerTitle">Step 2: Define ${PROJECT_DISPLAY_NAME} Accessibility</div>
+        <div>
+            <div class="containerItem">
+                Select the accessibility of your ${PROJECT_DISPLAY_LOWER}.
+            </div>
+            <hr class="h20">
+            <div id="access-selector" class="containerItem">
+
+                <div id="access-buttons" class="radio-toggle">
+                    <label class="access-label" title="Only you and study members will be able to access study data.">
+                        <input type="radio" id="private_access" name="accessibility" value="private"/> Private
+                    </label>
+                    <label class="access-label" title="All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data.">
+                        <input type="radio" id="protected_access" name="accessibility" value="protected"/> Protected
+                    </label>
+                    <label class="access-label" style="margin-bottom:0" title="All users will be able to access study data for analysis and download.">
+                        <input type="radio" id="public_access" name="accessibility" value="public"/> Public
+                    </label>
+                </div>
+
+                <div id="access-description"></div>
+
+                <br class="clear">
+
+            </div>
+        </div>
+    </div>
+	#else
+		<input type="hidden" id="private_access" name="accessibility" value="private"/>
+	#end
+	
+    #set ($guest=$om.getPublicAccessibility())
+
+    <script>
+
+        $('#project-accessibility').on('click', 'input[name=accessibility]', function(){
+            $('#access-description').html(this.parentElement.title)
+        });
+
+        // set to 'Private' by default when adding a project
+        $('#${guest}_access').click();
+
+    </script>
+
+    #xdatEditProps($item $edit_screen)
+
+    <table>
+        #auditBoxes("2" "" "" "Modified ${PROJECT_DISPLAY_LOWER}")
+    </table>
+
+    <div class="submit-right">
+        <input class="btn1 pull-right" type="button" name="eventSubmit_doPerform" value="Save Changes" onclick="processProjectForm(event)">
+        <div class="clear"></div>
+    </div>
+
+</form>
+
+<script>
+
+    var processProjectForm = function(e) {
+        e = e || window.event;
+        e.preventDefault(); // don't submit the form right away
+
+        XNAT.dialog.loading.open();
+
+        var __form = $('#edit-project-form');
+        __form.find('.invalid').removeClass('invalid');
+
+        // temporarily disable ability to resubmit
+        __form.find('input[type=submit]').prop('disabled','disabled').addClass('disabled');
+
+        var i = 1;
+
+        // add hidden inputs for 'other' investigators
+        XNAT.app.investigators.otherMenu.getSelected().forEach(function(inv){
+            if (inv != XNAT.app.investigators.primary) {
+                __form.spawn('input|type=hidden', {
+                    name: 'xnat:projectData/investigators/investigator[' + (i++) + ']/xnat_investigatordata_id',
+                    value: inv
+                });
+            }
+        });
+
+        var PROJECT = XNAT.app.displayNames.singular.project.toLowerCase();
+        var __projID = jq(document.getElementById("xnat:projectData/ID"));
+        var __projTitle = jq(document.getElementById("xnat:projectData/name"));
+        var __projRunningTitle = jq(document.getElementById("xnat:projectData/secondary_ID"));
+
+        var projIDVal = (__projID.val()+'').trim();
+        var projTitleVal = (__projTitle.val()+'').trim();
+        var projRunningTitleVal = (__projRunningTitle.val()+'').trim();
+
+        var invalid_count = 0;
+        var err_messages = [];
+
+        if (projTitleVal == '') {
+            // xmodal.message('Validation', 'Please enter a ' + PROJECT + ' title.');
+            err_messages.push('Please enter a ' + PROJECT + ' title.');
+            __projTitle.addClass('invalid');
+            invalid_count++;
+        }
+        if (projTitleVal.length > 199) {
+            // xmodal.message('Validation', 'Please enter a ' + PROJECT + ' title of 199 characters or less.');
+            err_messages.push('Please enter a ' + PROJECT + ' title of 199 characters or less.');
+            __projTitle.addClass('invalid');
+            invalid_count++;
+        }
+        if (projIDVal == '') {
+            // xmodal.message('Validation', 'Please enter a ' + PROJECT + ' abbreviation (ID).');
+            err_messages.push('Please enter a ' + PROJECT + ' abbreviation (ID).');
+            __projID.addClass('invalid');
+            invalid_count++;
+        }
+        if (projRunningTitleVal == '') {
+            // xmodal.message('Validation', 'Please enter a running title.');
+            err_messages.push('Please enter a running title.');
+            __projRunningTitle.addClass('invalid');
+            invalid_count++;
+        }
+        if (projRunningTitleVal.length > 24) {
+            // xmodal.message('Validation', 'Please enter a running title of 24 characters or less.');
+            err_messages.push('Please enter a running title of 24 characters or less.');
+            __projRunningTitle.addClass('invalid');
+            invalid_count++;
+        }
+
+        ## Add custom project validation
+        #addCustomScreens("xnat:projectData" "edit/validation")
+
+        if (invalid_count > 0) {
+            XNAT.dialog.loading.close();
+            // load a single form validation dialog. Focus the cursor on the OK button so multiple "enter" keypresses will not try to submit the underlying form again
+            XNAT.dialog.message({
+                title: 'Validation',
+                content: '<p>The following errors were found:</p><ul><li>' +
+                        err_messages.join('</li><li>') +
+                        '</li></ul>',
+                afterShow: function(obj){ obj.$dialog.find('button.default:first-child').focus() }
+            });
+            __form.find('.invalid').first().focus();
+            __form.find('input[type=submit]').prop('disabled',false).removeClass('disabled');
+            return false;
+        }
+        else {
+            __projID.val(projIDVal);
+            __projTitle.val(projTitleVal);
+            __projRunningTitle.val(projRunningTitleVal);
+            // return true;
+
+            __form.submit();
+        }
+    }
+
+    $('input').on('keyup',function(e){
+        if (e.key === 'Enter' || e.keyCode === 13) processProjectForm(e);
+    })
+
+</script>
+<!-- END xnat-templates/screens/XDATScreen_edit_xnat_projectData.vm -->

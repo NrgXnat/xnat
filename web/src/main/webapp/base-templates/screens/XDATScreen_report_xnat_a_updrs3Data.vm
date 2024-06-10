@@ -1,0 +1,245 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("UPDRS3 Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>UPDRS3 Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>subject_ID</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/subject_ID")</TD></TR>
+							<TR><TD>age</TD><TD>$!item.getDoubleProperty("xnat_a:updrs3Data/age")</TD></TR>
+							<TR><TD>date</TD><TD>$!item.getProperty("xnat_a:updrs3Data/date")</TD></TR>
+							<TR><TD>time</TD><TD>$!item.getProperty("xnat_a:updrs3Data/time")</TD></TR>
+							<TR><TD>duration</TD><TD>$!item.getProperty("xnat_a:updrs3Data/duration")</TD></TR>
+							<TR><TD>delay</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/delay")</TD></TR>
+							<TR><TD>delay/ref_expt_id</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/delay/ref_expt_id")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/note")</TD></TR>
+							<TR><TD>acquisition_site</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/acquisition_site")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/ID")</TD></TR>
+							<TR><TD>project</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/project")</TD></TR>
+							<TR><TD>visit_id</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/visit_id")</TD></TR>
+							<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/visit")</TD></TR>
+							<TR><TD>version</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/version")</TD></TR>
+							<TR><TD>original</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/original")</TD></TR>
+							<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/protocol")</TD></TR>
+							<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/label")</TD></TR>
+							<TR><TD>inScanner</TD><TD>$!item.getBooleanProperty("xnat_a:updrs3Data/inScanner")</TD></TR>
+							<TR><TD>clicker/right</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/clicker/right")</TD></TR>
+							<TR><TD>clicker/left</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/clicker/left")</TD></TR>
+							<TR><TD>clicker/interval</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/clicker/interval")</TD></TR>
+							<TR><TD>tremorRest/face</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/tremorRest/face")</TD></TR>
+							<TR><TD>tremorRest/rue</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/tremorRest/rue")</TD></TR>
+							<TR><TD>tremorRest/lue</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/tremorRest/lue")</TD></TR>
+							<TR><TD>tremorRest/rle</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/tremorRest/rle")</TD></TR>
+							<TR><TD>tremorRest/lle</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/tremorRest/lle")</TD></TR>
+							<TR><TD>rigidity/neck</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/rigidity/neck")</TD></TR>
+							<TR><TD>rigidity/rue</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/rigidity/rue")</TD></TR>
+							<TR><TD>rigidity/lue</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/rigidity/lue")</TD></TR>
+							<TR><TD>rigidity/rle</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/rigidity/rle")</TD></TR>
+							<TR><TD>rigidity/lle</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/rigidity/lle")</TD></TR>
+							<TR><TD>handMovementsGrip/right</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/handMovementsGrip/right")</TD></TR>
+							<TR><TD>handMovementsGrip/left</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/handMovementsGrip/left")</TD></TR>
+							<TR><TD>facialExpression</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/facialExpression")</TD></TR>
+							<TR><TD>gait</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/gait")</TD></TR>
+							<TR><TD>speech</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/speech")</TD></TR>
+							<TR><TD>writing</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/writing")</TD></TR>
+							<TR><TD>ariseFromChair</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/ariseFromChair")</TD></TR>
+							<TR><TD>actionPosturalTremor/right</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/actionPosturalTremor/right")</TD></TR>
+							<TR><TD>actionPosturalTremor/left</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/actionPosturalTremor/left")</TD></TR>
+							<TR><TD>handsRAM/right</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/handsRAM/right")</TD></TR>
+							<TR><TD>handsRAM/left</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/handsRAM/left")</TD></TR>
+							<TR><TD>fingerTaps/right</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/fingerTaps/right")</TD></TR>
+							<TR><TD>fingerTaps/left</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/fingerTaps/left")</TD></TR>
+							<TR><TD>posture</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/posture")</TD></TR>
+							<TR><TD>posturalStability</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/posturalStability")</TD></TR>
+							<TR><TD>footTaps/right</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/footTaps/right")</TD></TR>
+							<TR><TD>footTaps/left</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/footTaps/left")</TD></TR>
+							<TR><TD>bodyBradykinesiaHypokinesia</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/bodyBradykinesiaHypokinesia")</TD></TR>
+							<TR><TD>problem</TD><TD>$!item.getBooleanProperty("xnat_a:updrs3Data/problem")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat_a:updrs3Data -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_share_1_NUM_ROWS=$item.getChildItems("xnat_a:updrs3Data/sharing/share").size() - 1)
+							#if($xnat_experimentData_share_1_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_share_1_COUNTER in [0..$xnat_experimentData_share_1_NUM_ROWS])
+<!-- BEGIN xnat_a:updrs3Data/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/sharing/share[$xnat_experimentData_share_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>share</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/sharing/share[$xnat_experimentData_share_1_COUNTER]/share")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/sharing/share[$xnat_experimentData_share_1_COUNTER]/label")</TD></TR>
+													<TR><TD>project</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/sharing/share[$xnat_experimentData_share_1_COUNTER]/project")</TD></TR>
+													<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/sharing/share[$xnat_experimentData_share_1_COUNTER]/visit")</TD></TR>
+													<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/sharing/share[$xnat_experimentData_share_1_COUNTER]/protocol")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat_a:updrs3Data/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:updrs3Data/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/investigator/title")</TD></TR>
+										<TR><TD>firstname</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/investigator/firstname")</TD></TR>
+										<TR><TD>lastname</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/investigator/lastname")</TD></TR>
+										<TR><TD>institution</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/investigator/institution")</TD></TR>
+										<TR><TD>department</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/investigator/department")</TD></TR>
+										<TR><TD>email</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/investigator/email")</TD></TR>
+										<TR><TD>phone</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/investigator/phone")</TD></TR>
+										<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/investigator/ID")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:updrs3Data/investigator -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:updrs3Data/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/validation/method")</TD></TR>
+										<TR><TD>date</TD><TD>$!item.getProperty("xnat_a:updrs3Data/validation/date")</TD></TR>
+										<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/validation/notes")</TD></TR>
+										<TR><TD>validated_by</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/validation/validated_by")</TD></TR>
+										<TR><TD>status</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/validation/status")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:updrs3Data/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_4_NUM_ROWS=$item.getChildItems("xnat_a:updrs3Data/resources/resource").size() - 1)
+							#if($xnat_abstractResource_4_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_4_COUNTER in [0..$xnat_abstractResource_4_NUM_ROWS])
+<!-- BEGIN xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_5_NUM_ROWS=$item.getChildItems("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_5_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_5_COUNTER in [0..$xnat_abstractResource_tag_5_NUM_ROWS])
+<!-- BEGIN xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_field_6_NUM_ROWS=$item.getChildItems("xnat_a:updrs3Data/fields/field").size() - 1)
+							#if($xnat_experimentData_field_6_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_field_6_COUNTER in [0..$xnat_experimentData_field_6_NUM_ROWS])
+<!-- BEGIN xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_6_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>field</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_6_COUNTER]/field")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_6_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat_a:updrs3Data -->
+		</TD>
+	</TR>
+</TABLE><BR>#parse("/screens/ReportProjectSpecificFields.vm")

@@ -1,0 +1,92 @@
+<script type="text/javascript">
+	document.title = "Protocol Validation for $!mr.getIdentifier($project,false)";
+</script>
+
+<style>
+TH {
+	text-align:left;
+}
+.clauseTable td{
+	color:red;
+}	
+.status {
+	font-weight:700;
+}
+.rowpass {
+	background-color:FFDDEE;
+}
+.fieldfail {
+	color:red;
+}
+.fieldpass {
+	color:green;
+}
+.fieldunknown {
+	color:orange;
+}
+
+.scanDIV{
+	margin-top:0px;
+}
+</style>
+
+
+
+
+#if ($protocolValidation)
+  #set($checkPass="pass")
+  #set($checkFail="fail")
+  #set ($status = $protocolValidation.getProtocolCheck_status())
+  #if ($status.equals($checkPass))
+   #set($field="fieldvalid")
+  #elseif ($status.equals($checkFail))
+   #set($field="fieldinvalid")
+  #else
+   #set($field="fieldunknown")
+  #end
+
+#set ($scanCounter = 4000)
+
+<a name="LINK${scanCounter}" href="#LINK${scanCounter}" onClick=" return blocking($scanCounter);">
+		  <img ID="IMG$scanCounter" src="$content.getURI("images/plus.jpg")" border=0>
+	$displayManager.getSingularDisplayNameForImageSession() Validation: <font class="status $field">$protocolValidation.getProtocolCheck_status().toUpperCase()</font>
+</a>
+
+<span ID="span$!{scanCounter}" style="position:relative; display:none; background-color:ffa07a; ">
+<TABLE width="80%">
+			<TR> <TH colspan="2" align="left">Problems</tH>
+			</TR>
+			#set ($causes = $protocolValidation.getProtocolCheck_causes_cause())
+			#set ($comments = $protocolValidation.getProtocolCheck_comments_comment())
+			#if ($causes.size()>0)
+			#foreach($cause in $causes)
+					<TR>
+						<TD>$cause.getId()</TD>
+						<TD>$cause.getCause()</TD>
+					</TR>
+				#end
+			#else
+					<TR>
+						<TD colspan="2" align="left">None</TD>
+					</TR>
+			
+			#end
+			<TR> <TH colspan="2" align="left">Comments</tH>
+			</TR>
+			#if ($comments.size()>0)
+			#foreach($comment in $comments)
+					<TR>
+						<TD colspan="2" align="left">$comment.getUsername() (on $comment.getDatetime()): $comment.getComment()</TD>
+					</TR>
+				#end
+			#else
+					<TR>
+						<TD colspan="2" align="left">None</TD>
+					</TR>
+			
+			#end
+
+</TABLE>
+</span>
+
+#end	

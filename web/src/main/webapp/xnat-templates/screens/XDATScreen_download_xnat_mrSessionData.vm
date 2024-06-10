@@ -1,0 +1,80 @@
+#if($om.getLabel())
+#set ($sessionId = $om.getLabel())
+#else
+#set ($sessionId = $om.getId())
+#end
+$page.setTitle("Download $!sessionId")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<style>
+.body{
+	font: 13pt $ui.sansSerifFonts;
+}
+.trigger{
+	cursor: pointer;
+	cursor: hand;
+}
+.branch{
+	display: none;
+	margin-left: 12px;
+}
+</style>
+<font face="$ui.sansSerifFonts">				
+
+<form class="noHide" name="DownloadImages" method="post" action="$link.setAction("DownloadImages").setPage("ClosePage.vm")">
+<b>
+  <font face="$ui.sansSerifFonts" size="3">
+	      $displayManager.getSingularDisplayNameForImageSession(): $sessionId 
+  </font>
+</b>
+<table border=0 width="100%" bordercolor="#CC3333">
+	<tr><td colspan=2>&nbsp;</td></tr>
+	<tr>
+		<td>
+			<b>Download Type:</b>			
+		</td>	
+		<td align="left">
+			<select name="download_type">
+				<option value="zip" selected>zip</option>
+				<option value="xar">xar (3D Slicer)</option>
+				<option value="tar">tar</option>
+				<option value="tar.gz">tar.gz</option>
+				<option value="xcat">Catalog XML (.xcat)</option>
+			</select>
+		</td>	
+	</tr>
+	<tr><td colspan=2>&nbsp;</td></tr>
+	<tr><td colspan=2>
+		#if($archive)
+			<TABLE>
+				<TR>
+					<TD>$archive</TD>
+				</TR>
+			</TABLE>
+		#else
+			ERROR:  Failed to load images.
+		#end
+	</td></tr>
+	<tr><td colspan=2>&nbsp;</td></tr>
+	<tr>
+		<td colspan=2 NOWRAP>
+			<input type="submit" name="eventSubmit_doPerform" value="Download" />
+    			&nbsp;&nbsp;
+   		#if ($popup=="false")
+	    	<input type="button" ONCLICK="javascript:history.go(-1)" value="Back"/>
+			&nbsp;&nbsp;
+	    	<input type="button" ONCLICK="javascript:self.close()" value="Close"/>
+       	#else
+	    	<input type="button" ONCLICK="javascript:self.close()" value="Close"/>
+    	#end
+		</td>
+	</tr>
+</table>
+
+#xdatPassItemFormFields($search_element $search_field $search_value $project)
+</form>
+</font>
+			

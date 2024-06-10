@@ -1,0 +1,571 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<p>
+<table border="0" width="95%">
+	<tr>
+		<td align="left" colspan="2">
+			<font face="$ui.sansSerifFonts" size="2">
+				<b>$!listName</b>
+			</font>
+		</td>
+	</tr>
+	<tr>
+		<TD ALIGN="left">
+			<TABLE>
+				<TR>
+					<TD ALIGN="right">
+						$!legend 
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+		<td ALIGN="right">
+		#if ($results_time)
+	Search Time: 	$!{results_time}ms
+		#end
+		</td>
+	</tr>
+	#if(!$searchType.equalsIgnoreCase("none"))
+	<!-- searchType==null-->
+		<tr>
+			<td colspan=2>
+				<TABLE>
+					<tr>
+						<td align=left>
+						#xdatHiddenSearchForm($schemaElement 3)
+						</td>
+					</tr>
+				</TABLE>
+			</td>
+		</tr>
+	#else 
+	<!-- searchType!=null-->
+	<script type="text/javascript">
+		<!--
+		function toggleSearch() // 1 visible, 0 hidden
+		{
+		    if (document.getElementById)
+			{
+				if (document.getElementById('hidden_search').style.display=='none')
+				{
+					document.getElementById('hidden_search').style.display = 'block';
+				    document.getElementById('hide_search').value="Search <<<";
+				}else{
+					document.getElementById('hidden_search').style.display = 'none';
+				    document.getElementById('hide_search').value="Search >>>";
+				}
+			}
+			else if (document.all)
+			{
+			    if (document.all['hidden_search'].style.display=='none')
+				{
+					document.all['hidden_search'].style.display = 'block';
+				    document.getElementById('hide_search').value="Search <<<";
+				}else{
+					document.all['hidden_search'].style.display = 'none';
+				    document.getElementById('hide_search').value="Search >>>";
+				}
+			}
+		}
+		// -->
+		</script>	  
+<script language="javascript">
+var spans = new Array();
+function showSpan(spanName)
+{
+  for(var x in spans)
+  {
+    var spanPanel = document.getElementById(spans[x]);
+    if(spanPanel.id==spanName)
+    {
+      spanPanel.style.display='block';
+    }else{
+      spanPanel.style.display='none';
+    }
+  }
+  
+  return false;
+}
+
+</script>
+		#if($search.isStoredSearch())
+		<tr>
+			<td colspan=2>
+				<TABLE>
+					<tr>
+						<td align=left>
+						
+		<input id="hide_search" type="button" onClick="toggleSearch()" value="Search >>>">
+		<span ID="hidden_search" style="position:relative; display:none;">
+#set($storedSearch = $search.getStoredSearch())
+<div id="container1" VALIGN="top">
+  <TABLE VALIGN="top">
+  	  <TR>
+  		    <TD COLSPAN=2>
+  		   </TD>
+  	  </TR>
+  	  
+		#if ($storedSearch.getCustomSearchVM())
+  	  <TR VALIGN="top">
+  		   <TD VALIGN="top">
+  		    <FORM name="search$velocityCount" method="post" action="$link.setAction("BundleAction")">
+  		     <TABLE VALIGN="top">
+  		      <TR VALIGN="top">
+  		       <TD VALIGN="top">
+  			          <INPUT type="hidden" name="bundle" value="$storedSearch.getId()"/>
+			#parse($storedSearch.getCustomSearchVM())
+			         </TD>
+			        </TR>
+			        <TR>
+			         <TD ALIGN="right">
+<input type="submit" name="eventSubmit_doPerform" value="Submit"/>
+         </TD>
+        </TR>
+       </TABLE>
+			        </FORM>
+				     </TD>
+				    </TR>
+		#else
+  	  <TR VALIGN="top">
+  		   <TD VALIGN="top">
+		  	    <ul>
+			       #set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplaysByDesc())
+			       #foreach ($typeObject in $typeObjects)
+			       	<li class="cornflower_border_bottom" style="padding:3px 5px 5px 5px;"><a href="#" onClick="return showSpan('panel$typeObject.getElementName()')" id="tab$velocityCount">$typeObject.getDescription()</a></li>
+			       #end
+			      </ul>
+		     </TD>
+		     <TD>
+  		   <FORM name="search$velocityCount" method="post" action="$link.setAction("BundleAction")">
+  			    <INPUT type="hidden" name="bundle" value="$!storedSearch.getId()"/>
+			      <TABLE border="0">
+			       	<TR>
+			  		      <TD>
+					          #foreach ($typeObject in $typeObjects)
+					           <SCRIPT language="javascript">spans.push("panel$typeObject.getElementName()");</SCRIPT>
+						           <span id="panel$typeObject.getElementName()" VALIGN="top" style="display:none;">
+							            <TABLE VALIGN="top">
+							  	           <TR>
+							  		            <TH valign="top">$typeObject.getDescription() Search Criteria</TH>
+							             	</TR>
+							  	           <TR>
+							               		<TD align="right">#xdatSearchElement($typeObject.getSchemaElement() 3)
+							               		</TD>
+							  	           </TR>	
+							            </TABLE>
+					           </span>
+						          #end  
+					        </TD>
+				       </TR>
+				       <TR>
+					        <TD ALIGN="center">
+					         <input type="submit" name="eventSubmit_doPerform" value="Submit"/>
+					        </TD>
+				       </TR>
+			      </TABLE>
+			     </FORM>
+  		   </TD>
+  		  </TR>
+  		  <TR>
+	  		   <TD colspan=2 ALIGN="right">
+	  		   </TD>
+	    </TR>
+#end
+ </TABLE>
+</div>
+		</span>
+						</td>
+					</tr>
+				</TABLE>
+			</td>
+		</tr>
+		#elseif ($search.isSuperSearch())
+		<tr>
+			<td colspan=2>
+				<TABLE>
+					<tr>
+						<td align=left>
+						
+		<input id="hide_search" type="button" onClick="toggleSearch()" value="Search >>>">
+		<span ID="hidden_search" style="position:relative; display:none;">
+			  
+<div id="container1" VALIGN="top">
+  <TABLE VALIGN="top">
+  	<TR>
+  		<TD COLSPAN=2>
+  		<FORM name="search$velocityCount" method="post" action="$link.setAction("DisplaySearchAction")">
+  				<INPUT type="hidden" name="ELEMENT_0" value="$search.getRootElement().getFullXMLName()"/>
+  				#foreach($al in $search.getAdditialViewArrayLists())
+  					<INPUT type="hidden" name="super_$al.get(0)" value="$al.get(1)"/>
+  				#end
+	  		
+  		</TD>
+  	</TR>
+  	<TR VALIGN="top">
+  		<TD VALIGN="top">
+		  	<ul>
+			  #set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplaysByDesc())
+				  #foreach ($typeObject in $typeObjects)
+				  	<li class="cornflower_border_bottom" style="padding:3px 5px 5px 5px;"><a href="#" onClick="return showSpan('panel$typeObject.getElementName()');" id="tab$velocityCount">$typeObject.getDescription()</a></li>
+				  #end
+			  </ul>
+		</TD>
+		<TD>
+			  <TABLE>
+			  	<TR>
+			  		<TD>
+					    #foreach ($typeObject in $typeObjects)
+					           <SCRIPT language="javascript">spans.push("panel$typeObject.getElementName()");</SCRIPT>
+						  <span id="panel$typeObject.getElementName()" VALIGN="top">
+							  <TABLE VALIGN="top">
+							  	<TR>
+							  		<TH colspan=2 valign="top">$typeObject.getDescription() Search Criteria</TH>
+							  	</TR>
+							  	<TR>
+							  		<TD>#xdatSearchElement($typeObject.getSchemaElement() 3)
+							  		</TD>
+							  	</TR>
+							  </TABLE>
+					      </span>
+						#end  
+					 </TD>
+				</TR>
+				<TR>
+					<TD ALIGN=right>
+					<input type="submit" name="eventSubmit_doPerform" value="Submit"/>
+					</TD>
+				</TR>
+			</TABLE>
+  		</TD>
+  		<TR>
+	  		<TD colspan=2 ALIGN="right">
+	  		</TD>
+	  	</TR>
+	  		</FORM>
+  	</TR>
+  </TABLE>
+</div>
+		</span>
+						</td>
+					</tr>
+				</TABLE>
+			</td>
+		</tr>
+		#end
+	#end
+	<tr>
+		<TD ALIGN=left COLSPAN=2>
+#if ($numPages > 1)
+	<TABLE WIDTH="95%"><TR><TD ALIGN=left NOWRAP>Pages:&nbsp;&nbsp;&nbsp;
+	#set ($pgsToShow = 8)
+	#set($lastPage = $numPages - 1)
+	#set($firstPage = 0)
+		
+	#set($previousPage = $currentPage - 2)
+	#set($nextPage = $currentPage)
+		
+	#if ($numPages > $pgsToShow)
+		#set($actualCurrentPg=$currentPage - 1)
+	
+		#set($firstSegment=$pgsToShow)
+		#set($lastSegment=${numPages}-${pgsToShow})
+		
+		#set($skipsomeUp = $currentPage + 9)
+		#set($skipsomeDown = $currentPage - 11)
+				
+		#if ($currentPage >1)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$firstPage)"><img src="$content.getURI("images/left_end.gif")" border="0" alt="First Page"></A>&nbsp;&nbsp;
+		#end
+		
+		#if ($currentPage >10)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$skipsomeDown)"><img src="$content.getURI("images/left2.gif")" border=0 alt="-10 Pages"></A>&nbsp;&nbsp;
+		#end
+		
+		#if ($currentPage >1)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$previousPage)"><img src="$content.getURI("images/left.gif")" border=0 alt="Previous Page"></A>&nbsp;&nbsp;
+		#end
+		
+		#if($currentPage < $lastSegment)
+			#set($start = $currentPage - 4)
+			#if ($start <=0)
+				#set($start = 1)
+			#end
+			
+			#set ($end = $start + 8)			
+			#if ($end > $numPages)
+				#set($end=$numPages)
+			#end
+		#else
+			#set($start = $currentPage - 4)
+			#if ($start >$lastSegment)
+				#set($start = $lastSegment)
+			#end
+			#if ($start <=0)
+				#set($start = 1)
+			#end
+			
+			#set ($end = $start + 8)
+			
+			#if ($end > $numPages)
+				#set($end=$numPages)
+			#end
+		#end
+		
+		#foreach ($i in [$start..$end])
+			#set ($actualPage = $i - 1)
+			&nbsp;#if ($currentPage == $i )[$i]#else<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$actualPage)">$i</A>#end&nbsp;
+		#end
+		
+		
+		#if ($currentPage < $numPages)
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$nextPage)"><img src="$content.getURI("images/right.gif")" border=0 alt="Next Page"></A>
+		#end
+			
+		#if ($currentPage < ($numPages - 9))
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$skipsomeUp)"><img src="$content.getURI("images/right2.gif")" border=0 alt="+10 Pages"></A>
+		#end
+		
+		#if ($currentPage < $numPages)
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$lastPage)"><img src="$content.getURI("images/right_end.gif")" border=0 alt="Last Page"></A>
+		#end
+		
+		
+	#else
+		#if ($currentPage >1)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$firstPage)"><img src="$content.getURI("images/left_end.gif")" border="0" alt="First Page"></A>&nbsp;&nbsp;
+		#end
+		
+		#if ($currentPage >1)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$previousPage)"><img src="$content.getURI("images/left.gif")" border=0 alt="Previous Page"></A>&nbsp;&nbsp;
+		#end
+	
+		#foreach ($i in [1..$numPages])
+		#set ($actualPage = $i - 1)
+			&nbsp;#if ($currentPage == $i )[$i]#else<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$actualPage)">$i</A>#end&nbsp;
+		#end
+		
+		
+		#if ($currentPage < $numPages)
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$nextPage)"><img src="$content.getURI("images/right.gif")" border=0 alt="Next Page"></A>
+		#end
+		
+		#if ($currentPage < $numPages)
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$lastPage)"><img src="$content.getURI("images/right_end.gif")" border=0 alt="Last Page"></A>
+		#end
+	#end
+	&nbsp;&nbsp;($totalRecords Records in $numPages Pages.)
+	</TD></TR></TABLE>
+#end
+		</td>
+	</tr>
+</Table>
+<DIV ID="dataTable">
+$!dataTable
+</DIV>
+<BR>
+#if ($numPages > 1)
+	<TABLE WIDTH="95%"><TR><TD ALIGN=left NOWRAP>Pages:&nbsp;&nbsp;&nbsp;
+	#set ($pgsToShow = 8)
+	#set($lastPage = $numPages - 1)
+	#set($firstPage = 0)
+		
+	#set($previousPage = $currentPage - 2)
+	#set($nextPage = $currentPage)
+		
+	#if ($numPages > $pgsToShow)
+		#set($actualCurrentPg=$currentPage - 1)
+	
+		#set($firstSegment=$pgsToShow)
+		#set($lastSegment=${numPages}-${pgsToShow})
+		
+		#set($skipsomeUp = $currentPage + 9)
+		#set($skipsomeDown = $currentPage - 11)
+				
+		#if ($currentPage >1)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$firstPage)"><img src="$content.getURI("images/left_end.gif")" border="0" alt="First Page"></A>&nbsp;&nbsp;
+		#end
+		
+		#if ($currentPage >10)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$skipsomeDown)"><img src="$content.getURI("images/left2.gif")" border=0 alt="-10 Pages"></A>&nbsp;&nbsp;
+		#end
+		
+		#if ($currentPage >1)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$previousPage)"><img src="$content.getURI("images/left.gif")" border=0 alt="Previous Page"></A>&nbsp;&nbsp;
+		#end
+		
+		#if($currentPage < $lastSegment)
+			#set($start = $currentPage - 4)
+			#if ($start <=0)
+				#set($start = 1)
+			#end
+			
+			#set ($end = $start + 8)			
+			#if ($end > $numPages)
+				#set($end=$numPages)
+			#end
+		#else
+			#set($start = $currentPage - 4)
+			#if ($start >$lastSegment)
+				#set($start = $lastSegment)
+			#end
+			#if ($start <=0)
+				#set($start = 1)
+			#end
+			
+			#set ($end = $start + 8)
+			
+			#if ($end > $numPages)
+				#set($end=$numPages)
+			#end
+		#end
+		
+		#foreach ($i in [$start..$end])
+			#set ($actualPage = $i - 1)
+			&nbsp;#if ($currentPage == $i )[$i]#else<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$actualPage)">$i</A>#end&nbsp;
+		#end
+		
+		
+		#if ($currentPage < $numPages)
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$nextPage)"><img src="$content.getURI("images/right.gif")" border=0 alt="Next Page"></A>
+		#end
+			
+		#if ($currentPage < ($numPages - 9))
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$skipsomeUp)"><img src="$content.getURI("images/right2.gif")" border=0 alt="+10 Pages"></A>
+		#end
+		
+		#if ($currentPage < $numPages)
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$lastPage)"><img src="$content.getURI("images/right_end.gif")" border=0 alt="Last Page"></A>
+		#end
+		
+		<!--
+		<BR><BR>NUM PAGES: $numPages
+		<BR>CURRENT PG: $currentPage
+		<BR>ACTUAL CURRENT PG: $actualCurrentPg
+		<BR>FIRST SEGMENT: $firstSegment
+		<BR>LAST SEGMENT: $lastSegment
+		<BR>SKIP SOME UP: $skipsomeUp
+		<BR>SKIP SOME DOWN: $skipsomeDown
+		<BR>NEXT PAGE: $nextPage
+		<BR>PREVIOUS PAGE: $previousPage
+		<BR>LAST PAGE: $lastPage
+		<BR>FIRST PAGE: $firstPage
+		<BR>START: $start
+		<BR>END: $end
+		-->
+		
+	#else
+		#if ($currentPage >1)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$firstPage)"><img src="$content.getURI("images/left_end.gif")" border="0" alt="First Page"></A>&nbsp;&nbsp;
+		#end
+		
+		#if ($currentPage >1)
+			<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$previousPage)"><img src="$content.getURI("images/left.gif")" border=0 alt="Previous Page"></A>&nbsp;&nbsp;
+		#end
+	
+		#foreach ($i in [1..$numPages])
+		#set ($actualPage = $i - 1)
+			&nbsp;#if ($currentPage == $i )[$i]#else<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$actualPage)">$i</A>#end&nbsp;
+		#end
+		
+		
+		#if ($currentPage < $numPages)
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$nextPage)"><img src="$content.getURI("images/right.gif")" border=0 alt="Next Page"></A>
+		#end
+		
+		#if ($currentPage < $numPages)
+			&nbsp;&nbsp;<A CLASS=b HREF="$link.setAction("SearchAction").addPathInfo('page',$lastPage)"><img src="$content.getURI("images/right_end.gif")" border=0 alt="Last Page"></A>
+		#end
+	#end
+	&nbsp;&nbsp;
+	</TD></TR></TABLE>
+#end
+
+$!legend</p>
+<table width="100%" border=0>
+  <tr>
+    <td colspan="2" valign="bottom">
+    <TABLE width="95%">
+    	<TR>
+    		<TD align="right">
+    		<p>
+    			<form name="MiniSearch" method="post" action="$link.setAction("SearchAction")" >
+    				Rows Per Page: <INPUT style="font-family:'arial'; font-style:normal; font-weight:normal; font-size:10px; border-style:ridge;" TYPE="text" NAME="numToDisplay" #if($numToDisplay) VALUE='$!numToDisplay' #else VALUE="30" #end SIZE=4 />
+    				<input style="font-family:'arial'; font-style:normal; font-weight:normal; font-size:10px; border-style:ridge;" type="submit" value="Change" />
+    			</form>
+    			</p>
+    		</TD>
+    	</TR>
+    </TABLE>
+    </td>
+  </tr>
+</table>
+
+
+<script>
+if (NS4) {document.write('<LAYER NAME="floatlayer" LEFT="'+floatX+'" TOP="'+floatY+'">');}
+if ((IE4) || (NS6)) {document.write('<div id="floatlayer" style="position:absolute; left:'+floatX+'; top:'+floatY+';">');}
+
+function launchAction(){
+  var box= document.getElementById("listingActionBox");
+  var link = "$link/action/";
+  if (box.selectedIndex>0)
+  {
+    var dest = box.options[box.selectedIndex].value;
+    var url = link + box.options[box.selectedIndex].value;
+    if (dest=="CSVAction"){
+       window.location=url;
+    }else{
+       popup(url, '','600','800');
+    }
+  }
+}
+</script>
+<TABLE><TR>
+<TD NOWRAP>
+<b>Actions:</b> <select ONCHANGE="launchAction();" ID="listingActionBox" name="listingActionBox">
+ <option value="">(SELECT)</option>
+ <option value="CSVAction">Spreadsheet</option>
+#if($search.isStoredSearch())
+	 <option value="EmailBundleAction/popup/true">Email</option>
+#else
+	 <option value="EmailSearchAction/popup/true">Email</option>
+#end
+ 	#set ($elementSecurity = $schemaElement.getElementSecurity())
+	#if ($elementSecurity)
+		 #set ($actions = $elementSecurity.getListingActions())
+		 #if ($actions.size() > 0)
+  #foreach ($actionObject in $actions)
+										  <option value="$actionObject.getElementActionName()">$actionObject.getDisplayName()</option>
+						  #end
+		 #end
+		#end
+		</select>
+</TD>
+</TR></TABLE>
+<script>
+if (NS4) 
+{
+document.write('</LAYER>');
+}
+if ((IE4) || (NS6)) 
+{
+document.write('</DIV>');
+}
+ifloatX=floatX;
+ifloatY=floatY;
+define();
+window.onresize=define;
+lastX=-1;
+lastY=-1;
+adjust();
+</script>
+

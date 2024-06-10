@@ -1,0 +1,195 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#macro( propValueRow $name $prop )
+  #if ( $!item.getProperty("$prop") )
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getProperty("$prop")</td></tr>
+	#end
+#end
+
+#macro( propValueRow $name $prop $addText)
+  #if ( $!item.getProperty("$prop") )
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getProperty("$prop") $addText</td></tr>
+	#end
+#end
+
+<!-- TODO: better presentation -->
+#macro( propBoolValueRow $name $prop )
+	#if ($!item.getBooleanProperty("$prop"))
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getBooleanProperty("$prop")</td></tr>
+	#end
+#end
+
+#macro(tableHeaderNCols $header $subheads)
+<tr>
+	<th>$header</th>
+	#foreach($subhead in $subheads)
+	<th>$subhead</th>
+	#end
+</tr>
+#end
+
+#macro(propNValueRow $name $fields)
+<tr>
+	<td class="table_attr_name">$name</td>
+	#foreach($field in $fields)
+		<td class="attr_value">$!item.getProperty($field)</td>
+	#end
+#end
+
+
+<style type="text/css">
+td.attr_name { <!-- in imitation of xdat.css (th) -->
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	border-top-style: none;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 13px;
+	margin: 0px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.table_attr_name { <!-- much like attr_name, but not bold -->
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	border-top-style: none;
+	font-size: 11px;
+	line-height: 13px;
+	margin: 0px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.attr_value { <!-- in imitation of xdat.css (td) -->
+	font-family: verdana,geneva,helvetica;
+	font-size: 10px;
+	line-height: 14px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.subtable {
+	valign: top;
+}
+</style>
+
+$page.setTitle("YGTSS : $!item.getProperty('xnat_a:ygtssData.ID')")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+<br>
+
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+#if (!$project)
+#set($project=$item.getProperty("project"))
+#end
+
+#set($subject = $om.getSubjectData())
+#set($part_id = $subject.getStringProperty("ID"))
+
+#parse("/screens/workflow_alert.vm")
+
+<div class="edit_title">
+Yale Global Tic Severity Scale:
+#if ($project)
+	$om.getIdentifier($project)
+#else
+	$!item.getProperty("xnat_a:ygtssData.ID")
+#end
+</div>
+
+<table width="100%">
+	<tr>
+		<td valign="top"><table>
+		<!-- left table -->
+		#propValueRow("Date" "xnat_a:ygtssData/date")
+		#propValueRow("Time" "xnat_a:ygtssData/time")
+		#propValueRow("Visit ID" "xnat_a:ygtssData/visit_id")
+		</table></td>
+		<td valign="top"><table>
+		<!-- middle table -->
+			<tr>
+				<td class="attr_name">$displayManager.getSingularDisplayNameForSubject():</td>
+				<td>
+					<A CLASS=b HREF="$link.setAction('DisplayItemAction').addPathInfo('search_element','xnat:subjectData').addPathInfo('search_field','xnat:subjectData.ID').addPathInfo('search_value',$part_id).addPathInfo('popup','$!popup').addPathInfo('project','$!project')">
+					#if($project)
+						$!subject.getIdentifier($project)
+					#else
+						$!subject.getId()
+					#end
+					</A>
+				</td>
+			</tr>
+			#if($!subject.getGenderText())
+			<tr>
+				<td class="attr_name">Gender:</td>
+				<td class="attr_value">$subject.getGenderText()</td>
+			</tr>
+			#end
+			#propValueRow("Age" "xnat_a:ygtssData/age")
+		</table></td>
+		<td valign="top">
+		#parse("/screens/xnat_experimentData_shareDisplay.vm")
+		</td>
+		<td valign="top">
+			#parse($turbineUtils.getTemplateName("actions", $om.getXSIType(), $project))
+		</td>
+	</tr>
+</table>
+
+#if ($!item.getStringProperty("note"))
+<table>
+  <tr>
+		<td valign="top" class="attr_name">Notes:</td>
+		<td valign="top" class="attr_value">$!item.getStringProperty("note")</td>
+	</tr>
+</table>
+#end
+
+<br>
+
+<table>
+#propValueRow("Filled Out By" "xnat_a:ygtssData/filledOutBy")
+#propValueRow("Current or Worst Ever" "xnat_a:ygtssData/period")
+#propValueRow("Age at Worst Ever" "xnat_a:ygtssData/worstEverAge")
+#propValueRow("Impairment" "xnat_a:ygtssData/impairment")
+#tableHeaderNCols("" ["Motor", "Phonic"])
+#propNValueRow("Number" ["xnat_a:ygtssData/motor/number", "xnat_a:ygtssData/phonic/number"])
+#propNValueRow("Frequency" ["xnat_a:ygtssData/motor/frequency", "xnat_a:ygtssData/phonic/frequency"])
+#propNValueRow("Intensity" ["xnat_a:ygtssData/motor/intensity", "xnat_a:ygtssData/phonic/intensity"])
+#propNValueRow("Complexity" ["xnat_a:ygtssData/motor/complexity", "xnat_a:ygtssData/phonic/complexity"])
+#propNValueRow("Interference" ["xnat_a:ygtssData/motor/interference", "xnat_a:ygtssData/phonic/interference"])
+#propNValueRow("Inventory" ["xnat_a:ygtssData/motor/inventory", "xnat_a:ygtssData/phonic/inventory"])
+#propNValueRow("Complexity" ["xnat_a:ygtssData/motor/complexity", "xnat_a:ygtssData/phonic/complexity"])
+</table>
+
+
+#set($xnat_experimentData_field_4_NUM_ROWS=$item.getChildItems("xnat_a:ygtssData/fields/field").size() - 1)
+#if($xnat_experimentData_field_4_NUM_ROWS>=0)
+	#foreach($xnat_experimentData_field_4_COUNTER in [0..$xnat_experimentData_field_4_NUM_ROWS])
+<!-- BEGIN xnat_a:ygtssData/fields/field[$xnat_experimentData_field_4_COUNTER] -->
+		<TABLE>
+			<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:ygtssData/fields/field[$xnat_experimentData_field_4_COUNTER]</font></TH></TR>
+			<TR>
+				<TD align="left" valign="top">
+					<TABLE>
+						<TR><TD>field</TD><TD>$!item.getStringProperty("xnat_a:ygtssData/fields/field[$xnat_experimentData_field_4_COUNTER]/field")</TD></TR>
+						<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:ygtssData/fields/field[$xnat_experimentData_field_4_COUNTER]/name")</TD></TR>
+					</TABLE>
+				</TD>
+			</TR>
+		</TABLE>
+<!-- END xnat_a:ygtssData/fields/field[$xnat_experimentData_field_4_COUNTER] -->
+	#end
+#end
+
+<BR>#parse("/screens/ReportProjectSpecificFields.vm")

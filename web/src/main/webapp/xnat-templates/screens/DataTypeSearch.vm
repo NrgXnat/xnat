@@ -1,0 +1,6 @@
+<form id="${dataType}_search" class="data-type-search" method="POST" action="$link.setAction("DisplaySearchAction")">
+<input type="hidden" name="ELEMENT_0" value="$dataType"/>
+#parse("/screens/${schemaElement.getSQLName()}_search.vm")
+<div style="padding:10px 20px;text-align:right;"><input class="btn1" type="submit" name="eventSubmit_doPerform" value="Submit"></div>
+<input type="hidden" name="XNAT_CSRF" value="$!XNAT_CSRF">
+</form>

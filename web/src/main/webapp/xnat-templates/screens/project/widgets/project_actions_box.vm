@@ -1,0 +1,64 @@
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+<!-- actions menu -->
+<DIV id="actionsMenu" class="yuimenu">
+    <DIV class="bd">
+        <ul class="first-of-type">
+            <li class="yuimenuitem">
+                <a class="yuimenuitemlabel">Actions</a>
+            </li>
+        </ul>
+        <ul>
+            #if($turbineUtils.canEdit($user, "xnat:subjectData/project", $project.getId()))
+                <li class="yuimenuitem">
+                    <a class="yuimenuitemlabel" href="#insertbox">Add</a>
+                    <DIV ID="insertbox" class="yuimenu">
+                        <DIV class="bd">
+                            <ul class="first-of-type">
+                                #foreach($protocol in $project.getStudyprotocol())
+                                    <li class="yuimenuitem">
+                                        <a class="yuimenuitemlabel" href="$link.setPage(
+                                            "XDATScreen_edit_${protocol.getDatatypeSchemaElement().getSQLName()}.vm").addPathInfo(
+                                            'project',$project.getId())">$protocol.getDatatypeSchemaElement().getSingularDescription()</a>
+                                    </li>
+                                #end
+                            </ul>
+                        </DIV>
+                    </DIV>
+                </li>
+                <li class="yuimenuitem">
+                    <a class="yuimenuitemlabel" href="$link.setPage("UploadOptions.vm")">Upload Images</a>
+                </li>
+                <li class="yuimenuitem">
+                    <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo(
+                        'xdataction','prearchives').addPathInfo('project',$project.getId())">View Prearchive</a>
+                </li>
+            #end
+        </ul>
+        <ul>
+            <li class="yuimenuitem">
+                <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo(
+                    "xdataction","xml_file").addPathInfo("search_element","xnat:projectData").addPathInfo(
+                    "search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo(
+                    "popup","$!popup")">Download XML</a>
+            </li>
+            #if($user.checkRestrictedFeature("$!om.getId()","data_download"))
+                <li class="yuimenuitem">
+                    <a class="yuimenuitemlabel" data-wait="Preparing data for download..." href="$link.setAction("ProjectDownloadAction").addPathInfo('project',$project.getId())">Download Images</a>
+                </li>
+            #end
+        </ul>
+    </DIV>
+</DIV>
+<SCRIPT language="javascript">
+    YAHOO.util.Event.onContentReady("actionsMenu", function(){
+        var actionsMenu = new YAHOO.widget.Menu("actionsMenu", {
+            autosubmenudisplay: true,
+            scrollincrement: 5,
+            position: "static",
+            maxheight: 130
+        });
+        // Render the MenuBar instance
+        actionsMenu.getItem(0).cfg.setProperty("disabled", true);
+        actionsMenu.render();
+    });
+</SCRIPT>

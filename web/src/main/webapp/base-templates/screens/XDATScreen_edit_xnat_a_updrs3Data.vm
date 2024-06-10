@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">UPDRS3 Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD colspan='2'>
+								#parse("/screens/xnat_edit_subjectAssessorData.vm")
+							</TD></TR>
+							<tr>
+								<TD colspan="2">#parse("/screens/EditProjectSpecificFields.vm")</TD>
+							</tr>
+							<TR><TD>age</TD><TD>#xdatTextBox("xnat_a:updrs3Data/age" $item "" $vr)</TD></TR>
+							<TR><TD>date</TD><TD>#xdatDateBox("xnat_a:updrs3Data/date" $item $vr $years)</TD></TR>
+							<TR><TD>time</TD><TD>#xdatTextBox("xnat_a:updrs3Data/time" $item "" $vr)</TD></TR>
+							<TR><TD>duration</TD><TD>#xdatTextBox("xnat_a:updrs3Data/duration" $item "" $vr)</TD></TR>
+							<TR><TD>delay</TD><TD>#xdatTextBox("xnat_a:updrs3Data/delay" $item "" $vr)</TD></TR>
+							<TR><TD>delay/ref_expt_id</TD><TD>#xdatStringBox("xnat_a:updrs3Data/delay/ref_expt_id" $item "" $vr)</TD></TR>
+							<TR><TD>note</TD><TD>#xdatStringBox("xnat_a:updrs3Data/note" $item "" $vr)</TD></TR>
+							<TR><TD>acquisition_site</TD><TD>#xdatStringBox("xnat_a:updrs3Data/acquisition_site" $item "" $vr)</TD></TR>
+							<TR><TD>visit_id</TD><TD>#xdatStringBox("xnat_a:updrs3Data/visit_id" $item "" $vr)</TD></TR>
+							<TR><TD>visit</TD><TD>#xdatStringBox("xnat_a:updrs3Data/visit" $item "" $vr)</TD></TR>
+							<TR><TD>version</TD><TD>#xdatTextBox("xnat_a:updrs3Data/version" $item "" $vr)</TD></TR>
+							<TR><TD>original</TD><TD>#xdatStringBox("xnat_a:updrs3Data/original" $item "" $vr)</TD></TR>
+							<TR><TD>protocol</TD><TD>#xdatStringBox("xnat_a:updrs3Data/protocol" $item "" $vr)</TD></TR>
+							<TR><TD>label</TD><TD>#xdatStringBox("xnat_a:updrs3Data/label" $item "" $vr)</TD></TR>
+							<TR><TD>inScanner</TD><TD>#xdatBooleanRadio("xnat_a:updrs3Data/inScanner" $item false $vr)</TD></TR>
+							<TR><TD>clicker/right</TD><TD>#xdatTextBox("xnat_a:updrs3Data/clicker/right" $item "" $vr)</TD></TR>
+							<TR><TD>clicker/left</TD><TD>#xdatTextBox("xnat_a:updrs3Data/clicker/left" $item "" $vr)</TD></TR>
+							<TR><TD>clicker/interval</TD><TD>#xdatTextBox("xnat_a:updrs3Data/clicker/interval" $item "" $vr)</TD></TR>
+							<TR><TD>tremorRest/face</TD><TD>#xdatStringBox("xnat_a:updrs3Data/tremorRest/face" $item "" $vr)</TD></TR>
+							<TR><TD>tremorRest/rue</TD><TD>#xdatStringBox("xnat_a:updrs3Data/tremorRest/rue" $item "" $vr)</TD></TR>
+							<TR><TD>tremorRest/lue</TD><TD>#xdatStringBox("xnat_a:updrs3Data/tremorRest/lue" $item "" $vr)</TD></TR>
+							<TR><TD>tremorRest/rle</TD><TD>#xdatStringBox("xnat_a:updrs3Data/tremorRest/rle" $item "" $vr)</TD></TR>
+							<TR><TD>tremorRest/lle</TD><TD>#xdatStringBox("xnat_a:updrs3Data/tremorRest/lle" $item "" $vr)</TD></TR>
+							<TR><TD>rigidity/neck</TD><TD>#xdatStringBox("xnat_a:updrs3Data/rigidity/neck" $item "" $vr)</TD></TR>
+							<TR><TD>rigidity/rue</TD><TD>#xdatStringBox("xnat_a:updrs3Data/rigidity/rue" $item "" $vr)</TD></TR>
+							<TR><TD>rigidity/lue</TD><TD>#xdatStringBox("xnat_a:updrs3Data/rigidity/lue" $item "" $vr)</TD></TR>
+							<TR><TD>rigidity/rle</TD><TD>#xdatStringBox("xnat_a:updrs3Data/rigidity/rle" $item "" $vr)</TD></TR>
+							<TR><TD>rigidity/lle</TD><TD>#xdatStringBox("xnat_a:updrs3Data/rigidity/lle" $item "" $vr)</TD></TR>
+							<TR><TD>handMovementsGrip/right</TD><TD>#xdatTextBox("xnat_a:updrs3Data/handMovementsGrip/right" $item "" $vr)</TD></TR>
+							<TR><TD>handMovementsGrip/left</TD><TD>#xdatTextBox("xnat_a:updrs3Data/handMovementsGrip/left" $item "" $vr)</TD></TR>
+							<TR><TD>facialExpression</TD><TD>#xdatTextBox("xnat_a:updrs3Data/facialExpression" $item "" $vr)</TD></TR>
+							<TR><TD>gait</TD><TD>#xdatTextBox("xnat_a:updrs3Data/gait" $item "" $vr)</TD></TR>
+							<TR><TD>speech</TD><TD>#xdatTextBox("xnat_a:updrs3Data/speech" $item "" $vr)</TD></TR>
+							<TR><TD>writing</TD><TD>#xdatTextBox("xnat_a:updrs3Data/writing" $item "" $vr)</TD></TR>
+							<TR><TD>ariseFromChair</TD><TD>#xdatTextBox("xnat_a:updrs3Data/ariseFromChair" $item "" $vr)</TD></TR>
+							<TR><TD>actionPosturalTremor/right</TD><TD>#xdatTextBox("xnat_a:updrs3Data/actionPosturalTremor/right" $item "" $vr)</TD></TR>
+							<TR><TD>actionPosturalTremor/left</TD><TD>#xdatTextBox("xnat_a:updrs3Data/actionPosturalTremor/left" $item "" $vr)</TD></TR>
+							<TR><TD>handsRAM/right</TD><TD>#xdatTextBox("xnat_a:updrs3Data/handsRAM/right" $item "" $vr)</TD></TR>
+							<TR><TD>handsRAM/left</TD><TD>#xdatTextBox("xnat_a:updrs3Data/handsRAM/left" $item "" $vr)</TD></TR>
+							<TR><TD>fingerTaps/right</TD><TD>#xdatTextBox("xnat_a:updrs3Data/fingerTaps/right" $item "" $vr)</TD></TR>
+							<TR><TD>fingerTaps/left</TD><TD>#xdatTextBox("xnat_a:updrs3Data/fingerTaps/left" $item "" $vr)</TD></TR>
+							<TR><TD>posture</TD><TD>#xdatTextBox("xnat_a:updrs3Data/posture" $item "" $vr)</TD></TR>
+							<TR><TD>posturalStability</TD><TD>#xdatTextBox("xnat_a:updrs3Data/posturalStability" $item "" $vr)</TD></TR>
+							<TR><TD>footTaps/right</TD><TD>#xdatTextBox("xnat_a:updrs3Data/footTaps/right" $item "" $vr)</TD></TR>
+							<TR><TD>footTaps/left</TD><TD>#xdatTextBox("xnat_a:updrs3Data/footTaps/left" $item "" $vr)</TD></TR>
+							<TR><TD>bodyBradykinesiaHypokinesia</TD><TD>#xdatTextBox("xnat_a:updrs3Data/bodyBradykinesiaHypokinesia" $item "" $vr)</TD></TR>
+							<TR><TD>problem</TD><TD>#xdatBooleanRadio("xnat_a:updrs3Data/problem" $item false $vr)</TD></TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat_a:updrs3Data -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:updrs3Data/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>#xdatStringBox("xnat_a:updrs3Data/investigator/title" $item "" $vr)</TD></TR>
+										<TR><TD>firstname</TD><TD>#xdatStringBox("xnat_a:updrs3Data/investigator/firstname" $item "" $vr)</TD></TR>
+										<TR><TD>lastname</TD><TD>#xdatStringBox("xnat_a:updrs3Data/investigator/lastname" $item "" $vr)</TD></TR>
+										<TR><TD>institution</TD><TD>#xdatStringBox("xnat_a:updrs3Data/investigator/institution" $item "" $vr)</TD></TR>
+										<TR><TD>department</TD><TD>#xdatStringBox("xnat_a:updrs3Data/investigator/department" $item "" $vr)</TD></TR>
+										<TR><TD>email</TD><TD>#xdatStringBox("xnat_a:updrs3Data/investigator/email" $item "" $vr)</TD></TR>
+										<TR><TD>phone</TD><TD>#xdatStringBox("xnat_a:updrs3Data/investigator/phone" $item "" $vr)</TD></TR>
+										<TR><TD>ID</TD><TD>#xdatStringBox("xnat_a:updrs3Data/investigator/ID" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat_a:updrs3Data/investigator/xnat_investigatorData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:updrs3Data/investigator -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:updrs3Data/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>#xdatStringBox("xnat_a:updrs3Data/validation/method" $item "" $vr)</TD></TR>
+										<TR><TD>date</TD><TD>#xdatDateBox("xnat_a:updrs3Data/validation/date" $item $vr $years)</TD></TR>
+										<TR><TD>notes</TD><TD>#xdatStringBox("xnat_a:updrs3Data/validation/notes" $item "" $vr)</TD></TR>
+										<TR><TD>validated_by</TD><TD>#xdatStringBox("xnat_a:updrs3Data/validation/validated_by" $item "" $vr)</TD></TR>
+										<TR><TD>status</TD><TD>#xdatStringBox("xnat_a:updrs3Data/validation/status" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat_a:updrs3Data/validation/xnat_validationData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:updrs3Data/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_abstractResource_3_COUNTER in [0..5])
+<!-- BEGIN xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>label</TD><TD>#xdatStringBox("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/label" $item "" $vr)</TD></TR>
+												<TR><TD>file_count</TD><TD>#xdatTextBox("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/file_count" $item "" $vr)</TD></TR>
+												<TR><TD>file_size</TD><TD>#xdatTextBox("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/xnat_abstractResource_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_abstractResource_tag_4_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/tag" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/xnat_abstractResource_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag -->
+								</TABLE>
+<!-- END xnat_a:updrs3Data/resources/resource[$xnat_abstractResource_3_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+<!-- BEGIN xnat_a:updrs3Data/fields/field -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/fields/field</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>field</TD>
+								<TD>name</TD>
+							</TR>
+							#foreach($xnat_experimentData_field_4_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_4_COUNTER]/field" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_4_COUNTER]/name" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_4_COUNTER]/xnat_experimentData_field_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat_a:updrs3Data/fields/field -->
+			</TABLE>
+<!-- END xnat_a:updrs3Data -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateSubjectAssessorForm();
+   return false;
+}
+</script>

@@ -1,0 +1,19 @@
+<!-- Sequence: 10 -->
+<!-- Upload/Default -->
+    <li><a href="#!" class="nolink">Images</a>
+        <ul>
+            <!-- Sequence: 10 -->
+            <!-- Images -->
+            <li><a href="$link.setPage("UploadOptions.vm")">All Upload Options</a>
+            <li><a href="$link.setPage("UploadAssistantPage.vm")">XNAT Desktop Applications</a></li>
+            #if(!$siteConfig.getBooleanValue("uiHideCompressedUploaderUploadOption"))
+                <li><a href="$link.setPage("CompressedUploaderPage.vm")">Compressed Uploader</a></li>
+            #end
+            #if(!$siteConfig.getBooleanValue("uiHideDicomScpUploadOption"))
+                <li><a href="$link.setPage("DICOMSCPPage.vm")">DICOM SCP</a></li>
+            #end
+        </ul>
+    </li>
+    <li><a href="$link.setPage("XMLUpload.vm")">XML</a></li>
+    <li><a href="$link.setPage("XDATScreen_uploadCSV.vm")">Spreadsheet</a></li>
+    <li><a href="$link.setPage("XDATScreen_prearchives.vm")">Go to prearchive</a></li>

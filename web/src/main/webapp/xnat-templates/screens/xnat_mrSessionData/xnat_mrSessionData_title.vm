@@ -1,0 +1,20 @@
+<!-- BEGIN /xnat-templates/screens/xnat_mrSessionData/xnat_mrSessionData_title.vm -->
+
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatMrsessiondata" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+#define ($reportTitle)
+    #if ($!om.getIdentifier($project,true))
+        $!om.getIdentifier($project,true)
+    #elseif ($om.getLabel())
+        $om.getLabel()
+    #else
+        $om.getId()
+    #end
+#end
+<div id="report_title" class="edit_title">
+    $om.getSchemaElement().getSingularDescription(): #escapeCleanHTML($reportTitle)
+</div>
+
+<!-- END /xnat-templates/screens/xnat_mrSessionData/xnat_mrSessionData_title.vm -->

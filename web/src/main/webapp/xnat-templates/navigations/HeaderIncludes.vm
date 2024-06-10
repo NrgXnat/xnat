@@ -1,0 +1,266 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.base.BaseElement" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="requireReason" type="java.lang.String" *#
+#* @vtlvariable name="showReason" type="java.lang.String" *#
+#* @vtlvariable name="XNAT_CSRF" type="java.lang.String" *#
+#* @vtlvariable name="SITE_ROOT" type="java.lang.String" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+#* @vtlvariable name="typeObjects" type="java.util.List" *#
+#* @vtlvariable name="typeObject" type="org.nrg.xdat.display.ElementDisplay" *#
+#* @vtlvariable name="appInfo" type="org.nrg.xnat.services.XnatAppInfo" *#
+<!-- path: /xnat-templates/navigations/HeaderIncludes -->
+
+#set ($debugParam = $data.getParameters().getString('debug'))
+#set ($jsDebugParam = $data.getParameters().getString('jsdebug'))
+#set ($DEBUG = ($debugParam == 'true' || $jsDebugParam == 'true'))
+
+## pull in the base JavaScript files
+$navigation.setTemplate("/BaseJS.vm")
+
+#set ($projectName = $turbineUtils.getProjectName($om, $project))
+#if (!$projectName)
+    #set($projectName = $project.getName())
+#end
+#define ($projectNameEsc)
+    #escapeAll("$!projectName")
+#end
+
+#set ($projectId = $turbineUtils.getProjectDisplayID($om, $project))
+#define ($projectIdEsc)
+    #escapeAll("$!projectId")
+#end
+
+<!-- setup XNAT namespace -->
+<script>
+
+    /*
+     * XNAT global namespace object, which will not be overwriten if
+     * already defined. Also define some other top level namespaces.
+     */
+    extend(XNAT, {
+        /*
+         * Parent namespace that templates can use to put their
+         * own namespace
+         */
+        app: {
+            displayNames: {
+                singular: {
+                    project: "$!displayManager.getSingularDisplayNameForProject()",
+                    subject: "$!displayManager.getSingularDisplayNameForSubject()",
+                    imageSession: "$!displayManager.getSingularDisplayNameForImageSession()",
+                    mrSession: "$!displayManager.getSingularDisplayNameForMRSession()"
+                },
+                plural: {
+                    project: "$!displayManager.getPluralDisplayNameForProject()",
+                    subject: "$!displayManager.getPluralDisplayNameForSubject()",
+                    imageSession: "$!displayManager.getPluralDisplayNameForImageSession()",
+                    mrSession: "$!displayManager.getPluralDisplayNameForMRSession()"
+                }
+            },
+            siteId: "$!turbineUtils.GetSystemName()"
+        },
+        data: {
+            context: {
+                siteName: '$!systemName',
+                projectName: '$!projectNameEsc.trim()',
+
+                #if ($!projectId)
+                    projectID: '$!projectIdEsc.trim()',
+                    project: '$!projectIdEsc.trim()',
+                    ## if the user is viewing a shared data object, display the ID of the project that owns that object
+                    #if ($!projectId == $!om.getProject())
+                    #else
+                        parentProjectID: '#escapeAll("$!om.getProject()")',
+                    #end
+                #else
+                    projectID: '#escapeAll("$!om.getProject()")',
+                    project: '#escapeAll("$!om.getProject()")',
+                #end
+
+                xsiType: "$!om.getXSIType()",
+
+                #if ($om)
+                    isSubject: $!om.getItem().instanceOf("xnat:subjectData"),
+                    isExperiment: $!om.getItem().instanceOf("xnat:experimentData"),
+                    isSubjectAssessor: $!om.getItem().instanceOf("xnat:subjectAssessorData"),
+                    isImageSession: $!om.getItem().instanceOf("xnat:imageSessionData"),
+                    isImageAssessor: $!om.getItem().instanceOf("xnat:imageAssessorData"),
+                #end
+
+                #define ($subjectLabelEsc)
+                    #if ($!subject.getIdentifier($project,true))
+                        #escapeAll("$!subject.getIdentifier($project,true)")
+                    #elseif ($subject.getLabel())
+                        #escapeAll("$!subject.getLabel()")
+                    #else
+                        #escapeAll("$!subject.getId()")
+                    #end
+                #end
+                subjectLabel: '$!subjectLabelEsc.trim()',
+                subjectID: '#escapeAll("$!subject.getId()")',
+
+                #define ($labelEsc)
+                    #if ($!om.getIdentifier($project,true))
+                        #escapeAll("$!om.getIdentifier($project,true)")
+                    #elseif ($om.getLabel())
+                        #escapeAll("$!om.getLabel()")
+                    #else
+                        #escapeAll("$!om.getId()")
+                    #end
+                #end
+                label: '$!labelEsc.trim()',
+
+                ID: '#escapeAll("$!om.getId()")'
+                ## subjectLabel: "$!item.getStringProperty("xnat:subjectData/name")"
+            },
+            timestamp: jq.now() // timestamp for the page when it loads
+        }
+    });
+
+    if (XNAT.data.context.projectName === "") {
+        #define ($projectName)
+            #escapeAll("$turbineUtils.getProjectName($om, $project)")
+        #end
+        XNAT.data.context.projectName = '$!projectName.trim()';
+    }
+
+    // 'page' object is same as 'context' - easier to remember?
+    XNAT.data.page = XNAT.data.context;
+
+    XNAT.data.siteConfig = getObject(XNAT.data.siteConfig || {});
+
+    XNAT.app.showLeftBar = realValue($!siteConfig.uiShowLeftBarBrowse);
+    XNAT.app.showLeftBarProjects = realValue($!siteConfig.uiShowLeftBarProjects);
+    XNAT.app.showLeftBarFavorites = realValue($!siteConfig.uiShowLeftBarFavorites);
+    XNAT.app.showLeftBarSearch =  realValue($!siteConfig.uiShowLeftBarSearch);
+    XNAT.app.showLeftBarBrowse = realValue($!siteConfig.uiShowLeftBarBrowse);
+    XNAT.app.dateFormat = "$!turbineUtils.getDateFormatter().toPattern()";
+    XNAT.app.rerunProjectAnonOnRename= realValue($!siteConfig.rerunProjectAnonOnRename);
+    
+    #if ($project)
+        #if ($project.getId())
+        window.projectScope = "$!project.getId()";
+        #else
+        window.projectScope = "$!project";
+        #end
+    #end
+
+    if (window.projectScope) {
+        XNAT.data.context.project = XNAT.data.context.projectID = window.projectScope
+    }
+
+    #if ($item)
+        #if ($item.instanceOf("xnat:subjectData"))
+            XNAT.app.current_uri = serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getId()";
+        #elseif($item.instanceOf("xnat:derivedData"))
+            XNAT.app.current_uri = serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getImageSessionData().getSubjectId()/experiments/$om.getImageSessionData().getId()/assessors/$om.getId()";
+        #else
+            XNAT.app.current_uri = serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getSubjectId()/experiments/$om.getId()";
+        #end
+    #end
+
+    // quickly reference today's date
+    XNAT.data.todaysDate = {};
+    // if today was January 23, 2013...
+    // m (1), mm (01), d (23), dd (23), yyyy (2013), ISO/iso (2013-01-23), US/us (01/23/2013)
+    (function (dateObj) {
+        dateObj.date = new Date();
+        dateObj.gotMonth = dateObj.date.getMonth();
+        dateObj.m = (dateObj.gotMonth + 1).toString();
+        dateObj.mm = (dateObj.m.length === 1) ? '0' + dateObj.m : dateObj.m;
+        dateObj.d = dateObj.date.getDate().toString();
+        dateObj.dd = (dateObj.d.length === 1) ? '0' + dateObj.d : dateObj.d;
+        dateObj.yyyy = dateObj.date.getFullYear().toString();
+        dateObj.ISO = dateObj.iso = dateObj.yyyy + '-' + dateObj.mm + '-' + dateObj.dd;
+        dateObj.US = dateObj.us = dateObj.mm + '/' + dateObj.dd + '/' + dateObj.yyyy;
+    })(XNAT.data.todaysDate);
+
+</script>
+<script>
+    // initialize "Chosen" menus on DOM load
+    // all <select class="xnat-menu"> elements
+    // will be converted
+    // putting this here to be at the top of
+    // the jQuery DOM-ready queue
+    jq(function(){ menuInit() });
+</script>
+<script src="${SITE_ROOT}/scripts/xdat.js"></script>
+<script src="${SITE_ROOT}/scripts/DynamicJSLoad.js"></script>
+
+<!-- YAHOO USER INTERFACE files below here -->
+<script src="${SITE_ROOT}/scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+##<script src="${SITE_ROOT}/scripts/yui/build/event/event.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/event/event-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/container/container-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/menu/menu-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/element/element-beta-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/button/button-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/connection/connection-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/treeview/treeview-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/cookie/cookie-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/tabview/tabview-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/datasource/datasource-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/resize/resize-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/dragdrop/dragdrop-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/datatable/datatable-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/paginator/paginator-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/json/json-min.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/xnat_loader.js"></script>
+<script src="${SITE_ROOT}/scripts/LeftBarTreeView.js"></script>
+<script src="${SITE_ROOT}/scripts/justification/justification.js"></script>
+<script>
+
+    // The YUIDOM alias is used throughout XNAT
+    var YUIDOM = YAHOO.util.Dom;
+
+    XNAT.app = getObject(XNAT.app||{});
+    XNAT.app.addFormCSRF = function(form){
+        $$(form||'form').each(function(){
+            var form$ = $(this);
+            if (!form$.has('input[name="XNAT_CSRF"]').length){
+                form$.append('<input type="hidden" name="XNAT_CSRF" value="' + csrfToken + '">')
+            }
+        });
+    };
+
+    jq(function(){
+        // add hidden input with CSRF data
+        // to all forms on page load
+        XNAT.app.addFormCSRF();
+    });
+
+</script>
+
+<!-- YUI css -->
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/xnat/xnat.${css}">
+
+<!-- date input stuff -->
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.${mincss}">
+<script src="${SITE_ROOT}/scripts/lib/dateTimePicker/jquery.datetimepicker.full.${minjs}"></script>
+
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/calendar/assets/skins/sam/calendar.${css}">
+##<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar.js"></script>
+<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar-min.${js}"></script>
+<script src="${SITE_ROOT}/scripts/ezCalendar.${js}"></script>
+
+<!--triage stuff-->
+<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_resource_delete.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_resource_approve.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_file_approve.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/triage/Triage_file_delete.js')"></script>
+
+
+## pull in the XNAT app JavaScript files
+$navigation.setTemplate("/AppJS.vm")
+
+
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.${css}">
+<script src="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.${js}"></script>
+
+
+#addGlobalCustomScreens("header")

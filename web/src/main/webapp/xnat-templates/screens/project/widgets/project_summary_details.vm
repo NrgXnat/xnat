@@ -1,0 +1,11 @@
+<DIV style="white-space:normal;">$!item.getStringProperty("xnat:projectData/description")</DIV>
+#if($canEditOrDeleteProject)
+<BR><A ID="button1" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo(
+    "search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo(
+    "search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Edit Details</A>
+    #if($data.getSession().getAttribute("userHelper").canDelete($project))
+    <A ID="button3" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","delete").addPathInfo(
+        "search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo(
+        "search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Delete</A>
+    #end
+#end

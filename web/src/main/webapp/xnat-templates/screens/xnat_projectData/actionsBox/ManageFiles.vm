@@ -1,0 +1,69 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+<!-- BEGIN xnat-templates/screens/xnat_projectData/actionsBox/ManageFiles.vm -->
+#if($user.checkFeature($om,"manage_files") && $siteConfig.uiShowProjectManageFiles)
+     <li class="yuimenuitem">
+			<A href="" ONCLICK="window.viewer.render();return false;">
+				<div class="ic">
+					<img border="0" src="$content.getURI("scripts/yui/build/treeview/assets/img/folders/cf.gif")"/>
+				</div>
+				<div class="ic_spacer">&nbsp;</div>
+				Manage Files
+			</A>
+	 </li>
+
+<script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
+<script type="text/javascript">
+  	var obj=new Object();
+  	obj.uri=serverRoot + "/REST/projects/$!om.getId()";
+    obj.refresh = serverRoot + "/data/services/refresh/catalog?options=" + encodeURIComponent("populateStats,append,delete,checksum") + "&XNAT_CSRF=" + csrfToken + "&resource=/archive/projects/$!om.getId()";
+    obj.objectId = "$!om.getId()";
+    obj.objectType = "project";
+
+    #if ($turbineUtils.canEdit($user, $item))
+	      obj.canEdit=true;
+    #else
+	      obj.canEdit=false;
+	#end
+    #if ($turbineUtils.canDelete($user, $item))
+          obj.canDelete=true;
+    #else
+          obj.canDelete=false;
+    #end
+
+  obj.catalogs=new Object();
+  obj.catalogs.ids=new Array();
+
+  obj.allowDownload = ("$!user.checkRestrictedFeature("$!om.getProject()",'data_download')" == "true")
+  window.viewer=new FileViewer(obj);
+    
+  function showFiles(){
+    window.viewer.render();
+  }
+</script>
+<style type="text/css">   
+	/* custom styles for inline instances */
+.yui-skin-sam .yui-ac-input { position:static;width:20em; vertical-align:middle;}
+.yui-skin-sam .yui-ac-container { width:20em;left:0px;}
+
+/* buttons */
+.yui-ac .yui-button {vertical-align:middle;}
+.yui-ac .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-rt.png")) center center no-repeat }
+.yui-ac .open .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-dn.png")) center center no-repeat}
+
+/* custom styles for scrolling container */ 
+	#type_auto_div { 
+    padding-bottom:2em; 
+	}
+	#type_auto_div .yui-ac-content { 
+    max-height:20em;overflow:auto;overflow-x:hidden; /* set scrolling */ 
+    _height:20em; /* ie6 */ 
+	} 
+	
+</style>
+#end
+<!-- END xnat-templates/screens/xnat_projectData/actionsBox/ManageFiles.vm -->

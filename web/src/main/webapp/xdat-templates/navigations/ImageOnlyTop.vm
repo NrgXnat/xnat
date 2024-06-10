@@ -1,0 +1,9 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setBgColor($ui.bgcolor)
+<table cellspacing="0" width="100%">
+   <tr valign="bottom" height="80">
+	<td>
+		<a href="$link.setPage("Index.vm")">#parse("/screens/Logo.vm")</a>
+	</td>
+   </tr>
+</table>

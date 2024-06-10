@@ -1,0 +1,3 @@
+#set($importHandlerTypesWithUploadEnabled = $siteConfig.projectUploadImagesFromActionsBox)
+#set($projectId = $project.getId())
+#parse("/screens/UploadAction.vm")

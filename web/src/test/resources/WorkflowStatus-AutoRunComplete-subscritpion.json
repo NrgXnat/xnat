@@ -1,0 +1,9 @@
+{
+    "active": true,
+    "event-filter": {
+        "event-type": "org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent",
+        "project-ids": ["ABC123"],
+        "payload-filter": "(@.status == \"Complete\" && @.eventId == \"xnat_tools/AutoRun.xml\" )"
+    },
+    "action-key": "org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction"
+}

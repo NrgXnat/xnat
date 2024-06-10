@@ -1,0 +1,321 @@
+#* @vtlmacrolibrary path="../../../../xdat-templates/macros/TurbineMacros.vm" *#
+#* @vtlvariable name="arcP" type="org.nrg.xdat.om.ArcProject" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="parentTemplate" type="java.lang.String" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+## YAML for spawning project details
+<script id="project-data-form" type="text/yaml">
+
+    panels:
+        kind: panel.form
+        contents:
+            projectTitle:
+                kind: panel.input.text
+                name: "xnat:projectData/name"
+                label: Project Title
+                validate: required text
+                description: >
+                    <span class="noteRequired">REQUIRED: </span>
+                    <span class="formLabelRequiredStatement">Enter the full name of your project here. This will show up on
+                    project listings.</span>
+                element:
+                    size: 60
+            runningTitle:
+                kind: panel.input.text
+                name: "xnat:projectData/secondary_ID"
+                label: Running Title
+                validate: required alphaNumDashSpace max-length=24
+                description: >
+                    <span class="noteRequired">REQUIRED: </span>
+                    <span class="formLabelRequiredStatement">Create a simple abbreviation of your project name, using 24
+                    characters or less. Spaces are allowed. This will be commonly used in menus and UI elements.</span>
+                element:
+                    size: 24
+            projectID:
+                kind: panel.input.text
+                name: "xnat:projectData/ID"
+                label: Project ID
+                validate: required text id-strict max-length=24
+                description: >
+                    <span class="noteRequired">REQUIRED: </span>
+                    <span class="formLabelRequiredStatement">Create a one word project identifier. This is used in the
+                    database and <b>cannot be changed</b>.</span>
+                element:
+                    size: 24
+
+    # more to come...?
+
+</script>
+
+<style>
+    #project_details th,
+    #project_details td { padding-bottom: 15px; }
+    #project_details th { padding-top: 8px; padding-right: 8px; text-align: right; vertical-align: top; white-space: nowrap; }
+    #project_details div.requirementStatement { padding: 5px 2px 0; }
+    #project_details.edit-project input.requiredField { border: 1px solid #c0c0c0; }
+    #project_details.edit-project div.requirementStatement { display: none; }
+    #project_details .read-only { font-weight: bold; background: #f0f0f0; border-color: #f0f0f0; }
+    #project_details #investigatorBox { margin-top: 2px; }
+</style>
+
+#define($projectIdEsc)#escapeAll($!project.getId())#end
+
+#define ($projectDisplayNameSingular)
+    #escapeAll($displayManager.getSingularDisplayNameForProject())
+#end
+
+#set ($PROJECT_DISPLAY_NAME = $projectDisplayNameSingular.toString().trim())
+#set ($PROJECT_DISPLAY_LOWER = $PROJECT_DISPLAY_NAME.toLowerCase())
+
+<table id="project_details">
+
+    <tr>
+        <th>${PROJECT_DISPLAY_NAME} Title</th>
+        <td>
+            <input class="requiredField project_title title" id="xnat:projectData/name" type="text" name="xnat:projectData/name" value="$!item.getStringProperty("xnat:projectData/name")" size="95" maxlength="199">
+            <div class="requirementStatement">
+                <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Enter the full name of your project here. This will show up on project listings.</span>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <th>Running Title</th>
+        <td>
+            <input class="requiredField abbreviation" id="xnat:projectData/secondary_ID" type="text" name="xnat:projectData/secondary_ID" value="$!item.getStringProperty("xnat:projectData/secondary_ID")" size="24" maxlength="24">
+            <div class="requirementStatement">
+                <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Create a simple abbreviation of your project name, using 24 characters or less. Spaces are allowed.<br>This will be commonly used in menus and UI elements.</span>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <th>${PROJECT_DISPLAY_NAME} ID</th>
+        <td>
+            #if( $parentTemplate != 'add' )
+                <input readonly class="read-only" id="project-id" type="text" name="xnat:projectData/ID" size="14" value="$item.getStringProperty("xnat:projectData/ID")">
+                ##<input class="abbreviation" id="xnat:projectData/ID" type="hidden" name="xnat:projectData/ID" value="$item.getStringProperty("xnat:projectData/ID")">
+                ##<p class="project-id">$item.getProperty("xnat:projectData/ID")</p>
+            #else
+                <input class="requiredField abbreviation" id="xnat:projectData/ID" type="text" name="xnat:projectData/ID" value="$!item.getStringProperty("xnat:projectData/ID")" size="32" maxlength="32" onchange="this.value=stringCamelCaps(this.value);">
+            #end
+            <div class="requirementStatement">
+                <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Create a one word project identifier. This is used in the database and <b>cannot be changed.</b></span>
+            </div>
+        </td>
+    </tr>
+
+   ## Add custom details
+   #addCustomScreens("xnat:projectData" "edit/details")
+    
+    <tr>
+        <th>
+            <span class="nobr">${PROJECT_DISPLAY_NAME} Description</span>
+        </th>
+        <td>
+            <textarea id="xnat:projectData/description" name="xnat:projectData/description" rows="4" cols="70">$!item.getStringProperty("xnat:projectData/description")</textarea>
+            <div class="requirementStatement">
+                <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">Provide a description of your project. This is for reference only and is not searchable.</span>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <th>Keywords</th>
+        <td>
+            <input id="xnat:projectData/keywords" type="text" name="xnat:projectData/keywords" value="$!item.getStringProperty("xnat:projectData/keywords")" size="95" maxlength="255">
+            <div class="requirementStatement">
+                <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">Enter searchable keywords. Each word, separated by a space, can be used independently as a search string.</span>
+            </div>
+        </td>
+    </tr>
+
+    #set($pathInfo = $arcP.getPaths())
+
+    <input type="hidden" name="arc:project/current_arc" value="arc001">
+
+    <tr>
+        <th>Alias(es)</th>
+        <td>
+            #set($numAliases = $om.getAliases_alias().size())
+            #if(!$numAliases || $numAliases < 3)
+                #set($numAliases = 3)
+            #end
+            #foreach($aliasCounter in [0..$numAliases])
+                <input type="text" size="17" maxlength="99" class="project_alias" id="xnat:projectData/aliases/alias[$aliasCounter]/alias" name="xnat:projectData/aliases/alias[$aliasCounter]/alias" value="$!item.getStringProperty("xnat:projectData/aliases/alias[$aliasCounter]/alias")">
+                &nbsp;
+            #end
+            <div class="requirementStatement">
+                <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">Enter alternate aliases (for example: charge codes) that this project can be identified by.</span>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <th>Investigator(s)</th>
+        <td>
+            <!-- #investigatorBox gets replaced via JS -->
+            <div id="investigatorBox">Loading...</div>
+            #if($siteConfig.uiAllowMoreProjectInvestigators)
+                <div class="requirementStatement">
+                    <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">List investigators associated with this project. This is for reference only and <b>does not provide access</b> to this project for the listed investigators.</span>
+                 </div>
+            #end
+        </td>
+    </tr>
+    #parse("/screens/xnat_projectData/edit/parameters.vm")
+
+</table>
+
+<script type="text/javascript" src="$content.getURI("scripts/generated/xnat_investigatorData.js")"></script>
+
+<script>
+
+    (function(){
+
+        var projectDetails$ = $('#project_details');
+
+        #if ( $parentTemplate == 'add' )
+            projectDetails$.addClass('add-project');
+        #elseif ( $parentTemplate == 'edit' )
+            projectDetails$.addClass('edit-project');
+        #end
+
+        var investigators = XNAT.app.investigators = getObject(XNAT.app.investigators);
+        investigators.project = XNAT.data.context.projectID;
+        investigators.primary = null;
+        investigators.others = [];
+        investigators.count = 0;
+
+        #if($om.getProperty("pi_xnat_investigatordata_id"))
+            investigators.primary = '$!om.getProperty("pi_xnat_investigatordata_id")';
+        #end
+
+        #set ($primaryInv = $!om.getProperty("pi_xnat_investigatordata_id"))
+        #foreach($inv in $om.investigators_investigator)
+            #if (!$inv.xnatInvestigatordataId.equals($primaryInv))
+                investigators.others.push('$inv.getXnatInvestigatordataId()');
+            #end
+        #end
+
+        investigators.primary = investigators.primary || 'NULL';
+
+        console.log(investigators.primary);
+    })();
+
+    function stringCamelCaps(val) {
+        if (val === "")return "";
+        var temp = val;
+        var regex = /^[0-9A-Za-z_-]+$/g;
+        if (!(regex.test(temp))) {
+            xmodal.message('Validation Error', 'No special characters allowed in ${PROJECT_DISPLAY_LOWER} abbreviation.');
+            return "";
+        }
+        var newVal = '';
+        temp = temp.split(' ');
+        for (var c = 0; c < temp.length; c++) {
+            if (c === 0)
+                newVal += temp[c].substring(0, 1) +
+                    temp[c].substring(1, temp[c].length);
+            else
+                newVal += temp[c].substring(0, 1).toUpperCase() +
+                    temp[c].substring(1, temp[c].length);
+        }
+        return newVal;
+    }
+
+</script>
+
+<script type="text/javascript" src="$content.getURI("scripts/xnat/app/investigators.js")"></script>
+
+<script>
+    (function(){
+
+        var investigators = XNAT.app.investigators = getObject(XNAT.app.investigators);
+
+        // existing container for ALL investigator elements
+        var iBox = $('#investigatorBox');
+
+        // xnat:projectData/pi_xnat_investigatordata_id
+        // PRIMARY INVESTIGATOR
+        var primaryBox = spawn('span#primary-investigator-menu', [['b', 'Primary Investigator: ']]);
+
+        var primaryMenu = investigators.init();
+        var otherMenu = investigators.init(); // new menu instance
+
+        investigators.menus = [primaryMenu, otherMenu];
+
+        investigators.primaryMenu = primaryMenu;
+        investigators.otherMenu = otherMenu;
+
+        // creates <select>
+        primaryMenu.createMenu({
+            name: 'xnat:projectData/pi_xnat_investigatordata_id',
+            className: 'primary'
+        });
+
+        // creates <option> elements with PI selected
+        primaryMenu.createMenuItems(investigators.primary);
+
+        // puts the menu in the box
+        primaryMenu.render(primaryBox, 300);
+
+        // when the Primary menu changes, disable that option in the 'Other' menu
+        primaryMenu.menu.onchange = function(){
+            console.log(this.value);
+            investigators.primary = this.value;
+            otherMenu.updateMenu();
+        }
+
+        // button for creating new (other) investigators
+        var createPrimary = spawn('button#create-primary|type=button', 'Create New');
+
+        createPrimary.onclick = function(){
+            primaryMenu.dialog();
+        };
+
+        var editPrimary = spawn('a#edit-primary|href=#!', 'Edit Selected');
+
+        editPrimary.onclick = function(){
+            if (investigators.primary !== 'NULL') {
+                primaryMenu.dialog(investigators.primary)
+            }
+        }
+        
+        // xnat:projectData/investigators/investigator[1]/xnat_investigatordata_id
+        // OTHER INVESTIGATORS
+        var otherBox = spawn('div#other-investigators', {
+            style: { margin: '15px 0' }
+        }, [ ['b', 'Other Investigators: '], ['br'] ]);
+        
+        otherMenu.createMenu({
+            id: 'others-menu',
+            name: 'otherInvestigators',
+            value: '',
+            className: 'other',
+            multiple: true
+        });
+
+        otherMenu.createMenuItems(investigators.others);
+        
+        otherMenu.render(otherBox, 600);
+
+        // button for creating new (other) investigators
+        var createOther = spawn('button#create-investigator|type=button', 'Create Investigator');
+
+        createOther.onclick = function(){
+            otherMenu.dialog('', primaryMenu);
+        };
+        
+#if($siteConfig.uiAllowMoreProjectInvestigators)
+        iBox.empty().append([primaryBox, ' &nbsp; ', editPrimary, otherBox, createOther]);
+#else
+        iBox.empty().append([primaryBox, ' &nbsp; ', editPrimary, ' &nbsp; ', createOther]);
+#end
+
+    })();
+</script>

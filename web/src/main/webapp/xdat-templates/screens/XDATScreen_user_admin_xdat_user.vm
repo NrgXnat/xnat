@@ -1,0 +1,17 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<p align=left>
+<TABLE border="0" width="95%">
+	<TR>
+		<TD align=left align="left">
+			<p>This feature has been removed as of version 1.6.</p>
+		</TD>
+	</TR>	
+</table>
+</p>

@@ -1,0 +1,148 @@
+#parse($turbineUtils.getTemplateName("report","xnat:imageAssessorData",$project))
+
+<!-- BEGIN val_protocolData/report.vm -->
+
+<script type="text/javascript">
+	document.title = "Acquisition Validation for $!mr.getIdentifier($project,false)";
+</script>
+
+<style>
+TH {
+	text-align:left;
+}
+.clauseTable td{
+	color:red;
+}	
+.status {
+	font-weight:700;
+}
+.rowfail {
+	background-color:FFDDEE;
+}
+.fieldfail {
+	color:red;
+}
+.fieldpass {
+	color:green;
+}
+.scanDIV{
+	margin-top:0px;
+}
+</style>
+
+
+#set($status=$!om.getCheck_status())
+#set ($conditions = $om.getCheck_conditions_condition())
+#set($val_protocolData_cause_15_NUM_ROWS=$conditions.size())
+
+<p><b>Validation Status</b>: <font class="status field$status">$!status.toUpperCase()</font></p>
+
+</br>
+#if($val_protocolData_cause_15_NUM_ROWS>0)
+	#set ($acquisitionStatus = 0)
+	#set ($failStatus="FAIL")
+			#foreach($condition in $conditions)
+				#if ($condition.getStatus().equalsIgnoreCase($failStatus))
+				  #set ($acquisitionStatus = 1)
+				#end
+			#end
+		#if ($acquisitionStatus == 1)
+		<p align="left">Failure cause #if($val_protocolData_cause_15_NUM_ROWS>1)s#end</p>
+		#else 
+		<p align="left">Passed</p>
+		#end
+		<ul>
+			#foreach($condition in $conditions)
+			  
+					<li>$!condition.getId()	$!condition.getDiagnosis()</li>
+			   
+			#end
+		</ul>	
+		
+#end
+
+</br>
+
+#set ($comments = $om.getCheck_comments_comment())
+#set($val_protocolData_comment_16_NUM_ROWS=$comments.size())
+#if($val_protocolData_comment_16_NUM_ROWS>0)
+		<table>
+		<TR>
+		 <TD align="left" colspan="3">User Comments </TD>
+		</TR>
+			#foreach($comment in $comments)
+			<TR>
+				<TD>$!comment.getDatetime()</TD>
+				<TD>$!comment.getUsername()</TD>
+				<TD>$!comment.getComment()</TD>
+			</TR>
+			#end
+		</table>				
+#end
+
+</br>
+
+<p><b>Scan Validations for $!mr.getIdentifier($project,false)</b></p>
+
+
+#set($scanValidations = $om.getScans_scanCheck())
+#set($val_protocolData_scan_18_NUM_ROWS=$scanValidations.size())
+
+#if($val_protocolData_scan_18_NUM_ROWS>0)
+
+#foreach($scanValidation in $scanValidations)
+
+#set($scanId=$!scanValidation.getScanId())
+#set($scan=$mr.getScanById("$scanId"))
+#set($status=$!scanValidation.getStatus())
+#set ($conditions = $scanValidation.getConditions_condition())
+			
+#set($val_protocolData_scan_condition_19_NUM_ROWS=$conditions.size())
+
+			
+</br>			
+
+<b>Scan $!scanId </b> ($!scan.getType()-$!scan.getSeriesDescription()) <font class="status field$status">$!status.toUpperCase()</font> 
+<br/>
+<TABLE>
+		#foreach($condition in $conditions)
+		#set($status=$!condition.getStatus())
+
+			<TR>
+				<TD>$!condition.getId() ($!condition.getExpectedValue()):</TD>
+				<TD><font class="status field$status">$!status.toUpperCase()</font>
+				#if ($!status.equalsIgnoreCase("PASS"))
+				   </TD>
+				#else
+				  ($!condition.getFoundValue()) </TD>
+				#end
+			</TR>
+		#end
+</table>
+
+</br>				
+
+#set ($comments = $scanValidation.getCheck_comments_comment())
+#set($val_protocolData_comment_20_NUM_ROWS=$comments.size())
+#if($val_protocolData_comment_20_NUM_ROWS>0)
+		<table>
+		<TR>
+		 <TD align="left" colspan="3">Scan Comments </TD>
+		</TR>
+			#foreach($comment in $comments)
+			<TR>
+				<TD>$!comment.getDatetime()</TD>
+				<TD>$!comment.getUsername()</TD>
+				<TD>$!comment.getComment()</TD>
+			</TR>
+			#end
+		</table>				
+#end
+
+
+
+#end
+#end
+
+
+<!-- END val_protocolData/report.vm -->

@@ -1,0 +1,50 @@
+:root {
+
+    /* Default XNAT brand colors */
+    --XNAT-blue-100: #e4efff;
+    --XNAT-blue-200: #cce1f3;
+    --XNAT-blue-300: #66c7ff; /* alternate link color for dark bgs */
+    --XNAT-blue-400: #2fa4e7;
+    --XNAT-blue-500: #1a75bb; /* primary XNAT brand blue */
+    --XNAT-blue-600: #085895;
+    --XNAT-blue-700: #033769;
+
+    --XNAT-gray-050: #f7f7f7;
+    --XNAT-gray-100: #f0f0f0;
+    --XNAT-gray-200: #d0d0d0;
+    --XNAT-gray-300: #cccccc; /* primary border color */
+    --XNAT-gray-400: #a0a0a0;
+    --XNAT-gray-500: #848484;
+    --XNAT-gray-600: #6d6d6d;
+    --XNAT-gray-700: #484848;
+    --XNAT-gray-900: #242424;
+
+    --XNAT-yellow-100: #ffffcc;
+    --XNAT-yellow-500: #ffaa66;
+    --XNAT-red-100: #ffeaf5;
+    --XNAT-red-500: #993333;
+    --XNAT-red-600: #702222;
+    --XNAT-green-100: #dbffc9;
+    --XNAT-green-500: #339933;
+    --XNAT-green-600: #227022;
+
+    /* basic text colors */
+    --text-color: #000000;
+    --text-color-reverse: #ffffff;
+
+    /* links and interactive elements */
+    --link-color: #084fab;
+    --link-color-hover: #1a75bb;
+    --link-color-reverse: #66c7ff;
+    --link-color-reverse-hover: #cce1f3;
+    --default-button-bg: #f7f7f7 linear-gradient( #ffffff, #f0f0f0 );
+    --default-button-border: #848484; /* #a0a0a0 */
+    --default-button-text: #000000;
+    --primary-button-bg: #1A75BB linear-gradient( #3C8BC7, #1A75BB );
+    --primary-button-border: #085895;
+    --primary-button-text: #ffffff;
+
+    /* noninteractive panels and elements */
+    --default-border: #ccc; /* #d0d0d0 #c0c0c0 #c8c8c8 */
+
+}

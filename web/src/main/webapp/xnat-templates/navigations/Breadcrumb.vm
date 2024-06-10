@@ -1,0 +1,567 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatExperimentdata" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="subject" type="org.nrg.xdat.om.XnatSubjectdata" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+<div id="breadcrumbs"></div>
+#if($project)
+    #if($project.class.name == "java.lang.String")
+        #set($projectId = $project)
+    #else
+        #set($projectId = $project.getId())
+    #end
+#else
+    #if($om)
+        #if($om.getProject())
+            #set($projectId = $om.getProject())
+        #else
+            #set($projectId = "")
+        #end
+    #else
+        #set($projectId = "")
+    #end
+#end
+#if($subject)
+    #if($subject.class.name == "java.lang.String")
+        #set($subjectId = $subject)
+    #else
+        #set($subjectId = $subject.getId())
+    #end
+#end
+
+#macro(makeDefaultLink)
+    #if($!om && $om.getId())
+        #set($xsitype = "#escapeHTML($om.getXSIType())")
+        #if($!projectId && $!projectId != "")
+            #set ($defaultLink = $link.setAction("DisplayItemAction").addPathInfo("search_element","$xsitype").addPathInfo("search_field","${xsitype}.ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId"))
+        #else
+            #set ($defaultLink = $link.setAction("DisplayItemAction").addPathInfo("search_element","$xsitype").addPathInfo("search_field","${xsitype}.ID").addPathInfo("search_value","$om.getId()"))
+        #end
+        '$defaultLink'
+    #else
+        '#'
+    #end
+#end
+
+<script src="$content.getURI("scripts/xnat/ui/breadcrumbs.js")"></script>
+<script language="javascript">
+
+    window.isProjectPage = (XNAT.data.context.xsiType === 'xnat:projectData');
+
+    // wrap it up to keep things
+    // out of global scope
+    (function(){
+
+        const crumbs = [];
+
+        #if($!projectId && $!projectId != "")
+            #if($om)
+                #set($item = $om.getItem())
+                //HAS OM
+                #if($item.instanceOf("xnat:mrAssessorData"))
+                    //mrAssessorData
+                    #if($mr)
+
+                    #else
+                        #if($mr.getMrSessionData())
+                            #set($pet=$om.getMrSessionData())
+                        #end
+                    #end
+                    #if($subject)
+
+                    #else
+                        #if($mr.getSubjectData())
+                            #set($subject= $mr.getSubjectData())
+                            #set($subjectId= $subject.getId())
+                        #elseif($part)
+                            #set($subject=$part)
+                            #set($subjectId= $subject.getId())
+                        #end
+                    #end
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $projectId))
+                    #if($!displayId)
+                        // 61
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 71
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subjectId").addPathInfo("project","$projectId")',
+                            label: '#if($!subject.getIdentifier($projectId, true))$!subject.getIdentifier($projectId, true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($mr)
+                        // 81
+                        crumbs.push({
+                            id:    '$!mr.getId()',
+                            type:  'MR',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:mrSessionData").addPathInfo("search_field","xnat:mrSessionData.ID").addPathInfo("search_value","$mr.getId()").addPathInfo("project","$projectId")',
+                            label: '#if($!mr.getIdentifier($projectId, true))$!mr.getIdentifier($projectId, true)#elseif($mr.getLabel())$!mr.getLabel()#else$!mr.getId()#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.getId())
+                            // 92
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId")',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 100
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.getId())
+                            // 108
+                            crumbs.push({
+                                link:  #makeDefaultLink(),
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+                #elseif($item.instanceOf("xnat:petAssessorData"))
+                    //petAssessorData
+                    #if($pet)
+
+                    #else
+                        #if($om.getPetSessionData())
+                            #set($pet=$om.getPetSessionData())
+                        #end
+                    #end
+                    #if($subject)
+
+                    #else
+                        #if($pet.getSubjectData())
+                            #set($subject= $pet.getSubjectData())
+                            #set($subjectId= $subject.getId())
+                        #elseif($part)
+                            #set($subject=$part)
+                            #set($subjectId= $subject.getId())
+                        #end
+                    #end
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $projectId))
+                    #if($!displayId)
+                        // 139
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 149
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subjectId").addPathInfo("project","$projectId")',
+                            label: '#if($!subject.getIdentifier($projectId, true))$!subject.getIdentifier($projectId, true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($pet)
+                        // 159
+                        crumbs.push({
+                            id:    '$!pet.getId()',
+                            type:  'PET',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:petSessionData").addPathInfo("search_field","xnat:petSessionData.ID").addPathInfo("search_value","$pet.getId()").addPathInfo("project","$projectId")',
+                            label: '#if($!pet.getIdentifier($projectId, true))$!pet.getIdentifier($projectId, true)#elseif($pet.getLabel())$!pet.getLabel()#else$!pet.getId()#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.getId())
+                            // 170
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId")',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 178
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.getId())
+                            // 186
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  #makeDefaultLink(),
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+                #elseif($item.instanceOf("xnat:subjectAssessorData"))
+                    //subjectAssessorData
+                    #if($subject)
+
+                    #else
+                        #if($om.getSubjectData())
+                            #set($subject= $om.getSubjectData())
+                            #set($subjectId= $subject.getId())
+                        #elseif($part)
+                            #set($subject=$part)
+                            #set($subjectId= $subject.getId())
+                        #end
+                    #end
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $projectId))
+                    #if($!displayId)
+                        // 211
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 221
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subjectId").addPathInfo("project","$projectId")',
+                            label: '#if($!subject.getIdentifier($projectId, true))$!subject.getIdentifier($projectId, true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.getId())
+                            // 232
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId")',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 240
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.getId())
+                            #set ($xsitype = "#escapeHTML($om.getXSIType())");
+                            // 248
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$xsitype").addPathInfo("search_field","${xsitype}.ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId")',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+                #elseif($item.instanceOf("xnat:imageAssessorData"))
+                    //imageAssessorData
+                    #if($om.getImageSessionData())
+                        #set($imageSession=$om.getImageSessionData())
+                    #end
+
+
+                    #if($subject)
+
+                    #else
+                        #if($imageSession.getSubjectData())
+                            #set($subject= $imageSession.getSubjectData())
+                            #set($subjectId= $subject.getId())
+                        #elseif($part)
+                            #set($subject=$part)
+                            #set($subjectId= $subject.getId())
+                        #end
+                    #end
+
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $projectId))
+                    #if($!displayId)
+                        // 278
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 288
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subjectId").addPathInfo("project","$projectId")',
+                            label: '#if($!subject.getIdentifier($projectId, true))$!subject.getIdentifier($projectId, true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($imageSession)
+                        // 298
+                        crumbs.push({
+                            id:    '$!imageSession.getId()',
+                            type:  '$displayManager.getSingularDisplayNameForImageSession().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$imageSession.getXSIType()").addPathInfo("search_field","${imageSession.getXSIType()}.ID").addPathInfo("search_value","$imageSession.getId()").addPathInfo("project","$projectId")',
+                            label: '#if($!imageSession.getIdentifier($projectId, true))$!imageSession.getIdentifier($projectId, true)#elseif($imageSession.getLabel())$!imageSession.getLabel()#else$!imageSession.getId()#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.getId())
+                            // 309
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId")',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 317
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.getId())
+                            // 325
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  #makeDefaultLink(),
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+                #elseif($item.instanceOf("xnat:imageScanData"))
+                    // scan
+                    #if($om.getImageSessionData())
+                        #set($imageSession=$om.getImageSessionData())
+                    #end
+
+
+                    #if($subject)
+
+                    #else
+                        #if($imageSession.getSubjectData())
+                            #set($subject= $imageSession.getSubjectData())
+                            #set($subjectId= $subject.getId())
+                        #elseif($part)
+                            #set($subject=$part)
+                            #set($subjectId= $subject.getId())
+                        #end
+                    #end
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $projectId))
+                    #if($!displayId)
+                        // 380
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 390
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subjectId").addPathInfo("project","$projectId")',
+                            label: '#if($!subject.getIdentifier($projectId, true))$!subject.getIdentifier($projectId, true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($imageSession)
+                        // 400
+                        crumbs.push({
+                            id:    '$!imageSession.getId()',
+                            type:  '$displayManager.getSingularDisplayNameForImageSession().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$imageSession.getXSIType()").addPathInfo("search_field","${imageSession.getXSIType()}.ID").addPathInfo("search_value","$imageSession.getId()").addPathInfo("project","$projectId")',
+                            label: '#if($!imageSession.getIdentifier($projectId, true))$!imageSession.getIdentifier($projectId, true)#elseif($imageSession.getLabel())$!imageSession.getLabel()#else$!imageSession.getId()#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.getId())
+                            // 411
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$content.getURI("")/data/experiments/$!imageSession.getId()/scans/$om.getId()?format=html',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 419
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.getId())
+                            // 427
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$content.getURI("")/data/experiments/$!imageSession.getId()/scans/$om.getId()?format=html',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+
+                #elseif($item.getGenericSchemaElement().getPrimaryElements().indexOf("xnat:experimentData")!=-1)
+                    //experimentData
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $projectId))
+                    #if($!displayId)
+                        // 339
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  window.isProjectPage ? null :
+                                           '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.getId())
+                            // 351
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId")',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 359
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.getId())
+                            // 367
+                            // prevent 'bonus' breadcrumb on project page
+                            var l = #makeDefaultLink();
+                            if (!window.isProjectPage){
+                                crumbs.push({
+                                    id:    '$!om.getId()',
+                                    link:  #makeDefaultLink(),
+                                    label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                                });
+                            }
+                        #end
+                    #end
+                #elseif($item.instanceOf("xnat:subjectData"))
+                    //subjectData
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $projectId))
+                    #if($!displayId)
+                        // 384
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($pageName)
+                        #if($om.getId())
+                            // 395
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$projectId")',
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 403
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.getId())
+                            // 411
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  #makeDefaultLink(),
+                                label: '#if($!om.getIdentifier($projectId, true))$!om.getIdentifier($projectId, true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+                #elseif($item.instanceOf("xnat:projectData"))
+                    //projectData
+                #else
+                    //UNKNOWN
+                    // 426
+                    crumbs.push({
+                        link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                        label: '$displayManager.getSingularDisplayNameForProject().toUpperCase(): $!projectId'
+                    });
+
+                    #if($page_name)
+                        // 433
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #end
+                #end
+            #else
+                //NO OM
+                // 443
+                crumbs.push({
+                    id:    '$!projectId',
+                    type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                    link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectId")',
+                    label: '$!projectId'
+                });
+
+                #if($page_name)
+                    // 452
+                    crumbs.push({
+                        link:  null,
+                        label: '$pageName'
+                    });
+
+                #end
+            #end
+        #end
+
+        XNAT.ui.breadcrumbs.render('#breadcrumbs', crumbs);
+
+    })();
+
+</script>

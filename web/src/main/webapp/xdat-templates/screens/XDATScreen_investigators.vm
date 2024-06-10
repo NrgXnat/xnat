@@ -1,0 +1,58 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<table  class="dark" STYLE="border-width:1px;border-color:black;border-style:solid;">
+			<tr>
+			<th style="border-style:none;"><font face="$ui.sansSerifFonts">View</font></th>
+		    	<td align="left">
+	   				<a class=b href="$link.setPage("XDATScreen_admin.vm")" onmouseover="return true;">Users</a>
+			   	</td>
+				<td align="left">
+					<a class=b href="$link.setPage("XDATScreen_dataTypes.vm")" onmouseover="return true;">Data Types</a>
+				</td>
+				<td align="left">
+					<a class=b href="$link.setPage("XDATScreen_roles.vm")" onmouseover="return true;">Roles</a>
+				</td>
+				<td align="left">
+					<font face="$ui.sansSerifFonts">Investigators</font>
+				</td>
+				<td align="left">
+					<a class=b href="$link.setPage("XDATScreen_email.vm")" onmouseover="return true;">Mail</a>
+				</td>
+				<td align="left">
+					<a class=b href="$link.setPage("XDATScreen_bundles.vm")" onmouseover="return true;">Bundles</a>
+				</td>
+				<td align="left">
+					<a class=b href="$link.setPage("XDATScreen_admin_options.vm")" onmouseover="return true;">More...</a>
+				</td>
+			</tr>
+		</table>
+		<BR><BR>
+<p>
+<table border="0" width="95%">
+	<tr>
+		<td align=left colspan=2>
+			<font face="$ui.sansSerifFonts" size="2">
+				<font face="$ui.sansSerifFonts"><b>Investigators</b></font>
+			</font>
+			&nbsp;&nbsp;&nbsp;&nbsp;
+			<font face="$ui.sansSerifFonts" size="2">
+				#set ( $url = $link.setPage("XDATScreen_edit_investigator.vm").addPathInfo("popup","true")  ) 
+				<a href="#" ONCLICK="return popup('$url','b');">
+				Add Investigator
+				</a>
+			</font>
+		</td>
+	</tr>
+<tr><td colspan=2>
+
+$!dataTable
+</td></tr></table>

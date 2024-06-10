@@ -1,0 +1,14 @@
+<div id="logo" align="center">#parse("/screens/Logo_Email.vm")</div>
+<hr>
+<div id="content">
+Dear $!user.getFirstname() $!user.getLastname()<br><br>
+The following procedure for $search_value has been completed:
+<br>$process
+
+<br><p>$message</p>
+<br><p>Details for this $displayManager.getSingularDisplayNameForImageSession().toLowerCase() are available at <a href="$server/app/action/DisplayItemAction/search_element/$search_element/search_field/$search_field/search_value/$search_value">the $system website</a>.
+</p>
+<br><br>
+The $system Team
+<a href="$server">$server</a>
+<a href="mailto:$admin_email">$admin_email</a>

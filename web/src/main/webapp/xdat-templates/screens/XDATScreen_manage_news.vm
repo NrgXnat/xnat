@@ -1,0 +1,33 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+#parse("/screens/admin_bar.vm")
+		<BR><BR>
+<p>
+<table border="0" width="95%">
+	<tr>
+		<td align=left colspan=2>
+			<font face="$ui.sansSerifFonts" size="2">
+				<font face="$ui.sansSerifFonts"><b>News</b></font>
+			</font>
+			&nbsp;&nbsp;&nbsp;&nbsp;
+			<font face="$ui.sansSerifFonts" size="2">
+				#set ( $url = $link.setPage("XDATScreen_edit_xdat_newsEntry.vm").addPathInfo("popup","true")  ) 
+				<a href="#" ONCLICK="return popupWSize('$url',800,800);"> 
+				Setup News Item
+				</a>
+			</font>
+		</td>
+	</tr>
+<tr><td colspan=2>
+
+$!dataTable
+</td></tr></table>

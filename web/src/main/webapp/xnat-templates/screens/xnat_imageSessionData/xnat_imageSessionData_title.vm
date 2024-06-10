@@ -1,0 +1,17 @@
+<!-- BEGIN /xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_title.vm -->
+
+#define ($reportTitle)
+    #if ($!om.getIdentifier($project,true))
+        $!om.getIdentifier($project,true)
+    #elseif ($om.getLabel())
+        $om.getLabel()
+    #else
+        $om.getId()
+    #end
+#end
+
+<div id="report_title" class="edit_title">
+    $displayManager.getSingularDisplayNameForImageSession(): #escapeCleanHTML($reportTitle)
+</div>
+
+<!-- END /xnat-templates/screens/xnat_imageSessionData/xnat_imageSessionData_title.vm -->

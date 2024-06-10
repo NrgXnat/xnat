@@ -1,0 +1,90 @@
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="escUtils" type="org.apache.commons.text.StringEscapeUtils" *#
+#set($project=$om)
+<script language="javascript">
+    var server = "$content.getURI("images")/";
+    var user_email = "$user.getEmail()";
+</script>
+#set($subject_count=$project.getSubjectCount())
+#if($om.getStudyprotocol().size() >= 1)
+    #set($protocol=$om.getStudyprotocol().get(0))
+#end
+##	<STYLE>
+##	 TABLE.dataTable{
+##	   cellpadding:0;
+##	   cellspacing:0;
+##	   width:100%;
+##	   border:0;
+##	 }
+##	 TR.resultsHEADER{
+##	   background-color:#FFFFFF;
+##	 }
+##	</STYLE>
+<div id="project-page" class="yui-skin-sam" style="position: relative;">
+
+##    <div id="tp_fm" style="display:none"></div>
+    #addCustomScreens($om.getXSIType() "report/alerts")
+    #addCustomScreens($om.getXSIType() "report/errors")
+    #addGlobalCustomScreens("search/plugins/pre")
+
+    <h2 class="edit_header1" style="">#escapeCleanHTML($!item.getStringProperty("xnat:projectData/name"))</h2>
+
+    ## Create a catchall permissions check for all user types that can edit and delete the project, and use that for all future checks to hide or show features in the UI.
+    #set ($canEditOrDeleteProject = $data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $data.getSession().getAttribute("userHelper").canDelete($project))
+
+    #if($canEditOrDeleteProject && !$data.getSession().getAttribute("userHelper").isOwner($project.getId()) && !$turbineUtils.isSiteAdmin($user))
+        <div class="warning" style="margin-bottom: 1em"><strong>Note:</strong> You have the ability to view and administer data in this project and all projects because your account has the "Data Admin" role. You are not an explicit Project Owner in this project nor are you a site wide administrator, but this other role does give you this increased access. Please tread lightly.</div>
+        <div class="clearfix clear"></div>
+    #end
+
+    #if($data.getSession().getAttribute("userHelper").canRead("xnat:subjectData/project","$project.getId()"))
+        <script type="text/javascript" src="$content.getURI("scripts/yui/build/resize/resize-beta-min.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/yui/build/layout/layout-beta-min.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_stored_search.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_search_field.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_criteria.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_criteria_set.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/search/tabManager.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/search/saveSearch.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/search/searchManager.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/search/dataTableSearch.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/search/dataTableStoredSearch.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/yui/xnat_loader.js")"></script>
+        <!-- BEGIN SET AND PARSE SUMMARY TABS -->
+        #addCustomScreens($om.getXSIType() "report/preContent")
+        #set($summary_tabs=$turbineUtils.getTemplateName("_summary_tabs","xnat:projectData",$project.getId()))
+        #parse($turbineUtils.getTemplateName("_summary_tabs","xnat:projectData",$project.getId()))
+        <!-- END SET AND PARSE SUMMARY TABS -->
+
+
+        #parse($turbineUtils.getTemplateName("_actions_box","xnat:projectData",$project.getId()))
+
+        <div class="clear"></div>
+        <br>
+
+        #addCustomScreens($om.getXSIType() "report/preData")
+
+        #parse($turbineUtils.getTemplateName("_bundle_tabs","xnat:projectData",$project.getId()))
+
+        #addCustomScreens($om.getXSIType() "report/postData")
+    	#addGlobalCustomScreens("search/plugins/post")
+    #else
+        <!--can't read data-->
+
+        #parse($turbineUtils.getTemplateName("_summary_tabs","xnat:projectData",$project.getId()))
+
+        <div class="clearfix clear" style="margin-bottom: 2em"></div>
+        <div class="error">
+            <p><strong>Security Warning</strong></p>
+            <p>
+                Your account has not been granted access to this $displayManager.getSingularDisplayNameForProject().toLowerCase()'s data. If you would like to view this data, you will need to request access.
+                <a href="$link.setPage("RequestProjectAccess.vm").addPathInfo("project","$!{project.getId()}").addPathInfo("popup","$!popup")" class="btn1">
+                    #if($user.isGuest()) Log In And #end Request Access
+                </a>
+            </p>
+        </div>
+
+
+    #end
+    <DIV ID="temp_display"></DIV>
+</div>

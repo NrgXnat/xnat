@@ -1,0 +1,8 @@
+<!-- Sequence: 11 -->
+<!-- allowGuest: true -->
+
+<li class="hidden"><a href="#browse">Browse</a>
+    <ul style="min-width: 120px">
+        #addGlobalCustomScreens("topBar/Browse")
+    </ul>
+</li>

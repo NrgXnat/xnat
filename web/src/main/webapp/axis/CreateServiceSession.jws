@@ -1,0 +1,9 @@
+
+public class CreateServiceSession{
+
+    
+    public String execute() throws java.rmi.RemoteException 
+    {
+        return org.nrg.xdat.services.CreateServiceSession.Execute();
+    }
+}

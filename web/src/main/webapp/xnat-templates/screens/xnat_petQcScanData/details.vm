@@ -1,0 +1,113 @@
+#if( $scan.getStringProperty("xnat:petQcScanData/acquisition") )
+	<tr><th>Acquisition</th><td>$!scan.getStringProperty("xnat:petQcScanData/acquisition")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:petQcScanData/correctReconstructionAlgorithm") )
+	<tr>
+		<th>Correct reconstruction algorithm?</th>
+		<td>
+			#qcYesNo("xnat:petQcScanData/correctReconstructionAlgorithm" $scan)
+		</td>
+	</tr>
+#end
+#if( $scan.getStringProperty("xnat:petQcScanData/reconstructionAlgorithmUsed") )
+	<tr><th>Reconstruction algorithm used</th><td>$!scan.getStringProperty("xnat:petQcScanData/reconstructionAlgorithmUsed")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:petQcScanData/correctIterationsAndSubsets") )
+	<tr><th>&nbsp;&nbsp;&nbsp;If OSEM or Ramla, correct # of iterations and subsets?</th>
+		<td>
+			#qcYesNo("xnat:petQcScanData/correctIterationsAndSubsets" $scan)
+		</td>
+	</tr>
+#end
+#if( $scan.getStringProperty("xnat:petQcScanData/correctFilters") )
+	<tr><th>Correct Filters/TRIM?</th>
+		<td>
+			#qcYesNo("xnat:petQcScanData/correctFilters" $scan)
+		</td>
+	</tr>
+#end
+
+#if( $scan.getStringProperty("xnat:petQcScanData/correctSliceThickness") )
+	<tr>
+		<th>Correct slice thickness (PET/CT systems)?</th>
+		<td>
+			#qcYesNo("xnat:petQcScanData/correctSliceThickness" $scan)
+		</td>
+	</tr>
+#end
+#if( $scan.getStringProperty("xnat:petQcScanData/acceptableVoxelSize") )
+	<tr>
+		<th>Acceptable Voxel Size?</th>
+		<td>
+			#qcYesNo("xnat:petQcScanData/acceptableVoxelSize" $scan)
+		</td>
+	</tr>
+#end
+#if( $scan.getStringProperty("xnat:petQcScanData/unacceptableFrames") )
+	<tr><th>Unacceptable Frames</th><td>$!scan.getStringProperty("xnat:petQcScanData/unacceptableFrames")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:petQcScanData/reasonFramesUnacceptable") )
+	<tr><th>&nbsp;&nbsp;&nbsp;Reason why frames were unacceptable</th><td>$!scan.getStringProperty("xnat:petQcScanData/reasonFramesUnacceptable")</td></tr>
+#end
+<tr>
+	<th>Pass</th>
+	<td style="font-weight:bold;">
+		#if ($!scan.getStringProperty("xnat:qcScanData/pass").equals("1"))
+			<span style="color:green">Passed</span>
+		#elseif($!scan.getStringProperty("xnat:qcScanData/pass").equals("0"))
+			<span style="color:red">Failed</span>
+		#else
+			<span style="color:gold">Unknown ($!scan.getStringProperty("xnat:qcScanData/pass")</span>
+		#end
+	</td>
+</tr>
+
+#if ($!scan.getStringProperty("xnat:qcScanData/pass") != "1")
+	<tr>
+		<th valign="top">&nbsp;&nbsp;&nbsp;Processing Errors(s)</th>
+		<td>
+			#foreach ($processing_error in $scan.getProcessingerrors_processingerror())
+				$processing_error.getStringProperty("processingError")<br />
+			#end
+		</td>
+	</tr>
+	<tr><th>&nbsp;&nbsp;&nbsp;QC Outcome</th><td>$!scan.getStringProperty("xnat:petQcScanData/qcOutcome")</td></tr>
+	
+	#if ($scan.getStringProperty("xnat:petQcScanData/qcOutcomeReason"))
+		<tr><th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Reason for not rescanning</th><td>$!scan.getStringProperty("xnat:petQcScanData/qcOutcomeReason")</td></tr>
+	#end
+#end
+
+#if( $!scan.getStringProperty("xnat:qcScanData/motion") || $scan.getStringProperty("xnat:petQcScanData/topCutoff") || $scan.getStringProperty("xnat:petQcScanData/bottomCutoff") || $!scan.getStringProperty("xnat:qcScanData/otherImageArtifacts") )
+	<tr>
+	 	<td colspan="2">
+	 		<b>Imaging Issues:</b>
+	 	</td>
+	</tr>
+#end
+
+#if( $!scan.getStringProperty("xnat:qcScanData/motion") )
+	<tr><th>&nbsp;&nbsp;&nbsp;Motion</th><td>$!scan.getStringProperty("xnat:qcScanData/motion")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:petQcScanData/topCutoff") )
+	<tr><th>&nbsp;&nbsp;&nbsp;Top Cutoff</th><td>$!scan.getStringProperty("xnat:petQcScanData/topCutoff")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:petQcScanData/bottomCutoff") )
+	<tr><th>&nbsp;&nbsp;&nbsp;Bottom Cutoff</th><td>$!scan.getStringProperty("xnat:petQcScanData/bottomCutoff")</td></tr>
+#end 		
+#if( $!scan.getStringProperty("xnat:qcScanData/otherImageArtifacts") )
+	<tr>
+		<th>&nbsp;&nbsp;&nbsp;Other</th>
+		<td>$!scan.getStringProperty("xnat:qcScanData/other")</td>
+	</tr>
+#end
+
+#if( $!scan.getStringProperty("xnat:qcScanData/comments") )
+	<tr><th>Additional QC Comments</th><td>$!scan.getStringProperty("xnat:qcScanData/comments")</td></tr>
+#end	
+
+
+	
+
+	
+

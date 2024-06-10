@@ -1,0 +1,461 @@
+<!-- BEGIN plugin-resources/webapp/xnat-templates/screens/Scripts.vm -->
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="tabs" type="java.util.List<java.util.Properties>" *#
+#* @vtlvariable name="scripts" type="java.util.List<org.nrg.automation.entities.Script>" *#
+#* @vtlvariable name="script" type="org.nrg.automation.entities.Script" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="error" type="java.lang.String" *#
+<style type="text/css">
+
+            #events_table .item, #events_table .header, #events_manage_table .item, #events_manage_table .header {
+                border-bottom: 1px solid #888;
+                font: 11px Arial, Helvetica, sans-serif;
+                margin-top: 0;
+                margin-bottom: 0;
+                padding: 4px;
+                overflow: auto;
+            }
+
+            dl.item, item.item {
+                display: block;
+            }
+
+            #events_table dl dl, #events_manage_table dl dl {
+                margin: 1px 0;
+            }
+
+            #events_table .header, #events_manage_table .header {
+                background-color: #ccc;
+                font-weight: bold;
+            }
+
+            #events_table dl dt, #events_table dl dd, #events_manage_table dl dt, #events_manage_table dl dd {
+                display: block;
+                float: left;
+                padding: 4px 0;
+            }
+
+            #events_table .item:hover {
+                background-color: #fff;
+            }
+
+            #events_manage_table .item:hover {
+                background-color: #fff;
+            }
+
+            #events_table dd, #events_manage_table dd {
+                margin-left: 20px;
+            }
+
+            #events_table dd.col1, #events_manage_table dd.col1 {
+                width: 140px;
+                margin-left: 10px
+            }
+
+            #events_table dd.col2, #events_manage_table dd.col2 {
+                width: 155px;
+            }
+
+            #events_table dd.col3, #events_manage_table dd.col3 {
+                width: 230px;
+            }
+
+            #events_table dd.col4, #events_manage_table dd.col4 {
+                width: 40px;
+            }
+
+            #events_table dd.col5, #events_manage_table dd.col5 {
+                width: 105px;
+            }
+
+            #events_table dd.col6, #events_manage_table dd.col6 {
+                width: 50px;
+            }
+
+            #events_table dd.col7, #events_manage_table dd.col7 {
+                width: 130px;
+            }
+
+            #events_table dd.colX, #events_manage_table dd.colX {
+                width: 90%;
+                padding-left: 70px;
+            }
+            #events_table dd.colC, #events_manage_table dd.colC {
+                width: 90%;
+                padding-left: 10px;
+                padding-top: 2px;
+                padding-bottom: 2px;
+            }
+
+            #events_table dd.colEx, #events_manage_table dd.colEx {
+                position: relative;
+            }
+
+            #events_table_title #events_manage_table_title {
+                font-weight: 700;
+            }
+            button.event-handler-button {
+                font: 11px Arial, Helvetica, sans-serif;
+                padding: 3px;
+                margin: -3px;
+            }
+
+            div.row3 {
+                float: right;
+                margin-top: 8px;
+            }
+
+            div.row4 {
+                clear: both;
+                margin-top: 8px;
+            }
+
+</style>
+
+
+<h3 style="margin:0 0 15px 0;">Automation</h3>
+
+<p class="yui-skin-sam">
+
+##    <div id="tp_fm" style="display:none"></div>
+
+    #if($turbineUtils.isSiteAdmin($user))
+
+        <style type="text/css">
+            #automation-events-scripts .yui-content > div { padding: 2px; }
+            td.edit:hover { cursor: pointer }
+            td.edit:hover a,
+            td.actions a:hover { text-decoration: underline }
+            td.edit a,
+            td.actions a { display: inline-block; padding: 2px 8px; }
+            table.edit-script { margin-bottom: -4px; }
+            table.edit-script td { padding: 4px 2px; vertical-align: baseline; }
+        </style>
+
+        <script type="text/javascript" src="$content.getURI("scripts/xnat/app/siteEventsManager.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/uploaders/AutomationBasedUploader.js")"></script>
+
+        <div id="addEventHandler" class="html-template">
+            <table>
+                <tr>
+                    <td><label for="eventClass" class="required"><strong>Event Type:</strong><i>*</i></label></td>
+                    <td><select id="select_eventClass" name="eventClass" class="eventClass"></select></td>
+                </tr>
+                <tr>
+                    <td><label for="event" class="required"><strong>Event ID:</strong><i>*</i></label></td>
+                    <td><select id="select_event" name="event" class="event"></select> <input type="text" id="select_input" class="event" style="display:none" size="15"/> <button class="customButton">Custom Value</button></td>
+                </tr>
+                <tr id="filterRow">
+                    <td><label for="filters"><strong>Filters:</strong></label></td>
+                    <td><div id="filterDiv"></div></td>
+                </tr>
+                <tr>
+                    <td><label for="scriptId" class="required"><strong>Script:</strong><i>*</i></label></td>
+                    <td><select id="select_scriptId" name="scriptId" class="scriptId"></select></td>
+                </tr>
+                <tr>
+                    <td><label for="description"><strong>Description:</strong></label></td>
+                    <td><input id="description" name="description" class="description" type="text" size="40"></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- SITE EVENTS TABLE ROW TEMPLATE -->
+        <table id="event-row-template" class="html-template">
+            <tbody>
+            <tr class="highlight events-list"
+##                    data-workflow-label="__WORKFLOW_LABEL__"
+                    data-event-id="__SITE_EVENT_ID__"
+                    data-event-label="__SITE_EVENT_LABEL__">
+                <td class="site-event-id">
+##                    <a href="#!" class="site-event-id"><b>
+                        __SITE_EVENT_ID__
+##                    </b></a>
+                </td>
+                <td class="site-event-label">
+##                    <a href="#!" class="site-event-label">
+                        __SITE_EVENT_LABEL__
+##                    </a>
+                </td>
+##                <td class="workflow-label">__WORKFLOW_LABEL__</td>
+                <td class="actions" style="text-align:center;white-space:nowrap;">
+##                    <a href="#!" data-action="editEvent" title="edit existing event">edit</a>
+                    <a href="#!" class="delete-event" data-action="deleteEvent" title="delete existing event">delete</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <table id="script-row-template" class="html-template">
+            <tbody>
+            <tr class="highlight script-list" data-script-id="__SCRIPT_ID__">
+                <td class="edit" data-action="editScript">
+                    <a href="#!" class="edit"><b>__SCRIPT_ID__</b></a>
+                </td>
+                <td class="edit" data-action="editScript">__SCRIPT_LABEL__</td>
+                <td class="edit" data-action="editScript">__SCRIPT_DESCRIPTION__</td>
+                <td class="actions" style="text-align:center;white-space:nowrap;">
+                    <a href="#!" data-action="editScript" title="edit existing script">edit</a>
+                    <a href="#!" data-action="deleteScript" title="delete existing script">delete</a>
+                    <a href="#!" data-action="duplicateScript" title="copy existing script to a new script">duplicate</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div id="automation-events-scripts" class="yui-module">
+            <div class="yui-navset yui-navset-top bogus-tabs">
+                <ul class="yui-nav">
+                    <li class="first selected"><a href="#automationEventHandlers"><em>Site Event Handlers</em></a></li>
+                    ##<li><a href="#automationEvents"><em>Events</em></a></li>
+                    <li><a href="#automationScripts"><em>Scripts</em></a></li>
+                </ul>
+                <div class="yui-content">
+
+
+                    <!-- Site Event Handlers -->
+                    <div id="automationEventHandlers">
+
+##                        <h3>Event Handlers</h3>
+                        <div id="events_list">
+##                            <p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>
+                            <p id="no_event_handlers" style="display:none;padding:20px;">There are no event handlers currently configured for this site.</p>
+                            <!--
+                            <table id="events_table" class="xnat-table" style="display:none;width:100%;">
+                                <thead>
+                                <th>Event</th>
+                                <th>Script</th>
+                                <th>Description</th>
+                                </thead>
+                                <tbody>
+                                ## content populated with XNAT.app.eventsManager.initEventsTable()
+                                </tbody>
+                            </table>
+                            -->
+                            <div id="events_table" class="xnat-table" style="display:none;width:100%;">
+                            </div>
+                            <br>
+                            <b style="padding:0 8px;">Create a site-wide Event Handler: </b>
+    <button type="button" id="add_event_handler" class="btn1" style="font-size:12px;" title="add an event handler">Add Event Handler</button>
+                        </div>
+
+
+                    </div>
+
+##                    <!-- Events -->
+##                    <div id="automationEvents" class="yui-hidden">
+##
+##                        <div id="events-container">
+##
+##                            <p id="no-events" style="display:none;">There are no Events defined for this site.</p>
+##
+##                            <table id="events-table" class="xnat-table" style="display:none;width:100%;">
+##
+##                                <thead>
+##                                <th width="40%">Event ID</th>
+##                                <th width="40%">Event Label</th>
+##                                <th>Workflow</th>
+##                                <th width="20%">&nbsp;</th>
+##                                </thead>
+##
+##                                <tbody>
+##
+##                                ## events list inserted here via AJAX
+##
+##                                </tbody>
+##
+##                            </table>
+##
+##                            <br>
+##
+##                            <b style="padding:0 8px;">Define an Event from existing Workflows or create a new Event:</b>
+##
+##                            <button type="button" id="define-event-button" class="btn1" style="font-size:12px;" title="define an event">Define Event</button>
+##
+##                        </div>
+##
+##                    </div>
+
+                    <!-- Scripts -->
+                    <div id="automationScripts" class="yui-hidden">
+                        <!-- SCRIPTS LIST TABLE -->
+                        <div id="scripts-container">
+
+                            <p id="no-scripts-installed" style="display:none;">No scripts are currently installed on this system.</p>
+
+                            <table id="scripts-table" class="sortable xnat-table" style="display:none;width:100%;">
+                                <thead>
+                                <tr>
+                                <th class="sort index">Script ID</th>
+                                <th class="sort">Script Label</th>
+                                <th width="50%">Description</th>
+                                ##<th>Version</th>
+                                <th>&nbsp;</th>
+                                ##                <th>&nbsp;</th>
+                                ##                <th>&nbsp;</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+
+                                ## script list inserted here via AJAX
+
+                                </tbody>
+                            </table>
+
+                            <br>
+
+                            <b style="padding:0 8px;">Add a new script: </b>
+
+                            <select id="add-script-language" class="language">
+                                <option value="!">Select a Language</option>
+                            </select>
+
+                            <button type="button" id="add-script-button" class="btn1" style="font-size:12px;" title="add new script">Add Script</button>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+
+            // YUI tab simulator using jQuery for event handling for '.bogus-tabs'
+            // using 'on' to handle any tabs that may be added dynamically
+            jq('.yui-navset.bogus-tabs').each(function(){
+
+                var __navset = jq(this),
+                    TABS = '> ul.yui-nav > li',
+                    CONTENTS = '> .yui-content > div',
+                    selected = null;
+
+                __navset.on('click', TABS + '> a', function(e){
+
+                    e.preventDefault();
+
+                    var __link = jq(this),
+                        __tab = __link.closest('li');
+
+                    selected = __link.attr('href'); // safer to use jQuery to get 'href' value
+
+                    __navset.find(TABS).removeClass('selected');
+                    __tab.addClass('selected');
+
+                    __navset.find(CONTENTS).addClass('yui-hidden');
+                    __navset.find(selected).removeClass('yui-hidden');
+
+                });
+
+            });
+
+        </script>
+
+
+        <!-- SITE EVENTS DIALOG TEMPLATE -->
+        <div id="site-events-template" class="html-template">
+            <p>Select a Workflow or enter a new Event name to define an Event to use with project and site Event Handlers:</p>
+            <table>
+                <tr>
+                    <td><label for="workflow-event-id-menu" class="required"><strong>Workflow:</strong><i>*</i></label></td>
+                    <td>
+
+                        <div id="workflow-event-id-container">
+                        ## workflow events menu
+                        </div>
+##                        <select id="workflow-event-id-menu" name="event_id" class="event_id active">
+##                            <option data-label="__WORKFLOW_EVENT_LABEL__" data-id="__WORKFLOW_EVENT_ID__" value="__WORKFLOW_EVENT_ID__">__WORKFLOW_EVENT_LABEL__</option>
+##                        </select>
+
+                    </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td>
+                        <div id="custom-event-id" style="padding:10px 0;">
+                            <input type="checkbox" id="custom-event-checkbox">
+                            <label for="custom-event-checkbox">Or enter a custom Event id:</label>
+                            <br>
+                            <input type="text" id="custom-event-input" class="event_id" placeholder="(enter custom Event id)" disabled>
+                        </div>
+                    </td>
+                </tr>
+##                <tr>
+##                    <td><label for="scriptId" class="required"><strong>Script ID:</strong><i>*</i></label></td>
+##                    <td><select name="scriptId" class="scriptId"></select></td>
+##                </tr>
+                <tr>
+                    <td><label for="events-event-label"><strong>Label:</strong></label></td>
+                    <td>
+                        <input id="events-event-label" name="event_label" class="event_label" type="text" size="40">
+                    </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td>
+                        <small>Label not required. If no label is entered, it will be the same as the ID.</small>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+
+        <!-- SCRIPT EDITOR TEMPLATE -->
+        <div id="script-editor-template" class="html-template">
+            <input type="hidden" name="id" class="id" value="">
+            <input type="hidden" name="scriptId" class="scriptId" value="">
+            <input type="hidden" name="language" class="language" value="">
+            <input type="hidden" name="languageVersion" class="languageVersion" value="">
+            <input type="hidden" name="timestamp" class="timestamp" value="">
+            <table class="edit-script" border="0" cellspacing="0">
+                <tr>
+                    <td><b>Script ID: </b>&nbsp;</td>
+                    <td>
+                        <b class="script-id-text"></b>
+                        <input type="text" name="script-id-input" class="script-id-input" size="30" value="">
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Script Label: </b>&nbsp;</td>
+                    <td>
+                        <input type="text" name="scriptLabel" class="scriptLabel" size="80" value="">
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Description: </b>&nbsp;</td>
+                    <td><input type="text" name="script-description" class="script-description" size="80" value=""></td>
+                </tr>
+                <tr>
+                    <td><b>Script Version: </b>&nbsp;</td>
+                    <td>
+                        <select id="script-version" class="script-version">
+##                          <option value="!">Select a Version</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+            <br>
+            <div class="editor-wrapper" style="width:840px;height:320px;position:relative;">
+                <!-- the '.editor-content' div gets replaced when the script content is loaded -->
+                <div class="editor-content" style="position:absolute;top:0;right:0;bottom:0;left:0;border:1px solid #ccc;"></div>
+            </div>
+        </div><!-- /#script-editor-template -->
+
+
+        <script type="text/javascript" src="$content.getURI("scripts/xnat/app/automation.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/xnat/app/scriptEditor.js")"></script>
+
+    #else
+        <div class="clearfix clear"></div>
+        <div class="error">
+                <p><strong>Security Warning</strong></p>
+                <p>You do not have administrator access and can't access this page.</p>
+        </div>
+    #end
+
+    <!-- END plugin-resources/webapp/xnat-templates/screens/Scripts.vm -->
+

@@ -1,0 +1,20 @@
+				<TABLE align="left">
+					<TR><TH align="left" colspan=2><font face="$ui.sansSerifFonts" size="3"><b>Experiment Info</b></font><BR><BR></TH></TR>
+					<TR><TH align="left" width=200>Date: </TH><TD>$!item.getProperty("date")</TD></TR>
+					<TR><TH align="left">$displayManager.getSingularDisplayNameForImageSession() Id: </TH>
+					#set($mr_id=$item.getProperty("${search_element}.imageSession_ID"))
+					#set ( $click = "return popup('$link.setAction('DisplayItemAction').addPathInfo('search_element','xnat:mrSessionData').addPathInfo('search_field','xnat:mrSessionData.ID').addPathInfo('search_value',$mr_id).addPathInfo('popup',true)', '','600','800').addPathInfo('project','$!project');" )
+ <TD><A CLASS=b href="#" onClick="$click">$!item.getProperty("${search_element}.imageSession_ID")</A></TD>
+					</TR>
+					<TR><TH align="left">Investigator: </TH><TD>$!item.getProperty("investigator.title") $!item.getProperty("investigator.firstname") $!item.getProperty("investigator.lastname")</TD></TR>
+					#set($part_id = $!mr.getSubjectData().getId())
+					#set ( $click = "return popup('$link.setAction('DisplayItemAction').addPathInfo('search_element','xnat:subjectData').addPathInfo('search_field','xnat:subjectData.ID').addPathInfo('search_value',$!part_id).addPathInfo('popup','true')', '','600','800').addPathInfo('project','$!project');" )
+															<TR><TH align="left">$displayManager.getSingularDisplayNameForSubject(): </TH><TD>
+					<A CLASS=b href="#" onClick="$click">
+					#if($project)$!mr.getSubjectData().getIdentifier($project)#else$!mr.getSubjectData().getId()#end</A></TD></TR>
+#if($mr.getSubjectData.getIdentifier("ADRC",true))
+															<TR><TH align="left">MAP: </TH><TD>$mr.getSubjectData.getIdentifier("ADRC",true)</TD></TR>
+					#end
+					<TR align="left"><TH ALIGN="left">Gender: </TH><TD>$!mr.getSubjectData().getGenderText()</TD></TR>
+					<TR align="left"><TH ALIGN="left">Age:</TH><TD>$!mr.SubjectAge</TD></TR>
+				</TABLE>

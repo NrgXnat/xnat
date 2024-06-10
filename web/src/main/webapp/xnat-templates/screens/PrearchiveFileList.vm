@@ -1,0 +1,105 @@
+#if($popup=="true")
+	#set ($template = $data.getTemplateInfo())
+	$!template.setLayoutTemplate("ScreenOnly.vm")
+#end
+
+<table class="file-details padding-sm" style="border-collapse:collapse;">
+    <thead style="border-bottom:1px solid #a0a0a0;">
+    <tr class="file-details-header">
+        <th align="left" width="">File</th>
+        <th align="center" width="100px">Size</th>
+        <th width="240px">&nbsp;</th>
+    </tr>
+    </thead>
+    #set($lastURL="0")
+    <tbody>
+    #foreach($row in $table.toArrayListOfLists())
+        #set($lastURL=$content.getURI("$!row.get(2)"))
+        <tr class="file-details-row highlight-row">
+            <td class="scan-image-link">
+            #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
+                <a class="image-download" href="$lastURL" style="text-decoration:underline" title="Download File: $!row.get(0)">$!row.get(0)</a>
+            #else
+                $!row.get(0)
+            #end
+            </td>
+            <td class="scan-image-size" align="center">$!row.get(1)</td>
+            <td class="scan-image-buttons" align="right">
+                #if($!row.get(2).contains("/DICOM/"))
+                    #set($hasDICOM="1")
+                    <button onclick="XNAT.app.headerDialog.load('$content.getURI("/REST/services/dicomdump?src=$!row.get(2).substring(5)&format=html&requested_screen=DicomFileTable.vm")','File $!row.get(0) DICOM');">Review DICOM Tags</button>
+                    <button class="view-image-button" data-popup-opts="$lastURL|$!row.get(0)|256|256">View Image</button>
+                #end
+            </td>
+        </tr>
+    #end
+    </tbody>
+</table>
+#if($lastURL!="0")
+<!-- <img id="viewer" src="$lastURL" border="0"/> -->
+#end
+
+<script type="text/javascript">
+
+    (function(){
+
+        var jq = jQuery;
+
+        jq('.view-image-button').click(function(){
+            var __btn, params=[], url, title, width, height, imageModal={};
+            __btn = jq(this);
+            params = __btn.data('popup-opts').split('|');
+            url = params[0];
+            title = params[1];
+            width = params[2];
+            height = params[3];
+            imageModal.content =
+            #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
+                '<div style="text-align:center;background:#000;">' +
+                '<a class="image-download" href="' + url + '" title="Download File: ' + title + '" style="display:block;height:' + height + 'px;">' +
+                '<img src="' + url + '?format=image/jpeg" alt="preview">' +
+                '</a>' +
+                '<p style="margin:0;padding:6px 0 10px;background:#303030;">' +
+                    '<a class="image-download" ' +
+                        'href="' + url + '" ' +
+                        'title="Download File: ' + title + '" ' +
+                        'style="color:#c0c0c0;">(click to download original file)</a>' +
+                '</p>'+
+                '</div>';
+            #else
+                '<img src="' + url + '?format=image/jpeg" alt="preview">';
+            #end
+            imageModal.title = 'Image: ' + title;
+            imageModal.width = parseInt(width,10);
+            imageModal.height = parseInt(height,10) + 72;
+            imageModal.footer = false;
+            imageModal.modal = false;
+            imageModal.scroll = false;
+            imageModal.padding = '0';
+            xmodal.open(imageModal);
+        });
+
+        // remove event handlers in 'imageDownload' namespace
+        // to prevent firing more than once on the same element
+        // since this template (and JavaScript) is (re)loaded multiple times
+        jq(document.body).off('click.imageDownload', 'a.image-download');
+
+        // download original file from link or image preview
+        jq(document.body).on('click.imageDownload', 'a.image-download', function(e){
+            e.preventDefault();
+            var title = this.title;
+            var url   = this.href;
+            xmodal.confirm({
+                width: 500,
+                title: 'Download',
+                content: title + '?',
+                okLabel: 'Download',
+                okAction: function(){
+                    window.location.href = url;
+                }
+            });
+        });
+
+    })();
+
+</script>

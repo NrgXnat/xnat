@@ -1,0 +1,101 @@
+<!-- BEGIN ProjectSelector.vm -->
+#set($create_projects= $data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","create"))
+		#set($projectMap = $data.getSession().getAttribute("userHelper").getCachedItemValuesHash("xnat:projectData",null,false,"xnat:projectData/ID","xnat:projectData/secondary_ID"))
+#if($project)
+  #if($item.getProperty("project"))
+  
+  #else
+   $item.setProperty("$item.getXSIType()/project",$project)
+  #end
+#else
+  #set($project=$item.getProperty("project"))
+#end
+<TABLE><TR><TH ALIGN="left">
+Primary $displayManager.getSingularDisplayNameForProject(): </TH><TD>
+#if($item.getProperty("project"))
+<INPUT ID="$item.getXSIType()/project" type="hidden" name="$item.getXSIType()/project" value="$item.getProperty("project")">
+#if($projectMap.get($item.getProperty("project")))
+$projectMap.get($item.getProperty("project"))
+#else
+$item.getProperty("project")
+#end
+#else
+#if($create_projects.size()>0)
+<SELECT ID="$item.getXSIType()/project" name="$item.getXSIType()/project" ONCHANGE="addNewProject(this.options[this.selectedIndex].value,this.options[this.selectedIndex].text);">
+<option value="">(SELECT)</option>
+#foreach($proj in $create_projects)
+<option value="$proj">
+#if($projectMap.get($proj))
+$projectMap.get($proj)
+#elseif($proj!="*")
+$proj
+#end
+</option>
+#end
+</SELECT>
+#else
+ERROR:  No $displayManager.getPluralDisplayNameForProject().toLowerCase() exist.  Please create a $displayManager.getSingularDisplayNameForProject().toLowerCase() before attempting to insert this item.
+#end
+#end
+</TD>
+</TR>
+#if($preventLabel)
+
+#else
+<TR>
+ <TH ALIGN="left"><label ID='${item.getXSIType()}_label'>#if($item.instanceOf("xnat:subjectData"))$displayManager.getSingularDisplayNameForSubject()#else Experiment#end
+ ID in this $displayManager.getSingularDisplayNameForProject().toLowerCase():</label></TH>
+ <TD>
+ #if($item.getProperty("ID") && $item.getProperty("ID")!="" && $item.getProperty("label"))
+ $!item.getProperty("label")<INPUT size="10" type="hidden" value="$!item.getProperty("label")" id="$item.getXSIType()/label" name="$item.getXSIType()/label" ONCHANGE="identifierChanged();"/>
+ #else
+ <INPUT size="10" type="text" value="$!item.getProperty("label")" id="$item.getXSIType()/label" name="$item.getXSIType()/label" ONCHANGE="identifierChanged();"/>
+ #end
+ </TD>
+ <TD></TD>
+</TR>
+#if($visit)
+   $item.setProperty("$item.getXSIType()/visit",$visit)
+#else
+  #set($visit=$item.getProperty("visit"))
+#end
+
+#if($visit)
+<TR>
+  <TH ALIGN="left">Visit: </TH>
+  <TD><input type="text" id="$item.getXSIType()/visit" name="$item.getXSIType()/visit" value="$!visit" disabled="true"/></TD>
+  <TD></TD>
+</TR>
+#end
+#end
+</TABLE>
+		
+		<SCRIPT type="text/javascript" LANGUAGE="JavaScript">
+		//USERS can create a 'eventIdentifierChanged' function in calling template if desired
+		function identifierChanged(){
+		  var idBox = document.getElementById("$item.getXSIType()/label");
+		  idBox.value=fixSpaces(idBox.value);
+}
+function fixSpaces(val)
+{
+        var temp = stringTrim(val);
+        var newVal = '';
+        temp = temp.split(' ');
+        for(var c=0; c < temp.length; c++) {
+                newVal += temp[c];
+        }
+        
+        newVal = newVal.replace(/[&]/,"_");
+        newVal = newVal.replace(/[?]/,"_");
+        newVal = newVal.replace(/[<]/,"_");
+        newVal = newVal.replace(/[>]/,"_");
+        newVal = newVal.replace(/[(]/,"_");
+        newVal = newVal.replace(/[)]/,"_");
+        if (newVal!=val){
+          xmodal.message('Project Selector', 'Spaces and special characters are not allowed in identifier fields.');
+        }
+        return newVal;
+}
+
+		</SCRIPT>
+		<!-- END ProjectSelector.vm -->

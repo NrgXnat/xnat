@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ web: src/main/resources/ehcache.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2017, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<ehcache name="xnatCacheManager" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd">
+
+    <diskStore path="${xnat.home}/work/cache/xnat"/>
+
+    <defaultCache
+            maxElementsInMemory="10000"
+            timeToIdleSeconds="120"
+            timeToLiveSeconds="120"
+            maxElementsOnDisk="10000000"
+            diskExpiryThreadIntervalSeconds="120"
+            memoryStoreEvictionPolicy="LRU">
+        <persistence strategy="localTempSwap"/>
+    </defaultCache>
+
+    <cache name="CustomClasspathResourceLoaderResourceCache"
+           maxEntriesLocalHeap="2000"
+           clearOnFlush="true"
+           overflowToDisk="false">
+        <persistence strategy="none"/>
+    </cache>
+
+    <cache name="DefaultAnonUtilsScriptsCache"
+           maxEntriesLocalHeap="5000"
+           clearOnFlush="true"
+           timeToLiveSeconds="120">
+        <persistence strategy="none"/>
+    </cache>
+
+    <cache name="DefaultCatalogServiceCache"
+           maxEntriesLocalHeap="5000"
+           clearOnFlush="true"
+           timeToLiveSeconds="3600"
+           diskPersistent="true"/>
+
+    <cache name="UserProjectCacheManagerCache"
+           maxEntriesLocalHeap="5000"
+           clearOnFlush="true"
+           timeToLiveSeconds="3600">
+        <persistence strategy="none"/>
+    </cache>
+
+    <cache name="GroupsAndPermissionsCache"
+           maxEntriesLocalHeap="10000"
+           clearOnFlush="true"
+           timeToLiveSeconds="86400">
+        <persistence strategy="none"/>
+    </cache>
+
+    <cache name="XdatMetaElementCache"
+           maxEntriesLocalHeap="1000"
+           clearOnFlush="true"
+           timeToLiveSeconds="86400">
+        <persistence strategy="none"/>
+    </cache>
+
+</ehcache>

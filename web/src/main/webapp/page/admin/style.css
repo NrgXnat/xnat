@@ -1,0 +1,308 @@
+/*
+ * web: style.css
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
+/* SETTINGS TABS HEADER */
+.settings-tabs header h2 { margin: 10px 0 20px; }
+
+.xnat-nav-tabs { position: relative; z-index: 1; }
+.xnat-nav-tabs > ul,
+.xnat-nav-tabs ul.tabs {
+    list-style-type: none;
+    padding: 0 30px;
+}
+.xnat-nav-tabs li.tab {
+    float: left; margin-right: -1px; margin-bottom: -1px;
+    padding: 0;
+    border: 1px solid #c8c8c8;
+    box-sizing: border-box;
+}
+.xnat-nav-tabs li.tab:hover { background: #f0f0f0; }
+.xnat-nav-tabs li.tab > a {
+    display: block;
+    padding: 8px 18px;
+    font-size: 15px; color: #444;
+    outline: none !important;
+    background: #f0f0f0 top repeat-x url('data:image/gif;base64,R0lGODlhBAAiAKIAAPf39/Hx8fX19fPz8/Dw8PLy8vT09Pb29iH5BAAAAAAALAAAAAAEACIAAAMhCLp6/jDKJ6q9WJjNu/dDKI7kUJxoqqpB675wQMx0bRMJADs=');
+    background-image: linear-gradient( #f8f8f8, #f0f0f0 );
+}
+.xnat-nav-tabs li.tab > a:active { /*outline: none !important;*/ }
+.xnat-nav-tabs li.tab > a:hover { background: inherit; }
+.xnat-nav-tabs li.tab.active { background: #2fa4e7; border-color: #c8c8c8; z-index: 2; }
+.xnat-nav-tabs li.tab.active > a { color: #000; background: #fff !important; }
+.xnat-nav-tabs li.tab.active > a:hover { background: inherit; cursor: default; }
+
+/* TOP TABS */
+.xnat-nav-tabs.top {  }
+.xnat-nav-tabs.top li.tab { border-bottom: none; }
+.xnat-nav-tabs.top li.tab > a { border-bottom: 1px solid #c8c8c8; }
+.xnat-nav-tabs.top li.tab.active > a {
+    top: 5px; padding-top: 3px;
+    /*padding-bottom: 13px;*/
+    border-top: 5px solid #2fa4e7;
+    border-bottom-color: #fff;
+}
+
+/* LEFT-SIDE TABS */
+.xnat-nav-tabs.side { width: 17%; right: -1px; padding-top: 12px; }
+.xnat-nav-tabs.side li.tab { width: 100%; border-right: none; }
+.xnat-nav-tabs.side li.tab > a { border-right: 1px solid #c8c8c8; }
+.xnat-nav-tabs.side li.tab.active { /* border-bottom-color: #d0d0d0; */ }
+.xnat-nav-tabs.side li.tab.active > a {
+    padding-left: 12px; padding-right: 24px;
+    border-left: 6px solid #2fa4e7; border-right-color: #fff;
+}
+/*.xnat-tab-content.side.pull-right .panel { padding: 24px; }*/
+/* (if we ever need right-side tabs, new style rules will be needed ) */
+
+/* TAB GROUPS */
+.xnat-nav-tabs.side .tab-group { display: none; margin-top: 20px; padding: 0; list-style-type: none; }
+.xnat-nav-tabs.side .tab-group li.label {
+    padding: 16px 2px 6px; border: none;  text-align: left;
+    font-size: 13px; font-weight: bold; color: #000; }
+.xnat-nav-tabs.side .tab-group li.label:hover { background: inherit; }
+.xnat-nav-tabs.side .tab-group:first-of-type { margin-top: 0; }
+.xnat-nav-tabs.side .tab-group:first-of-type li.label { padding-top: 0; }
+
+/* top tabs CANNOT have groups */
+.xnat-nav-tabs.top .tab-group li.label {
+    display: none;
+}
+
+/* TAB CONTENT AND PANES */
+.xnat-tab-content {
+    padding: 30px 0;
+    margin-bottom: 30px;
+    clear: left;
+    background: #fff;
+    border-top: 1px solid #c8c8c8;
+    box-sizing: border-box;
+}
+.xnat-tab-content.side {
+    width: 83%; min-height: 800px;
+    padding: 0 0 0 30px;
+    margin-bottom: 30px;
+    border-top: none;
+}
+.xnat-tab-content.side.pull-right {
+    clear: right;
+    border-left: 1px solid #c8c8c8;
+}
+.xnat-tab-content .tab-pane { display: none; min-height: 500px; height: auto; overflow: auto; background: #fff; }
+.xnat-tab-content .tab-pane > .pad { margin-bottom: 20px; padding: 20px 20px 0 20px; }
+.xnat-tab-content .tab-pane > .footer {
+    width: 100%; position: absolute; bottom: 0; padding: 10px 15px; overflow: auto;
+    background: #f0f0f0; border-top: 1px solid #c8c8c8; }
+.xnat-tab-content .tab-pane.active { display: block; }
+
+/* PANELS */
+body.xnat .panel { margin-bottom: 30px; background: /* #f8f8f8 */ inherit; border-radius: 0; }
+body.xnat .panel-default { border: 1px solid #c8c8c8; }
+.panel-default .panel-heading {
+    padding: 12px 16px;
+    color: #fff; background: #1A75BB;
+}
+/* special styling for panels in a dialog box */
+body.xnat div.xmodal .panel { padding: 0; margin: 0; border: none; }
+body.xnat div.xmodal .panel-body { padding: 0 ; }
+
+/* hide footer on individual form elements that are part of a multi-form panel */
+.multi-form .panel .footer { display: none; }
+
+.panel-default .panel-body { padding: 30px; }
+.panel-default .panel-footer  { padding: 12px; background: #f0f0f0; border-top: #c8c8c8; }
+.panel-title { font-weight: normal; font-size: 18px; line-height: inherit; }
+
+/* PANEL ELEMENTS */
+.panel .panel-element { margin: 5px 0 10px; padding: 10px 5px 0; clear: both; overflow: visible; }
+.panel .panel-element.highlighted { background-color: #e4efff; border: 1px solid #d4dfef; border-radius: 5px; }
+.panel .panel-element.stacked { margin: 0 0 30px;}
+.panel .panel-element:last-child { margin: 0; }
+.panel .panel-element > * { box-sizing: border-box; }
+.panel .panel-element .element-label {
+    width: 30%; padding-right: 10px; float: left;
+    color: #222; font-weight: bold; text-align: right;
+    text-transform: capitalize;
+}
+.panel .panel-element.stacked .element-label {
+    width: inherit; display: block; float: none;
+    text-align: left;
+}
+.panel .panel-element .element-wrapper { display: inline-block; width: 70%; float: right; }
+.panel .panel-element.stacked .element-wrapper { display: block; width: inherit; float: none; }
+.panel .panel-element .element-wrapper .description { margin: 5px 2px; color: #727272; }
+.panel .panel-element.stacked .element-wrapper .description { font-size: 12px; }
+.panel .panel-element span.before { right: 10px; }
+.panel .panel-element span.after { margin-left: 10px; }
+.panel .panel-element label.small { font-weight: normal; }
+.panel .panel-element input {
+    /* inputs shouldn't be wider than textareas */
+    max-width: 100%; box-sizing: border-box;
+    margin-top: -6px;
+}
+.panel .panel-element input[type="checkbox"],
+.panel .panel-element input[type="radio"] {
+    margin-top: 0;
+}
+
+.panel .panel-element.disabled .element-label {
+    color: #a8a8a8;
+}
+/* */
+.panel .panel-element textarea {
+    width: 100%; margin-top: -6px; padding: 5px 7px; box-sizing: border-box;
+    font-family: Courier, monospace; font-weight: normal;
+}
+.panel .panel-element select {overflow: auto;}
+
+.panel .input-bundle { margin-top: 10px; }
+
+.panel .panel-subhead {
+    border-bottom: 1px solid #c8c8c8;
+    color: #757575;
+    margin: 40px 0 20px;
+    text-transform: uppercase;
+}
+
+/* ELEMENT GROUP ITEMS */
+.panel .panel-element-group .group-item .element-label { width: auto; }
+
+/* MULTI-FORM PANEL ELEMENTS */
+.multi-form.panel {}
+.multi-form.panel > .panel-heading {  }
+.multi-form.panel > .panel-heading .panel-title { font-weight: normal; font-size: 18px; }
+.multi-form.panel > .panel-body { padding: 24px 24px 0; background: #fff; }
+.multi-form.panel > .panel-footer {  }
+/* MULTI-FORM PANEL CHILD PANELS */
+.multi-form.panel > .panel-body > .panel .panel-title {  }
+
+/* FORM CONTROLS */
+body.xnat textarea.form-control { font-family: Courier, monospace; font-weight: normal; }
+
+
+/* ==========================================================
+     UI WIDGETS
+  ========================================================== */
+.input-table { border-collapse: collapse; }
+.input-table td { padding: 5px; border: 1px solid #e0e0e0; }
+.input-table input { border: 1px solid #c8c8c8; }
+
+
+/* CONFIG PANELS */
+.config.panel .panel-footer { text-align: right; }
+.config.panel .panel-footer button { margin-left: 10px; }
+
+
+/*
+CSS styles for gradients with
+embedded base-64 image fallbacks
+*/
+
+/* greater difference between top and bottom values */
+/* used for .panel-heading background */
+.cssgradients .vgradient-lt-gray,
+.cssgradients .gradient-lt-gray,
+.cssgradients .gradient-light-gray,
+.cssgradients body.xnat .panel-default .panel-heading {
+    /* background: #e9e9e9 url('images/gradient-light-gray-34px.gif') top repeat-x; */
+    background: #e9e9e9 top repeat-x url('data:image/gif;base64,R0lGODlhBAAiAMQAAPz8/Pf39+vr6/X19fLy8vHx8fv7++np6fb29vPz8/Dw8P39/fr6+urq6vT09O7u7vj4+Ozs7AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAEACIAAAU74CKOImACRqqmTOu2UCzPcWAHSK7nQz84wCAwQSwSCUhCYclcKp7Q52NKrU4j2KwWK+gKGuAw+EAuk0MAOw==');
+    background-image: linear-gradient( #fdfdfd, #e9e9e9 );
+}
+
+/* subtle difference between top and bottom values */
+/* used for .nav-tab background */
+.cssgradients .vgradient-lt-gray2,
+.cssgradients .gradient-lt-gray2,
+.cssgradients .gradient-light-gray2 {
+    /* background: #f0f0f0 url('images/gradient-light-gray2-34px.gif') top repeat-x; */
+    background: #f0f0f0 top repeat-x url('data:image/gif;base64,R0lGODlhBAAiAKIAAPf39/Hx8fX19fPz8/Dw8PLy8vT09Pb29iH5BAAAAAAALAAAAAAEACIAAAMhCLp6/jDKJ6q9WJjNu/dDKI7kUJxoqqpB675wQMx0bRMJADs=');
+    background-image: linear-gradient( #f8f8f8, #f0f0f0 );
+}
+
+
+.clearfix:before,
+.clearfix:after,
+.container:before,
+.container:after,
+.container-fluid:before,
+.container-fluid:after,
+.row:before,
+.row:after,
+.form-horizontal .form-group:before,
+.form-horizontal .form-group:after,
+.btn-toolbar:before,
+.btn-toolbar:after,
+.btn-group-vertical > .btn-group:before,
+.btn-group-vertical > .btn-group:after,
+.nav:before,
+.nav:after,
+.navbar:before,
+.navbar:after,
+.navbar-header:before,
+.navbar-header:after,
+.navbar-collapse:before,
+.navbar-collapse:after,
+.pager:before,
+.pager:after,
+.panel-body:before,
+.panel-body:after,
+.modal-footer:before,
+.modal-footer:after {
+    content: " ";
+    display: table;
+}
+.clearfix:after,
+.container:after,
+.container-fluid:after,
+.row:after,
+.form-horizontal .form-group:after,
+.btn-toolbar:after,
+.btn-group-vertical > .btn-group:after,
+.nav:after,
+.navbar:after,
+.navbar-header:after,
+.navbar-collapse:after,
+.pager:after,
+.panel-body:after,
+.modal-footer:after {
+    clear: both;
+}
+.center-block {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+.pull-right {
+    float: right !important;
+}
+.pull-left {
+    float: left !important;
+}
+.hide {
+    display: none !important;
+}
+.show {
+    display: block !important;
+}
+.invisible {
+    visibility: hidden;
+}
+.text-hide {
+    font: 0/0 a;
+    color: transparent;
+    text-shadow: none;
+    background-color: transparent;
+    border: 0;
+}
+.hidden {
+    display: none !important;
+    visibility: hidden !important;
+}
+.affix {
+    position: fixed;
+}

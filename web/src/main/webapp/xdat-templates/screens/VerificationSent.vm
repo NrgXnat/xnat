@@ -1,0 +1,27 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("NoMenu.vm")
+$page.setTitle("XDAT -- Verifation Sent")
+<form id="resend" action="$content.getURI('/app/template/ResendVerification.vm')" method="POST">
+<table width="600">
+<tr><td>&nbsp;</td></tr>
+<tr><th>Thank you for your interest in our site.</th></tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td>You have been sent a link to verify your email address. Please check your email.</td></tr>
+
+<input type="hidden" name="emailTo" id="emailTo" value="${emailTo}" />
+<input type="hidden" name="emailUsername" id="emailUsername" value="${emailUsername}" />
+<tr><td>If you do not receive the email soon, <a href="#" onclick="resend()">click here</a> to resend the email.</td></tr></table>
+</form>
+#if ( $data.getMessage() )
+ <br><br><DIV class="error">$data.message</DIV>
+#end
+#if($msg)
+ <br><br> <DIV class="message">$msg</DIV>
+#end
+
+<script type="text/javascript">
+function resend() {
+	 var form = document.getElementById("resend");
+	 form.submit();
+}
+</script>

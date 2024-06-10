@@ -1,0 +1,22 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- BEGIN xdat-templates/screens/XDATScreen_aliasTokens.vm -->
+$page.setTitle("XNAT - Manage Alias Tokens")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+<button id="create-alias-token" style="margin-left: 10px; margin-bottom: 10px;">New alias token</button>
+<div id="alias-token-table-container">
+</div>
+
+<script type="text/javascript" src="$content.getURI("scripts/xnat/app/aliasTokens.js")"></script>
+<script language="javascript">
+    console.log('XDATScreen_aliasTokens.vm');
+
+    $(document).ready(function(){
+        console.log('I just loaded XDATScreen_aliasTokens.vm');
+    });
+</script>
+<!-- END xdat-templates/screens/XDATScreen_aliasTokens.vm -->

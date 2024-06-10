@@ -1,0 +1,130 @@
+<table>
+     <tr>
+      <td colspan="3">
+          ##<font face="$ui.sansSerifFonts" size="3" style="line-height:20px;">
+              <span class="ui_sansSerifFonts" style="line-height:20px;">
+                <b>Create $displayManager.getSingularDisplayNameForSubject()</b>
+              </span>
+          ##</font>
+      </td>
+     </tr>
+     <tr>
+      <td colspan="3">						<DIV ID="create_message"></DIV></td>
+     </tr>
+		<tr>
+<th>Identifiers</th>
+			<td align="left">
+				 <table align="left">
+				  <tr>
+				   <td>Name</td>
+				   <td>Value</td>
+	  </tr>
+	  #foreach($counter in [0..3])
+				  <tr>
+				   <td><input type="text" id="addID_name$counter" name="addID_name$counter"/></td>
+				   <td><input type="text" id="addID_addID$counter" name="addID_addID$counter"/></td>
+	  </tr>
+	  #end
+	 </table>
+</td>
+		</tr>
+     <tr>
+      <th align="left">Birth date:</th>
+  			<td NOWRAP>
+				#set($years = [ 1900..$!turbineUtils.getYear()])
+						#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+						#set($days = [ 1..31 ])
+						##<font face="$ui.sansSerifFonts">
+						<span class="ui_sansSerifFonts">
+							<select name="subject_bmonth" ID="subject_bmonth">
+								<option value="bad">(SELECT)</option>
+								#foreach ($month in $months)
+									#set ($monthCount = $velocityCount + 1)
+					        		<option value="$monthCount">
+										$month
+									</option>
+								#end
+							</select>
+					
+							<select name="subject_bday" ID="subject_bday">
+								<option value="bad">(SELECT)</option>
+								#foreach ($day in $days)
+					        		<option value="$day">$day</option>
+								#end
+							</select>
+						</span>
+						##</font>
+					
+						<select name="subject_byear" ID="subject_byear" >
+							<option value="bad">(SELECT)</option>
+							#foreach ($year in $years)
+					    		<option value="$year">$year</option>
+							#end
+						</select>
+  			</td>
+		</tr>
+		<tr>
+			#formLabel("DOB Estimated")
+			<td>
+				<input type="checkbox" name="subject_bestimate" ID="subject_bestimate">
+		    </td>
+		</tr>
+		<tr>
+			#formLabel("Gender")
+			<td>
+			<select name="subject_gender" ID="subject_gender">
+            		<option value="male">Male</option>
+            		<option value="female">Female</option>
+            		<option value="unknown">Unknown</option>
+			</select></td>
+		</tr>
+		<tr>
+			#formLabel("Handedness")
+			<td><select name="subject_hand" ID="subject_hand">
+            		<option value="right">Right</option>
+            		<option value="left">Left</option>
+            		<option value="ambidextrous" >Ambidextrous</option>
+            		<option value="unknown" >Unknown</option>
+			</select></td>
+		</tr>
+		<tr>
+			#formLabel("Education")
+			<td><input type="text" name="education" ID="subject_education"/></td>
+		</tr>
+		<tr>
+			#formLabel("Race")
+			<td><input type="text" name="race" ID="subject_race"/></td>
+		</tr>
+		<tr>
+			#formLabel("Ethnicity")
+			<td><input type="text" name="ethnicity" ID="subject_ethnicity"/></td>
+		</tr>
+		<tr>
+			#formLabel("SES")
+			<td><input type="text" name="ses" ID="subject_ses"/></td>
+		</tr>
+		<tr>
+			#formLabel("Height")
+			<td><input type="text" name="height" ID="subject_height"/></td>
+		</tr>
+		<tr>
+			#formLabel("Weight")
+			<td><input type="text" name="weight" ID="subject_weight"/></td>
+		</tr>
+		<tr>
+			#formLabel("$displayManager.getPluralDisplayNameForProject()")
+			  <td>
+			  <select ID="subject_project" name="project">
+						<option value="bad">(SELECT)</option>
+				#foreach ($project in $projects)
+		    		<option value="$					$projects.getId()" >
+					$projects.getId()
+				</option>
+				#end
+			  </select></td>
+		</tr>
+				<tr>
+			  <td>&nbsp;</td><td>
+			  <input id="save_subject" type="button" onclick="submitSubjectStore();return false;" value="Save $displayManager.getSingularDisplayNameForSubject()"/></td>
+		</tr>
+   </table>

@@ -1,0 +1,75 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+
+<table border="0" width="95%">
+	<tr>
+		<td colspan=2>
+			<form name="Mail" method="post" action="$link.setAction("EmailReportAction")">
+			<DIV VALIGN="top" align="left">
+						<input type="hidden" name="RowCount" value="1">	
+						<input type="hidden" name="to1" value="true">
+						<input type="hidden" name="search_element" value="$search_element"/>
+						<input type="hidden" name="search_field" value="$search_field"/>
+						<input type="hidden" name="search_value" value="$search_value"/>
+						#set($colorCode="#CCCC99")
+				<table >
+					<tr>
+						<TH align="left" height="20"><FONT size="+1">Email $item.getProperName() Report.</font></TH>
+					</tr>
+					<tr>
+						<TH align="left" height="20">$!item.getProperty("label")</TH>
+					</tr>
+					<TR>
+						<TD align="left">A link to this report will be included in your message. </TD>
+					</TR>
+					<TR>
+						<TD><HR color="$colorCode"></TD>
+					</TR>
+					<tr>
+						<TH align="left">Your email address:</TH>
+					</tr>
+					<TR>
+						<TD align="left">$!user.getEmail() ($!user.getFirstname() $!user.getLastname())</TD>
+					</TR>
+					<TR>
+						<TD><HR color="$colorCode"></TD>
+					</TR>
+					<tr>
+						<TH align="left">Recipient's email address: </TH>
+					</tr>
+					<TR>
+						<TD align="left"><input type="text" name="EMAILID_1" size="30"></TD>
+					</tr>
+					<TR>
+						<TD align="left">(Separate multiple email addresses with commas.)</TD>
+					</tr>
+					<TR>
+						<TD><HR color="$colorCode"></TD>
+					</TR>
+					<tr>
+						<TH align="left">Email subject message: </TH>
+					</tr>
+					<TR>
+						<TD align="left"><input type=text name="subject" size="30"></TD>
+					</tr>
+					<TR>
+						<TD><HR color="$colorCode"></TD>
+					</TR>
+					<tr>
+						<TH align="left">Personal Message: </TH>
+					</tr>
+					<tr>
+						<td align="left" valign=top colspan=2>							
+							<TEXTAREA COLS="31" NAME="message" ROWS="15" ></TEXTAREA>
+						</td>
+					</tr>
+					<tr>
+						<td valign=top colspan=2 align="left">
+							<input type="submit" name="eventSubmit_doPerform" value="Send">
+						</td>
+					</tr>
+				</table>
+			</div>
+			</form>
+		</td>
+	</tr>
+</table>

@@ -1,0 +1,195 @@
+<!-- BEGIN ProjectSelector.vm -->
+<script type="text/javascript" LANGUAGE="JavaScript">
+		  
+var elementName="$!item.getXSIType()";
+
+		  function addNewProject()
+		  {
+		   var projects = document.getElementById('projects');
+		   if (projects.selectedIndex==0)
+		   {
+               xmodal.message('Project Validation', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
+		       return false;
+		   }
+		    
+		   var proj= projects.options[projects.selectedIndex].value;
+		    
+    var inputs =document.getElementsByTagName("input");
+    for (ti=0;ti<inputs.length;ti++) {
+	       var thisInput = inputs[ti];
+	       if (((' '+thisInput.name+' ').indexOf(elementName+"/sharing/share") != -1) && ((' '+thisInput.name+' ').indexOf("]/project") != -1) ) {
+		         
+		         if(thisInput.value==proj)
+		         {
+                   xmodal.message('Project Validation', '$displayManager.getSingularDisplayNameForProject() already exists');
+		           return false;
+		         }
+			       }
+    }
+    
+		   var t =document.getElementById('projects_project');
+		   var newRowCount = t.rows.length;
+		   var tr = document.createElement('tr');
+	   var td1 = document.createElement('td');
+	   var td2 = document.createElement('td');
+	   var td3 = document.createElement('td');
+	    
+	   var formTag = document.getElementById('editSubjectForm');
+	    
+	   td1.innerHTML=projects.options[projects.selectedIndex].text;
+	    
+	   var newInputP = document.createElement('input');
+	   newInputP.type='hidden';
+	   newInputP.id="$item.getXSIType()/sharing/share[" + newRowCount + "]/project";
+	   newInputP.name="$item.getXSIType()/sharing/share[" + newRowCount + "]/project";
+	   newInputP.value=proj;
+	   
+	   td1.appendChild(newInputP);
+	   
+	   var newInputV = document.createElement('input');
+	   newInputV.type='text';
+	   newInputV.size='10';
+	   newInputV.id="$item.getXSIType()/sharing/share[" + newRowCount + "]/label";
+	   newInputV.name="$item.getXSIType()/sharing/share[" + newRowCount + "]/label";
+	   newInputV.onchange=function(){identifierChanged("$item.getXSIType()/sharing/share[" + newRowCount + "]/label",newRowCount);};
+	   td2.appendChild(newInputV);
+	   
+	   var newInputG = document.createElement('input');
+	   newInputG.type='text';
+	   newInputG.size='10';
+	   newInputG.id="$item.getXSIType()/sharing/share[" + newRowCount + "]/group";
+	   newInputG.name="$item.getXSIType()/sharing/share[" + newRowCount + "]/group";
+	   td3.appendChild(newInputG);
+	   
+	   tr.appendChild(td1);
+	   tr.appendChild(td2);
+	   tr.appendChild(td3);
+	   t.appendChild(tr);
+		  }		  
+		</script>
+<form method="post" action="$link.setAction("ManageEntryAccess")" name="form1" id="form1" ONSUBMIT="return validateForm();">
+<DIV ID="PROJECT_BOX">
+<DIV class="edit_header1">$displayManager.getSingularDisplayNameForProject() Info</DIV>
+<DIV ID="projectSpacer">&nbsp;</DIV>
+<DIV class="edit_header3">
+$displayManager.getSingularDisplayNameForProject():
+<INPUT type="hidden" name="project" value="$!project"/>
+#set($create_projects=$data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","create"))
+#set($read_projects=$data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","read"))
+#set($projectMap = $data.getSession().getAttribute("userHelper").getCachedItemValuesHash("xnat:projectData",null,false,"xnat:projectData/ID","xnat:projectData/secondary_ID"))
+
+#if($create_projects.size()>0)
+<SELECT ID="projects" name="projects">
+<option value="">(SELECT)</option>
+#foreach($proj in $create_projects)
+#if($projectMap.get($proj))
+<option value="$proj">
+$projectMap.get($proj)
+</option>
+#elseif($proj=="*")
+
+#else
+<option value="$proj">
+$proj
+</option>
+#end
+#end
+</SELECT>
+<input type="button" value="Add" ONCLICK="addNewProject();"/>
+#else
+ERROR:  No $displayManager.getPluralDisplayNameForProject().toLowerCase() exist.  Please create a $displayManager.getSingularDisplayNameForProject().toLowerCase() before attempting to insert this item.
+#end
+</DIV>
+<DIV ID="projectSpacer">&nbsp;</DIV>
+<DIV class="container" style="width:none;height:none;max-height:none;">
+			 <DIV class="withColor containerTitle">$displayManager.getSingularDisplayNameForProject() Labels</DIV>
+			<DIV class="containerBody">
+    <TABLE>
+       <thead>
+       <TR><TH>$displayManager.getSingularDisplayNameForProject()</TH><TH>ID</TH><TH>Group</TH></TR>
+       </thead>
+       <tbody ID="projects_project">
+       #set($ppCount =0) 
+       #foreach($pp in $om.getSharing_share())
+         #if($read_projects.contains($pp.getProperty("project")))
+          <TR><TD>$pp.getProjectDisplayID()<INPUT type="hidden" value="$pp.getProperty("project")" id="$item.getXSIType()/sharing/share[$ppCount]/project" name="$item.getXSIType()/sharing/share[$ppCount]/project"/></TD>
+         
+           #if($create_projects.contains($pp.getProperty("project")))
+           <TD><INPUT size="10" type="text" value="$!pp.getProperty("label")" id="$item.getXSIType()/sharing/share[$ppCount]/label" name="$item.getXSIType()/sharing/share[$ppCount]/label" ONCHANGE="identifierChanged('$item.getXSIType()/sharing/share[$ppCount]/label',$ppCount);"/></TD>
+           <TD><INPUT size="10" type="text" value="$!pp.getProperty("group")" id="$item.getXSIType()/sharing/share[$ppCount]/group" name="$item.getXSIType()/sharing/share[$ppCount]/group"/></TD>
+           #else
+           <TD>$!pp.getProperty("label")<INPUT size="10" type="hidden" value="$!pp.getProperty("label")" id="$item.getXSIType()/sharing/share[$ppCount]/label" name="$item.getXSIType()/sharing/share[$ppCount]/label"/></TD>
+           <TD>$!pp.getProperty("group")<INPUT size="10" type="hidden" value="$!pp.getProperty("group")" id="$item.getXSIType()/sharing/share[$ppCount]/group" name="$item.getXSIType()/sharing/share[$ppCount]/group"/></TD>
+           #end
+             #foreach($key in $pp.getPkNames())
+               #if($pp.getProperty("$key"))
+               <INPUT TYPE="hidden" NAME="$item.getXSIType()/sharing/share[$ppCount]/$key" VALUE="$pp.getProperty("$key")"/>
+               #end
+             #end
+          </TR>
+         #else
+           <INPUT size="10" type="hidden" value="$!pp.getProperty("label")" id="$item.getXSIType()/sharing/share[$ppCount]/label" name="$item.getXSIType()/sharing/share[$ppCount]/label"/>
+           <INPUT size="10" type="hidden" value="$!pp.getProperty("group")" id="$item.getXSIType()/sharing/share[$ppCount]/group" name="$item.getXSIType()/sharing/share[$ppCount]/group"/>
+	           <INPUT type="hidden" value="$pp.getProperty("project")" id="$item.getXSIType()/sharing/share[$ppCount]/project" name="$item.getXSIType()/sharing/share[$ppCount]/project"/>
+             #foreach($key in $pp.getPkNames())
+               #if($pp.getProperty("$key"))
+               <INPUT TYPE="hidden" NAME="$item.getXSIType()/sharing/share[$ppCount]/$key" VALUE="$pp.getProperty("$key")"/>
+               #end
+             #end
+         #end
+         #set($ppCount =$ppCount+1)
+       #end
+       </tbody>
+    </TABLE>
+   </DIV>
+  </DIV>
+</DIV>
+		<br><br>
+    	<input type="button" ONCLICK="javascript:history.go(-1)" value="Back"/>&nbsp;&nbsp;&nbsp;
+    	<input type="submit" name="eventSubmit_doPerform" value="Submit"/>
+		<SCRIPT type="text/javascript" LANGUAGE="JavaScript">
+		function validateForm(){
+		    var inputs =document.getElementsByTagName("input");
+    for (ti=0;ti<inputs.length;ti++) {
+	       var thisInput = inputs[ti];
+	       if (((' '+thisInput.name+' ').indexOf(elementName+"/sharing/share") != -1) && ((' '+thisInput.name+' ').indexOf("]/label") != -1) ) {
+		         if(thisInput.value=="")
+		         {
+		           thisInput.value="NULL";
+		         }
+			       }
+    }
+		}
+		
+		function identifierChanged(id,index){
+		  var idBox = document.getElementById(id);
+		  idBox.value=fixSpaces(idBox.value);
+}
+
+function fixSpaces(val)
+{
+        var temp = stringTrim(val);
+        var newVal = '';
+        temp = temp.split(' ');
+        for(var c=0; c < temp.length; c++) {
+                newVal += temp[c];
+        }
+        
+        newVal = newVal.replace(/[&]/,"_");
+        newVal = newVal.replace(/[?]/,"_");
+        newVal = newVal.replace(/[<]/,"_");
+        newVal = newVal.replace(/[>]/,"_");
+        newVal = newVal.replace(/[(]/,"_");
+        newVal = newVal.replace(/[)]/,"_");
+        if(newVal!=val){
+          xmodal.message('Project Validation', 'Spaces and special characters are not allowed in identifier fields.');
+        }
+        return newVal;
+}
+
+		</SCRIPT>
+		<!-- END ProjectSelector.vm -->
+#xdatEditProps($item "XDATScreen_manage_entry_access.vm")
+<input type="hidden" value="$item.getProperty("ID")" name="$item.getXSIType()/ID"/>
+<input type="hidden" value="$item.getProperty("project")" name="$item.getXSIType()/project"/>
+		</form>

@@ -1,0 +1,172 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+#macro( propValueRow $name $prop )
+  #if ( $!item.getProperty("$prop") )
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getProperty("$prop")</td></tr>
+	#end
+#end
+
+#macro( propValueRow $name $prop $addText)
+  #if ( $!item.getProperty("$prop") )
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getProperty("$prop") $addText</td></tr>
+	#end
+#end
+
+<!-- TODO: better presentation -->
+#macro( propBoolValueRow $name $prop )
+	#if ($!item.getBooleanProperty("$prop"))
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getBooleanProperty("$prop")</td></tr>
+	#end
+#end
+
+<style type="text/css">
+td.attr_name { <!-- in imitation of xdat.css (th) -->
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	border-top-style: none;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 13px;
+	margin: 0px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.attr_value { <!-- in imitation of xdat.css (td) -->
+	font-family: verdana,geneva,helvetica;
+	font-size: 10px;
+	line-height: 14px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.subtable {
+	valign: top;
+}
+</style>
+
+
+$page.setTitle("Pittsburgh Side Effects : $!item.getProperty('sideEffectsPittsburgh.ID')")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+<br>
+
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+
+#if (!$project)
+#set($project=$item.getProperty("project"))
+#end
+
+#set($subject = $om.getSubjectData())
+#set($part_id = $subject.getStringProperty("ID"))
+
+<div class="edit_title">
+Pittsburgh Side Effects:
+#if($project)
+	$om.getIdentifier($project)
+#else
+	$!item.getProperty("sideEffectsPittsburgh.ID")
+#end
+</div>
+
+#parse("/screens/workflow_alert.vm")
+
+<table width="100%">
+	<tr>
+		<td valign="top"><table>
+				<!-- left table -->
+			#propValueRow("Date" "xnat_a:sideEffectsPittsburghData/date")
+			#propValueRow("Time" "xnat_a:sideEffectsPittsburghData/time")
+			#propValueRow("Visit ID" "xnat_a:sideEffectsPittsburghData/visit_id")
+		</table></td>
+		<td valign="top"<table>
+				<!-- middle table -->
+			<tr>
+				<td class="attr_name">$displayManager.getSingularDisplayNameForSubject():</td>
+				<td>
+					<A CLASS=b HREF="$link.setAction('DisplayItemAction').addPathInfo('search_element','xnat:subjectData').addPathInfo('search_field','xnat:subjectData.ID').addPathInfo('search_value',$part_id).addPathInfo('popup','$!popup').addPathInfo('project','$!project')">
+					#if($project)
+						$!subject.getIdentifier($project)
+					#else
+						$!subject.getId()
+					#end
+					</A>
+				</td>
+			</tr>
+			#if($!subject.getGenderText())
+			<tr>
+				<td class="attr_name">Gender:</td>
+				<td class="attr_value">$subject.getGenderText()</td>
+			</tr>
+			#end
+			#propValueRow("Age" "xnat_a:sideEffectsPittsburghData/age")
+		</table></td>
+		<td valign="top">
+		#parse("/screens/xnat_experimentData_shareDisplay.vm")
+		</td>
+		<td valign="top">
+			#parse($turbineUtils.getTemplateName("actions", $om.getXSIType(), $project))
+		</td>
+	</tr>
+</table>
+
+#if ($!item.getStringProperty("note"))
+<table>
+  <tr>
+		<td valign="top" class="attr_name">Notes:</td>
+		<td valign="top" class="attr_value">$!item.getStringProperty("note")</td>
+	</tr>
+</table>
+#end
+
+<br>
+
+<table>
+	#propValueRow("Motor Tics" "xnat_a:sideEffectsPittsburghData/motorTics")
+	#propValueRow("Buccal/Lingual Movements" "xnat_a:sideEffectsPittsburghData/buccal_lingualMovements")
+	#propValueRow("Picking Skin/Fingers/Nails/Lip" "xnat_a:sideEffectsPittsburghData/picking_skin_fingers_nails_lip")
+	#propValueRow("Worried/Anxious" "xnat_a:sideEffectsPittsburghData/worried_anxious")
+	#propValueRow("Dull/Tired/Listless" "xnat_a:sideEffectsPittsburghData/dull_tired_listless")
+	#propValueRow("Sedation" "xnat_a:sideEffectsPittsburghData/sedation")
+	#propValueRow("Stomachache" "xnat_a:sideEffectsPittsburghData/stomachache")
+	#propValueRow("Nausea/Vomiting" "xnat_a:sideEffectsPittsburghData/nausea_vomiting")
+	#propValueRow("Crabby/Irritable" "xnat_a:sideEffectsPittsburghData/crabby_irritable")
+	#propValueRow("Tearful/Sad/Depressed" "xnat_a:sideEffectsPittsburghData/tearful_sad_depressed")
+	#propValueRow("Hallucinations" "xnat_a:sideEffectsPittsburghData/hallucinations")
+	#propValueRow("Trouble Sleeping" "xnat_a:sideEffectsPittsburghData/troubleSleeping")
+	#propValueRow("Loss of Appetite" "xnat_a:sideEffectsPittsburghData/lossOfAppetite")
+	#propValueRow("Trouble Concentrating/Distractible" "xnat_a:sideEffectsPittsburghData/troubleConcentrating_distractible")
+	#propValueRow("Dizziness/Lightheadedness" "xnat_a:sideEffectsPittsburghData/dizziness_lightheadedness")
+	#propValueRow("Headaches" "xnat_a:sideEffectsPittsburghData/headaches")
+	#propValueRow("Social Withdrawal" "xnat_a:sideEffectsPittsburghData/socialWithdrawal")
+	#propValueRow("Dry Mouth" "xnat_a:sideEffectsPittsburghData/dryMouth")
+	#propValueRow("Palpitations" "xnat_a:sideEffectsPittsburghData/palpitations")
+</table>
+
+#set($xnat_experimentData_field_4_NUM_ROWS=$item.getChildItems("xnat_a:sideEffectsPittsburghData/fields/field").size() - 1)
+#if($xnat_experimentData_field_4_NUM_ROWS>=0)
+	#foreach($xnat_experimentData_field_4_COUNTER in [0..$xnat_experimentData_field_4_NUM_ROWS])
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_4_COUNTER] -->
+	<TABLE>
+		<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_4_COUNTER]</font></TH></TR>
+		<TR>
+			<TD align="left" valign="top">
+				<TABLE>
+					<TR><TD>field</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_4_COUNTER]/field")</TD></TR>
+					<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_4_COUNTER]/name")</TD></TR>
+				</TABLE>
+			</TD>
+		</TR>
+	</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_4_COUNTER] -->
+	#end
+#end
+
+<BR>#parse("/screens/ReportProjectSpecificFields.vm")

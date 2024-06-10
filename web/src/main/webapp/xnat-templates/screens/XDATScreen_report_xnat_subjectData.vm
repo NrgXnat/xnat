@@ -1,0 +1,14 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- BEGIN xnat-templates/screens/XDATScreen_report_xnat_subjectData.vm -->
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<div class="note">$data.message</div><br>
+#end
+#parse($turbineUtils.getTemplateName("_report","xnat:subjectData",$project))
+<!-- END xnat-templates/screens/XDATScreen_report_xnat_subjectData.vm -->

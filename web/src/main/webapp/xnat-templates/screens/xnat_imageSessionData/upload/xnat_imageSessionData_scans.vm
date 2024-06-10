@@ -1,0 +1,121 @@
+#* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+<div class="scans">
+	<div class="edit_header1">Scan Details</div>
+	<table bgcolor="#FFFFFF" cellspacing="0">
+		<tr>
+			<th>ID</th>
+			<th>time</th>
+			<th>type</th>
+			<th>quality</th>
+			<th>note</th>
+			<th>files</th>
+		</tr>
+	#set($numScans = $om.getSortedScans().size())
+	#set ($TOP_SCAN = $numScans - 1)
+		#set($even="even")
+	#foreach($scani in [0..$TOP_SCAN])
+  #if($even=="even")
+  #set($even="odd")
+  #else		
+  #set($even="even")
+  #end
+		  <tr class="$even">
+		  
+		  #set($scan = $om.getSortedScans().get($scani))
+		  
+		  #if($!scan.getProperty("series_description"))
+		    #set($sd=$!scan.getProperty("series_description"))
+		  #else
+		    #set($sd=$!scan.getProperty("type"))
+		  #end
+		  
+		  #set($scanTypes=$scanTypeHash.get($!sd))
+		  
+			  <td>$!scan.getProperty("ID")	<!-- align="left" -->
+			  #if($scan.getProperty("ID"))
+				  <INPUT type="hidden"  name="${datatype}/scans/scan[$scani]/ID"							 value="$scan.getProperty("ID")"/>
+			  #end
+			  </td>
+			<td>
+				$!om.getSortedScans().get($scani).getProperty("startTime")
+			</td>
+			<td>	<!-- align="left" -->
+			$scanTypes
+			#if($scanTypes)
+			#if($scanTypes.size()==0)
+		    <input type="text" id="${datatype}/scans/scan[$scani]/type" name="${datatype}/scans/scan[$scani]/type"
+		    			 value="$!scan.getProperty("type")"/>
+			#else
+				#set($matched=false)
+				<table>	<!--  cellpadding="0" cellspacing="0" align="left" -->
+					<tr>
+						<td>	<!-- align="left" -->
+							<SELECT id="SEL_${datatype}/scans/scan[$scani]/type"
+										  name="SEL_${datatype}/scans/scan[$scani]/type"
+										  onchange="setSelectValue(this);">
+								<OPTION VALUE="">(SELECT)</OPTION>
+
+							#foreach ($pValue in $scanTypes)
+								#if($pValue.equals($scan.getProperty("type")))
+								<OPTION VALUE="$pValue" SELECTED>$pValue</OPTION>
+									#set($matched=true)
+								#else
+								<OPTION VALUE="$pValue">$pValue</OPTION>
+								#end
+							#end
+							#if($matched==false && $scan.getProperty("type"))
+															<OPTION SELECTED VALUE="$scan.getProperty("type")">$scan.getProperty("type")</OPTION>
+							#end
+							</SELECT>
+						#if($matched==false)
+							<BR>($scan.getProperty("type"))
+						#end
+						</td>
+						<td>	<!-- align="left" -->
+							<DIV ID="IND_${datatype}/scans/scan[$scani]/type">
+								<a ID="A_${datatype}/scans/scan[$scani]/type"
+								   onclick="showText(this);" style="font-size:11px">
+Other
+								</a>
+							</DIV>
+						</td>
+						<td>	<!-- align="left" -->
+							<DIV ID="TEXT_${datatype}/scans/scan[$scani]/type"
+							     style="display:none">
+								Enter: <input id="${datatype}/scans/scan[$scani]/type"
+														  type="text" name="${datatype}/scans/scan[$scani]/type"
+															value="$!scan.getProperty("type")"/>
+							</DIV>
+						</td>
+					</tr>
+				</table>
+		  #end
+		 #else
+		    <input type="text" id="${datatype}/scans/scan[$scani]/type" name="${datatype}/scans/scan[$scani]/type"			 value="$!scan.getProperty("type")"/>
+		 #end
+		
+#if($!scan.getProperty("series_description"))$!scan.getProperty("series_description")#end
+			</td>
+			<td>	<!-- width="127" align="center" -->
+				<SELECT id="${datatype}/scans/scan[$scani]/quality" name="${datatype}/scans/scan[$scani]/quality">
+					<OPTION VALUE="" selected>(SELECT)</OPTION>
+					#foreach ($quality in $qualityLabels)
+					<OPTION VALUE="$quality">$quality</OPTION>
+					#end
+				</SELECT>
+			</td>
+			<td>	<!-- width="215" align="center" -->
+				<input type="text" name="${datatype}/scans/scan[$scani]/note"			 value="$!scan.getProperty("note")" maxlength="80" size="23"/>
+			</td>
+
+						<td>
+				$!scan.getFormattedReadableFileStats($user)
+			</td>
+		#if($scan.getProperty("xnat_imagescandata_id"))
+			<input type="hidden" name="${datatype}/scans/scan[$scani]/xnat_imagescandata_id" value="$scan.getProperty("xnat_imagescandata_id")"/>
+		#end
+		</tr>
+	#end
+	</table>
+</div>

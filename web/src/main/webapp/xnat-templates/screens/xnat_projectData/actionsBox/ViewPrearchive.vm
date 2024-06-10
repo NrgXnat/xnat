@@ -1,0 +1,7 @@
+#if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
+    <li class="yuimenuitem">
+        <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','prearchives').addPathInfo('project',$project.getId())">
+            View Prearchive
+        </a>
+    </li>
+#end

@@ -1,0 +1,7 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("ScreenOnly.vm")
+<!-- only useful for popups. -->
+<script>
+    window.opener.location.reload();
+    window.close();
+</script>

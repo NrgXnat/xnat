@@ -1,0 +1,30 @@
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+<!--BEGIN xnat_mrSessionData_keyFields.vm -->
+
+#parse($turbineUtils.getTemplateName("_keyFields","xnat:imageSessionData",$project))
+
+#if($!item.getProperty("marker"))
+<tr>
+    <th align="left">Marker:</th>
+    <td>#escapeCleanHTML("$!item.getProperty('marker')")</td>
+</tr>
+#end
+
+#if($!item.getProperty("stabilization"))
+<tr>
+    <th align="left">Stabilization:</th>
+    <td>#escapeCleanHTML("$!item.getProperty('stabilization')")</td>
+</tr>
+#end
+
+#if($!item.getProperty("coil"))
+<tr>
+    <th align="left">Receiver Coil:</th>
+    <td>#escapeCleanHTML("$!item.getProperty('coil')")</td>
+</tr>
+#end
+
+<!--END xnat_mrSessionData_keyFields.vm -->

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ web: context.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2005-2021, Washington University School of Medicine and Howard Hughes Medical Institute
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<Context>
+    <!--
+    For Tomcat 7 compatibility, uncomment the <Loader> element and comment out the <Resources>
+    and <CookieProcessor> elements under that.
+    -->
+    <!-- Loader className="org.apache.catalina.loader.VirtualWebappLoader" searchVirtualFirst="true" virtualClasspath="${xnat.home}/plugins/*.jar"/ -->
+
+    <!--
+    For Tomcat 8 compatibility, uncomment the <Resources> and <CookieProcessor> elements below and
+    comment out the <Loader> element below that.
+    -->
+    <Resources>
+        <PreResources className="org.apache.catalina.webresources.DirResourceSet" base="${xnat.home}/plugins" webAppMount="/WEB-INF/lib" />
+    </Resources>
+    <CookieProcessor className="org.apache.tomcat.util.http.LegacyCookieProcessor" />
+    <JarScanner scanAllDirectories="true" />
+    <Parameter name="xnatHome" value="${xnat.home}"/>
+    <Manager pathname="" />
+</Context>

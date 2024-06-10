@@ -1,0 +1,28 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+<script>
+    window.isLoginPage = true;
+    window.loadDataTypes = false;
+</script>
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+<!-- path: xnat-templates/layouts/Login -->
+<div id="xnat-login">
+    <script>
+        window.isLoginPage = true;
+        window.location.hash = '#!';
+    </script>
+    $navigation.setTemplate("/NoMenuTop.vm")
+    <div id="layout_content2" style="display:none;">Loading...</div>
+    <div id="layout_content">$screen_placeholder</div>
+</div><!-- /#xnat-login -->
+<script>
+    ## moved 'onload' script in <body> tag to a jQuery function
+    jq('#username').focus();
+</script>
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

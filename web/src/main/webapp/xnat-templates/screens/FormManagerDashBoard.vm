@@ -1,0 +1,35 @@
+<!-- BEGIN xnat-templates/screens/FormManagerDashBoard.vm -->
+
+
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+
+<!-- Protocol Manager -->
+
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/datatypeManager.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/protocolManager.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/assignDialog.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/projectListModal.js')"></script>
+
+<div class="header">
+    <div id="form-json-container">
+        <h2 id = "headerTitle">Datatype specific custom forms </h2>
+    </div>
+    <div  id="editForm" class="xnat-bootstrap html-template">
+        <div class="xnat-bootstrap" id="formio-builder"></div>
+    </div>
+    <div  id="addFormVariable" class="xnat-bootstrap html-template">
+        <div  id="formio" class="xnat-bootstrap"></div>
+        <div  id="formio-container" class="xnat-bootstrap container-fluid"></div>
+    </div>
+</div>
+
+#parse('screens/formioJSIncludes.vm')
+
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/builderConfiguration.js')"></script>
+<script src="$content.getURI('/scripts/xnat/app/formJson/formJsonConfig.js')" type="text/javascript"></script>
+
+<!-- END xnat-templates/screens/FormManagerDashBoard.vm -->
+
+

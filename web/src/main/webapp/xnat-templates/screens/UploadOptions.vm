@@ -1,0 +1,36 @@
+<h2>Options for Uploading $displayManager.getPluralDisplayNameForImageSession()</h2>
+
+<div style="width: 500px;">
+
+    #set($sectionTitle = "<h3>Option 1: XNAT Desktop Applications</h3>")
+    #parse("/screens/UploadAssistantPage.vm")
+
+    #if(!$siteConfig.getBooleanValue("uiHideCompressedUploaderUploadOption"))
+        <hr style="margin: 2em 0" />
+    #set($sectionTitle = "<h3>Option 2: XNAT Compressed Uploader</h3>")
+    #parse("/screens/CompressedUploaderPage.vm")
+    #end
+
+    #if(!$siteConfig.getBooleanValue("uiHideDicomScpUploadOption"))
+    <hr style="margin: 2em 0" />
+        <h3>Option #if($siteConfig.getBooleanValue("uiHideCompressedUploaderUploadOption")) 2: #else 3: #end DICOM C-STORE Service Class User</h3>
+
+        <p>Any DICOM C-STORE SCU, including scanner consoles or DICOM applications like
+            <a href="http://www.osirix-viewer.com" target="_blank">OsiriX</a> or <a href="https://wiki.xnat.org/xnat-tools/dicombrowser" target="_blank">DicomBrowser</a>,
+            can send files directly to this server.
+        </p>
+
+        <p><b>DICOM C-STORE receiver (SCP) Specifications</b></p>
+        #foreach ($scp in $scps)
+            <ul>
+                <li>ID: $!scp.getScpId()</li>
+                <li>AE Title: $!scp.getAeTitle()</li>
+                <li>Port: $!scp.getPort()</li>
+            </ul>
+            <br>
+        #end
+    #end
+</div>
+
+
+

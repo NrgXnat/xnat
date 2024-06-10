@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("SubjectVariables Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>SubjectVariables Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>subject_ID</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/subject_ID")</TD></TR>
+							<TR><TD>age</TD><TD>$!item.getDoubleProperty("xnat:subjectVariablesData/age")</TD></TR>
+							<TR><TD>date</TD><TD>$!item.getProperty("xnat:subjectVariablesData/date")</TD></TR>
+							<TR><TD>time</TD><TD>$!item.getProperty("xnat:subjectVariablesData/time")</TD></TR>
+							<TR><TD>duration</TD><TD>$!item.getProperty("xnat:subjectVariablesData/duration")</TD></TR>
+							<TR><TD>delay</TD><TD>$!item.getIntegerProperty("xnat:subjectVariablesData/delay")</TD></TR>
+							<TR><TD>delay/ref_expt_id</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/delay/ref_expt_id")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/note")</TD></TR>
+							<TR><TD>acquisition_site</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/acquisition_site")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/ID")</TD></TR>
+							<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/project")</TD></TR>
+							<TR><TD>visit_id</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/visit_id")</TD></TR>
+							<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/visit")</TD></TR>
+							<TR><TD>version</TD><TD>$!item.getIntegerProperty("xnat:subjectVariablesData/version")</TD></TR>
+							<TR><TD>original</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/original")</TD></TR>
+							<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/protocol")</TD></TR>
+							<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/label")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:subjectVariablesData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_share_1_NUM_ROWS=$item.getChildItems("xnat:subjectVariablesData/sharing/share").size() - 1)
+							#if($xnat_experimentData_share_1_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_share_1_COUNTER in [0..$xnat_experimentData_share_1_NUM_ROWS])
+<!-- BEGIN xnat:subjectVariablesData/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:subjectVariablesData/sharing/share[$xnat_experimentData_share_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>share</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/sharing/share[$xnat_experimentData_share_1_COUNTER]/share")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/sharing/share[$xnat_experimentData_share_1_COUNTER]/label")</TD></TR>
+													<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/sharing/share[$xnat_experimentData_share_1_COUNTER]/project")</TD></TR>
+													<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/sharing/share[$xnat_experimentData_share_1_COUNTER]/visit")</TD></TR>
+													<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/sharing/share[$xnat_experimentData_share_1_COUNTER]/protocol")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:subjectVariablesData/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:subjectVariablesData/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:subjectVariablesData/investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/investigator/title")</TD></TR>
+										<TR><TD>firstname</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/investigator/firstname")</TD></TR>
+										<TR><TD>lastname</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/investigator/lastname")</TD></TR>
+										<TR><TD>institution</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/investigator/institution")</TD></TR>
+										<TR><TD>department</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/investigator/department")</TD></TR>
+										<TR><TD>email</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/investigator/email")</TD></TR>
+										<TR><TD>phone</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/investigator/phone")</TD></TR>
+										<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/investigator/ID")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:subjectVariablesData/investigator -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:subjectVariablesData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:subjectVariablesData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/validation/method")</TD></TR>
+										<TR><TD>date</TD><TD>$!item.getProperty("xnat:subjectVariablesData/validation/date")</TD></TR>
+										<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/validation/notes")</TD></TR>
+										<TR><TD>validated_by</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/validation/validated_by")</TD></TR>
+										<TR><TD>status</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/validation/status")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:subjectVariablesData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_4_NUM_ROWS=$item.getChildItems("xnat:subjectVariablesData/resources/resource").size() - 1)
+							#if($xnat_abstractResource_4_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_4_COUNTER in [0..$xnat_abstractResource_4_NUM_ROWS])
+<!-- BEGIN xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_5_NUM_ROWS=$item.getChildItems("xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_5_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_5_COUNTER in [0..$xnat_abstractResource_tag_5_NUM_ROWS])
+<!-- BEGIN xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:subjectVariablesData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_field_6_NUM_ROWS=$item.getChildItems("xnat:subjectVariablesData/fields/field").size() - 1)
+							#if($xnat_experimentData_field_6_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_field_6_COUNTER in [0..$xnat_experimentData_field_6_NUM_ROWS])
+<!-- BEGIN xnat:subjectVariablesData/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:subjectVariablesData/fields/field[$xnat_experimentData_field_6_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>field</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/fields/field[$xnat_experimentData_field_6_COUNTER]/field")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/fields/field[$xnat_experimentData_field_6_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:subjectVariablesData/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_subjectVariablesData_variable_7_NUM_ROWS=$item.getChildItems("xnat:subjectVariablesData/variables/variable").size() - 1)
+							#if($xnat_subjectVariablesData_variable_7_NUM_ROWS>=0)
+								#foreach($xnat_subjectVariablesData_variable_7_COUNTER in [0..$xnat_subjectVariablesData_variable_7_NUM_ROWS])
+<!-- BEGIN xnat:subjectVariablesData/variables/variable[$xnat_subjectVariablesData_variable_7_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:subjectVariablesData/variables/variable[$xnat_subjectVariablesData_variable_7_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>variable</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/variables/variable[$xnat_subjectVariablesData_variable_7_COUNTER]/variable")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:subjectVariablesData/variables/variable[$xnat_subjectVariablesData_variable_7_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:subjectVariablesData/variables/variable[$xnat_subjectVariablesData_variable_7_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:subjectVariablesData -->
+		</TD>
+	</TR>
+</TABLE><BR>#parse("/screens/ReportProjectSpecificFields.vm")

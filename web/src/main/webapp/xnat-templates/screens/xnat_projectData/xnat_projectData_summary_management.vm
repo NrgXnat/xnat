@@ -1,0 +1,136 @@
+<!-- BEGIN xnat-templates/screens/xnat_projectData/xnat_projectData_summary_management.vm -->
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#set($showUserList = !$siteConfig.restrictUserListAccessToAdmins || $turbineUtils.isSiteAdmin($user))
+
+#define ($projectIdEsc)
+    #escapeAll($!project.getId())
+#end
+
+#define ($projectDisplayNameSingular)
+    #escapeAll($displayManager.getSingularDisplayNameForProject())
+#end
+
+<p style="margin-bottom: 3px;"><label><input id="showDeactivatedUsersCheck" type="checkbox" onclick="XNAT.projectAccess.renderUsersTable();">Show Deactivated Users</label></p>
+<div id="user_mgmt_div" class="panel-table-container"></div>
+<div class="clearfix clear"></div>
+
+<div id="access_controls_container" class="pad10v">
+    <div class="inline-thirds" id="user_invite_div" >
+        #if($siteConfig.securityExternalUserParDisabled)
+            <h4 id="add_invite_user_header" style="margin-bottom:3px">Add User</h4>
+        #else
+            <h4 id="add_invite_user_header" style="margin-bottom:3px">Add/Invite User</h4>
+        #end
+        <p>Enter the username or email address of the user(s) to add. Separate multiple users by spaces or commas.</p>
+        <p>
+           <textarea name="email" ID="invite_user" style="margin-bottom:3px; height: 2em;"></textarea><br>
+           <select name="access_level" id="invite_access_level" style="margin-bottom:3px">
+               <option value selected></option>
+           </select><br>
+           <input type="button" class="btn sm" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" onclick="XNAT.projectAccess.inviteMultipleUsersFromForm();"/>
+        </p>
+    </div>
+
+    #if($showUserList)
+        <div class="inline-thirds" id="user_invite_list">
+            <h4 id="user_list_header" style="margin-bottom:3px">Add Users from List</h4>
+            <p>
+                <input type="button" id="popup_all_users_button" disabled value="Show List" onclick="XNAT.projectAccess.inviteUserFromList();"/>
+            </p>
+        </div>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                XNAT.projectAccess.initSiteUsers();
+            });
+        </script>
+    #end
+    <div class="inline-thirds">
+        <h4 style="margin-bottom: 3px;">Project Access Settings</h4>
+        <p>
+            #set($canCreateCustomGroups = $data.getSession().getAttribute("userHelper").isOwner($project.getId()) || $turbineUtils.isSiteAdmin($user))
+            <button class="btn" onclick="XNAT.projectAccess.showGroups( $canCreateCustomGroups );" style="margin-bottom: 6px">Manage Groups</button><br>
+            <button class="btn" onclick="window.location.assign('$content.getURI("/app/template/ManageProjectFeatures.vm/project/${projectIdEsc.toString().trim()}")')">Manage Features</button>
+        </p>
+    </div>
+</div>
+<div id="availableUserList" class="hidden"></div>
+<div class="clearfix clear pad10v"></div>
+
+#if($siteConfig.securityAllowNonPrivateProjects)
+<div id="access_container">
+    #set($guest=$om.getPublicAccessibility())
+    #if($guest=="")
+        #set($guest="private")
+    #end
+    <input type="hidden" id="current_accessibility" value="$guest"/>
+    <h4 style="margin: 0 0 3px;">Define Default ${projectDisplayNameSingular.toString().trim()} Accessibility</h4>
+    <table class="xnat-table clean">
+        <tr>
+            <td nowrap>
+                <label><input name="accessibility" type="radio" value="private" #if($guest=="private")CHECKED#end /> Private</label>
+            </td>
+            <td>Only you and study members will be able to access study data.</td>
+        </tr>
+        <tr>
+            <td nowrap>
+                <label><input name="accessibility" type="radio" value="protected" #if($guest=="protected")CHECKED#end /> Protected</label>
+            </td>
+            <td>All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data.</td>
+        </tr>
+        <tr>
+            <td nowrap>
+                <label><input name="accessibility" type="radio" value="public" #if($guest=="public")CHECKED#end /> Public</label>
+            </td>
+            <td>All users will be able to access study data for analysis and download.</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <button class="btn" onclick="javascript:XNAT.projectAccess.setAccessibility()" id="accessibility_save" disabled="disabled">Set Accessibility</button>
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="clearfix clear pad10v"></div>
+#end
+
+
+<div>
+    <h4 style="margin: 0 0 3px;">${projectDisplayNameSingular.toString().trim()} Invitations</h4>
+    <div id="invite_container"></div>
+    <script type="text/javascript" src="$content.getURI("scripts/project/parManager.js")"></script>
+    <script>
+        $(document).ready(function(){
+            XNAT.projectAccess.initPars('project');
+            XNAT.projectAccess.securityExternalUserParDisabled = ("$!siteConfig.securityExternalUserParDisabled" == "true");
+        });
+    </script>
+</div>
+
+<script type="text/javascript" src="$content.getURI("scripts/project/userAccessMgmt.js")"></script>
+<script language="javascript">
+    function summaryUserTabChange(obj){
+        if (obj.newValue.get("href") == "#tab3") {
+            if (window.userManager == undefined) {
+                window.userManager = new UserManager("user_mgmt_div", "${projectIdEsc.toString().trim()}", $showUserList);
+            }
+        }
+    }
+
+    function addUserMgmtMonitor(){
+        if (window.summaryTabView.get("activeTab").get("href") == "#tab3") {
+            if (window.userManager == undefined) {
+                window.userManager = new UserManager("user_mgmt_div", "${projectIdEsc.toString().trim()}", $showUserList);
+            }
+        }
+        else {
+            window.summaryTabView.subscribe("activeTabChange", summaryUserTabChange);
+        }
+    }
+
+    YAHOO.util.Event.onDOMReady(addUserMgmtMonitor);
+
+</script>
+<!-- END xnat-templates/screens/xnat_projectData/xnat_projectData_summary_management.vm -->

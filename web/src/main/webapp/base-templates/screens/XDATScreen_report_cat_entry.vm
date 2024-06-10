@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("Entry Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>Entry Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>URI</TD><TD>$!item.getStringProperty("cat:entry/URI")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("cat:entry/ID")</TD></TR>
+							<TR><TD>name</TD><TD>$!item.getStringProperty("cat:entry/name")</TD></TR>
+							<TR><TD>description</TD><TD>$!item.getStringProperty("cat:entry/description")</TD></TR>
+							<TR><TD>format</TD><TD>$!item.getStringProperty("cat:entry/format")</TD></TR>
+							<TR><TD>content</TD><TD>$!item.getStringProperty("cat:entry/content")</TD></TR>
+							<TR><TD>cachePath</TD><TD>$!item.getStringProperty("cat:entry/cachePath")</TD></TR>
+							<TR><TD>createdTime</TD><TD>$!item.getProperty("cat:entry/createdTime")</TD></TR>
+							<TR><TD>createdBy</TD><TD>$!item.getStringProperty("cat:entry/createdBy")</TD></TR>
+							<TR><TD>createdEventId</TD><TD>$!item.getIntegerProperty("cat:entry/createdEventId")</TD></TR>
+							<TR><TD>modifiedTime</TD><TD>$!item.getProperty("cat:entry/modifiedTime")</TD></TR>
+							<TR><TD>modifiedBy</TD><TD>$!item.getStringProperty("cat:entry/modifiedBy")</TD></TR>
+							<TR><TD>modifiedEventId</TD><TD>$!item.getIntegerProperty("cat:entry/modifiedEventId")</TD></TR>
+							<TR><TD>digest</TD><TD>$!item.getStringProperty("cat:entry/digest")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN cat:entry -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($cat_entry_metaField_1_NUM_ROWS=$item.getChildItems("cat:entry/metaFields/metaField").size() - 1)
+							#if($cat_entry_metaField_1_NUM_ROWS>=0)
+								#foreach($cat_entry_metaField_1_COUNTER in [0..$cat_entry_metaField_1_NUM_ROWS])
+<!-- BEGIN cat:entry/metaFields/metaField[$cat_entry_metaField_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:entry/metaFields/metaField[$cat_entry_metaField_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>metaField</TD><TD>$!item.getStringProperty("cat:entry/metaFields/metaField[$cat_entry_metaField_1_COUNTER]/metaField")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("cat:entry/metaFields/metaField[$cat_entry_metaField_1_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END cat:entry/metaFields/metaField[$cat_entry_metaField_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($cat_entry_tag_2_NUM_ROWS=$item.getChildItems("cat:entry/tags/tag").size() - 1)
+							#if($cat_entry_tag_2_NUM_ROWS>=0)
+								#foreach($cat_entry_tag_2_COUNTER in [0..$cat_entry_tag_2_NUM_ROWS])
+<!-- BEGIN cat:entry/tags/tag[$cat_entry_tag_2_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:entry/tags/tag[$cat_entry_tag_2_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>tag</TD><TD>$!item.getStringProperty("cat:entry/tags/tag[$cat_entry_tag_2_COUNTER]/tag")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END cat:entry/tags/tag[$cat_entry_tag_2_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END cat:entry -->
+		</TD>
+	</TR>
+</TABLE>

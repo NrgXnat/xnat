@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!--[if lt IE 7 ]> <html class="ie ie6 no-js"> <![endif]-->
+<!--[if IE 7 ]>    <html class="ie ie7 no-js"> <![endif]-->
+<!--[if IE 8 ]>    <html class="ie ie8 no-js"> <![endif]-->
+<!--[if IE 9 ]>    <html class="ie ie9 no-js"> <![endif]-->
+<!--[if gt IE 9]><!--><html class="no-js"><!--<![endif]-->
+##<!-- the "no-js" class is for Modernizr. -->
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="cache-control" content="max-age=0" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="expires" content="-1" />
+    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+    <script type="text/javascript">
+
+        var jqScript = (function () {
+
+            var script = 'jquery';
+            var min = (window.jsdebug) ? '' : '.min';
+
+            return '<script type="text/javascript" src="' + serverRoot +
+                    '/scripts/lib/jquery/' + script + min + '.js"><\/script>';
+
+        })();
+
+        if (!window.jQuery) document.write(jqScript);
+
+    </script>
+    <!-- document.write(jqScript); -->
+    <script>
+        var jq = jQuery;
+        jq.ajaxSetup({ cache: false });
+    </script>
+</head>
+<body id="page_body" class="yui-skin-sam screen-only">
+
+<script type="text/javascript">
+    // path: xdat-templates/layouts/ScreenOnly
+</script>
+
+<div id="tp_fm"></div>
+<div id="layout_content2" style="display:none;">Loading...</div>
+<div id="layout_content">$screen_placeholder</div>
+
+<script type="text/javascript">
+  // end path: xdat-templates/layouts/ScreenOnly
+</script>
+
+</body>
+</html>

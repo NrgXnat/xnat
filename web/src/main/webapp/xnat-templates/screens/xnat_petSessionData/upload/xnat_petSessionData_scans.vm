@@ -1,0 +1,54 @@
+<div class="scans">
+	<div class="edit_header1">Scan Details</div>
+	<table bgcolor="#FFFFFF" cellspacing="0">
+		<tr>
+			<th>ID</th>
+			<th>type</th>
+			<th>quality</th>
+			<th>note</th>
+		</tr>
+	#set($numScans = $om.getSortedScans().size())
+	#set ($TOP_SCAN = $numScans - 1)
+		#set($even="even")
+	#foreach($scani in [0..$TOP_SCAN])
+  #if($even=="even")
+  #set($even="odd")
+  #else		
+  #set($even="even")
+  #end
+		  <tr class="$even">
+		  
+		  #set($scan = $om.getSortedScans().get($scani))
+		  <td valign="top">$!scan.getProperty("ID")	<!-- align="left" -->
+			  #if($scan.getProperty("ID"))
+				  <INPUT type="hidden"  name="${datatype}/scans/scan[$scani]/ID"							 value="$scan.getProperty("ID")"/>
+			  #end
+			  </td>
+			<td valign="top">	<!-- align="left" -->
+			#if($scan.getProperty("type"))
+			<input type="hidden" id="${datatype}/scans/scan[$scani]/type" name="${datatype}/scans/scan[$scani]/type"
+		    			 value="$!scan.getProperty("type")"/>
+		    			 <b>$scan.getProperty("type")</b>
+			#else
+			<input type="text" id="${datatype}/scans/scan[$scani]/type" name="${datatype}/scans/scan[$scani]/type"
+		    			 value="$!scan.getProperty("type")"/>
+			#end
+			</td>
+			<td valign="top">	<!-- width="127" align="center" -->
+				<SELECT id="${datatype}/scans/scan[$scani]/quality" name="${datatype}/scans/scan[$scani]/quality">
+					<OPTION VALUE="" selected>(SELECT)</OPTION>
+					#foreach ($quality in $qualityLabels)
+					<OPTION VALUE="$quality">$quality</OPTION>
+					#end
+				</SELECT>
+			</td>
+			<td>	<!-- width="215" align="center" -->
+				<textarea name="${datatype}/scans/scan[$scani]/note" cols="50" rows="4">$!scan.getProperty("note")</textarea>
+			</td>
+		#if($scan.getProperty("xnat_imagescandata_id"))
+			<input type="hidden" name="${datatype}/scans/scan[$scani]/xnat_imagescandata_id" value="$scan.getProperty("xnat_imagescandata_id")"/>
+		#end
+		</tr>
+	#end
+	</table>
+</div>

@@ -1,0 +1,101 @@
+#* @vtlvariable name="XNAT_CSRF" type="java.lang.String" *#
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+<script language="javascript">
+    console.log('XDATScreen_change_email.vm');
+
+    $(document).ready(function(){
+        $('#update_email').off('submit').on('submit',function(e){
+            // e.preventDefault();
+
+            var errorCount = 0, errorMessages = [];
+            var _form = $(this);
+
+            // define fields to validate
+            var newEmail = _form.find('#new_email');
+            var confirmEmail = _form.find('#confirm_email');
+
+            // define specific tests
+            var emailReg = XNAT.validation.regex.email;
+
+            // current email
+            var validateNewEmail = XNAT.validate(newEmail).reset().chain();
+            validateNewEmail.minLength(1).failure('Please enter a new email address');
+            validateNewEmail.pattern(emailReg).failure('Please enter a valid email address');
+
+            // confirm email
+            var validateConfirmEmail = XNAT.validate(confirmEmail).reset().chain();
+            validateConfirmEmail.minLength(1).failure('Please confirm your new email address');
+            validateConfirmEmail.matches(newEmail).failure('Email entries must match');
+
+            [validateNewEmail,validateConfirmEmail].forEach(function(item){
+                item.check();
+                errorCount += item.messages.length;
+                item.messages.forEach(function(msg){ errorMessages.push(msg) });
+            });
+
+            if (errorCount) {
+                xmodal.message({ title: 'Form Validation Error', content: '<p>Errors found:</p><ul><li>' + errorMessages.join('</li><li>') + '</li></ul>', height: 300 });
+                return false;
+            } else {
+                return true;
+            }
+        });
+    });
+
+    XNAT.xhr.getJSON({
+        url: XNAT.url.rootUrl('/xapi/users/$!item.getProperty("login")'),
+        success: function(data){
+            if (data.email !== "$!item.getProperty("email")"){
+                $('#display-current-email').html(data.email);
+            }
+        },
+        fail: function(e){
+            console.log("Couldn't verify user email via XAPI",e);
+        }
+    })
+</script>
+<div class="user_account_settings">
+	<form name="form1" id="update_email" class="noHide friendlyForm optOutOfXnatDefaultFormValidation" method="post" action="$link.setAction("ModifyEmail")">
+
+		<h3>Change Email for $!item.getProperty("firstname") $!item.getProperty("lastname") ($!item.getProperty("login"))</h3>
+		<fieldset>
+			<p>
+				<label>Current Email</label>
+				<span id="display-current-email">$!item.getProperty("email")</span>
+			</p>
+
+#if($newEmail)
+    <input type="hidden" name="cancelRequest" value="true"/>
+    <div class="message">
+        An email address change request has been sent to '$newEmail'. Click the link in the change request email to verify the change, or <a onclick="form1.submit();">click here</a> to cancel the request.
+    </div>
+
+#else
+
+			<p>
+				<label for="xdat:user.email">Enter New Email</label>
+				<input id="new_email" type="text" name="xdat:user.email" value=""/>
+			</p>
+			<p>
+				<label for="confirm_email">Confirm New Email</label>
+				<input id="confirm_email" type="text" name="confirm_email" value=""/>
+			</p>
+			<input type="hidden" name="destination" value="Index.vm"/>
+			<input type="hidden" name="message" value="Email Changed."/>
+			#xdatHiddenBox("xdat:user.xdat_user_id" $item "")
+			#xdatHiddenBox("xdat:user.login" $item "")
+			#xdatEditProps($item $edit_screen)
+			<p>
+				<input type="submit" name="eventSubmit_doSetup" value="Submit"/>
+			</p>
+#end
+
+
+
+		</fieldset>
+	</form>
+</div>

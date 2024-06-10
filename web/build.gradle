@@ -1,0 +1,577 @@
+/*
+ * web: build.gradle
+ * XNAT https://www.xnat.org
+ * Copyright (c) 2005-2020, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *  
+ * Released under the Simplified BSD.
+ */
+
+buildscript {
+    ext {
+        vXnat = "1.8.11-SNAPSHOT"
+    }
+}
+
+plugins {
+    id "eclipse"
+    id "groovy"
+    id "idea"
+    id "jacoco"
+    id "java-library"
+    id "maven-publish"
+    id "war"
+    id "com.bmuschko.cargo" version "2.8.0"
+    id "com.bmuschko.tomcat" version "2.5"
+    id "com.dorongold.task-tree" version "1.5"
+    id "com.palantir.git-version" version "0.12.1"
+    id "io.franzbecker.gradle-lombok" version "4.0.0"
+    id "io.spring.dependency-management" version "1.0.11.RELEASE"
+    id "net.linguica.maven-settings" version "0.5"
+}
+
+group "org.nrg.xnat"
+version vXnat
+description "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve."
+
+repositories {
+    mavenLocal()
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
+    mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+war.archiveBaseName.set hasProperty("archiveName") ? (archiveName.endsWith(".war") ? archiveName : "${archiveName}.war") : "xnat-web"
+
+
+configurations {
+    javadocCoverage
+
+    all {
+        exclude group: "ant", module: "ant"
+        exclude group: "avalon-logkit"
+        exclude group: "berkeleydb"
+        exclude group: "com.github.jai-imageio"
+        exclude group: "com.google.code.findbugs", module: "annotations"
+        exclude group: "com.metaparadigm"
+        exclude group: "com.sun.jdmk", module: "jmxtools"
+        exclude group: "com.sun.jmx", module: "jmxri"
+        exclude group: "commons-beanutils", module: "commons-beanutils-core"
+        exclude group: "commons-betwixt"
+        exclude group: "commons-dbcp"
+        exclude group: "commons-email"
+        exclude group: "commons-logging"
+        exclude group: "commons-messenger"
+        exclude group: "commons-pool"
+        exclude group: "edu.ucar", module: "netcdf"
+        exclude group: "excalibur-component"
+        exclude group: "excalibur-instrument"
+        exclude group: "excalibur-logger"
+        exclude group: "excalibur-pool"
+        exclude group: "fulcrum"
+        exclude group: "geronimo-spec"
+        exclude group: "hsqldb"
+        exclude group: "imagej"
+        exclude group: "jakarta-regexp"
+        exclude group: "jamon"
+        exclude group: "javax.jms", module: "jms"
+        exclude group: "javax.mail", module: "mail"
+        exclude group: "javax.servlet", module: "servlet-api"
+        exclude group: "javax.sql", module: "jdbc-stdext"
+        exclude group: "javax.transaction", module: "jta"
+        exclude group: "javax.xml", module: "jsr173"
+        exclude group: "jdbc", module: "jdbc"
+        exclude group: "jmock"
+        exclude group: "jms", module: "jms"
+        exclude group: "jndi"
+        exclude group: "jython"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "mockobjects"
+        exclude group: "mysql"
+        exclude group: "net.sf.saxon"
+        exclude group: "ojb", module: "ojb"
+        exclude group: "org.apache.geronimo.specs"
+        exclude group: "org.apache.struts"
+        exclude group: "org.nrg", module: "nrg"
+        exclude group: "org.nrg", module: "nrgutil"
+        exclude group: "org.nrg", module: "plexiviewer"
+        exclude group: "org.nrg.xdat", module: "beans"
+        exclude group: "org.nrg.xnat", module: "web"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "quartz"
+        exclude group: "resources", module: "resources"
+        exclude group: "servletapi"
+        exclude group: "stax", module: "stax-api"
+        exclude group: "tomcat"
+        exclude group: "velocity"
+        exclude group: "xalan"
+        exclude group: "xerces"
+        exclude group: "xml-apis"
+        exclude group: "xml-resolver"
+        exclude group: "xmlrpc"
+        exclude module: "log4j-slf4j-impl"
+        exclude module: "pipelineCNDAXNAT"
+        exclude module: "slf4j-simple"
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.nrg:parent:${vXnat}"
+    }
+    generatedPomCustomization {
+        enabled = false
+    }
+}
+
+configurations.all {
+    resolutionStrategy.force "org.mockito:mockito-core:${dependencyManagement.importedProperties["mockito.version"] as String}"
+}
+
+dependencies {
+    annotationProcessor "org.nrg:framework"
+    annotationProcessor "com.google.auto.value:auto-value"
+
+    api platform("org.nrg:parent:${vXnat}")
+    implementation platform("org.nrg:parent:${vXnat}")
+
+    // NRG dependencies first.
+    api "org.nrg.xdat:core"
+    api "org.nrg.xnat:xnat-data-models"
+    api "org.nrg:framework"
+    api "org.springframework.security:spring-security-ldap"
+    api "org.springframework.security.oauth:spring-security-oauth2"
+    api "org.springframework.security:spring-security-jwt"
+    api "org.springframework:spring-web"
+    api "org.springframework:spring-jms"
+    api "org.springframework:spring-jdbc"
+    api "org.springframework:spring-beans"
+    api "org.springframework:spring-context"
+    api "org.springframework:spring-core"
+
+    implementation "org.nrg.xnat:spawner"
+    implementation "org.nrg.xdat:core"
+    implementation "org.nrg:framework"
+    implementation "org.nrg:transaction"
+    implementation "org.nrg:prefs"
+    implementation "org.nrg:config"
+    implementation "org.nrg:automation"
+    implementation "org.nrg:dicomtools"
+    implementation "org.nrg.dicom:dicom-edit4"
+    implementation "org.nrg.dicom:dicom-edit6"
+    implementation "org.nrg:mail"
+    implementation "org.nrg:notify"
+
+    implementation "org.nrg:dicom-xnat-mx"
+    implementation "org.nrg:dicom-xnat-sop"
+    implementation "org.nrg:dicom-xnat-util"
+    implementation "org.nrg:ecat4xnat"
+    implementation "org.nrg:ExtAttr"
+    implementation "org.nrg:DicomImageUtils"
+    implementation "org.nrg:PrearcImporter"
+    implementation "org.nrg:SessionBuilders"
+
+    implementation("org.nrg.xnat:plexiviewer") {
+        transitive = false
+    }
+
+    implementation "org.nrg:pipelineBase"
+    implementation "org.nrg:pipelineBuild"
+    implementation "org.nrg:pipelineWorkflow"
+    implementation "org.nrg:pipelineXNAT"
+    implementation "org.nrg.xnat.pipeline:pipeline-client"
+    implementation "org.nrg.xnat.pipeline:xnat-pipeline"
+    implementation "org.nrg.xnat.pipeline:xnat-tools"
+
+    implementation "dcm4che:dcm4che-core"
+    implementation "dcm4che:dcm4che-image"
+    implementation "dcm4che:dcm4che-imageio"
+    implementation "dcm4che:dcm4che-imageio-rle"
+    implementation "dcm4che:dcm4che-iod"
+    implementation "dcm4che:dcm4che-net"
+    implementation "net.imagej:ij"
+    implementation "org.dcm4che:dcm4che-core"
+    implementation "org.dcm4che:dcm4che-image"
+    implementation "org.dcm4che:dcm4che-imageio"
+
+    implementation "org.springframework:spring-aop"
+    implementation "org.springframework:spring-context-support"
+    implementation "org.springframework:spring-jms"
+    implementation "org.springframework:spring-messaging"
+    implementation "org.springframework:spring-orm"
+    implementation "org.springframework:spring-oxm"
+    implementation "org.springframework:spring-tx"
+    implementation "org.springframework:spring-webmvc"
+
+    implementation "io.springfox:springfox-swagger2"
+    implementation "io.springfox:springfox-swagger-ui"
+
+    implementation "org.springframework.security:spring-security-acl"
+    implementation "org.springframework.security:spring-security-aspects"
+    implementation "org.springframework.security:spring-security-config"
+    implementation "org.springframework.security:spring-security-taglibs"
+    implementation "org.springframework.ldap:spring-ldap-core"
+
+    implementation "org.hibernate:hibernate-core"
+    implementation "org.hibernate:hibernate-ehcache"
+    implementation "org.hibernate:hibernate-validator"
+    implementation "org.hibernate:hibernate-envers"
+    implementation "net.sf.ehcache:ehcache-core"
+    implementation "com.vladmihalcea:hibernate-types-43"
+
+    implementation "org.aspectj:aspectjweaver"
+    implementation "org.aspectj:aspectjrt"
+
+    implementation "com.noelios.restlet:com.noelios.restlet"
+    implementation "com.noelios.restlet:com.noelios.restlet.ext.servlet"
+    implementation "org.restlet:org.restlet.ext.fileupload"
+
+    implementation "com.fasterxml.jackson.core:jackson-annotations"
+    implementation "com.fasterxml.jackson.core:jackson-core"
+    implementation "com.fasterxml.jackson.core:jackson-databind"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
+    implementation "com.fasterxml.jackson.module:jackson-module-parameter-names"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+    implementation "com.jayway.jsonpath:json-path"
+    implementation "org.json:json"
+
+    implementation "commons-beanutils:commons-beanutils"
+    implementation "commons-codec:commons-codec"
+    implementation "commons-collections:commons-collections"
+    implementation "commons-configuration:commons-configuration"
+    implementation "commons-digester:commons-digester"
+    implementation "commons-discovery:commons-discovery"
+    implementation "commons-fileupload:commons-fileupload"
+    implementation "commons-net:commons-net"
+
+    implementation "org.apache.commons:commons-configuration2"
+    implementation "org.apache.commons:commons-math"
+    implementation "org.apache.commons:commons-text"
+    implementation "org.apache.httpcomponents:httpclient"
+    implementation "org.apache.httpcomponents:httpcore"
+    implementation "org.apache.httpcomponents:httpcore-nio"
+    implementation "org.apache.httpcomponents:httpmime"
+    implementation "org.apache.commons:commons-pool2"
+
+    implementation "org.codehaus.groovy:groovy-all"
+
+    implementation "eu.bitwalker:UserAgentUtils"
+    implementation "com.twmacinta:fast-md5"
+    implementation "com.h2database:h2"
+    implementation "com.lowagie:itext"
+    implementation "net.java.dev.msv:msv-core"
+    implementation "gnu.getopt:java-getopt"
+    implementation "org.quartz-scheduler:quartz"
+    implementation "org.reflections:reflections"
+    implementation "org.apache.xmlbeans:xmlbeans"
+    implementation "org.apache.xmlbeans:xmlbeans-xpath"
+    implementation "org.apache.xbean:xbean-spring"
+    implementation "net.java.dev.msv:xsdlib"
+    implementation "javax.servlet:jstl"
+    implementation "com.google.code.gson:gson"
+    implementation "com.google.guava:guava"
+    implementation "org.postgresql:postgresql"
+    implementation "net.ttddyy:datasource-proxy"
+    implementation "org.apache.activemq:activemq-broker"
+    implementation "org.apache.activemq:activemq-spring"
+    implementation "org.apache.activemq:activemq-kahadb-store"
+    implementation "org.apache.activemq:activemq-jdbc-store"
+    implementation "io.micrometer:micrometer-core"
+    implementation "io.micrometer:micrometer-registry-prometheus"
+
+    implementation "org.slf4j:slf4j-api"
+    implementation "org.slf4j:jul-to-slf4j"
+    implementation "org.slf4j:jcl-over-slf4j"
+    implementation "org.slf4j:log4j-over-slf4j"
+    implementation "ch.qos.logback:logback-classic"
+    implementation "ch.qos.logback:logback-core"
+    implementation "net.logstash.logback:logstash-logback-encoder"
+    implementation "com.google.auto.value:auto-value-annotations"
+
+    providedCompile "com.google.code.findbugs:jsr305"
+    providedCompile "javax.servlet:javax.servlet-api"
+    providedCompile "org.jetbrains:annotations"
+    providedCompile "org.kohsuke.metainf-services:metainf-services"
+
+    runtimeOnly "org.apache.ant:ant"
+    runtimeOnly "axis:axis-ant"
+    runtimeOnly "axis:axis-schema"
+    runtimeOnly "cglib:cglib"
+    runtimeOnly "com.zaxxer:HikariCP"
+    runtimeOnly "org.hsqldb:hsqldb"
+    runtimeOnly "com.sun.media:jai_imageio"
+    runtimeOnly "net.bull.javamelody:javamelody-core"
+    runtimeOnly "org.javassist:javassist"
+    runtimeOnly "org.python:jython-standalone"
+
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core",
+            "org.apache.tomcat.embed:tomcat-embed-logging-juli",
+            "org.apache.tomcat.embed:tomcat-embed-jasper"
+
+    cargo "org.codehaus.cargo:cargo-core-uberjar",
+            "org.codehaus.cargo:cargo-ant",
+            "org.slf4j:jcl-over-slf4j",
+            "org.slf4j:slf4j-api",
+            "ch.qos.logback:logback-classic",
+            "ch.qos.logback:logback-core"
+
+    testImplementation "org.nrg:test"
+    testImplementation "junit:junit"
+    testImplementation "org.springframework:spring-test"
+    testImplementation "org.assertj:assertj-core"
+    testImplementation "org.springframework.security:spring-security-test"
+    testImplementation "org.springframework.security:spring-security-config"
+    testImplementation "org.hamcrest:hamcrest"
+    testImplementation "org.mockito:mockito-core"
+    testImplementation "org.powermock:powermock-api-mockito2"
+    testImplementation "org.powermock:powermock-module-junit4"
+
+    javadocCoverage "com.manoelcampos:javadoc-coverage"
+}
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir = compileJava.destinationDir
+        testOutputDir = compileTestJava.destinationDir
+    }
+}
+
+lombok {
+    version = dependencyManagement.importedProperties["lombok.version"] as String
+    sha256 = dependencyManagement.importedProperties["lombok.checksum"] as String
+}
+
+tomcatRun.contextPath = "/"
+tomcatRunWar.contextPath = "/"
+
+[tomcatRun, tomcatRunWar].each { task ->
+    task.additionalRuntimeResources << file("${System.getenv().XNAT_HOME ?: System.getenv().HOME}/config/plugins")
+}
+
+["Java", "War"].each { type ->
+    ["Local", "Repository"].each { target ->
+        def artifactName = type == "Java" ? "Jar" : type
+        def taskName = "publish${artifactName}To${target}"
+        logger.info "Creating task ${taskName}"
+        tasks.create(name: taskName) {
+            description = "Publishes the Maven ${type} publications to Maven ${target}."
+            dependsOn tasks.withType(AbstractPublishToMaven).matching {
+                it.name == "publishMaven${type}PublicationToMaven${target}"
+            }
+        }
+    }
+}
+
+task deployToTomcat(type: Copy, dependsOn: war) {
+    from war.archiveFile
+    into "${propertyWithDefault("tomcatHome", ".")}/webapps"
+}
+
+cargo {
+    // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command line in
+    // the form -PdeployPort=8080 -PdeployContext=/ -PdeployHost=localhost -PdeployUser=deploy -PdeployPassword=deploy
+    containerId = "tomcat8x"
+    port = propertyWithDefault("deployPort", 8080) as int
+
+    deployable {
+        context = propertyWithDefault("deployContext", "/")
+    }
+
+    remote {
+        hostname = propertyWithDefault("deployHost", "localhost")
+        username = propertyWithDefault("deployUser", "deploy")
+        password = propertyWithDefault("deployPassword", "deploy")
+    }
+}
+
+// Pulls in the Jenkins BUILD_NUMBER environment variable if available.
+def buildDate = new Date()
+def buildNumber = System.getenv().BUILD_NUMBER?.toInteger() ?: "Manual"
+def isDirty, branchName, gitHash, gitHashFull, commitDistance, lastTag, isCleanTag
+
+try {
+    def gitDetails = versionDetails()
+    isDirty = gitVersion().endsWith ".dirty"
+    branchName = gitDetails.branchName ?: "Unknown"
+    gitHash = gitDetails.gitHash
+    gitHashFull = gitDetails.gitHashFull
+    commitDistance = gitDetails.commitDistance
+    lastTag = gitDetails.lastTag
+    isCleanTag = gitDetails.isCleanTag
+} catch (IllegalArgumentException e) {
+    logger.info "Got an error trying to read VCS metadata from git. It's possible this project is not under VCS control. Using placeholder values for manifest entries."
+    isDirty = true
+    branchName = "Unknown"
+    gitHash = "None"
+    gitHashFull = "None"
+    commitDistance = 0
+    lastTag = "None"
+    isCleanTag = false
+}
+
+logger.info "Build-Date:              ${buildDate}"
+logger.info "Build-Number:            ${buildNumber}"
+logger.info "Implementation-Version:  ${version}"
+logger.info "Implementation-Sha-Full: ${gitHashFull}"
+logger.info "Implementation-Sha:      ${gitHash}"
+logger.info "Implementation-Commit:   ${commitDistance}"
+logger.info "Implementation-LastTag:  ${lastTag}"
+logger.info "Implementation-Branch:   ${branchName}"
+logger.info "Implementation-CleanTag: ${isCleanTag}"
+logger.info "Implementation-Dirty:    ${isDirty}"
+
+ext.gitManifest = manifest {
+    attributes "Application-Name": "XNAT",
+            "Build-Date": buildDate,
+            "Build-Number": buildNumber,
+            "Implementation-Version": project.version,
+            "Implementation-Sha": gitHash,
+            "Implementation-Sha-Full": gitHashFull,
+            "Implementation-Commit": commitDistance,
+            "Implementation-LastTag": lastTag,
+            "Implementation-Branch": branchName,
+            "Implementation-CleanTag": isCleanTag,
+            "Implementation-Dirty": isDirty
+}
+
+jar {
+    manifest {
+        from gitManifest
+    }
+}
+
+war {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    manifest {
+        from gitManifest
+    }
+}
+
+test {
+    systemProperties["xnat.home"] = "${buildDir}/tmp/test"
+}
+
+jacoco {
+    toolVersion = dependencyManagement.importedProperties["jacoco.version"] as String
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.required = true
+    }
+}
+
+task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {
+    source = sourceSets.main.allJava
+    destinationDir = reporting.file("javadoc")
+    classpath = configurations.compileClasspath
+    options.docletpath = configurations.javadocCoverage.files.asType(List)
+    options.doclet = "com.manoelcampos.javadoc.coverage.CoverageDoclet"
+}
+
+task sourceJar(type: Jar, dependsOn: classes) {
+    classifier "sources"
+    manifest {
+        from gitManifest
+    }
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar) {
+    classifier "javadoc"
+    manifest {
+        from gitManifest
+    }
+    from javadoc.destinationDir
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            artifacts {
+                artifact sourceJar
+                artifact javadocJar
+            }
+
+            pom.withXml {
+                def root = asNode()
+                populatePom(root)
+            }
+        }
+        mavenWar(MavenPublication) {
+            groupId = "${project.group}.${rootProject.name}"
+            artifactId = "xnat-${rootProject.name}"
+
+            from components.web
+
+            pom.withXml {
+                def root = asNode()
+                populatePom(root)
+            }
+        }
+    }
+    repositories {
+        maven {
+            url project.version.endsWith("-SNAPSHOT") ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
+            // The value for name must match <id> in ~/.m2/settings.xml
+            name = "XNAT_Artifactory"
+        }
+    }
+}
+
+def propertyWithDefault(String name, Object value) {
+    hasProperty(name) ? property(name) : value
+}
+
+def populatePom(def root) {
+    root.appendNode("name", "XNAT Server")
+    root.appendNode("description", project.description)
+    root.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+    root.appendNode("inceptionYear", "2019")
+
+    def scm = root.appendNode("scm")
+    scm.appendNode("url", "https://bitbucket.org/xnatdev/xnat-web")
+    scm.appendNode("connection", "scm:https://bitbucket.org/xnatdev/xnat-web.git")
+    scm.appendNode("developerConnection", "scm:git://bitbucket.org/xnatdev/xnat-web.git")
+
+    def license = root.appendNode("licenses").appendNode("license")
+    license.appendNode("name", "Simplified BSD 2-Clause License")
+    license.appendNode("url", "https://xnat.org/about/license.php")
+    license.appendNode("distribution", "repo")
+
+    def developers = root.appendNode("developers")
+    [["akaushal", "Atul Kaushal", "atul.hkaushal@gmail.com"],
+     ["cmoore", "Charlie Moore", "moore.c@wustl.edu"],
+     ["dmaffitt", "Dave Maffitt", "david.maffitt@wustl.edu"],
+     ["jcleveland", "Justin Cleveland", "clevelandj@wustl.edu"],
+     ["jflavin", "John Flavin", "flavinj@gmail.com"],
+     ["jgurney", "Jenny Gurney", "gkgurney@wustl.edu"],
+     ["jransford", "James Ransford", "ransfordj@radiologics.com"],
+     ["kalpert", "Kate Alpert", "kate@radiologics.com"],
+     ["mflorida", "Mark Florida", "markflorida@wustl.edu"],
+     ["mhodge", "Mike Hodge", "hodgem@wustl.edu"],
+     ["mkelsey", "Matt Kelsey", "kelseym@mir.wustl.edu"],
+     ["mmcKay", "Mike McKay", "mfmckay@wustl.edu"],
+     ["mramaratnam", "Mohana Ramaratnam", "mohana@radiologics.com"],
+     ["rherrick", "Rick Herrick", "jrherrick@wustl.edu"],
+     ["smoore", "Steve Moore", "moores@mir.wustl.edu"],
+     ["tolsen", "Tim Olsen", "tim@radiologics.com"],
+     ["whorton", "Will Horton", "hortonw@wustl.edu"]].forEach({ info ->
+        def developer = developers.appendNode("developer")
+        developer.appendNode("id", info[0])
+        developer.appendNode("name", info[1])
+        developer.appendNode("email", info[2])
+    })
+}

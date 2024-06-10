@@ -1,0 +1,15 @@
+<!-- Sequence: 10 -->
+<!-- allowGuest: true -->
+##<li><a href="$link.setPage("Index.vm")">Home</a></li>
+<li id="main-nav-home">
+    <a id="nav-home" title="Home" href="$link.setPage("Index.vm")">&nbsp;</a>
+    <script>
+        $('#nav-home').css({
+            width: '30px',
+            backgroundImage: "url('$content.getURI("images/xnat-nav-logo-white-lg.png")')",
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: '32px',
+            backgroundPosition: 'center'
+        });
+    </script>
+</li>

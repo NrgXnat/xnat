@@ -1,0 +1,131 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#macro (dateEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatDateBox($field $item $vr $years)</td>
+</tr>
+#end
+
+#macro (textEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatTextBox($field $item "" $vr)</td>
+</tr>
+#end
+
+#macro (textEditNColsRow $names $fields)
+<tr>
+  #foreach ($name in $names)
+	  #set ($index = $velocityCount - 1)
+		<td>$name</td>
+		<td>#xdatTextBox("$fields.get($index)" $item "" $vr)</td>
+  #end
+</tr>
+#end
+
+#macro (boolRadioEditRow $name $field $isTrue)
+<tr>
+	<td>$name</td>
+	<td>#xdatBooleanRadio($field $item $isTrue $vr)</td>
+</tr>
+#end
+
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#set($years = [ $!turbineUtils.getYear()..1990])
+
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+
+<br>
+<div class="edit_title">Unified Parkinson's Disease Rating Scale</div>
+#parse("screens/xnat_edit_subjectAssessorData.vm")
+<div class="edit_header1">$displayManager.getSingularDisplayNameForImageSession() Info</div><br>
+
+<table class="session_info_edit">
+	#dateEditRow("Date" "xnat_a:updrs3Data/date")
+	#textEditRow("Time" "xnat_a:updrs3Data/time")
+	#textEditRow("Visit ID" "xnat_a:updrs3Data/visit_id")
+	#textEditRow("Age" "xnat_a:updrs3Data/age")
+	#boolRadioEditRow("Problem with ${displayManager.getSingularDisplayNameForImageSession()}?" "xnat_a:updrs3Data/problem" false)
+	#boolRadioEditRow("In Scanner?" "xnat_a:updrs3Data/inScanner" false)
+	<tr><th>Clicker</th></tr>
+	#textEditRow("Right" "xnat_a:updrs3Data/clicker/right")
+	#textEditRow("Left" "xnat_a:updrs3Data/clicker/left")
+	#textEditRow("Interval" "xnat_a:updrs3Data/clicker/interval")
+	<tr><th>Resting Tremors</th></tr>
+	#textEditRow("Face" "xnat_a:updrs3Data/tremorRest/face")
+	#textEditRow("Right Upper Extremities" "xnat_a:updrs3Data/tremorRest/rue")
+	#textEditRow("Left Upper Extremities" "xnat_a:updrs3Data/tremorRest/lue")
+	#textEditRow("Right Lower Extremities" "xnat_a:updrs3Data/tremorRest/rle")
+	#textEditRow("Left Lower Extremities" "xnat_a:updrs3Data/tremorRest/lle")
+	<tr><th>Rigidity</th></tr>
+	#textEditRow("Neck" "xnat_a:updrs3Data/rigidity/neck")
+	#textEditRow("Right Upper Extremities" "xnat_a:updrs3Data/rigidity/rue")
+	#textEditRow("Left Upper Extremities" "xnat_a:updrs3Data/rigidity/lue")
+	#textEditRow("Right Lower Extremities" "xnat_a:updrs3Data/rigidity/rle")
+	#textEditRow("Left Lower Extremities" "xnat_a:updrs3Data/rigidity/lle")
+	<tr><th>Hand Movements/Grip</th></tr>
+	#textEditRow("Right Hand" "xnat_a:updrs3Data/handMovementsGrip/right")
+	#textEditRow("Left Hand" "xnat_a:updrs3Data/handMovementsGrip/left")
+	<tr><th></th></tr>
+	#textEditRow("Facial Expression" "xnat_a:updrs3Data/facialExpression")
+	#textEditRow("Gait" "xnat_a:updrs3Data/gait")
+	#textEditRow("Speech" "xnat_a:updrs3Data/speech")
+	#textEditRow("Writing" "xnat_a:updrs3Data/writing")
+	#textEditRow("Arising from Chair" "xnat_a:updrs3Data/ariseFromChair")
+	<tr><th>Action/Postural Tremor</th></tr>
+	#textEditRow("Right" "xnat_a:updrs3Data/actionPosturalTremor/right")
+	#textEditRow("Left" "xnat_a:updrs3Data/actionPosturalTremor/left")
+	<tr><th>Hands RAM (Pronation-Supination)</tr></th>
+	#textEditRow("Right" "xnat_a:updrs3Data/handsRAM/right")
+	#textEditRow("Left" "xnat_a:updrs3Data/handsRAM/left")
+	<tr><th>Finger Tap</th></tr>
+	#textEditRow("Right" "xnat_a:updrs3Data/fingerTaps/right")
+	#textEditRow("Left" "xnat_a:updrs3Data/fingerTaps/left")
+	<tr><th></th></tr>
+	#textEditRow("Posture" "xnat_a:updrs3Data/posture")
+	#textEditRow("Postural Stability" "xnat_a:updrs3Data/posturalStability")
+	<tr><th>Foot Taps (Leg Agility)</th></tr>
+	#textEditRow("Right" "xnat_a:updrs3Data/footTaps/right")
+	#textEditRow("Left" "xnat_a:updrs3Data/footTaps/left")
+	<tr><th></th></th>
+	#textEditRow("Body Bradykinesia/Hypokinesia" "xnat_a:updrs3Data/bodyBradykinesiaHypokinesia")
+</table>
+
+<br>
+<div class="edit_header2">Notes</div>
+<br>
+<textarea name="xnat_a:updrs3Data.note" rows="4" cols="50" style="text-align:left;">$!notes</textarea>
+
+<hr>
+#auditTable("" "")
+
+#xdatEditProps($item $edit_screen)
+<input type="button" onclick="javascript:history.go(-1)" value="Back"/>
+&nbsp;&nbsp;&nbsp;
+<input type="button" onclick="validateForm();" name="eventSubmit_doInsert" value="Submit"/>
+
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateSubjectAssessorForm();
+   return false;
+}
+</script>
+

@@ -1,0 +1,334 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">SCID Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD colspan='2'>
+								#parse("/screens/xnat_edit_subjectAssessorData.vm")
+							</TD></TR>
+							<tr>
+								<TD colspan="2">#parse("/screens/EditProjectSpecificFields.vm")</TD>
+							</tr>
+							<TR><TD>age</TD><TD>#xdatTextBox("xnat_a:scidResearchData/age" $item "" $vr)</TD></TR>
+							<TR><TD>date</TD><TD>#xdatDateBox("xnat_a:scidResearchData/date" $item $vr $years)</TD></TR>
+							<TR><TD>time</TD><TD>#xdatTextBox("xnat_a:scidResearchData/time" $item "" $vr)</TD></TR>
+							<TR><TD>duration</TD><TD>#xdatTextBox("xnat_a:scidResearchData/duration" $item "" $vr)</TD></TR>
+							<TR><TD>delay</TD><TD>#xdatTextBox("xnat_a:scidResearchData/delay" $item "" $vr)</TD></TR>
+							<TR><TD>delay/ref_expt_id</TD><TD>#xdatStringBox("xnat_a:scidResearchData/delay/ref_expt_id" $item "" $vr)</TD></TR>
+							<TR><TD>note</TD><TD>#xdatStringBox("xnat_a:scidResearchData/note" $item "" $vr)</TD></TR>
+							<TR><TD>acquisition_site</TD><TD>#xdatStringBox("xnat_a:scidResearchData/acquisition_site" $item "" $vr)</TD></TR>
+							<TR><TD>visit_id</TD><TD>#xdatStringBox("xnat_a:scidResearchData/visit_id" $item "" $vr)</TD></TR>
+							<TR><TD>visit</TD><TD>#xdatStringBox("xnat_a:scidResearchData/visit" $item "" $vr)</TD></TR>
+							<TR><TD>version</TD><TD>#xdatTextBox("xnat_a:scidResearchData/version" $item "" $vr)</TD></TR>
+							<TR><TD>original</TD><TD>#xdatStringBox("xnat_a:scidResearchData/original" $item "" $vr)</TD></TR>
+							<TR><TD>protocol</TD><TD>#xdatStringBox("xnat_a:scidResearchData/protocol" $item "" $vr)</TD></TR>
+							<TR><TD>label</TD><TD>#xdatStringBox("xnat_a:scidResearchData/label" $item "" $vr)</TD></TR>
+							<TR><TD>administrator</TD><TD>#xdatStringBox("xnat_a:scidResearchData/administrator" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/currentMajorDepressiveEpisode</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/currentMajorDepressiveEpisode" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/pastMajorDepressiveEpisode</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/pastMajorDepressiveEpisode" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/currentManicEpisode</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/currentManicEpisode" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/pastManicEpisode</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/pastManicEpisode" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/currentHypomanicEpisode</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/currentHypomanicEpisode" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/pastHypomanicEpisode</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/pastHypomanicEpisode" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/currentDysthmicEpisode</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/currentDysthmicEpisode" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/currentMoodDisorderDueToMedicalCondition</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/currentMoodDisorderDueToMedicalCondition" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/pastMoodDisorderDueToMedicalCondition</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/pastMoodDisorderDueToMedicalCondition" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/currentSubstanceInducedMoodDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/currentSubstanceInducedMoodDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>moodEpisodes/pastSubstanceInducedMoodDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodEpisodes/pastSubstanceInducedMoodDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/currentDelusions</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/currentDelusions" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/pastDelusions</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/pastDelusions" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/currentHallucinations</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/currentHallucinations" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/pastHallucinations</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/pastHallucinations" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/currentDisorganizedSpeechBehavior</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/currentDisorganizedSpeechBehavior" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/pastDisorganizedSpeechBehavior</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/pastDisorganizedSpeechBehavior" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/currentCatatonicBehavior</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/currentCatatonicBehavior" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/pastCatatonicBehavior</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/pastCatatonicBehavior" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/currentNegativeSymptoms</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/currentNegativeSymptoms" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticSymptoms/pastNegativeSymptoms</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticSymptoms/pastNegativeSymptoms" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentSchizophrenia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentSchizophrenia" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastSchizophrenia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastSchizophrenia" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentParanoidType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentParanoidType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastParanoidType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastParanoidType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentCatatonicType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentCatatonicType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastCatatonicType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastCatatonicType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentDisorganizedType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentDisorganizedType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastDisorganizedType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastDisorganizedType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentUndifferentiatedType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentUndifferentiatedType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastUndifferentiatedType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastUndifferentiatedType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentResidualType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentResidualType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastResidualType</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastResidualType" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentSchizophreniformDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentSchizophreniformDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastSchizophreniformDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastSchizophreniformDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentSchizoaffectiveDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentSchizoaffectiveDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastSchizoaffectiveDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastSchizoaffectiveDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentDelusionalDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentDelusionalDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastDelusionalDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastDelusionalDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentBriefPsychoticDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentBriefPsychoticDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastBriefPsychoticDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastBriefPsychoticDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentPsychoticDisorderDueToMedicalCondition</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderDueToMedicalCondition" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastPsychoticDisorderDueToMedicalCondition</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderDueToMedicalCondition" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentSubstanceInducedPsychoticDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentSubstanceInducedPsychoticDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastSubstanceInducedPsychoticDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastSubstanceInducedPsychoticDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/currentPsychoticDisorderNOS</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderNOS" $item "" $vr)</TD></TR>
+							<TR><TD>psychoticDisorders/pastPsychoticDisorderNOS</TD><TD>#xdatTextBox("xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderNOS" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/currentBipolar1Disorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/currentBipolar1Disorder" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/pastBipolar1Disorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/pastBipolar1Disorder" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/currentBipolar2Disorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/currentBipolar2Disorder" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/pastBipolar2Disorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/pastBipolar2Disorder" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/currentOtherBipolarDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/currentOtherBipolarDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/pastOtherBipolarDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/pastOtherBipolarDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/currentMajorDepressiveDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/currentMajorDepressiveDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/pastMajorDepressiveDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/pastMajorDepressiveDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/currentDepressiveDisorderNOS</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/currentDepressiveDisorderNOS" $item "" $vr)</TD></TR>
+							<TR><TD>moodDisorders/pastDepressiveDisorderNOS</TD><TD>#xdatTextBox("xnat_a:scidResearchData/moodDisorders/pastDepressiveDisorderNOS" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentAlcoholDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastAlcoholDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentAlcoholAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastAlcoholAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentAmphetamineDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastAmphetamineDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentAmphetamineAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastAmphetamineAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentCannabisDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentCannabisDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastCannabisDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastCannabisDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentCannabisAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentCannabisAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastCannabisAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastCannabisAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentCocaineDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentCocaineDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastCocaineDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastCocaineDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentCocaineAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentCocaineAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastCocaineAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastCocaineAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentHallucinogenDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastHallucinogenDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentHallucinogenAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastHallucinogenAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentOpioidDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentOpioidDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastOpioidDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastOpioidDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentOpioidAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentOpioidAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastOpioidAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastOpioidAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentPhencyclidineDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastPhencyclidineDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentPhencyclidineAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastPhencyclidineAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentSedativeHypnoticAnxiolyticDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastSedativeHypnoticAnxiolyticDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentSedativeHypnoticAnxiolyticAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastSedativeHypnoticAnxiolyticAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentPolysubstanceDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentPolysubstanceDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastPolysubstanceDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastPolysubstanceDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentOtherOrUnknownDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastOtherOrUnknownDependence</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownDependence" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/currentOtherOrUnknownAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>substanceUseDisorders/pastOtherOrUnknownAbuse</TD><TD>#xdatTextBox("xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownAbuse" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentPanicWithAgoraphobia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentPanicWithAgoraphobia" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastPanicWithAgoraphobia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastPanicWithAgoraphobia" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentPanicWithoutAgoraphobia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentPanicWithoutAgoraphobia" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastPanicWithoutAgoraphobia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastPanicWithoutAgoraphobia" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentAgoraphobiaWithoutPanicHx</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentAgoraphobiaWithoutPanicHx" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastAgoraphobiaWithoutPanicHx</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastAgoraphobiaWithoutPanicHx" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentSocialPhobia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentSocialPhobia" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastSocialPhobia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastSocialPhobia" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentSpecificPhobia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentSpecificPhobia" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastSpecificPhobia</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastSpecificPhobia" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentOCD</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentOCD" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastOCD</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastOCD" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentPTSD</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentPTSD" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastPTSD</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastPTSD" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentGeneralizedAnxietyDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentGeneralizedAnxietyDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentAnxietyDueToMedicalCondition</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDueToMedicalCondition" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastAnxietyDueToMedicalCondition</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDueToMedicalCondition" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentSubstanceInducedAnxietyDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentSubstanceInducedAnxietyDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastSubstanceInducedAnxietyDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastSubstanceInducedAnxietyDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/currentAnxietyDisorderNOS</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDisorderNOS" $item "" $vr)</TD></TR>
+							<TR><TD>anxietyDisorders/pastAnxietyDisorderNOS</TD><TD>#xdatTextBox("xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDisorderNOS" $item "" $vr)</TD></TR>
+							<TR><TD>somatoformDisorders/somatizationDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/somatoformDisorders/somatizationDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>somatoformDisorders/undifferentiatedSomatformDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/somatoformDisorders/undifferentiatedSomatformDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>somatoformDisorders/painDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/somatoformDisorders/painDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>somatoformDisorders/hypochondriasis</TD><TD>#xdatTextBox("xnat_a:scidResearchData/somatoformDisorders/hypochondriasis" $item "" $vr)</TD></TR>
+							<TR><TD>somatoformDisorders/bodyDysmorphicDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/somatoformDisorders/bodyDysmorphicDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>eatingDisorders/currentAnorexiaNervosa</TD><TD>#xdatTextBox("xnat_a:scidResearchData/eatingDisorders/currentAnorexiaNervosa" $item "" $vr)</TD></TR>
+							<TR><TD>eatingDisorders/pastAnorexiaNervosa</TD><TD>#xdatTextBox("xnat_a:scidResearchData/eatingDisorders/pastAnorexiaNervosa" $item "" $vr)</TD></TR>
+							<TR><TD>eatingDisorders/currentBulimiaNervosa</TD><TD>#xdatTextBox("xnat_a:scidResearchData/eatingDisorders/currentBulimiaNervosa" $item "" $vr)</TD></TR>
+							<TR><TD>eatingDisorders/pastBulimiaNervosa</TD><TD>#xdatTextBox("xnat_a:scidResearchData/eatingDisorders/pastBulimiaNervosa" $item "" $vr)</TD></TR>
+							<TR><TD>eatingDisorders/currentBingeEatingDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/eatingDisorders/currentBingeEatingDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>eatingDisorders/pastBingeEatingDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/eatingDisorders/pastBingeEatingDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>adjustmentDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/adjustmentDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>optional/currentAcuteStressDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/optional/currentAcuteStressDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>optional/pastAcuteStressDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/optional/pastAcuteStressDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>optional/currentMinorDepressiveDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/optional/currentMinorDepressiveDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>optional/pastMinorDepressiveDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/optional/pastMinorDepressiveDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>optional/currentMixedAnxietyDepressiveDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/optional/currentMixedAnxietyDepressiveDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>optional/pastMixedAnxietyDepressiveDisorder</TD><TD>#xdatTextBox("xnat_a:scidResearchData/optional/pastMixedAnxietyDepressiveDisorder" $item "" $vr)</TD></TR>
+							<TR><TD>optional/pastSympomaticDetails</TD><TD>#xdatStringBox("xnat_a:scidResearchData/optional/pastSympomaticDetails" $item "" $vr)</TD></TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat_a:scidResearchData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:scidResearchData/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>#xdatStringBox("xnat_a:scidResearchData/investigator/title" $item "" $vr)</TD></TR>
+										<TR><TD>firstname</TD><TD>#xdatStringBox("xnat_a:scidResearchData/investigator/firstname" $item "" $vr)</TD></TR>
+										<TR><TD>lastname</TD><TD>#xdatStringBox("xnat_a:scidResearchData/investigator/lastname" $item "" $vr)</TD></TR>
+										<TR><TD>institution</TD><TD>#xdatStringBox("xnat_a:scidResearchData/investigator/institution" $item "" $vr)</TD></TR>
+										<TR><TD>department</TD><TD>#xdatStringBox("xnat_a:scidResearchData/investigator/department" $item "" $vr)</TD></TR>
+										<TR><TD>email</TD><TD>#xdatStringBox("xnat_a:scidResearchData/investigator/email" $item "" $vr)</TD></TR>
+										<TR><TD>phone</TD><TD>#xdatStringBox("xnat_a:scidResearchData/investigator/phone" $item "" $vr)</TD></TR>
+										<TR><TD>ID</TD><TD>#xdatStringBox("xnat_a:scidResearchData/investigator/ID" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat_a:scidResearchData/investigator/xnat_investigatorData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:scidResearchData/investigator -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:scidResearchData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>#xdatStringBox("xnat_a:scidResearchData/validation/method" $item "" $vr)</TD></TR>
+										<TR><TD>date</TD><TD>#xdatDateBox("xnat_a:scidResearchData/validation/date" $item $vr $years)</TD></TR>
+										<TR><TD>notes</TD><TD>#xdatStringBox("xnat_a:scidResearchData/validation/notes" $item "" $vr)</TD></TR>
+										<TR><TD>validated_by</TD><TD>#xdatStringBox("xnat_a:scidResearchData/validation/validated_by" $item "" $vr)</TD></TR>
+										<TR><TD>status</TD><TD>#xdatStringBox("xnat_a:scidResearchData/validation/status" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat_a:scidResearchData/validation/xnat_validationData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:scidResearchData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_abstractResource_3_COUNTER in [0..5])
+<!-- BEGIN xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>label</TD><TD>#xdatStringBox("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/label" $item "" $vr)</TD></TR>
+												<TR><TD>file_count</TD><TD>#xdatTextBox("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/file_count" $item "" $vr)</TD></TR>
+												<TR><TD>file_size</TD><TD>#xdatTextBox("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/xnat_abstractResource_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_abstractResource_tag_4_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/tag" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/xnat_abstractResource_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag -->
+								</TABLE>
+<!-- END xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+<!-- BEGIN xnat_a:scidResearchData/fields/field -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/fields/field</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>field</TD>
+								<TD>name</TD>
+							</TR>
+							#foreach($xnat_experimentData_field_4_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat_a:scidResearchData/fields/field[$xnat_experimentData_field_4_COUNTER]/field" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat_a:scidResearchData/fields/field[$xnat_experimentData_field_4_COUNTER]/name" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat_a:scidResearchData/fields/field[$xnat_experimentData_field_4_COUNTER]/xnat_experimentData_field_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat_a:scidResearchData/fields/field -->
+			</TABLE>
+<!-- END xnat_a:scidResearchData -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateSubjectAssessorForm();
+   return false;
+}
+</script>

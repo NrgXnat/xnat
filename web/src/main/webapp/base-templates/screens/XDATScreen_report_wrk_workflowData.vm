@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("Workflow Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>Workflow Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>comments</TD><TD>$!item.getStringProperty("wrk:workflowData/comments")</TD></TR>
+							<TR><TD>details</TD><TD>$!item.getStringProperty("wrk:workflowData/details")</TD></TR>
+							<TR><TD>justification</TD><TD>$!item.getStringProperty("wrk:workflowData/justification")</TD></TR>
+							<TR><TD>description</TD><TD>$!item.getStringProperty("wrk:workflowData/description")</TD></TR>
+							<TR><TD>src</TD><TD>$!item.getStringProperty("wrk:workflowData/src")</TD></TR>
+							<TR><TD>type</TD><TD>$!item.getStringProperty("wrk:workflowData/type")</TD></TR>
+							<TR><TD>category</TD><TD>$!item.getStringProperty("wrk:workflowData/category")</TD></TR>
+							<TR><TD>data_type</TD><TD>$!item.getStringProperty("wrk:workflowData/data_type")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("wrk:workflowData/ID")</TD></TR>
+							<TR><TD>ExternalID</TD><TD>$!item.getStringProperty("wrk:workflowData/ExternalID")</TD></TR>
+							<TR><TD>current_step_launch_time</TD><TD>$!item.getProperty("wrk:workflowData/current_step_launch_time")</TD></TR>
+							<TR><TD>current_step_id</TD><TD>$!item.getStringProperty("wrk:workflowData/current_step_id")</TD></TR>
+							<TR><TD>status</TD><TD>$!item.getStringProperty("wrk:workflowData/status")</TD></TR>
+							<TR><TD>create_user</TD><TD>$!item.getStringProperty("wrk:workflowData/create_user")</TD></TR>
+							<TR><TD>pipeline_name</TD><TD>$!item.getStringProperty("wrk:workflowData/pipeline_name")</TD></TR>
+							<TR><TD>next_step_id</TD><TD>$!item.getStringProperty("wrk:workflowData/next_step_id")</TD></TR>
+							<TR><TD>step_description</TD><TD>$!item.getStringProperty("wrk:workflowData/step_description")</TD></TR>
+							<TR><TD>launch_time</TD><TD>$!item.getProperty("wrk:workflowData/launch_time")</TD></TR>
+							<TR><TD>percentageComplete</TD><TD>$!item.getStringProperty("wrk:workflowData/percentageComplete")</TD></TR>
+							<TR><TD>jobID</TD><TD>$!item.getStringProperty("wrk:workflowData/jobID")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN wrk:workflowData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN wrk:workflowData/executionEnvironment -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">wrk:workflowData/executionEnvironment</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END wrk:workflowData/executionEnvironment -->
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END wrk:workflowData -->
+		</TD>
+	</TR>
+</TABLE>

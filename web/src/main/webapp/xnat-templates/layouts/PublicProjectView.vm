@@ -1,0 +1,15 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+
+<!-- path: xnat-templates/layouts/PublicProjectView -->
+
+    <div id="layout_content2" style="display:none;">Loading...</div>
+    <div id="layout_content">$screen_placeholder</div>
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

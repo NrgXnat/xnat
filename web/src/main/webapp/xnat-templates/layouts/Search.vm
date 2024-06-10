@@ -1,0 +1,23 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+
+<!-- path: xnat-templates/layouts/Search -->
+
+                        $navigation.setTemplate("/DefaultTop.vm")
+
+                        <div id="layout_content">$screen_placeholder</div>
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+##<script type="text/javascript" src="$content.getURI("scripts/tabWrangler/tabWrangler.js")"></script>
+<script type="text/javascript">
+    jq(window).load(function(){
+        //wrangleTabs('#search_tabs');
+    })
+</script>
+
+$navigation.setTemplate("/htmlClose.vm")

@@ -1,0 +1,13 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("ScreenOnly.vm")
+<br>
+
+#if ($data.getMessage()!="File Uploaded.")
+<DIV class="error">$data.message</DIV><br>
+#else
+<script type="text/javascript">
+
+  window.parent.proceed();
+  
+</script>
+#end

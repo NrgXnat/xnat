@@ -1,0 +1,245 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("CTScan Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>CTScan Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>image_session_ID</TD><TD>$!item.getStringProperty("xnat:ctScanData/image_session_ID")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:ctScanData/note")</TD></TR>
+							<TR><TD>quality</TD><TD>$!item.getStringProperty("xnat:ctScanData/quality")</TD></TR>
+							<TR><TD>condition</TD><TD>$!item.getStringProperty("xnat:ctScanData/condition")</TD></TR>
+							<TR><TD>series_description</TD><TD>$!item.getStringProperty("xnat:ctScanData/series_description")</TD></TR>
+							<TR><TD>documentation</TD><TD>$!item.getStringProperty("xnat:ctScanData/documentation")</TD></TR>
+							<TR><TD>scanner</TD><TD>$!item.getStringProperty("xnat:ctScanData/scanner")</TD></TR>
+							<TR><TD>scanner/manufacturer</TD><TD>$!item.getStringProperty("xnat:ctScanData/scanner/manufacturer")</TD></TR>
+							<TR><TD>scanner/model</TD><TD>$!item.getStringProperty("xnat:ctScanData/scanner/model")</TD></TR>
+							<TR><TD>modality</TD><TD>$!item.getStringProperty("xnat:ctScanData/modality")</TD></TR>
+							<TR><TD>frames</TD><TD>$!item.getIntegerProperty("xnat:ctScanData/frames")</TD></TR>
+							<TR><TD>operator</TD><TD>$!item.getStringProperty("xnat:ctScanData/operator")</TD></TR>
+							<TR><TD>startTime</TD><TD>$!item.getProperty("xnat:ctScanData/startTime")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:ctScanData/ID")</TD></TR>
+							<TR><TD>type</TD><TD>$!item.getStringProperty("xnat:ctScanData/type")</TD></TR>
+							<TR><TD>UID</TD><TD>$!item.getStringProperty("xnat:ctScanData/UID")</TD></TR>
+							<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:ctScanData/project")</TD></TR>
+							<TR><TD>parameters/voxelRes/units</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/voxelRes/units")</TD></TR>
+							<TR><TD>parameters/voxelRes/x</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/voxelRes/x")</TD></TR>
+							<TR><TD>parameters/voxelRes/y</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/voxelRes/y")</TD></TR>
+							<TR><TD>parameters/voxelRes/z</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/voxelRes/z")</TD></TR>
+							<TR><TD>parameters/orientation</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/orientation")</TD></TR>
+							<TR><TD>parameters/fov/x</TD><TD>$!item.getIntegerProperty("xnat:ctScanData/parameters/fov/x")</TD></TR>
+							<TR><TD>parameters/fov/y</TD><TD>$!item.getIntegerProperty("xnat:ctScanData/parameters/fov/y")</TD></TR>
+							<TR><TD>parameters/rescale/intercept</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/rescale/intercept")</TD></TR>
+							<TR><TD>parameters/rescale/slope</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/rescale/slope")</TD></TR>
+							<TR><TD>parameters/kvp</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/kvp")</TD></TR>
+							<TR><TD>parameters/acquisitionNumber</TD><TD>$!item.getIntegerProperty("xnat:ctScanData/parameters/acquisitionNumber")</TD></TR>
+							<TR><TD>parameters/imageType</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/imageType")</TD></TR>
+							<TR><TD>parameters/options</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/options")</TD></TR>
+							<TR><TD>parameters/collectionDiameter</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/collectionDiameter")</TD></TR>
+							<TR><TD>parameters/distanceSourceToDetector</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/distanceSourceToDetector")</TD></TR>
+							<TR><TD>parameters/distanceSourceToPatient</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/distanceSourceToPatient")</TD></TR>
+							<TR><TD>parameters/gantryTilt</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/gantryTilt")</TD></TR>
+							<TR><TD>parameters/tableHeight</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/tableHeight")</TD></TR>
+							<TR><TD>parameters/rotationDirection</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/rotationDirection")</TD></TR>
+							<TR><TD>parameters/exposureTime</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/exposureTime")</TD></TR>
+							<TR><TD>parameters/xrayTubeCurrent</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/xrayTubeCurrent")</TD></TR>
+							<TR><TD>parameters/exposure</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/exposure")</TD></TR>
+							<TR><TD>parameters/filter</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/filter")</TD></TR>
+							<TR><TD>parameters/generatorPower</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/generatorPower")</TD></TR>
+							<TR><TD>parameters/convolutionKernel</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/convolutionKernel")</TD></TR>
+							<TR><TD>parameters/collimationWidth/single</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/collimationWidth/single")</TD></TR>
+							<TR><TD>parameters/collimationWidth/total</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/collimationWidth/total")</TD></TR>
+							<TR><TD>parameters/tableSpeed</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/tableSpeed")</TD></TR>
+							<TR><TD>parameters/tableFeedPerRotation</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/tableFeedPerRotation")</TD></TR>
+							<TR><TD>parameters/pitchFactor</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/pitchFactor")</TD></TR>
+							<TR><TD>parameters/estimatedDoseSaving/modulation</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/estimatedDoseSaving/modulation")</TD></TR>
+							<TR><TD>parameters/estimatedDoseSaving</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/estimatedDoseSaving")</TD></TR>
+							<TR><TD>parameters/ctDIvol</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/ctDIvol")</TD></TR>
+							<TR><TD>parameters/derivation</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/derivation")</TD></TR>
+							<TR><TD>dcmValidation</TD><TD>$!item.getStringProperty("xnat:ctScanData/dcmValidation")</TD></TR>
+							<TR><TD>dcmValidation/status</TD><TD>$!item.getBooleanProperty("xnat:ctScanData/dcmValidation/status")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:ctScanData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_imageScanData_share_1_NUM_ROWS=$item.getChildItems("xnat:ctScanData/sharing/share").size() - 1)
+							#if($xnat_imageScanData_share_1_NUM_ROWS>=0)
+								#foreach($xnat_imageScanData_share_1_COUNTER in [0..$xnat_imageScanData_share_1_NUM_ROWS])
+<!-- BEGIN xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>share</TD><TD>$!item.getStringProperty("xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/share")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/label")</TD></TR>
+													<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/project")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_2_NUM_ROWS=$item.getChildItems("xnat:ctScanData/file").size() - 1)
+							#if($xnat_abstractResource_2_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_2_COUNTER in [0..$xnat_abstractResource_2_NUM_ROWS])
+<!-- BEGIN xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_3_NUM_ROWS=$item.getChildItems("xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_3_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_3_COUNTER in [0..$xnat_abstractResource_tag_3_NUM_ROWS])
+<!-- BEGIN xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:ctScanData/file[$xnat_abstractResource_2_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:ctScanData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>$!item.getStringProperty("xnat:ctScanData/validation/method")</TD></TR>
+										<TR><TD>date</TD><TD>$!item.getProperty("xnat:ctScanData/validation/date")</TD></TR>
+										<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat:ctScanData/validation/notes")</TD></TR>
+										<TR><TD>validated_by</TD><TD>$!item.getStringProperty("xnat:ctScanData/validation/validated_by")</TD></TR>
+										<TR><TD>status</TD><TD>$!item.getStringProperty("xnat:ctScanData/validation/status")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:ctScanData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_ctScanData_focalSpot_5_NUM_ROWS=$item.getChildItems("xnat:ctScanData/parameters/focalSpots/focalSpot").size() - 1)
+							#if($xnat_ctScanData_focalSpot_5_NUM_ROWS>=0)
+								#foreach($xnat_ctScanData_focalSpot_5_COUNTER in [0..$xnat_ctScanData_focalSpot_5_NUM_ROWS])
+<!-- BEGIN xnat:ctScanData/parameters/focalSpots/focalSpot[$xnat_ctScanData_focalSpot_5_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/parameters/focalSpots/focalSpot[$xnat_ctScanData_focalSpot_5_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>focalSpot</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/focalSpots/focalSpot[$xnat_ctScanData_focalSpot_5_COUNTER]/focalSpot")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:ctScanData/parameters/focalSpots/focalSpot[$xnat_ctScanData_focalSpot_5_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:ctScanData/parameters/contrastBolus -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/parameters/contrastBolus</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>agent</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/contrastBolus/agent")</TD></TR>
+										<TR><TD>route</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/contrastBolus/route")</TD></TR>
+										<TR><TD>volume</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/contrastBolus/volume")</TD></TR>
+										<TR><TD>totalDose</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/contrastBolus/totalDose")</TD></TR>
+										<TR><TD>flowRate</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/contrastBolus/flowRate")</TD></TR>
+										<TR><TD>flowDuration</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/contrastBolus/flowDuration")</TD></TR>
+										<TR><TD>activeIngredient</TD><TD>$!item.getStringProperty("xnat:ctScanData/parameters/contrastBolus/activeIngredient")</TD></TR>
+										<TR><TD>concentration</TD><TD>$!item.getDoubleProperty("xnat:ctScanData/parameters/contrastBolus/concentration")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:ctScanData/parameters/contrastBolus -->
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:ctScanData -->
+		</TD>
+	</TR>
+</TABLE>

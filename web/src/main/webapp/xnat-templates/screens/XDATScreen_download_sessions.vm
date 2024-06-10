@@ -1,0 +1,528 @@
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="projectIds" type="java.util.List" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="scan_formats" type="java.util.List" *#
+#* @vtlvariable name="scan" type="java.util.List" *#
+#* @vtlvariable name="sessionSummary" type="java.util.List" *#
+#* @vtlvariable name="sessionRow" type="java.util.List" *#
+#* @vtlvariable name="item" type="java.util.List" *#
+#* @vtlvariable name="format" type="java.util.List" *#
+#* @vtlvariable name="scans" type="java.util.List" *#
+#* @vtlvariable name="resources" type="java.util.List" *#
+#* @vtlvariable name="resource" type="java.util.List" *#
+#* @vtlvariable name="recons" type="java.util.List" *#
+#* @vtlvariable name="assessors" type="java.util.List" *#
+#set($showResources = $turbineUtils.isNonEmptyCollection($resources))
+#set($showRecons = $turbineUtils.isNonEmptyCollection($recons))
+#set($showAssessors = $turbineUtils.isNonEmptyCollection($assessors))
+#set($SESSION_DISPLAY_NAME_PLURAL = $displayManager.getPluralDisplayNameForImageSession())
+#set($SITE_ROOT = $content.getURI(""))
+
+<style type="text/css">
+
+    #download-form {
+        width: 1109px;
+        padding: 5px;
+        background: #f0f0f0;
+        border: 1px solid #e0e0e0;
+        overflow: auto;
+    }
+
+    div.download-column {
+        width: 34%;
+        float: left;
+        /*font-size: 12px;*/
+    }
+
+    div.download-column > .pad {
+        padding: 10px;
+    }
+
+    div.download-column.last {
+        width: 32%;
+    }
+
+    div.download-column .inner {
+        /*min-height: 500px;*/
+        /*max-height: 700px;*/
+        height: 670px;
+        padding: 5px;
+        overflow-y: scroll;
+        overflow-x: visible;
+        background: #fff;
+        border: 1px solid #d0d0d0;
+    }
+
+    div.download-column.last .inner {
+        /*height: auto;*/
+        overflow: auto;
+    }
+
+    div.download-column section {
+        margin: 7px 0 15px;
+        padding: 0 15px;
+    }
+
+    div.download-column section.list {
+        margin: 0 0 30px;
+        padding: 0 10px;
+        /*border: 1px solid #ccc;*/
+    }
+
+    div.download-column h3 {
+        padding: 7px 15px;
+        /*background: #f0f0f0;*/
+        background: #1A75BB;
+        /*border-bottom: 1px solid #d0d0d0;*/
+        border: 1px solid #11609c;
+        color: #fff;
+        font-weight: normal;
+        font-size: 15px;
+    }
+
+    div.download-column h4 {
+        margin: 10px 10px 0;
+        padding: 0 5px 5px;
+        font-size: 14px;
+        /*font-weight: normal;*/
+        border-bottom: 1px solid #d0d0d0;
+    }
+
+    div.download-column .xnat-table.data-table thead td {
+        padding: 6px 8px;
+        background: #f0f0f0;
+        border: none;
+        border-bottom: 5px solid #fff;
+    }
+
+    div.download-column dl {
+        position: relative;
+        margin: 15px 0;
+    }
+
+    div.download-column dt {
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+    div.download-column dd {
+        margin-left: 22px;
+    }
+
+    div.download-column dd label {
+        display: block;
+        margin: 0;
+        /*font-weight: bold;*/
+    }
+
+    section.list div.data-table-wrapper {
+        border: none;
+    }
+
+    section.list table.data-table {
+        border: none !important;
+        border-collapse: collapse;
+    }
+
+    section.list table.data-table tbody tr:hover {
+        background: #e5f2ff;
+    }
+
+    section.list table.data-table td,
+    section.list table.data-table th {
+        padding: 4px 8px;
+        border: none;
+        /*border-bottom: 1px solid #e0e0e0;*/
+    }
+
+    section.list table.data-table label {
+        display: block;
+        /*text-decoration: underline;*/
+    }
+
+</style>
+
+<script>
+    XNAT.app = getObject(XNAT.app);
+    XNAT.app.projectDownload = getObject(XNAT.app.projectDownload);
+    XNAT.app.projectDownload.items = extend(true, XNAT.app.projectDownload.items || {}, {
+        counts: {},
+        projectIds: [],
+        sessions: {
+            list: [],
+            data: []
+        },
+        scan_formats: {
+            list: [],
+            data: []
+        },
+        scan_types: {
+            list: [],
+            data: []
+        },
+        resources: {
+            list: [],
+            data: []
+        },
+        reconstructions: {
+            list: [],
+            data: []
+        },
+        assessors: {
+            list: [],
+            data: []
+        }
+    });
+    // alias to 'recons'
+    XNAT.app.projectDownload.items.recons = XNAT.app.projectDownload.items.reconstructions;
+    // alias to 'assessments'
+    XNAT.app.projectDownload.items.assessments = XNAT.app.projectDownload.items.assessors;
+</script>
+
+<h2>Imaging Data Download</h2>
+#if($msg)
+<div class="alert">$!msg</div></br>
+#end
+
+#if($sessionSummary && !$sessionSummary.isEmpty())
+<form id="download-form" class="json noHide" method="post" content-type="application/json" action="/xapi/archive/downloadwithsize">
+
+    #set($counter=0)
+    #set($_ID="")
+    #set($_NAME="")
+    #set($_LABEL="")
+    #set($_VALUE="")
+    #set($_COUNT="")
+    #set($_TYPE="")
+    #set($_SUBJECT="")
+    #set($_PROJECT="")
+
+    <!-- Select Sessions -->
+    <div id="project-sessions" class="download-column">
+        <div class="pad">
+
+            <h3>1: Select ${SESSION_DISPLAY_NAME_PLURAL}</h3>
+
+            <div class="inner">
+
+                <h4>Sessions</h4>
+                <section class="sessions list">
+                    <p class="hidden none"><i>(none)</i></p>
+                    <!-- list project sessions -->
+                </section>
+
+                <div class="html-template hidden">
+
+                    ##<ul id="sessions-list-items hidden">
+
+                    <script>
+                        #foreach($projectId in $projectIds)XNAT.app.projectDownload.items.projectIds.push('$!projectId');#end
+                    </script>
+                    #foreach($projectId in $projectIds)
+                        <input type="hidden" name="projectIds[]" value="$!projectId">
+                    #end
+
+                        ## gather sessions
+                        #foreach($sessionRow in $sessionSummary)
+
+                            #set($_ID = $!turbineUtils.escapeHTML("$!sessionRow.get(0)"))
+                            #set($_NAME = $!turbineUtils.escapeHTML("$!sessionRow.get(0)"))
+                            #set($_LABEL = $!turbineUtils.escapeHTML("$!sessionRow.get(1)"))
+                            #set($_VALUE = $!turbineUtils.escapeHTML("$!sessionRow.get(4):$!sessionRow.get(3):$!sessionRow.get(1):$!sessionRow.get(0)"))
+                            #set($_TYPE = $!turbineUtils.escapeHTML("$!sessionRow.get(2)"))
+                            #set($_SUBJECT = $!turbineUtils.escapeHTML("$!sessionRow.get(3)"))
+                            #set($_PROJECT = $!turbineUtils.escapeHTML("$!sessionRow.get(4)"))
+
+                            ##<li class="session-item hidden">
+                            ##    <i class="id hidden">$_ID</i>
+                            ##    <i class="name hidden">$_NAME</i>
+                            ##    <i class="label hidden">$_LABEL</i>
+                            ##    <i class="value hidden">$_VALUE</i>
+                            ##    <i class="type hidden">$_TYPE</i>
+                            ##    <i class="subject hidden">$_SUBJECT</i>
+
+                            <script>
+                                XNAT.app.projectDownload.items.sessions.list.push('$_ID');
+                                XNAT.app.projectDownload.items.sessions.data.push({
+                                    id: '$_ID',
+                                    name: '$_NAME',
+                                    label: '$_LABEL',
+                                    value: '$_VALUE',
+                                    type: '$_TYPE',
+                                    subject: '$_SUBJECT',
+                                    project: '$_PROJECT',
+                                });
+                            </script>
+                            ##</li>
+                        #end
+                    ##</ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Select Image Data -->
+    <div id="project-imaging-data" class="download-column">
+        <div class="pad">
+
+            <h3>2: Select Image Data</h3>
+
+            <div class="inner">
+
+                <!-- Scan Formats -->
+                <h4>Scan Formats</h4>
+                <section class="scan-formats list">
+                    <p class="hidden none"><i>(none)</i></p>
+                    <!-- list scan formats -->
+                </section>
+                #set($counter=0)
+                #set($_FORMAT="")
+                #foreach($format in $scan_formats)
+                    #set($_FORMAT = $!turbineUtils.escapeHTML("$!format.get(0)").replaceAll("'", "\\'"))
+                    <script>
+                            #if($!format.get(0))
+                            XNAT.app.projectDownload.items.scan_formats.list.push('$_FORMAT')
+                            XNAT.app.projectDownload.items.scan_formats.data.push({
+                                counter: +'$counter',
+                                value: '$_FORMAT',
+                                name: '$_FORMAT',
+                                label: '$_FORMAT'
+                            });
+                            #else
+                            XNAT.app.projectDownload.items.scan_formats.list.push('Unspecified')
+                            XNAT.app.projectDownload.items.scan_formats.data.push({
+                                counter: +'$counter',
+                                value: 'null',
+                                name: 'Unspecified',
+                                label: 'Unspecified'
+                            });
+                            #end
+                    </script>
+                    #set($counter = $counter + 1)
+                #end
+
+                <!-- Scan Types -->
+                <h4>Scan Types</h4>
+                <section class="scan-types list">
+                    <p class="hidden none"><i>(none)</i></p>
+                    <!-- list scan types -->
+                </section>
+
+            ## gather scan types
+                #set($counter = 0)
+                #foreach($scan in $scans)
+                    #set($_ID = $!turbineUtils.escapeHTML("$!scan.get(0)").replaceAll("'", "\\'"))
+                    #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
+                    <script>
+                            #if($!scan.get(0))
+                            XNAT.app.projectDownload.items.scan_types.list.push('$_ID');
+                            XNAT.app.projectDownload.items.scan_types.data.push({
+                                counter: $counter,
+                                value: '$_ID',
+                                name: '$_ID',
+                                label: '$_ID',
+                                count: '$_COUNT'
+                            });
+                            #else
+                            XNAT.app.projectDownload.items.scan_types.list.push('Unassigned');
+                            XNAT.app.projectDownload.items.scan_types.data.push({
+                                counter: +'$counter',
+                                value: 'null',
+                                name: 'Unassigned',
+                                label: 'Unassigned',
+                                count: '$_COUNT'
+                            });
+                            #end
+                    </script>
+                    #set($counter = $counter + 1)
+                #end
+
+                <!-- Additional Resources -->
+                #if($showResources)
+                    <h4>Additional Resources</h4>
+                    <section class="resources list">
+                        <p class="hidden none"><i>(none)</i></p>
+                        <!-- list project resources -->
+                    </section>
+                    ## gather resources
+                    #set($counter = 0)
+                    #foreach($resource in $resources)
+                        #set($_RESOURCE_ID = $!turbineUtils.escapeHTML("$!resource.get(0)").replaceAll("'", "\\'"))
+                        <script>
+                                #if($!resource.get(0))
+                                XNAT.app.projectDownload.items.resources.list.push('$_RESOURCE_ID');
+                                XNAT.app.projectDownload.items.resources.data.push({
+                                    counter: +'$counter',
+                                    value: '$_RESOURCE_ID',
+                                    name: '$_RESOURCE_ID',
+                                    label: '$_RESOURCE_ID'
+                                });
+                                #else
+                                XNAT.app.projectDownload.items.resources.list.push('Unspecified');
+                                XNAT.app.projectDownload.items.resources.data.push({
+                                    counter: +'$counter',
+                                    value: 'null',
+                                    name: 'Unspecified',
+                                    label: 'Unspecified'
+                                });
+                                #end
+                        </script>
+                        #set($counter = $counter + 1)
+                    #end
+                #end
+
+                <!-- Reconstructions -->
+                #if($showRecons)
+                    <h4>Reconstructions</h4>
+                    <section class="reconstructions list">
+                        <div class="warning" style="left:-12px;margin-top:5px;">
+                            XNAT reconstructions were found in this project, but this type of assessor is no longer supported and the current download process can not package them. If you need access
+                            to these particular assessors, try using the <b>Manage Files</b> feature on those experiments and downloading files there. You can also contact your system administrator
+                            for alternative means of accessing the data.
+                        </div>
+                    </section>
+                #end
+
+
+                <!-- Assessors -->
+                #if($showAssessors)
+                    <h4>Assessments</h4>
+                    <section class="assessors list">
+                        <p class="hidden none"><i>(none)</i></p>
+                        <!-- list assessors -->
+                    </section>
+                    ## gather assessors
+                    #set($counter = 0)
+                    #foreach($scan in $assessors)
+                        #set($_NAME = $!turbineUtils.escapeHTML("$!scan.get(2)").replaceAll("'", "\\'"))
+                        #set($_VALUE = $!turbineUtils.escapeHTML("$!scan.get(0)").replaceAll("'", "\\'"))
+                        #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
+                        <script>
+                                #if($!scan.get(2))
+                                XNAT.app.projectDownload.items.assessors.list.push('$_NAME');
+                                XNAT.app.projectDownload.items.assessors.data.push({
+                                    counter: +'$counter',
+                                    value: '$_VALUE',
+                                    name: '$_NAME',
+                                    label: '$_NAME',
+                                    count: +'$_COUNT'
+                                });
+                                #else
+                                XNAT.app.projectDownload.items.assessors.list.push('$_VALUE');
+                                XNAT.app.projectDownload.items.assessors.data.push({
+                                    counter: +'$counter',
+                                    value: '$_VALUE',
+                                    name: '$_VALUE',
+                                    label: '$_VALUE',
+                                    count: +'$_COUNT'
+                                });
+                                #end
+                                #set($counter = $counter + 1)
+                        </script>
+                    #end
+                #end
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // cache the list containers
+    </script>
+
+
+
+    <!-- Download Options -->
+    <div id="project-download-options" class="download-column last">
+        <div class="pad">
+
+            <h3>3: Download Data</h3>
+
+            <div class="inner">
+
+                <h4>Options</h4>
+                <section>
+                    #if(!$siteConfig.uiHideDesktopClientDownload)
+                        <dl>
+                            <dt><input type="radio" id="client-download" name="download_type" class="download-type ignore" value="client" checked></dt>
+                            <dd><label for="direct-download"><b>Option 1: Download via Desktop Client</b></label></dd>
+                            <dd>
+                                An XML download manifest will be sent to the XNAT Desktop Client, which works behind the scenes to download your files.
+                                <div class="info" style="margin-top: 6px;">
+                                    Download the XNAT Desktop Client here: <a href="https://download.xnat.org/desktop-client" target="_blank" style="font-weight: bold">download.xnat.org</a>.
+                                </div>
+                            </dd>
+                        </dl>
+                    #end
+                    <dl>
+                        <dt><input type="radio" id="direct-download" name="download_type" class="download-type ignore" value="zip" #if($siteConfig.uiHideDesktopClientDownload) checked #end></dt>
+                        <dd><label for="direct-download">
+                            <b>Option #if(!$siteConfig.uiHideDesktopClientDownload) 2: #else 1: #end ZIP download</b></label></dd>
+                        <dd>
+                            Your selected session data will be downloaded as a single compressed zip file.
+                        </dd>
+                    </dl>
+                    <dl>
+                        <dt><input type="radio" id="catalog-download" name="download_type" class="download-type ignore" value="catalog"></dt>
+                        <dd><label for="catalog-download">
+                        <b>Option #if(!$siteConfig.uiHideDesktopClientDownload) 3: #else 2: #end Catalog XML</b></label></dd>
+                        <dd>
+                            Download an xml representation of the files. This xml can then be used by
+                            specific applications to download the data at the user's command.
+                        </dd>
+                    </dl>
+                    <dl>
+                        <dt><input id="project-in-path" type="checkbox" name="options[]" value="projectIncludedInPath"></dt>
+                        <dd>
+                            <label for="project-in-path">Include $displayManager.getSingularDisplayNameForProject().toLowerCase() in file paths</label>
+                        </dd>
+                    </dl>
+                    <dl>
+                        <dt><input id="subject-in-path" type="checkbox" name="options[]" value="subjectIncludedInPath"></dt>
+                        <dd>
+                            <label for="subject-in-path">Include $displayManager.getSingularDisplayNameForSubject().toLowerCase() in file paths</label>
+                        </dd>
+                    </dl>
+                    <dl>
+                        <dt><input id="simplify-archive" type="checkbox" name="options[]" checked value="simplified"></dt>
+                        <dd><label for="simplify-archive">Simplify downloaded archive structure</label></dd>
+                    </dl>
+                </section>
+                <br>
+                <h4>Submit Data Request</h4>
+                <section>
+                    <p> Upon page submission, the pertinent files will be reviewed and organized for download.
+                        Depending on the number of files, this may take several minutes to process. </p><br>
+                    <div class="pull-right">
+                        <button type="submit">Submit</button>
+                    </div>
+                    <div class="clear"></div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="clear"></div>
+
+</form>
+#end
+
+<script src="${SITE_ROOT}/scripts/xnat/app/projectDownload.js"></script>
+
+<script>
+    (function(){
+        var sampleJSON = {
+            "sessions": ["session1", "session2", "session3", "session4", "session5"],
+            "scan_type": ["scan_type1", "scan_type2", "scan_type3", "scan_type4", "scan_type5"],
+            "scan_format": ["scan_format1", "scan_format2", "scan_format3", "scan_format4", "scan_format5"],
+            "recon": ["recon1", "recon2", "recon3", "recon4", "recon5"],
+            "assessors": ["assessors1", "assessors2", "assessors3", "assessors4", "assessors5"],
+            "resources": ["resources1", "resources2", "resources3", "resources4", "resources5"]
+        }
+    })()
+</script>

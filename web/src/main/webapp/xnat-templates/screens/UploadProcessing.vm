@@ -1,0 +1,8 @@
+#set($currentStep="step3")
+ <table border="0" align="center" cellspacing="0">
+      <tr>
+        <td valign="top"><span class="class9">Your files are being extracted, organized and reviewed.  This process may take several hours.  Once the process completes, you will receive an email notification with instructions for continuing to Step 4.
+        </span>          </td>
+      </tr>
+    </table>
+    

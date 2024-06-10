@@ -1,0 +1,211 @@
+#set($create_projects=$data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","create"))
+#set($edit_projects=$data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","edit"))
+#set($read_projects=$data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","read"))
+#set($projectMap = $data.getSession().getAttribute("userHelper").getCachedItemValuesHash("xnat:projectData",null,false,"xnat:projectData/ID","xnat:projectData/secondary_ID"))
+<div>
+  This $displayManager.getSingularDisplayNameForSubject().toLowerCase() is owned by: <b>#escapeCleanHTML($!om.getProjectDisplayID())</b>.
+</div>
+<div class="spacer">&nbsp;</div>
+<div style="margin-bottom:5px">
+  <div ID="sharing_summary_title" style="margin-bottom:5px"></div>
+  <div ID="sharing_summary_table"></div>
+</div>
+<div>
+Share into 
+#if($create_projects.size()>0)
+<SELECT ID="s_projects" name="projects">
+<option value="">(SELECT)</option>
+#foreach($proj in $create_projects)
+#if(!$om.hasProject($proj))
+#if($projectMap.get($proj))
+<option value="$proj">
+$projectMap.get($proj)
+</option>
+#elseif($proj=="*")
+
+#else
+<option value="$proj">
+$proj
+</option>
+#end
+#end
+#end
+</SELECT>
+<input type="button" value="Share" ONCLICK="restShare(false)"/>
+#if($project)
+<!-- 
+##This doesn't work because the expt uri leads to 403 
+<input type="button" value="Share All" ONCLICK="restShare(true)"/>-->
+#end
+#else
+ERROR:  No $displayManager.getPluralDisplayNameForProject().toLowerCase() exist.  Please create a $displayManager.getSingularDisplayNameForProject().toLowerCase() before attempting to insert this item.
+#end
+</div>
+<style type="text/css">
+/* custom styles for inline instances */
+.yui-skin-sam .yui-ac-input { position:static;width:20em; vertical-align:middle;}
+.yui-skin-sam .yui-ac-container { width:20em;left:0px;}
+
+/* buttons */
+.yui-ac .yui-button {vertical-align:middle;}
+.yui-ac .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-rt.png")) center center no-repeat }
+.yui-ac .open .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-dn.png")) center center no-repeat}
+
+</style>
+				<script type="text/javascript" src="$content.getURI("scripts/yui/build/autocomplete/autocomplete-min.js")"></script>
+		<script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/restSharer.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/LabelEditor.js")"></script>
+
+<script>
+XNAT.app.subject.shared_projects=new Array();
+XNAT.app.subject.primary_project="$om.getProject()";
+
+#foreach($pp in $om.getSharing_share())
+XNAT.app.subject.shared_projects.push({id:"#escapeCleanHTML($pp.getProperty("project"))",
+     name:"#escapeCleanHTML($!pp.getProjectDisplayID())",
+     label:"#escapeCleanHTML($!pp.getProperty("label"))",
+     group:"#escapeCleanHTML($!pp.getProperty("group"))",
+     expts:$om.getAssessmentCount($pp.getProperty("project")),
+     canEdit:$edit_projects.contains($pp.getProperty("project"))});
+#end
+
+   var dataSource = new YAHOO.util.DataSource(XNAT.app.subject.shared_projects);
+   		dataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+   		dataSource.responseSchema = {
+     		fields:["id","name","label","group","expts","canEdit"]
+   		};
+   		
+   XNAT.app.subject.cfDT=new YAHOO.widget.DataTable("sharing_summary_table",[
+   		{key:"button", label:"Unshare",formatter:function(el, oRecord, oColumn, oData) {
+    					if(oRecord.getData("canEdit"))
+				      el.innerHTML = "<button type=\"button\" class=\"yui-dt-button\"><i class=\"fa fa-close\"></i></button>";
+				    else
+				   	   el.innerHTML="N/A";
+   	    }},
+   		{label:"$displayManager.getSingularDisplayNameForProject()",key:"name"},
+   		{label:"Label",key:"label",formatter:function(elCell, oRecord, oColumn, oData){
+     			elCell.innerHTML = oRecord.getData("label");
+     			if(oRecord.getData("canEdit"))elCell.innerHTML+=			"<a onclick=\"modifyLabel({'id':'" + oRecord.getData("id") +"','name':'" + oRecord.getData("name") +"','label':'" + oRecord.getData("label") +"','group':'" + oRecord.getData("group") +"','expts':'" + oRecord.getData("expts") +"','canEdit':" + oRecord.getData("canEdit") +",'record':'" + oRecord.getCount() +"'})\"><i class=\"fa fa-edit\" title=\"Edit\"></i></a>";
+    		}},
+   		{label:"Group",key:"group"},
+   		{label:"Note",key:"expts",formatter:function(elCell, oRecord, oColumn, oData){
+   		  if(oRecord.getData("expts")>0)
+     			elCell.innerHTML = "* " +oRecord.getData("expts") + " added experiment(s)";
+    		}}],dataSource,
+   		{});
+   
+   XNAT.app.subject.cfDT.render();
+   	
+   function refreshSharing(){
+      		if(XNAT.app.subject.cfDT.getRecordSet().getRecords().length==0){
+      		   		document.getElementById("sharing_summary_table").style.display="none";
+      		}
+      		else{ 
+      		   		document.getElementById("sharing_summary_table").style.display="block";
+      		}
+      		document.getElementById("sharing_summary_title").innerHTML="This $displayManager.getSingularDisplayNameForSubject().toLowerCase() has been shared into <span id='sharedInto' style='font-weight:bold;'>"+XNAT.app.subject.shared_projects.length+"</span> $displayManager.getSingularDisplayNameForProject().toLowerCase()(s):";
+   }
+   refreshSharing();
+		
+   		XNAT.app.subject.cfDT.subscribe("buttonClickEvent", function(oArgs){  
+        var oRecord = this.getRecord(oArgs.target);
+
+        if(oRecord.getData("id")==XNAT.app.subject.primary_project){
+          xmodal.message("Error", "Unable to remove $displayManager.getSingularDisplayNameForProject() owner.  Contact a system administrator.");
+          return;
+        }
+
+        if(oRecord.getData("expts")>0){
+          xmodal.message("Error", "This $displayManager.getSingularDisplayNameForProject() has created experiments which would be deleted by this action.  Please either modify the ownership of this $displayManager.getSingularDisplayNameForSubject().toLowerCase() to match that $displayManager.getSingularDisplayNameForProject(), or separately delete the created experiments.");
+          return;
+        }
+
+        xmodal.confirm({
+          title: 'Remove Share?',
+          content: 'Are you sure you want to remove this $displayManager.getSingularDisplayNameForSubject().toLowerCase() from the '+oRecord.getData("name")+' $displayManager.getSingularDisplayNameForProject().toLowerCase()?<br/><br/>Any experiments for this $displayManager.getSingularDisplayNameForSubject().toLowerCase() will also be removed from the $displayManager.getSingularDisplayNameForProject().toLowerCase().',
+          okLabel: 'Yes',
+          cancelLabel: 'No',
+          okAction: function(){
+            var deleteCallback={
+              success:function(o){
+                closeModalPanel("share");
+                document.getElementById("s_projects").add(new Option(oRecord.getData("name"), oRecord.getData("id")));
+                XNAT.app.subject.cfDT.deleteRow(o.argument.oArgs.target);
+                for(var i=0; i<XNAT.app.subject.shared_projects.length; i++){
+                  if(XNAT.app.subject.shared_projects[i].id == o.argument.oRecord._oData.id){
+                    XNAT.app.subject.shared_projects.splice(i, 1);
+                  }
+                }
+                $('#sharedInto').text(XNAT.app.subject.shared_projects.length);
+              },
+              failure:function(o){
+                closeModalPanel("share");
+                xmodal.message("Error", "Unable to remove $displayManager.getSingularDisplayNameForSubject().toLowerCase() from "+o.argument.oRecord.getData("name") + "<br/><br/>" + o.statusText);
+              },
+              cache:false, // Turn off caching for IE
+              scope:this,
+              argument:{"oRecord":oRecord,"oArgs":oArgs}
+            };
+
+            openModalPanel("share","Un-sharing $displayManager.getSingularDisplayNameForSubject().toLowerCase()...");
+            var label=(oRecord.getData("label")=="" ||oRecord.getData("label")==null)?"$om.getId()":oRecord.getData("label");
+            var uri=serverRoot +'/REST/projects/' +oRecord.getData("id")+'/subjects/'+ label +'?format=json&XNAT_CSRF='+csrfToken+'&event_reason=standard unshare';
+            YAHOO.util.Connect.asyncRequest('DELETE',uri,deleteCallback,null,this);
+          },
+          cancelAction: function(){}
+        });
+   		});
+				
+function restShare(_shareAll){
+	if(document.getElementById("s_projects").selectedIndex>0){
+		if(XNAT.app.subject==undefined){
+			XNAT.app.subject=new Object();
+		}
+		XNAT.app.subject.share_expts=new Array();
+		for(var _sAC=0;_sAC<_a.length;_sAC++){
+			if((_a[_sAC].hasProject=="true" || _shareAll) && _a[_sAC].canRead==true){
+				XNAT.app.subject.share_expts.push(_a[_sAC]);
+			}
+		}
+		XNAT.app.subject.Sharer=new RestSharer(XNAT.app.subject.share_expts,{defaultHeight:450,defaultWidth:700,project:{id:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].value,label:document.getElementById("s_projects").options[document.getElementById("s_projects").selectedIndex].text}});
+		XNAT.app.subject.Sharer.init();
+		XNAT.app.subject.Sharer.oncomplete.subscribe(function(e,args){
+			
+			if(args[1] != "$displayManager.getSingularDisplayNameForElement($om.getXSIType())"){
+				return; // Don't update the table if we shared an assessor of this data type 
+			}
+			
+			var newSP= {	id:       XNAT.app.subject.Sharer.config.project.id,
+							name:     XNAT.app.subject.Sharer.config.project.label,
+							label:    args[0],
+							group:    "",
+							expts:    0,
+							canEdit:  true
+						};
+			XNAT.app.subject.cfDT.addRow(newSP);
+			XNAT.app.subject.shared_projects.push(newSP);
+			document.getElementById("s_projects").remove(document.getElementById("s_projects").selectedIndex);
+			document.getElementById("s_projects").selectedIndex=0;
+			refreshSharing();
+		},this,this);
+	}else{
+		xmodal.message("No $displayManager.getSingularDisplayNameForProject().toLowerCase() specified", "Please specify a $displayManager.getSingularDisplayNameForProject().");
+	}
+}
+
+				function modifyLabel(row){
+    var config ={uri:serverRoot +"/REST/projects/" + row.id +"/subjects",header:"$displayManager.getSingularDisplayNameForSubject()","currentLabel":row.label,"project":row.id,"row":row};
+
+    if(XNAT.app._label==undefined)XNAT.app._label=new Object();
+    XNAT.app._label.LabelEditor=new XNAT.app._label.LabelEditorP(config,config.uri,config.currentLabel);
+    XNAT.app._label.LabelEditor.onModification.subscribe(function (obj,obj2){
+         XNAT.app.subject.cfDT.updateRow(this.config.row.record,this.config.row);
+         XNAT.app.subject.	shared_projects[this.config.row.record]=this.config.row;
+         refreshSharing();
+        xmodal.message("Record updated", "Refresh the page to see the update.");
+      });
+    XNAT.app._label.LabelEditor.render();
+    XNAT.app._label.LabelEditor.panel.show();
+  }
+</script>

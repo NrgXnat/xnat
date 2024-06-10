@@ -1,0 +1,55 @@
+<!--BEGIN ReportProjectSpecificFields.vm -->
+#set($groups=$om.getFieldDefinitionGroups($item.getXSIType(), $project))
+#if($groups.size()>0)
+	#foreach($group in $groups)
+		#if($group.getFields_field().size()>0)
+            #if(!$hdrAdded)
+	            <h3 style="margin: 1em 0 0.5em;">Custom Variable Sets</h3>
+                #set($hdrAdded=true)
+            #end
+		<table id="customvar-$group.getId()" class="xnat-table compact alt1">
+            <thead>
+            <th colspan="2" class="left">
+                #if($group.getDescription())$group.getDescription()#else $group.getId() Fields#end
+            </th>
+            </thead>
+            <tbody>
+            #foreach($f in $group.getFields_field())
+                #if($!om.getProperty($f.getXmlpath()))
+                <tr>
+                    <th>#escapeCleanHTML($!f.getName())</th>
+                    <td>#escapeCleanHTML($!om.getProperty($f.getXmlpath()))</td>
+                </tr>
+                #end
+            #end
+            </tbody>
+        </table>
+		<br>
+
+		#end
+	#end
+#end
+<br>
+<div id="customFieldsRow" style="width: 75%; overflow-y:auto">
+<h3 style="margin: 1em 0 0.5em;">Custom Field Sets</h3>
+<div id="formio" class="xnat-bootstrap" style="width: 75%; overflow-y:auto"  data-id="$!om.getId()" data-type="$!om.getXSIType()" data-project="$!om.getProject()"></div>
+
+
+<script type="text/javascript"> 
+   var formOptions = {  readOnly:true,
+                        renderMode: 'html',
+                        buttonSettings: {
+                             showCancel: false,
+                             showSubmit: false,
+                             showNext: false,
+                             showPrevious: false
+                           }
+                     };
+</script>
+
+#parse('screens/formioJSIncludes.vm')
+#parse('screens/formioIncludes.vm')
+<hr>
+</div>
+
+<!--END ReportProjectSpecificFields.vm -->

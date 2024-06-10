@@ -1,0 +1,138 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#macro(dateEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatDateBox($field $item $vr $years)</td>
+</tr>
+#end
+
+#macro(textEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatTextBox($field $item "" $vr)</td>
+</tr>
+#end
+
+#macro(tableHeaderNCols $header $subheads)
+<tr>
+	<th>$header</th>
+	#foreach($subhead in $subheads)
+	<th>$subhead</th>
+	#end
+</tr>
+#end
+
+#macro(textEditNColRow $name $fields)
+<tr>
+	<td>$name</td>
+	#foreach($field in $fields)
+		<td>#if("" != $field)#xdatTextBox($field $item "" $vr)#end</td>
+	#end
+#end
+
+<!-- Builds a select box, displaying the choices in disp_values
+  -- and passing on the corresponding value from values.
+  -- Similar to (simpler than) xdatSelectBox, but no custom values are
+  -- allowed.
+  -- (This would be cleaner as a map, but map literals aren't implemented
+  --  in Velocity 1.3)
+  -->
+#macro (selectBox $name $item $defaultValue $values $disp_values $vr)
+#if ($vr)
+	#if ($vr.getField($name))
+		<font color="red">&#8658</font>
+	#end
+#end
+	#if ($item.getProperty($name))
+		<select name="$name">
+	#else
+		<select>
+	#end
+	<option value="">(SELECT)</option>
+	#foreach ($value in $values)
+		#set ($valueIndex = $velocityCount - 1)
+		#if ($defaultValue == $value)
+		  #set ($selectedAttribute = "selected=""true""")
+		#else
+		  #set ($selectedAttribute = "")
+		#end
+		#if ($disp_values && $disp_values.get($valueIndex))
+			<option $selectedAttribute value=$value>$disp_values.get($valueIndex)</option>
+		#else
+			<option $selectedAttribute>$value</option>
+		#end
+	#end		
+		</select>
+#end
+
+
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#set($years = [ $!turbineUtils.getYear()..1990])
+
+#if ($data.message)
+<div class="alert"> $data.message</div>
+#end
+
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+
+
+<br>
+<div class="edit_title">Yale Global Tic Severity Scale</div>
+#parse("/screens/xnat_edit_subjectAssessorData.vm")
+<div class="edit_header1">$displayManager.getSingularDisplayNameForImageSession() Info</div><br>
+
+<table class="session_info_edit">
+	#dateEditRow("Date" "xnat_a:ygtssData/date")
+	#textEditRow("Time" "xnat_a:ygtssData/time")
+	#textEditRow("Visit ID" "xnat_a:ygtssData/visit_id")
+	#textEditRow("Filled Out By" "xnat_a:ygtssData/filledOutBy")
+	<tr>
+		<td>Current or worst ever?</td>
+		<td>#selectBox("xnat_a:ygtssData/period" $item "" ["current", "worst ever"] ["(C)urrent", "(W)orst ever"] $vr)</td>
+	</tr>
+	#textEditRow("Worst ever age (if worst ever)" "xnat_a:ygtssData/worstEverAge")
+	#textEditRow("Impairment<br>(0=none; 50=severe)" "xnat_a:ygtssData/impairment")
+	#tableHeaderNCols("" ["Motor", "Phonic"])
+	#textEditNColRow("Number" ["xnat_a:ygtssData/motor/number", "xnat_a:ygtssData/phonic/number"])
+	#textEditNColRow("Frequency" ["xnat_a:ygtssData/motor/frequency", "xnat_a:ygtssData/phonic/frequency"])
+	#textEditNColRow("Intensity" ["xnat_a:ygtssData/motor/intensity", "xnat_a:ygtssData/phonic/intensity"])
+	#textEditNColRow("Complexity" ["xnat_a:ygtssData/motor/complexity", "xnat_a:ygtssData/phonic/complexity"])
+	#textEditNColRow("Interference" ["xnat_a:ygtssData/motor/interference", "xnat_a:ygtssData/phonic/interference"])
+	#textEditNColRow("Inventory" ["xnat_a:ygtssData/motor/inventory", "xnat_a:ygtssData/phonic/inventory"])
+	#textEditNColRow("Complexity" ["xnat_a:ygtssData/motor/complexity", "xnat_a:ygtssData/phonic/complexity"])
+	<tr><td colspan=2>#parse("/screens/EditProjectSpecificFields.vm")</td></tr>
+</table>
+
+<br>
+
+<div class="edit_header2">Notes</div>
+<br>
+<textarea name="xnat_a:ygtssData.note" rows="4" cols="50" style="text-align:left;">$!notes</textarea>
+
+<hr>
+#auditTable("" "")
+
+<input type="button" onclick="javascript:history.go(-1)" value="Back"/>
+&nbsp;&nbsp;&nbsp;
+<input type="button" onclick="validateForm();" name="eventSubmit_doInsert" value="Submit"/>
+
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateSubjectAssessorForm();
+   return false;
+}
+</script>

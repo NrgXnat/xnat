@@ -1,0 +1,6 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("NoMenu.vm")
+
+<table width="600">
+<tr><td>&nbsp;</td></tr>
+<tr><td><div class="alert">$data.getMessage()</div></td></tr></table>

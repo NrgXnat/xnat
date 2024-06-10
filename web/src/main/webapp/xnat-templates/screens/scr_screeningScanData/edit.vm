@@ -1,0 +1,19 @@
+					  <tr valign="top"> <!-- each scan generates a TR with editable fields -->
+							<td>Scan ID: 
+							</td>
+							<td>
+								#xdatStringBoxWSize("scr:screeningAssessment/scans/scan[$scan_counter]/imagescan_id" $item "" $vr 10)		
+							</td>
+							<td valign="top"> 
+							  <label>Comments:</label>
+							</td>
+							<td>
+								#xdatTextArea("scr:screeningAssessment/scans/scan[$scan_counter]/comments" $item "" $vr 3 30)
+                            </td>
+							<td><label>Pass:</label>
+							</td>
+							<td>
+								#xdatBooleanRadioYesNoWithoutDefault ("scr:screeningAssessment/scans/scan[$scan_counter]/pass" $item $vr)
+							  	#xdatHiddenBox("scr:screeningAssessment/scans/scan[$scan_counter]/scr_screeningscandata_id" $item "") 
+							</td>
+						</tr>

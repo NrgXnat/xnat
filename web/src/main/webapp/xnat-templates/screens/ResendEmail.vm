@@ -1,0 +1,93 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("Noninteractive.vm")
+$page.setTitle("XDAT -- Register")
+$page.setBgColor($ui.bgcolor)
+<script>
+
+function validEmailFormat(email) {
+    var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+}
+
+// set a 'master' position for all modals on this page
+var modal_top = '20%';
+
+function requestVerificationEmail(email){
+
+    var __email = jq('#requestEmail');
+
+    email = email || __email.val();
+
+    if (!validEmailFormat(email)){
+        xmodal.message('Error','Invalid email format. Please enter an email address in the format "name@domain.com" and try again.',{action:function(){__email.focus().select()},top:modal_top});
+        return false;
+    }
+
+    xmodal.loading.open('Please Wait...');
+
+    var msg = {} ;
+    msg.buttonLabel = 'OK';
+    msg.top = modal_top;
+
+    var requestURL = serverRoot + '/data/services/sendEmailVerification?email=' + encodeURIComponent(email) ;
+
+    var request = jQuery.ajax({
+        type: 'POST',
+        url: requestURL
+    });
+
+    request.done(function( data, status ){
+        xmodal.loading.close();
+        msg.title = 'Email Sent';
+        msg.content = 'A verification email has been sent to ' + email + '.';
+        msg.action = function(){
+            if (window.requestModal) {
+                xmodal.close(window.requestModal);
+            }
+            else {
+                xmodal.closeAll();
+            }
+            window.location = serverRoot + '/app/template/Login.vm';
+        };
+        xmodal.message(msg)
+    });
+
+    request.fail(function( data, status, error ){
+        xmodal.loading.close();
+        //xmodal.closeAll();
+
+        var _status = data.status;
+
+        msg.title = 'Error';
+
+        if (_status === 503){
+            msg.content = 'You have exceeded the allowed number of email requests. Please try again later.';
+            xmodal.message(msg);
+        }
+        else if (_status === 400){
+            msg.content = 'Unknown email address.';
+            xmodal.message(msg);
+        }
+        else {
+            msg.content = 'An unexpected error has occurred. Please contact your administrator.';
+            xmodal.message(msg);
+        }
+    });
+}
+
+
+</script>
+<div valign="top">
+   <table valign="top" align="center">
+      <tr>
+         <td colspan="3" align="left">Enter your email address to resend the verification email.</td>
+      </tr>
+      <tr>
+         #formLabel("Email")
+         <td><input id="requestEmail" type="text" name="email" value="$!email"></td>
+         <td><input class="ui_sansSerifFonts" type="button" value="Request" onclick="requestVerificationEmail()"></td>
+      </tr>
+         <tr><td colspan="3"><br><br></td></tr>
+   </table>
+</div>

@@ -1,0 +1,20 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("ScreenOnly.vm")
+<br>
+
+#if ($data.getMessage()!="File Uploaded.")
+<DIV class="error">$data.message</DIV><br>
+<script type="text/javascript">
+  window.parent.showIFrame();
+</script>
+#end
+<script type="text/javascript">
+  window.parent.clearFiles();
+
+#foreach($file in $uploadedFiles)
+  window.parent.addFile("$file.get(0)","$file.get(1)","$file.get(2)");
+#end
+
+  window.parent.resetPage();
+  
+</script>

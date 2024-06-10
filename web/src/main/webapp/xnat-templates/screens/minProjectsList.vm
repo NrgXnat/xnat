@@ -1,0 +1,7 @@
+
+<script type="text/javascript" src="$content.getURI("scripts/project/minProjectsList.js")"></script>
+<div id="min_projects_list"></div>
+<script type="text/javascript">
+window.projList=new MinProjectsList("min_projects_list");
+window.projList.init();
+</script>

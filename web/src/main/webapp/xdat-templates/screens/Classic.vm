@@ -1,0 +1,5 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br><BR>
+#end
+

@@ -1,0 +1,67 @@
+
+<div class="advanced-search-fields autogen"><div class="search-group by-criteria"><h3><label>Search by Criteria <input type="checkbox" class="search-method by-criteria" value="by-criteria"></label></h3>
+<div class="search-item">
+<h5>Inserted:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("INSERT_DATE"))
+</div>
+<div class="search-item">
+<h5>Creator:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("INSERT_USER"))
+</div>
+<div class="search-item">
+<h5>URI:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("URI"))
+</div>
+<div class="search-item">
+<h5>ID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ID"))
+</div>
+<div class="search-item">
+<h5>name:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("NAME"))
+</div>
+<div class="search-item">
+<h5>description:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DESCRIPTION"))
+</div>
+<div class="search-item">
+<h5>format:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("FORMAT"))
+</div>
+<div class="search-item">
+<h5>content:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("CONTENT"))
+</div>
+<div class="search-item">
+<h5>cachePath:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("CACHEPATH"))
+</div>
+<div class="search-item">
+<h5>createdTime:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("CREATEDTIME"))
+</div>
+<div class="search-item">
+<h5>createdBy:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("CREATEDBY"))
+</div>
+<div class="search-item">
+<h5>createdEventId:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("CREATEDEVENTID"))
+</div>
+<div class="search-item">
+<h5>modifiedTime:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MODIFIEDTIME"))
+</div>
+<div class="search-item">
+<h5>modifiedBy:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MODIFIEDBY"))
+</div>
+<div class="search-item">
+<h5>modifiedEventId:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MODIFIEDEVENTID"))
+</div>
+<div class="search-item">
+<h5>digest:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DIGEST"))
+</div>
+<div class="clear"></div></div></div>

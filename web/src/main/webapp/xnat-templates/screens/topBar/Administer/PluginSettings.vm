@@ -1,0 +1,8 @@
+<!-- Sequence: 20 -->
+<li id="view-plugin-settings" class="hidden">
+    <a href="${SITE_ROOT}/app/template/Page.vm?view=admin/plugins">Plugin Settings</a>
+</li>
+
+<script>
+    XNAT.app.pluginSettings.siteSettingsMenuItem('#view-plugin-settings');
+</script>

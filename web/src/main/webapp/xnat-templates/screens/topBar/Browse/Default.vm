@@ -1,0 +1,48 @@
+<!-- Sequence: 10 -->
+<!-- allowGuest: true -->
+
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+
+#set($userHelper = $data.getSession().getAttribute("userHelper"))
+
+<!-- Browse/Default -->
+<li class="hidden"><a href="#!" class="nolink">My $!displayManager.getPluralDisplayNameForProject()</a>
+    <ul id="my-projects" class="shadowed dark-shadow">
+        <!-- Sequence: 10 -->
+    </ul>
+</li>
+
+#if($siteConfig.securityAllowNonPrivateProjects || $turbineUtils.isSiteAdmin($user))
+    <li class="hidden"><a id="browse-projects-menu-item" href="#!" class="nolink">All $!displayManager.getPluralDisplayNameForProject()</a>
+        <ul id="browse-projects" class="shadowed dark-shadow">
+            <!-- Sequence: 11 -->
+            #if($turbineUtils.isSiteAdmin($user) || $siteConfig.uiAllowNonAdminProjectCreation)
+                <li class="create-project hidden"><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a></li>
+            #end
+        </ul>
+    </li>
+#end
+
+<li class="hidden"><a href="#!" class="nolink">Favorite $!displayManager.getPluralDisplayNameForProject()</a>
+    <ul id="favorite-projects">
+        <!-- Sequence: 20 -->
+    </ul>
+</li>
+<li class="hidden"><a href="#!" class="nolink">Data</a>
+    <ul id="browse-data">
+        <li class="loading-access-browse"><a href="#!">Loading...</a></li>
+        <!-- Sequence: 30 -->
+    </ul>
+</li>
+<li class="hidden"><a href="#!" class="nolink">Stored Searches</a>
+    <ul id="stored-search-menu">
+        <!-- Sequence: 40 -->
+    </ul>
+</li>
+
+<script src="$content.getURI("/scripts/xnat/app/topnav-browse.js")"></script>

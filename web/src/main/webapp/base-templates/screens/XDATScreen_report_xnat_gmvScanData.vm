@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("GMVScan Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>GMVScan Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>image_session_ID</TD><TD>$!item.getStringProperty("xnat:gmvScanData/image_session_ID")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:gmvScanData/note")</TD></TR>
+							<TR><TD>quality</TD><TD>$!item.getStringProperty("xnat:gmvScanData/quality")</TD></TR>
+							<TR><TD>condition</TD><TD>$!item.getStringProperty("xnat:gmvScanData/condition")</TD></TR>
+							<TR><TD>series_description</TD><TD>$!item.getStringProperty("xnat:gmvScanData/series_description")</TD></TR>
+							<TR><TD>documentation</TD><TD>$!item.getStringProperty("xnat:gmvScanData/documentation")</TD></TR>
+							<TR><TD>scanner</TD><TD>$!item.getStringProperty("xnat:gmvScanData/scanner")</TD></TR>
+							<TR><TD>scanner/manufacturer</TD><TD>$!item.getStringProperty("xnat:gmvScanData/scanner/manufacturer")</TD></TR>
+							<TR><TD>scanner/model</TD><TD>$!item.getStringProperty("xnat:gmvScanData/scanner/model")</TD></TR>
+							<TR><TD>modality</TD><TD>$!item.getStringProperty("xnat:gmvScanData/modality")</TD></TR>
+							<TR><TD>frames</TD><TD>$!item.getIntegerProperty("xnat:gmvScanData/frames")</TD></TR>
+							<TR><TD>operator</TD><TD>$!item.getStringProperty("xnat:gmvScanData/operator")</TD></TR>
+							<TR><TD>startTime</TD><TD>$!item.getProperty("xnat:gmvScanData/startTime")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:gmvScanData/ID")</TD></TR>
+							<TR><TD>type</TD><TD>$!item.getStringProperty("xnat:gmvScanData/type")</TD></TR>
+							<TR><TD>UID</TD><TD>$!item.getStringProperty("xnat:gmvScanData/UID")</TD></TR>
+							<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:gmvScanData/project")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:gmvScanData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_imageScanData_share_1_NUM_ROWS=$item.getChildItems("xnat:gmvScanData/sharing/share").size() - 1)
+							#if($xnat_imageScanData_share_1_NUM_ROWS>=0)
+								#foreach($xnat_imageScanData_share_1_COUNTER in [0..$xnat_imageScanData_share_1_NUM_ROWS])
+<!-- BEGIN xnat:gmvScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:gmvScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>share</TD><TD>$!item.getStringProperty("xnat:gmvScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/share")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:gmvScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/label")</TD></TR>
+													<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:gmvScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/project")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:gmvScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_2_NUM_ROWS=$item.getChildItems("xnat:gmvScanData/file").size() - 1)
+							#if($xnat_abstractResource_2_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_2_COUNTER in [0..$xnat_abstractResource_2_NUM_ROWS])
+<!-- BEGIN xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_3_NUM_ROWS=$item.getChildItems("xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_3_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_3_COUNTER in [0..$xnat_abstractResource_tag_3_NUM_ROWS])
+<!-- BEGIN xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:gmvScanData/file[$xnat_abstractResource_2_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:gmvScanData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:gmvScanData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>$!item.getStringProperty("xnat:gmvScanData/validation/method")</TD></TR>
+										<TR><TD>date</TD><TD>$!item.getProperty("xnat:gmvScanData/validation/date")</TD></TR>
+										<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat:gmvScanData/validation/notes")</TD></TR>
+										<TR><TD>validated_by</TD><TD>$!item.getStringProperty("xnat:gmvScanData/validation/validated_by")</TD></TR>
+										<TR><TD>status</TD><TD>$!item.getStringProperty("xnat:gmvScanData/validation/status")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:gmvScanData/validation -->
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:gmvScanData -->
+		</TD>
+	</TR>
+</TABLE>

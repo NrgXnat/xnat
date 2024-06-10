@@ -1,0 +1,139 @@
+#* @vtlvariable name="assessors" type="java.util.List" *#
+#* @vtlvariable name="assessor" type="org.nrg.xdat.om.XnatImageassessordata" *#
+#* @vtlvariable name="asset" type="org.nrg.xdat.om.XnatAbstractprojectasset" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="experiment" type="org.nrg.xdat.om.XnatExperimentdata" *#
+#* @vtlvariable name="experiments" type="java.util.Map" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="projectAssets" type="java.util.List" *#
+#* @vtlvariable name="projectData" type="java.util.Map" *#
+#* @vtlvariable name="subject" type="org.nrg.xdat.om.XnatSubjectdata" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+<!-- BEGIN xnat-templates/screens/XDATScreen_delete_xnat_projectData.vm -->
+#set($projectId = $om.id)
+<h2 class="edit_header1">Delete Project: #escapeCleanHTML($!om.getName())</h2>
+<form name="form1" method="post" action="$link.setAction("DeleteProjectData")" ONSUBMIT="return validateForm();">
+    <p>Select content to delete from this project. </p>
+    <div id="projectDeleteTree">
+        <ul>
+            <li yuiConfig='{"type":"TaskNode","expanded":true,"ru":"/data/projects/$projectId","redirectHome":true,"canRead":true,"xsiType":"Project","date":"","primary_label":"$projectId"}' class="expanded">Delete Entire $displayManager.getSingularDisplayNameForProject()
+                <ul>
+                    #if($projectAssets.size() > 0)
+                    <li yuiconfig='{"type":"TaskNode","expanded":true,"canRead":true,"xsiType":null}' class="expanded group-selector">
+                        Select All $displayManager.getSingularDisplayNameForProject() Assessors:
+                        <ul>
+                            #foreach($asset in $projectAssets)
+                                <li yuiConfig='{"type":"TaskNode","ru":"/data/projects/$projectId/experiments/$asset.getId()" #if($asset.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"$!asset.getItem().getProperName()","date":"$!asset.getDate()",primary_label:"$!asset.getIdentifier($projectId)"}'>
+                                    $!asset.getItem().getProperName(): $!asset.getDate() $asset.getIdentifier($projectId) $!asset.getType()
+                                </li>
+                            #end
+                        </ul>
+                    </li>
+                    #end
+                    #if(!$projectData.isEmpty())
+                    <li yuiconfig='{"type":"TaskNode","expanded":true,"canRead":true, "xsiType":null}' class="expanded group-selector">
+                        Select All $displayManager.getPluralDisplayNameForSubject() and $displayManager.getSingularDisplayNameForSubject() Assessors:
+                        <ul>
+                            #foreach($subject in $projectData.keySet())
+                                <li yuiConfig='{"type":"TaskNode","ru":"/data/projects/$projectId/subjects/$subject.getId()" #if($subject.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"Subject","date":"",primary_label:"$!subject.getIdentifier($projectId)"}'>
+                                    $displayManager.getSingularDisplayNameForSubject(): $!subject.getIdentifier($projectId,false) #if($subject.project != $projectId) (shared from $subject.project: only shared reference will be deleted) #end
+                                    <ul>
+                                        #set ($experiments = $projectData.get($subject))
+                                        #foreach($experiment in $experiments.keySet())
+                                            <li yuiConfig='{"type":"TaskNode","ru":"/data/projects/$projectId/subjects/$subject.getId()/experiments/$experiment.getId()" #if($experiment.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"$!experiment.getItem().getProperName()","date":"$!experiment.getDate()",primary_label:"$!experiment.getIdentifier($projectId)"}'>
+                                                $!experiment.getItem().getProperName(): $!experiment.getDate() $experiment.getIdentifier($projectId) $!experiment.getType() $!experiment.getSessionType() #if($experiment.project != $projectId) (shared from $experiment.project: only shared reference will be deleted) #end
+                                                <ul>
+                                                    #set ($assessors = $experiments.get($experiment))
+                                                    #foreach($assessor in $assessors)
+                                                        <li yuiConfig='{"type":"TaskNode","ru":"/data/projects/$projectId/subjects/$subject.getId()/experiments/$experiment.getId()/assessors/$assessor.getId()" #if($assessor.canRead($user)),"canRead":true#else,"canRead":false#end,"xsiType":"$!assessor.getItem().getProperName()","date":"$!assessor.getDate()",primary_label:"$!assessor.getIdentifier($projectId)"}'>
+                                                            $!assessor.getItem().getProperName(): $!assessor.getDate() $!assessor.getIdentifier($projectId) $!assessor.getType() $!assessor.getSessionType() #if($assessor.project != $projectId) (shared from $assessor.project: only shared reference will be deleted) #end
+                                                        </li>
+                                                    #end
+                                                </ul>
+                                            </li>
+                                        #end
+                                    </ul>
+                                </li>
+                            #end
+                        </ul>
+                    </li>
+                    #end
+                </ul>
+            </li>
+        </ul>
+    </div>
+    <script type="text/javascript" src="$content.getURI("scripts/yui/build/treeview/taskNode.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/restDeleter.js")"></script>
+    <style type="text/css">
+        #projectDeleteTree {
+            border: 1px solid #e0e0e0;
+            margin: 1em 0;
+            padding: 1em;
+        }
+    </style>
+    <script type="text/javascript">
+        var pTree = document.getElementById("projectDeleteTree");
+        window.pdTree = new YAHOO.widget.TaskTreeView(pTree);
+        window.pdTree.draw();
+
+        function deleteEntries() {
+            var _a = window.pdTree.getCheckedNodes();
+            if (_a.length == 0) {
+                xmodal.message('Delete Action', 'Please select at least one item to delete.');
+            } else {
+                if (_a.length < window.pdTree.getNodeCount()) {
+                    // Not all boxes are selected, don't delete entire project
+                    let projectNode = window.pdTree.getNodeByProperty("primary_label", "$!om.getId()");
+                    projectNode.setCheckState(0);
+                    _a = window.pdTree.getCheckedNodes();
+                }
+                var removeFiles = document.getElementById("removeFiles");
+                if (removeFiles.checked) {
+                    xmodal.confirm({
+                        content: "Submission will cause the permanent deletion of all meta-data and physical files for the selected items.",
+                        okAction: function() {
+                            doDelete(_a);
+                        }
+                    });
+                } else {
+                    xmodal.confirm({
+                        content: "If you don't delete the project's associated files from the file system, the files may later be accessible if someone creates a project with the same ID as the project you're deleting. Please confirm that you want to leave the files on the physical file system after deleting the project meta-data.",
+                        okAction: function() {
+                            doDelete(_a);
+                        }
+                    });
+                }
+            }
+        }
+
+        function doDelete(raw) {
+            var _items = new Array();
+            for (var cnAC = 0; cnAC < raw.length; cnAC++) {
+                var tO = raw[cnAC].data;
+                tO.label = raw[cnAC].label;
+                _items.push(tO);
+            }
+            window.deleter = new RestDeleter(_items, {defaultHeight: 450, defaultWidth: 600});
+            window.deleter.init();
+        }
+    </script>
+
+    <p><label><input type="checkbox" value="true" name="removeFiles" id="removeFiles" checked defaultchecked/> Remove Files from File System</label></p>
+    <table>
+        <tr>
+            <td>&nbsp;</td>
+        </tr>
+        #auditBoxes("" "" "" "Removed Project")
+        <tr>
+            <td>
+                <input type="hidden" name="project" value="$projectId"/>
+                <input type="button" name="eventSubmit_doPerform" value="Delete" onclick="deleteEntries();" class="btn primary"/>
+                <a href="$content.getURI("/data/projects/${om.getId()}?format=html")"><input type="button" name="cancel" value="Cancel"></a>
+            </td>
+        </tr>
+    </table>
+</form>
+<!-- END xnat-templates/screens/XDATScreen_delete_xnat_projectData.vm -->

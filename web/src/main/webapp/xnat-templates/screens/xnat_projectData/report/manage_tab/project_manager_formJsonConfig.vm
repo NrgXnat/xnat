@@ -1,0 +1,47 @@
+<!-- BEGIN xnat-templates/screens/xnat_projectData/report/manage_tab/formJsonConfig.vm -->
+
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/datatypeManager.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/protocolManager.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/assignDialog.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/projectListModal.js')"></script>
+<script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/builderConfiguration.js')"></script>
+
+
+<h3 id="cfConfigManage"> Custom Form Configuration </h3>
+
+<div class="xnat-bootstrap">
+    <div class="xnat-bootstrap" id="form-project-json-container"></div>
+    <div id="editForm" class="xnat-bootstrap html-template">
+        <div class="xnat-bootstrap" id="formio-project-builder"></div>
+    </div>
+    <div  id="addFormVariable" class="xnat-bootstrap html-template">
+        <div  id="formio" class="xnat-bootstrap"></div>
+        <div  id="formio-container" class="xnat-bootstrap container-fluid"></div>
+    </div>
+
+</div>
+<script>
+  var cfProjManagerInitd=false;
+  jq("#cfConfigManage").on('click', function() {
+    if(!cfProjManagerInitd){
+      cfProjManagerInitd=true;
+      openModalPanel("cfConfigModal","Loading form configurations");
+      setTimeout(function() {
+        ##this gives the browser time to finish the cick event before it 'locks up' for the form init.
+        jq("#cfConfigManage").trigger( "loadForms");
+      }, 100);
+    }
+    return true;
+  });
+  jq( "#cfConfigManage" ).on( "loadForms", function( event, param1, param2 ) {
+    XNAT.customFormManager.projectOwner.projectFormManager.init();
+  });
+</script>
+
+
+
+<script src="$content.getURI('/scripts/xnat/app/formJson/formJsonConfig_project.js')" type="text/javascript"></script>
+
+<!-- END xnat-templates/screens/xnat_projectData/report/manage_tab/formJsonConfig.vm -->
+
+

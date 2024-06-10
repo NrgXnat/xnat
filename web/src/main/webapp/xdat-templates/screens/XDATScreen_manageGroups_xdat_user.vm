@@ -1,0 +1,68 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<p align=left>
+<TABLE border="0" width="95%">
+	<TR>
+		<TD align=left align="left">
+			<form name="form1" method="post" action="$link.setAction("ModifyUserGroups")">
+			<table border="0" align="left">
+				<tr>
+					<TH align=left>User Groups for $!userObject.getFirstname() $!userObject.getLastname() ($!userObject.getLogin()) $!tempUser.getEmail()</TH>
+				</tr>
+				<TR>
+					<TD align=left valign=top>&nbsp;
+					</td>
+				</tr>
+							  #set($groupCounter=0)
+							#if($projectGroups.size()>0)
+	<TR><TD>
+							 <Table border="0">
+							  <TR><TH align="left" colspan="3">$displayManager.getSingularDisplayNameForProject() Groups<BR><BR></TH></TR>
+#foreach($group in $projectGroups.keySet())
+ #set($localGroups = $projectGroups.get($group))
+   <TR>
+     <TD>$group:</TD>
+     <TD>
+      <input type="radio" name="xdat:user.groups.groupID[$groupCounter].groupID" value=""/> None
+     </TD>
+      #foreach($local in $localGroups)
+     <TD>
+       <input type="radio" name="xdat:user.groups.groupID[$groupCounter].groupID" value="$local.get(0)" #if($userObject.getGroup($local.get(0)))CHECKED#end/> $local.get(1)
+     </TD>
+      #end
+   </TR>
+							  #set($groupCounter=$groupCounter+1)
+#end
+	 </TABLE>
+	</TD></TR>
+	#end
+	<TR><TD>
+							 <Table border="0">
+							  <TR><TH align="left" colspan="2">Custom Groups<BR><BR></TH></TR>
+#foreach($group in $allGroups.keySet())
+   <TR>
+     <TD>$allGroups.get($group):</TD>
+     <TD><input type="checkbox" name="xdat:user.groups.groupID[$groupCounter].groupID" value="$group" #if($userObject.getGroup($group))CHECKED#end/></TD>
+   </TR>
+							  #set($groupCounter=$groupCounter+1)
+#end 
+	 </TABLE>
+	</TD></TR>
+				<INPUT type="hidden" name="xdat:user.login" value="$!item.getProperty("login")"/>
+				#xdatEditProps($item $edit_screen)
+				<TR>
+					<TD ALIGN=left>&nbsp;<BR><input type="submit" name="eventSubmit_doPerform" value="Submit"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" ONCLICK="javascript:history.go(-1)" value="Back"/>
+					</TD>
+				</TR>
+			</table>
+			</form>
+		</TD>
+	</TR>	
+</table>
+</p>

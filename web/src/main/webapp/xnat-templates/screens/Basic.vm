@@ -1,0 +1,27 @@
+## There's not a Java class file for this template yet.
+###* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("Basic.vm")
+<head>
+    <!-- start xnat-templates/screens/Basic.vm -->
+
+    ## base JavaScript libraries
+    #parse("/navigations/BaseJS.vm")
+
+    ## XNAT css and JLAPI scripts
+    #parse("/navigations/AppJS.vm")
+
+</head>
+<body id="basic-page" class="xnat app basic">
+
+    <!-- Bare-bones HTML file. No YUI files and only -->
+    <!-- essential js and css files for new pages. -->
+
+
+    <!-- ================= -->
+    <!-- CONTENT GOES HERE -->
+    <!-- ================= -->
+
+
+    <!-- end xnat-templates/screens/Basic.vm -->
+</body>

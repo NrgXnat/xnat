@@ -1,0 +1,22 @@
+<tr>
+	<th>Pass/Fail</th>
+	<td style="font-weight:bold;">
+		#if ($!scan.getStringProperty("xnat:otherQcScanData/pass").equals("1"))
+			<span style="color:green">Passed</span>
+		#elseif($!scan.getStringProperty("xnat:otherQcScanData/pass").equals("0"))
+			<span style="color:red">Failed</span>
+		#else
+			<span style="color:gold">Unknown ($!scan.getStringProperty("xnat:otherQcScanData/pass")</span>
+		#end
+	</td>
+</tr>
+
+#if( $!scan.getStringProperty("xnat:otherQcScanData/comments") )
+	<tr><th>Additional QC Comments</th><td>$!scan.getStringProperty("xnat:otherQcScanData/comments")</td></tr>
+#end	
+
+
+	
+
+	
+

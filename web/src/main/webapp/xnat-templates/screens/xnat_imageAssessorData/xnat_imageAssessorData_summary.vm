@@ -1,0 +1,22 @@
+									<TR><TH align="left">$displayManager.getSingularDisplayNameForSubject(): </TH><TD>
+					#set($part_id = $!mr.getSubjectData().getId())
+					#set ( $click = "$link.setAction('DisplayItemAction').addPathInfo('search_element','xnat:subjectData').addPathInfo('search_field','xnat:subjectData.ID').addPathInfo('search_value',$!part_id).addPathInfo('popup',$!popup).addPathInfo('project',$project)" )
+					<A CLASS=b href="$click">$!mr.getSubjectData().getIdentifier($project,false)</A></TD></TR>
+					<TR align="left"><TH ALIGN="left">Date of Birth: </TH><TD>$!mr.getSubjectData().getDOB()</TD></TR>
+					<TR align="left"><TH ALIGN="left">Age at Scan:</TH><TD>$!mr.SubjectAge</TD></TR>
+					<TR align="left"><TH ALIGN="left">Cohort: </TH><TD>$!mr.getSubjectData().getCohort()</TD></TR>
+					<TR><TH align="left">$displayManager.getSingularDisplayNameForImageSession() Id: </TH>
+					#set($mr_id=$item.getProperty("${search_element}.imageSession_ID"))
+               #set($xsi_type=$mr.getXSIType())
+               #set($xsi_type_idstr="${xsi_type}.ID")
+				#if ($mr)
+					  #set ( $click = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$xsi_type).addPathInfo('search_field',$xsi_type_idstr).addPathInfo('search_value',$mr_id).addPathInfo('popup',$!popup).addPathInfo('project',$project)" )
+				  <TD><A CLASS=b href="$click">$!mr.getIdentifier($project,false)</A></TD>
+					#else
+						<TD>$!item.getProperty("${search_element}.imageSession_ID")</TD>
+					#end
+					</TR>
+					<TR><TH align="left" width=200>Date of scan: </TH><TD>$!mr.getProperty("date")</TD></TR>
+					<TR><TH align="left" width=200>Type: </TH><TD>$!mr.getProperty("session_type")</TD></TR>
+					<TR><TH align="left" width=200>Scanner: </TH><TD>$!mr.getProperty("scanner")</TD></TR>
+					<TR><TH align="left" width=200>Date of assessment: </TH><TD>$!item.getProperty("date")</TD></TR>

@@ -1,0 +1,132 @@
+/*
+ * web: xmodal.css
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
+/*
+    CSS for xmodal-v1 script
+*/
+
+/*html.noscroll { position: relative ; overflow-y: scroll ; width: 100% ; }*/
+
+body.xmodal-v1, body.xmodal { display: block !important ; overflow-y: scroll ; } /* the body will not disappear! */
+/*body.xmodal-v1.open { position: fixed !important ; overflow: hidden ; } *//* hold the page still while the xModal is open */
+
+div.xmodal-mask { display: none ; margin: auto ; position: fixed ; left: 0 ; top: 0 ; width: 100% ; height: 100% ; background: rgba(0,0,0,0.3) ; }
+div.xmodal-mask { background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABhJREFUeNpiZGBg8GVAAkwMaICwAECAAQAUlABVw7mtDgAAAABJRU5ErkJggg==); }
+/*div.xmodal-mask.open { display: block ; z-index: 100 ; }*/
+
+div.xmodal {
+    display: none ; min-width: 200px ; min-height: 128px ; max-width: 92% ; max-height: 92% ;
+    position: fixed ; top: 0 ; right: 0 ; bottom: 0 ; left: 0 ; margin: auto ; overflow: hidden ;
+    background: #fff ; border: 1px solid #a0a0a0 ; box-shadow: 0 10px 30px rgba(0,0,0,0.5) ;
+    font-family: Arial, Helvetica, sans-serif ; }
+
+div.xmodal.open { display: block; }
+
+div.xmodal:focus { outline: 1px solid #808080; }
+
+div.xmodal.dialog { width: 600px ; height: 400px ; }
+
+div.xmodal.loading { min-height: 80px;  }
+div.xmodal.loading .title { height: 20px;  }
+div.xmodal.loading .title .inner { padding-left: 10px; font-size: 12px; line-height: 20px; }
+div.xmodal.loading .body > .inner { overflow: hidden !important; }
+
+div.xmodal.maxxed {
+    width: 98% !important; height: 98% !important;
+    max-width: 98% !important; max-height: 98% !important;
+    top: 0 !important; right: 0 !important;
+    bottom: 0 !important; left: 0 !important; }
+
+div.xmodal .button:hover,
+div.xmodal .close:hover { cursor: pointer ; }
+
+div.xmodal .buttons :focus { box-shadow: 0 0 5px rgba(0, 100, 200, 0.8); }
+
+div.xmodal .title {
+    height: 40px; padding: 0 ; overflow: hidden ;
+    color: #303030 ; background: #f0f0f0 ; border-bottom: 1px solid #e0e0e0 ; }
+div.xmodal .title .inner {
+    display: inline-block; padding-left: 15px ; overflow: hidden; white-space: nowrap;
+    font-size: 15px ; font-weight: normal ; line-height: 42px ; vertical-align: middle ; }
+div.xmodal .title .inner > i { color: #505050; font-weight: normal; font-style: normal; }
+div.xmodal .title .close,
+div.xmodal .title .maximize {
+    font-size: 12px;
+    width: 24px; height: 18px; margin: 0; padding: 0;
+    position: absolute ; top: 8px ; right: 8px ;
+    font-weight: normal ; text-align: center; line-height: 19px;
+    color: #808080 ; background: #f8f8f8 ;
+    border: 1px solid #a0a0a0 ; border-radius: 2px; }
+div.xmodal .title .maximize { right: 38px; }
+div.xmodal.maxxed .title .maximize .fa-expand:before { content: "\f066"; }
+div.xmodal .title .close:hover,
+div.xmodal .title .maximize:hover { color: #606060; background: #fafafa; border-color: #a0a0a0; cursor: pointer; }
+
+div.xmodal .body { width: 100% ; height: 100% ; position: absolute ; overflow: hidden ; }
+div.xmodal .body.scroll,
+div.xmodal .body.scroll > .inner { overflow: auto ; }
+div.xmodal .body > .inner > iframe {
+    width: 100%; height: 100%; position: absolute;
+    top: 0; bottom: 0; right: 0; left: 0; }
+div.xmodal .body .inner { display: none ; padding: 20px ; font-size: 13px ; line-height: 17px ; }
+div.xmodal.nopad .body .inner { padding: 0 ; }
+div.xmodal.open .body .inner { display: block ; }
+/* Only styles for the dialog elements should be in this file */
+div.xmodal .body h1,
+div.xmodal .body h2,
+div.xmodal .body h3,
+div.xmodal .body h4 { /* margin-bottom: 1em !important; */ }
+div.xmodal .body p { margin: 0 0 1em ; }
+
+div.xmodal .footer {
+    display: block ; width: 100% ; height: 60px ; margin-top: -1px ; padding: 0 ;
+    position: absolute ; bottom: 0 ;
+    background: #f0f0f0; border-top: 1px solid #e0e0e0 ; overflow: hidden ; }
+div.xmodal .footer.white { background: #fff ; border-top-color: #fff ; }
+div.xmodal .footer .inner { display: table ; width: 100% ; height: 100% ; position: relative ; }
+div.xmodal .footer .content { display: table-cell ; padding-left: 15px ; vertical-align: middle ; text-align: left ; }
+div.xmodal .footer .buttons { display: table-cell ; padding-right: 15px ; vertical-align: middle ; text-align: right ; }
+div.xmodal .footer .buttons .link { display: inline-block; padding: 10px; font-size: 13px; text-decoration: underline; }
+div.xmodal .footer .button {
+    display: inline-block ; margin-left: 10px ; padding: 6px 12px !important ; float: right ;
+    vertical-align: middle; box-shadow: 0 1px 1px #a0a0a0;
+    font-size: 13px ; font-weight: normal; letter-spacing: 0.02em; text-decoration: none !important ; }
+div.xmodal .footer a.button { height: 24px ; line-height: 24px; } /* set height only for <a> buttons */
+div.xmodal .footer .button,
+div.xmodal .footer .button.cancel.default {
+    color: #000 ; background: #f8f8f8 linear-gradient( #ffffff, #f0f0f0 ) ; border: 1px solid #a0a0a0 ; border-radius: 3px ; }
+div.xmodal .footer .button:hover,
+div.xmodal .footer .button.cancel.default:hover { background: #e8e8e8; box-shadow: none; }
+div.xmodal .footer .button:active,
+div.xmodal .footer .button.cancel.default:active { color: inherit ; background: #d0d0d0 }
+div.xmodal .footer .button.default { color: #fff ; background: #1A75BB linear-gradient( #3C8BC7, #1A75BB ); border-color: #085895 ; }
+div.xmodal .footer .button.default:active { background: #1A75BB ; border-color: #085895 ; }
+div.xmodal .footer .button.default:hover { background: #1A75BB; }
+div.xmodal .footer .button.hidden,
+div.xmodal .footer .button.disabled { opacity: 0.6; }
+div.xmodal .footer .button.hidden:hover,
+div.xmodal .footer .button.disabled:hover { cursor: not-allowed !important ; }
+
+/* Override bootstrap */
+div.xmodal button.close {
+    opacity: 1;
+    text-shadow: none;
+}
+
+div.xmodal.loading .title .close { display: none ; }
+div.xmodal.loading .body .inner { text-align: center ; }
+
+.ie8 body div.xmodal .footer .button { /* margin: 10px ; */ padding: 3px 6px ; }
+.ie9 body div.xmodal .footer .button { /* margin: 12px ; */ padding: 4px 6px 3px ; }
+
+.modal_content, .modal_template { display: none ; }
+
+/* sorry Will */
+
+div.xmodal.embedded { top: 0; left: 0; border: none; box-shadow: none; display: block; z-index: auto;  }

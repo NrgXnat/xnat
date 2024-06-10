@@ -1,0 +1,41 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+<script>
+    window.loggedIn = true;
+    window.loadDataTypes = false;
+    ##        #set($username = $user.getUsername())
+    ##        #if (!$username)
+    //            window.loggedIn = false;
+    ##        #end
+</script>
+
+<script type="text/javascript">
+
+    var jq = jQuery;
+    jq.ajaxSetup({cache: false});
+
+    if (typeof XNAT == 'undefined') { XNAT = {} }
+    if (typeof XNAT.app == 'undefined') { XNAT.app = {} }
+    if (typeof XNAT.data == 'undefined') { XNAT.data = {} }
+    if (typeof XNAT.app.utils == 'undefined') { XNAT.app.utils = {} }
+
+</script>
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+
+
+<div>
+    $navigation.setTemplate("/NoninteractiveTop.vm")
+
+    <div id="layout_content2" style="display:none;">Loading...</div>
+    <div id="layout_content">$screen_placeholder</div>
+
+    $navigation.setTemplate("/DefaultBottom.vm")
+
+</div>
+
+
+$navigation.setTemplate("/htmlClose.vm")
+

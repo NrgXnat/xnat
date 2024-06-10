@@ -1,0 +1,51 @@
+#* @vtlvariable name="sectionTitle" type="java.lang.String" *#
+<style>
+    p {
+        margin-bottom: 1em;
+    }
+</style>
+
+#if(!$sectionTitle)
+    #set($sectionTitle = "<h2>XNAT Desktop Applications</h2>")
+#end
+$sectionTitle
+
+#if(!$siteConfig.getBooleanValue("uiHideXnatDesktopClientDownload"))
+    <h3>Use the new XNAT Desktop Client for Uploads and Downloads</h3>
+    <p style="width: 500px">
+        The new <a href="https://download.xnat.org/desktop-client/" target="_blank" style="font-weight: bold">XNAT Desktop Client</a>,
+        released in 2018, has been developed to handle uploads and downloads of XNAT image data. Install the Desktop Client on your Mac,
+        PC, or Linux system. Store connections to multiple XNATs. Apply DICOM Edit and anonymization scripts to your uploaded data
+        before it leaves your desktop.
+    </p>
+    <p style="width: 500px">
+        The <a href="https://download.xnat.org/desktop-client/" target="_blank" style="font-weight: bold">XNAT Desktop Client</a> also
+        installs system support for the 'xnat://' protocol, which is used to download XNAT image data from an XML manifest. The Desktop Client
+        handles large downloads with ease, and allows you to manage all data transfers &mdash; giving you the ability to pause, resume, or
+        cancel any ongoing transfer.
+    </p>
+    <p>
+        <a href="https://download.xnat.org/desktop-client/" target="_blank" class="btn1 btn-sm">Download the XNAT Desktop Client</a>
+    </p>
+#end
+
+#if(!$siteConfig.getBooleanValue("uiHideXnatUploadAssistantDownload"))
+    <h3>Download the XNAT Upload Assistant</h3>
+    <p style="width: 500px">
+        You can upload DICOM and ECAT files using the <a href="https://download.xnat.org/upload-assistant/" target="_blank" style="font-weight: bold">XNAT Upload Assistant</a>.
+        This tool is installed on your local machine and provides the ability to access
+        multiple XNAT servers from a single tool, as well as apply DICOM edit and anonymization scripts to the data before it
+        leaves your desktop, reducing the risk of exposing PHI or sensitive patient data during the transfer process.
+    </p>
+    <p>
+        <a href="https://download.xnat.org/upload-assistant/" target="_blank" class="btn1 btn-sm">Download the XNAT Upload Assistant</a>
+    </p>
+#end
+
+#addGlobalCustomScreens("desktopApplications")
+
+<div class="alert" style="width:500px">
+    Installing XNAT desktop applications requires administrator privileges for the workstation on which you wish to
+    install. If you don't have administrator privileges, please contact your IT support staff.
+</div>
+

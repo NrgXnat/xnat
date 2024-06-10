@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("ResourceCatalog Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>ResourceCatalog Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>URI</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/URI")</TD></TR>
+							<TR><TD>format</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/format")</TD></TR>
+							<TR><TD>description</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/description")</TD></TR>
+							<TR><TD>content</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/content")</TD></TR>
+							<TR><TD>cachePath</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/cachePath")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/note")</TD></TR>
+							<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/label")</TD></TR>
+							<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:resourceCatalog/file_count")</TD></TR>
+							<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:resourceCatalog/file_size")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:resourceCatalog -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:resourceCatalog/provenance -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:resourceCatalog/provenance</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+									</TABLE>
+								</TD>
+							</TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE><TR><TD>
+										#set($prov_processStep_2_NUM_ROWS=$item.getChildItems("xnat:resourceCatalog/provenance/processStep").size() - 1)
+										#if($prov_processStep_2_NUM_ROWS>=0)
+											#foreach($prov_processStep_2_COUNTER in [0..$prov_processStep_2_NUM_ROWS])
+<!-- BEGIN xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER] -->
+												<TABLE>
+													<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]</font></TH></TR>
+													<TR>
+														<TD align="left" valign="top">
+															<TABLE>
+																<TR><TD>program</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/program")</TD></TR>
+																<TR><TD>program/version</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/program/version")</TD></TR>
+																<TR><TD>program/arguments</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/program/arguments")</TD></TR>
+																<TR><TD>timestamp</TD><TD>$!item.getProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/timestamp")</TD></TR>
+																<TR><TD>cvs</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/cvs")</TD></TR>
+																<TR><TD>user</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/user")</TD></TR>
+																<TR><TD>machine</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/machine")</TD></TR>
+																<TR><TD>platform</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/platform")</TD></TR>
+																<TR><TD>platform/version</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/platform/version")</TD></TR>
+																<TR><TD>compiler</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/compiler")</TD></TR>
+																<TR><TD>compiler/version</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/compiler/version")</TD></TR>
+															</TABLE>
+														</TD>
+													</TR>
+													<TR>
+														<TD align="left" valign="top">
+															<TABLE><TR><TD>
+																#set($prov_processStep_library_3_NUM_ROWS=$item.getChildItems("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library").size() - 1)
+																#if($prov_processStep_library_3_NUM_ROWS>=0)
+																	#foreach($prov_processStep_library_3_COUNTER in [0..$prov_processStep_library_3_NUM_ROWS])
+<!-- BEGIN xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library[$prov_processStep_library_3_COUNTER] -->
+																		<TABLE>
+																			<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library[$prov_processStep_library_3_COUNTER]</font></TH></TR>
+																			<TR>
+																				<TD align="left" valign="top">
+																					<TABLE>
+																						<TR><TD>library</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library[$prov_processStep_library_3_COUNTER]/library")</TD></TR>
+																						<TR><TD>version</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library[$prov_processStep_library_3_COUNTER]/version")</TD></TR>
+																					</TABLE>
+																				</TD>
+																			</TR>
+																		</TABLE>
+<!-- END xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library[$prov_processStep_library_3_COUNTER] -->
+																	#end
+																#end
+															</TD></TR></TABLE>
+														</TD>
+													</TR>
+												</TABLE>
+<!-- END xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER] -->
+											#end
+										#end
+									</TD></TR></TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:resourceCatalog/provenance -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_tag_4_NUM_ROWS=$item.getChildItems("xnat:resourceCatalog/tags/tag").size() - 1)
+							#if($xnat_abstractResource_tag_4_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_tag_4_COUNTER in [0..$xnat_abstractResource_tag_4_NUM_ROWS])
+<!-- BEGIN xnat:resourceCatalog/tags/tag[$xnat_abstractResource_tag_4_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:resourceCatalog/tags/tag[$xnat_abstractResource_tag_4_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/tag")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:resourceCatalog/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:resourceCatalog/tags/tag[$xnat_abstractResource_tag_4_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:resourceCatalog -->
+		</TD>
+	</TR>
+</TABLE>

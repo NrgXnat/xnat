@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("Catalog Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>Catalog Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("cat:catalog/ID")</TD></TR>
+							<TR><TD>name</TD><TD>$!item.getStringProperty("cat:catalog/name")</TD></TR>
+							<TR><TD>description</TD><TD>$!item.getStringProperty("cat:catalog/description")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN cat:catalog -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($cat_catalog_metaField_1_NUM_ROWS=$item.getChildItems("cat:catalog/metaFields/metaField").size() - 1)
+							#if($cat_catalog_metaField_1_NUM_ROWS>=0)
+								#foreach($cat_catalog_metaField_1_COUNTER in [0..$cat_catalog_metaField_1_NUM_ROWS])
+<!-- BEGIN cat:catalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:catalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>metaField</TD><TD>$!item.getStringProperty("cat:catalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER]/metaField")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("cat:catalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END cat:catalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($cat_catalog_tag_2_NUM_ROWS=$item.getChildItems("cat:catalog/tags/tag").size() - 1)
+							#if($cat_catalog_tag_2_NUM_ROWS>=0)
+								#foreach($cat_catalog_tag_2_COUNTER in [0..$cat_catalog_tag_2_NUM_ROWS])
+<!-- BEGIN cat:catalog/tags/tag[$cat_catalog_tag_2_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:catalog/tags/tag[$cat_catalog_tag_2_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>tag</TD><TD>$!item.getStringProperty("cat:catalog/tags/tag[$cat_catalog_tag_2_COUNTER]/tag")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END cat:catalog/tags/tag[$cat_catalog_tag_2_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($cat_entry_3_NUM_ROWS=$item.getChildItems("cat:catalog/entries/entry").size() - 1)
+							#if($cat_entry_3_NUM_ROWS>=0)
+								#foreach($cat_entry_3_COUNTER in [0..$cat_entry_3_NUM_ROWS])
+<!-- BEGIN cat:catalog/entries/entry[$cat_entry_3_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:catalog/entries/entry[$cat_entry_3_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>URI</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/URI")</TD></TR>
+													<TR><TD>ID</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/ID")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/name")</TD></TR>
+													<TR><TD>description</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/description")</TD></TR>
+													<TR><TD>format</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/format")</TD></TR>
+													<TR><TD>content</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/content")</TD></TR>
+													<TR><TD>cachePath</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/cachePath")</TD></TR>
+													<TR><TD>createdTime</TD><TD>$!item.getProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/createdTime")</TD></TR>
+													<TR><TD>createdBy</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/createdBy")</TD></TR>
+													<TR><TD>createdEventId</TD><TD>$!item.getIntegerProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/createdEventId")</TD></TR>
+													<TR><TD>modifiedTime</TD><TD>$!item.getProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/modifiedTime")</TD></TR>
+													<TR><TD>modifiedBy</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/modifiedBy")</TD></TR>
+													<TR><TD>modifiedEventId</TD><TD>$!item.getIntegerProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/modifiedEventId")</TD></TR>
+													<TR><TD>digest</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/digest")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($cat_entry_metaField_4_NUM_ROWS=$item.getChildItems("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField").size() - 1)
+													#if($cat_entry_metaField_4_NUM_ROWS>=0)
+														#foreach($cat_entry_metaField_4_COUNTER in [0..$cat_entry_metaField_4_NUM_ROWS])
+<!-- BEGIN cat:catalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField[$cat_entry_metaField_4_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:catalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField[$cat_entry_metaField_4_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>metaField</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField[$cat_entry_metaField_4_COUNTER]/metaField")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField[$cat_entry_metaField_4_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END cat:catalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField[$cat_entry_metaField_4_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($cat_entry_tag_5_NUM_ROWS=$item.getChildItems("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag").size() - 1)
+													#if($cat_entry_tag_5_NUM_ROWS>=0)
+														#foreach($cat_entry_tag_5_COUNTER in [0..$cat_entry_tag_5_NUM_ROWS])
+<!-- BEGIN cat:catalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag[$cat_entry_tag_5_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:catalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag[$cat_entry_tag_5_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("cat:catalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag[$cat_entry_tag_5_COUNTER]/tag")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END cat:catalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag[$cat_entry_tag_5_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END cat:catalog/entries/entry[$cat_entry_3_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END cat:catalog -->
+		</TD>
+	</TR>
+</TABLE>

@@ -1,0 +1,6 @@
+<!-- Sequence: 15 -->
+<!-- allowGuest: true -->
+
+	           <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","xml_file").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Download XML</A>
+           </li>

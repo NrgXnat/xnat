@@ -1,0 +1,278 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+<!-- BEGIN /xnat-templates/screens/PrearchiveDetails.vm -->
+#if($popup=="true")
+	#set ($template = $data.getTemplateInfo())
+	$!template.setLayoutTemplate("Popup.vm")
+#end
+
+#if($project)
+	#set($allowArchive=true)
+#else
+	#set($allowArchive=false)
+	<div class="alert">This session is in the Unassigned folder.  Move the session to a project to enable archiving.</div>
+#end
+
+## used to create Change Project modal dialog
+<div id='move_project_dialog' style='visibility:hidden'>
+	<div class='hd'>Change project</div>
+	<div class='bd' style=''>
+		<div id='move_projec_desc'>Select the project to move this session to.</div>
+		<div id='move_projec_div'>
+			<select id="proj_move_select"></select>
+		</div>
+	</div>
+</div>
+
+<style>
+	#scans_div{
+		margin-top:10px;
+	}
+	button.hide_me{
+		visibility:hidden;
+	}
+</style>
+<div style="float:left">
+    <table clsss="">
+    #if($session.getProject())
+    	<tr><th align="left">$displayManager.getSingularDisplayNameForProject():</th><td>#escapeHTML("$!session.getProject()")</td></tr>
+    #end
+    #if($session.getLabel())
+    	<tr><th align="left">Session:</th><td>#escapeHTML("$!session.getLabel()")</td></tr>
+    #end
+    #if($session.getSubjectId())
+    	<tr><th align="left">$displayManager.getSingularDisplayNameForSubject():</th><td>#escapeHTML("$!session.getSubjectId()")</td></tr>
+    #end
+
+    #if($session.getDate())
+        <tr><th align="left">Study Date:</th><td>$turbineUtils.formatDate($!session.getDate())</td></tr>
+    #end
+
+    #if($session.getDcmpatientid())
+        <tr><th align="left">Patient ID:</th><td>#escapeCleanHTML("$!session.getDcmpatientid()")</td></tr>
+    #end
+    #if($session.getDcmpatientname())
+        <tr><th align="left">Patient Name:</th><td>#escapeCleanHTML("$!session.getDcmpatientname()")</td></tr>
+    #end
+    #if($session.getUid())
+        <tr><th align="left">UID:</th><td>#escapeHTML("$!session.getUid()")</td></tr>
+    #end
+    #if($uploadDate)
+        <tr><th align="left">Upload Date:</th><td>$!turbineUtils.formatDateTime($uploadDate)</td></tr>
+    #end
+    </table>
+</div>
+<div style="float:right">
+    <script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_actions.js")"></script>
+    <form method="post" action="$content.getURI("/REST/services/archive")?XNAT_CSRF=$!{XNAT_CSRF}" name="form1" id="form1">
+    	<input type="hidden" name="src" value="$url"/>
+    	<input type="hidden" name="redirect" value="true"/>
+    </form>
+#startElementActionBox()
+	#if($allowArchive)
+	    #if($turbineUtils.isSiteAdmin($user) || !$siteConfig.uiPrearchiveHideArchiveBtn)
+            <li class="yuimenuitem">
+                <a id="archiveLink" href="#" class="nolink" onclick="XNAT.app.archiveValidator.validate()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Archive</a>
+            </li>
+        #end
+        <li class="yuimenuitem">
+			<a href="$content.getURI("/data${url}?format=html&screen=XDATScreen_uploaded_xnat_imageSessionData.vm")"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Modify and Archive</a>
+        </li>
+	#end
+    <li class="yuimenuitem">
+			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestMoveDialog()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Change Project</a>
+    </li>
+    <li class="yuimenuitem">
+			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestDelete()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Delete</a>
+    </li>
+
+	#endElementActionsBox()
+</div>
+<div class="spacer" style="clear:both;">&nbsp;</div>
+<div id="scans_div" style="clear:both;">
+	<h3>Scans</h3>
+	<table>
+		<tr><th>ID</th><th>Description</th><th>Files</th><th>Actions</th></tr>
+	#foreach($scan in $session.getScans_scan())
+        #define($scanId)#escapeAll("$!scan.getId()")#end
+        <tr id="scanTR$!{scanId}">
+			<td>$!{scanId}</td>
+			<td>#escapeCleanHTML("$!scan.getSeriesDescription()")</td>
+			<td nowrap><div id="scan$!{scanId}Files" class="fileCountAndSize"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
+			<td nowrap>
+			    #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
+				    &nbsp;&nbsp;<button id="scanB1$$!{scanId}" onclick="XNAT.app.prearchiveActions.downloadFiles('$url', '$!{scanId}')">Download Files</button>
+				#end
+				#foreach($res in $scan.getFile())
+					&nbsp;&nbsp;<button id="scanB3$$!{scanId}" onclick="XNAT.app.prearchiveActions.reviewFileDetails('$url', '$!{scanId}', '$res.getLabel()', '$!project')">Review File Details</button>
+					&nbsp;&nbsp;<button #if($res.getLabel()!="DICOM") class="hide_me" #end id="scanB4$$!{scanId}" onclick="XNAT.app.prearchiveActions.reviewDicomTags('$url', '$!{scanId}')">Review DICOM Tags</button>
+				#end
+				&nbsp;&nbsp;<button id="scanB2$$!{scanId}" onclick="XNAT.app.scanDeleter.requestDelete('$!{scanId}');">Delete Series</button>
+			</td>
+		</tr>
+	#end
+	</table>
+
+    #set($resources = $session.getResources_resource())
+    #if($resources.size() > 0)
+        <h3>Resources</h3>
+        <table>
+            <tr><th>Label</th><th>Files</th><th>Actions</th></tr>
+            #foreach($res in $resources)
+                #define($resLabel)#escapeAll("$!res.getLabel()")#end
+                <tr id="resourceTR$!{resLabel}">
+                    <td>#escapeCleanHTML("$!resLabel")</td>
+                    <td nowrap><div id="res$!{resLabel}Files"  class="fileCountAndSize"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load()" style="text-decoration:underline">Show Counts</a></div></td>
+                    <td nowrap>
+                        #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
+                            &nbsp;&nbsp;<button id="res1$!{resLabel}" onclick="XNAT.app.prearchiveActions.downloadResFiles('$url', '$!{resLabel}')">Download Files</button>
+                        #end
+                        &nbsp;&nbsp;<button id="res2$!{resLabel}" onclick="XNAT.app.prearchiveActions.reviewResFileDetails('$url', '$!{resLabel}', '$!project')">Review File Details</button>
+                        &nbsp;&nbsp;<button id="res3$$!{resLabel}" onclick="XNAT.app.scanDeleter.requestDelete('$!{resLabel}', false);">Delete Resource</button>
+                    </td>
+                </tr>
+            #end
+        </table>
+    #end
+
+    ## move this out of the table
+    <p id="prearchiveSessionTotals"></p>
+    #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
+         <button id="dAscans" style="float:right;margin-top:20px;" onclick="XNAT.app.prearchiveActions.downloadAllFiles('$url')">Download All Files</button>
+    #end
+</div>
+
+<div id="validationAlerts"></div>
+<br>
+<div id="prearcLogs"></div>
+
+
+<!-- BEGIN CONTENT FOR POPUP DIALOGS -->
+<script type="text/javascript" src="$content.getURI('scripts/prearchive/PrearchiveDetails_delete.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/prearchive/PrearchiveDetails_files.js')"></script>
+<script>
+//add variables for PrearchiveDetails_files.js
+ XNAT.app.fileCounter.url="$url";
+ #foreach($scan in $session.getScans_scan())
+ 	XNAT.app.fileCounter.scans.push("$!scan.getId()");
+ #end
+
+ XNAT.app.scanDeleter.url="$url";
+</script>
+
+
+<!-- begin file list dialog -->
+<div id="files_dialog" style="visibility:hidden">
+    <div class="hd" id="filesDialog_header">Prearchived files</div>
+    <div class="bd" style="overflow:auto">
+		<div id="filesDialog_content">
+            <!-- content -->
+		</div>
+	</div>
+</div>
+
+
+<!-- begin header dialog -->
+<div id="header_dialog" style="visibility:hidden">
+    <div class="hd" id="headerDialog_header">DICOM Headers</div>
+    <div class="bd" style="overflow:auto">
+		<div id="headerDialog_content">
+            <!-- content -->
+		</div>
+	</div>
+</div>
+
+
+<!-- begin validation warnings dialog -->
+<style type="text/css">
+
+    #val_warning_div {
+        margin-top: 12px;
+        overflow: auto;
+    }
+
+    #val_warning_div .valWARN, #val_warning_div .valCONFLICT, #val_warning_div .valFAIL, #val_warning_div .header {
+        border-bottom: 1px solid #888;
+        font: 11px Arial, Helvetica, sans-serif;
+        margin-top: 0;
+        margin-bottom: 0;
+        padding: 4px;
+        overflow: auto;
+    }
+
+    #val_warning_div .header {
+        background-color: #ccc;
+        font-weight: bold;
+    }
+
+    dl.valWARN, item.valWARN {
+        display: block;
+    }
+
+    dl.valFAIL, item.valFAIL {
+        display: block;
+    }
+    dl.valCONFLICT, item.valCONFLICT {
+        display: block;
+    }
+    #val_warning_div dl dl { margin: 1px 0; }
+    #val_warning_div dl dt, #val_warning_div dl dd {
+        display: block;
+        float: left;
+        padding: 4px 0;
+    }
+    #val_warning_div dd { margin-left: 20px; }
+    dd.valCode { width: 80px; font-weight: bold; position: relative; }
+    dd.valMessage { width: 630px; }
+</style>
+<div id="uploads_warnings">
+	<div id='val_warning_dialog' style='visibility:hidden'>
+		<div class='hd'>Upload warnings</div>
+		<div class='bd' style=''>
+			<div id='val_warning_desc'>Merging the uploaded data into the pre-existing session will override the following warnings:</div>
+			<div id='val_warning_div'>
+				<!-- content -->
+			</div>
+			<div style="text-align:right; width:100%; margin-top:3px;" id='val_warning_quest'>Are you sure you want to proceed?</div>
+		</div>
+	</div>
+</div>
+
+
+<script type="text/javascript" src="$content.getURI("scripts/imageSessionData/archive.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_fileDialog.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_headerDialog.js")"></script>
+<script>
+
+    jq(document.body).on('click','a.nolink',function(e){
+        e.preventDefault();
+    });
+
+    XNAT.app.fileDialog.url='$url';
+    XNAT.app.headerDialog.url='$url';
+
+    //automatically show file counts
+    XNAT.app.fileCounter.load();
+
+    XNAT.app.prearchiveActions.url="$url";
+    XNAT.app.prearchiveActions.timestamp="$timestamp";
+    XNAT.app.prearchiveActions.folder="$folder";
+    XNAT.app.prearchiveActions.loadLogs();
+
+        #if($allowArchive)
+	//validation CODES that are not allowed to be overidden
+	XNAT.app.validator.fail_merge_on=$siteConfig.formattedFailMergeOn;
+	XNAT.app.validator.xsiType="$session.getXSIType()";
+
+	XNAT.app.archiveValidator.fail_merge_on=$siteConfig.formattedFailMergeOn;
+	XNAT.app.archiveValidator.xsiType="$session.getXSIType()";
+	#if($url)
+		XNAT.app.archiveValidator.url="$!url";
+	#end
+
+    XNAT.app.validator.validate();
+
+#end
+</script>
+<script type="text/javascript" src="$content.getURI('/scripts/popupCentered.js')"></script>
+<!-- END /xnat-templates/screens/PrearchiveDetails.vm -->

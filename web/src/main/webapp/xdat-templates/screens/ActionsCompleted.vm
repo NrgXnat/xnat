@@ -1,0 +1,7 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#if ($data.getMessage())
+<BR><DIV class="error">$data.message</DIV><br><BR>
+#else
+<font face="$ui.sansSerifFonts" size=4 style="line-height:18px;"><p><b>An error has occurred.</b></p></font><BR>
+#end 
+<font face="$ui.sansSerifFonts" size=4 style="line-height:18px;"><p>Please contact your Site Admin for more information.</p></font>

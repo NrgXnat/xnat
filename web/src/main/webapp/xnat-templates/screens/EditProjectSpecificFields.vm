@@ -1,0 +1,63 @@
+<!-- BEGIN /xnat-templates/screens/EditProjectSpecificFields.vm -->
+#set($groups=$om.getFieldDefinitionGroups($item.getXSIType(), $project))
+#if($groups.size()>0)
+<hr>
+	#foreach($group in $groups)
+		#if($group.getFields_field().size()>0)
+            #if(!$hdrAdded)
+                <h3 style="margin: 1em 0 0.5em;">Custom Variable Sets</h3>
+                #set($hdrAdded=true)
+            #end
+			<p>
+                <strong>#if($group.getDescription())$group.getDescription()#else $group.getId() Fields#end</strong>
+            </p>
+            <table id="customvar-$group.getId()">
+                <tbody>
+				#foreach($f in $group.getFields_field())
+					#parse("/screens/EditProjectSpecificFields_field.vm")
+					#set($fieldCounter=$fieldCounter + 1)
+				#end
+				</tbody>
+			</table>
+			<br>
+		#end
+	#end
+
+  <script>
+    $(document).ready(function(){
+      $('#eventSubmit_doInsert').click(function(e){
+        var required = $('.required');
+        var errors = [];
+        for(var i=0; i<required.length; i++){
+          var val = $(required[i]).val();
+          if(!val || val == 'NULL'){
+            var label = $('[for="'+required[i].name+'"]');
+            if(label[0]){
+              label = $(label[0]);
+              errors.push(label.text());
+              label.html('<b>'+label.text()+'</b>');
+            }
+          }
+        }
+        if(errors.length > 0){
+          e.preventDefault();
+          var fields = "";
+          for(var i=0; i<errors.length; i++){
+            fields += '&nbsp;&nbsp;&nbsp;<span class="noteRequired">'+errors[i]+'</span><br/>';
+          }
+          xmodal.message('Required variables', 'Missing required variable values:<br/><br/>'+fields);
+        }
+      });
+    });
+  </script>
+
+#end
+<br>
+<div id="customFieldsRow" style="width: 75%; overflow-y:auto">
+
+<h3 style="margin: 1em 0 0.5em;">Custom Field Sets</h3>
+
+#parse($turbineUtils.getTemplateName("parameters.vm",$om.getXSIType(),$project,"edit"))
+</div>
+
+<!-- END /xnat-templates/screens/EditProjectSpecificFields.vm -->

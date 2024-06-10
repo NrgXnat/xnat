@@ -1,0 +1,96 @@
+
+##Developer: James Dickson james@radiologics.com
+##Code used to display a list of triage files from the triage location
+#if($popup=="true")
+	#set ($template = $data.getTemplateInfo())
+	$!template.setLayoutTemplate("ScreenOnly.vm")
+#end
+<style type="text/css">
+	#fileDIV .fileItem, #fileDIV .header {
+	  border-bottom:1px solid #888;
+	  font:11px Arial, Helvetica, sans-serif;
+	  margin-top:0;
+	  margin-bottom:0;
+	  padding: 4px;
+	  overflow:auto;
+	}
+	dl.fileItem, item.fileItem {
+		display:block;
+	}
+	#fileDIV dl dl 	{ margin:1px 0;	}
+	#fileDIV .header {
+		background-color: #ccc;
+		font-weight: bold;
+	}
+	#fileDIV dl dt, #fileDIV dl dd {
+		display:block;
+		float:left;
+		padding:4px 0;
+	}
+	.fileItem:hover {
+		background-color:#fe9;
+	}
+	#fileDIV dd 	{ 	margin-left:20px; }
+	dd.fileDir 	{	width:180px; position:relative;	}
+	dd.fileFormat 	{	width:100px;	}
+	dd.fileContents 	{	width:100px;	}
+	dd.fileDownload 	{	width:60px;	}
+	dd.fileMove 	{	width:40px;	}
+	dd.fileDate 	{	width:40px;	}
+	dd.fileUser 	{	width:40px;	}
+	dd.fileSize 	{	width:40px;	}
+	dd.fileTarget 	{	width:180px;	}
+	dd.fileApprove 	{	width:60px;	}
+	dd.fileRemove 	{	width:60px;	}
+	
+</style>	
+##<tr class="x_rs_tr_head"><th>Name</th><th>Size</th><th>URI</th><th>TARGET</th><th>USER</th><th>DATE</th><th>OVERWRITE</th><th>EVENT_REASON</th></tr>
+<div id="fileDIV">
+            <dl class="header">
+              <dl>
+              
+                  <dd class="fileRemove">Remove</dd>
+                  #if($data.getSession().getAttribute("user").canEdit("xnat:projectData/ID",$project))
+                  	<dd class="fileApprove">Approve</dd>
+                  #end
+                  <dd class="fileContents">File</dd>
+                  <dd class="fileUser">User</dd>
+                  <dd class="fileDate">Date</dd>
+                  <dd class="fileSize">Size</dd>
+                  <dd class="fileTarget">Target</dd>
+              </dl>
+            </dl>		
+            #set($lastURL="0")
+            #foreach($row in $table.toArrayListOfLists())
+            #set($lastURL=$content.getURI("$!row.get(2)"))
+				#set($url=$content.getURI("$!row.get(2)"))
+				#set($src=$!row.get(2))
+				#set($dest=$!row.get(3))
+				#set($fdest=$!row.get(8))
+				
+				#set($shortname="$!row.get(0)")
+				
+				#set($theuser="$!row.get(4)")
+				#set($date="$!row.get(5)")
+				#set($size="$!row.get(1)")
+				#set($overwrite="$!row.get(6)")
+				#set($event_reason="$!row.get(7)")
+				#set($format=$row.get(9))
+				#set($content=$row.get(10))
+			
+				#if($data.getSession().getAttribute("user").canEdit("xnat:projectData/ID",$project) || $data.getSession().getAttribute("user").getUsername().equals($theuser))
+					<dl id="fileItem${velocityCount}" class="fileItem">
+		            		<dd class="fileRemove"><button id="dAscans" onclick="XNAT.app.TriageFileDeleter.requestDelete('$velocityCount','$shortname','$url')">Remove</button></dd>
+		            		#if($data.getSession().getAttribute("user").canEdit("xnat:projectData/ID",$project))
+		            			<dd class="fileApprove"><button id="dAscans" onclick="XNAT.app.TriageFileApprover.requestMove('$velocityCount','$shortname','$src','$dest','$overwrite','$event_reason','$!format','$!content')">Approve</button></dd>
+		                    #end
+		                    <dd class="fileContents"><a class="image-download" href="$lastURL" style="text-decoration:underline">$shortname</a></dd>
+		                    <dd class="fileUser">${theuser}</dd>
+		                    <dd class="fileDate">${date}</dd>
+		                    <dd class="fileSize">${size}</dd>
+		                    <dd class="fileTarget">${fdest}</dd>
+				 	</dl>
+			#end			 	
+#end
+							
+</DIV>

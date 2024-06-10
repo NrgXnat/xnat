@@ -1,0 +1,41 @@
+$navigation.setTemplate("/htmlOpen.vm")
+<style type="text/css">
+    html body.popup { margin: 20px; background: #fff !important ; }
+    body.popup #page_wrapper { margin: 30px ; }
+    body.popup #xnat_power {
+        /*margin: 30px; */
+        border: none;
+    }
+    body.modal-popup #xnat_power,
+    body.xmodal-popup #xnat_power { display: none ; }
+</style>
+## insert any template-specific <head> code here
+<script type="text/javascript">
+    window.loggedIn = true; // just assume we're logged in - how else would we get here?
+    window.isPopup = true;
+    window.loadDataTypes = false;
+    jq(function(){
+        jq('body').addClass('popup');
+    });
+</script>
+#set($popup=true)
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+<!-- path: xdat-templates/layouts/Popup -->
+
+<div id="tp_fm"></div>
+<div id="layout_content2" style="display:none;">Loading...</DIV>
+<div id="layout_content">$screen_placeholder</DIV>
+##$navigation.setTemplate("/DefaultBottom.vm")
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+<script type="text/javascript">
+    jq(function(){
+        if (getQueryStringValue('modal') === 'x') {
+            jq('body').addClass('xmodal-popup')
+        }
+    });
+</script>
+$navigation.setTemplate("/htmlClose.vm")

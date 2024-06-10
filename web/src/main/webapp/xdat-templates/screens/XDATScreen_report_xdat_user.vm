@@ -1,0 +1,335 @@
+#* @vtlvariable name="allRoles" type="java.util.Collection<org.nrg.xdat.security.services.RoleRepositoryServiceI.RoleDefinitionI>" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="hasFailedLoginAttempts" type="java.lang.Boolean" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XdatUser" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+#* @vtlvariable name="userObject" type="org.nrg.xdat.security.XDATUser" *#
+#* @vtlvariable name="userObjectHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($dataPopup = $turbineUtils.GetPassedParameter("popup",$data))
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+
+#if ($turbineUtils.isNullObject($project))
+    #set ($contextProjectId = "")
+#else
+    #set ($contextProjectId = $project.id)
+#end
+#set ($username = "$!userObject.getUsername()")
+<script>
+    window.editUser = '${username}';
+    console.log('window.editUser: "${username}"')
+</script>
+
+#parse("/screens/LoadProjectsJS.vm")
+<form id="userform" name="form1" method="post" action="$link.setAction("ModifyUserGroups")">
+    <table width=100% align="left" border="0">
+        <tr>
+            <td align="left">
+                #addCustomScreens($om.getXSIType() "report/preDetails")
+                <div id="subject_summary_module" style="display:none">
+                    <div id="subjectSummary" class="yui-navset" style="min-width:480px;">
+                        <ul class="yui-nav" style="">
+                            <li class="selected"><a href="#tab1"><em>Details<span class="spacer"></span></em></a></li>
+                            <li><a href="#tab2"><em>Stored Searches</em></a></li>
+                        ##<!-- inject additional tabs-->
+                            #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
+                                <li><a href="#$tab.getProperty("divName")"><em>$tab.getProperty("title")
+                                    <span class="spacer"></span></em></a></li>
+                            #end
+                        </ul>
+
+                        <div class="yui-content" style="clear:both;overflow:auto;">
+
+                        ##<!-- details tab -->
+                            <div id="tab1">
+                                #parse($turbineUtils.getTemplateName("details", "xdat:user", $contextProjectId))
+                            </div>
+
+                        ##<!-- stored searches tab -->
+                            <div id="tab2">
+                                #parse($turbineUtils.getTemplateName("stored_searches", "xdat:user", $contextProjectId))
+                            </div>
+
+                        ##<!-- inject additional tabs -->
+                            #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(), "report/tabs"))
+                                <div id="$tab.getProperty("divName")">
+                                    #set($path = "screens/${tab.getProperty('path')}")
+                                    <p>#parse($path)</p>
+                                </div>
+                            #end
+
+                            <script type="text/javascript">
+
+                                function goToUsersPage(){
+                                    xmodal.loading.open('#wait');
+                                    window.top.location.href = serverRoot + '/app/template/XDATScreen_admin.vm';
+                                }
+
+                                function clearFailedLogins(){
+                                    var callback = {
+                                        cache: false, // Turn off caching for IE
+                                        success: function(response){
+                                            document.getElementById("reset_user").style.display = 'none';
+                                            closeModalPanel("resetting");
+                                        },
+                                        failure: function(response){
+                                            closeModalPanel("resetting");
+                                            xmodal.message('User Validation', 'Failed to reset user $username: ' + response);
+                                        }
+                                    };
+
+                                    openModalPanel("resetting", "Resetting failed user login attempts for user $username...");
+                                    YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$username/reset?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
+                                }
+
+                                function clearEmailRequests(){
+                                    var callback = {
+                                        cache: false, // Turn off caching for IE
+                                        success: function(response){
+                                            document.getElementById("reset_user").style.display = 'none';
+                                            closeModalPanel("resetting");
+                                        },
+                                        failure: function(response){
+                                            closeModalPanel("resetting");
+                                            xmodal.message('User Validation', 'Failed to reset user $username: ' + response);
+                                        }
+                                    };
+
+                                    openModalPanel("resetting", "Resetting email requests for user $username...");
+                                    YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/user/actions/$username/resetEmailRequests?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
+                                }
+
+                                function summaryIndexChanged(){
+                                    var activeIndex = this.get("activeIndex");
+                                    YAHOO.util.Cookie.set("${project.getId()}.summary.index", activeIndex);
+                                }
+
+                                function summaryTabManagerInit(){
+                                    window.summaryTabView = new YAHOO.widget.TabView('subjectSummary');
+                                    window.subject_summary_module = new YAHOO.widget.Module("subject_summary_module", {
+                                        visible: false,
+                                        zIndex: 5
+                                    });
+
+                                    #addCustomScreenJS($om.getXSIType() "report/tabs_js")
+
+                                    window.subject_summary_module.show();
+
+                                    var tabIndex = YAHOO.util.Cookie.get("${om.getId()}.summary.index");
+                                    window.summaryTabView.set('activeIndex', tabIndex || 0);
+
+                                    window.summaryTabView.subscribe("activeTabChange", summaryIndexChanged);
+                                }
+                                summaryTabManagerInit();
+                            </script>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+                #addCustomScreens($om.getXSIType() "report/postDetails")
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div style="padding:10px;background:#f0f0f0;border:1px solid #ccc">
+
+                    <h3>Assign $displayManager.getSingularDisplayNameForProject().toLowerCase() membership and roles</h3>
+
+                    <div style="padding:10px;">
+                        ## container for user group table
+                        <div id="user-group-membership-table">
+                            <!-- listing of this user's group memberships -->
+                        </div>
+
+                        <br>
+                        ## 'Add Role' button - adds a row to the above table containing projects and roles (groups)
+                        <button type="button" class="btn btn1" id="user-add-group">Add Role</button>
+                    </div>
+
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+        </tr>
+        <tr>
+            <td>
+                <div style="padding:10px;background:#f0f0f0;border:1px solid #ccc">
+                    <h3>Define security settings</h3>
+                    <table width="100%" border="0">
+                        <tr>
+                            <td valign="top">
+                                <table border="0" width="100%" style="margin-top:10px;">
+                                    <tr>
+                                        <th align="left">System Roles:</th>
+                                    </tr>
+                                    #foreach($role in $allRoles)
+                                        <tr>
+                                            <td align="left">
+                                                <input class="access role" type="checkbox" id="role_$role.getKey()" name="custom_role" value="$role.getKey()" #if($userObject.checkRole($role.getKey()))checked#end/>
+                                                <label for="role_$role.getKey()">$role.getName()</label>
+                                                : $!role.getDescription()
+                                            </td>
+                                        </tr>
+                                        #if($role.getWarning())
+                                            <tr>
+                                            ## <td align="center" valign="top"><img src="$content.getURI("images/rc.gif")" border="0"></td>
+                                                <td align="left">
+                                                    <div class="warning">
+                                                        $role.getWarning()
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td></td>
+                                            </tr>
+                                        #end
+                                    #end
+                                </table>
+
+                                #set($groupCounter=0)
+
+                                #if($siteConfig.allowDataAdmins)
+                                    <table border="0" width="100%" style="margin-top:20px;">
+                                        <tr>
+                                            <th align="left">Allow All Data Access:</th>
+                                        </tr>
+                                        <tr>
+                                        ## <td align="center" valign="top" style="width:20px"><img src="$content.getURI("images/rc.gif")" border="0"></td>
+                                            <td align="left">
+                                                <div class="warning">
+                                                    WARNING: Allowing 'All Data Access' will allow this user to see ALL data stored in this system, superseding project membership.
+                                                    This permission is automatically granted to all site administrators, but should not be granted to most other users.
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td align="left">
+                                                <label style="margin-right:10px;white-space:nowrap;">
+                                                    <input class="access group alldata limited" type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="NULL" checked/><label for="data_none">No</label>
+                                                </label>
+                                                <label style="margin-right:10px;white-space:nowrap;">
+                                                    <input class="access group alldata limited" type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObjectHelper.isMember("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
+                                                </label>
+                                                <label style="margin-right:10px;white-space:nowrap;">
+                                                    <input class="access group alldata full" type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObjectHelper.isMember("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <script>
+                                        var XNAT = getObject(XNAT);
+
+                                        (function(factory){
+                                            if (typeof define === 'function' && define.amd) {
+                                                define(factory);
+                                            }
+                                            else if (typeof exports === 'object') {
+                                                module.exports = factory();
+                                            }
+                                            else {
+                                                return factory();
+                                            }
+                                        }(function() {
+                                            var undefined, usersGroups;
+                                            XNAT.admin = getObject(XNAT.admin || {});
+
+                                            XNAT.admin.usersGroups = usersGroups =
+                                                    getObject(XNAT.admin.usersGroups || {});
+                                            XNAT.usersGroups = extend(true, usersGroups, XNAT.usersGroups);
+
+                                            usersGroups.toggleAlldata = function(adminPermission){
+                                                if (adminPermission === undefined) {
+                                                    adminPermission = jq('#role_Administrator').is(':checked');
+                                                }
+
+                                                if (adminPermission) {
+                                                    jq('input.alldata').not('.full').prop('disabled','disabled');
+                                                    jq('input.alldata').not('.limited').prop('checked','checked');
+                                                    XNAT.ui.banner.top(4000,'Site Admin permissions must be tied to "All Data Access" permissions.','warning','480px');
+                                                }
+                                                else {
+                                                    jq('input.alldata').prop('disabled',false);
+                                                    jq('input.alldata').each(function(){
+                                                        if (jq(this).data('preset')) jq(this).prop('checked','checked')
+                                                    });
+                                                }
+                                            }
+
+                                        }));
+
+                                        jq(document).ready(function(){
+                                            jq('input.alldata:checked').data('preset','true');
+                                            XNAT.admin.usersGroups.toggleAlldata();
+                                        })
+                                        jq(document).on('click','#role_Administrator',function(){
+                                            // determine if user has been given site Admin privileges. If so, grant all data access and prevent user modification
+                                            var adminPermission = jq(this).prop('checked');
+                                            XNAT.admin.usersGroups.toggleAlldata(adminPermission);
+                                        })
+                                    </script>
+                                #end
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="right">
+
+                                <button id="update-user-roles" type="button" class="btn1">Save</button>
+
+                                ## #set ($projectAccessScript = "/scripts/xnat/data/projectAccess.jsp?user=${USERNAME}")
+                                ## <script type="text/javascript" src="$content.getURI($projectAccessScript)"></script>
+                                <script type="text/javascript" src="$content.getURI('/scripts/xnat/admin/usersAdvanced.js')"></script>
+
+                            </td>
+                        </tr>
+                        #set($groupCounter=$groupCounter+1)
+                    </table>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                #addCustomScreens($om.getXSIType() "report/postContent")
+            </td>
+        </tr>
+    </table>
+</form>
+
+<script type="text/javascript">
+
+    // hacks for Actions menu items
+    (function(){
+
+        var __actions = jq('#actionsMenu');
+
+        // hack to remove the "Change Permissions" link
+        __actions.find('a[title="Change Permissions"]').closest('li').remove();
+
+        // view the XML in a popup
+        __actions.find('a[href*="/xdataction/xml/"]').on('click', function(e){
+            e.preventDefault();
+            XNAT.ui.popup.viewXML(this.href);
+        });
+
+    })();
+
+</script>

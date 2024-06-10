@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">ImageRegionResource Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>creator/firstname</TD><TD>#xdatStringBox("xnat:regionResource/creator/firstname" $item "" $vr)</TD></TR>
+							<TR><TD>creator/lastname</TD><TD>#xdatStringBox("xnat:regionResource/creator/lastname" $item "" $vr)</TD></TR>
+							<TR><TD>name</TD><TD>#xdatStringBox("xnat:regionResource/name" $item "" $vr)</TD></TR>
+							<TR><TD>hemisphere</TD><TD>#xdatStringBox("xnat:regionResource/hemisphere" $item "" $vr)</TD></TR>
+							<TR><TD>session_id</TD><TD>#xdatStringBox("xnat:regionResource/session_id" $item "" $vr)</TD></TR>
+													#xdatHiddenBox("xnat:regionResource/xnat_regionResource_id" $item "")
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:regionResource -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:regionResource/file -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/file</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>note</TD><TD>#xdatStringBox("xnat:regionResource/file/note" $item "" $vr)</TD></TR>
+										<TR><TD>label</TD><TD>#xdatStringBox("xnat:regionResource/file/label" $item "" $vr)</TD></TR>
+										<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:regionResource/file/file_count" $item "" $vr)</TD></TR>
+										<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:regionResource/file/file_size" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat:regionResource/file/xnat_abstractResource_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+<!-- BEGIN xnat:regionResource/file/tags/tag -->
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/file/tags/tag</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR>
+											<TD>tag</TD>
+											<TD>name</TD>
+										</TR>
+										#foreach($xnat_abstractResource_tag_2_COUNTER in [0..5])
+											<TR>
+												<TD>#xdatTextBox("xnat:regionResource/file/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/tag" $item "" $vr)</TD>
+												<TD>#xdatTextBox("xnat:regionResource/file/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/name" $item "" $vr)</TD>
+												#xdatHiddenBox("xnat:regionResource/file/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/xnat_abstractResource_tag_id" $item "")
+											</TR>
+										#end
+									</TABLE>
+								</TD>
+							</TR>
+<!-- END xnat:regionResource/file/tags/tag -->
+						</TABLE>
+<!-- END xnat:regionResource/file -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:regionResource/baseimage -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/baseimage</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>note</TD><TD>#xdatStringBox("xnat:regionResource/baseimage/note" $item "" $vr)</TD></TR>
+										<TR><TD>label</TD><TD>#xdatStringBox("xnat:regionResource/baseimage/label" $item "" $vr)</TD></TR>
+										<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:regionResource/baseimage/file_count" $item "" $vr)</TD></TR>
+										<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:regionResource/baseimage/file_size" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat:regionResource/baseimage/xnat_abstractResource_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+<!-- BEGIN xnat:regionResource/baseimage/tags/tag -->
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/baseimage/tags/tag</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR>
+											<TD>tag</TD>
+											<TD>name</TD>
+										</TR>
+										#foreach($xnat_abstractResource_tag_3_COUNTER in [0..5])
+											<TR>
+												<TD>#xdatTextBox("xnat:regionResource/baseimage/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/tag" $item "" $vr)</TD>
+												<TD>#xdatTextBox("xnat:regionResource/baseimage/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/name" $item "" $vr)</TD>
+												#xdatHiddenBox("xnat:regionResource/baseimage/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/xnat_abstractResource_tag_id" $item "")
+											</TR>
+										#end
+									</TABLE>
+								</TD>
+							</TR>
+<!-- END xnat:regionResource/baseimage/tags/tag -->
+						</TABLE>
+<!-- END xnat:regionResource/baseimage -->
+					</TD>
+				</TR>
+<!-- BEGIN xnat:regionResource/subregionlabels/label -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/subregionlabels/label</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>label</TD>
+								<TD>id</TD>
+								<TD>hemisphere</TD>
+							</TR>
+							#foreach($xnat_regionResource_label_3_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_3_COUNTER]/label" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_3_COUNTER]/id" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_3_COUNTER]/hemisphere" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_3_COUNTER]/xnat_regionResource_label_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:regionResource/subregionlabels/label -->
+			</TABLE>
+<!-- END xnat:regionResource -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

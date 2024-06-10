@@ -1,0 +1,125 @@
+<!-- BEGIN xnat-templates/screens/xnat_subjectData/xnat_subjectData_assessors.vm -->
+#set($assessorTemplateName = $turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))
+
+#if(!$project)
+    #set($project=$om.getProject())
+#end
+
+<BR>
+
+<div id="expts_container">
+
+    <div id="expts_link_legend">
+        #if($useTabs)
+        #else
+            <span id="expts_header" class="edit_header1">Experiments</span>
+        #end
+        <a id="toggle_expts_link" style="display:none;text-decoration:underline;" onClick="XNAT.app.subject.toggleExptView();">View All Available Data For This Subject</a>
+    </div>
+
+    #set ($hasOtherProjects = false)
+    #if($project)
+        <div id="proj_expts" style="display:none">
+
+            <table width="100%" class="highlight sortable">
+                <thead>
+                <tr>
+                    <th align="left" class="underscore sort">Date</th>
+                    <th align="left" class="underscore sort">Experiment</th>
+                    <th align="left" class="underscore sort">$displayManager.getSingularDisplayNameForProject()</th>
+                    <th align="left" class="underscore sort">Label</th>
+                </tr>
+                </thead>
+                <tbody>
+                #set ($subjectHasData = false)
+                #foreach ($assessor in $subject.getMinimalLoadAssessors())
+                    #if($assessor.hasProject($project))
+                        #parse($assessorTemplateName)
+                        #set ($subjectHasData = true)
+                    #else
+                        #set ($hasOtherProjects = true)
+                    #end
+                #end
+
+                #if(!$subjectHasData)
+                <tr>
+                    <td colspan="4">No data to show</td>
+                </tr>
+                #end
+                </tbody>
+            </table>
+
+        </div><!-- /proj_expts -->
+    #end
+    <div id="all_expts" style="display:none">
+
+        <table width="100%" class="highlight sortable">
+            <thead>
+            <tr>
+                <th align="left" class="underscore sort">Date</th>
+                <th align="left" class="underscore sort">Experiment</th>
+                <th align="left" class="underscore sort">$displayManager.getSingularDisplayNameForProject()</th>
+                <th align="left" class="underscore sort">Label</th>
+            </tr>
+            </thead>
+            <tbody>
+            #if ($subject.getMinimalLoadAssessors().isEmpty())
+            <tr>
+                <td colspan="4">No data to show</td>
+            </tr>
+            #else
+                #foreach ($assessor in $subject.getMinimalLoadAssessors())
+                    #parse($assessorTemplateName)
+                #end
+            #end
+            </tbody>
+        </table>
+
+        #if($shared || $denied)
+            <p class="data-table-key" style="margin-top: 1em;">Key:
+                #if($shared)
+                    <span style="margin-right: 2em;" class="expt-legend">
+                        <b style="background-color:#FC9;margin-right: 2px; width: 1em; height: 1em; display: inline-block;" class="withThinBorder"></b>
+                        Shared
+                    </span>
+                #end
+                #if($denied)
+                    <span style="margin-right: 2em;" class="expt-legend">
+                        <b style="background-color:#F99;margin-right: 2px; width: 1em; height: 1em; display: inline-block;" class="withThinBorder"></b>
+                        You do not have access to this data
+                    </span>
+                #end
+            </p>
+        #end
+
+    </div><!-- /all_expts -->
+
+</div><!-- /expts_container -->
+
+<script type="text/javascript">
+
+        #if($project && $hasOtherProjects)
+            XNAT.app.subject.toggleExptView = function(){
+                if (document.getElementById("all_expts").style.display == "block") {
+                    document.getElementById("toggle_expts_link").innerHTML = "View All Available Data For This Subject";
+                    document.getElementById("expts_header").innerHTML = "Experiments in ${project}";
+                    document.getElementById("proj_expts").style.display = "block";
+                    document.getElementById("all_expts").style.display = "none";
+                }
+                else {
+                    document.getElementById("toggle_expts_link").innerHTML = "View $project Only";
+                    document.getElementById("expts_header").innerHTML = "All Experiments";
+                    document.getElementById("proj_expts").style.display = "none";
+                    document.getElementById("all_expts").style.display = "block";
+                }
+            }
+            document.getElementById("toggle_expts_link").style.display = "inline-block";
+            document.getElementById("proj_expts").style.display = "block";
+            document.getElementById("expts_header").innerHTML = "Experiments in ${project}";
+        #else
+            document.getElementById("all_expts").style.display = "block";
+        #end
+
+</script>
+
+<!-- END xnat-templates/screens/xnat_subjectData/xnat_subjectData_assessors.vm -->

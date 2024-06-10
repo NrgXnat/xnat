@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("Investigator Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>Investigator Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>title</TD><TD>$!item.getStringProperty("xnat:investigatorData/title")</TD></TR>
+							<TR><TD>firstname</TD><TD>$!item.getStringProperty("xnat:investigatorData/firstname")</TD></TR>
+							<TR><TD>lastname</TD><TD>$!item.getStringProperty("xnat:investigatorData/lastname")</TD></TR>
+							<TR><TD>institution</TD><TD>$!item.getStringProperty("xnat:investigatorData/institution")</TD></TR>
+							<TR><TD>department</TD><TD>$!item.getStringProperty("xnat:investigatorData/department")</TD></TR>
+							<TR><TD>email</TD><TD>$!item.getStringProperty("xnat:investigatorData/email")</TD></TR>
+							<TR><TD>phone</TD><TD>$!item.getStringProperty("xnat:investigatorData/phone")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:investigatorData/ID")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:investigatorData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:investigatorData -->
+		</TD>
+	</TR>
+</TABLE>

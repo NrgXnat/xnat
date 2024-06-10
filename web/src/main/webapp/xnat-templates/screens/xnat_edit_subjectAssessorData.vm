@@ -1,0 +1,15 @@
+	#parse("/screens/LoadProjectsJS.vm")
+	<input type="hidden" name="$!item.getXSIType()/ID" id="$!item.getXSIType()/ID" value="$!item.getProperty("ID")"/>
+	<hr>
+		   			#parse("screens/ProjectSelector.vm")
+<HR>
+		   <DIV class="edit_header1">$displayManager.getSingularDisplayNameForSubject() Details</div><br>
+			#parse("/screens/SubjectFinder.vm")
+<HR>
+<script type="text/javascript">
+var elementName="$!item.getXSIType()";
+</script>
+		<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/omUtils.js')"></SCRIPT>
+		<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/xnat_edit_experimentData.js')"></SCRIPT>
+		<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/xnat_edit_subjectAssessorData.js')"></SCRIPT>
+	<INPUT type="hidden" name="ELEMENT_0" value="$!item.getXSIType()"/>

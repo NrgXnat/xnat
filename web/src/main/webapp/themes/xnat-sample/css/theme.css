@@ -1,0 +1,51 @@
+/* Style for XNAT "Default" theme */
+
+body, html body, * body {
+    color: #000;
+    background: #fff;
+}
+
+#page_wrapper {
+    background: inherit;
+}
+
+#header {
+    background: inherit;
+}
+
+#header_logo {
+    /*display: none;*/
+    /*visibility: hidden;*/
+    /*opacity: 0;*/
+}
+
+#main_nav {
+    background-color: #04519b;
+    background-image: linear-gradient(#04519b, #044687 60%, #033769);
+    border-bottom: 1px solid #033769;
+}
+
+#main_nav ul.nav li li.active,
+#main_nav ul.nav li li.active > a,
+#main_nav ul.nav li li.active > a:hover {
+    background-color: #cce1f3;
+    /*background: #e5f2ff;*/
+    /*z-index: 20;*/
+}
+
+#main_nav ul.nav li.active > ul {
+    display: block;
+    z-index: 21;
+}
+
+#main_nav ul.nav > li {
+    border-right: 1px solid #033769;
+}
+
+#main_nav ul.nav > li:first-of-type {
+    border-left: 1px solid #033769;
+}
+
+.xnat-table {
+    color: #333;
+}

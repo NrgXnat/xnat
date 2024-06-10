@@ -1,0 +1,41 @@
+$navigation.setTemplate("/htmlOpen.vm")
+
+## insert any template-specific <head> code here
+<script type="text/javascript">
+    window.loggedIn = true;
+    window.isPopup=true;
+    window.loadDataTypes = false;
+    jq(function(){
+        jq('body').addClass('popup');
+    });
+</script>
+#set($popup=true)
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+
+<!-- path: xdat-templates/layouts/Popup_empty.vm -->
+
+<div id="layout_content2" style="display:none;">Loading...</div>
+<div id="layout_content">$screen_placeholder</div>
+	  
+## insert any template-specific code here that needs to be directly before closing </body> tag
+<script type="text/javascript">
+    jq(function(){
+        if (getQueryStringValue('modal') === 'x'){
+            jq('body').addClass('xmodal-popup')
+        }
+    });
+</script>
+
+<div id="mylogger"></div>
+#addGlobalCustomScreens("footer")
+
+##$navigation.setTemplate("/htmlClose.vm")
+
+</div><!-- /page_wrapper -->
+##$navigation.setTemplate("/powered_by.vm")
+<script type="text/javascript" src="$content.getURI('scripts/footer.js')"></script>
+</body>
+</html>

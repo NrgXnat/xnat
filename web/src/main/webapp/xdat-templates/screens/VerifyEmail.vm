@@ -1,0 +1,20 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("Login.vm")
+$page.setTitle("Email Verified")
+
+<div id="login_area">
+    #if($data.getMessage())
+        <div class="message">
+            <p><strong>Note: </strong><br />$data.getMessage()</p>
+        </div>
+    #end
+    <h1>Email Verification Complete</h1>
+    #if ($autoApproval == "true" || $userEnabled == "true")
+        <p>Thank you for verifying your email address. Your account has been enabled and you can now log in to XNAT.</p>
+        <p><a href="$link.setPage("Login.vm")"><button class="btn btn2">Go to the Login Screen</button></a></p>
+    #else
+        <p>Thank you for verifying your email address. Your user account will now be reviewed and enabled by the site administrator. When this is complete, you will receive an email inviting you to login to the site.</p>
+        <p><a href="$link.setPage("Login.vm")"><button class="btn btn2">Return to Site Home</button></a></p>
+    #end
+</div>

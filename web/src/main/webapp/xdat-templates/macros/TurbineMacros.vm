@@ -1,0 +1,2156 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="escUtils" type="org.apache.commons.text.StringEscapeUtils" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="tipText" type="java.util.List" *#
+##Copyright 2016 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+##
+## Default macro file for XNAT
+##
+
+#macro(escapeHTML $s)$!turbineUtils.escapeHTML("$!s").toString().trim()#end
+#macro(escapeJS $s)$!turbineUtils.escapeJS("$!s").toString().trim()#end
+#macro(escapeAll $s)$!turbineUtils.escapeHTML($!turbineUtils.escapeJS("$!s")).toString().trim()#end
+#macro(escapeParam $s)$!turbineUtils.escapeParam("$!s").toString().trim()#end
+#macro(escapeAllUnescapeParam $s)#escapeAll($!turbineUtils.unescapeParam("$!s"))#end
+
+#macro(escapeXML $s)$!escUtils.escapeXml11("$!s")#end
+#macro(escapeCleanHTML $s)$!escUtils.escapeHtml4($!escUtils.unescapeHtml4($!escUtils.unescapeXml("$!s"))).replaceAll("'", "&apos;").replaceAll('"', '&quot;')#end
+#macro(escapeCleanJS $s)$!escUtils.escapeEcmaScript($!escUtils.unescapeEcmaScript("$!s"))#end
+#macro(escapeAllJS $s)$!escUtils.escapeEcmaScript($!escUtils.escapeXml11($!escUtils.unescapeXml("$!s")))#end
+
+#macro(unescapeAllHTML $s)$!escUtils.unescapeHtml4($!escUtils.unescapeXml("$!s"))#end
+#macro(escapeHtmlForJS $s)#escapeCleanJS($!escUtils.escapeHtml4($!escUtils.unescapeHtml4($!escUtils.unescapeXml("$!s"))))#end
+
+## convert " to &quot; - prevents breaking out of HTML attributes
+#macro(replaceQuotes $str)$str.toString().replaceAll('"', '&quot;')#end
+
+## convert ' to &apos; - prevents breaking out of single-quoted attributes
+#macro(replaceSingleQuotes $str)$str.toString().replaceAll("'", "&apos;")#end
+
+#macro(insertPipelineNotification)
+   <br/>
+    <p>&nbsp;</p>
+    #set ($email = $user.getEmail())
+    #set ($text	= "")
+    #if(!($email==""))
+            <p>
+                When the build is complete, an email will be automatically sent to $email
+            </p>
+    <p>&nbsp;</p>
+    #end
+    #set ($text="additional")
+            <p>
+                Send <i>$text</i> confirmation emails to
+                <input type="text" name="emailField" value="" size="20">  (use commas to separate multiple addresses)
+            </p>
+    <p>&nbsp;</p>
+#end
+
+#macro(insertCustomPipelineNotification $msg)
+   <br/>
+    <p>&nbsp;</p>
+    #set ($email = $user.getEmail())
+    #set ($text	= "")
+    #if(!($email==""))
+            <p>
+                When the $msg is complete, an email will be automatically sent to $email
+            </p>
+    <p>&nbsp;</p>
+    #end
+    #set ($text="additional")
+            <p>
+                Send <i>$text</i> confirmation emails to
+                <input type="text" name="emailField" value="" size="20">  (use commas to separate multiple addresses)
+            </p>
+    <p>&nbsp;</p>
+#end
+
+
+#macro (includeJSFile)
+  <script type="text/javascript">
+    var serverRoot = "$content.getURI('')";
+  </script>
+  <script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/xdat.js')"></script>
+#end
+
+##CREATED BY TIMOTHY OLSEN 3/7/05 FOR USE IN EDIT SCREENS
+#macro (xdatPassItemFormFields $search_element $search_field $search_value $project)
+  <input type="hidden" name="search_element" value="$search_element"/>
+  <input type="hidden" name="search_field" value="$search_field"/>
+  <input type="hidden" name="search_value" value="$search_value"/>
+  <input type="hidden" name="project" value="$project"/>
+#end
+
+#macro (xdatTextBox $name $item $defaultValue $vr)
+<!-- macro: xdatTextBox -->
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+    #end
+  #end
+  #if ($item.getProperty($name))
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+    #else
+    <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+    #end
+  #else
+  <input id="$name" type="text" name="$name" value="$defaultValue"/>
+  #end
+#end
+
+#macro (xdatTextBoxWID $name $item $defaultValue $vr $id)
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+    #end
+  #end
+  #if ($item.getProperty($name))
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$id" type="hidden" name="$name" value="$item.getProperty($name)"/>
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+    #else
+    <input id="$id" type="text" name="$name" value="$item.getProperty($name)"/>
+    #end
+  #else
+  <input id="$id" type="text" name="$name" value="$defaultValue"/>
+  #end
+#end
+
+
+#macro (xdatStringBox $name $item $defaultValue $vr)
+	#xdatStringBoxOnChange($name $item $defaultValue "" $vr "")
+#end
+
+#macro (xdatStringBoxWClass $name $item $defaultValue $vr $classes)
+	#xdatStringBoxOnChange($name $item $defaultValue "" $vr $classes)
+#end
+
+#macro (xdatStringBoxOnChange $name $item $defaultValue $onChange $vr $classes)
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+    #end
+  #end
+  #if ("$!classes" == "")
+    #set ($classes = "")
+  #end
+  #if ($item.getProperty($name))
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+      <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+    #else
+      <input id="$name" class="$!classes" type="text" name="$name" value="$item.getStringProperty($name)" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
+    #end
+  #else
+    <input id="$name" class="$!classes" type="text" name="$name" value="$defaultValue" #if($!onChange != "") onchange="$!{onChange}(this)" #end/>
+  #end
+#end
+
+#macro (xdatStringBoxWSize $name $item $defaultValue $vr $size)
+<!-- macro: xdatStringBoxWSize -->
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+    #end
+  #end
+  #if ($item.getProperty($name))
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)"/>
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+    #else
+    <input id="$name" type="text" name="$name" size="$size" value="$item.getStringProperty($name)"/>
+    #end
+  #else
+  <input id="$name" type="text" name="$name" size="$size" value="$defaultValue"/>
+  #end
+#end
+
+#macro (xdatStringBoxWSizeClass $name $item $defaultValue $vr $size $classes)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658</span>
+  #end
+#end
+  #if ($item.getProperty($name))
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)"/>
+    $item.getProperty($name)
+    #else
+    <input id="$name" type="text" class="$!classes" name="$name" size="$size" value="$item.getStringProperty($name)"/>
+    #end
+  #else
+  <input id="$name" type="text" class="$!classes" name="$name" size="$size" value="$defaultValue"/>
+  #end
+#end
+
+#macro (xdatTextArea $name $item $defaultValue $vr $rows $cols)
+<!-- macro: xdatTextArea -->
+  #if ($vr)
+    #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+    #end
+  #end
+  #if ($item.getProperty($name))
+  <textarea rows="$rows" cols="$cols" id="$name" name="$name">$item.getStringProperty($name)</textarea>
+  #else
+  <textarea rows="$rows" cols="$cols" id="$name" name="$name">$defaultValue</textarea>
+  #end
+#end
+
+#macro (xdatPKDisplay $name $item)
+  <input id="$name" type="hidden" name="$name" value="$item.getStringProperty($name)"/>
+  #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+#end
+
+#macro (xdatBooleanDisplay $name $item $defaultValue)
+  #if($item.getBooleanProperty($name,$defaultValue))
+    <img border="0" src="$content.getURI("images/cg.gif")"/>
+  #else
+    <img border="0" src="$content.getURI("images/cr.gif")"/>
+  #end
+#end
+
+#macro (xdatHiddenBox $name $item $defaultValue)
+  <!-- macro: xdatHiddenBox -->
+  #if ($item.getProperty($name))
+  <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+  #else
+  <input id="$name" type="hidden" name="$name" value="$defaultValue"/>
+  #end
+#end
+
+#macro (xdatBooleanCheckbox $name $item $vr)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #set($value = $!item.getBooleanProperty($name))
+
+  ## The hidden box is necessary to submit a "false" value if the checkbox is unchecked
+  ## If the checkbox is checked, its true value will override the hidden's "false" value
+  <input id="$name" type="checkbox" name="$name" value="1" #if($value) checked #end />
+  <input type="hidden" name="$name" value="0" />
+#end
+
+#macro (xdatBooleanRadio $name $item $defaultValue $vr)
+<!-- macro: xdatBooleanRadio -->
+  #if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if ($item.getBooleanProperty($name,$defaultValue))
+  <input type="radio" name="$name" value="1" CHECKED/>&nbsp;true
+  <input type="radio" name="$name" value="0"/>&nbsp;false
+  #else
+  <input type="radio" name="$name" value="1"/>&nbsp;true
+  <input type="radio" name="$name" value="0" CHECKED/>&nbsp;false
+  #end
+#end
+
+#macro (xdatBooleanRadioYesNo $name $item $defaultValue $vr)
+<!-- macro: xdatBooleanRadioYesNo -->
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if ($item.getBooleanProperty($name,$defaultValue))
+  <input type="radio" name="$name" value="1" CHECKED/>&nbsp;yes
+  <input type="radio" name="$name" value="0"/>&nbsp;no
+  #else
+  <input type="radio" name="$name" value="1"/>&nbsp;yes
+  <input type="radio" name="$name" value="0" CHECKED/>&nbsp;no
+  #end
+#end
+
+#macro (xdatBooleanRadioYesNoWithoutDefault $name $item $vr)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #set($value = "$!item.getBooleanProperty($name)")
+
+  #if ($value == "true")
+  <input type="radio" name="$name" value="1" CHECKED/>&nbsp;yes
+  <input type="radio" name="$name" value="0"/>&nbsp;no
+  #elseif ($value == "false")
+  <input type="radio" name="$name" value="1"/>&nbsp;yes
+  <input type="radio" name="$name" value="0" CHECKED/>&nbsp;no
+  #else
+  <input type="radio" name="$name" value="1"/>&nbsp;yes
+  <input type="radio" name="$name" value="0"/>&nbsp;no
+  #end
+#end
+
+
+#macro (xdatBooleanRadioYesNoWithoutDefaultWONClick $name $item $vr $onchange)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #set($value = "$!item.getBooleanProperty($name)")
+
+  #if ($value == "true")
+  <input type="radio" id="${name}_1" name="$name" value="1" onclick="return $!{onchange}(true);" CHECKED/>&nbsp;yes
+  <input type="radio" id="${name}_0" name="$name" value="0" onclick="return $!{onchange}(false);"/>&nbsp;no
+  #elseif ($value == "false")
+  <input type="radio" id="${name}_1" name="$name" value="1" onclick="return $!{onchange}(true);"/>&nbsp;yes
+  <input type="radio" id="${name}_0" name="$name" value="0" onclick="return $!{onchange}(false);" CHECKED/>&nbsp;no
+  #else
+  <input type="radio" id="${name}_1" name="$name" value="1" onclick="return $!{onchange}(true);"/>&nbsp;yes
+  <input type="radio" id="${name}_0" name="$name" value="0" onclick="return $!{onchange}(false);"/>&nbsp;no
+  #end
+#end
+
+#macro (xdatRadioButtonGroup $name $item $possibleValues $vr)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+  #else
+    #if ($possibleValues.size()==0)
+      <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+    #else
+      #foreach ($pValue in $possibleValues)
+      <input type="radio" name="$name" value="$pValue" #if($pValue.equals($item.getProperty($name))) checked #end />&nbsp;$pValue
+      #end
+    #end
+  #end
+#end
+
+#macro (xdatComboBox $name $item $settings_alias $vr)
+  <!-- macro: xdatComboBox -->
+ #if ($vr)
+    #if($vr.getField($name))
+       <span style="color:red;">&#8658;</span>
+    #end
+ #end
+  #if($item.isPKField($name) && (!$vr.getField($name)))
+      <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+      #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+  #else
+      <select id="$name" name="$name"></select>
+      <script type="text/javascript" src="$content.getURI("scripts/customizableSelectBox.js")"></script>
+      <script type="text/javascript">
+          (function(){
+              var comboBox = new CustomSelectBox("$name", $settings_alias);
+              comboBox.render('#escapeAll("$!item.getProperty($name)")');
+          })();
+      </script>
+  #end
+#end
+
+#macro (xdatSelectBox $name $item $possibleValues $vr)
+<!-- macro: xdatSelectBox -->
+  #if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+  #else
+  #if($possibleValues)
+    #if ($possibleValues.size()==0)
+      <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+    #else
+    <table align="left" cellpadding="0" cellspacing="0"><tr><td align="left" style="padding-left:0px;">
+      <select id="SEL_$name" name="SEL_$name" onchange="setSelectValue(this);">
+        <option value="">(SELECT)</option>
+        #foreach ($pValue in $possibleValues)
+        <option value="$pValue.get(0)" #if($pValue.get(0).equals($item.getProperty($name))) SELECTED #end>$pValue.get(1)</option>
+        #end
+        <option value="">CUSTOM</option>
+      </select>			</td><td align="left"><div id="IND_$name"><a id="A_$name" onclick="showText(this);">Other</a></div>
+      </td><td>
+<div id="TEXT_$name" style="display:none"> Enter: <input id="$name" type="text" name="$name" value="$!item.getProperty($name)"/></div>
+</td></tr></table>
+  <script type="text/javascript">
+  function setSelectValue(SELECTbox){
+    if(SELECTbox.selectedIndex!=0)
+    {
+      var name = SELECTbox.name;
+      name = name.substring(4);
+      var NEWvalue=SELECTbox.options[SELECTbox.selectedIndex].value;
+      if (NEWvalue=="")
+      {
+        document.getElementById("TEXT_" + name).style.display="block";
+        document.getElementById("IND_" + name).style.display="none";
+        //SELECTbox.disabled=true;
+      }else{
+        document.getElementById(name).value=NEWvalue;
+      }
+    }
+  }
+  function showText(ATag){
+      var name = ATag.id;
+      name = name.substring(2);
+        document.getElementById("TEXT_" + name).style.display="block";
+        document.getElementById("IND_" + name).style.display="none";
+  }
+  </script>
+    #end
+    #else
+      <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+    #end
+  #end
+#end
+
+
+#macro (xdatSelectBoxWSingleValueLbl $lbl $name $item $possibleValues $vr)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$!item.getProperty($name)"/>
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+  #else
+  #if($possibleValues)
+    #if ($possibleValues.size()==0)
+      <input id="$name" type="text" name="$name" value="$!item.getProperty($name)"/>
+    #else
+    <table cellpadding="0" cellspacing="0" align="left"><tr><td align="left">
+      <select id="SEL_$name" name="SEL_$name" ONCHANGE="setSelectValue(this);">
+        <option value="">$lbl</option>
+        #foreach ($pValue in $possibleValues)
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>$pValue</option>
+        #end
+        <option value="">CUSTOM</option>
+      </select>			</td><td align="left"><div id="IND_$name"><a id="A_$name" onclick="showText(this);">Other</a></div>
+      </td><td>
+<div id="TEXT_$name" style="display:none"> Enter: <input id="$name" type="text" name="$name" value="$!item.getProperty($name)"/></div>
+</td></tr></table>
+  <script type="text/javascript">
+  function setSelectValue(SELECTbox){
+    if(SELECTbox.selectedIndex!=0)
+    {
+      var name = SELECTbox.name;
+      name = name.substring(4);
+      var NEWvalue=SELECTbox.options[SELECTbox.selectedIndex].value;
+      if (NEWvalue=="")
+      {
+        document.getElementById("TEXT_" + name).style.display="block";
+        document.getElementById("IND_" + name).style.display="none";
+        //SELECTbox.disabled=true;
+      }else{
+        document.getElementById(name).value=NEWvalue;
+      }
+    }
+  }
+  function showText(ATag){
+      var name = ATag.id;
+      name = name.substring(2);
+        document.getElementById("TEXT_" + name).style.display="block";
+        document.getElementById("IND_" + name).style.display="none";
+  }
+  </script>
+    #end
+    #else
+      <input id="$name" type="text" name="$name" value="$!item.getProperty($name)"/>
+    #end
+  #end
+#end
+
+#macro (xdatSelectBoxWSingleValue $name $item $possibleValues $vr)
+	#xdatSelectBoxWSingleValueLbl("(SELECT)" $name $item $possibleValues $vr)
+#end
+
+#macro (xdatSelectBoxWSingleValueWID $name $item $possibleValues $vr $id)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$id" type="hidden" name="$name" value="$item.getProperty($name)"/>
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+  #else
+    #if ($possibleValues.size()==0)
+      <input id="$id" type="text" name="$name" value="$item.getProperty($name)"/>
+    #else
+      <select id="$id" name="$name">
+        <option value="">(SELECT)</option>
+        #foreach ($pValue in $possibleValues)
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue")</option>
+        #end
+      </select>
+    #end
+  #end
+#end
+
+#macro (xdatSelectBoxWDefault $name $item $possibleValues $vr)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+  #else
+    #if ($possibleValues.size()==0)
+      <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+    #else
+      <select id="$name" name="$name">
+        #foreach ($pValue in $possibleValues)
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue")</option>
+        #end
+      </select>
+    #end
+  #end
+#end
+
+#macro (xdatSimpleSelectBoxLbl $lbl $name $item $possibleValues $vr)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+  #else
+    #if ($possibleValues.size()==0)
+      <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+    #else
+      <select id="$name" name="$name">
+        <option value="">$!lbl</option>
+        #foreach ($pValue in $possibleValues)
+        <option value="$pValue" #if($pValue.equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue")</option>
+        #end
+      </select>
+    #end
+  #end
+#end
+
+
+#macro (xdatSimpleSelectBoxLblWKeyValue $lbl $name $item $possibleValues $vr)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+  #else
+    #if ($possibleValues.size()==0)
+      <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+    #else
+      <select id="$name" name="$name">
+        <option value="">$!lbl</option>
+        #foreach ($pValue in $possibleValues)
+        <option value="$pValue.get(0)" #if($pValue.get(0).equals($item.getProperty($name))) SELECTED #end>#escapeHTML("$pValue.get(1)")</option>
+        #end
+      </select>
+    #end
+  #end
+#end
+
+#macro (xdatSimpleSelectBox $name $item $possibleValues $vr)
+	#xdatSimpleSelectBoxLbl("(SELECT)" $name $item $possibleValues $vr)
+#end
+
+#macro (xdatIntegerValueSelectBox $name $item $possibleValues $offset $vr)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #if($item.isPKField($name) && (!$vr.getField($name)))
+    <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+    #escapeHTML($!turbineUtils.unescapeParam("$item.getStringProperty($name)"))
+  #else
+    #if ($possibleValues.size()==0)
+      <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+    #else
+      <select id="$name" name="$name">
+        <option value="">(SELECT)</option>
+        #foreach ($pValue in $possibleValues)
+        #set($intValue = ($velocityCount - 1) + $offset)
+        <option value="$intValue" #if("$intValue" == "$!item.getProperty($name)") SELECTED #end>#escapeHTML("$pValue")</option>
+        #end
+      </select>
+    #end
+  #end
+#end
+
+#macro (xdatDateBox $name $item $vr $years)
+  <!-- macro: xdatDateBox -->
+ #if ($vr)
+    #if($vr.getField($name))
+       <span style="color:red;">&#8658;</span>
+    #end
+ #end
+   #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+   #set($days = [ 1..31 ])
+   <div id="date_container">
+         #if($item.getDateProperty($name))
+              #set ($expt_date = $!item.getDateProperty($name))
+            <select name="${name}.month" onchange="validateDate(this);">
+           <option value="bad">(SELECT)</option>
+                   #foreach ($month in $months)
+              #set ($monthCount = $velocityCount - 1)
+      <option value="$monthCount" #if ( $monthCount == $!expt_date.getMonth()) SELECTED="true" #end>						$month					</option>
+           #end
+        </select>
+        <select name="${name}.date" onchange="validateDate(this);">
+           <option value="bad">(SELECT)</option>
+           #foreach ($day in $days)
+      <option value="$day" #if ( $day == $!expt_date.getDate() ) SELECTED="true" #end>$day</option>
+           #end
+        </select>
+
+##			  #set ($currentYear = $date.Year + 1900)
+        <select name="${name}.year" onchange="validateDate(this);">
+           <option value="bad">(SELECT)</option>
+           #foreach ($year in $years)
+            <option value="$year" #if ( $year == $!expt_date.getYear() + 1900 ) SELECTED="true" #end>$year</option>
+           #end
+        </select>
+     #else
+        <select name="${name}.month" onchange="validateDate(this);">
+           <option value="bad">(SELECT)</option>
+           #foreach ($month in $months)
+              #set ($monthCount = $velocityCount - 1)
+          <option value="$monthCount">				$month					</option>
+           #end
+        </select>
+          <select name="${name}.date" onchange="validateDate(this);">
+           <option value="bad">(SELECT)</option>
+           #foreach ($day in $days)
+          <option value="$day">$day</option>
+           #end
+        </select>
+
+##			  #set ($currentYear = $date.Year + 1900)
+        <select name="${name}.year" onchange="validateDate(this);">
+           <option value="bad">(SELECT)</option>
+           #foreach ($year in $years)
+        <option value="$year">$year</option>
+           #end
+        </select>
+     #end
+      <div id="div_img" style="display:inline"></div>
+   </div>
+#end
+
+
+#macro (xdatDateBoxNotReportedJS)
+<script type="text/javascript">
+	function selectDayReported(name, reported) {
+		if (reported) {
+			document.getElementById(name + "DayNotReported").value = 0;
+			if (document.getElementsByName(name + ".date")[0].selectedIndex === 1) {
+				document.getElementsByName(name + ".date")[0].selectedIndex = 0;
+			}
+			selectMonthReported(name, reported);
+		} else {
+			document.getElementById(name + "DayNotReported").value = 1;
+			document.getElementsByName(name + ".date")[0].selectedIndex = 1;
+		}
+	}
+
+	function selectMonthReported(name, reported) {
+		if (reported) {
+			document.getElementById(name + "MonthNotReported").value = 0;
+			if (document.getElementsByName(name + ".month")[0].selectedIndex === 1) {
+				document.getElementsByName(name + ".month")[0].selectedIndex = 0;
+				selectDayReported(name, reported);
+			}
+			selectYearReported(name, reported);
+		} else {
+			document.getElementById(name + "MonthNotReported").value = 1;
+			document.getElementsByName(name + ".month")[0].selectedIndex = 1;
+			selectDayReported(name, reported);
+		}
+	}
+
+	function selectYearReported(name, reported) {
+		if (reported) {
+			document.getElementById(name + "YearNotReported").value = 0;
+			if (document.getElementsByName(name + ".year")[0].selectedIndex === 1) {
+				document.getElementsByName(name + ".year")[0].selectedIndex = 0;
+				selectMonthReported(name, reported);
+			}
+		} else {
+			document.getElementById(name + "YearNotReported").value = 1;
+			document.getElementsByName(name + ".year")[0].selectedIndex = 1;
+			selectMonthReported(name, reported);
+		}
+	}
+</script>
+#end
+
+#macro (xdatDateBoxNotReported $name $item $vr $years)
+	#if ($vr)
+		#if($vr.getField($name))
+			<span style="color:red;">&#8658;</span>
+		#end
+	#end
+
+	#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+	#set($days = [ 1..31 ])
+	#set($DayNotReported = "${name}DayNotReported")
+	#set($MonthNotReported = "${name}MonthNotReported")
+	#set($YearNotReported = "${name}YearNotReported")
+
+	<div id="date_container">
+	#if($item.getDateProperty($name))
+		#set ($expt_date = $!item.getDateProperty($name))
+
+		<select name="${name}.month" onchange="if(this.selectedIndex === 1) { selectMonthReported('${name}', false); } else { selectMonthReported('${name}', true); validateDate(this); }">
+			<option value="bad">(SELECT)</option>
+			<option value="0" #if ( $item.getBooleanProperty($MonthNotReported) ) SELECTED="true" #end>Not Reported</option>
+		#foreach ($month in $months)
+			#set ($monthCount = $velocityCount - 1)
+			<option value="$monthCount" #if ( !$item.getBooleanProperty($MonthNotReported) && $monthCount == $!expt_date.getMonth()) SELECTED="true" #end>$month</option>
+		#end
+		</select>
+
+		<select name="${name}.date" onchange="if(this.selectedIndex === 1) { selectDayReported('${name}', false); } else { selectDayReported('${name}', true); validateDate(this); }">
+			<option value="bad">(SELECT)</option>
+			<option value="1" #if ( $item.getBooleanProperty($DayNotReported) ) SELECTED="true" #end>Not Reported</option>
+		#foreach ($day in $days)
+			<option value="$day" #if (  !$item.getBooleanProperty($DayNotReported) && $day == $!expt_date.getDate() ) SELECTED="true" #end>$day</option>
+		#end
+		</select>
+
+		<select name="${name}.year" onchange="if(this.selectedIndex === 1) { selectYearReported('${name}', false); } else { selectYearReported('${name}', true); validateDate(this); }">
+			<option value="bad">(SELECT)</option>
+			<option value="1900" #if ( $item.getBooleanProperty($YearNotReported) ) SELECTED="true" #end>Not Reported</option>
+		#foreach ($year in $years)
+			<option value="$year" #if (  !$item.getBooleanProperty($YearNotReported) && $year == $!expt_date.getYear() + 1900 ) SELECTED="true" #end>$year</option>
+		#end
+		</select>
+	#else
+		<select name="${name}.month" onchange="if(this.selectedIndex === 1) { selectMonthReported('${name}', false); } else { selectMonthReported('${name}', true); validateDate(this); }">
+			<option value="bad">(SELECT)</option>
+			<option value="0">Not Reported</option>
+		#foreach ($month in $months)
+			#set ($monthCount = $velocityCount - 1)
+			<option value="$monthCount">$month</option>
+		#end
+		</select>
+
+		<select name="${name}.date" onchange="if(this.selectedIndex === 1) { selectDayReported('${name}', false); } else { selectDayReported('${name}', true); validateDate(this); }">
+			<option value="bad">(SELECT)</option>
+			<option value="1">Not Reported</option>
+		#foreach ($day in $days)
+			<option value="$day">$day</option>
+		#end
+		</select>
+
+		<select name="${name}.year" onchange="if(this.selectedIndex === 1) { selectYearReported('${name}', false); } else { selectYearReported('${name}', true); validateDate(this); }">
+			<option value="bad">(SELECT)</option>
+			<option value="1900">Not Reported</option>
+		#foreach ($year in $years)
+			<option value="$year">$year</option>
+		#end
+		</select>
+	#end
+	<div id="div_img" style="display:inline"></div>
+
+	<input type="hidden" id="${name}DayNotReported" name="${name}DayNotReported" value="$!item.getIntegerProperty($DayNotReported)"/>
+	<input type="hidden" id="${name}MonthNotReported" name="${name}MonthNotReported" value="$!item.getIntegerProperty($MonthNotReported)"/>
+	<input type="hidden" id="${name}YearNotReported" name="${name}YearNotReported" value="$!item.getIntegerProperty($YearNotReported)"/>
+
+	</div>
+#end
+
+#macro (xdatViewDateNotReported $name $item)
+	#set($DayNotReported = "${name}DayNotReported")
+	#set($MonthNotReported = "${name}MonthNotReported")
+	#set($YearNotReported = "${name}YearNotReported")
+
+
+	#if($item.getDateProperty($name))
+		#set($storedDate = $!item.getDateProperty($name))
+		#set($viewedDate = "")
+
+		#if ($item.getBooleanProperty($YearNotReported))
+			#set($viewedDate = "????")
+		#else
+			#set($year = $!storedDate.getYear() + 1900)
+			#set($viewedDate = "$!year")
+		#end
+
+		#set($viewedDate = "$!{viewedDate}-")
+
+		#if ($item.getBooleanProperty($MonthNotReported))
+			#set($viewedDate = "$!{viewedDate}??")
+		#else
+			#set($month = $!storedDate.getMonth() + 1)
+			#if ($month < 10)
+				#set($month = "0$!month")
+			#end
+			#set($viewedDate = "$!{viewedDate}$!month")
+		#end
+
+		#set($viewedDate = "$!{viewedDate}-")
+
+		#if ($item.getBooleanProperty($DayNotReported))
+			#set($viewedDate = "$!{viewedDate}??")
+		#else
+			#set($viewedDate = "$!{viewedDate}$!storedDate.getDate()")
+		#end
+		$!viewedDate
+	#end
+#end
+
+## DATE-TIME PROPS
+#macro (xdatDateTimeBox $name $item $vr $years)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+  #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+  #set($days = [ 1..31 ])
+  <font face="$ui.sansSerifFonts">
+    #if($item.getDateProperty($name))
+      #set ($expt_date = $!item.getDateProperty($name))
+      <select name="${name}.month">
+        <option value="bad">(SELECT)</option>
+
+        #foreach ($month in $months)
+          #set ($monthCount = $velocityCount - 1)
+              <option value="$monthCount" #if ( $monthCount == $!expt_date.getMonth()) SELECTED="true" #end>
+            $month
+          </option>
+        #end
+      </select>/
+
+      <select name="${name}.date">
+        <option value="bad">(SELECT)</option>
+        #foreach ($day in $days)
+              <option value="$day" #if ( $day == $!expt_date.getDate() ) SELECTED="true" #end>$day</option>
+        #end
+      </select>/
+
+##			#set ($currentYear = $date.Year + 1900)
+      <select name="${name}.year" >
+        <option value="bad">(SELECT)</option>
+        #foreach ($year in $years)
+            <option value="$year" #if ( $year == $!expt_date.getYear() + 1900 ) SELECTED="true" #end>$year</option>
+        #end
+      </select>-
+
+      <select name="${name}.hours">
+        <option value="bad">(SELECT)</option>
+        #foreach ($hour in [ 0..23 ])
+              <option value="$hour" #if ( $hour == $!expt_date.getHours() ) SELECTED="true" #end>$hour</option>
+        #end
+      </select>:
+
+      <select name="${name}.minutes">
+        <option value="bad">(SELECT)</option>
+        #foreach ($minute in [ 0..59 ])
+              <option value="$minute" #if ( $minute == $!expt_date.getMinutes() ) SELECTED="true" #end>$minute</option>
+        #end
+      </select>
+
+    #else
+      <select name="${name}.month">
+        <option value="bad">(SELECT)</option>
+        #foreach ($month in $months)
+          #set ($monthCount = $velocityCount - 1)
+              <option value="$monthCount">
+            $month
+          </option>
+        #end
+      </select>/
+
+      <select name="${name}.date">
+        <option value="bad">(SELECT)</option>
+        #foreach ($day in $days)
+              <option value="$day">$day</option>
+        #end
+      </select>/
+
+##			#set ($currentYear = $date.Year + 1900)
+      <select name="${name}.year" >
+        <option value="bad">(SELECT)</option>
+        #foreach ($year in $years)
+            <option value="$year">$year</option>
+        #end
+      </select>-
+
+      <select name="${name}.hours">
+        <option value="bad">(SELECT)</option>
+        #foreach ($hour in [ 0..23 ])
+              <option value="$hour">$hour</option>
+        #end
+      </select>:
+
+      <select name="${name}.minutes">
+        <option value="bad">(SELECT)</option>
+        #foreach ($minute in [ 0..59 ])
+              <option value="$minute">$minute</option>
+        #end
+      </select>
+
+    #end
+      </font>
+#end
+
+
+## TIME PROPS
+#macro (xdatTimeBox $name $item $vr)
+#if ($vr)
+  #if($vr.getField($name))
+    <span style="color:red;">&#8658;</span>
+  #end
+#end
+#set ($hours=[["08","8AM",8],["09","9AM",9],["10","10AM",10],["11","11AM",11],["12","12PM",12],["13","1PM",13],["14","2PM",14],["15","3PM",15],["16","4PM",16],["17","5PM",17],["18","6PM",18],["19","7PM",19],["20","8PM",20],["21","9PM",21],["22","10PM",22],["23","11PM",23],["00","12AM",0],["01","1AM",1],["02","2AM",2],["03","3AM",3],["04","4AM",4],["05","5AM",5],["06","6AM",6],["07","7AM",7]]	)
+        <font face="$ui.sansSerifFonts">
+        #if($!item.getDateProperty($name))
+      #set ($expt_date = $!item.getDateProperty($name))
+          <select id="${name}.hours" name="${name}.hours">
+        <option value="">HH</option>
+        #foreach ($hour in $hours)
+              <option value="$hour.get(0)" #if ( $hour.get(2) == $!expt_date.getHours() ) SELECTED="true" #end>$hour.get(1)</option>
+        #end
+      </select>:
+
+      <select id="${name}.minutes" name="${name}.minutes">
+        <option value="">MM</option>
+        #foreach ($minute in [ 0..59 ])
+           #if($minute<10)
+           		#set($minuteD="0$minute")
+           #else
+           		#set($minuteD="$minute")
+           #end
+              <option value="$minute" #if ( $minute == $!expt_date.getMinutes() ) SELECTED="true" #end>$minuteD</option>
+        #end
+      </select>
+      <select id="${name}.seconds" name="${name}.seconds">
+        <option value="">SS</option>
+        #foreach ($second in [ 0..59 ])
+           #if($second<10)
+           		#set($secondD="0$second")
+           #else
+           		#set($secondD="$second")
+           #end
+           <option value="$second" #if ( $second == $!expt_date.getSeconds() ) SELECTED="true" #end>$secondD</option>
+        #end
+      </select>
+
+      #else
+      <select id="${name}.hours" name="${name}.hours">
+        <option value="">HH</option>
+        #foreach ($hour in $hours)
+              <option value="$hour.get(0)">$hour.get(1)</option>
+        #end
+      </select>:
+
+      <select id="${name}.minutes" name="${name}.minutes">
+        <option value="">MM</option>
+        #foreach ($minute in [ 0..59 ])
+           #if($minute<10)
+           		#set($minuteD="0$minute")
+           #else
+           		#set($minuteD="$minute")
+           #end
+              <option value="$minute">$minuteD</option>
+        #end
+      </select>
+
+      <select id="${name}.seconds" name="${name}.seconds">
+        <option value="">SS</option>
+        #foreach ($second in [ 0..59 ])
+          #if($second<10)
+            #set($secondD="0$second")
+          #else
+            #set($secondD="$second")
+          #end
+          <option value="$second">$secondD</option>
+        #end
+      </select>
+
+      #end
+            </font>
+#end
+
+
+## EDIT PROPS
+#macro (xdatEditProps $item $edit_screen)
+  <!-- macro: xdatEditProps -->
+  #set ($dataPopup = $turbineUtils.GetPassedParameter("popup",$data))
+  #if($dataPopup)
+  #else
+    #set ($dataPopup = "false")
+  #end
+  <input type="hidden" name="popup" value="$dataPopup"/>
+  <input type="hidden" name="edit_screen" value="$!edit_screen"/>
+  <input type="hidden" name="ELEMENT_0" value="$!item.getXSIType()"/>
+#end
+
+#macro (xdatSearchField $schemaElement $displayField)
+  <!-- macro: xdatSearchField -->
+    #if ($displayField.getDataType().equalsIgnoreCase("string"))
+        #if ($displayField.hasEnumeration())
+        <select name="${schemaElement.getFullXMLName()}.${displayField.Id}_equals">
+            <option value="" #if($!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_equals")=="")SELECTED#end>(SELECT)</option>
+            #foreach ($key in $displayField.getEnumeration())
+                <option value="$key" #if($!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_equals")==$key)SELECTED#end>$key</option>
+            #end
+        </select>
+        #else
+        <input size="18" type="text" data-type="text-string" name="${schemaElement.getFullXMLName()}.${displayField.Id}_equals" value="$!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_equals")"/>
+        #end
+    #elseif ($displayField.getDataType().equalsIgnoreCase("date"))
+    <div class="date-range">
+        <input class="date_mask check_date us" size="10" maxlength="10" type="text" data-type="date" name="${schemaElement.getFullXMLName()}.${displayField.Id}_to_fulldate"
+            placeholder="MM/DD/YYYY" value="$!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_to_fulldate")"#* ONCHANGE="return validateDateBox(this);"*#/>
+        &ndash;
+        <input class="date_mask check_date us" size="10" maxlength="10" type="text" data-type="date" name="${schemaElement.getFullXMLName()}.${displayField.Id}_from_fulldate"
+            placeholder="MM/DD/YYYY" value="$!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_from_fulldate")"#* ONCHANGE="return validateDateBox(this);"*#/>
+    </div>
+    #elseif ($displayField.getDataType().equalsIgnoreCase("integer"))
+        #if ($displayField.getId().equalsIgnoreCase("INVEST_ID"))
+        <select name="${schemaElement.getFullXMLName()}.${displayField.Id}_equals">
+            <option value="">(SELECT)</option>
+            #foreach ($key in $investigators.keySet())
+                <option value="$key" #if($!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_equals")==$key)SELECTED#end>$investigators.get($key)</option>
+            #end
+        </select>
+        #else
+        <input size="12" type="text" data-type="number-integer" name="${schemaElement.getFullXMLName()}.${displayField.Id}_equals" value="$!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_equals")"/>
+        #end
+    #elseif ($displayField.getDataType().equalsIgnoreCase("float"))
+    <input size="12" type="text" data-type="number-float" name="${schemaElement.getFullXMLName()}.${displayField.Id}_equals" value="$!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_equals")"/>
+    #elseif ($displayField.getDataType().equalsIgnoreCase("double"))
+    <input size="12" type="text" data-type="number-double" name="${schemaElement.getFullXMLName()}.${displayField.Id}_equals" value="$!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_equals")"/>
+    #elseif ($displayField.getDataType().equalsIgnoreCase("decimal"))
+    <input size="12" type="text" data-type="number-decimal" name="${schemaElement.getFullXMLName()}.${displayField.Id}_equals" value="$!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}_equals")"/>
+    #else
+    <input size="18" type="text" name="${schemaElement.getFullXMLName()}.$displayField.Id" value="$!search.getWebFormValue("${schemaElement.getFullXMLName()}.${displayField.Id}")"/>
+    #end
+
+#end
+
+#macro (xdatSearchElement $schemaElement $cols)
+  <!-- macro: xdatSearchElement -->
+  #set($elementDisplay = $schemaElement.Display)
+  #if($elementDisplay)
+    #if ($elementDisplay.getCustomSearchVM())
+    <!-- FOUND CUSTOM $schemaElement.getName() Search -->
+      #parse($elementDisplay.getCustomSearchVM())
+    #else
+      #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+      #set($days = [ 1..31 ])
+      #set($years = [ 1901..$!turbineUtils.getYear()])
+      <table valign="top">
+          #foreach ($displayRow in $elementDisplay.getSearchableFields($cols))
+          <tr>
+            #foreach ($displayField in $displayRow)
+              <td>
+                  <!-- $:displayField.Header -->
+                  <h5>$displayField.Header</h5>
+                  <!-- #:xdatSearchField($:schemaElement $:displayField) -->
+                  #xdatSearchField($schemaElement $displayField)
+              </td>
+            #end
+          </tr>
+          #end
+      </table>
+    #end
+  #end
+#end
+#macro (xdatHiddenSearchForm $schemaElement $cols)
+  #set($elementDisplay = $schemaElement.Display)
+  #if($elementDisplay)
+    <script type="text/javascript">
+    <!--
+    function toggleSearch() // 1 visible, 0 hidden
+    {
+        if (document.getElementById)
+      {
+        if (document.getElementById('hidden_search').style.display=='none')
+        {
+          document.getElementById('hidden_search').style.display = 'block';
+            document.getElementById('hide_search').value="Search <<<";
+        }else{
+          document.getElementById('hidden_search').style.display = 'none';
+            document.getElementById('hide_search').value="Search >>>";
+        }
+      }
+      else if (document.all)
+      {
+          if (document.all['hidden_search'].style.display=='none')
+        {
+          document.all['hidden_search'].style.display = 'block';
+            document.getElementById('hide_search').value="Search <<<";
+        }else{
+          document.all['hidden_search'].style.display = 'none';
+            document.getElementById('hide_search').value="Search >>>";
+        }
+      }
+    }
+    // -->
+    </script>
+    <input id="hide_search" type="button" onClick="toggleSearch()" value="Search >>>">
+    <span id="hidden_search" style="position:relative; display:none;">
+        #xdatSearchForm($schemaElement $cols)
+    </span>
+  #end
+#end
+
+#macro (xdatSearchForm $schemaElement $cols)
+  <FORM name="search" method="post" action="$link.setAction("DisplaySearchAction")">
+    <table>
+      <tr>
+        <td>
+          #xdatSearchElement($schemaElement $cols)
+        </td>
+      </tr>
+      <tr><td align=right><input type="hidden" name="ELEMENT_0" value="${schemaElement.getFullXMLName()}"/><input type="submit" name="eventSubmit_doPerform" value="Submit Search"/></td></tr>
+    </table>
+  </FORM>
+#end
+
+##END
+
+#macro (header $body $size)
+      <font face="$ui.sansSerifFonts" size="$size">
+        <b>$!body</b>
+      </font>
+#end
+
+#macro ( booleanCheckbox $booleanField )
+ <input type="checkbox" name="$booleanField.Key" value="true"
+#if ($booleanField.Value) checked #end />
+   <input type="hidden" name="$booleanField.ValueIfAbsent" value="false" />
+#end
+
+#macro (formCheckBox $label $field)
+  <th>
+        $label
+  </th>
+  <td bgcolor="$ui.formFieldColor">
+    #booleanCheckbox($field)
+  </td>
+#end
+
+
+#macro (ynDropDownBox $booleanField)
+ <select name="$booleanField.Key">
+   <option value="Y">Y</option>
+   <option value="N">N</option>
+ </select>
+#end
+
+#macro (formConciseCheck $label $booleanField)
+  <td bgcolor="$ui.formFieldColor">
+    #booleanCheckbox($booleanField)
+    <b>
+       $label
+    </b>
+</td>
+#end
+
+#macro (formXDATCheckBox $label $field $value)
+<td bgcolor="$ui.formFieldColor">
+    <input type="checkbox" name="$field" value="true" #if ($value) checked #end />
+    <b>
+       $label
+    </b>
+</td>
+#end
+
+#macro (formIntakeErrorMessage $field)
+  <td bgcolor="$ui.formFieldColor">
+      <font face="$ui.sansSerifFonts" size="2" color="red">
+      $!field.Message
+    </font>
+  </td>
+#end
+
+#macro (formIntakeTextFieldWValue $field $value)
+  <td bgcolor="$ui.formFieldColor">
+  #if (!$field.isValid())
+      <font face="$ui.sansSerifFonts" size="2" color="red">
+      $!field.Message<br>
+    </font>
+  #end
+      <input type="text" size="20" name="$field.Key" value="$!value">
+  </td>
+#end
+
+#macro (formIntakeTextFieldWValueSize $field $value $size)
+  <td bgcolor="$ui.formFieldColor">
+  #if (!$field.isValid())
+      <font face="$ui.sansSerifFonts" size="2" color="red">
+      $!field.Message<br>
+    </font>
+  #end
+      <input type="text" size="$size" name="$field.Key" value="$!value">
+  </td>
+#end
+
+#macro (formXDATValidatedField $field $value)
+  <td bgcolor="$ui.formFieldColor">
+    #if ($vr)
+      #if($vr.getField("$field"))
+        <font color="red">$!vr.getField("$field")</font><BR>
+      #end
+    #end
+      <input type="text" size="20" name="$field" value="$!value">
+    </td>
+#end
+
+#macro (formIntakeTextField $field )
+  <td bgcolor="$ui.formFieldColor">
+  #if (!$field.isValid())
+      <font face="$ui.sansSerifFonts" size="2" color="red">
+      $!field.Message<br>
+    </font>
+  #end
+      <input type="text" size="20" name="$field.Key" value="$!field">
+  </td>
+#end
+
+#macro (formTextFieldS $field $value $size)
+  <td bgcolor="$ui.formFieldColor">
+      <input type="text" size="$size" name="$field" value="$value">
+  </td>
+#end
+
+
+#macro (formTextField $field $value)
+  #formTextFieldS($field $value 20)
+#end
+
+#macro (text $text)
+  <font face="$ui.sansSerifFonts">
+    $text
+  </font>
+#end
+
+#macro (formLabel $label)
+<th class="formLabel">$label</th>
+#end
+
+#macro (formLabelRequired $label)
+<th class="formLabelRequired">
+    $label
+    <b>*</b>
+</th>
+#end
+
+#macro (formSublabel $label)
+<td class="formSublabel">$label</td>
+#end
+
+#macro (formUnderlineLabel $label)
+  <th><u>
+        $label
+    </u>
+  </th>
+#end
+
+#macro (textField $name $value $size)
+    <input type="text" size="$size" name="$name" value="$value">
+#end
+
+#macro (listBox $list)
+    $list
+#end
+
+#macro (formPasswordCell $label $name $value)
+  #formLabel($label)
+  <td bgcolor="$ui.formFieldColor">
+      <input type="password" size="20" name="$name" value="$value" autocomplete="off">
+  </td>
+#end
+
+#macro (formCell $label $name $value)
+  #formLabel($label)
+  #formTextField($name $value)
+#end
+
+#macro (fileUploadField $name)
+  <td bgcolor="$ui.formFieldColor">
+      <input type="file" size="30" name="$name">
+  </td>
+#end
+
+#macro (fileUpload $label $name)
+  #formLabel($label)
+  #fileUploadField($name)
+#end
+
+#macro (formListBox $label $list)
+  <th>
+        $label
+  </th>
+  <td bgcolor="$ui.formFieldColor">
+    $list
+  </td>
+#end
+
+#* ------------------------------------------------------------------
+#
+# Macros that are used for displaying information in tables.
+#
+*# ------------------------------------------------------------------
+
+#macro (headerCell $body $size)
+ <th align="left">$!body</th>
+#end
+
+#macro (smallHeaderCell $body $size)
+  <th valign="center" style="padding-top:0px; padding-right:20px; padding-bottom:0px; padding-left:5px;">
+      $!body
+  </th>
+#end
+
+#macro (headerSpan2Cell $body $size)
+  <th valign="center" colspan="2">
+      $!body
+  </th>
+#end
+
+#macro (smallEntryCell $body $size)
+  <td valign="center" style="padding-top:0px; padding-right:20px; padding-bottom:0px; padding-left:5px;" >
+      $!body
+  </td>
+#end
+
+#macro (entryCell $body $size)
+  <td valign="left" nowrap>
+      $!body
+  </td>
+#end
+
+#* Added by Tim *#
+#macro (imageCell $imageLink)
+  <td valign="center" align="center">
+    <img src="$content.getURI("$!imageLink")" border=0>
+  </td>
+#end
+
+#macro (scanSnapshotImage $content $om $scan)
+  #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+  #* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
+  #* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
+  #set ($scanSnapshotId = "scan${scan.id}snapshot")
+  <span class="span-$scanSnapshotId" data-expt-id="$om.getId()">Loading snapshot</span>
+#end
+
+#macro (elementActions $element $search_field $search_value $user $item $actions)
+##<style>
+##div.ic{
+##  width:18px;
+##  display:inline;
+##}
+##div.ic_spacer{
+##  width:10px;
+##  display:inline;
+##}
+##</style>
+#set($previousLink=$link.getLink())
+        #foreach ($actionGroup in $actions)
+         #if($actionGroup.getGroup()!="")
+           <li class="yuimenuitem #if($actionGroup.group=="Upload") lockable #end ${actionGroup.group}Grouping" style="margin-bottom:2px">
+     <a class="yuimenuitemlabel" href="#${actionGroup.group}box"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>$actionGroup.group</a>
+            <div id="${actionGroup.group}box" class="yuimenu">
+             <div class="bd">
+              <ul class="first-of-type">
+              #set($groupingCount=0)
+         #end
+         #foreach ($actionObject in $actionGroup.getActions())
+            #set($canAccess = "true")
+            #set($li_class = "")
+            #if($actionObject.getSecureAccess().equalsIgnoreCase("edit"))
+                #if ($item.canEdit($user))
+                    #set($canAccess = "true")
+                #else
+                    #set($canAccess = "false")
+                #end
+				#set($li_class = "lockable")
+            #elseif($actionObject.getSecureAccess().equalsIgnoreCase("read"))
+                #if ($item.canRead($user))
+                    #set($canAccess = "true")
+                #else
+                    #set($canAccess = "false")
+                #end
+            #elseif($actionObject.getSecureAccess().equalsIgnoreCase("create"))
+                #if ($item.canCreate($user))
+                    #set($canAccess = "true")
+                #else
+                    #set($canAccess = "false")
+                #end
+				#set($li_class = "lockable")
+            #elseif($actionObject.getSecureAccess().equalsIgnoreCase("delete"))
+                #if ($item.canDelete($user))
+                    #set($canAccess = "true")
+                #else
+                    #set($canAccess = "false")
+                #end
+				#set($li_class = "lockable")
+            #elseif($actionObject.getSecureAccess().equalsIgnoreCase("activate"))
+                #if ($item.canActivate($user))
+                    #set($canAccess = "true")
+                #else
+                    #set($canAccess = "false")
+				#end
+			#end
+			<!-- $actionObject.getSecureFeature() -->
+			#if($canAccess.equals("true") && $actionObject.getSecureFeature() && !$actionObject.getSecureFeature().equals(""))
+				#if ($user.checkFeature($om,$actionObject.getSecureFeature()))
+                    #set($canAccess = "true")
+                #else
+                    #set($canAccess = "false")
+                #end
+			#end
+
+            #if($actionObject.getParameterString())
+                #set($additionalParameters=$actionObject.getParameterString())
+            #else
+                #set($additionalParameters="")
+            #end
+
+            #set($width=$actionObject.getPopupWidth())
+            #set($height=$actionObject.getPopupHeight())
+
+            #if($canAccess.equalsIgnoreCase("true"))
+              #set($groupingCount=$groupingCount + 1)
+                ## special setup for 'xml'
+                #if ($actionObject.getName() == "xml")
+                  <li class="yuimenuitem $!li_class">
+                      <a href="#!" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" onclick="XNAT.ui.popup.viewXML('${link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",'true').addPathInfo("project","$!project")}$!additionalParameters')">$actionObject.getDisplayName()</a>
+                  </li>
+              #elseif ($actionObject.getPopup() && $actionObject.getPopup()=="always")
+                  <li class="yuimenuitem $!li_class">
+                      <a href="#!" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" onclick="return popupWithProperties('${link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",'true').addPathInfo("project","$!project")}$!additionalParameters','','width='+'700'+/*$!width*/',height='+'550'+/*$!height*/',status=yes,resizable=yes,scrollbars=yes,toolbar=no');">
+                          <div class="ic">#if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#else&nbsp;#end</div>
+                          <div class="ic_spacer">&nbsp;</div>$actionObject.getDisplayName()</a>
+                  </li>
+              #elseif($actionObject.getPopup() && $actionObject.getPopup()=="sometimes")
+                #if ($popup=="true")
+                    <li class="yuimenuitem $!li_class">
+                        <a title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="${link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup).addPathInfo("project","$!project")}$!additionalParameters">
+                            <div class="ic">#if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#else&nbsp;#end</div>
+                            <div class="ic_spacer">&nbsp;</div>$actionObject.getDisplayName()</a>
+                    </li>
+                #else
+                    <li class="yuimenuitem n2 $!li_class">
+                        <a title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="#!" onclick="return popupWithProperties('${link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",'true').addPathInfo("project","$!project")}$!additionalParameters','','width='+'700'+/*$!width*/',height='+'550'+/*$!height*/',status=yes,resizable=yes,scrollbars=yes,toolbar=no');">
+                            <div class="ic">#if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#else&nbsp;#end</div>
+                            <div class="ic_spacer">&nbsp;</div>$actionObject.getDisplayName()</a>
+                    </li>
+                #end
+              #else
+                  <li class="yuimenuitem $!li_class">
+                      <a title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="${link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup).addPathInfo("project","$!project")}$!additionalParameters">
+                          <div class="ic">#if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#else&nbsp;#end</div>
+                          <div class="ic_spacer">&nbsp;</div>$actionObject.getDisplayName()</a>
+                  </li>
+              #end
+             #end
+            #end
+       #if($actionGroup.getGroup()!="")
+			#addCustomScreens("$element" "actionsBox/$actionGroup.getGroup()")
+           </ul>
+          </div>
+         </div>
+        </li>
+        #if($groupingCount==0)
+        	<script>$(".${actionGroup.group}Grouping").hide();</script>
+        #end
+           #end
+      #end
+#end
+
+#macro (elementActionsBoxNoEnd $element $search_field $search_value $user $item)
+    #set ($dataPopup = $turbineUtils.GetPassedParameter("popup",$data))
+    #if($dataPopup)
+    #else
+      #set ($dataPopup = "false")
+    #end
+    #set ($elementSecurity = $element.getElementSecurity())
+    #if ($elementSecurity)
+        #set ($actions = $elementSecurity.getElementActionsByGroupings())
+        #if ($actions.size() > 0)
+			<script type="text/javascript">
+YAHOO.util.Event.onContentReady("actionsMenu", function () {
+    var actionsMenu = new YAHOO.widget.Menu("actionsMenu", { autosubmenudisplay: true,scrollincrement:5,position:"static"});
+    // Render the MenuBar instance
+    actionsMenu.getItem(0).cfg.setProperty("disabled",true);
+    actionsMenu.render();
+    actionsMenu.show();
+});
+</script>
+      <!-- actions menu -->
+    <div id="actionsMenu" class="yuimenu" style="display:none">
+     <div class="bd">
+      <ul class="first-of-type">
+             <li class="yuimenuitem">
+            <a class="yuimenuitemlabel">Actions</a>
+           </li>
+      </ul>
+      <ul>
+			#elementActions($element $search_field $search_value $user $item $actions)
+        #end
+    #end
+#end
+
+#macro (startElementActionBox)
+	<script type="text/javascript">
+YAHOO.util.Event.onContentReady("actionsMenu", function () {
+    var actionsMenu = new YAHOO.widget.Menu("actionsMenu", { autosubmenudisplay: true,scrollincrement:5,position:"static"});
+    // Render the MenuBar instance
+    actionsMenu.getItem(0).cfg.setProperty("disabled",true);
+    actionsMenu.render();
+    actionsMenu.show();
+});
+</script>
+      <!-- actions menu -->
+    <div id="actionsMenu" class="yuimenu" style="display:none">
+     <div class="bd">
+      <ul class="first-of-type">
+             <li class="yuimenuitem">
+            <a class="yuimenuitemlabel">Actions</a>
+           </li>
+      </ul>
+      <ul>
+#end
+
+## EndElementActionsBox
+## Used in conjunction with ElemnetActionsBoxNoEnd to correctly close out
+## the macro without copy pasting code.
+##
+#macro (endElementActionsBox)
+      </ul>
+     </div>
+    </div>
+#end
+
+#macro (elementActionsBox $element $search_field $search_value $user $item)
+    #set ($dataPopup = $turbineUtils.GetPassedParameter("popup",$data))
+    #if($dataPopup)
+    #else
+      #set ($dataPopup = "false")
+    #end
+    #set ($elementSecurity = $element.getElementSecurity())
+    #if ($elementSecurity)
+        #set ($actions = $elementSecurity.getElementActionsByGroupings())
+        #if ($actions.size() > 0)
+			<script type="text/javascript">
+YAHOO.util.Event.onContentReady("actionsMenu", function () {
+    var actionsMenu = new YAHOO.widget.Menu("actionsMenu", { autosubmenudisplay: true,scrollincrement:5,position:"static"});
+    // Render the MenuBar instance
+    actionsMenu.getItem(0).cfg.setProperty("disabled",true);
+    actionsMenu.render();
+    actionsMenu.show();
+});
+</script>
+      <!-- actions menu -->
+    <div id="actionsMenu" class="yuimenu" style="display:none">
+     <div class="bd">
+      <ul class="first-of-type">
+             <li class="yuimenuitem">
+            <a class="yuimenuitemlabel">Actions</a>
+           </li>
+      </ul>
+      <ul>
+			#elementActions($element $search_field $search_value $user $item $actions)
+			  </ul>
+     </div>
+    </div>
+        #end
+    #end
+#end
+
+
+#macro(displayFileSystem $directory)
+<table>
+#foreach($f in $directory.listFiles())
+ <tr>
+ #if($f.isDirectory())
+   <td><b>$f.getName()</b></td>
+   <td>#displayFileSystem($f)</td>
+ #else
+   <td>$f.getName()</td>
+   <td>$f.length()</td>
+ #end
+ </tr>
+#end
+</table>
+#end
+
+#macro(renderTopListType $type)
+  #* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+  #* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+  #set($userHelper = $data.getSession().getAttribute("userHelper"))
+
+  #if($userHelper.getBrowseableElementDisplay($type))
+  #set($typeObject=$userHelper.getBrowseableElementDisplay($type))
+  #if($project)
+          #if($project.getId())
+             #if($userHelper.canCreate("$typeObject.getElementName()/project", $project.getId()))
+        <li>
+            <a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element",$typeObject.getElementName())/project/$!project.getId()">$typeObject.getSchemaElement().getElementSecurity().getSingularDescription()</a>
+        </li>
+       #end
+          #else
+             #if($userHelper.canCreate("$typeObject.getElementName()/project", $project))
+        <li>
+            <a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element",$typeObject.getElementName())$!projectString">$typeObject.getSchemaElement().getElementSecurity().getSingularDescription()</a>
+        </li>
+       #end
+          #end
+  #else
+        <li>
+            <a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element",$typeObject.getElementName())">$typeObject.getSchemaElement().getElementSecurity().getSingularDescription()</a>
+        </li>
+  #end
+ #else
+ <!-- no object found -->
+ #end
+#end
+
+#macro(selectEmployment $value $item $vr)
+    #if ($vr)
+        #if($vr.getField($name))
+            <span style="color: red; ">&#8658;</span>
+        #end
+    #end
+    #set($employment=$!item.getProperty($value))
+    <select name="$value">
+        <option value="" #if ( "" == $employment) selected="true" #end>(SELECT)</option>
+        <option value="0" #if ( 0 == $employment) selected="true" #end>Employed</option>
+        <option value="1" #if ( 1 == $employment) selected="true" #end>Unemployed</option>
+        <option value="2" #if ( 2 == $employment) selected="true" #end>Retired</option>
+        <option value="3" #if ( 3 == $employment) selected="true" #end>Unknown or N/A</option>
+    </select>
+#end
+
+#macro(renderEmployment $value)
+    #set ($employment = "")
+    #if($value == 0)
+        #set ($employment = "Employed")
+    #elseif($value == 1)
+        #set ($employment = "Unemployed")
+    #elseif($value == 2)
+        #set ($employment = "Retired")
+    #elseif($value == 3)
+        #set ($employment = "Unknown or N/A")
+    #end
+    $!employment
+#end
+
+
+#macro(auditTable $reason $action)
+	#if($showReason)
+	<table>
+		#auditBoxes("1" "" $reason $action)
+	</table>
+	#end
+#end
+
+#macro(auditBoxes $span $align $reason $action)
+  <!-- macro: auditBoxes -->
+	#if($showReason)
+	<tr>
+		<td colspan="$span" align="$align">
+			<input type="hidden" name="event_action" value="$!action"/>
+			<input type="hidden" name="event_type" value="WEB_FORM"/>
+			<div id="form_justification" class="justification">Justification (Why are you completing this form?)<BR/>
+				<textarea rows="3" cols="70" id="event_reason" name="event_reason" #if($requireReason) class="required" #end>$!reason</textarea>
+			</div>
+		</td>
+	</tr>
+	#end
+#end
+
+#macro(hideFormJustification)
+    #if($showReason)
+    <script>
+        var justification = YUIDOM.get('form_justification');
+        if (justification && justification.style) {
+            justification.style.display = 'none';
+        }
+    </script>
+    #end
+#end
+
+##Used to load globally scoped VM files and inject them into parent VMs.
+#macro(addGlobalCustomScreenJS $subFolder)
+	#if($siteConfig.uiDebugExtensionPoints)document.write("<div class='extension_js'>/templates/screens/$subFolder</div>")#end
+	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
+		#set($templateFileName=$screenProps.getProperty("path"))
+		#if($user.isGuest())
+			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
+				#parse("/screens/$templateFileName")
+			#end
+		#elseif($screenProps.getProperty("adminOnly"))
+			#if($turbineUtils.isSiteAdmin($user))
+				#parse("/screens/$templateFileName")
+			#end
+		#elseif($user.getUsername())
+				#parse("/screens/$templateFileName")
+		#end
+	#end
+#end
+
+##Used to load  VM files for specfic data-types and their extensions and inject them into parent VMs.
+#macro(addCustomScreenJS $dataType $subFolder)
+	#if($siteConfig.uiDebugExtensionPoints)document.write("<div class='extension_js'>/templates/screens/$dataType/$subFolder</div>")#end
+	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
+		#set($templateFileName=$screenProps.getProperty("path"))
+		#if($user.isGuest())
+			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
+				#parse("/screens/$templateFileName")
+			#end
+		#elseif($screenProps.getProperty("adminOnly"))
+			#if($turbineUtils.isSiteAdmin($user))
+				#parse("/screens/$templateFileName")
+			#end
+		#elseif($user.getUsername())
+				#parse("/screens/$templateFileName")
+		#end
+	#end
+#end
+
+##Used to load globally scoped VM files and inject them into parent VMs.
+#macro(addGlobalCustomScreens $subFolder)
+	#if($siteConfig.uiDebugExtensionPoints)<div class="extension">/templates/screens/$subFolder</div>#end
+	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
+		#set($templateFileName=$screenProps.getProperty("path"))
+		#if($user.isGuest())
+			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
+				#parse("/screens/$templateFileName")
+			#end
+		#elseif($screenProps.getProperty("adminOnly"))
+			#if($turbineUtils.isSiteAdmin($user))
+				#parse("/screens/$templateFileName")
+			#end
+		#elseif($user.getUsername())
+				#parse("/screens/$templateFileName")
+		#end
+	#end
+#end
+
+##Used to load  VM files for specfic data-types and their extensions and inject them into parent VMs.
+#macro(addCustomScreens $dataType $subFolder)
+	#if($siteConfig.uiDebugExtensionPoints)<div class="extension">/templates/screens/$dataType/$subFolder</div>#end
+	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
+		#set($templateFileName=$screenProps.getProperty("path"))
+		#if($user.isGuest())
+			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
+				#parse("/screens/$templateFileName")
+			#end
+		#elseif($screenProps.getProperty("adminOnly"))
+			#if($turbineUtils.isSiteAdmin($user))
+				#parse("/screens/$templateFileName")
+			#end
+		#elseif($user.getUsername())
+				#parse("/screens/$templateFileName")
+		#end
+	#end
+#end
+
+#macro(hasCustomScreens $dataType $subFolder)
+    #set($hasCustomScreens = false)
+    #foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
+        #set($templateFileName=$screenProps.getProperty("path"))
+        #if($user.isGuest())
+            #if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
+                #set($hasCustomScreens = true)
+            #end
+        #elseif($screenProps.getProperty("adminOnly"))
+            #if($turbineUtils.isSiteAdmin($user))
+                #set($hasCustomScreens = true)
+            #end
+        #elseif($user.getUsername())
+            #set($hasCustomScreens = true)
+        #end
+    #end
+#end
+
+#macro (xdatCalendar $property $item $vr)
+    #if ($vr)
+        #if($vr.getField($property))
+            <span style="color: red;">&#8658;</span>
+        #end
+    #end
+    #set ($rawDate = $!item.getDateProperty($property))
+    #if ($rawDate)
+        #set ($date = $turbineUtils.formatDate($!item.getDateProperty($property), "MM/dd/yyyy"))
+    #else
+        #set ($date = "")
+    #end
+    <input type="text" id="$property" name="$property" value="$date"/>
+    <script type="text/javascript">
+        insertCalendar(document.getElementById("$property"), "Date of birth");
+    </script>
+#end
+
+#macro(xdatMonthRange)
+        #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#end
+
+#macro(xdatDayRange)
+        #set($days = [ 1..31 ])
+#end
+
+#macro(xdatYearRange)
+        #set($years = [ $!turbineUtils.getYear()..1900 ])
+#end
+
+#*
+Takes a list of strings and displays it as a bit of text using the first string,
+then adds any subsequent strings to a block of text to use as a pop-over.
+ *#
+#macro(displayListAsTipText $tipText)
+    #if("$!tipText" == "" || "$!tipText.get(0)" == "")
+    <span class="tip_text">
+            No items found.
+            <span style="top:20px;white-space:nowrap;left:-10;width:auto;" class="tip shadowed">
+                No items were found: Check your data to be sure you specified a valid system object.
+            </span>
+        </span>
+    #else
+        <span class="tip_text">
+            $!tipText.get(0) ## This displays the first item in the list as the main text.
+        <span style="top:20px;white-space:nowrap;left:-10px;width:auto;" class="tip shadowed">
+            #set($current = 1)
+            #set($size = $tipText.size())
+            #set($delimiter = "<br/>")
+            #foreach($text in $tipText)
+                #if($current > 1)
+                    #if($current == $size)
+                        #set($delimiter = "")
+                    #end
+                    $text$delimiter
+                #end
+                #set($current = $current + 1)
+            #end
+        </span>
+    </span>
+    #end
+#end
+
+#macro(advancedSearchCreateProjectList $data $displayManager $search $schemaElement)
+	#set($projects=$data.getSession().getAttribute("userHelper").getAllowedValues("${schemaElement.getFullXMLName()}","${schemaElement.getFullXMLName()}/project","read"))
+    <div class="project-multi-select">
+##        <h5>$displayManager.getSingularDisplayNameForProject():</h5>
+        #set($TYPE_value=$!search.getWebFormValue("${schemaElement.getFullXMLName()}.PROJECTS_equals"))
+        <select multiple size="6" class="xnat-menu project-multi-select-menu" data-menu-opts="width:280px" style="min-width:100px;" name="${schemaElement.getFullXMLName()}.PROJECTS_equals">
+            #foreach($proj in $projects)
+                <option value="/<$proj>" #if($TYPE_value && $TYPE_value.indexOf("<$proj>")!=-1) SELECTED #end>$proj</option>
+            #end
+        </select>
+        <script type="text/javascript">
+            menuInit($('select.project-multi-select-menu'));
+            //$('select.project-multi-select-menu').chosen();
+        </script>
+    </div>
+#end
+
+## ---- Pipeline Email Notification List Manager ----
+## Each pipeline should be able to have its own notification list defined by the project owner upon installing a pipeline.
+## Each execution will draw from this list, and also allow users to add additional emails to that specific execution.
+## Function borrowed from Project notifications list by Tim at https://bitbucket.org/nrg/xnat_builder_1_6dev/src/35795656eaa61c9666b92f195ac6d0a85e6e164c/plugin-resources/webapp/xnat-templates/screens/xnat_projectData/report/manage_tab/notifs.vm?at=default
+
+#macro( pipelineEmailNotif $generalEmailFile $specificEmailFile)
+<table id="notif_script_table">
+    <tr><td></td><td>When the pipeline completes, these email addresses will be notified:</td></tr>
+    <tr><td></td><td><input type="text" disabled name="general-notif-list" id="general-notif-list" SIZE="100"/></td></tr>
+    <tr/>
+    <tr><td></td><td>Specify any additional emails to be notified as a comma-separated list.</td></tr>
+    <tr><td></td><td><input type="text" name="specific-notif-list" id="specific-notif-list" SIZE="100"/></td></tr>
+    #if ("$!specificEmailFile"!="")
+    <tr><td COLSPAN="2"><button type="button" class="btn" id="pipeline-notif-save" onclick="XNAT.app.pipeNotifUpdate();">Save List</button></td></tr>
+    #end
+</table>
+
+<script>
+    var generalEmailFile = "$generalEmailFile";
+    var specificEmailFile = "$!specificEmailFile";
+
+    addUnique=function(toAdd, toReturn) {
+        for (i=0; i<toAdd.length; i++) {
+            var addr = toAdd[i].trim();
+            if (addr && toReturn.indexOf(addr)==-1) {
+                toReturn.push(addr);
+            }
+        }
+        return toReturn;
+    }
+    concatEmailLists=function(){
+        this.generalCSV = YUIDOM.get("general-notif-list").value;
+        this.specificCSV = YUIDOM.get("specific-notif-list").value;
+
+        this.generalList = this.generalCSV.trim().split(',');
+        this.specificList = this.specificCSV.trim().split(',');
+
+        if (this.generalList.length+this.specificList.length === 0) {
+            return "";
+        } else {
+            this.retList = addUnique(this.generalList, []);
+            this.retList = addUnique(this.specificList, this.retList);
+        }
+        return this.retList.join(',');
+    }
+
+    XNAT.app.pipeNotifUpdate=function(){
+
+        this.notifs=concatEmailLists();
+        if(this.notifs.indexOf("'")>-1 || this.notifs.indexOf("\"")>-1){
+            xmodal.message('Email Entry Error', 'Notification email addresses cannot contain quotes.');
+            return false;
+        }
+        openModalPanel('notifs','Saving Emails');
+        if (this.notifs) {
+            YAHOO.util.Connect.asyncRequest('PUT',serverRoot+"/data/projects/$project/resources/notifications/files/"+specificEmailFile+"?inbody=true&overwrite=true&content=PIPELINE_NOTIFICATION&XNAT_CSRF=" + window.csrfToken,
+                    {
+                        success : function()
+                        {
+                            closeModalPanel('notifs');
+                            xmodal.message('Email Notification', 'Emails updated for the pipeline.');
+                        },
+                        failure: function(o){
+                            closeModalPanel('notifs');
+                            var options = {};
+                            var message = "<p>Failed to store emails for the pipeline.</p>";
+                            var reasons = "";
+                            if(o.responseText){
+                                reasons = o.responseText.match(/\<h3\>(.*[\n\r])+\<\/h3\>/g);
+                                if(reasons && reasons[0]){
+                                    reasons = reasons[0].replace(/\<\/?h3\>/g,"").replace(/[\n\r]/g,"<br>");
+                                    options = {width: 500, height: 400};
+                                }else{
+                                    reasons = "";
+                                }
+                            }
+                            xmodal.message('Email Error', message + reasons, "OK", options);
+                        },
+                        cache:false, // Turn off caching for IE
+                        scope: this
+                    },
+                    this.notifs);
+        } else {
+            YAHOO.util.Connect.asyncRequest('DELETE',serverRoot+"/data/projects/$project/resources/notifications/files/"+specificEmailFile+"?content=PIPELINE_NOTIFICATION&XNAT_CSRF=" + window.csrfToken,
+                    {
+                        success : function()
+                        {
+                            closeModalPanel('notifs');
+                            xmodal.message('Email Notification', 'Email list removed for the pipeline.');
+                        },
+                        failure: function(){
+                            closeModalPanel('notifs');
+                            xmodal.message('Email Error', 'Failed to remove email list for the pipeline.');
+                        },
+                        cache:false, // Turn off caching for IE
+                        scope: this
+                    });
+        }
+    }
+
+    XNAT.app.loadGeneral=function(obj){
+        YUIDOM.get("general-notif-list").value = obj.responseText;
+    }
+
+    XNAT.app.loadSpecific=function(obj){
+        this.emailCSVUnion = obj.responseText;
+        if (this.emailCSVUnion) {
+            this.generalEmailCSV = YUIDOM.get("general-notif-list").value;
+            if (this.generalEmailCSV) {
+                this.emailListUnion = this.emailCSVUnion.split(",");
+                this.specificEmailList = [];
+                for (i=0; i<this.emailListUnion.length; i++) {
+                    var addr = this.emailListUnion[i].trim();
+                    if (addr && this.generalEmailCSV.indexOf(addr)==-1) {
+                        this.specificEmailList.push(addr);
+                    }
+                }
+                this.specificEmailCSV = this.specificEmailList.join(",");
+            } else {
+                this.specificEmailCSV = this.emailCSVUnion;
+            }
+
+            YUIDOM.get("specific-notif-list").value = this.specificEmailCSV;
+        }
+    }
+
+    YAHOO.util.Connect.asyncRequest('GET', serverRoot+'/data/projects/$project/resources/notifications/files/'+generalEmailFile, {success : XNAT.app.loadGeneral, failure : function(){}, cache : false, scope : this});
+    if (specificEmailFile) {
+        YAHOO.util.Connect.asyncRequest('GET', serverRoot+'/data/projects/$project/resources/notifications/files/'+specificEmailFile, {success : XNAT.app.loadSpecific, failure : function(){}, cache : false, scope : this});
+    }
+</script>
+#end
+
+#macro(config $toolName $fileName $project $nullable)
+<p>
+    <label for="${toolName}-${fileName}" id="${toolName}-${fileName}-label" title="Set this">Set this text with jQuery!</label>
+    <input type="text" id="${toolName}-${fileName}" name="${toolName}-${fileName}" value="" size="75"/>
+</p>
+
+<script>
+    if (!configData) {
+        var configData = {};
+    }
+    configData["${toolName}-${fileName}"] = {};
+    configData["${toolName}-${fileName}"]["currentlyStored"] = "";
+
+    configData["${toolName}-${fileName}"]["project"] = "$!project";
+    if (configData["${toolName}-${fileName}"]["project"]) {
+        configData["${toolName}-${fileName}"]["configPath"] = '/data/projects/'+configData["${toolName}-${fileName}"]["project"]+'/config/$toolName/$fileName?format=json';
+    } else {
+        configData["${toolName}-${fileName}"]["configPath"] = '/data/config/$toolName/$fileName?format=json';
+    }
+
+    configData["${toolName}-${fileName}"].saveConfig=function(){
+        this.inputValue = $("#${toolName}-${fileName}").val();
+
+        if ((this.inputValue || "${nullable}") && (this.inputValue != configData["${toolName}-${fileName}"]["currentlyStored"])) {
+            YAHOO.util.Connect.asyncRequest('PUT',serverRoot+configData["${toolName}-${fileName}"].configPath+'?inbody=true&overwrite=true&XNAT_CSRF=' + window.csrfToken,
+                {
+                    success : function() {
+                        configData["${toolName}-${fileName}"]["currentlyStored"] = YUIDOM.get("${toolName}-${fileName}").value;
+                    },
+                    failure: function(o){
+                        var options = {};
+                        var message = "<p>Failed to store config ${toolName}/${fileName}.</p>";
+                        var reasons = "";
+                        if(o.responseText){
+                            reasons = o.responseText.match(/\<h3\>(.*[\n\r])+\<\/h3\>/g);
+                            if(reasons && reasons[0]){
+                                reasons = reasons[0].replace(/\<\/?h3\>/g,"").replace(/[\n\r]/g,"<br>");
+                                options = {width: 500, height: 400};
+                            }else{
+                                reasons = "";
+                            }
+                        }
+                        xmodal.message('Config error', message + reasons, "OK", options);
+                    },
+                    cache:false, // Turn off caching for IE
+                    scope: this
+                },
+                this.inputValue);
+        }
+    }
+
+    configData["${toolName}-${fileName}"].loadConfig=function(obj){
+        this.configResults = JSON.parse(obj.responseText);
+        this.contents = this.configResults["ResultSet"]["Result"][0]["contents"];
+
+        $("#${toolName}-${fileName}").val(this.contents);
+        configData["${toolName}-${fileName}"]["currentlyStored"] = this.contents;
+    }
+
+    YAHOO.util.Connect.asyncRequest('GET', serverRoot+configData["${toolName}-${fileName}"]["configPath"], {success : configData["${toolName}-${fileName}"].loadConfig, failure : function(){}, cache : false, scope : this});
+</script>
+
+#end
+
+
+## Need this CNDA macro for a pipeline screen
+#macro (cndaSelectBoxSimple $name $item $possibleValues $vr)
+    #if ($vr)
+        #if($vr.getField($name))
+            <font color="red">&#8658;</font>
+        #end
+    #end
+    #if($item.isPKField($name) && (!$vr.getField($name)))
+        <input id="$name" type="hidden" name="$name" value="$item.getProperty($name)"/>
+        $item.getProperty($name)
+    #else
+        #if($possibleValues)
+            #if ($possibleValues.size()==0)
+                <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+            #else
+                <SELECT id="$name" name="$name">
+                <OPTION VALUE="">(SELECT)</OPTION>
+                #foreach ($pValue in $possibleValues)
+                    <OPTION VALUE="$pValue.get(0)" #if($pValue.get(0).equals($item.getProperty($name))) SELECTED #end>$pValue.get(1)</OPTION>
+                #end
+                </SELECT>
+            #end
+        #else
+            <input id="$name" type="text" name="$name" value="$item.getProperty($name)"/>
+        #end
+    #end
+#end
+
+## Need this CNDA macro for a pipeline screen
+#macro (cndaDateBox $name $item $vr $years)
+    #cndaDateBoxOnChange($name $item $vr $years "")
+#end
+
+#macro (cndaDateBoxOnChange $name $item $vr $years $onChange)
+
+ #if ($vr)
+      #if($vr.getField($name))
+           <font color="red">&#8658;</font>
+      #end
+ #end
+     #set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+     #set($days = [ 1..31 ])
+     <DIV ID="date_container">
+                #if($item.getDateProperty($name))
+                          #set ($expt_date = $!item.getDateProperty($name))
+                      <select id="${name}.month" name="${name}.month" onchange="validateDate(this); #if($onChange) $onChange(this); #end">
+                   <option value="bad">(MONTH)</option>
+                                   #foreach ($month in $months)
+                        #set ($monthCount = $velocityCount - 1)
+        <option value="$monthCount" #if ( $monthCount == $!expt_date.getMonth()) SELECTED="true" #end>                      $month                  </option>
+                   #end
+              </select>
+              <select id="${name}.date" name="${name}.date" onchange="validateDate(this); #if($onChange) $onChange(this); #end">
+                   <option value="bad">(DAY)</option>
+                   #foreach ($day in $days)
+        <option value="$day" #if ( $day == $!expt_date.getDate() ) SELECTED="true" #end>$day</option>
+                   #end
+              </select>
+
+              <select id="${name}.year" name="${name}.year" onchange="validateDate(this); #if($onChange) $onChange(this); #end">
+                   <option value="bad">(YEAR)</option>
+                   #foreach ($year in $years)
+                    <option value="$year" #if ( $year == $!expt_date.getYear() + 1900 ) SELECTED="true" #end>$year</option>
+                   #end
+              </select>
+         #else
+              <select id="${name}.month" name="${name}.month" onchange="validateDate(this); #if($onChange) $onChange(this); #end">
+                   <option value="bad">(MONTH)</option>
+                   #foreach ($month in $months)
+                        #set ($monthCount = $velocityCount - 1)
+                <option value="$monthCount">                $month                  </option>
+                   #end
+              </select>
+                <select id="${name}.date" name="${name}.date" onchange="validateDate(this); #if($onChange) $onChange(this); #end">
+                   <option value="bad">(DAY)</option>
+                   #foreach ($day in $days)
+                <option value="$day">$day</option>
+                   #end
+              </select>
+
+##            #set ($currentYear = $date.Year + 1900)
+              <select id="${name}.year" name="${name}.year" onchange="validateDate(this); #if($onChange) $onChange(this); #end">
+                   <option value="bad">(YEAR)</option>
+                   #foreach ($year in $years)
+            <option value="$year">$year</option>
+                   #end
+              </select>
+         #end
+          <div ID="div_img" style="display:inline"></div>
+     </DIV>
+#end

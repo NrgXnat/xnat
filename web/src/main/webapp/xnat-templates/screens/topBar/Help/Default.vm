@@ -1,0 +1,4 @@
+<!-- Sequence: 10 -->
+<!-- Home/Default -->
+    <li><a href="$link.setPage("ReportIssue.vm")">Report a Problem</a></li>
+    <li><a href="https://wiki.xnat.org/documentation" target="_blank">Documentation</a></li>

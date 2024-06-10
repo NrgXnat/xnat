@@ -1,0 +1,103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">Workflow Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>comments</TD><TD>#xdatStringBox("wrk:workflowData/comments" $item "" $vr)</TD></TR>
+							<TR><TD>details</TD><TD>#xdatStringBox("wrk:workflowData/details" $item "" $vr)</TD></TR>
+							<TR><TD>justification</TD><TD>#xdatStringBox("wrk:workflowData/justification" $item "" $vr)</TD></TR>
+							<TR><TD>description</TD><TD>#xdatStringBox("wrk:workflowData/description" $item "" $vr)</TD></TR>
+							<TR><TD>src</TD><TD>#xdatStringBox("wrk:workflowData/src" $item "" $vr)</TD></TR>
+							<TR><TD>type</TD><TD>#xdatStringBox("wrk:workflowData/type" $item "" $vr)</TD></TR>
+							<TR><TD>category</TD><TD>#xdatStringBox("wrk:workflowData/category" $item "" $vr)</TD></TR>
+							<TR><TD>data_type</TD><TD>#xdatStringBox("wrk:workflowData/data_type" $item "" $vr)</TD></TR>
+							<TR><TD>ID</TD><TD>#xdatStringBox("wrk:workflowData/ID" $item "" $vr)</TD></TR>
+							<TR><TD>ExternalID</TD><TD>#xdatStringBox("wrk:workflowData/ExternalID" $item "" $vr)</TD></TR>
+							<TR><TD>current_step_launch_time</TD><TD>#xdatTextBox("wrk:workflowData/current_step_launch_time" $item "" $vr)</TD></TR>
+							<TR><TD>current_step_id</TD><TD>#xdatStringBox("wrk:workflowData/current_step_id" $item "" $vr)</TD></TR>
+							<TR><TD>status</TD><TD>#xdatStringBox("wrk:workflowData/status" $item "" $vr)</TD></TR>
+							<TR><TD>create_user</TD><TD>#xdatStringBox("wrk:workflowData/create_user" $item "" $vr)</TD></TR>
+							<TR><TD>pipeline_name</TD><TD>#xdatStringBox("wrk:workflowData/pipeline_name" $item "" $vr)</TD></TR>
+							<TR><TD>next_step_id</TD><TD>#xdatStringBox("wrk:workflowData/next_step_id" $item "" $vr)</TD></TR>
+							<TR><TD>step_description</TD><TD>#xdatStringBox("wrk:workflowData/step_description" $item "" $vr)</TD></TR>
+							<TR><TD>launch_time</TD><TD>#xdatTextBox("wrk:workflowData/launch_time" $item "" $vr)</TD></TR>
+							<TR><TD>percentageComplete</TD><TD>#xdatStringBox("wrk:workflowData/percentageComplete" $item "" $vr)</TD></TR>
+							<TR><TD>jobID</TD><TD>#xdatStringBox("wrk:workflowData/jobID" $item "" $vr)</TD></TR>
+													#xdatHiddenBox("wrk:workflowData/wrk_workflowData_id" $item "")
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN wrk:workflowData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN wrk:workflowData/executionEnvironment -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">wrk:workflowData/executionEnvironment</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+																#xdatHiddenBox("wrk:workflowData/executionEnvironment/wrk_abstractExecutionEnvironment_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END wrk:workflowData/executionEnvironment -->
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END wrk:workflowData -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

@@ -1,0 +1,2947 @@
+tabGroups:
+    #    dashboard: Dashboard
+    xnatSetup: Site Settings
+    manageAccess: Manage Access
+    manageNotifications: Manage Notifications
+    manageData: Manage Data
+    processing: Processing
+    projectCustomization: Project Customization
+    advanced: Advanced XNAT Settings
+    other: Other
+
+
+siteId:
+    kind: panel.input.text
+    name: siteId
+    label: Site ID
+    validation: id-strict max-length:24 onblur
+    description: >
+        The id used to refer to this site (also used to generate database ids).
+        The Site ID must start with a letter and contain only letters, numbers
+        and underscores. No spaces or non-alphanumeric characters.
+
+siteUrl:
+    kind: panel.element
+    label: Site Url
+    info: >
+        <p>This should be a functional address (i.e. if the user pasted this address in their web browser, they should come to the site). You are required to guarantee that this address is functional for reaching the site.</p>
+        <p>Note: "localhost" only works if the web browser is located on the same machine. </p>
+    contents:
+        siteUrlInput:
+            kind: input.text
+            name: siteUrl
+            validation: url onblur
+            after: >
+                <p class="description">The address you want visible to users in emails, and other external links. Include http(s) protocol.</p>
+
+siteDescriptionPage:
+    tag: input|type=text|name=siteDescriptionPage|size=30|class=uri onblur|data-validate=uri onblur
+    after: >
+        <p class="description">Specify a velocity template file to display on the login page</p>
+
+siteDescriptionText:
+    tag: textarea|data-code-editor=html|data-code-language=html
+    element:
+        name: siteDescriptionText
+        rows: 8
+    after: >
+        <p class="description">Specify a simple text description of this site.</p>
+
+siteDescriptionType:
+    kind: panel.element
+    #id: siteDescriptionType
+    #name: siteDescriptionType
+    label: Site Description
+    info: >
+        <p>The site description will show up on the login page and can be utilized to describe the purpose of this
+        site, or notify users of important application status messages (ie. "The system is down for maintenance").</p>
+        <p>Administrators can opt to display a simple text message, or specify a velocity template reference containing
+        the content to be displayed.</p>
+    contents:
+        info:
+            tag: p
+            element:
+                style: "margin: 3px 0 8px 0;"
+            content: Select a site description option below
+        siteDescriptionTypePage:
+            kind: input.radio
+            name: siteDescriptionType
+            id: siteDescriptionTypePage
+            value: Page
+            after: >
+                <label class="pad5h" for="siteDescriptionTypePage">Page</label>
+        siteDescriptionTypeText:
+            kind: input.radio
+            name: siteDescriptionType
+            id: siteDescriptionTypeText
+            value: Text
+            after: >
+                <label class="pad5h" for="siteDescriptionTypeText">Text (Markdown)</label>
+        pagePath:
+            tag: div.input-bundle.page
+            contents:
+                ${siteDescriptionPage}
+        pageText:
+            tag: div.input-bundle.text
+            contents:
+                ${siteDescriptionText}
+        siteInfoJs:
+            tag: script|src=/scripts/xnat/admin/siteInfo.js
+
+siteLogo:
+    kind: panel.element
+    label: Site Logo Path
+    info: >
+        <p>The site log should be specified by its path within the web application. The default XNAT site logo is
+        located at <b>/images/logo.png</b>. The maximum recommended size for a logo is 240w x 120h.</p>
+        <p><b>Note:</b> Your logo can be located at any path within the web application, but, for it to be available to
+        be displayed to users who are not logged in, that path must be an <i>open URL</i> in the XNAT security
+        configuration. The <b>/images</b> folder and its descendants are already configured as open URLs.</p>
+    contents:
+        siteLogoPath:
+            kind: input.text
+            placeholder: /images/logo.png
+            validation: uri onblur
+            after: >
+                <p class="description">The path to the file to be used as the site logo.</p>
+
+siteLoginLanding:
+    kind: panel.input.text
+    name: siteLoginLanding
+    label: Site Login Landing
+    validation: uri onblur
+    description: "The page users will land on immediately after logging in."
+
+siteLandingLayout:
+    kind: panel.input.text
+    name: siteLandingLayout
+    label: Site Landing Layout
+
+siteHome:
+    kind: panel.input.text
+    name: siteHome
+    label: Site Home
+    validation: uri onblur
+    description: "The page users will land on by clicking the XNAT logo in the menu bar."
+
+siteHomeLayout:
+    kind: panel.input.text
+    name: siteHomeLayout
+    label: Site Home Layout
+
+processingUrl:
+    kind: panel.input.text
+    name: processingUrl
+    label: Processing Url
+    validation: allow-empty url onblur
+    description: >
+        The address to be used for processing. If this is left blank, pipelines will use the site
+        URL. If your pipelines need to connect to an internal URL, different from your external
+        site URL, provide one here.
+
+adminEmail:
+    kind: panel.element
+    label: Site Admin Email
+    info: >
+        <p>This address will receive frequent emails on system events, such as errors, processing completion, new user registration and so on. </p>
+        <p>Additional emails for specific notification types can be configured on the Notifications tab.</p>
+    contents:
+        adminEmailInput:
+            kind: input.email
+            name: adminEmail
+            validation: email onblur
+            after: >
+                <p class="description">The administrative email account to receive system emails.</p>
+
+primaryAdminUsername:
+    kind: panel.input.text
+    name: primaryAdminUsername
+    label: Primary Admin Username
+    validation: id-strict max-length:40 onblur
+    placeholder: User account to use when performing system functions
+    description: >
+        The login name of an enabled and valid user with site administrator privileges. This field must be valid for proper system functioning.
+
+siteInfo:
+    kind: panel.form
+    name: siteInfo
+    label: Site Information
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${siteId}
+        ${siteUrl}
+#        ${processingUrl}
+        ${siteDescriptionType}
+        ${siteLogo}
+        ${siteLoginLanding}
+#        ${siteLandingLayout}
+        ${siteHome}
+#        ${siteHomeLayout}
+
+adminInfo:
+    kind: panel.form
+    name: adminInfo
+    label: Admin Information
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${adminEmail}
+        ${primaryAdminUsername}
+
+
+## SECURITY
+
+generalSecuritySettings:
+    kind: panel.form
+    name: generalSecuritySettings
+    label: General Site Security Settings
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        securityChannel:
+            kind: panel.element
+            label: Security Channel
+            info: >
+                <p>If you're using another service for SSL termination, including a front-end proxy such as Apache HTTPD
+                or nginx, or a load balancer such as AWS elastic load balancing, you should leave the security channel
+                set to "any".</p>
+                <p>For more information, see <a target="_blank" href="https://wiki.xnat.org/documentation/xnat-administration/xnat-security-settings-in-the-admin-ui">our documentation page</a>.</p>
+            contents:
+                securityChannelMenu:
+                    kind: select.menu
+                    name: securityChannel
+                    options:
+                        any: Any
+                        http: http
+                        https: https
+                    after: >
+                        <p class="description">Set the http/s protocol used to access your XNAT installation</p>
+        restrictUserListAccessToAdmins:
+            kind: panel.input.switchbox
+            name: restrictUserListAccessToAdmins
+            label: "Restrict user list access <br>to site administrators"
+            onText: Restricted
+            offText: Not Restricted
+            description: >
+                If set to "Restricted", the site is more secure, but this restricts project owners from being able to
+                administer users in their projects directly.
+        uiAllowNonAdminProjectCreation:
+            kind: panel.input.switchbox
+            label: "Allow non-administrators <br>to create projects"
+            onText: Allow
+            offText: Do Not Allow
+            description: >
+                If set to "Do Not Allow", the site is more secure, but this can make it more difficult for
+                regular users to create new projects for their research efforts.
+        allowNonAdminsToClaimUnassignedSessions:
+            kind: panel.input.switchbox
+            name: allowNonAdminsToClaimUnassignedSessions
+            label: "Allow non-administrators <br>to find and claim <br>unassigned sessions"
+            onText: Allow
+            offText: Do Not Allow
+            description: >
+                Setting this to "Do Not Allow" removes the "Find My Study" feature for non-administrators. But it can also make it harder for users to get their
+                data into XNAT and increase the burden on site administrators.
+        displayHostName:
+            kind: panel.select.single
+            name: displayHostName
+            label: Display host name in footer
+            options:
+                always: "Always"
+                multinode: "When multinode"
+                never: "Never"
+            description: >
+                When set to <b>Always</b> the host name is always displayed even in a single-server deployment.
+                When set to <b>Multinode</b>, the host name is only displayed when XNAT nodes detect a multi-server configuration.
+                When set to <b>Never</b>, the host name is not displayed.
+        renderHtmlResources:
+            kind: panel.input.switchbox
+            label: Resource Rendering
+            name: allowHtmlResourceRendering
+            onText: Allow
+            offText: Do Not Allow
+            description: >
+                Setting this to "Allow" will mean that resources specified in the whitelist below
+                will be rendered by your web browser. Rendering includes execution of any code that might be present. See note for details.
+        renderHtmlResourceTypePanel:
+            tag: div#html-resource-options
+            contents:
+                htmlResourceRenderingWhitelist:
+                    kind: panel.element
+                    label: Resource Rendering Whitelist
+                    contents:
+                        htmlResourceRenderingWhitelistInput:
+                            kind: textarea.list
+                            name: htmlResourceRenderingWhitelist
+                            delim: ','
+                            after: >
+                                <p class="description">
+                                List all allowed resource file extensions, separated by commas (ex: "png, jpg, gif").
+                                You can use a single <code>*</code> item to allow all file extensions. Supported mime types are listed in the article listed above:
+                                <a href="https://wiki.xnat.org/documentation/xnat-administration/how-to-restrict-rendering-of-xnat-resources" target="_new">How To Restrict Rendering of XNAT Resources</a>.
+                                </p>
+
+                securitySettingsScript:
+                    tag: script|src=/scripts/xnat/admin/securitySettings.js
+
+        ipsThatCanSendEmailsThroughRest:
+            kind: panel.element
+            label: Email-enabled IP Addresses
+            info: >
+                <p>By default this is set to allow all IPs but should be changed so that malicious users do not use your XNAT server to send phishing emails.</p>
+            contents:
+                ipsThatCanSendEmailsThroughRestInput:
+                    kind: input.text
+                    name: ipsThatCanSendEmailsThroughRest
+                    after: >
+                        <p class="description">This must be a regular expression (do not include bounding '/' characters) which matches
+                        trusted IPs from which users or pipelines should be able to send emails via an XNAT REST call.</p>
+                    validation: "!pattern:^/"
+                    element:
+                        data:
+                            message: Please do not include bounding "/" characters in your regex pattern.
+
+userAuthenticationSettings:
+    kind: panel.form
+    name: userAuthenticationSettings
+    label: User Authentication Settings
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        requireLogin:
+            kind: panel.input.switchbox
+            name: requireLogin
+            label: Require User Login
+            onText: Required
+            offText: Not Required
+            description: >
+                If required, then only registered users will be able to access your site. If not required, anyone
+                visiting your site will automatically be logged in as 'guest' with access to public data.
+        enabledProviders:
+            kind: panel.input.textList
+            label: Enabled Authentication Providers
+            description: >
+                Specifies the authentication providers that are currently enabled on the XNAT server. "localdb" refers to the default XNAT provider.
+        securityNewUserRegistrationDisabled:
+            kind: panel.input.switchbox
+            name: securityNewUserRegistrationDisabled
+            label: Hide User Registration Options
+            onText: Registration DISABLED on Home Page
+            offText: Registration Enabled on Home Page
+            description: >
+                If set to TRUE, user registration via localdb is hidden on the home page.
+        securityLocalDbParRegistrationDisabled:
+            kind: panel.input.switchbox
+            name: securityLocalDbParRegistrationDisabled
+            label: Disable Local DB Project Access Requests
+            onText: PARs DISABLED for localDB
+            offText: PARs Enabled for localDB
+            description: >
+                If set to TRUE, project access requests cannot be sent to create new accounts via XNAT's default localdb authentication provider
+        securityExternalUserParDisabled:
+            kind: panel.input.switchbox
+            name: securityExternalUserParDisabled
+            label: Disable External Project Access Requests
+            onText: PARs DISABLED for External Authentication Methods
+            offText: PARs Enabled for External Authentication Methods
+            description: >
+                If set to TRUE, project access requests cannot be sent to create new accounts via external authentication providers, i.e. LDAP.
+
+
+userLoginsSessionControls:
+    kind: panel.form
+    name: userLoginsSessionControls
+    label: User Logins / Session Controls
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        userSessionSubhead:
+            kind: panel.subhead
+            text: User Session Controls
+        sessionTimeout:
+            kind: panel.input.text
+            name: sessionTimeout
+            label: User Session Timeout
+            validation: interval onblur
+            description: >
+                Interval for timing out user sessions. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+        aliasTokenTimeout:
+            kind: panel.input.text
+            name: aliasTokenTimeout
+            label: Alias Token Timeout
+            validation: interval onblur
+            description: >
+                Interval for timing out alias tokens. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+        aliasTokenTimeoutSchedule:
+            kind: panel.input.text
+            name: aliasTokenTimeoutSchedule
+            label: Alias Token Timeout Schedule
+            validation: cron onblur
+            description: >
+                How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses basic
+                <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+        sessionTimeoutMessage:
+            kind: panel.textarea
+            name: sessionTimeoutMessage
+            label: Session Timeout Message
+            code: html
+            description: Alert message provided to users after a session timeout. TIMEOUT_TIME will be replaced by the timeout time.
+        #        allowResumeOnNextLogin:
+        #            kind: panel.input.checkbox
+        #            id: allow-resume-on-next-login
+        #            name: allowResumeOnNextLogin
+        #            label: Allow Resume On Next Login
+        #            description: Allow user to resume where they left off, if logging back in after a session timeout?
+        maximumConcurrentSessions:
+            kind: panel.input.number
+            name: concurrentMaxSessions
+            label: Maximum Concurrent Sessions
+            validation: integer gte:1 onblur
+            description: The maximum number of permitted sessions a user can have open simultaneously. Tomcat restart required to take effect.
+        loginFailureSubhead:
+            kind: panel.subhead
+            text: Managing Failed Logins
+        loginFailureMessage:
+            kind: panel.textarea
+            name: uiLoginFailureMessage
+            label: Login Failure Message
+            code: html
+            description: Text to show when a user fails to login. "%d" is replaced by the count of failed logins.
+        maximumFailedLogins:
+            kind: panel.input.number
+            name: maxFailedLogins
+            label: Maximum Failed Logins
+            validation: integer gte:-1 lte:9999 !eq:0 onblur
+            description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
+        failedLoginLockoutDuration:
+            kind: panel.input.text
+            name: maxFailedLoginsLockoutDuration
+            label: Failed Logins Lockout Duration
+            validation: interval onblur
+            description: >
+                Interval of time to lock user accounts that have exceeded the max_failed_logins count. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+        resetFailedLoginsSchedule:
+            kind: panel.input.text
+            name: resetFailedLoginsSchedule
+            label: Reset Failed Logins Schedule
+            validation: cron onblur
+            description: >
+                How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
+                <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+        canResetFailedLoginsWithForgotPassword:
+            kind: panel.input.switchbox
+            name: canResetFailedLoginsWithForgotPassword
+            label: Reset failed login count on forgot password
+            onText: Enabled
+            offText: Disabled
+            description: >
+                If set to "Enabled", a locked out user will be able to request a forgot password email
+                and click the link from that email to change their password and unlock their account.
+        userLockoutSettings:
+            kind: panel.subhead
+            text: User Lockout Settings
+        userInactivityLockout:
+            kind: panel.input.text
+            name: inactivityBeforeLockout
+            label: User Inactivity Lockout
+            validation: interval onblur
+            description: >
+                Interval of inactivity before a user account is disabled. Uses
+                <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+        inactivityBeforeLockoutSchedule:
+            kind: panel.input.text
+            name: inactivityBeforeLockoutSchedule
+            label: Inactivity Lockout Schedule
+            validation: cron onblur
+            description: >
+                How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
+                <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+        userClientIdentificationSubhead:
+            kind: panel.subhead
+            text: User Client Identification
+        interactiveAgentIds:
+            kind: panel.input.textList
+            size: 60
+            name: interactiveAgentIds
+            delim: ","
+            label: Interactive Agent IDs
+            placeholder: .*MSIE.*, .*Mozilla.*, .*AppleWebKit.*, .*Opera.*
+            description: >
+                Regular-expression patterns that define user-agent header values that indicate whether a particular
+                request comes from an interactive agent (e.g. a browser) or some other kind of tool, such as curl or other
+                scriptable or automatable client. Separate multiple agent IDs with commas.
+        dataPaths:
+            kind: panel.element
+            label: Data Paths
+            info: >
+                <p>XNAT uses these paths in conjunction with the interactive agent IDs above to determine the response to certain calls. For
+                example, instead of simply returning a "404 Not Found" error when an inaccessible resource is indicated,
+                a call to a data path by a browser may be redirected to the login page. </p>
+            contents:
+                dataPathsInput:
+                    kind: input.textList
+                    size: 60
+                    name: dataPaths
+                    delim: ","
+                    placeholder: /xapi/**, /data/**, /REST/**, /fs/**
+                    after: >
+                        <p class="description">URL patterns that represent data paths (e.g. REST API calls). Separate multiple data paths with commas.
+                        Uses <a target="_blank" href="https://ant.apache.org/manual/dirtasks.html">Apache Ant Pattern Notation</a></p>
+
+passwordExpirationInterval:
+    kind: input.text
+    name: passwordExpirationInterval
+    label: Password Expiration (Interval)
+    validation: interval onblur
+    after: >
+        <p class="description">Interval of time after which unchanged passwords expire and users have to change them.
+        Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.</p>
+
+passwordExpirationDate:
+    kind: input.text
+    name: passwordExpirationDate
+    label: Password Expiration (Date)
+    validation: allow-empty date-iso onblur
+    after: >
+        <span id="datePicker">&nbsp;&nbsp;
+        <span id="openCal-passwordExpirationDate" class="fa fa-calendar"></span>
+        <br>
+        <p class="description">Expire passwords that were last changed before this date and require those users to change them.</p>
+        </span>
+
+passwords:
+    kind: panel.form
+    name: passwords
+    label: Passwords
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        passwordComplexity:
+            kind: panel.input.text
+            name: passwordComplexity
+            label: Password Complexity
+            description: Must be a valid regular expression. Do not include bounding '/' characters.
+            validation: "!pattern:^/"
+            element:
+                data:
+                    message: Please do not include bounding "/" characters in your regex pattern.
+        passwordComplexityMessage:
+            kind: panel.textarea
+            name: passwordComplexityMessage
+            label: Password Complexity Message
+            code: html
+        passwordExpiration:
+            kind: panel.element
+            label: Password Expiration
+            info: >
+                <p>A <b>password expiration interval</b> specifies the length of time users have before they must change their passwords (Specified in <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>).</p><p>Alternatively, a <b>password expiration date</b> can be configured to expire passwords that were last changed before it. This is useful for purging access to obsolete accounts.</p>
+            contents:
+                info:
+                    tag: p
+                    element:
+                        style: "margin: 3px 0 8px 0;"
+                    content: Select a password expiration type below
+                passwordExpirationTypeDisabled:
+                    kind: input.radio
+                    id: passwordExpirationTypeDisabled
+                    name: passwordExpirationType
+                    value: Disabled
+                    after: >
+                        <label class="pad5h" for="passwordExpirationTypeDisabled">Disabled</label>
+                passwordExpirationTypeInterval:
+                    kind: input.radio
+                    id: passwordExpirationTypeInterval
+                    name: passwordExpirationType
+                    value: Interval
+                    after: >
+                        <label class="pad5h" for="passwordExpirationTypeInterval">Interval</label>
+                passwordExpirationTypeDate:
+                    kind: input.radio
+                    id: passwordExpirationTypeDate
+                    name: passwordExpirationType
+                    value: Date
+                    after: >
+                        <label class="pad5h" for="passwordExpirationTypeDate">Date</label>
+                passwordExpirationInterval:
+                    tag: div.input-bundle.interval
+                    contents:
+                        ${passwordExpirationInterval}
+                passwordExpirationDate:
+                    tag: div.input-bundle.date
+                    contents:
+                        ${passwordExpirationDate}
+        passwordReuseRestriction:
+            kind: panel.select.single
+            id: password-reuse-restriction
+            name: passwordReuseRestriction
+            label: Password Reuse Restriction
+            options:
+                None: None
+                Historical: Historical
+            description: >
+                If set to "Historical", users cannot reuse a password that was previously used within a defined duration of time
+        passwordHistoryDuration:
+            kind: panel.input.text
+            id: password-history-duration
+            name: passwordHistoryDuration
+            label: Password History
+            validation: interval onblur
+            description: >
+                Interval for which users cannot reuse an old password of theirs. Uses <a target="_blank" href="http://www.postgresql.org/docs/9.0/static/functions-datetime.html">PostgreSQL interval notation</a>.
+        passwordsjs:
+            tag: script|src=/scripts/xnat/admin/passwords.js
+
+
+csrf:
+    kind: panel.form
+    name: csrf
+    label: CSRF
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        enableCsrfToken:
+            kind: panel.input.switchbox
+            name: enableCsrfToken
+            label: Require CSRF Token
+            onText: Required
+            offText: Not Required
+            description: >
+                If set to "Required" (highly recommended), all POST, PUT, and DELETE requests will require a token to prevent CSRF attacks
+        csrfEmailAlert:
+            kind: panel.input.switchbox
+            name: csrfEmailAlert
+            label: CSRF Email Alert
+            onText: Enabled
+            offText: Disabled
+            description: >
+                If enabled, this site will email the site admin whenever a CSRF attack is attempted
+
+#securityServices:
+#    kind: panel.form
+#    name: securityServices
+#    label: Security Services
+#    url: /xapi/siteConfig
+#    method: POST
+#    contentType: json
+#    contents:
+#        securityServicesFeatureDefault:
+#            kind: panel.input.text
+#            name: featureService
+#            label: Feature Default
+#            size: 50
+#        securityServicesFeatureRepoDefault:
+#            kind: panel.input.text
+#            name: featureRepositoryService
+#            label: Feature Repository Default
+#            size: 50
+#        securityServicesRoleDefault:
+#            kind: panel.input.text
+#            name: roleService
+#            label: Role Default
+#            size: 50
+#        securityServicesRoleRepositoryDefault:
+#            kind: panel.input.text
+#            name: roleRepositoryService
+#            label: Role Repository Default
+#            size: 50
+
+## EMAIL SERVER
+
+emailServerSettings:
+    kind: panel.form
+    method: POST
+    contentType: json
+    url: /xapi/notifications
+    name: emailServerSettings
+    label: Mail Server Settings
+    contents:
+        emailSettingsWarning:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    XNAT relies on its mail servers to send messages to its users as well as to alert admins when certain events happen. In addition, a properly configured mail server is necessary for users to be able to get sent links to reset their password when they forget it.
+
+        smtpEnabled:
+            kind: panel.input.switchbox
+            label: Enable SMTP
+            onText: Enabled
+            offText: Disabled
+            description: >
+                This setting must be enabled in order for your XNAT to send notification emails.
+
+        serverSettings:
+            kind: panel.subhead
+            text: Server
+        smtpHostname:
+            kind: panel.input.text
+            label: Host
+            placeholder: localhost
+        smtpPort:
+            kind: panel.input.number
+            label: Port
+            placeholder: 25
+            validation: allow-empty integer
+        smtpProtocol:
+            kind: panel.input.text
+            label: Protocol
+            placeholder: smtp
+
+        authentication:
+            kind: panel.subhead
+            text: Authentication
+        smtpAuth:
+            kind: panel.input.switchbox
+            label: SMTP Auth
+            onText: Enabled
+            offText: Disabled
+        smtpUsername:
+            kind: panel.input.text
+            label: Username
+        smtpPassword:
+            kind: panel.input.password
+            label: Password
+
+        otherSettings:
+            kind: panel.subhead
+            text: Other Settings
+        smtpStartTls:
+            kind: panel.input.switchbox
+            label: Start TLS
+            onText: Enabled
+            offText: Disabled
+        smtpSslTrust:
+            kind: panel.input.text
+            label: SSL Trust
+        emailPrefix:
+            kind: panel.input.text
+            label: Email Prefix
+            placeholder: XNAT
+
+## SITE-WIDE ALERTS
+
+siteWideAlerts:
+    kind: panel.form
+    name: siteWideAlerts
+    label: Site-wide Alerts
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        siteWideAlertInfo:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    <p>This panel can be used to create a notification banner that will be visible for all site visitors and logged-in users.
+                    You can determine whether the banner is visible only on the login page, or on all site pages.</p>
+                    <p>There are three stylistic treatments: </p>
+                    <ul>
+                        <li>"message" is informational</li>
+                        <li>"alert" calls attention to critical info, such as scheduled maintenance downtime</li>
+                        <li>"error" calls attention to severe info, such as a known bug or broken functionality</li>
+                    </ul>
+
+        siteWideAlertStatus:
+            kind: panel.select.single
+            name: siteWideAlertStatus
+            label: Enable Alert Message
+            options:
+                "0": "Off"
+                1: "On (Login Page Only)"
+                2: "On (Login and Site Header)"
+            element:
+                title: Enable Alert Message
+
+        siteWideAlertMessage:
+            kind: panel.textarea
+            name: siteWideAlertMessage
+            label: Alert Message
+            code: html
+            description: Enter your message text here. You can use HTML to enter links or add emphasis as needed.
+
+        siteWideAlertType:
+            kind: panel.select.single
+            name: siteWideAlertType
+            label: Alert Type
+            description: "Default: Alert"
+            options:
+                message:
+                    label: Message
+                    value: message
+                alert:
+                    label: Alert
+                    value: alert
+                error:
+                    label: Error
+                    value: error
+            element:
+                title: Select Alert Type
+
+## NOTIFICATIONS
+
+notifications:
+    kind: panel.form
+    name: notifications
+    label: Notification Options
+    url: /xapi/notifications
+    method: POST
+    contentType: json
+    contents:
+        helpContactInfo:
+            kind: panel.input.email
+            label: "Help Contact Info"
+            validation: allow-empty email onblur
+            description: >
+                Email address used for general help contact information in outgoing emails and pipeline notifications
+        #        notifyAdminSubhead:
+        #            kind: panel.subhead
+        #            label: "Notify Administrator on..."
+        #
+        #        notifyAdminUserRegistration:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminUserRegistration
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminUserRegistration"
+        #            label: "User Registration"
+        #            description: "Whether to cc admin user on new user emails. Requires valid admin email address."
+        #        notifyAdminPipelineEmails:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminPipelineEmails
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminPipelineEmails"
+        #            label: "Pipeline Emails"
+        #            description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
+        #        notifyAdminProjectAccessRequest:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminProjectAccessRequest
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectAccessRequest"
+        #            label: "Project Access Request"
+        #            description: "Whether to cc admin user on user project access request. Requires valid admin email address."
+        #        notifyAdminSessionTransfer:
+        #            kind: panel.input.checkbox
+        #            id: notifyAdminSessionTransfer
+        ##            value: "?? XNAT:data:siteConfig:notifications.notifyAdminProjectOnSessionTransfer"
+        #            label: "Session Transfer"
+        #            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
+
+#        emailRecipientSubhead:
+#            kind: panel.subhead
+#            label: "Notification Email Recipients"
+
+        emailAllowNonuserSubscribers:
+            kind: panel.element
+            label: "Allow Nonuser Subscribers"
+            info: >
+                <p>The notification email addresses defined in this panel, and as the site admin email, can potentially be sent to any email address.</p>
+                <p>This setting determines whether this site should allow notifications to be sent to email addresses that do not belong to valid users of this XNAT site. If set to \"Do Not Allow\", the site is more secure from exploitation as a spam relay, but restricts the addresses that can be used when alerting administrators to system events.</p>
+            contents:
+                emailAllowNonuserSubscribersInput:
+                    kind: select.single
+                    name: emailAllowNonuserSubscribers
+                    options:
+                        true: Allow
+                        false: Do Not Allow
+                    after: >
+                        <p class="description">If set to "Allow", site notifications can be sent to email addresses other than those belonging to users of this XNAT site</p>
+
+        emailRecipientErrorMessages:
+            kind: panel.input.email
+            label: "Error Messages"
+            name: "emailRecipientErrorMessages"
+            description: "What email address(es) should receive error emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            size: 50
+            validation: allow-empty emails onblur
+        #            value: "!? XNAT.data.notifications['emailRecipientErrorMessages'] || XNAT.data.siteConfig.adminEmail"
+        emailRecipientIssueReports:
+            kind: panel.input.email
+            label: "Issue Reports"
+            name: "emailRecipientIssueReports"
+            description: "What email address(es) should receive issue reports. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            size: 50
+            validation: allow-empty emails onblur
+        #            value: "!? XNAT.data.notifications['emailRecipientIssueReports'] || XNAT.data.siteConfig.adminEmail"
+        userEmailForReportProblem:
+            kind: panel.input.switchbox
+            name: userEmailForReportProblem
+            label: "Issue Reports Sender"
+            onText: Reporter
+            offText: Admin
+            description: "If reporter, issue report emails will be sent from the email of the reporting user as opposed to the admin email (default)."
+        emailRecipientNewUserAlert:
+            kind: panel.input.email
+            label: "New User Alert"
+            name: "emailRecipientNewUserAlert"
+            description: "What email address(es) should receive New User Registration emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            size: 50
+            validation: allow-empty emails onblur
+        #            value: "!? XNAT.data.notifications['emailRecipientNewUserAlert'] || XNAT.data.siteConfig.adminEmail"
+        emailRecipientUpdate:
+            kind: panel.input.email
+            label: "Updates"
+            name: "emailRecipientUpdate"
+            description: "What email address(es) should receive update emails. Separate multiple email addresses with commas. If empty, emails will be sent to the site administrator email address."
+            size: 50
+            validation: allow-empty emails onblur
+        #            value: "!? XNAT.data.notifications['emailRecipientUpdate'] || XNAT.data.siteConfig.adminEmail"
+        copyAdminOnNotifications:
+            kind: panel.input.switchbox
+            name: copyAdminOnNotifications
+            label: "Copy Administrator on Notifications"
+            onText: Enabled
+            offText: Disabled
+            description: "If enabled, the primary administrator will receive a copy of error, issue, new user, and update notifications."
+
+notificationEmails:
+    kind: panel.form
+    name: notificationEmails
+    label: Notification Emails
+    url: /xapi/notifications
+    method: POST
+    contentType: json
+    contents:
+        notificationsDocumentationNote:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    Each of these system notifications are sent to users based on various actions. Each notification email has a set of usable shortcodes, such as "USER_USERNAME". For help with system notifications, see <a href="https://wiki.xnat.org/documentation/xnat-administration/notifications-and-alerts-in-xnat">Notifications and Alerts in XNAT.</a>
+        notificationEmailSelector:
+            kind: panel.select.single
+            name: notificationEmailSelector
+            id: notification-email-selector
+            label: Select Email Template
+            description: Toggle which email template appears in the panel below
+        notificationScript:
+            tag: script|src=/scripts/xnat/admin/notificationManagement.js
+        notificationEmailContainer:
+            tag: div
+            element:
+                id: notification-email-container
+            contents:
+                emailMessageUserRegistration:
+                    kind: panel.textarea
+                    label: "User Registration"
+                    code: html
+                    description: >
+                        Text of message emailed to users upon registration. Link for email validation is auto-populated. Available shortcodes:<br>
+                        USER_FIRSTNAME - The first name of the user who will be sent the message.<br>
+                        USER_LASTNAME - The last name of the user who will be sent the message.<br>
+                        SITE_NAME - The name of the xnat site.<br>
+                        SITE_LINK - The link to the xnat site.<br>
+                        USER_USERNAME - The username of the new user.<br>
+                        ADMIN_MAIL_LINK - The link to email the site admin.
+
+                emailMessageForgotUsernameRequest:
+                    kind: panel.textarea
+                    label: "Forgot Username Request"
+                    code: html
+                    description: >
+                        Text of message emailed to users upon lost username request. Available shortcodes: <br>
+                        USER_USERNAME - The requested username <br>
+                        SITE_LINK - The link to the xnat site.
+
+                emailMessageForgotPasswordReset:
+                    kind: panel.textarea
+                    label: "Password Reset"
+                    code: html
+                    description: >
+                        Text of message emailed to users upon lost password reset. Link for password reset is auto-populated. Available shortcodes: <br>
+                        USER_FIRSTNAME - The first name of the user receiving the password reset. <br>
+                        USER_LASTNAME - The last name of the user receiving the password reset. <br>
+                        RESET_LINK - The link used to reset the password.
+
+                emailMessageNewUserVerification:
+                    kind: panel.textarea
+                    label: "New User Verification"
+                    code: html
+                    description: >
+                        Text of the message emailed to users to verify a new user account. Available shortcodes: <br>
+                        USER_FIRSTNAME - The new user's first name. <br>
+                        USER_LASTNAME - The new user's last name. <br>
+                        VERIFY_URL - The URL used to verify the new account. <br>
+                        ENABLED_MESSAGE - A message indicating whether the user account is now enabled, includes a login link. <br>
+                        FORGOT_LOGIN_URL - The URL used if the user has forgotten their login information.
+
+                emailMessageProjectRequestAccess:
+                    kind: panel.textarea
+                    label: "Project Access Request"
+                    code: html
+                    description: >
+                        Text of the message sent out when a user requests access to a project. Available shortcodes: <br>
+                        PROJECT_NAME - The name of the project the user is attempting to access. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        RQ_ACCESS_LEVEL - The level of access (member, collaborator, etc.) that is being requested. <br>
+                        LIST_PERMISSIONS - The permissions associated with the level requested. <br>
+                        USER_USERNAME - The username of the requesting user. <br>
+                        USER_EMAIL - The email of the requesting user. <br>
+                        USER_FIRSTNAME - The first name of the requesting user. <br>
+                        USER_LASTNAME - The last name of the requesting user. <br>
+                        RQA_COMMENTS - The comments that the user attached to their request. <br>
+                        ACCESS_URL - The URL used to respond to the access request. <br>
+                        SITE_LINK - The link to the xnat site. <br>
+                        ADMIN_MAIL_LINK - The link to email the site admin.
+
+                emailMessageProjectAccessApproval:
+                    kind: panel.textarea
+                    label: "Project Access Approval"
+                    code: html
+                    description: >
+                        Text of the message sent out when a user's project access is approved. Available shortcodes: <br>
+                        PROJECT_NAME - The name of the project. <br>
+                        RQ_ACCESS_LEVEL - The level of access (member, collaborator, etc.) that is being granted. <br>
+                        ACCESS_URL - The URL used to access the project. <br>
+                        SITE_LINK - The link to the xnat site. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        ADMIN_MAIL_LINK - The link to email the site admin.
+
+                emailMessageProjectAccessDenial:
+                    kind: panel.textarea
+                    label: "Project Access Denial"
+                    code: html
+                    description: >
+                        Text of the message sent out when a user's project access is denied. Available shortcodes: <br>
+                        PROJECT_NAME - The name of the project for which access was requested. <br>
+                        USER_EMAIL - The email of the project manager. <br>
+                        SITE_LINK - The link to the xnat site. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        ADMIN_MAIL_LINK - The link to email the site admin.
+
+                emailMessageInviteProjectAccess:
+                    kind: panel.textarea
+                    label: "Project Access Invitation"
+                    code: html
+                    description: >
+                        Text of the email sent out when a user is invited to join a project. Available shortcodes: <br>
+                        PROJECT_NAME - The name of the project. <br>
+                        USER_FIRSTNAME - The first name of the user extending the invitation. <br>
+                        USER_LASTNAME - The last name of the user extending the invitation. <br>
+                        ACCEPT_URL - The URL to be used to accept the invitation to join the project. <br>
+                        SITE_LINK - The link to the xnat site. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        ADMIN_MAIL_LINK - The link to email the site admin.
+
+                emailMessageDisabledUserVerification:
+                    kind: panel.textarea
+                    label: "Disabled User Verification"
+                    code: html
+                    description: >
+                        Text of the message sent out when a previously disabled user account is verified and reactivated. Available shortcodes: <br>
+                        DATE_INPUT - The date on which the user was re-verified. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        SITE_LINK - The link to the xnat site. <br>
+                        USER_USERNAME - The username of the re-verified user. <br>
+                        USER_FIRSTNAME - The first name of the re-verified user. <br>
+                        USER_LASTNAME - The last name of the re-verified user. <br>
+                        ENABLED_MESSAGE - A message indicating whether the user account is now enabled, includes a login link.
+
+                emailMessageErrorMessage:
+                    kind: panel.textarea
+                    label: "Error Occurred"
+                    code: html
+                    description: >
+                        Text of the message sent out when an error has occurred within the system. Available shortcodes: <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        USER_LOGIN - The login information for the user associated with the error. <br>
+                        USER_FIRSTNAME - The first name of the associated with the error. <br>
+                        USER_LASTNAME - The last name of the associated with the error. <br>
+                        ERROR_TIME - The time of the error. <br>
+                        ERROR_MESSAGE - The error message.
+
+                emailMessageNewUserNotification:
+                    kind: panel.textarea
+                    label: "New User Notification"
+                    code: html
+                    description: >
+                        Text of the message sent out when a new user account registration has been created. Available shortcodes: <br>
+                        TIME - The time of user creation. <br>
+                        SITE_NAME - The name of the xnat site.  <br>
+                        SITE_LINK - The link to the xnat site. <br>
+                        USER_USERNAME - The username of the new user. <br>
+                        USER_FIRSTNAME - The first name of the new user. <br>
+                        USER_LASTNAME - The last name of the new user. <br>
+                        USER_PHONE - The phone number of the new user. <br>
+                        LAB_NAME - The name of the lab the new user is under. <br>
+                        USER_EMAIL - The email address of the new user. <br>
+                        PROJECT_ACCESS_REQUESTS - Projects for which the new user has access requests (blank if none). <br>
+                        REVIEW_LINK - The link used to accept or deny the request. <br>
+                        USER_COMMENTS - The comments provided to the administrator by the new user.
+
+                emailMessageNewUserRequest:
+                    kind: panel.textarea
+                    label: "New User Request"
+                    code: html
+                    description: >
+                        Text of the message sent out when a new user account is created but has not yet been enabled. Available shortcodes: <br>
+                        TIME - The time of user creation. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        SITE_LINK - The link to the xnat site. <br>
+                        USER_USERNAME - The username of the new user. <br>
+                        USER_FIRSTNAME - The first name of the new user. <br>
+                        USER_LASTNAME - The last name of the new user. <br>
+                        USER_PHONE - The phone number of the new user. <br>
+                        LAB_NAME - The name of the lab the new user is under. <br>
+                        USER_EMAIL - The email address of the new user. <br>
+                        PROJECT_ACCESS_REQUESTS - Projects for which the new user has access requests (blank if none) <br>
+                        REVIEW_LINK - The link used to accept or deny the request. <br>
+                        USER_COMMENTS - The comments provided to the administrator by the new user.
+
+                emailMessagePipelineDefaultSuccess:
+                    kind: panel.textarea
+                    label: "Pipeline Success"
+                    code: html
+                    description: >
+                        Text of the message sent out when an experiment pipeline has completed successfully without errors. Available shortcodes: <br>
+                        USER_FIRSTNAME - The first name of the contacted user. <br>
+                        USER_LASTNAME - The last name of the contacted user. <br>
+                        PIPELINE_NAME - The name of the pipeline. <br>
+                        EXPERIMENT_NAME - The name of the experiment on which the pipeline ran. <br>
+                        SUCCESS_URL - Link for details on the pipeline run. <br>
+                        SITE_NAME - The name of the xnat site.
+
+                emailMessagePipelineDefaultFailure:
+                    kind: panel.textarea
+                    label: "Pipeline Failure"
+                    code: html
+                    description: >
+                        Text of the message sent out when an experiment pipeline fails before completion due to error. Available shortcodes: <br>
+                        PIPELINE_NAME - The name of the pipeline. <br>
+                        PROJECT_NAME - The name of the project in which the pipeline failed. <br>
+                        EXPERIMENT_NAME - The name of the experiment on which the pipeline failed. <br>
+                        PIPELINE_STEP - The step at which the pipeline failed. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        CONTACT_EMAIL - The email at which a user can contact the site team for help. <br>
+                        ATTACHMENTS_STATEMENT - Other information about the pipeline failures if applicable. <br>
+                        PIPELINE_PARAMETERS - The parameters of the specific pipeline run. </br>
+                        STDOUT - The stdout of the pipeline error. <br>
+                        STDERR - The stderr of the pipeline error.
+
+                emailMessagePipelineAutorunSuccess:
+                    kind: panel.textarea
+                    label: "Pipeline Autorun Success"
+                    code: html
+                    description: >
+                        Text of the message sent out when an automated pipeline is run successfully and a session is archived in the system. Available shortcodes: <br>
+                        USER_FIRSTNAME - The first name of the contacted user. <br>
+                        USER_LASTNAME - The last name of the contacted user. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        PROJECT_NAME - The name of the project in which the pipeline ran. <br>
+                        SUBJECT_NAME - The name of the subject on which the pipeline ran. <br>
+                        EXPERIMENT_NAME - The name of the experiment on which the pipeline ran. <br>
+                        SUCCESS_URL - Link for details on the pipeline run.
+
+                emailMessageBatchWorkflowComplete:
+                    kind: panel.textarea
+                    label: "Batch Transfer Complete"
+                    code: html
+                    description: >
+                        Text of the message when a batch data transfer to the archive has been successfully completed. Available shortcodes: <br>
+                        USER_FIRSTNAME - The first name of the contacted user. <br>
+                        USER_LASTNAME - The last name of the contacted user. <br>
+                        PROCESS_NAME - The name of the process that has been completed. <br>
+                        NUMBER_MESSAGES - Number of messages transferred. <br>
+                        MESSAGES_LIST - List of transferred messages. <br>
+                        ERRORS_LIST - List of any errors that occurred during the transfer. <br>
+                        SITE_LINK - The link to the xnat site. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        ADMIN_MAIL_LINK - The link to email the site admin.
+
+                emailMessageUnauthorizedDataAttempt:
+                    kind: panel.textarea
+                    label: "Unauthorized Data Attempt"
+                    code: html
+                    description: >
+                        Text of the message sent when one of several types of unauthorized data or login access attempts are recognized by the system. Available shortcodes: <br>
+                        TYPE - The type of data attempt. <br>
+                        USER_DETAILS - The details on the user who attempted to access the data (if known and applicable).
+
+                emailMessageEmailAddressChangeRequest:
+                    kind: panel.textarea
+                    label: "Email Change Request"
+                    code: html
+                    description: >
+                        Text of the message sent to alert a user that someone has requested to change the email for the account associated with that email address. Available shortcodes: <br>
+                        USER_USERNAME - The username of the account. <br>
+                        NEW_EMAIL - The new email for the account. <br>
+                        ADMIN_MAIL_LINK - The link to email the site admin.
+
+                emailMessageVerifyEmailChangeRequest:
+                    kind: panel.textarea
+                    label: "Verify Email Change Request"
+                    code: html
+                    description: >
+                        Text of the message sent to a new email address for a user to verify the change made to the account's associated email. Available shortcodes: <br>
+                        USER_USERNAME - The username of the account. <br>
+                        CHANGE_EMAIL_LINK - The link to change the email address.
+
+                emailMessageAddressChanged:
+                    kind: panel.textarea
+                    label: "Email Address Successfully Changed"
+                    code: html
+                    description: >
+                        Text of the message sent to both the former and new email address associated with an account to alert the user that the email has successfully been changed. <br>
+                        NEW_EMAIL - The new email address for the account.
+
+                emailMessageSystemPathError:
+                    kind: panel.textarea
+                    label: "System Path Error"
+                    code: html
+                    description: >
+                        Text of the message sent when XNAT is unable to find the filesystem (e.g,, archive, build, prearchive directories). Available shortcodes: <br>
+                        ERRORS_LIST - The list of the errors that have been found.
+
+                emailMessageUploadByReferenceSuccess:
+                    kind: panel.textarea
+                    label: "Upload By Reference Success"
+                    code: html
+                    description: >
+                        Text of the message sent when a user has uploaded a file or files to the system by reference. Available shortcodes: <br>
+                        USER_USERNAME - The user who requested the upload. <br>
+                        DUPLICATES_LIST - The list of the duplicate files (if applicable).
+
+                emailMessageUploadByReferenceFailure:
+                    kind: panel.textarea
+                    label: "Upload By Reference Failure"
+                    code: html
+                    description: >
+                        Text of the message sent when a user has attempted to upload a file or files to the system by reference but the process failed. Available shortcodes: <br>
+                        USER_USERNAME - The user who requested the upload.
+
+                emailMessageDataAlertCustom:
+                    kind: panel.textarea
+                    label: "Data Alert Custom Email"
+                    code: html
+                    description: >
+                        Text of the message sent out by from one user to another to alert them of possibly useful data. Available shortcodes: <br>
+                        USER_FIRSTNAME - The first name of the user who initiates the message. <br>
+                        USER_LASTNAME- The last name of the user who initiates the message. <br>
+                        SITE_NAME - The name of the xnat site. <br>
+                        REQUEST_LINK - The link the user can follow to view the data. <br>
+                        SENDER_MESSAGE - The message sent by the user alongside the data alert. <br>
+                        SITE_LINK - The link to the xnat site. <br>
+                        TIME_SENT - The time at which the information was sent. <br>
+                        HELP_CONTACT - Email address at which help can be reached.
+
+## DATE MANAGEMENT
+
+dateFormatting:
+    kind: panel.form
+    name: dateFormatting
+    id: admin-date-formatting-panel
+    label: Standard Date Formatting
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        dateFormatDescription:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    These preferred date formats are not necessarily followed in all parts of XNAT. Date formatting uses the <a href="https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html" target="_blank">Java SimpleDateFormat syntax</a>.
+                    <br><br>
+                    <strong>Updates in this panel require a Tomcat restart to be applied.</strong>
+#        dateFormatValidator:
+#            tag: div#date-format-validator.note
+#            element:
+#                html: >
+#                    Example date-time string: <span class="date-string">January 1, 2021 12:00 PM</span>
+#                    <a href="javascript:void()" class="reset-date-string">(Reset Date String)</a>
+#        dateFormatInputHidden:
+#            kind: panel.input.hidden
+#            name: uiDateFormat
+#        dateTimeFormatInputHidden:
+#            kind: panel.input.hidden
+#            name: uiDateTimeFormat
+#        dateTimeSecondsFormatInputHidden:
+#            kind: panel.input.hidden
+#            name: uiDateTimeSecondsFormat
+#        timeFormatInputHidden:
+#            kind: panel.input.hidden
+#            name: uiTimeFormat
+        dateFormatInput:
+            kind: panel.input.text
+            name: uiDateFormat
+            label: Date Format
+            placeholder: yyyy-MM-dd
+        timeFormatInput:
+            kind: panel.input.text
+            name: uiTimeFormat
+            label: Time Format
+            placeholder: HH:mm
+        datetimeFormatInput:
+            kind: panel.input.text
+            name: uiDateTimeFormat
+            label: Date/time Format
+            placeholder: yyyy-MM-dd HH:mm
+        dateTimeSecondsFormatInput:
+            kind: panel.input.text
+            name: uiDateTimeSecondsFormat
+            label: Date/time/seconds Format
+            placeholder: yyyy-MM-dd HH:mm ss.SSS
+#        dateTimeValidator:
+#            kind: panel.element
+#            name: dateTimeValidator
+#            contents:
+#                dateTimeValidatorBtn:
+#                    tag: button.btn#validate-datetime-format
+#                    element:
+#                        html: >
+#                            <i class="fa fa-spinner"></i> Preview Date-Time Format
+        dateFormatScript:
+            tag: script|src=/scripts/xnat/admin/datetimeManagement.js
+
+## SEARCH PERFORMANCE MANAGEMENT
+
+searchPerformance:
+    kind: panel.form
+    name: searchPerformance
+    id: admin-search-performance-panel
+    label: Search Performance
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        sortedListing:
+            kind: panel.input.switchbox
+            name: defaultToSortedListings
+            onText: Enabled
+            offText: Disabled
+            checked: true
+            label: "Sort Search Listings By Default"
+            description: >
+                <p>Sorting of tables can add several seconds onto larger queries.  On small instances, this isn't an issue.  But on servers with millions of entries, this can impact performance. This setting determines whether all data listings are sorted by default (on initial access).  Set to 'Disabled' on large instances.</p>
+                <p>Default: Enabled</p>
+        countsOnProject:
+            kind: panel.input.switchbox
+            label: "Include Summary Counts in Project Data Listings"
+            name: addCountFieldsToProjectListings
+            onText: Enabled
+            offText: Disabled
+            checked: true
+            description: >
+                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Disabling count fields can improve performance.  This setting determines whether count fields (like MR Count) should be included in project level listings (like Subjects). If Enabled, counts of child objects will be automatically included in project data listings. If Disabled, counts of child objects will only be available if display documents are manually configured to add them.</p>
+                <p>Default: Enabled</p>
+        scanCountAgg:
+            kind: panel.input.switchbox
+            label: "Exclude Scan Aggregate Fields From Data Listings"
+            name: removeScanAggregateFields
+            onText: Enabled (Scan aggregate fields are excluded)
+            offText: Disabled (Scan aggregate fields are shown)
+            checked: false
+            description: >
+                <p>Aggregate functions are costly on large systems (i.e. millions of rows).  Excluding count fields can improve performance.  This setting overrides Display Document configuration to exclude Scan Aggregate Counts if they are otherwise configured to be displayed.</p>
+                <p>Default: Disabled</p>
+
+## THEMES
+
+themeManagement:
+    kind: panel
+    name: themeManagement
+    id: theme-management-panel
+    label: Theme Management
+    footer: false
+    contents:
+        themeDocumentationNote:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    For help with themes, see <a href="https://wiki.xnat.org/documentation/xnat-administration/working-with-ui-themes">Working with UI Themes in XNAT</a>
+        themeStyle:
+            tag: style
+            # "|" preserves line breaks...
+            content: |
+                input.theme-uploader { width:244px; display: inline !important; }
+                body #theme-management-panel div.element-wrapper { position: relative; top: -5px; }
+        themeSelectorForm:
+            tag: "form|id=theme-selector"
+            contents:
+                themeSelection:
+                    kind: panel.select.single
+                    id: theme-selection
+                    name: themeSelection
+                    label: Select Theme
+                    description: Select a new global theme from those available on the system.
+                    element:
+                        style: "width:230px;margin-right:10px;"
+                    afterElement: >
+                        <span style="display:inline-block;margin-left:10px"></span>
+                        <button id="activate-theme" class="btn btn-sm" type="submit">Set Theme</button>
+                        <button id="remove-theme" class="btn btn-sm">Delete</button>
+        uploadTheme:
+            kind: panel.input.file
+            id: xnat-theme-upload
+            className: theme-uploader
+            name: themePackage
+            label: Upload Theme
+            description: Upload a zipped theme package for selection above.
+        themeScript:
+            tag: script|src=/scripts/xnat/admin/themeManagement.js
+
+adminControls:
+    kind: panel.form
+    label: Admin UI Controls
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        enableSitewideFeatures:
+            kind: panel.input.switchbox
+            label: Enable Site-wide Feature Management
+            name: uiShowAdminManageSiteFeatures
+            onText: Enabled
+            offText: Disabled
+            description: >
+                When Site-wide Feature Management is enabled, a new menu item will appear in the Administer menu in the top navigation.
+                This page will allow site admins to set default appearance of defined features in the UI.
+                <a href="https://wiki.xnat.org/documentation/xnat-administration/enabling-features-at-the-site-wide-level" target="_blank">See documentation</a>
+
+displayedUserIdentifier:
+    kind: panel.form
+    label: Displayed User Identifier
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        displayedUserIdentifierType:
+            kind: panel.element
+            label: Displayed User Identifier Type
+            contents:
+                displayedUserIdentifierTypeMenu:
+                    kind: select.menu
+                    name: displayedUserIdentifierType
+                    options:
+                        USERNAME: Username
+                        EMAIL: Email
+                        NAME_FIRST_SPACE_LAST: Name (First Last)
+                        NAME_LAST_COMMA_FIRST: Name (Last, First)
+                    after: >
+                        <p class="description">Sets the user identifier displayed at the top right of each page. To see the change after you modify and save this value, you'll need to refresh the page.</p>
+searchTabsHomePage:
+    kind: panel.form
+    label: Quick Search Datatype Options
+    footer: false
+    contents:
+        mainPageSearchDatatypeOptions:
+            tag: "div#quick-search-datatypes"
+        afterButton: >
+                <button id="update-quick-search" class="btn btn-sm" type="submit" style="margin-top:15px;">Update Options</button>
+        jqueryUi:
+            tag: script|src="~/scripts/lib/jquery-ui/jquery-ui.min.js"
+        jqueryUiCss:
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/lib/jquery-ui/jquery-ui.css"
+        chosenScript:
+            tag: script|src="~/scripts/lib/jquery-plugins/chosen/chosen.jquery.js"
+        chosenCss:
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/lib/jquery-plugins/chosen/chosen.css"
+        quickSearchDatatypeScript:
+            tag: script|src=/scripts/xnat/admin/quickSearchDatatypeInputs.js
+
+
+## PLUGINS
+
+# create a container for the plugin table to be spawned into
+pluginTable:
+    tag: "div#plugin-table-container"
+
+pluginTableScript:
+    tag: script|src=/scripts/xnat/admin/pluginManager.js
+
+pluginList:
+    kind: panel
+    name: pluginList
+    label: List of Installed Plugins
+    footer: false
+    contents:
+        ${pluginTable}
+        ${pluginTableScript}
+
+
+pluginOpenUrlsConfig:
+    tag: div
+    contents:
+        pluginOpenUrlsContainer:
+            tag: "div#plugin-open-urls-config"
+        pluginOpenUrlsScript:
+            tag: script|src=/scripts/xnat/admin/pluginOpenUrlsManager.js
+
+pluginOpenUrlsPanel:
+    kind: panel
+    label: Plugin Open URLs
+    footer: false
+    contents:
+        ${pluginOpenUrlsConfig}
+
+## REGISTRATION OPTIONS
+
+registrationOptionsPanel:
+    kind: panel.form
+    label: Registration Options
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        registrationOptionsMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    These settings control auto-enabling and auto-verification of user accounts on registration. Email notifications
+                    to site administrators on new user registrations are not affected by these settings.
+        requireEmailVerificationToRegister:
+            kind: panel.input.switchbox
+            label: "Require Email Verification"
+            name: emailVerification
+            onText: Required
+            offText: Not Required
+            description: >
+                If email verification is required (recommended), newly registered users and users who change their email address must
+                verify their email address before their account is verified. Verification happens via a link sent to the submitted email.
+        autoEnableUserRegistration:
+            kind: panel.input.switchbox
+            name: userRegistration
+            label: "Auto-enable <br>User Registration"
+            onText: Auto-enable
+            offText: Do Not Auto-enable
+            description: >
+                If set to "Auto-enable", user accounts will be enabled automatically when the user registers. If not, new user accounts
+                must be manually enabled by a site administrator.
+        autoEnablePar:
+            kind: panel.input.switchbox
+            label: "Auto-enable with <br>Project Access Request"
+            name: par
+            onText: Auto-enable
+            offText: Do Not Auto-enable
+            description: >
+                If an unregistered user receives a Project Access Request via email, the site administrator could assume that
+                the project owner knows this user and can verify the validity of their account. This setting allows for auto-enabling
+                users who register accounts after receiving a Project Access Request, overriding the Auto-enable setting above.
+        uiAllowNewUserComments:
+            kind: panel.input.switchbox
+            label: "Allow User Comments <br>on Registration"
+            onText: Allow
+            offText: Do Not Allow
+            description: >
+                User comments, if allowed, are displayed in the email notifications sent to the site administrator.
+
+## SESSION UPLOAD
+
+uploadChannels:
+    kind: panel.form
+    name: uploadChannels
+    label: "Image Session Upload Methods"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiHideCompressedUploaderUploadOption:
+            kind: panel.input.switchbox
+            label: "Hide Compressed Uploader"
+            onText: Hidden
+            offText: Available
+            description: >
+                If set to "Hidden", the Compressed Uploader is removed from the "Upload > Images" menu.
+                (The DICOM-zip importer is enabled regardless of this setting.)
+        uiDefaultUploaderImporter:
+            kind: panel.element
+            label: Default Uploader Importer
+            contents:
+                info:
+                    tag: p
+                    element:
+                        style: "margin: 3px 0 8px 0;"
+                    content: Select the default uploader importer
+                uploaderUploadDicomZip:
+                    kind: input.radio
+                    name: uiDefaultCompressedUploaderImporter
+                    id: uploaderDicomZip
+                    value: DICOM-zip
+                    after: >
+                        <label class="pad5h" for="uploaderDicomZip">DICOM-Zip</label>
+                uploaderUploadSessionImporter:
+                    kind: input.radio
+                    name: uiDefaultCompressedUploaderImporter
+                    id: uploaderSI
+                    value: SI
+                    after: >
+                        <label class="pad5h" for="uploaderSI">Session Importer</label>
+                        <p class="description">
+                        Select the import handler default. The compressed uploader and the restful import API will use this value by default, but
+                        users will be able to select which handler to use on the compressed uploader page or the url of the API call. </p>
+                        <p class="description">DICOM-zip is recommended for consistency with other upload mechanisms (C-STORE, XNAT Desktop Client), 
+                        and despite its name, it does support tar, tar.gz, tgz, as well.</p> 
+                        <p class="description">Session Importer (SI) is deprecated but offered for backward consistency
+                        e.g., if they’re uploading a lot of ECAT. </p>
+        uiHideXnatUploadAssistantDownload:
+            kind: panel.input.switchbox
+            label: "Hide XNAT Upload Assistant"
+            onText: Hidden
+            offText: Available
+            description: >
+                If set to "Hidden", the legacy XNAT Upload Assistant is removed from the "Upload > Images" menu.
+sessionBuilder:
+    kind: panel.form
+    name: sessionBuilder
+    label: "Session Builder"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        receivedFileUser:
+            kind: panel.input.text
+            label: Received File User
+            validation: id-strict max-length:40 onblur
+            placeholder: User account for performing import and archiving operations
+            description: >
+                This should be the login name of an enabled and valid user. The specified user must be a site
+                administrator.
+        reloadPrearcDatabaseOnStartup:
+            kind: panel.input.switchbox
+            label: "Reload Prearchive Database<br>On Start-up"
+            onText: Enabled
+            offText: Disabled
+            description: >
+                This controls whether the prearchive database is rebuilt when your XNAT server restarts. This can help
+                keep your system in sync with the data in prearchive, but can add to system load at start-up, especially
+                on systems that handle a lot of incoming data.
+        sessionXmlRebuilderRepeat:
+            kind: panel.input.number
+            label: Session Idle Check Interval
+            validation: integer onblur
+            placeholder: Interval in milliseconds
+            afterElement: <span class="after">milliseconds</span>
+            description: >
+                This controls how often the system checks to see if any incoming DICOM sessions in the prearchive have
+                been idle for longer than the configured session idle time. This value should be specified in
+                milliseconds and defaults to 60,000 ms or one minute.
+        sessionXmlRebuilderInterval:
+            kind: panel.input.number
+            label: Session Idle Time
+            validation: integer onblur
+            placeholder: Time in minutes
+            afterElement: <span class="after">minutes</span>
+            description: >
+                This tells the system how long a DICOM session should sit idle&mdash;that is, with no new data added to the
+                session&mdash;before attempting to build a session document from the DICOM data. This value is specified in
+                minutes and defaults to 5 minutes.
+
+anonymization:
+    kind: panel.form
+    name: Anonymization
+    label: "Anonymization Script (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        enableSitewideAnonymizationScript:
+            kind: panel.input.switchbox
+            label: "Enable Site-wide <br>Anonymization Script"
+            onText: Enabled
+            offText: Disabled
+        sitewideAnonymizationScript:
+            kind: panel.textarea
+            label: "Edit Anonymization Script"
+            code: text
+            description: >
+                This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script can also be supplemented by anonymization operations specified at the project level. The script must conform to <a href="https://wiki.xnat.org/display/XTOOLS/DicomEdit" target="_blank">DicomEdit</a> format.<br><br>Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide anonymization.
+
+rerunProjectAnon:
+    kind: panel.form
+    name: ProjectAnon
+    label: "Re-running project level anonymization"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        rerunProjectAnonOnRename:
+            kind: panel.input.switchbox
+            label: "Rerun project level anonymization on changes to image session's label, subject or project"
+            onText: Enabled
+            offText: Disabled
+            description: >
+                On some systems, the project level anonymization script is used to insert the project, subject and/or label into the DICOM headers. If the these values are changed, the values can become out of sync. This setting controls whether the project level anonymization script is rerun when the image session's label, subject or project is changed to correct the value in the DICOM. Default is Disabled to prevent accidental DICOM modification.
+
+
+seriesImportFilter:
+    kind: panel.form
+    name: seriesImportFilter
+    label: "Series Import Filter (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        cautionMessage:
+            tag: div.warning.bold
+            content: >
+                Caution: This feature has been deprecated as of XNAT 1.8.10 and will be removed from future versions. Series filtering and rejection can now be managed natively within DicomEdit anonymization scripts. See <a href="https://wiki.xnat.org/documentation/how-to-write-a-series-import-filter" target="_blank">documentation for details</a>. (Note: Support for modality maps will not be preserved.)
+        enableSitewideSeriesImportFilter:
+            kind: panel.input.switchbox
+            name: enableSitewideSeriesImportFilter
+            label: "Enable Site-wide <br>Series Import Filter"
+            onText: Enabled
+            offText: Disabled
+        sitewideSeriesImportFilterMode:
+            kind: panel.select.single
+            name: sitewideSeriesImportFilterMode
+            label: Filter Mode
+            description: >
+                Creating a <b>whitelist</b> means that <i>only</i> DICOM series with a series description that matches one of series filter patterns will be considered by XNAT import tools such as the upload assistant. Creating a <b>blacklist</b> means that all DICOM series will be considered <i>except</i> for series that have one of the specified series filter patterns. A <b>modality map</b> lets you specify boolean expressions in JavaScript that can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the destination session.
+            options:
+                whitelist: Whitelist
+                blacklist: Blacklist
+                modalityMap: Modality Map
+        sitewideSeriesImportFilter:
+            kind: panel.textarea
+            name: sitewideSeriesImportFilter
+            label: "Edit Series Import Filter"
+            code: text
+            description: >
+                The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
+                <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive,
+                i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
+petTracers:
+    kind: panel.form
+    name: petTracers
+    label: "Pet Tracers (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        sitewidePetTracers:
+            kind: panel.textarea
+            name: sitewidePetTracers
+            label: "Pet Tracers"
+            code: text
+            validation: max-length:1000
+            description: >
+                This is the site-wide list of PET tracers. List entries should be separated by whitespace. Project owners can specify their own lists as needed.
+
+petMr:
+    kind: panel.form
+    name: petMr
+    label: "Separate PET-MR (Site Wide)"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        petMr:
+            kind: panel.select.single
+            name: sitewidePetMr
+            label: "Separate PET-MR"
+            description: >
+                When data is received from a PET-MR scanner, XNAT can treat this as a single PET/MR imaging session, a single PET imaging session, or separate the data into PET and MR sessions
+            options:
+                #value: Label
+                petmr: Create as PET/MR session
+                pet: Create as PET session
+                separate: Separate into PET and MR sessions
+
+## CUSTOM DICOM ROUTING
+
+projectRouting:
+    kind: panel.form
+    name: projectRouting
+    label: "Project Routing (Site Wide)"
+    method: PUT
+    contentType: json
+    url: /data/config/dicom/projectRules
+    contents:
+        customDicomRoutingMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html:
+                    Each of the Custom DICOM Routing panels allow you to set a custom routing scheme for determining Project,
+                    Subject, or Session Label from the DICOM fields in incoming data as it is being handled by the session importer.
+                    See <a target="_blank" href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui">
+                    Custom DICOM Routing Documentation</a> for guidance formatting these fields.
+                    Note that each of these settings will take precedence over the <a target="_blank" href="https://wiki.xnat.org/documentation/how-to-use-xnat/image-session-upload-methods-in-xnat/how-xnat-scans-dicom-to-map-to-project-subject-session">
+                    default XNAT routing rules</a>.
+        enableSitewideProjectRouting:
+            kind: panel.input.switchbox
+            label: "Enable Custom Site-wide <br>Project Routing"
+            name: status
+            id: enableSitewideProjectRouting
+            onValue: enabled
+            values: enabled|disabled
+            onText: Enabled
+            offText: Disabled
+        sitewideProjectRouting:
+            kind: panel.textarea
+            label: "Edit Project Routing Rules"
+            name: contents
+            id: sitewideProjectRouting
+            code: text
+            description: >
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+
+
+subjectRouting:
+    kind: panel.form
+    name: subjectRouting
+    label: "Subject Routing (Site Wide)"
+    method: PUT
+    contentType: json
+    url: /data/config/dicom/subjectRules
+    contents:
+        enableSitewideSubjectRouting:
+            kind: panel.input.switchbox
+            label: "Enable Custom Site-wide <br>Subject Routing"
+            name: status
+            id: enableSitewideSubjectRouting
+            onValue: enabled
+            values: enabled|disabled
+            onText: Enabled
+            offText: Disabled
+        sitewideSubjectRouting:
+            kind: panel.textarea
+            label: "Edit Subject Routing Rules"
+            name: contents
+            id: sitewideSubjectRouting
+            code: text
+            description: >
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+
+sessionRouting:
+    kind: panel.form
+    name: sessionRouting
+    label: "Session Routing (Site Wide)"
+    method: PUT
+    contentType: json
+    url: /data/config/dicom/sessionRules
+    contents:
+        enableSitewideSessionRouting:
+            kind: panel.input.switchbox
+            label: "Enable Custom Site-wide <br>Session Routing"
+            name: status
+            id: enableSitewideSessionRouting
+            values: enabled|disabled
+            onValue: enabled
+            onText: Enabled
+            offText: Disabled
+        sitewideSessionRouting:
+            kind: panel.textarea
+            label: "Edit Session Routing Rules"
+            name: contents
+            id: sitewideSessionRouting
+            code: text
+            description: >
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+
+## DICOM NAMING
+dicomNaming:
+    kind: panel.form
+    label: DICOM File Naming
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        dicomFileNameTemplate:
+            kind: panel.input.text
+            size: 100
+            name: dicomFileNameTemplate
+            label: DICOM Filename Template
+            validation: not-empty
+            description: >
+                The DICOM Filename Template controls naming of DICOM files ingested via GradualDicomImporter 
+                (e.g., gradual-DICOM, DICOM-zip, C-STORE), unless rename = false. Variables must be 
+                <a href="https://www.dcm4che.org/docs/dcm4che-2.0.17-apidocs/org/dcm4che2/data/Tag.html"
+                target="_blank">dcm4che tag names</a>, or to compute a hash of tags, use <code>HashTag1WithTag2WithTag3</code> 
+                (etc). Variables should be demarcated with <code>${}</code> per the 
+                <a href="https://commons.apache.org/proper/commons-text/apidocs/org/apache/commons/text/StringSubstitutor.html"
+                target="_blank">StringSubstitutor</a> class. <strong>Use extreme caution when changing this value: it must 
+                be unique per instance or data will be overwritten silently.</strong> Additionally, changing this value 
+                may lead to duplicated DICOM files on merge unless using SOP Instance UID to uniquely identify DICOM, 
+                controlled below.
+        useSopInstanceUidToUniquelyIdentifyDicom:
+            kind: panel.input.switchbox
+            name: useSopInstanceUidToUniquelyIdentifyDicom
+            label: "Use SOP Instance UID to uniquely identify a DICOM file?"
+            onText: Yes, use SOP Instance UID
+            offText: No, use file name
+            description: >
+                SOP Instance UID should uniquely identify a DICOM file, and using this setting will prevent XNAT 
+                storing duplicate files when file names change due to source, import method, or updates to the 
+                "dicomFileNameTemplate" configuration setting. However, using file name is offered for backward 
+                compatibility or handling non-compliant scenarios.
+
+
+## PIPELINE SETTINGS
+
+pipelineSettings:
+    kind: panel.form
+    label: Pipeline Settings
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${processingUrl}
+
+autoRunSettings:
+    kind: panel.form
+    label: AutoRun
+    method: POST
+    contentType: json
+    url: /xapi/pipelines
+    contents:
+        autoRunEnabled:
+            kind: panel.input.switchbox
+            name: autoRunEnabled
+            label: Launch AutoRun
+            onText: AutoRun Enabled
+            offText: AutoRun Disabled
+            description: >
+                Determines whether XNAT should launch the AutoRun pipeline as new sessions are archived. Requires the pipeline engine
+                to be installed at the location stored in the <b>pipelinePath</b> site configuration option.
+
+        allowAutoRunProjectOverride:
+            kind: panel.input.switchbox
+            name: allowAutoRunProjectOverride
+            label: Allow Project Override
+            onText: Project Override Enabled
+            offText: Project Override Disabled
+            description: >
+                Determines whether Project Owners can enable or disable the AutoRun pipeline for their projects, regardless of the
+                site-wide setting.
+
+## DICOM SCP RECEIVERS
+
+dicomScpEditor:
+    kind: panel.form
+    name: dicomScpEditor
+    header: false
+    footer: false
+    load: false
+    action: "#!"
+    method: null
+    class: json
+    element:
+        style:
+            border: none
+            marginBottom: 0
+    contents:
+        validation:
+            ## Need access to regex for custom form validation
+            tag: script|src="~/scripts/xnat/validate.js"
+        scpId:
+            kind: panel.input.hidden
+            id: scp-id
+            name: id
+            className: hidden
+        aeTitle:
+            kind: panel.input.text
+            id: scp-title
+            name: aeTitle
+            label: AE Title
+            #description: AE Title for DICOM Receiver
+            validation: not-empty
+            description: Can be up to 16 characters long. Backslashes and control characters are not allowed.
+        port:
+            kind: panel.input.number
+            id: scp-port
+            name: port
+            label: Port
+            #description: Port for DICOM Receiver
+            validation: integer gte:1 lte:65535
+        enabled:
+            kind: input.hidden
+            id: scp-enabled
+            name: enabled
+            className: hidden
+        customProcessing:
+            kind: panel.input.switchbox
+            name: customProcessing
+            label: Custom Processing
+            #show: false
+            #            className: hidden
+            onText: "Custom Processing: <b>Enabled</b>"
+            offText: "Custom Processing <b>Disabled</b>"
+            description: Enable or Disable Custom Processing for DICOM Receiver
+        directArchive:
+            kind: panel.input.switchbox
+            name: directArchive
+            label: Direct Archive
+            onText: "Direct to archive: <b>Enabled</b>"
+            offText: "Direct to archive: <b>Disabled</b> (use prearchive)"
+            description: Enable or Disable Direct Archive for DICOM Receiver (if disabled, data comes through the prearchive)
+        identifier:
+            kind: panel.select.single
+            id: scp-identifier
+            name: identifier
+            label: Identifier
+            className: hidden
+            element:
+                title: Select DICOM Object Identifier
+                disabled: disabled
+            description: >
+                Select the DICOM object identifier to associate with this AE. If none is selected, the default identifier is applied.
+#            fileNamer:
+#                kind: panel.input.text
+#                name: fileNamer
+#                label: File Namer
+#            identifier:
+#                kind: panel.input.text
+#                name: identifier
+#                label: Identifier
+        anonymizationEnabled:
+            kind: panel.input.switchbox
+            label: Anonymization
+            id: anonymization-enabled
+            name: anonymizationEnabled
+            onText:  "Anonymization: <b>Enabled</b>"
+            offText: "Anonymization: <b>Disabled</b>"
+            description: Enable or disable all site-wide and project-level anonymization for this DICOM Receiver.
+        whitelistEnabled:
+            kind: panel.input.switchbox
+            label: Enable Whitelist
+            id: whitelist-enabled
+            name: whitelistEnabled
+            onText: "Whitelist: <b>Enabled</b>"
+            offText: "Whitelist: <b>Disabled</b>"
+            description: Enable or disable the whitelist for this DICOM Receiver.
+        whitelistText:
+            kind: panel.textarea
+            name: whitelistText
+            class: ignore
+            label: Whitelist
+            description: Enter a list of AE-titles and/or IP addresses that this DICOM receiver can interact with.  Any association requested by an AE-title or IP address not in this list will be rejected.  Entries can be AE-titles, IP addresses with an optional CIDR subnet mask, or both (e.g. ae_title@ip_address/mask). Entries should be separated by a new line.
+        routingExpressionsEnabled:
+            kind: panel.input.switchbox
+            label: Enable Receiver-Specific Routing Expressions
+            id: routingExpressions-enabled
+            name: routingExpressionsEnabled
+            onText: "Routing Expressions: <b>Enabled</b>"
+            offText: "Routing Expressions: <b>Disabled</b>"
+            description: Enable or disable custom routing expressions for this DICOM Receiver.
+        projectRoutingExpression:
+            kind: panel.textarea
+            class: ignore
+            name: projectRoutingExpression
+            label: Project Routing Expression
+            description: >
+                Routing expression to extract Project label.
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+        subjectRoutingExpression:
+            kind: panel.textarea
+            class: ignore
+            name: subjectRoutingExpression
+            label: Subject Routing Expression
+            description: >
+                Routing expression to extract Subject label.
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+        sessionRoutingExpression:
+            kind: panel.textarea
+            class: ignore
+            name: sessionRoutingExpression
+            label: Session Routing Expression
+            description: >
+                Routing expression to extract Session label.
+                Reference: <a href="https://wiki.xnat.org/documentation/xnat-administration/xnat-custom-dicom-routing-rules-in-the-admin-ui" target="_blank">Custom DICOM Routing Formatting Guide</a>.
+
+dicomScpReceiversGlobal:
+    kind: panel.form
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    name: dicomScpReceiversGlobal
+    label: Manage DICOM SCP Receivers Globally
+    contents:
+        enableDicomReceiver:
+            kind: panel.input.switchbox
+            name: enableDicomReceiver
+            label: Global Permission
+            onText: "DICOM Receivers: <b>Allowed</b>"
+            offText: "DICOM Receivers: <b>Not Allowed</b>"
+            description: Globally Allow or Disallow DICOM Receivers
+
+dicomScpReceivers:
+    kind: panel
+    name: dicomScpReceivers
+    label: Manage DICOM SCP Receivers
+    footer: false
+    contents:
+        cautionMessage:
+            tag: div.warning.bold
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    Caution: Changes to these settings take effect immediately.
+                    Note that any changes, including defining a new receiver and
+                    editing or deleting an existing receiver, require restarting
+                    <i>all other receivers</i> on the same port. Before performing
+                    any operations like this, verify that there are no transmissions
+                    currently in progress to any of the receivers on that port.
+        dicomScpManager:
+            tag: "div#dicom-scp-manager"
+        dicomScpManagerScript:
+            tag: script|src="~/scripts/xnat/admin/dicomScpManager.js"
+
+## FILE SYSTEM
+
+fileSystemSettingsWarning:
+    tag: div.message
+    element:
+        html: >
+            These settings must be defined during initial application configuration,
+            and are seldom, if ever, changed.
+        style:
+            fontWeight: bold
+            marginBottom: 24px
+archivePath:
+    kind: panel.input.text
+    name: archivePath
+    label: Archive Path
+    validation: required onblur
+    description: ""
+    element:
+        disabled: true
+cachePath:
+    kind: panel.input.text
+    name: cachePath
+    label: Cache Path
+    validation: required onblur
+    description: ""
+prearchivePath:
+    kind: panel.input.text
+    name: prearchivePath
+    label: Prearchive Path
+    validation: required onblur
+    description: ""
+#ftpPath:
+#    kind: panel.input.text
+#    name: ftpPath
+#    label: FTP Path
+#    validation: required onblur
+#    description: ""
+buildPath:
+    kind: panel.input.text
+    name: buildPath
+    label: Build Path
+    validation: required onblur
+    description: ""
+pipelinePath:
+    kind: panel.input.text
+    name: pipelinePath
+    label: Pipeline Path
+    validation: required onblur
+    description: ""
+triagePath:
+    kind: panel.element
+    label: Resource Quarantine Path
+    info: >
+        <p>The Resource Quarantine, or Triage, can be enabled for custom resource uploads. See <a target="_blank" href="https://wiki.xnat.org/documentation/how-to-use-xnat/managing-resource-files-in-xnat/using-the-resource-file-quarantine">Resource Quarantine Documentation</a></p>
+    contents:
+        triagePathInput:
+            kind: input.text
+            name: triagePath
+            after: >
+                <p class="description">Location of XNAT Quarantine for uploaded resources.</p>
+inboxPath:
+    kind: panel.input.text
+    name: inboxPath
+    label: Inbox Path
+    validation: required onblur
+    description: ""
+maxNumberOfSessionsForJobsWithSharedData:
+    tag: div
+    contents:
+        fileOperationUsedForJobsWithSharedData:
+            kind: panel.select.single
+            name: fileOperationUsedForJobsWithSharedData
+            label: Operation Used For Shared Data Jobs
+            validation: required onblur
+            options:
+                hard_link: "Hard Link"
+                copy: "Copy"
+            description: >
+                The type of operation used to create a new directory in the case that a job is run on a project (Ex- container jobs, Jupyter Notebooks).
+                Only used when project has shared data. For distributed file systems copy must be used. In other cases, we recommend using hard links as it will reduce the size of data requirements.
+        maxNumberOfSessionsForJobsWithSharedData:
+            kind: panel.input.number
+            name: maxNumberOfSessionsForJobsWithSharedData
+            label: Maximum Number Of Sessions When Running Project Jobs
+            validation: required onblur
+            description: "The maximum number of sessions that can be processed by a job running on a project. Ex: container jobs, Jupyter Notebooks. This maximum is only used in cases where shared data is present within the project."
+zipExtensions:
+    kind: panel.input.text
+    name: zipExtensions
+    label: Zip Extensions
+    description: >
+        Determines which filetypes should be handled by the ZipUtils class.
+        (.tar and .gz are handled separately)
+zipCompressionMethod:
+    kind: panel.select.single
+    name: zipCompressionMethod
+    label: Zip Compression Method
+    options:
+        0: "Uncompressed"
+        8: "Compressed"
+    description: >
+        Default zip compression method used for XNAT Restlet API calls and turbine actions. <br/>
+        Uncompressed - Files are written to the zip with no compression (STORED).<br/>
+        Compressed - Files in the zip are compressed using the DEFLATE algorithm (DEFLATED).<br/>
+checksums:
+    kind: panel.input.switchbox
+    name: checksums
+    label: Checksums
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Determines whether checksums will be calculated for each image file as it is archived.
+        Enabling checksums provides greater assurance of data integrity, but may add significant
+        overhead to the archive process. Changes to this setting require a tomcat restart to take effect.
+backupDeletedToCache:
+    kind: panel.input.switchbox
+    name: backupDeletedToCache
+    label: Backup to-be-deleted data to cache "recycle bin"
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Determines whether XNAT should move files from deleted entities (projects, subjects, sessions, etc.)
+        into a DELETED subdirectory of the cache space (a.k.a., a "recycle bin") or just remove them completely.
+        Enabling the recycle bin offers some protection against accidental data loss, but may incur an IO penalty,
+        especially if the archive and cache directories are not on the same filesystem.
+maintainFileHistory:
+    kind: panel.input.switchbox
+    name: maintainFileHistory
+    label: Track file history
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Determines whether XNAT should retain copies of deleted files in a .history subdirectory of the cache space for
+        version control. Only files corresponding to existing entities (projects, subjects, sessions, etc.) can be tracked.
+        Deleting an entire entity cannot be version controlled, though you can enable the cache "recycle bin" for some
+        added deletion protection. Changes to this setting require a tomcat restart to take effect.
+uiShowPrearchiveFileActions:
+    kind: panel.input.switchbox
+    name: uiShowPrearchiveFileActions
+    label: Show preachive file actions
+    onText: Enabled
+    offText: Disabled
+    description: >
+        Enables the File Actions dropdown in the scan section of the Prearchive.
+
+#checksumsPropertyChangedListener:
+#    kind: panel.input.text
+#    id: checksumsPropertyChangedListener
+#    name: checksums.property.changed.listener
+#    label: Checksums Property Changed Listener
+
+fileSystem:
+    kind: panel.form
+    name: fileSystem
+    label: File System
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+#        ${fileSystemSettingsWarning}
+        ${archivePath}
+        ${cachePath}
+        ${prearchivePath}
+#        ${ftpPath}
+        ${buildPath}
+        ${pipelinePath}
+        ${triagePath}
+        ${inboxPath}
+        ${maxNumberOfSessionsForJobsWithSharedData}
+
+fileSystemBehaviors:
+    kind: panel.form
+    label: File System Behaviors
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${zipExtensions}
+        ${zipCompressionMethod}
+        ${checksums}
+        ${backupDeletedToCache}
+        ${maintainFileHistory}
+        ${uiShowPrearchiveFileActions}
+
+
+## ASYNC OPERATIONS
+
+asyncOperationsSettingsWarning:
+    someInfo:
+        tag: div.message
+        element:
+            html: >
+                These settings can only be applied during application start-up. That means that any
+                changes to the values here require a restart of the application server.
+            style:
+                fontWeight: bold
+defaultTimeout:
+    kind: panel.element
+    label: Default Timeout
+    info: >
+        <p>This sets the timeout for asynchronous request handling and defines the maximum lifespan of an asynchronous process.
+        Generally speaking, this should stay set to -1.</p>
+    contents:
+        defaultTimeoutInput:
+            kind: input.text
+            name: defaultTimeout
+            validation: required onblur
+            after: > 
+                <p class="description">Sets the timeout for asynchronous request handling.</p>
+
+corePoolSize:
+    kind: panel.input.text
+    name: corePoolSize
+    label: Core Pool Size
+    validation: required onblur
+    description: "Sets the minimum number of threads available to the asynchronous task executor."
+maxPoolSize:
+    kind: panel.input.text
+    name: maxPoolSize
+    label: Max Pool Size
+    validation: required onblur
+    description: "Sets the maximum number of threads available to the asynchronous task executor."
+keepAliveSeconds:
+    kind: panel.input.text
+    name: keepAliveSeconds
+    label: Keep-Alive Time
+    validation: required onblur
+    description: "Sets the time (as a number of seconds) that idle threads above the core pool size should be kept alive before disposal."
+allowCoreThreadTimeOut:
+    kind: panel.element
+    label: Allow Core Thread Time Out
+    info: >
+        Allowing core threads to time out enables dynamic growing and shrinking even in combination with a non-zero queue
+        (since the max pool size will only grow once the queue is full).
+    contents:
+        defaultallowCoreThreadTimeOutInput:
+            kind: input.switchbox
+            name: allowCoreThreadTimeOut
+            onText: Allow core thread time out
+            offText: Disallow core thread time out
+
+reactorWorkQueueDispatcherPoolSize:
+    kind: panel.element
+    label: Event Thread Pool Size
+    info: >
+        This controls the size of the Reactor Dispatcher thread pool. If you are seeing issues with event throughput, 
+        you might increase this value. You would likely want to do so in concert with increasing the event buffer size, 
+        and with consideration for the resources available on your system.
+    contents:
+        reactorWorkQueueDispatcherPoolSizeInput:
+            kind: input.text
+            name: reactorWorkQueueDispatcherPoolSize
+            validation: required onblur integer gte:5
+            after: >
+                <p class="description">Sets the number of threads dedicated to consuming and processing events.</p>
+reactorWorkQueueDispatcherRingBufferSizePower:
+    kind: panel.element
+    label: Event Buffer Size
+    info: >
+        This controls the size of the Reactor Dispatcher RingBuffer, which will be 2 raised to the power of this value 
+        (i.e., if you set the event buffer size to 13, the Reactor Dispatcher RingBuffer's bufferSize will be 
+        2^13 = 8192). If you are seeing CPU pressure during high bursts of events (e.g., large-scale bulk ingestion, 
+        container launch, etc.), you might increase this value.
+    contents:
+        reactorWorkQueueDispatcherRingBufferSizePowerInput:
+            kind: input.text
+            name: reactorWorkQueueDispatcherRingBufferSizePower
+            validation: required onblur integer gte:10 lte:31
+            after: >
+                <p class="description">Sets the size of the event buffer.</p>
+
+## EVENT SERVICE
+
+eventServiceConfig:
+    kind: panel.form
+    name: eventServiceConfig
+    label: Event Service Configuration
+    method: PUT
+    contentType: json
+    url: /xapi/events/prefs
+    contents:
+        enabled:
+            kind: panel.input.switchbox
+            name: enabled
+            label: Enable Event Service
+            onText: Enabled
+            offText: Disabled
+            description: >
+                <p>If enabled, Event Service will detect events and trigger actions linked by subscription.
+                If disabled, event detection, action triggers, and subscription creation will be disabled.</p>
+
+##
+
+authenticationMethods:
+    kind: panel.form
+    name: authenticationMethods
+    label: User Authentication Methods
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        xnatInternal:
+            kind: panel.input.switchbox
+            name: ":provider.providers.xnatInternal"
+            label: XNAT (Internal)
+            onText: Enabled
+            offText: Disabled
+        ldapProvider:
+            kind: panel.input.switchbox
+            name: ":provider.providers.ldap"
+            label: LDAP
+            onText: Enabled
+            offText: Disabled
+#        oauthProvider:
+#            kind: panel.input.switchbox
+#            id: oauthProvider
+#            name: ":provider.providers.oauth"
+#            label: OAuth
+genericAuthenticationProvider:
+    kind: panel.form
+    name: genericAuthenticationProvider
+    label: Generic Authentication Provider
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        providerDbName:
+            kind: panel.input.text
+            name: providerDbName
+            label: "Provider DB Name"
+        providerDbId:
+            kind: panel.input.text
+            name: providerDbId
+            label: "Provider DB ID"
+        providerDbType:
+            kind: panel.input.text
+            name: providerDbType
+            label: "Provider DB Type"
+
+ldapAuthentication:
+    kind: panel.form
+    name: ldapAuthenticationProvider
+    label: LDAP Authentication Provider
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        ldapName:
+            kind: panel.input.text
+            name: ldapName
+            label: "LDAP Name"
+        ldapId:
+            kind: panel.input.text
+            name: ldapId
+            label: "LDAP ID"
+        ldapType:
+            kind: panel.input.text
+            name: ldapType
+            label: "LDAP Type"
+        ldapAddress:
+            kind: panel.input.text
+            name: ldapAddress
+            label: "LDAP Address"
+        ldapUserDomain:
+            kind: panel.input.text
+            name: ldapUserDomain
+            label: "LDAP User Domain"
+        ldapPassword:
+            kind: panel.input.text
+            name: ldapPassword
+            label: "LDAP Password"
+        ldapSearchBase:
+            kind: panel.input.text
+            name: ldapSearchBase
+            label: "LDAP Search Base"
+        ldapSearchFilter:
+            kind: panel.input.text
+            name: ldapSearchFilter
+            label: "LDAP Search Filter"
+
+users:
+    kind: panel
+    name: users
+    label: Users
+#    contents:
+
+userRoles:
+    kind: panel
+    name: userRoles
+    label: User Roles
+#    contents:
+
+
+manageDataTypes:
+    kind: panel.form
+    name: manageDataTypes
+    label: Manage Data Types
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        displayNameForGenericImageSessionSingular:
+            kind: panel.input.text
+            name: imageSessionDisplayNameSingular
+            label: "Singular Display Name For Generic Image Session Singular"
+        displayNameForGenericImageSessionPlural:
+            kind: panel.input.text
+            name: imageSessionDisplayNamePlural
+            label: "Plural Display Name For Generic Image Session Singular"
+
+asyncOperations:
+    kind: panel.form
+    name: asyncOperations
+    label: Async Operations
+    method: POST
+    contentType: json
+    url: /xapi/asyncOps
+    contents:
+        ${asyncOperationsSettingsWarning}
+        ${defaultTimeout}
+        ${corePoolSize}
+        ${allowCoreThreadTimeOut}
+        ${maxPoolSize}
+        ${keepAliveSeconds}
+        ${reactorWorkQueueDispatcherPoolSize}
+        ${reactorWorkQueueDispatcherRingBufferSizePower}
+
+#automationSettings:
+#    kind: panel.form
+#    name: automationSettings
+#    label: Automation
+#    method: POST
+#    contentType: json
+#    url: /xapi/automation
+#    contents:
+#        internalScriptingEnabled:
+#            kind: panel.input.switchbox
+#            name: internalScriptingEnabled
+#            label: Internal Scripting Enabled
+#            onText: Enabled
+#            offText: Disabled
+#            description: "When enabled, administrators can create and edit scripts that run internally to the XNAT process. This can be a powerful feature, but also can pose security hazards that may be unacceptable for certain deployments. For these situations, configurable internal scripting can be disabled (XNAT itself may still use some scripting for feature implementation, but these scripts can not be modified or updated by users)."
+
+investigators:
+    kind: panel
+    name: investigators
+    label: List of Investigators
+    footer: false
+    contents:
+        investigatorsContainer:
+            tag: div#investigators-list-container
+        newInvestigatorButton:
+            tag: button#create-new-investigator.btn1|style=margin-top:15px
+            content: Create New Investigator
+        investigatorsjs:
+            tag: script|src=/scripts/xnat/app/investigators.js
+        renderInvestigatorsTable:
+            tag: script
+            content: >
+                XNAT.app.investigators.dataTable('#investigators-list-container')
+
+setScanTypeMapping:
+    kind: panel.form
+    label: Scan Type Mapping
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        scanTypeMapping:
+            kind: panel.input.switchbox
+            label: Scan Type Mapping
+            onText: Enabled
+            offText: Disabled
+
+scanTableSettings:
+    kind: panel.form
+    label: Scan Table Settings
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiDisplaySeriesDescription:
+            kind: panel.input.switchbox
+            label: Display Series Description
+            description: Display the series description in the image session scan table
+            onText: Enabled
+            offText: Disabled
+        uiDisplaySeriesClass:
+            kind: panel.input.switchbox
+            label: Display Series Class
+            description: Display the series class in the image session scan table
+            onText: Enabled
+            offText: Disabled
+
+recentExptListSettings:
+    kind: panel.form
+    label: Recent Data Activity Table Settings
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiShowRecentExptListScannerName:
+            kind: panel.input.switchbox
+            label: Display Scanner Name
+            description: Display the scanner name in the recent data activity table
+            onText: Enabled
+            offText: Disabled
+        uiShowRecentExptListDate:
+            kind: panel.input.switchbox
+            label: Display Experiment Date
+            description: Display the experiment date in the recent data activity table
+            onText: Enabled
+            offText: Disabled
+
+setPreventCrossModalityMerge:
+    kind: panel.form
+    label: Prevent Cross-modality Session Merger
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        crossModalityMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    Session merging happens when incoming data has a matching Study Instance UID to data already in the XNAT archive.
+                    However, if incoming data has scans of a different modality (i.e. PET) than the archived session (i.e. CT), how
+                    should XNAT react?
+        preventCrossModalityMerge:
+            kind: panel.input.switchbox
+            label: Prevent cross-modality post-archive session merger
+            onText: Cross-modality Merger Prevented
+            offText: Cross-modality Merger Allowed
+
+manualQC:
+    kind: panel.form
+    label: Manual QC
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        uiShowAddManualQCAction:
+            kind: panel.input.switchbox
+            label: Manual QC Actions Menu Item
+            description: If Enabled, an "Add QC Entry" action will be added to the actions menu for all image session report pages
+            onText: Enabled
+            offText: Disabled
+
+developmentUtilities:
+    kind: panel
+    label: Development Utilities
+    footer: false
+    contents:
+        spawner:
+            kind: panel.element
+            label: Spawner
+            contents:
+                link:
+                    tag: a.link|target=_blank|href=/page/#/admin/spawner/
+                    content: Manage Spawner Elements
+        swagger:
+            kind: panel.element
+            label: Swagger
+            contents:
+                link:
+                    tag: a.link|target=_blank|href=/xapi/swagger-ui.html
+                    content: View the Swagger page
+        monitoring:
+            kind: panel.element
+            label: Monitoring
+            contents:
+                link:
+                    tag: a.link|target=_blank|href=/monitoring
+                    content: View the JavaMelody application monitoring page
+
+
+#################################################
+####  Root Site Admin Spawner Config Object  ####
+#################################################
+root:
+    kind: tabs
+    name: adminPage
+    label: Administer XNAT
+    meta:
+        ${tabGroups}
+    contains: tabs
+    tabs:  # this property name is the same as 'contains', so it will be treated like 'contents'
+        siteSetup:
+            kind: tab
+            name: siteSetup
+            label: Site Setup
+            group: xnatSetup
+            active: true
+            contents:
+                ${siteInfo}
+                ${adminInfo}
+        security:
+            kind: tab
+            name: security
+            label: Security
+            group: xnatSetup
+            contents:
+                ${generalSecuritySettings}
+                ${userAuthenticationSettings}
+                ${userLoginsSessionControls}
+                ${passwords}
+                ${csrf}
+#                ${securityServices}
+        emailServer:
+            kind: tab
+            name: emailServer
+            label: Email Server
+            group: manageNotifications
+            contents:
+                ${emailServerSettings}
+        notifications:
+            kind: tab
+            name: notifications
+            label: Notification Options
+            group: manageNotifications
+            contents:
+                ${notifications}
+        notificationEmailsTab:
+            kind: tab
+            name: notificationEmailsTab
+            label: Notification Emails
+            group: manageNotifications
+            contents:
+                ${notificationEmails}
+        siteWideAlertsTab:
+            kind: tab
+            name: siteWideAlertsTab
+            label: Site-wide Alerts
+            group: manageNotifications
+            contents:
+                ${siteWideAlerts}
+        manageAppearance:
+            kind: tab
+            name: manageAppearance
+            label: Appearance
+            group: xnatSetup
+            contents:
+                ${dateFormatting}
+                ${themeManagement}
+                ${searchTabsHomePage}
+                ${adminControls}
+                ${displayedUserIdentifier}
+        managePerformance:
+            kind: tab
+            name: managePerformance
+            label: Performance
+            group: xnatSetup
+            contents:
+                ${searchPerformance}
+        plugins:
+            kind: tab
+            name: plugins
+            label: Installed Plugins
+            group: xnatSetup
+            contents:
+                ${pluginList}
+                ${pluginOpenUrlsConfig}
+
+#        eventService:
+#            kind: tab
+#            name: eventService
+#            label: Event Service
+#            group: xnatSetup
+#            contents:
+#                ${eventServiceConfig}
+
+
+        #        authenticationMethods:
+        #            kind: tab
+        #            name: authenticationMethods
+        #            label: Authentication Methods
+        #            group: manageAccess
+        #            contents:
+        #                ${authenticationMethods}
+        #                ${genericAuthenticationProvider}
+        #                ${ldapAuthentication}
+        #        users:            # enable when users table can be re-implemented in spawner, until then use old users config?
+        #            kind: tab
+        #            name: users
+        #            label: Users
+        #            group: manageAccess
+        #            contents:
+        #                ${users}
+        #        userRoles:        # enable when user roles table can be re-implemented in spawner, until then use old user roles config?
+        #            kind: tab
+        #            name: userRoles
+        #            label: User Roles
+        #            group: manageAccess
+        #            contents:
+        #                ${userRoles}
+        registrationOptions:
+            kind: tab
+            name: registrationOptions
+            label: Registration Options
+            group: manageAccess
+            contents:
+                ${registrationOptionsPanel}
+        #        manageDataTypes:
+        #            kind: tab
+        #            name: manageDataTypes
+        #            label: Manage Data Types
+        #            group: manageData
+        #            contents:
+        #                ${manageDataTypes}
+        sessionUploadImportAnonymization:
+            kind: tab
+            name: sessionUploadImportAnonymization
+            label: "Session Upload, Import & Anonymization"
+            group: manageData
+            contents:
+                ${uploadChannels}
+                ${sessionBuilder}
+                ${anonymization}
+                ${seriesImportFilter}
+                ${petTracers}
+                ${petMr}
+                ${rerunProjectAnon}
+        customRoutingRules:
+            kind: tab
+            name: customRoutingRules
+            label: "Custom DICOM Routing"
+            group: manageData
+            contents:
+                ${projectRouting}
+                ${subjectRouting}
+                ${sessionRouting}
+        dicomFileNaming:
+            kind: tab
+            name: dicomFileNaming
+            label: "DICOM File Naming"
+            group: manageData
+            contents:
+                ${dicomNaming}
+        pipelinesTab:
+            kind: tab
+            label: Pipeline Settings
+            group: advanced
+            contents:
+                ${pipelineSettings}
+                ${autoRunSettings}
+        dicomScpReceiversTab:
+            kind: tab
+            label: DICOM SCP Receivers
+            group: advanced
+            contents:
+                ${dicomScpReceiversGlobal}
+                ${dicomScpReceivers}
+        fileSystemTab:
+            kind: tab
+            label: File System
+            group: advanced
+            contents:
+                ${fileSystem}
+        fileSystemBehaviorsTab:
+            kind: tab
+            label: File System Behavior
+            group: advanced
+            contents:
+                ${fileSystemBehaviors}
+        asyncOperationsTab:
+            kind: tab
+            label: Async Operations
+            group: advanced
+            contents:
+                ${asyncOperations}
+        #        automationTab:
+        #            kind: tab
+        #            name: automationTab
+        #            label: Automation
+        #            group: advanced
+        #            contents:
+        #                ${automationSettings}
+        manageInvestigators:
+            kind: tab
+            label: Manage Investigators
+            group: other
+            contents:
+                ${investigators}
+        misc:
+            kind: tab
+            label: Miscellaneous
+            contents:
+                ${setScanTypeMapping}
+                ${scanTableSettings}
+                ${recentExptListSettings}
+                ${setPreventCrossModalityMerge}
+                ${manualQC}
+                ${developmentUtilities}
+
+
+###########################################
+####  Initial Site Setup Admin Panels  ####
+###########################################
+setupMessage:
+    tag: div.message
+    element:
+        style:
+            marginBottom: 24px
+        html: >
+            The settings below need to be configured before this XNAT system
+            can be used. Please set the properties below and submit the form to continue.
+
+siteSetupSiteInfo:
+    kind: panel.form
+    name: siteSetupSiteInfo
+    label: Site Information
+    footer: false
+    method: POST
+    url: /xapi/siteConfig
+    contentType: json
+    contents:
+        ${siteId}
+        ${siteUrl}
+        ${adminEmail}
+
+dataStorage:
+    kind: panel.form
+    name: dataStorage
+    label: File System
+    footer: false
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${archivePath}
+        ${prearchivePath}
+#        ${ftpPath}
+        ${buildPath}
+        ${pipelinePath}
+        ${cachePath}
+#        ${zipExtensions}
+#        ${checksums}
+#        ${checksumsPropertyChangedListener}
+
+
+initialSetup:
+    kind: app.siteSetup.form
+    name: initialSetup
+    label: XNAT Initial Setup
+    contents:
+        ${setupMessage}
+        ${setupSiteInfo}
+        ${fileSystem}
+        ${emailServerSettings}

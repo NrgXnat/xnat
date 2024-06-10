@@ -1,0 +1,12 @@
+<h2> Your uploaded entries have been stored.</h2>
+
+<TABLE>
+#foreach($row in $summary)
+  <tr>
+  #foreach($column in $row)
+    <td>$column</td>
+  #end
+  </tr>
+#end
+
+</table>

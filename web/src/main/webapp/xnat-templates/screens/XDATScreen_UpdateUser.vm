@@ -1,0 +1,63 @@
+#* @vtlvariable name="message" type="java.lang.String" *#
+#* @vtlvariable name="success" type="java.lang.Boolean" *#
+#* @vtlvariable name="expired" type="java.lang.Boolean" *#
+#* @vtlvariable name="forgot" type="java.lang.Boolean" *#
+#* @vtlvariable name="unathenticated" type="java.lang.Boolean" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="login_methods" type="java.util.Collection" *#
+#* @vtlvariable name="provider" type="org.nrg.xnat.security.provider.XnatAuthenticationProvider" *#
+
+
+#if ($expired || $forgot || $unathenticated)
+    $!data.getTemplateInfo().setLayoutTemplate("Noninteractive.vm")
+#end
+#if ($success)
+    #set($msgClass = "success")
+#else
+    #set($msgClass = "error")
+#end
+#if ($message)
+<div class="$msgClass">$message</div><br>
+#elseif ($data.message)
+<div class="$msgClass">$data.message</div><br>
+#end
+
+
+#if($expired)
+    <div class="alert">Your password has expired. Please create a new one.</div>
+    #parse("screens/XDATScreen_password.vm")
+
+#elseif($forgot)
+    #parse("screens/XDATScreen_password.vm")
+
+#elseif(!$unathenticated)
+    <script src="$content.getURI('/scripts/xnat/app/userProfile.js')"></script>
+
+    <h2>Manage User Login and Profile</h2>
+    <div id="user-profile-manager" class="xnat-tab-container"></div>
+    <div id="user-change-email" class="html-template">
+        #parse("screens/XDATScreen_change_email.vm")
+    </div>
+    <div id="user-change-password" class="html-template">
+        #parse("screens/XDATScreen_password.vm")
+    </div>
+    <div id="user-change-password-not-allowed">
+    </div>
+
+
+    #addGlobalCustomScreens("userProfile")
+        
+    <script src="$content.getURI("/scripts/xnat/app/aliasTokens.js")"></script>
+    <script src="$content.getURI("/scripts/xnat/app/userCacheManagement.js")"></script>
+
+    <script>
+        XNAT.app.userProfile.init('#user-profile-manager');
+        XNAT.app.userCache.init();
+    </script>
+    <div class="clearfix clear"></div>
+
+#end
+
+
+

@@ -1,0 +1,15 @@
+#* @vtlvariable name="isEnabled" type="java.lang.Boolean" *#
+#* @vtlvariable name="name" type="java.lang.String" *#
+#* @vtlvariable name="resendEmailLink" type="java.lang.String" *#
+#* @vtlvariable name="siteName" type="java.lang.String" *#
+#* @vtlvariable name="verifyEmailLink" type="java.lang.String" *#
+$name, <br><br>
+We received a request to register an account for you on $siteName. If you did not make this request, you can safely ignore this email. <br><br>
+If you would like to register, please confirm your email address by clicking this link within the next 24 hours: <a href="$verifyEmailLink" title="Verify your email address on $siteName">$verifyEmailLink</a> <br><br>
+#if($isEnabled)
+    After verifying your email address, you will be able to immediately log in and start using $siteName. <br><br>
+#else
+    Note: After verifying your email address, you will need to wait for a $siteName administrator to enable your account before you can log in. <br><br>
+#end
+-- <br>
+To request a new email verification link, please click this link and select "Resend email verification": <a href="$resendEmailLink" title="Request a new email verification link from $siteName">$resendEmailLink</a>

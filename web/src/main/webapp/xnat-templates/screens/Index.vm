@@ -1,0 +1,45 @@
+<!-- BEGIN xnat-templates/screens/Index.vm -->
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="par_count" type="java.lang.Integer" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#set ($template = $data.getTemplateInfo())
+#if($data.getParameters().getString("login").equals("true"))
+    $!template.setLayoutTemplate($siteConfig.siteLandingLayout)
+#else
+    $!template.setLayoutTemplate($siteConfig.siteHomeLayout)
+#end
+<script src="$content.getURI("scripts/project/parManager.js")"></script>
+
+#if ($data.message)
+<div class="note" id="messageToDisplay">$data.message</div><br>
+<script>
+    var messageToDisplay = "$data.message".toLowerCase();
+    if (messageToDisplay.indexOf('no project owners have emails which could receive the access request') > -1) {
+        $('#messageToDisplay').removeClass('note').addClass('error');
+    }
+</script>
+#end
+
+#if(0 < $par_count)
+<div class="message" id="login_par_message">You have been invited to join $par_count $displayManager.getSingularDisplayNameForProject().toLowerCase()(s).&nbsp;
+<button onclick="XNAT.projectAccess.initPars('site')">Review</button>
+</div>
+<div style="line-height:6px">&nbsp;</div>
+#end
+#if($data.getParameters().getString("login").equals("true"))
+    #if($turbineUtils.resourceExists($siteConfig.siteLoginLanding))
+        #parse($siteConfig.siteLoginLanding)
+    #else
+        <div>Custom site login landing page cannot be found!<br/><br/>Contact the site administrator.</div>
+    #end
+#else
+    #if($turbineUtils.resourceExists($siteConfig.siteHome))
+        #parse($siteConfig.siteHome)
+    #else
+        <div>Custom site home page cannot be found!<br/><br/>Contact the site administrator.</div>
+    #end
+#end
+<!-- END xnat-templates/screens/Index.vm -->

@@ -1,0 +1,117 @@
+<tr>
+    <th align="left">$displayManager.getSingularDisplayNameForProject():</th>
+    <td>
+        #if(! $!item.getProperty("project"))
+            <select id="$!item.getXSIType()/project" name="$!item.getXSIType()/project" disabled=true></select>
+        #else
+            $!om.getProject($project,false).getDisplayID()
+            <div style="display:none">
+                <select id="$!item.getXSIType()/project" name="$!item.getXSIType()/project" disabled=true></select>
+            </div>
+        #end
+    </td>
+</tr>
+<tr>
+    <th align="left">$displayManager.getSingularDisplayNameForSubject():</th>
+
+## #if ($!subject != "")
+    #if (!$subject)
+
+    ## #else
+        #if($mr.getSubjectData())
+            #set($subject=$mr.getSubjectData())
+        #else
+            #if($part)
+                #set($subject=$part)
+            #end
+        #end
+    #end
+
+
+    <td>
+        <select id="$!item.getXSIType()/subject_id" name="$!item.getXSIType()/subject_id"></select>
+        #if(!$preventSubject)
+         &nbsp; <a onclick="createSubjectForm();">Add New $displayManager.getSingularDisplayNameForSubject()</a>
+        #end
+    </td>
+
+</tr>
+<tr>
+    <td align="left" colspan="3">
+        <div style="color:rgb(204, 102, 102)" id="subj_msg"></div>
+    </td>
+</tr>
+
+
+<script type="text/javascript" src="$content.getURI('scripts/subjectAssessorData/proj_subj_selector.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/popupCentered.js')"></script>
+
+#addGlobalCustomScreens("projectSubjectForm")
+
+#parse($turbineUtils.getTemplateName("_session.vm",$om.getXSIType(),$project,"upload"))
+
+<script type="text/javascript">
+
+    var elementName = "$!item.getXSIType()";
+    var project;
+
+    function setNewProject(obj) {
+        project = document.getElementById("$!item.getXSIType()/project");
+    }
+
+        #if($item.getProperty('subject_id'))
+            #set($part_id=$item.getProperty('subject_id'))
+        #end
+
+    function createSubjectForm() {
+
+        if (this.subjectForm != undefined) {
+            this.subjectForm.close();
+            this.subjectForm = null;
+        }
+
+        window.create_subject_link = "$link.setPage('XDATScreen_edit_xnat_subjectData.vm').addPathInfo('popup','true')";
+
+        var project = document.getElementById("$!item.getXSIType()/project").value;
+
+        if ((project == "") && ($data.getSession().getAttribute("userHelper").canRead($item)) && ($data.getSession().getAttribute("userHelper").canEdit($item)) && ($data.getSession().getAttribute("userHelper").canCreate($item)) && ($data.getSession().getAttribute("userHelper").canActivate($item)) && ($data.getSession().getAttribute("userHelper").canDelete($item))) {
+            xmodal.message('Create Subject', 'Please Add Yourself as a "Member" of the $displayManager.getSingularDisplayNameForProject().');
+            return;
+        }
+        if (project == "") {
+            xmodal.message('Create Subject', 'Please Select a $displayManager.getSingularDisplayNameForProject() first.');
+            return;
+        }
+
+        window.create_subject_link += "/project/" + project + "/destination/JS_Parent_Return.vm";
+
+        this.subjectForm = popupCentered(window.create_subject_link,'Subject',610,800,10,'status=yes,resizable=yes,scrollbars=yes,toolbar=no');
+        if (this.subjectForm.opener == null) this.subjectForm.opener = self;
+        return this.subjectForm;
+
+    }
+
+    window.success = function (subject_id) {
+        //window.psm("The $displayManager.getSingularDisplayNameForSubject().toLowerCase() you entered was stored.");
+        if (this.subjectForm != undefined) {
+            this.subjectForm.close();
+            this.subjectForm = null;
+        }
+        window.psm.defaultSubject = subject_id;
+        window.psm.loadSubjects();
+    };
+    window.failure = function (msg) {
+        //window.psm.message(msg);
+        if (this.subjectForm != undefined) {
+            this.subjectForm.close();
+            this.subjectForm = null;
+        }
+    };
+
+    window.psm = new ProjectSubjectSelector("$!item.getXSIType()/project", "$!item.getXSIType()/subject_id", null, "$!project", "$!part_id");
+    window.psm.init();
+
+    var w = window;
+    // ?
+</script>
+<input type="hidden" name="ELEMENT_0" value="$!item.getXSIType()"/>

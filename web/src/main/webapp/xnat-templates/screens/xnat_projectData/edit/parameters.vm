@@ -1,0 +1,46 @@
+
+<!-- BEGIN xnat-templates/screens/xnat_projectData/edit/parameters.vm -->
+    <tr id="customFieldsRow">
+        <th>Custom Field(s)</th>
+        <td>
+            <div id="projectFormIO" style="overflow-y:auto" class="xnat-bootstrap" data-id="$!om.getId()" data-type="$!om.getXSIType()" data-project="$!om.getProject()"></div>
+        </td>
+    </tr>
+
+
+
+#parse('screens/formioJSIncludes.vm')
+#parse('screens/formioIncludesBase.vm')
+
+<script type="text/javascript">
+    var formOptions = { buttonSettings: {
+                                                showCancel: false,
+                                                showSubmit: false,
+                                                showNext: false,
+                                                showPrevious: false
+                                              }};
+
+   var formElt  = document.getElementById('new-project-form');
+   if (formElt === null || formElt === undefined) {
+      formElt = document.getElementById('edit-project-form');
+   }
+ 	var projectComponents = new CustomVariableFormComponents(formElt);
+    projectComponents.loadCustomFormComponents('null','null','projectFormIO','customFieldsRow');
+
+	document.addEventListener('DOMContentLoaded', function(event) {
+       //This odd style is required as the ID contains colon and /
+       var projectSelectElement = document.getElementById(projectFieldName);
+       if(typeof projectSelectElement !== 'undefined' && projectSelectElement !== null && projectSelectElement.tagName === 'SELECT') {
+              $(document.getElementById(projectFieldName)).chosen().change(handleProjectChange);
+       }
+    });
+
+     function handleProjectChange() {
+        projectComponents.updateOnProjectChange();
+     }
+
+</script>
+
+
+
+<!-- END xnat-templates/screens/xnat_projectData/edit/parameters.vm -->

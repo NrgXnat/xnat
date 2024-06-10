@@ -1,0 +1,102 @@
+
+<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/omUtils.js')"></SCRIPT>
+<script type="text/javascript">
+
+function appendImage(obj,img_name){
+if(obj!=null){
+	  if(obj.appendedImage==undefined){
+	    obj.appendedImage = document.createElement("img");
+	    obj.appendedImage.style.marginLeft="5pt";
+	    if(obj.nextSibling==null)
+	    {
+	    	obj.parentNode.insertBefore(obj.appendedImage,obj.nextSibling);
+	    }else{
+	    	obj.parentNode.appendChild(obj.appendedImage);
+	    }
+	  }
+	  obj.appendedImage.src=serverRoot + img_name;
+	}
+}
+
+function appendIcon(obj,icon_class,msg,styleObj){
+    if(obj!==null){
+        if(obj.appendedIcon==undefined){
+            obj.appendedIcon = document.createElement("i");
+            obj.appendedIcon.className = "fa "+icon_class;
+            if (Object.keys(styleObj).length) {
+                for (var k in styleObj) {
+                    obj.appendedIcon.style[k] = styleObj[k];
+                }
+            }
+            obj.appendedIcon.style.marginLeft="5px";
+            if(obj.nextSibling==null)
+            {
+                obj.parentNode.insertBefore(obj.appendedIcon,obj.nextSibling);
+            }else{
+                obj.parentNode.appendChild(obj.appendedIcon);
+            }
+        }
+        if(msg!==undefined)obj.appendedIcon.title=msg;
+    }
+}
+
+function confirmValues(){
+  var form_submit=document.getElementById("form_submit");
+  form_submit.disabled=true;
+  
+  var valid =true;
+  
+  var projBox=document.getElementById("${datatype}/project");
+  if(projBox.selectedIndex>0){
+     appendIcon(projBox,"fa-check",null,{ color: 'green' });
+  }else{
+	   	  appendIcon(projBox,"fa-asterisk","Required",{ color: '#c66' });
+	   	  valid=false;
+  		}
+  
+  var subBox=document.getElementById("${datatype}/subject_id");
+  if(subBox.selectedIndex>0){
+     appendIcon(subBox,"fa-check",null,{ color: 'green' });
+  }else{
+	   	  appendIcon(subBox,"fa-asterisk","Required",{ color: '#c66' });
+	   	  valid=false;
+  		}
+  
+  var labelBox=document.getElementById("${datatype}/label");
+  if(labelBox.validated==undefined)labelBox.value=fixSessionID(labelBox.value);
+  if(labelBox.value!=""){
+     labelBox.validated=true;
+     appendIcon(labelBox,"fa-check",null,{ color: 'green' });
+  }else{
+     labelBox.validated=false;
+	   	  appendIcon(labelBox,"fa-asterisk","Required",{ color: '#c66' });
+	   	  valid=false;
+  		}
+  		
+  		
+   					 #foreach($scan in [0..$TOP_SCAN])
+
+   var field = "${datatype}/scans/scan[$scan]/type";
+   if(document.getElementById(field).value=="")
+   {
+     var selBox=document.getElementById("SEL_" +field);
+     if (selBox==null){
+        selBox=document.getElementById(field);
+     }
+     if(valid)selBox.focus();
+	   	  appendIcon(selBox,"fa-asterisk","Required",{ color: '#c66' });
+	   	  valid=false;
+   }else{
+     var selBox=document.getElementById("SEL_"+field);
+     if (selBox==null){
+        selBox=document.getElementById(field);
+     }
+     appendIcon(selBox,"fa-check",null,{ color: 'green' });
+   }
+   					 #end
+  		
+  		if(valid)form_submit.disabled=false;
+}
+
+confirmValues();
+</script>

@@ -1,0 +1,148 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$data.setLayoutTemplate("/Popup.vm")
+#set ($popup=$turbineUtils.GetPassedParameter("popup",$data))
+<script type="text/javascript">
+
+<!--
+
+function popup(mylink, windowname)
+
+{
+
+if (! window.focus)return true;
+
+var href;
+
+if (typeof(mylink) == 'string')
+
+   href=mylink;
+
+else
+
+   href=mylink.href;
+
+window.open(href, windowname, 'width=500,height=400,status=yes,resizable=yes,scrollbars=yes');
+
+return false;
+
+}
+
+//-->
+
+</script>
+
+$page.setTitle("CNDA -- Central Neuroimaging Data Archive")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+##<font face="$ui.sansSerifFonts">
+
+#set ($sessionId = $om.getId())
+<form name="BuildPipeline" method="post" action="$link.setAction("BuildPipelineActions")" >
+<b>
+  ##<font face="$ui.sansSerifFonts">
+	      $displayManager.getSingularDisplayNameForImageSession(): $sessionId 
+  ##</font>
+</b>
+<br>
+<br>
+<br>
+
+#set ($qc='"')
+
+
+#foreach( $parameter in $parametersHash.keySet())
+#if ($parameter.Editable)
+ 	#set ($disabled="")	
+ #else
+ 	#set ($disabled="disabled=${qc}disabled${qc}")
+#end
+
+<table border=0 bodercolor="#CC3333">
+ #set ($valueCount = $parametersHash.get($parameter).size()) 
+			 ##<input type="hidden" name="Param_${parameter.Name}_TotalValues" value="$valueCount"/>
+				 <tr>
+	 				    <td> <b> $parameter.Name </b> </td>
+    	 <td> $!parameter.Description </td>
+			 </tr> 
+			 #if ($valueCount > 1)
+			 #if ($parameter.MultipleValues)
+			 <tr>
+			 <td colspan="2">
+			 <table>
+			 #set ($i = 1)
+			 #foreach($value in $parametersHash.get($parameter))
+			   ##if ($i%3 == 0) 			<tr> 			#end
+			   <tr>
+			 	     <td> <input type="checkbox" name="Param:${parameter.Name}:${i}" value="$value" $disabled /> </td>
+			 	     <td> $value </td>
+			 	  </tr>   
+   ##if ($i%3 == 0) 			 </tr> #end
+				  #set ($i = $i+1)
+			 #end
+			 </table>
+			 </td>
+			 </tr>
+#else
+						 #set ($i = 1)
+			 <tr>
+			 	     <td> </td>
+			 	     <td > <select name="Param:${parameter.Name}" $disabled>
+	            				<option value="bad">(SELECT)</option> 
+			            #foreach($value in $parametersHash.get($parameter))
+            				<option value="$value">$value</option> 
+					            #set ($i = $i+1)
+			            				#end
+	            				</select></td>
+ </tr>
+			 #end 
+#else 
+ <tr>
+						 	     <td>  </td>
+			 	     <td> <input type="text" maxlength="200"  name="Param:${parameter.Name}" value=${qc}$!parametersHash.get($parameter).get(0)${qc} $disabled /> </td>
+ </tr> 
+#end
+#end
+	</table>
+
+
+ <br>
+    <p>
+        <b><input type="checkbox" name="buildNowCheck" >Build images immediately</b>
+    </p>
+    <p>&nbsp;</p>
+    #set ($email = $user.getEmail())
+    #set ($text	= "")
+    #if(!($email==""))
+            <p>
+                When the build is complete, an email will be automatically sent to $email 
+            </p>
+    <p>&nbsp;</p>
+    #set ($text="additional")
+    #end
+            <p>
+                Send <i>$text</i> confirmation emails to
+                <input type="text" name="emailField" value="" size="20" />  (use spaces to separate multiple addresses)
+            </p>
+    <p>&nbsp;</p>
+    <p>
+    
+    <input type="submit" name="eventSubmit_doBuild" value="Build" />
+    			&nbsp;&nbsp;
+   	#if ($popup=="false")
+	    	<input type="button" ONCLICK="javascript:history.go(-1)" value="Back"/>
+			&nbsp;&nbsp;
+	    	<input type="button" ONCLICK="javascript:self.close()" value="Close"/>
+       	#else
+	    	<input type="button" ONCLICK="javascript:self.close()" value="Close"/>
+    	#end
+    <p>&nbsp;</p>
+    #xdatPassItemFormFields($search_element $search_field $search_value $project)
+    <input type="hidden" name="pipelineName" value="$pipelineName"/>
+</form>
+
+
+

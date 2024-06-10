@@ -1,0 +1,30 @@
+#* @vtlvariable name="system" type="java.lang.String" *#
+#* @vtlvariable name="server" type="java.lang.String" *#
+#* @vtlvariable name="time" type="java.lang.String" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+<html>
+<head><title>Expired User Reverified</title></head>
+<body>
+    <table>
+        <thead>
+            <tr><th>Expired User Reverified</th></tr>
+        </thead>
+        <tbody>
+            <tr><th>Date:</th><td>$time</td></tr>
+            <tr><th>Site:</th><td>$system</td></tr>
+            <tr><th>Host:</th><td>$server</td></tr>
+            <tr><th>Username:</th><td>$user.login</td></tr>
+            <tr><th>First:</th><td>$user.firstname</td></tr>
+            <tr><th>Last:</th><td>$user.lastname</td></tr>
+        </tbody>
+    </table>
+    #if ($user.isEnabled())
+        <p>After being disabled due to inactivity, the owner of this account has completed the email verification process to show that they are still the proper account owner. This user account is now no longer disabled due to inactivity and they can access the site again. </p>
+        <p>The <a href="$server/app/action/DisplayItemAction/search_value/$user.login/search_element/xdat:user/search_field/xdat:user.login">verified user account <b>$user.login</b></a> has been enabled.</p>
+    #else
+        <p>After being disabled due to inactivity, the owner of this account has completed the email verification process to show that they are still the proper account owner. This user account is now no longer disabled due to inactivity, but their account has not yet been manually enabled by a site administrator. You, or another admin, will need to do this before they can access the site. </p>
+        <p>You can review and enable <a href="$server/app/action/DisplayItemAction/search_value/$user.login/search_element/xdat:user/search_field/xdat:user.login">the verified user account <b>$user.login</b></a>.</p>
+    #end
+
+</body>
+</html>

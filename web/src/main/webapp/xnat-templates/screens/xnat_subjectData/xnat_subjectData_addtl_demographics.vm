@@ -1,0 +1,41 @@
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+<!-- start /xnat-templates/screens/xnat_subjectData/xnat_subjectData_addtl_demographics.vm -->
+
+#set ($demoDataStr = "xnat:subjectData/demographics[@xsi:type=xnat:demographicData]")
+
+## ["fieldname", "Field Label"]
+#set ($demographicProps = [
+    ["${demoDataStr}/education", "Education"],
+    ["${demoDataStr}/employment", "Employment"],
+    ["${demoDataStr}/race", "Race"],
+    ["${demoDataStr}/ethnicity", "Ethnicity"],
+    ["${demoDataStr}/height", "Height (inches)"],
+    ["${demoDataStr}/weight", "Weight (lbs)"],
+    ["xnat:subjectData/src", "Recruitment Source"],
+    ["xnat:subjectData/group", "Group"]
+])
+
+#foreach ($demoProp in $demographicProps)
+
+    #set ($fieldName = $demoProp[0])
+    #set ($fieldLabel = $demoProp[1])
+
+    #if ($subject.getProperty($fieldName))
+    <tr>
+        ## #formLabel($fieldLabel))
+        <th class="formLabel">$fieldLabel</th>
+        <td>
+        ## special handling of employment field
+        #if ($fieldLabel == "Employment")
+            #renderEmployment($!escUtils.escapeHtml4($!escUtils.unescapeHtml4($!escUtils.unescapeXml("$subject.getProperty($fieldName)"))).replaceAll("'", "&apos;").replaceAll('"', '&quot;'))
+        #else
+            #escapeCleanHTML("$subject.getProperty($fieldName)")
+        #end
+        </td>
+    </tr>
+    #end
+
+#end
+
+<!-- end /xnat-templates/screens/xnat_subjectData/xnat_subjectData_addtl_demographics.vm -->

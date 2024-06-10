@@ -1,0 +1,50 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatSubjectdata" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+<!-- BEGIN xnat-templates/screens/xnat_subjectData/xnat_subjectData_resources.vm -->
+<!--suppress CssUnusedSymbol -->
+<style>
+    /* custom styles for inline instances */
+    .yui-skin-sam .yui-ac-input { position:static;width:20em; vertical-align:middle;}
+    .yui-skin-sam .yui-ac-container { width:20em;left:0;}
+    /* buttons */
+    .yui-ac .yui-button {vertical-align:middle;}
+    .yui-ac .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-rt.png")) center center no-repeat }
+    .yui-ac .open .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-dn.png")) center center no-repeat}
+    /* custom styles for scrolling container */
+    #type_auto_div {padding-bottom:2em;}
+    #type_auto_div .yui-ac-content {max-height:20em;overflow:auto;overflow-x:hidden; /* set scrolling */ }
+    .ie6 #type_auto_div .yui-ac-content { height:20em }
+</style>
+<script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
+<script type="text/javascript">
+  const obj = {};
+  obj.uri = serverRoot + "/data/subjects/$!om.getId()";
+  obj.refresh = serverRoot + "/data/services/refresh/catalog?options=" + encodeURIComponent("populateStats,append,delete,checksum") + "&XNAT_CSRF=" + csrfToken + "&resource=/archive/subjects/$!om.getId()";
+  obj.objectId = "$!om.getId()";
+  obj.objectType = "subject";
+
+    #if ($turbineUtils.canEdit($user, $item))
+          obj.canEdit=true;
+    #else
+          obj.canEdit=false;
+    #end
+    #if ($turbineUtils.canEdit($user, $item))
+          obj.canDelete=true;
+    #else
+          obj.canDelete=false;
+    #end
+
+    obj.catalogs = {};
+    obj.catalogs.ids = [];
+    obj.allowDownload = ("$!user.checkRestrictedFeature("$!om.getProject()",'data_download')" == "true")
+    window.viewer = new FileViewer(obj);
+    
+  function showFiles(){
+    window.viewer.render();
+  }
+</script>
+
+<!-- END xnat-templates/screens/xnat_subjectData/xnat_subjectData_resources.vm -->

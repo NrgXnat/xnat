@@ -1,0 +1,14 @@
+#set($exptCounts = $project.getExperimentCountByXSIType())
+
+<DIV class="containerItem">$!subject_count $!data.getSession().getAttribute("userHelper").getBrowseableElementDisplay(
+    "xnat:subjectData").getSchemaElement().getPluralDescription()</DIV>
+#foreach($key in $exptCounts.keySet())
+<DIV class="containerItem">$exptCounts.get($key) $!data.getSession().getAttribute(
+    "userHelper").getBrowseableElementDisplay($key).getSchemaElement().getPluralDescription()</DIV>
+#end
+
+#if($canEditOrDeleteProject)
+<BR><A ID="button5" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","protocols").addPathInfo(
+    "search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo(
+    "search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Manage Custom Variables</A>
+#end

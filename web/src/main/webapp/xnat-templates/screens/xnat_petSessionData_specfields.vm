@@ -1,0 +1,44 @@
+<tr>
+	<td>Tracer</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.name" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Transmissions</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.transmissions" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Tracer Dosage</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.dose" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Tracer Dosage Units</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.dose.units" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Specific Activity</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.specificActivity" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Transmissions</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.totalMass" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Transmissions Units</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.totalMass.units" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Intermediate</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.intermediate" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Intermediate Units</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.intermediate.units" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Isotope</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.isotope" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Isotope half-life</td>
+	<td>#xdatTextBox("xnat:petSessionData.tracer.isotope.half-life" $item "" $vr)</td>
+</tr>

@@ -1,0 +1,11 @@
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatSubjectdata" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+<!-- Sequence: 20 -->
+<!-- allowGuest: true -->
+#if($user.checkRestrictedFeature("$!om.getProject()","data_download"))
+   <li class="yuimenuitem">
+    <a class="yuimenuitemlabel" data-wait="Preparing data for download..." href="$link.setAction("SubjectDownloadAction").addPathInfo("project", $project).addPathInfo("subject", $!om.getIdentifier($project))">Download Images</A>
+   </li>
+#end

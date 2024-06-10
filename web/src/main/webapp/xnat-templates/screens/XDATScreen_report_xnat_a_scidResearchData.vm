@@ -1,0 +1,290 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+#macro( propValueRow $name $prop )
+  #if ( $!item.getProperty("$prop") )
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getProperty("$prop")</td></tr>
+	#end
+#end
+
+<!-- TODO: better presentation -->
+#macro( propBoolValueRow $name $prop )
+	#if ($!item.getBooleanProperty("$prop"))
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getBooleanProperty("$prop")</td></tr>
+	#end
+#end
+
+#macro(tableHeaderNCols $header $subheads)
+<tr>
+	<th>$header</th>
+	#foreach($subhead in $subheads)
+	<th>$subhead</th>
+	#end
+</tr>
+#end
+
+#macro(propNValueRow $name $fields)
+<tr>
+	<td class="table_attr_name">$name</td>
+	#foreach($field in $fields)
+		<td class="attr_value">$!item.getProperty($field)</td>
+	#end
+</tr>
+#end
+
+
+<style type="text/css">
+td.attr_name { <!-- in imitation of xdat.css (th) -->
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	border-top-style: none;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 13px;
+	margin: 0px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.table_attr_name { <!-- much like attr_name, but not bold -->
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	border-top-style: none;
+	font-size: 11px;
+	line-height: 13px;
+	margin: 0px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.attr_value { <!-- in imitation of xdat.css (td) -->
+	font-family: verdana,geneva,helvetica;
+	font-size: 10px;
+	line-height: 14px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.subtable {
+	valign: top;
+}
+
+</style>
+	
+$page.setTitle("SCID : $!item.getProperty('xnat_a:scidResearchData.ID')")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+<br>
+
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+
+#if (!$project)
+#set($project=$item.getProperty("project"))
+#end
+
+#set($subject = $om.getSubjectData())
+#set($part_id = $subject.getStringProperty("ID"))
+
+<div class="edit_title">
+SCID
+#if($project)
+	$!om.getIdentifier($project) <!-- TODO: this is a mess -->
+#else
+	$!item.getProperty("xnat_a:scidResearchData.ID")
+#end
+</div>
+
+#parse("/screens/workflow_alert.vm")
+
+<table width="100%">  <!-- FIXME: ugh, nested tables. -->
+	<tr>
+		<td valign="top"><table>
+			#propValueRow( "Date" "xnat_a:scidResearchData/date" )
+			#propValueRow( "Time" "xnat_a:scidResearchData/time" )
+			#propValueRow( "Visit ID" "xnat_a:scidResearchData/visit_id" )
+			#propValueRow( "Administrator" "xnat_a:scidResearchData/administrator" )
+		</table></td>
+		<td valign="top"><table>
+			<tr>
+				<td class="attr_name">$displayManager.getSingularDisplayNameForSubject():</td>
+				<td>
+					<A CLASS=b HREF="$link.setAction('DisplayItemAction').addPathInfo('search_element','xnat:subjectData').addPathInfo('search_field','xnat:subjectData.ID').addPathInfo('search_value',$part_id).addPathInfo('popup','$!popup').addPathInfo('project','$!project')">
+					#if($project)
+						$!subject.getIdentifier($project)
+					#else
+						$!subject.getId()
+					#end
+					</A>
+				</td>
+			</tr>
+			#if($!subject.getGenderText())
+			<tr>
+				<td class="attr_name">Gender:</td>
+				<td class="attr_value">$subject.getGenderText()</td>
+			</tr>
+			#end
+			#propValueRow("Age" "xnat_a:scidResearchData/age")
+			#foreach($field in $subject.getAddid())
+			<tr>
+        <td class="attr_name">$field.getName():</td>
+				<td class="attr_value">
+					<A CLASS=b HREF="$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value",$part_id).addPathInfo("popup","$!popup").addPathInfo("project","$!project")">$field.getAddid()</A>
+				</td>
+			</tr>
+			#end
+		</table></td>
+		<td valign="top">
+#parse("/screens/xnat_experimentData_shareDisplay.vm")
+		</td>
+		<td valign="top">
+            #parse($turbineUtils.getTemplateName("actions", $om.getXSIType(), $project))
+		</td>
+	</tr>
+</table>
+
+#if ($!item.getStringProperty("note"))
+<table>
+  <tr>
+		<td valign="top" class="attr_name">Notes:</td>
+		<td valign="top" class="attr_value">$!item.getStringProperty("note")</td>
+	</tr>
+</table>
+#end
+
+<br>
+
+<div class="edit_header1">SCID Results</div><br>
+<table class="session_info_edit">
+	#tableHeaderNCols("Mood Episodes" ["Current", "Past"])
+	#propNValueRow("Major Depressive Episode" ["xnat_a:scidResearchData/moodEpisodes/currentMajorDepressiveEpisode", "xnat_a:scidResearchData/moodEpisodes/pastMajorDepressiveEpisode"])
+	#propNValueRow("Manic Episode" ["xnat_a:scidResearchData/moodEpisodes/currentManicEpisode", "xnat_a:scidResearchData/moodEpisodes/pastManicEpisode"])
+	#propNValueRow("Hypomanic Episode" ["xnat_a:scidResearchData/moodEpisodes/currentHypomanicEpisode", "xnat_a:scidResearchData/moodEpisodes/pastHypomanicEpisode"])
+	#propNValueRow("Dysthmic Episode" ["xnat_a:scidResearchData/moodEpisodes/currentDysthmicEpisode", ""])
+	#propNValueRow("Mood Disorder Due to Medical Condition" ["xnat_a:scidResearchData/moodEpisodes/currentMoodDisorderDueToMedicalCondition", "xnat_a:scidResearchData/moodEpisodes/pastMoodDisorderDueToMedicalCondition"])
+	#propNValueRow("Substance-Induced Mood Disorder" ["xnat_a:scidResearchData/moodEpisodes/currentSubstanceInducedMoodDisorder", "xnat_a:scidResearchData/moodEpisodes/pastSubstanceInducedMoodDisorder"])
+
+	#tableHeaderNCols("Psychotic Symptoms" ["Current", "Past"])
+	#propNValueRow("Delusions" ["xnat_a:scidResearchData/psychoticSymptoms/currentDelusions", "xnat_a:scidResearchData/psychoticSymptoms/pastDelusions"])
+	#propNValueRow("Hallucinations" ["xnat_a:scidResearchData/psychoticSymptoms/currentHallucinations", "xnat_a:scidResearchData/psychoticSymptoms/pastHallucinations"])
+	#propNValueRow("Disorganized Speech/Behavior" ["xnat_a:scidResearchData/psychoticSymptoms/currentDisorganizedSpeechBehavior", "xnat_a:scidResearchData/psychoticSymptoms/pastDisorganizedSpeechBehavior"])
+	#propNValueRow("Catatonic Behavior" ["xnat_a:scidResearchData/psychoticSymptoms/currentCatatonicBehavior", "xnat_a:scidResearchData/psychoticSymptoms/pastCatatonicBehavior"])
+	#propNValueRow("Negative Symptoms" ["xnat_a:scidResearchData/psychoticSymptoms/currentNegativeSymptoms", "xnat_a:scidResearchData/psychoticSymptoms/pastNegativeSymptoms"])
+	
+	#tableHeaderNCols("Psychotic Disorders" ["Current", "Past"])
+	#propNValueRow("Schizophrenia" ["xnat_a:scidResearchData/psychoticDisorders/currentSchizophrenia", "xnat_a:scidResearchData/psychoticDisorders/pastSchizophrenia"])
+	#propNValueRow("Paranoid Type" ["xnat_a:scidResearchData/psychoticDisorders/currentParanoidType", "xnat_a:scidResearchData/psychoticDisorders/pastParanoidType"])
+	#propNValueRow("Catatonic Type" ["xnat_a:scidResearchData/psychoticDisorders/currentCatatonicType", "xnat_a:scidResearchData/psychoticDisorders/pastCatatonicType"])
+	#propNValueRow("Disorganized Type" ["xnat_a:scidResearchData/psychoticDisorders/currentDisorganizedType", "xnat_a:scidResearchData/psychoticDisorders/pastDisorganizedType"])
+	#propNValueRow("Undifferentiated Type" ["xnat_a:scidResearchData/psychoticDisorders/currentUndifferentiatedType", "xnat_a:scidResearchData/psychoticDisorders/pastUndifferentiatedType"])
+	#propNValueRow("Residual Type" ["xnat_a:scidResearchData/psychoticDisorders/currentResidualType", "xnat_a:scidResearchData/psychoticDisorders/pastResidualType"])
+	#propNValueRow("Schizophreniform Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentSchizophreniformDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastSchizophreniformDisorder"])
+	#propNValueRow("Schizoaffective Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentSchizoaffectiveDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastSchizoaffectiveDisorder"])
+	#propNValueRow("Delusional Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentDelusionalDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastDelusionalDisorder"])
+	#propNValueRow("Brief Psychotic Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentBriefPsychoticDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastBriefPsychoticDisorder"])
+	#propNValueRow("Psychotic Disorder due to a General Medical Condition" ["xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderDueToMedicalCondition", "xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderDueToMedicalCondition"])
+	#propNValueRow("Substance-Induced Psychotic Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentSubstanceInducedPsychoticDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastSubstanceInducedPsychoticDisorder"])
+	#propNValueRow("Psychotic Disorder Not Otherwise Specified" ["xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderNOS", "xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderNOS"])
+	
+	#tableHeaderNCols("Mood Disorders" ["Current", "Past"])
+	#propNValueRow("Bipolar I Disorder" ["xnat_a:scidResearchData/moodDisorders/currentBipolar1Disorder", "xnat_a:scidResearchData/moodDisorders/pastBipolar1Disorder"])
+	#propNValueRow("Bipolar II Disorder" ["xnat_a:scidResearchData/moodDisorders/currentBipolar2Disorder", "xnat_a:scidResearchData/moodDisorders/pastBipolar2Disorder"])
+	#propNValueRow("Other Bipolar Disorders" ["xnat_a:scidResearchData/moodDisorders/currentOtherBipolarDisorder", "xnat_a:scidResearchData/moodDisorders/pastOtherBipolarDisorder"])
+	#propNValueRow("Major Depressive Disorder" ["xnat_a:scidResearchData/moodDisorders/currentMajorDepressiveDisorder", "xnat_a:scidResearchData/moodDisorders/pastMajorDepressiveDisorder"])
+	#propNValueRow("Depressive Disorder Not Otherwise Specified" ["xnat_a:scidResearchData/moodDisorders/currentDepressiveDisorderNOS", "xnat_a:scidResearchData/moodDisorders/pastDepressiveDisorderNOS"])
+
+	#tableHeaderNCols("Substance Use Disorders" ["Current", "Past"])
+	#propNValueRow("Alcohol Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholDependence"])
+	#propNValueRow("Alcohol Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholAbuse"])
+	#propNValueRow("Amphetamine Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineDependence"])
+	#propNValueRow("Amphetamine Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineAbuse"])
+	#propNValueRow("Cannabis Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentCannabisDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastCannabisDependence"])
+	#propNValueRow("Cannabis Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentCannabisAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastCannabisAbuse"])
+	#propNValueRow("Cocaine Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentCocaineDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastCocaineDependence"])
+	#propNValueRow("Cocaine Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentCocaineAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastCocaineAbuse"])
+	#propNValueRow("Hallucinogen Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenDependence"])
+	#propNValueRow("Hallucinogen Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenAbuse"])
+	#propNValueRow("Opioid Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentOpioidDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastOpioidDependence"])
+	#propNValueRow("Opioid Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentOpioidAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastOpioidAbuse"])
+	#propNValueRow("Phencyclidine Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineDependence"])
+	#propNValueRow("Phencyclidine Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineAbuse"])
+	#propNValueRow("Sedative/Hypnotic/Anxiolytic Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticDependence"])
+	#propNValueRow("Sedative/Hypnotic/Anxiolytic Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticAbuse"])
+	#propNValueRow("Polysubstance Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentPolysubstanceDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastPolysubstanceDependence"])
+	#propNValueRow("Other or Unknown Substance Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownDependence"])
+	#propNValueRow("Other or Unknown Substance Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownAbuse"])
+
+	#tableHeaderNCols("Anxiety Disorders" ["Current", "Past"])
+	#propNValueRow("Panic Disorder with Agoraphobia" ["xnat_a:scidResearchData/anxietyDisorders/currentPanicWithAgoraphobia", "xnat_a:scidResearchData/anxietyDisorders/pastPanicWithAgoraphobia"])
+	#propNValueRow("Panic Disorder without Agoraphobia" ["xnat_a:scidResearchData/anxietyDisorders/currentPanicWithoutAgoraphobia", "xnat_a:scidResearchData/anxietyDisorders/pastPanicWithoutAgoraphobia"])
+	#propNValueRow("Agoraphobia without History of Panic Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentAgoraphobiaWithoutPanicHx", "xnat_a:scidResearchData/anxietyDisorders/pastAgoraphobiaWithoutPanicHx"])
+	#propNValueRow("Social Phobia" ["xnat_a:scidResearchData/anxietyDisorders/currentSocialPhobia", "xnat_a:scidResearchData/anxietyDisorders/pastSocialPhobia"])
+	#propNValueRow("Specific Phobia" ["xnat_a:scidResearchData/anxietyDisorders/currentSpecificPhobia", "xnat_a:scidResearchData/anxietyDisorders/pastSpecificPhobia"])
+	#propNValueRow("Obsessive-Compulsive Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentOCD", "xnat_a:scidResearchData/anxietyDisorders/pastOCD"])
+	#propNValueRow("Posttraumatic Stress Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentPTSD", "xnat_a:scidResearchData/anxietyDisorders/pastPTSD"])
+	#propNValueRow("Generalized Anxiety Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentGeneralizedAnxietyDisorder", ""])
+	#propNValueRow("Anxiety Disorder Due to a General Medical Condition" ["xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDueToMedicalCondition", "xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDueToMedicalCondition"])
+	#propNValueRow("Substance-Induced Anxiety Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentSubstanceInducedAnxietyDisorder", "xnat_a:scidResearchData/anxietyDisorders/pastSubstanceInducedAnxietyDisorder"])
+	#propNValueRow("Anxiety Disorder Not Otherwise Specified" ["xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDisorderNOS", "xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDisorderNOS"])
+
+	#tableHeaderNCols("Somatoform Disorders" ["Current"])
+	#propNValueRow("Somatization Disorder" ["xnat_a:scidResearchData/somatoformDisorders/somatizationDisorder"])
+	#propNValueRow("Undifferentiated Somatform Disorder" ["xnat_a:scidResearchData/somatoformDisorders/undifferentiatedSomatformDisorder"])
+	#propNValueRow("Pain Disorder" ["xnat_a:scidResearchData/somatoformDisorders/painDisorder"])
+	#propNValueRow("Hypochondriasis" ["xnat_a:scidResearchData/somatoformDisorders/hypochondriasis"])
+	#propNValueRow("Body Dysmorphic Disorder" ["xnat_a:scidResearchData/somatoformDisorders/bodyDysmorphicDisorder"])
+
+	#tableHeaderNCols("Eating Disorders" ["Current", "Past"])
+	#propNValueRow("Anorexia Nervosa" ["xnat_a:scidResearchData/eatingDisorders/currentAnorexiaNervosa", "xnat_a:scidResearchData/eatingDisorders/pastAnorexiaNervosa"])
+	#propNValueRow("Bulimia Nervosa" ["xnat_a:scidResearchData/eatingDisorders/currentBulimiaNervosa", "xnat_a:scidResearchData/eatingDisorders/pastBulimiaNervosa"])
+	#propNValueRow("Binge Eating Disorder" ["xnat_a:scidResearchData/eatingDisorders/currentBingeEatingDisorder", "xnat_a:scidResearchData/eatingDisorders/pastBingeEatingDisorder"])
+
+	#tableHeaderNCols("Adjustment Disorder" ["Current"])
+	#propNValueRow("Adjustment Disorder" ["xnat_a:scidResearchData/adjustmentDisorder"])
+
+	#tableHeaderNCols("Optional Module" ["Current", "Past"])
+	#propNValueRow("Acute Stress Disorder" ["xnat_a:scidResearchData/optional/currentAcuteStressDisorder", "xnat_a:scidResearchData/optional/pastAcuteStressDisorder"])
+	#propNValueRow("Minor Depressive Disorder" ["xnat_a:scidResearchData/optional/currentMinorDepressiveDisorder", "xnat_a:scidResearchData/optional/pastMinorDepressiveDisorder"])
+	#propNValueRow("Mixed Anxiety Depressive Disorder" ["xnat_a:scidResearchData/optional/currentMixedAnxietyDepressiveDisorder", "xnat_a:scidResearchData/optional/pastMixedAnxietyDepressiveDisorder"])
+	#propNValueRow("Symptomatic Details of Major Depressive/Manic Epsiodes" ["", "xnat_a:scidResearchData/optional/pastSympomaticDetails"])
+</table>
+
+<!-- BEGIN xnat_a:scidResearchData/validation -->
+#if ($!item.getProperty("xnat_a:scidResearchData/validation/date") || $!item.getStringProperty("xnat_a:scidResearchData/validation/method"))
+<br>
+<font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/validation</font>
+<table>
+  <TR><TD>method</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/validation/method")</TD></TR>
+	<TR><TD>date</TD><TD>$!item.getProperty("xnat_a:scidResearchData/validation/date")</TD></TR>
+	<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/validation/notes")</TD></TR>
+	<TR><TD>status</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/validation/status")</TD></TR>
+</table>
+#end
+<!-- END xnat_a:scidResearchData/validation -->
+
+#set($xnat_abstractResource_3_NUM_ROWS=$item.getChildItems("xnat_a:scidResearchData/resources/resource").size() - 1)
+#if($xnat_abstractResource_3_NUM_ROWS>=0)
+	#foreach($xnat_abstractResource_3_COUNTER in [0..$xnat_abstractResource_3_NUM_ROWS])
+<!-- BEGIN xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER] -->
+	<TABLE>
+		<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]</font></TH></TR>
+		<TR>
+			<TD align="left" valign="top">
+				<TABLE>
+					<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER]/label")</TD></TR>
+				</TABLE>
+			</TD>
+		</TR>
+	</TABLE>
+<!-- END xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_3_COUNTER] -->
+	#end
+#end
+
+<BR>
+#parse("/screens/ReportProjectSpecificFields.vm")

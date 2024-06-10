@@ -1,0 +1,262 @@
+siteSetup:
+    kind: app.siteSetup.form
+    name: siteSetup
+    label: XNAT Initial Setup
+    contents:
+
+        # =========================
+        # HEADER MESSAGE
+        setupMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    The settings below need to be configured before this XNAT system
+                    can be used. Please set the properties below and submit the form to continue.
+
+        # =========================
+        # SITE INFORMATION
+        siteInfo:
+            kind: panel.form
+            name: siteInfo
+            label: Site Information
+            footer: false
+            method: POST
+            url: /xapi/siteConfig
+            contentType: json
+            contents:
+
+                siteId:
+                    kind: panel.input.text
+                    name: siteId
+                    label: Site ID
+                    value: ''
+                    placeholder: XNAT
+                    description: >
+                        The id used to refer to this site (also used to generate ids). The Site ID must start
+                        with a letter and contain only letters, numbers and underscores. It should be a short,
+                        one-word name or acronym which describes your site.
+                    validation: required id-strict
+
+                siteUrl:
+                    kind: panel.input.text
+                    name: siteUrl
+                    label: Site URL
+                    value: ''
+                    placeholder: localhost
+                    description: >
+                        The address you want visible to users in emails, and other external links. This should be a
+                        functional address (i.e. if the user pasted this address in their web browser, they should
+                        come to the site). localhost only works if the web browser is located on the same machine.
+                        You are required to guarantee that this address is functional for reaching the site.
+                    validation: required url
+
+                adminEmail:
+                    kind: panel.input.email
+                    name: adminEmail
+                    id: site-admin-email
+                    label: Administrator Email Address
+                    value: ''
+                    placeholder: admin@localhost
+                    description: Email address for site administrator.
+                    validation: required email
+
+        # this seems to work now...
+        # copy values from admin email to recipient list
+        # =========================
+        # EMAIL RECIPIENTS
+        notificationRecipients:
+            type: panel.form
+            classes: hidden
+            header: false
+            footer: false
+            method: POST
+            url: /xapi/notifications
+            contentType: json
+            contents:
+                vars:
+                    tag: script
+                    content: >
+                        window.siteAdminEmailInput = $('#site-admin-email')[0]
+                # copy adminEmail value to these properties:
+                helpContactInfo:
+                    kind: input.hidden
+                    name: helpContactInfo
+                    value: @?=window.siteAdminEmailInput.value
+
+        # =========================
+        # DATA STORAGE
+        dataStorage:
+            kind: panel.form
+            name: dataStorage
+            label: Data Storage
+            footer: false
+            method: POST
+            url: /xapi/siteConfig
+            contentType: json
+            contents:
+
+                archivePath:
+                    kind: panel.input.text
+                    name: archivePath
+                    label: Archive Location
+                    size: 35
+                    value: ''
+                    validation: required path
+
+                prearchivePath:
+                    kind: panel.input.text
+                    name: prearchivePath
+                    label: Pre-archive Location
+                    size: 35
+                    value: ''
+                    validation: required path
+
+                cachePath:
+                    kind: panel.input.text
+                    name: cachePath
+                    label: Cache Location
+                    size: 35
+                    value: ''
+                    validation: required path
+
+                buildPath:
+                    kind: panel.input.text
+                    name: buildPath
+                    label: Build Location
+                    size: 35
+                    value: ''
+                    validation: required path
+
+#                ftpPath:
+#                    kind: panel.input.text
+#                    name: ftpPath
+#                    label: FTP Location
+#                    size: 35
+#                    value: ''
+#                    validation: required path
+
+                pipelinePath:
+                    kind: panel.input.text
+                    name: pipelinePath
+                    label: Pipeline Installation Location
+                    size: 35
+                    value: ''
+                    validation: required path
+
+                inboxPath:
+                    kind: panel.input.text
+                    name: inboxPath
+                    label: Inbox Location
+                    size: 35
+                    value: ''
+                    validation: required path
+
+        # =========================
+        # SMTP SERVER SETTINGS
+        smtpServer:
+            kind: panel.form
+            name: smtpServer
+            label: SMTP Server Settings
+            footer: false
+            method: POST
+            contentType: json
+            url: /xapi/notifications
+            contents:
+
+                smtpEnabled:
+                    kind: panel.input.switchbox
+                    label: Enable SMTP?
+                    onText: Enabled
+                    offText: Disabled
+
+                serverSettings:
+                    kind: panel.subhead
+                    text: Server
+                smtpHostname:
+                    kind: panel.input.text
+                    label: Host
+                    placeholder: localhost
+                smtpPort:
+                    kind: panel.input.number
+                    label: Port
+                    placeholder: 25
+                    validation: allow-empty integer
+                smtpProtocol:
+                    kind: panel.input.text
+                    label: Protocol
+                    placeholder: smtp
+
+                authentication:
+                    kind: panel.subhead
+                    text: Authentication
+                smtpAuth:
+                    kind: panel.input.switchbox
+                    label: SMTP Auth?
+                    onText: Enabled
+                    offText: Disabled
+                smtpUsername:
+                    kind: panel.input.text
+                    label: Username
+                smtpPassword:
+                    kind: panel.input.password
+                    label: Password
+
+                otherSettings:
+                    kind: panel.subhead
+                    text: Other Settings
+                smtpStartTls:
+                    kind: panel.input.switchbox
+                    label: Start TLS?
+                    onText: Enabled
+                    offText: Disabled
+                smtpSslTrust:
+                    kind: panel.input.text
+                    label: SSL Trust
+                emailPrefix:
+                    kind: panel.input.text
+                    label: Email Prefix
+                    placeholder: XNAT
+
+        # =========================
+        # OTHER SETTINGS
+        otherSettings:
+            kind: panel.form
+            name: otherSettings
+            label: Miscellaneous Settings
+            footer: false
+            method: POST
+            url: /xapi/siteConfig
+            contentType: json
+            contents:
+
+                requireLogin:
+                    kind: panel.input.switchbox
+                    id: requireLogin
+                    name: requireLogin
+                    label: Require User Login
+                    onText: Required
+                    offText: Not Required
+                    description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
+
+                autoEnableUserRegistration:
+                    kind: panel.input.switchbox
+                    id: autoEnableUserRegistration
+                    name: userRegistration
+                    label: "Auto-enable User Registration?"
+                    onText: Auto-enable
+                    offText: Do Not Auto-enable
+                    description: >
+                        If true, user accounts will be enabled automatically when the user registers. Users will be able to access the site and any 'public'
+                        projects immediately. If false, the site administrator will be required to manually enable user accounts. Either way the administrator
+                        receives an email notification when a user registers.
+
+                enableCsrfToken:
+                    kind: panel.input.switchbox
+                    id: enableCsrfToken
+                    name: enableCsrfToken
+                    label: Require CSRF Token?
+                    onText: Required
+                    offText: Not Required
+                    description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?

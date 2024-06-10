@@ -1,0 +1,39 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<form name="form1" method="post" action="$link.setAction("ElementSecurityWizard")">
+	<INPUT TYPE="hidden" NAME="popup" VALUE="$popup">
+    <table width="450">
+	<tr>
+		<td colspan="2">
+		<br>Select the data type which you would like to add.
+		<br><br></td>
+	</tr>
+      <tr>  
+        	<TD>Data Type:</TD><TD>
+			<SELECT name="xdat:element_security.element_name" id="data-type-selector">
+				<OPTION VALUE="">(SELECT)</OPTION>
+			</SELECT>
+
+		  <script>
+			  var xsiTypes=[], xsiTypeSelector=document.getElementById('data-type-selector');
+				  #foreach($e in $elements)
+				  xsiTypes.push('$e');
+				  #end
+			  xsiTypes=xsiTypes.sort(function(a,b){ return a < b ? -1 : 1 });
+			  xsiTypes.forEach(function(xsiType){
+			  	var opt = document.createElement('option');
+			  	opt.value=xsiType;
+			  	opt.innerHTML=xsiType;
+			  	xsiTypeSelector.appendChild(opt);
+			  })
+		  </script>
+      </tr>
+	<tr>
+		<td></td>
+		<td>
+		
+    			<input type="submit" name="eventSubmit_doStep1" value="Submit"/>
+		</td>
+	</tr>
+    </table>
+  
+</form>

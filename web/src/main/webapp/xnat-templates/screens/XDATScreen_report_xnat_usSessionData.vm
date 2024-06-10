@@ -1,0 +1,8 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+			#parse($turbineUtils.getTemplateName("_report",$om.getXSIType(),$project))
+			#parse("screens/AutoGenWarning.vm")

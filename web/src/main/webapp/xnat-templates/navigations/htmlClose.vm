@@ -1,0 +1,19 @@
+<!-- path: xnat-templates/navigations/htmlClose -->
+</div><!-- /page_wrapper -->
+
+<div id="activity-tab">
+    <div class="panel-header">
+        <div class="title">Background processes <span class="count"></span></div>
+        <div class="actions">
+            <a class="activity-min icn" href="#"><i class="fa fa-angle-down"></i></a>
+            <a class="activity-max icn" href="#"><i class="fa fa-angle-up"></i></a>
+            <a class="activity-close icn" href="#"><i class="fa fa-close"></i></a>
+        </div>
+    </div>
+    <div class="panel-body"></div>
+</div>
+
+$navigation.setTemplate("/powered_by.vm")
+<script type="text/javascript" src="$content.getURI('scripts/footer.js')"></script>
+</body>
+</html>

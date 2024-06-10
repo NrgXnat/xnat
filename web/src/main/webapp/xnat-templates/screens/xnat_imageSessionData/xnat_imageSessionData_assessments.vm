@@ -1,0 +1,38 @@
+#if($om.getMinimalLoadAssessors().size()>0)
+					<BR><BR>
+					<div class="edit_header1" style="margin-bottom:16px">Assessments</div>
+						<Table cellspacing="0" cellpadding="1" border="0">
+							<TR>							
+							<TH class="underscore">Experiment</TH>
+							<TH class="underscore">Date</TH>
+							<TH class="underscore">$displayManager.getSingularDisplayNameForProject()</TH>
+							</TR>
+								
+								#foreach ($assessor in $om.getMinimalLoadAssessors())
+									<TR>
+										<TD NOWRAP>
+										#if($assessor.canRead($user))
+											#set ( $assessorID = $!assessor.getProperty("ID"))
+											#set ( $assessorField = "${assessor.getXSIType()}.ID")
+
+											#set ( $url = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$!assessor.getXSIType()).addPathInfo('search_field',$assessorField).addPathInfo('search_value',$assessorID).addPathInfo('popup',$popup).addPathInfo('project',$!project)" )
+											#if($assessor.getHeader())
+												<a href="$url" title="$assessor.getIdentifier($project)">$!assessor.getHeader()</A>
+											#else
+												<a href="$url" title="$assessor.getIdentifier($project)">$displayManager.getSingularDisplayNameForElement($assessor.getXSIType())</A>
+											#end
+											
+										#else
+											#if($assessor.getHeader())
+												<a title="$assessor.getIdentifier($project)">$!assessor.getHeader()</A>
+											#else
+												<a title="$assessor.getIdentifier($project)">$displayManager.getSingularDisplayNameForElement($assessor.getXSIType())</A>
+											#end
+										#end
+										</TD>
+										<TD NOWRAP>$!assessor.getProperty("date")</TD>
+										<TD NOWRAP>$!assessor.getProjectDisplayID()</TD>
+									</TR> 
+								#end
+							</TABLE>
+#end

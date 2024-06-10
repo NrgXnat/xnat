@@ -1,0 +1,91 @@
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="par_count" type="java.lang.Integer" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+
+<!-- start xnat-templates/screens/Page.vm -->
+
+#set ($SITE_ROOT = $content.getURI(""))
+#set ($template = $data.getTemplateInfo())
+#set ($pg = $turbineUtils.escapeHTML($!data.getParameters().getString('view')))
+#set ($pg_path = "/screens/pages/${pg}.vm")
+#set ($theme_pg = "")
+
+#if ($pg)
+
+    #if ($theme && $theme != "none")
+        ## first check /themes/theme-name/pages/page-name.vm
+        #set ($theme_pg = "/themes/${theme}/pages/${pg}.vm")
+        #if (!$turbineUtils.resourceExists($theme_pg))
+            ## then check /themes/theme-name/pages/page-name/content.vm
+            #set ($theme_pg = "/themes/${theme}/pages/${pg}/content.vm")
+            ## then check /themes/theme-name/templates/page-name.vm
+            #if (!$turbineUtils.resourceExists($theme_pg))
+                #set ($theme_pg = "/themes/${theme}/templates/${pg}.vm")
+                #if (!$turbineUtils.resourceExists($theme_pg))
+                    #set ($theme_pg = "")
+                #end
+            #end
+        #end
+    #end
+
+    ## if there's an active theme that contains the requested page as a
+    ## Velocity template at '/themes/theme-name/pages/page-name.vm',
+    ## load that...
+    #if ($theme_pg != "" && $turbineUtils.resourceExists($theme_pg))
+        <div id="view-page">
+            #parse($theme_pg)
+        </div>
+    ## or if there's a template at '/templates/screens/pages/page-name.vm', load that
+    #elseif ($turbineUtils.resourceExists($pg_path))
+        <div id="view-page">
+            #parse($pg_path)
+        </div>
+    ## lastly try to retrieve page content via ajax using the query string value
+    #else
+        #set($pg_path = "/page/${pg}/content.jsp")
+        ## NOTE: !not operator
+        #if (!$turbineUtils.resourceExists($pg_path))
+            #set($pg_path = "/page/${pg}/content.html")
+            ## NOTE: !not operator
+            #if (!$turbineUtils.resourceExists($pg_path))
+                ## set $pg_path to empty string if no matching JSP or HTML page exists
+                #set ($pg_path = "")
+            #end
+        #end
+        ## only try to fetch the page if it exists
+        #if ($pg_path != "")
+            <div id="view-page"></div>
+            <script>
+                XNAT.app.customPage.getPage('$!pg', '#view-page');
+            </script>
+        #else
+            <div id="view-page">page not found</div>
+            <!-- '$pg' not found -->
+            ##<script>console.log('"$turbineUtils.escapeJS($pg)" page not found')</script>
+        #end
+    #end
+
+#else
+
+    ## do stuff if there's no "view" query string param
+    <div id="view-page"></div>
+
+    <script>
+
+        (function(){
+
+            var sampleUrl = '/page/#/foo/#tab=bar/#panel=baz'
+
+            XNAT.app.customPage.container = $('#view-page');
+            XNAT.app.customPage.getPage();
+
+        })();
+
+    </script>
+
+#end
+
+<!-- end xnat-templates/screens/Page.vm -->

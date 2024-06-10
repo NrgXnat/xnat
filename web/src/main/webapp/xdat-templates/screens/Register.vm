@@ -1,0 +1,8 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("NoMenu.vm")
+$page.setTitle("XDAT -- Register")
+$page.setBgColor($ui.bgcolor)
+<DIV VALIGN="top" id="register_page">
+#parse("/screens/register_box.vm")
+</DIV>

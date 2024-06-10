@@ -1,0 +1,2 @@
+# JMeter generated Authorization file
+	admin				BASIC_DIGEST

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+  ~ web: componentConfiguration.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<!-- ======================================================================== -->
+<!--                                                                          -->
+<!--  Avalon component configuration                                          -->
+<!--                                                                          -->
+<!-- $Id: componentConfiguration.xml,v 1.1 2005/07/18 20:47:27 big Exp $  -->
+<!--                                                                          -->
+<!-- ======================================================================== -->
+
+<componentConfig/>

@@ -1,0 +1,51 @@
+#* @vtlvariable name="admin_email" type="java.lang.String" *#
+#* @vtlvariable name="system" type="java.lang.String" *#
+#* @vtlvariable name="server" type="java.lang.String" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="error" type="java.util.List" *#
+#* @vtlvariable name="errors" type="java.util.List" *#
+#* @vtlvariable name="messages" type="java.util.List" *#
+#* @vtlvariable name="process" type="java.lang.String" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+##
+## xnat-web: src/main/webapp/xnat-templates/screens/BatchWorkflowCompleteEmail.vm
+## XNAT http://www.xnat.org
+## Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+## All Rights Reserved
+##
+## Released under the Simplified BSD.
+##
+<!-- BEGIN xnat-templates/screens/BatchWorkflowCompleteEmail.vm -->
+<div id="logo" align="center">#parse("/screens/Logo_Email.vm")</div>
+<hr>
+<div id="content">
+    Dear $!user.getFirstname() $!user.getLastname()<br><br>
+    The following batch procedure has been completed:
+    <br>$process
+
+    <br><br>
+    <p>
+        $messages.size() successful transfer(s).
+        #foreach($message in $messages)
+            <br>$message
+        #end
+    </p>
+    #if($errors.size()>0)
+        <br><br>
+        <p>
+            $errors.size() error(s) occurred.
+            #foreach($error in $errors)
+                <br>$error.get(0): $error.get(1)
+            #end
+        </p>
+    #end
+    <br><br>
+    <p>Details for this $displayManager.getSingularDisplayNameForProject().toLowerCase() are available at <a
+            href="$server">the website</a>.</p>
+
+    <br><br>
+    The $system Team
+    <a href="$server">$server</a>
+    <a href="mailto:$admin_email">$admin_email</a>
+</div>
+<!-- END xnat-templates/screens/BatchWorkflowCompleteEmail.vm -->

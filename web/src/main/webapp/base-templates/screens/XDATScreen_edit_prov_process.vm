@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">process Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+													#xdatHiddenBox("prov:process/prov_process_id" $item "")
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN prov:process -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($prov_processStep_1_COUNTER in [0..5])
+<!-- BEGIN prov:process/processStep[$prov_processStep_1_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">prov:process/processStep[$prov_processStep_1_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>program</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/program" $item "" $vr)</TD></TR>
+												<TR><TD>program/version</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/program/version" $item "" $vr)</TD></TR>
+												<TR><TD>program/arguments</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/program/arguments" $item "" $vr)</TD></TR>
+												<TR><TD>timestamp</TD><TD>#xdatTextBox("prov:process/processStep[$prov_processStep_1_COUNTER]/timestamp" $item "" $vr)</TD></TR>
+												<TR><TD>cvs</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/cvs" $item "" $vr)</TD></TR>
+												<TR><TD>user</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/user" $item "" $vr)</TD></TR>
+												<TR><TD>machine</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/machine" $item "" $vr)</TD></TR>
+												<TR><TD>platform</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/platform" $item "" $vr)</TD></TR>
+												<TR><TD>platform/version</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/platform/version" $item "" $vr)</TD></TR>
+												<TR><TD>compiler</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/compiler" $item "" $vr)</TD></TR>
+												<TR><TD>compiler/version</TD><TD>#xdatStringBox("prov:process/processStep[$prov_processStep_1_COUNTER]/compiler/version" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("prov:process/processStep[$prov_processStep_1_COUNTER]/prov_processStep_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN prov:process/processStep[$prov_processStep_1_COUNTER]/library -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">prov:process/processStep[$prov_processStep_1_COUNTER]/library</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>library</TD>
+													<TD>version</TD>
+												</TR>
+												#foreach($prov_processStep_library_2_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("prov:process/processStep[$prov_processStep_1_COUNTER]/library[$prov_processStep_library_2_COUNTER]/library" $item "" $vr)</TD>
+														<TD>#xdatTextBox("prov:process/processStep[$prov_processStep_1_COUNTER]/library[$prov_processStep_library_2_COUNTER]/version" $item "" $vr)</TD>
+														#xdatHiddenBox("prov:process/processStep[$prov_processStep_1_COUNTER]/library[$prov_processStep_library_2_COUNTER]/prov_processStep_library_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END prov:process/processStep[$prov_processStep_1_COUNTER]/library -->
+								</TABLE>
+<!-- END prov:process/processStep[$prov_processStep_1_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END prov:process -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

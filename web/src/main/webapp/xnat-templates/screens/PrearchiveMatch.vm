@@ -1,0 +1,172 @@
+<h3>Pre-archive - Database Matches</h3><br>
+#set($scanTypes=$data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT type FROM xnat_imagescandata ORDER BY type;"))
+<form method="post" action="$link.setAction("MatchPrearchiveSessions")">
+<input type="hidden" name="project" value="$!project"/>
+<table border=0>
+ <tr>
+  <th>Store</th>
+  <th>Folder</th>
+  <th>Matches</th>
+ </tr>
+	<script type="text/javascript" LANGUAGE="JavaScript">
+	function setSelectValue(SELECTbox){
+	  if(SELECTbox.selectedIndex!=0)
+	  {
+	    var name = SELECTbox.name;
+	    name = name.substring(4);
+	    var NEWvalue=SELECTbox.options[SELECTbox.selectedIndex].value;
+	    if (NEWvalue=="")
+	    {
+	      document.getElementById("TEXT_" + name).style.display="block";
+	      document.getElementById("IND_" + name).style.display="none";
+	      //SELECTbox.disabled=true;
+	    }else{
+	      document.getElementById(name).value=NEWvalue;
+	    }
+	  }
+	}
+	function showText(ATag){
+	    var name = ATag.id;
+	    name = name.substring(2);
+	      document.getElementById("TEXT_" + name).style.display="block";
+	      document.getElementById("IND_" + name).style.display="none";
+	}
+	</script>
+#set($rowCount=0)
+#set($sessionCount=0)
+#foreach($session in $sessions)
+#set($om = $session.get(0))
+ <tr>
+  <td>
+  #if($session.get(3)> 0)
+   <input type="checkbox" name="session$rowCount" value="$session.get(2)" CHECKED/>
+   #set($sessionCount=$sessionCount+1)
+  #end
+  </td>
+  <td>
+    <table>
+     <tr>
+      <td colspan="2">$!session.get(1)</td>
+     </tr>
+     <tr>
+      <td>Date:</td>
+      <td>$!om.getDate()</td>
+     </tr>
+     <tr>
+      <td>Time:</td>
+      <td>$!om.getTime()</td>
+     </tr>
+     <tr>
+      <td>Patient ID:</td>
+      <td>$!om.getDcmpatientid()</td>
+     </tr>
+     <tr>
+      <td>Patient Name:</td>
+      <td>$!om.getDcmpatientname()</td>
+     </tr>
+    </table>
+  </td>
+ #set($securedCount=0)
+  <td>
+  #if($session.get(3)> 0)
+  <table><tr><td colspan="3">
+   <select name="match$rowCount">
+    <option value="">(SELECT)</option>
+    #foreach($field in $session.get(4))
+      #set($securedCount=$securedCount + $field.get(3).size())
+      #foreach($match in $field.get(2))
+        #set($matchOM = $match.get(0))
+        <option value="$!matchOM.getId()" #if($session.get(3)==1)SELECTED#end>$!matchOM.getLabel() ($!matchOM.getId() : $!matchOM.getDcmpatientid() : $!matchOM.getDcmpatientid()) #if($!matchOM.getDate())($!matchOM.getDate() $!matchOM.getTime())#end Matched By $!field.get(0)</option>
+      #end
+    #end
+   </select>
+   </td></tr>
+   $!om.fixScanTypes()
+   #set($scanCount = 0)
+    #foreach($scan in $om.getScans_scan())
+     <tr><td>SCAN $scan.getId()</td>
+     <input type="hidden" name="match${rowCount}.scan${scanCount}_ID" value="$scan.getId()"/>
+     <td>	<!-- align="left" -->
+			#if($scanTypes.size()==0)
+		    <input type="text" id="match${rowCount}.scan${scanCount}_type" name="match${rowCount}.scan${scanCount}_type"
+		    			 value="$!scan.getProperty("type")"/>
+			#else
+				#set($matched=false)
+				<table>	<!--  cellpadding="0" cellspacing="0" align="left" -->
+					<tr>
+						<td nowrap>	
+							<SELECT id="SEL_match${rowCount}.scan${scanCount}_type"
+										  name="SEL_match${rowCount}.scan${scanCount}_type"
+										  onchange="setSelectValue(this);">
+								<OPTION VALUE="">(SELECT)</OPTION>
+							#foreach ($pValue in $scanTypes)
+								#if($pValue.get(0).equals($scan.getProperty("type")))
+								<OPTION VALUE="$!pValue.get(0)" SELECTED>$!pValue.get(0)</OPTION>
+									#set($matched=true)
+								#else
+								<OPTION VALUE="$!pValue.get(0)">$!pValue.get(0)</OPTION>
+								#end
+							#end
+							</SELECT>
+						#if($matched==false)
+							<BR>($!scan.getProperty("series_description"))
+						#end
+						</td>
+						<td>	<!-- align="left" -->
+							<DIV ID="IND_match${rowCount}.scan${scanCount}_type">
+								<a ID="A_match${rowCount}.scan${scanCount}_type"
+								   onclick="showText(this);">
+									<img src="$content.getURI("images/arrow3.gif")" border=0>
+								</a>
+							</DIV>
+						</td>
+						<td>	<!-- align="left" -->
+							<DIV ID="TEXT_match${rowCount}.scan${scanCount}_type"
+							     style="display:none">
+								Enter: <input id="match${rowCount}.scan${scanCount}_type"
+														  type="text" name="match${rowCount}.scan${scanCount}_type"
+															value="$!scan.getProperty("type")"/>
+							</DIV>
+						</td>
+					</tr>
+				</table>
+		  #end
+			</td>
+     <td><select name="match${rowCount}.scan${scanCount}_USE">
+     #foreach ($quality in $qualityLabels)
+     <option value="$quality">$quality</option>
+     #end
+     </select>
+     </td></tr>
+     #set($scanCount = $scanCount + 1)
+    #end
+   </table>
+  #else
+   No match found.<br>
+  #end
+   #if($securedCount>0)
+    Invalid permissions for the following matches:<br>
+    #foreach($field in $sessions.get(4))
+      #foreach($match in $field.get(3))
+        $match.get(0).getId() $match.get(0).getInvestigator().getLastname()<br> 
+      #end
+    #end
+   #end
+  </td>
+  
+ </tr>
+<tr>
+  <td colspan="3" align="right">
+  <hr>
+  </td>
+</tr>
+ #set($rowCount=$rowCount+1)
+#end
+<input type="hidden" name="num_sessions" value="$rowCount"/>
+<tr>
+  <td colspan="3" align="right">
+  			<input type="submit" name="eventSubmit_doPerform" value="Submit"/>
+  </td>
+</tr>
+</table>
+</form>

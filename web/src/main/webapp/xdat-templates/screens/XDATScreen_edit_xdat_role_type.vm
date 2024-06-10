@@ -1,0 +1,65 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<DIV class="alert">$data.message</DIV><br>
+#end
+<p>
+<form name="form1" method="post" action="$link.setAction("ModifyItem")">
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+    <HR>
+#end
+<table border="0" width="350">
+	<tr>
+		<TH align=center colspan=2>$!item.getXSIType() Details</TH>
+	</tr>
+	<TR>
+		<TD align=left>role_name</TD>
+		<TD align=left>
+			#xdatTextBox("xdat:role_type.role_name" $item "" $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>description</TD>
+		<TD align=left>
+			#xdatTextBox("xdat:role_type.description" $item "" $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>sequence</TD>
+		<TD align=left>
+			#xdatTextBox("xdat:role_type.sequence" $item "" $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left colspan=2>
+		<TABLE>
+			<TR>
+				<TH colspan=2>Role Actions</TH>
+			</TR>
+			<TR>
+				<TD>Remove</TD><TD>Name</TD><TD>Display Name</TD><TD>Sequence</TD>
+			</TR>
+			#foreach($c in [0..10] )
+			<TR>
+				#set($action_name = $item.getProperty("xdat:role_type.allowed_actions.allowed_action__${c}.action_name"))
+				#if ($action_name)
+				<TD><INPUT TYPE="checkbox" NAME="REMOVE__${c}=xdat:action_type.action_name" VALUE="$!action_name"/></TD>
+				#else
+				<TD></TD>
+				#end
+				<TD>#xdatTextBox("xdat:role_type.allowed_actions.allowed_action__${c}.action_name" $item "" $vr)</TD>
+				<TD>#xdatTextBox("xdat:role_type.allowed_actions.allowed_action__${c}.display_name" $item "" $vr)</TD>
+				<TD>#xdatTextBox("xdat:role_type.allowed_actions.allowed_action__${c}.sequence" $item "" $vr)</TD>
+			</TR>
+			#end
+		</TABLE>
+		</TD>
+	</TR>
+	#xdatEditProps($item $edit_screen)
+	<TR><TD COLSPAN=2 ALIGN=center><input type="submit" name="eventSubmit_doSetup" value="Submit"/></TD></TR>
+</table>
+</form>
+</p>

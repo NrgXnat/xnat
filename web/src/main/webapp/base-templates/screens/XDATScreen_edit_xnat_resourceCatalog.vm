@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">ResourceCatalog Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>URI</TD><TD>#xdatStringBox("xnat:resourceCatalog/URI" $item "" $vr)</TD></TR>
+							<TR><TD>format</TD><TD>#xdatStringBox("xnat:resourceCatalog/format" $item "" $vr)</TD></TR>
+							<TR><TD>description</TD><TD>#xdatStringBox("xnat:resourceCatalog/description" $item "" $vr)</TD></TR>
+							<TR><TD>content</TD><TD>#xdatStringBox("xnat:resourceCatalog/content" $item "" $vr)</TD></TR>
+							<TR><TD>cachePath</TD><TD>#xdatStringBox("xnat:resourceCatalog/cachePath" $item "" $vr)</TD></TR>
+							<TR><TD>note</TD><TD>#xdatStringBox("xnat:resourceCatalog/note" $item "" $vr)</TD></TR>
+							<TR><TD>label</TD><TD>#xdatStringBox("xnat:resourceCatalog/label" $item "" $vr)</TD></TR>
+							<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:resourceCatalog/file_count" $item "" $vr)</TD></TR>
+							<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:resourceCatalog/file_size" $item "" $vr)</TD></TR>
+													#xdatHiddenBox("xnat:resourceCatalog/xnat_abstractResource_id" $item "")
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:resourceCatalog -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:resourceCatalog/provenance -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:resourceCatalog/provenance</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+																#xdatHiddenBox("xnat:resourceCatalog/provenance/prov_process_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE><TR><TD>
+										#foreach($prov_processStep_2_COUNTER in [0..5])
+<!-- BEGIN xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER] -->
+											<TABLE>
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+															<TR><TD>program</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/program" $item "" $vr)</TD></TR>
+															<TR><TD>program/version</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/program/version" $item "" $vr)</TD></TR>
+															<TR><TD>program/arguments</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/program/arguments" $item "" $vr)</TD></TR>
+															<TR><TD>timestamp</TD><TD>#xdatTextBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/timestamp" $item "" $vr)</TD></TR>
+															<TR><TD>cvs</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/cvs" $item "" $vr)</TD></TR>
+															<TR><TD>user</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/user" $item "" $vr)</TD></TR>
+															<TR><TD>machine</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/machine" $item "" $vr)</TD></TR>
+															<TR><TD>platform</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/platform" $item "" $vr)</TD></TR>
+															<TR><TD>platform/version</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/platform/version" $item "" $vr)</TD></TR>
+															<TR><TD>compiler</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/compiler" $item "" $vr)</TD></TR>
+															<TR><TD>compiler/version</TD><TD>#xdatStringBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/compiler/version" $item "" $vr)</TD></TR>
+																					#xdatHiddenBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/prov_processStep_id" $item "")
+														</TABLE>
+													</TD>
+												</TR>
+<!-- BEGIN xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library -->
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+															<TR>
+																<TD>library</TD>
+																<TD>version</TD>
+															</TR>
+															#foreach($prov_processStep_library_3_COUNTER in [0..5])
+																<TR>
+																	<TD>#xdatTextBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library[$prov_processStep_library_3_COUNTER]/library" $item "" $vr)</TD>
+																	<TD>#xdatTextBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library[$prov_processStep_library_3_COUNTER]/version" $item "" $vr)</TD>
+																	#xdatHiddenBox("xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library[$prov_processStep_library_3_COUNTER]/prov_processStep_library_id" $item "")
+																</TR>
+															#end
+														</TABLE>
+													</TD>
+												</TR>
+<!-- END xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER]/library -->
+											</TABLE>
+<!-- END xnat:resourceCatalog/provenance/processStep[$prov_processStep_2_COUNTER] -->
+										#end
+									</TD></TR></TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:resourceCatalog/provenance -->
+					</TD>
+				</TR>
+<!-- BEGIN xnat:resourceCatalog/tags/tag -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:resourceCatalog/tags/tag</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>tag</TD>
+								<TD>name</TD>
+							</TR>
+							#foreach($xnat_abstractResource_tag_3_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:resourceCatalog/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/tag" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:resourceCatalog/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/name" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:resourceCatalog/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/xnat_abstractResource_tag_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:resourceCatalog/tags/tag -->
+			</TABLE>
+<!-- END xnat:resourceCatalog -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

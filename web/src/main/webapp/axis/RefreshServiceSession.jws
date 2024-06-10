@@ -1,0 +1,8 @@
+
+public class RefreshServiceSession{
+
+    public String execute(String session) throws java.rmi.RemoteException 
+    {
+        return org.nrg.xdat.services.RefreshServiceSession.Execute(session);
+    }
+}

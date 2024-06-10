@@ -1,0 +1,5 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="siteLogoPath" type="java.lang.String" *#
+## max image size: 240w x 120h
+
+<img class="logo_img" src="$content.getURI(${siteConfig.siteLogoPath})" style="border:none;">

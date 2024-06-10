@@ -1,0 +1,71 @@
+<!-- Sequence: 10 -->
+
+<li class="yuimenuitem">
+    <a id="favorite_a" class="yuimenuitemlabel" href="#"></a>
+</li>
+
+<script type="text/javascript">
+
+    XNAT.projectPage =
+            getObject(XNAT.projectPage||{});
+
+    XNAT.projectPage.actionsMenu =
+            getObject(XNAT.projectPage.actionsMenu||{});
+
+    (function(){
+
+        var actionsMenu = XNAT.projectPage.actionsMenu,
+            _faveLink = document.getElementById('favorite_a'),
+            ADD_FAVE = 'Add to Favorites',
+            REMOVE_FAVE = 'Remove from Favorites',
+            faveText = ADD_FAVE,
+            faveStatus = false;
+
+        #if($data.getSession().getAttribute("userHelper").isFavorite("Project","$project.getId()"))
+            // change vars if project is already a favorite
+            faveText = REMOVE_FAVE;
+            faveStatus = true;
+        #end
+
+        _faveLink.innerHTML = faveText;
+
+        jq(_faveLink).click(function( e ){
+
+            e.preventDefault();
+
+            function quickMsg( text ){
+                XNAT.ui.banner.top(2000, text, 'success')
+            }
+
+            var method,
+                url = XNAT.url.csrfUrl('/data/users/favorites/Project/$project.getId()'),
+                callback = {
+                    error: function(){
+                        xmodal.message('Error', 'An error occurred changing favorite status.')
+                    }
+                };
+
+            if (faveStatus === true) {
+                method = 'DELETE';
+                callback.success = function(){
+                    quickMsg('Project removed from favorites');
+                    _faveLink.innerHTML = ADD_FAVE;
+                    faveStatus = false;
+                }
+            }
+            else {
+                method = 'PUT';
+                callback.success = function(){
+                    quickMsg('Project added to favorites.');
+                    _faveLink.innerHTML = REMOVE_FAVE;
+                    faveStatus = true;
+                }
+            }
+
+            XNAT.xhr.requestOfType(method, url, callback);
+
+        });
+
+    })();
+
+</script>

@@ -1,0 +1,20 @@
+
+#foreach($item in $infoEntries)
+<DIV class="containerItem">
+#if($item.getProperty("description"))
+<A name="LINKINFO_$item.getProperty("xdat_infoEntry_id")" HREF="#LINKINFO_$item.getProperty("xdat_infoEntry_id")" onClick=" return blocking('INFO_$item.getProperty("xdat_infoEntry_id")');">			<img ID="IMGINFO_$item.getProperty("xdat_infoEntry_id")" src="$content.getURI("images/plus.jpg")" border=0> $item.getStringProperty("title") </A>
+#elseif($item.getStringProperty("link"))
+<A target="_blank" href="$item.getStringProperty("link")">$item.getStringProperty("title")</A>
+#else
+$item.getStringProperty("title")
+#end
+#if($item.getProperty("description"))
+<SPAN ID="spanINFO_$item.getProperty("xdat_infoEntry_id")" style="position:relative; display:none;">
+$item.getStringProperty("description")
+#if($item.getStringProperty("link"))
+<A target="_blank" href="$item.getStringProperty("link")">... more</A>
+#end
+</SPAN>
+#end
+</DIV>
+#end

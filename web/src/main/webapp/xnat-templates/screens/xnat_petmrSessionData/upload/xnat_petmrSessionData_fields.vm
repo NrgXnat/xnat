@@ -1,0 +1,176 @@
+<!-- BEGIN /xnat-templates/screens/xnat_petmrSessionData/upload/xnat_petmrSessionData_fields.vm -->
+<tr valign="top">
+    <th align="left"><p style="margin-top: 0.5em">Scanner Name</p></th>
+
+	#set($currentScanner=$item.getProperty("scanner"))
+	#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id LEFT JOIN xnat_imageScanData scan ON isd.id=scan.image_session_id WHERE xme.element_name='${datatype}' AND scan.scanner='$currentScanner'"))
+
+	#if($scanners.size()==0)
+		#if($project)
+			#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_petmrSessionData mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id LEFT JOIN xnat_experimentData expt ON isd.id=expt.id WHERE expt.project='$project'"))
+			#if($scanners.size()==0)
+				#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_petmrSessionData mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id"))
+			#end
+		#else
+			#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_petmrSessionData mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id"))
+		#end
+	#end
+
+	#if($scanners.size()==0)
+		<td> #xdatTextBox("${datatype}.scanner" $item "" $vr)</td>
+	#else
+		<td>
+			#if (!$datatype)
+				#set ($datatype = 'xnat:petmrSessionData')
+			#end
+			#parse('/screens/xnat_imageSessionData/upload/scanners.vm')
+		</td>
+	#end
+</tr>
+
+<tr>
+	<th align="left">Acquisition Site</th>
+	<td>
+	 #xdatTextBox("xnat:petmrSessionData.acquisition_site" $item "" $vr)
+	</td>
+	<td></td>
+</tr>
+
+		<script type="text/javascript">
+		  window.tr_visibility="none";
+		function toggleAdditionalFields(){
+		  if(window.tr_visibility==""){
+		    window.tr_visibility="none";
+		  }else{
+		    window.tr_visibility="";
+		  }
+		  document.getElementById("operator.tr").style.display=window.tr_visibility;
+		  document.getElementById("stab.tr").style.display=window.tr_visibility;
+		  document.getElementById("mark.tr").style.display=window.tr_visibility;
+		  document.getElementById("coil.tr").style.display=window.tr_visibility;
+		}
+		</script>
+<tr>
+			 <td colspan="2"><div style="line-height:8px">&nbsp;</div></td>
+		</tr>
+		<tr id="operator.tr" name="additional_fields" style="display:none">
+			 <td>Operator</td>
+			 <td>
+		  	#if ($vr)
+	    		#if($vr.getField("${datatype}.operator"))
+		      	<font color="red">&#8658</font>
+	    		#end
+  			#end
+	  		#if ($item.getProperty("${datatype}.operator"))
+	  			<input type="text" name="${datatype}.operator"
+	    	  #if ($item.getProperty("${datatype}.operator")=="null")
+		      	value=""
+		      #else
+		      	value="$item.getProperty("${datatype}.operator")"
+		      #end
+		      />
+	  		#else
+	    		<input type="text" name="${datatype}.operator" value=""/>
+	  		#end
+		  </td>
+		  <td></td> <!-- no hints available -->
+		</tr>
+
+		<tr id="stab.tr" name="additional_fields" style="display:none">
+	<td>Stabilization Method</td>	<!-- align="left" -->
+	<td>
+		#if($stabilizations && $stabilizations.size()==0)
+			#xdatTextBox("xnat:petmrSessionData.stabilization" $item "" $vr)
+		#else
+			#xdatSelectBoxWSingleValue("xnat:petmrSessionData.stabilization" $item $stabilizations $vr)
+		#end
+	</td>
+	<td></td>	<!-- no hints available -->
+</tr>
+
+		<tr id="mark.tr" name="additional_fields" style="display:none">
+	<td>Reference Mark</td>	<!-- align="left" -->
+	<td>
+	#if($markers && $markers.size()==0)
+		#xdatTextBox("xnat:petmrSessionData.marker" $item "" $vr)
+	#else
+		#xdatSelectBoxWSingleValue("xnat:petmrSessionData.marker" $item $markers $vr)
+	#end
+	</td>
+	<td></td> <!-- no hints available -->
+</tr>
+
+		<tr id="coil.tr" name="additional_fields" style="display:none">
+	<td>Receiver coil</td>	<!-- align="left" -->
+	<td>
+	#if($coils && $coils.size()==0)
+		#xdatSelectBoxWSingleValue("xnat:petmrSessionData.coil" $item $coils $vr)
+	#else
+		#xdatTextBox("xnat:petmrSessionData.coil" $item "" $vr)
+	#end
+	</td>
+	</td>
+	<td></td> <!-- no hints available -->
+</tr>
+
+<tr>
+    <th align="left">Tracer</th>
+    <td>
+        #if($petTracerList.size()==0)
+            #xdatTextBox("xnat:petmrSessionData.tracer.name" $item "" $vr)
+        #else
+            <script type="text/javascript">
+                window.tracer=new Object();
+                window.tracer.local_values=new Array();
+                window.tracer.valueField="tracer";
+                #foreach ($pValue in $petTracerList)
+                window.tracer.local_values.push({"tracer":"$pValue"});
+                    #end
+            </script>
+            #xdatComboBox("xnat:petmrSessionData.tracer.name" $item "window.tracer" $vr)
+            <a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
+        #end
+    </td>
+</tr>
+#set($units =["mCi","ug"])
+<TR>
+    <th align="left">Transmissions</th>
+    <td>#xdatTextBox("xnat:petmrSessionData.tracer.transmissions" $item "" $vr)</td>
+</tr>
+<TR>
+    <th align="left">Time of Injection</th>
+    <td>#xdatTimeBox("xnat:petmrSessionData/start_time_injection" $item $vr)</td>
+</tr>
+<TR>
+    <th align="left">Tracer Dosage</th>
+    <td align="left" NOWRAP>
+        <TABLE>
+            <TR>
+                <TD align="left" style="padding-left:0px;">#xdatTextBox("xnat:petmrSessionData.tracer.dose" $item "" $vr)</TD>
+                <TD>#xdatSelectBoxWSingleValue("xnat:petmrSessionData.tracer.dose.units" $item $units  $vr)</TD>
+            </TR>
+        </TABLE>
+    </td>
+</tr>
+
+<TR>
+    <th align="left">Specific Activity</th>
+    <td>#xdatTextBox("xnat:petmrSessionData.tracer.specificActivity" $item "" $vr)</td>
+</tr>
+<TR>
+    <th align="left">Total mass</th>
+    <td align="left" NOWRAP>
+        <TABLE>
+            <TR>
+                <TD align="left" style="padding-left:0px;">#xdatTextBox("xnat:petmrSessionData.tracer.totalMass" $item "" $vr)</TD>
+                <TD>#xdatSelectBoxWSingleValue("xnat:petmrSessionData.tracer.totalMass.units" $item $units  $vr)</TD>
+            </TR>
+        </TABLE>
+    </td>
+</tr>
+<TR>
+    <th align="left">Emission Scan Start-time</th>
+    <td>#xdatTimeBox("xnat:petmrSessionData/start_time_scan" $item $vr)</td>
+</tr>
+
+<!-- END /xnat-templates/screens/xnat_petmrSessionData/upload/xnat_petmrSessionData_fields.vm -->

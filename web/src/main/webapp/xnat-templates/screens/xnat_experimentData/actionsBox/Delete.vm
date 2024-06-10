@@ -1,0 +1,22 @@
+<!-- BEGIN xnat-templates/screens/xnat_experimentData/actionsBox/Delete.vm -->
+<!-- Sequence: 10 -->
+	#if ($item.canDelete($user))
+      <li class="yuimenuitem lockable">
+       <a href="" ONCLICK="restDelete();return false;"><div class="ic"><i class="fa fa-trash-o" style="color: #900"></i></div><div class="ic_spacer">&nbsp;</div>Delete</a>
+      </li>
+	#end
+	<script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+	<script type="text/javascript" src="$content.getURI("scripts/restDeleter.js")"></script>
+	<script>
+	function restDelete(){
+				var expt=null;
+				  #if($project)
+				  
+				  #else
+				    #set($project=$om.getProject())
+				  #end
+													   window.deleter=new RestDeleter(_a,{defaultHeight:450,defaultWidth:600});
+   					window.deleter.init();
+				}
+	</script>
+<!-- END xnat-templates/screens/xnat_experimentData/actionsBox/Delete.vm -->

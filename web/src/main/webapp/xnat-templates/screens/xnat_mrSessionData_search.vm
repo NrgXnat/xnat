@@ -1,0 +1,146 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- start: screens/xnat_mrSessionData_search.vm -->
+
+<div id="mr-advanced-search" class="advanced-search-fields">
+
+    <a href="#!" style="position:absolute;right:0;top:0;font-size:12px;" class="link" onclick="XNAT.ui.popup('$link.setPage("SearchHelp.vm").addPathInfo("popup","true")','Help',500,600)">Help</a>
+
+    <div class="search-group by-criteria">
+
+        <h3>
+            <label>
+                Search by Criteria
+                <input type="radio" class="search-method by-criteria" value="by-criteria" name="search-by" checked>
+            </label>
+        </h3>
+
+        <!-- subject fields -->
+        <h4><label>$displayManager.getSingularDisplayNameForSubject() Fields
+            </label>
+        </h4>
+
+        <div class="search-item">
+            <h5>$displayManager.getSingularDisplayNameForSubject():</h5>
+            <!-- Subject: -->
+            <input type="hidden"
+                    name="xnat:subjectData.COMBO0_FIELDS"
+                    value="xnat:subjectData.SUBJECTID_equals,xnat:subjectData.ADD_IDS_equals,xnat:subjectData/label_equals,xnat:subjectData/sharing/share/label_equals">
+
+            <input type="text" size="20"
+                    name="xnat:subjectData.COMBO0"
+                    value="$!search.getWebFormValue("xnat:subjectData.COMBO0")"
+                    maxlength="100">
+        </div>
+
+        <div class="search-item">
+            <h5>Gender:</h5>
+            <!-- Gender: -->
+            <select name="xnat:subjectData.GENDER_TEXT_equals">
+                #set($GENDER_TEXT_value=$!search.getWebFormValue("xnat:subjectData.GENDER_TEXT_equals"))
+                <option value="" #if($GENDER_TEXT_value=="") SELECTED #end>(SELECT)</option>
+                <option value="F" #if($GENDER_TEXT_value=="F") SELECTED #end>female</option>
+                <option value="M" #if($GENDER_TEXT_value=="M") SELECTED #end>male</option>
+                <option value="U" #if($GENDER_TEXT_value=="U") SELECTED #end>unknown</option>
+            </select>
+        </div>
+
+        <div class="search-item">
+            <h5>Age:</h5>
+            <!-- Age: -->
+            <input size="10" type="text"
+                    name="xnat:mrSessionData.AGE_equals"
+                    value="$!search.getWebFormValue("xnat:mrSessionData.AGE_equals")" maxlength="30">
+        </div>
+
+        <div class="clear"></div>
+
+        <!-- session fields -->
+        <h4>$displayManager.getSingularDisplayNameForImageSession() Fields</h4>
+
+        <div class="search-item">
+            <h5>$displayManager.getSingularDisplayNameForImageSession() ID:</h5>
+            <input type="hidden"
+                    name="xnat:mrSessionData.COMBO1_FIELDS"
+                    value="xnat:mrSessionData/ID_equals,xnat:mrSessionData/label_equals,xnat:mrSessionData/sharing/share/label_equals">
+
+            <input type="text" size="20"
+                    name="xnat:mrSessionData.COMBO1"
+                    value="$!search.getWebFormValue("xnat:mrSessionData.COMBO1")"
+                    maxlength="100">
+        </div>
+
+        <div class="search-item">
+            <h5>Operator:</h5>
+            <!-- Operator -->
+            <input type="text" size="20"
+                    name="xnat:mrSessionData.OPERATOR_equals"
+                    value="$!search.getWebFormValue("xnat:mrSessionData.OPERATOR_equals")"
+                    maxlength="100">
+        </div>
+
+        <div class="search-item">
+            <h5>Date Range:</h5>
+            #xdatSearchField($schemaElement $schemaElement.getDisplayField("DATE"))
+        </div>
+
+        <div class="search-item">
+            <h5>Scanner:</h5>
+            <!-- Scanner -->
+            #set ($userHelper = $data.getSession().getAttribute("userHelper"))
+            #set ($mrScannerExists = $userHelper.getQueryResultsAsArrayList("SELECT 1 AS exists FROM information_schema.columns WHERE table_name = 'xnat_mrsessiondata' AND column_name = 'scanner'"))
+            #if ($mrScannerExists.size() > 0)
+                #set ($query = "SELECT DISTINCT scanner FROM (SELECT DISTINCT TRIM(BOTH ' ' FROM isd.scanner) AS scanner FROM xnat_mrsessiondata mr LEFT JOIN xnat_imagesessiondata isd ON mr.id = isd.id UNION SELECT DISTINCT TRIM(BOTH ' ' FROM mr.scanner) AS scanner FROM xnat_mrsessiondata mr LEFT JOIN xnat_imagesessiondata isd ON mr.id = isd.id) AS scanner WHERE scanner IS NOT NULL AND scanner <> '' ORDER BY scanner")
+            #else
+                #set ($query = "SELECT DISTINCT TRIM(BOTH ' ' FROM scanner) AS scanner FROM xnat_mrsessiondata mr LEFT JOIN xnat_imagesessiondata isd ON mr.id = isd.id WHERE scanner <> '' ORDER BY scanner")
+            #end
+            #set ($scans = $userHelper.getQueryResultsAsArrayList($query))
+            <select name="xnat:mrSessionData.SCANNER_equals">
+                #set($SCANNER_value=$!search.getWebFormValue("xnat:mrSessionData.SCANNER_equals"))
+                <option value="" #if($SCANNER_value=="") SELECTED #end>(SELECT)</option>
+                #foreach($scan in $scans)
+                    <option value="$!scan.get(0)" #if($SCANNER_value=="$!scan.get(0)") SELECTED #end>$!scan.get(0)</option>
+                #end
+            </select>
+        </div>
+
+        <div class="clear"></div>
+
+        <br>
+
+        <!-- advancedSearchCreateProjectList -->
+        <h5>$displayManager.getSingularDisplayNameForProject():</h5>
+        #advancedSearchCreateProjectList($data $displayManager $search $schemaElement)
+
+        <div class="clear"></div>
+
+    </div>
+
+    <div style="padding-left:40px;" class="search-group by-id">
+
+        <h3><label>Search by Exact IDs
+            <input type="radio" class="search-method by-id" value="by-id" name="search-by"></label>
+        </h3>
+
+        <select name="xnat:mrSessionData.COMBO0_FIELDS" required>
+            <option value="xnat:mrSessionData/ID_in,xnat:mrSessionData/label_in,xnat:mrSessionData/sharing/share/label_in"
+                #if($!search.getWebFormValue("xnat:mrSessionData.COMBO0_FIELDS")=="xnat:mrSessionData/ID_in,xnat:mrSessionData/label_in,xnat:mrSessionData/sharing/share/label_in")SELECTED#end>
+                $displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID
+            </option>
+            <option value="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in"
+                #if($!search.getWebFormValue("xnat:mrSessionData.COMBO0_FIELDS")=="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in")SELECTED#end>
+                $displayManager.getSingularDisplayNameForSubject().toUpperCase()
+            </option>
+        </select>
+
+        <textarea class="exact-ids" name="xnat:mrSessionData.COMBO0" cols="30" rows="6">$!search.getWebFormValue("xnat:mrSessionData.COMBO0")</textarea>
+
+    </div>
+
+    <div class="clear"></div>
+
+</div><!-- /#mr-advanced-search -->
+
+<!-- end: screens/xnat_mrSessionData_search.vm -->
+

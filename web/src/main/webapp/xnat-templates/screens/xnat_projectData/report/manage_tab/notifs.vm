@@ -1,0 +1,172 @@
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="autoRunEnabled" type="java.lang.Boolean" *#
+#* @vtlvariable name="autoRunOverrideAllowed" type="java.lang.Boolean" *#
+##
+## xnat-web: src/main/webapp/xnat-templates/screens/xnat_projectData/report/manage_tab/notifs.vm
+## XNAT http://www.xnat.org
+## Copyright (c) 2005-2020, Washington University School of Medicine and Howard Hughes Medical Institute
+## All Rights Reserved
+##
+## Released under the Simplified BSD.
+##
+<!-- BEGIN xnat-templates/screens/xnat_projectData/report/manage_tab/notifs.vm -->
+## Only display this if AutoRun is enabled or the AutoRun setting can be overridden on a per-project basis
+#if($autoRunEnabled || $autoRunOverrideAllowed)
+<h3>AutoRun Configuration</h3>
+<div>
+    <table id="notif_script_table">
+        <tr>
+            <td colspan="2" class="highlighted" id="notif_script_container">
+                <table>
+                    <tr>
+                        <td><label for="enableAutorun">Enable?</label></td>
+                        <td><input type="checkbox" name="enableAutorun" id="enableAutorun" onchange="XNAT.app.updateState()"/> <small>Indicates whether the <b>AutoRun</b> pipeline should be enabled for this project.</small></td>
+                    </tr>
+                    <tr>
+                        <td><label for="notif_list">Emails</label></td>
+                        <td><input type="text" name="notif_list" id="notif_list" size="100"/></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><small>Addresses should be comma separated (i.e. tim@somewhere.com,jenny@somewhere.com).</small></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <input type="button" id="notif_script_save" value="Save" onclick="XNAT.app.updateAll();"/>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <script>
+        let notifications;
+        XNAT.app.notifUpdate = function () {
+            this.notifs = YUIDOM.get("notif_list").value;
+            if (this.notifs.indexOf("'") > -1 || this.notifs.indexOf("\"") > -1) {
+                xmodal.message('Email Notification', 'Notification emails cannot contain quotes.');
+                return false;
+            }
+            openModalPanel('notifs', 'Saving Emails');
+            if (this.notifs) {
+                YAHOO.util.Connect.asyncRequest('PUT', serverRoot + "/data/projects/$project.id/resources/notifications/files/archival.lst?inbody=true&overwrite=true&content=NOTIFY_ARCHIVAL&XNAT_CSRF=" + window.csrfToken,
+                        {
+                            success: function () {
+                                closeModalPanel('notifs');
+                                xmodal.message('Email Notification', 'Emails updated.');
+                                notifications = this.notifs;
+                            },
+                            failure: function (o) {
+                                closeModalPanel('notifs');
+                                let options = {};
+                                let reasons = "";
+                                if (o.responseText) { ## Fixes XNAT-2989
+                                    reasons = o.responseText.match(/<h3>(.*[\n\r])+<\/h3>/g);
+                                    if (reasons && reasons[0]) {
+                                        reasons = reasons[0].replace(/<\/?h3>/g, "").replace(/[\n\r]/g, "<br>");
+                                        options = {width: 500, height: 400};
+                                    } else {
+                                        reasons = "";
+                                    }
+                                }
+                                xmodal.message('Email Error', "Failed to store emails.<br><br>" + reasons, "OK", options);
+                            },
+                            cache: false, // Turn off caching for IE
+                            scope: this
+                        },
+                        this.notifs);
+            } else {
+                YAHOO.util.Connect.asyncRequest('DELETE', serverRoot + "/data/projects/$project.id/resources/notifications/files/archival.lst?content=NOTIFY_ARCHIVAL&XNAT_CSRF=" + window.csrfToken,
+                        {
+                            success: function () {
+                                closeModalPanel('notifs');
+                                xmodal.message('Email Notification', 'Emails updated.');
+                                notifications = '';
+                            },
+                            failure: function () {
+                                closeModalPanel('notifs');
+                                xmodal.message('Email Error', 'Failed to store emails');
+                            },
+                            cache: false, // Turn off caching for IE
+                            scope: this
+                        });
+            }
+        }
+        XNAT.app.notifsLoad = function (obj) {
+            YUIDOM.get("notif_list").value = notifications = obj.responseText;
+        }
+
+        YAHOO.util.Connect.asyncRequest('GET', serverRoot + '/data/projects/$project.id/resources/notifications/files/archival.lst', {
+            success: XNAT.app.notifsLoad,
+            failure: function () {
+            },
+            cache: false,
+            scope: this
+        });
+
+#if($autoRunOverrideAllowed)
+        const autoRunUrl = serverRoot + "/xapi/pipelines/autoRun/projects/$project.id";
+        let enableAutoRun;
+
+        XNAT.app.updateState = function () {
+            jq('#notif_list').prop('disabled', !jq('#enableAutorun').is(':checked'));
+        }
+
+        XNAT.app.updateAll = function () {
+            const updateNotifications = jq('#notif_list').val();
+            if (updateNotifications !== notifications) {
+                XNAT.app.notifUpdate();
+            }
+            const updateAutoRun = jq('#enableAutorun').is(':checked');
+            if (updateAutoRun !== enableAutoRun) {
+                XNAT.app.autoRunUpdate();
+            }
+        }
+
+        XNAT.app.autoRunUpdate = function() {
+            openModalPanel('autoRun', 'Saving AutoRun state');
+            const shouldEnableAutoRun = jq('#enableAutorun').is(':checked');
+            XNAT.xhr.putJSON({
+                url: autoRunUrl,
+                data: shouldEnableAutoRun ? 'true' : 'false',
+                success: function(){
+                    // Toggle the notification list on or off based on AutoRun setting.
+                    jq('#notif_list').prop('disabled', !shouldEnableAutoRun);
+                    enableAutoRun = shouldEnableAutoRun;
+                    closeModalPanel('autoRun');
+                    xmodal.message('AutoRun', 'Updated AutoRun state');
+                },
+                fail: function(e){
+                    closeModalPanel('autoRun');
+                    xmodal.message('AutoRun Error', 'An error occurred trying to set AutoRun to ' + shouldEnableAutoRun + ' for project ' + $project.id + ': ' + e);
+                }
+            });
+        };
+
+        XNAT.app.autoRunLoad = function() {
+            return XNAT.xhr.getJSON({
+                url: autoRunUrl,
+                success: function(data) {
+                    jq('#enableAutorun').prop('checked', enableAutoRun = data);
+                    // Toggle the notification list on or off based on AutoRun setting.
+                    jq('#notif_list').prop('disabled', !enableAutoRun);
+                }
+            });
+        };
+        XNAT.app.autoRunLoad();
+#else
+        XNAT.app.updateAll = function () {
+            XNAT.app.notifUpdate();
+        }
+
+        // When AutoRun is enabled and overrides are not allowed, you can't change any
+        // auto-run settings other than the notifications list.
+        jq('#enableAutorun').prop('checked', true);
+        jq('#enableAutorun').prop('disabled', true);
+#end
+    </script>
+</div>
+#else
+<!-- autoRunEnabled and autoRunOverrideAllowed are set to false, so there are no relevant project configuration options for notifications -->
+#end
+<!-- END xnat-templates/screens/xnat_projectData/report/manage_tab/notifs.vm -->

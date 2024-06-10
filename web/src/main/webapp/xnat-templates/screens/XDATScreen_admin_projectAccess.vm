@@ -1,0 +1,25 @@
+<form method="post" action="$link.setAction("AdminProjectAccess")"> 
+<TABLE>
+ <TR>
+  <TH>$displayManager.getSingularDisplayNameForProject()</TH>
+  <TH>Private</TH>
+  <TH>Protected</TH>
+  <TH>Public</TH>
+ </TR>
+ #set($counter=0)
+ #foreach($proj in $projects.keySet())
+  <TR>
+   <TD>$projects.get($proj)</TD>
+   #set($accessibility=$projectAccessibility.get($proj))
+   <input type="hidden" name="project$counter" value="$proj"/>
+   <TD><label><input type="radio" name="access$counter" value="private" #if($accessibility=="private")CHECKED#end/></label></TD>
+   <TD><label><input type="radio" name="access$counter" value="protected" #if($accessibility=="protected")CHECKED#end/></label></TD>
+   <TD><label><input type="radio" name="access$counter" value="public" #if($accessibility=="public")CHECKED#end/></label></TD>
+  </TR>
+  #set($counter=$counter+1)
+ #end
+ <TR>
+  	   <TD align="right" colspan="4"><input type="submit" name="eventSubmit_doPerform" value="Save" />
+  	   </TD>
+  	  </TR>
+</TABLE>

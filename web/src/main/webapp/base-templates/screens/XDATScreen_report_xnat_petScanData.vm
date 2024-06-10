@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("PETScan Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>PETScan Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>image_session_ID</TD><TD>$!item.getStringProperty("xnat:petScanData/image_session_ID")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:petScanData/note")</TD></TR>
+							<TR><TD>quality</TD><TD>$!item.getStringProperty("xnat:petScanData/quality")</TD></TR>
+							<TR><TD>condition</TD><TD>$!item.getStringProperty("xnat:petScanData/condition")</TD></TR>
+							<TR><TD>series_description</TD><TD>$!item.getStringProperty("xnat:petScanData/series_description")</TD></TR>
+							<TR><TD>documentation</TD><TD>$!item.getStringProperty("xnat:petScanData/documentation")</TD></TR>
+							<TR><TD>scanner</TD><TD>$!item.getStringProperty("xnat:petScanData/scanner")</TD></TR>
+							<TR><TD>scanner/manufacturer</TD><TD>$!item.getStringProperty("xnat:petScanData/scanner/manufacturer")</TD></TR>
+							<TR><TD>scanner/model</TD><TD>$!item.getStringProperty("xnat:petScanData/scanner/model")</TD></TR>
+							<TR><TD>modality</TD><TD>$!item.getStringProperty("xnat:petScanData/modality")</TD></TR>
+							<TR><TD>frames</TD><TD>$!item.getIntegerProperty("xnat:petScanData/frames")</TD></TR>
+							<TR><TD>operator</TD><TD>$!item.getStringProperty("xnat:petScanData/operator")</TD></TR>
+							<TR><TD>startTime</TD><TD>$!item.getProperty("xnat:petScanData/startTime")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:petScanData/ID")</TD></TR>
+							<TR><TD>type</TD><TD>$!item.getStringProperty("xnat:petScanData/type")</TD></TR>
+							<TR><TD>UID</TD><TD>$!item.getStringProperty("xnat:petScanData/UID")</TD></TR>
+							<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:petScanData/project")</TD></TR>
+							<TR><TD>parameters/orientation</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/orientation")</TD></TR>
+							<TR><TD>parameters/originalFileName</TD><TD>$!item.getStringProperty("xnat:petScanData/parameters/originalFileName")</TD></TR>
+							<TR><TD>parameters/systemType</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/systemType")</TD></TR>
+							<TR><TD>parameters/fileType</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/fileType")</TD></TR>
+							<TR><TD>parameters/transaxialFOV</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/transaxialFOV")</TD></TR>
+							<TR><TD>parameters/acqType</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/acqType")</TD></TR>
+							<TR><TD>parameters/facility</TD><TD>$!item.getStringProperty("xnat:petScanData/parameters/facility")</TD></TR>
+							<TR><TD>parameters/numPlanes</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/numPlanes")</TD></TR>
+							<TR><TD>parameters/frames/numFrames</TD><TD>$!item.getProperty("xnat:petScanData/parameters/frames/numFrames")</TD></TR>
+							<TR><TD>parameters/numGates</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/numGates")</TD></TR>
+							<TR><TD>parameters/planeSeparation</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/planeSeparation")</TD></TR>
+							<TR><TD>parameters/binSize</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/binSize")</TD></TR>
+							<TR><TD>parameters/dataType</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/dataType")</TD></TR>
+							<TR><TD>parameters/dimensions/x</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/dimensions/x")</TD></TR>
+							<TR><TD>parameters/dimensions/y</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/dimensions/y")</TD></TR>
+							<TR><TD>parameters/dimensions/z</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/dimensions/z")</TD></TR>
+							<TR><TD>parameters/dimensions/num</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/dimensions/num")</TD></TR>
+							<TR><TD>parameters/offset/x</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/offset/x")</TD></TR>
+							<TR><TD>parameters/offset/y</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/offset/y")</TD></TR>
+							<TR><TD>parameters/offset/z</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/offset/z")</TD></TR>
+							<TR><TD>parameters/reconZoom</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/reconZoom")</TD></TR>
+							<TR><TD>parameters/pixelSize/x</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/pixelSize/x")</TD></TR>
+							<TR><TD>parameters/pixelSize/y</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/pixelSize/y")</TD></TR>
+							<TR><TD>parameters/pixelSize/z</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/pixelSize/z")</TD></TR>
+							<TR><TD>parameters/filterCode</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/filterCode")</TD></TR>
+							<TR><TD>parameters/resolution/x</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/resolution/x")</TD></TR>
+							<TR><TD>parameters/resolution/y</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/resolution/y")</TD></TR>
+							<TR><TD>parameters/resolution/z</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/resolution/z")</TD></TR>
+							<TR><TD>parameters/numRElements</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/numRElements")</TD></TR>
+							<TR><TD>parameters/numAngles</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/numAngles")</TD></TR>
+							<TR><TD>parameters/ZRotationAngle</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/ZRotationAngle")</TD></TR>
+							<TR><TD>parameters/processingCode</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/processingCode")</TD></TR>
+							<TR><TD>parameters/gateDuration</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/gateDuration")</TD></TR>
+							<TR><TD>parameters/rWaveOffset</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/rWaveOffset")</TD></TR>
+							<TR><TD>parameters/numAcceptedBeats</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/numAcceptedBeats")</TD></TR>
+							<TR><TD>parameters/filter/cutoff</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/filter/cutoff")</TD></TR>
+							<TR><TD>parameters/annotation</TD><TD>$!item.getStringProperty("xnat:petScanData/parameters/annotation")</TD></TR>
+							<TR><TD>parameters/MT_1_1</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_1_1")</TD></TR>
+							<TR><TD>parameters/MT_1_2</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_1_2")</TD></TR>
+							<TR><TD>parameters/MT_1_3</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_1_3")</TD></TR>
+							<TR><TD>parameters/MT_1_4</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_1_4")</TD></TR>
+							<TR><TD>parameters/MT_2_1</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_2_1")</TD></TR>
+							<TR><TD>parameters/MT_2_2</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_2_2")</TD></TR>
+							<TR><TD>parameters/MT_2_3</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_2_3")</TD></TR>
+							<TR><TD>parameters/MT_2_4</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_2_4")</TD></TR>
+							<TR><TD>parameters/MT_3_1</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_3_1")</TD></TR>
+							<TR><TD>parameters/MT_3_2</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_3_2")</TD></TR>
+							<TR><TD>parameters/MT_3_3</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_3_3")</TD></TR>
+							<TR><TD>parameters/MT_3_4</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/MT_3_4")</TD></TR>
+							<TR><TD>parameters/RFilter/cutoff</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/RFilter/cutoff")</TD></TR>
+							<TR><TD>parameters/RFilter/resolution</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/RFilter/resolution")</TD></TR>
+							<TR><TD>parameters/RFilter/code</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/RFilter/code")</TD></TR>
+							<TR><TD>parameters/RFilter/order</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/RFilter/order")</TD></TR>
+							<TR><TD>parameters/ZFilter/cutoff</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/ZFilter/cutoff")</TD></TR>
+							<TR><TD>parameters/ZFilter/resolution</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/ZFilter/resolution")</TD></TR>
+							<TR><TD>parameters/ZFilter/code</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/ZFilter/code")</TD></TR>
+							<TR><TD>parameters/ZFilter/order</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/ZFilter/order")</TD></TR>
+							<TR><TD>parameters/scatterType</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/scatterType")</TD></TR>
+							<TR><TD>parameters/reconType</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/reconType")</TD></TR>
+							<TR><TD>parameters/reconViews</TD><TD>$!item.getIntegerProperty("xnat:petScanData/parameters/reconViews")</TD></TR>
+							<TR><TD>parameters/bedPosition</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/bedPosition")</TD></TR>
+							<TR><TD>parameters/ecatCalibrationFactor</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/ecatCalibrationFactor")</TD></TR>
+							<TR><TD>ecatValidation</TD><TD>$!item.getStringProperty("xnat:petScanData/ecatValidation")</TD></TR>
+							<TR><TD>ecatValidation/status</TD><TD>$!item.getBooleanProperty("xnat:petScanData/ecatValidation/status")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:petScanData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_imageScanData_share_1_NUM_ROWS=$item.getChildItems("xnat:petScanData/sharing/share").size() - 1)
+							#if($xnat_imageScanData_share_1_NUM_ROWS>=0)
+								#foreach($xnat_imageScanData_share_1_COUNTER in [0..$xnat_imageScanData_share_1_NUM_ROWS])
+<!-- BEGIN xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>share</TD><TD>$!item.getStringProperty("xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/share")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/label")</TD></TR>
+													<TR><TD>project</TD><TD>$!item.getStringProperty("xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/project")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_2_NUM_ROWS=$item.getChildItems("xnat:petScanData/file").size() - 1)
+							#if($xnat_abstractResource_2_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_2_COUNTER in [0..$xnat_abstractResource_2_NUM_ROWS])
+<!-- BEGIN xnat:petScanData/file[$xnat_abstractResource_2_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_3_NUM_ROWS=$item.getChildItems("xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_3_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_3_COUNTER in [0..$xnat_abstractResource_tag_3_NUM_ROWS])
+<!-- BEGIN xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat:petScanData/file[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:petScanData/file[$xnat_abstractResource_2_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:petScanData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>$!item.getStringProperty("xnat:petScanData/validation/method")</TD></TR>
+										<TR><TD>date</TD><TD>$!item.getProperty("xnat:petScanData/validation/date")</TD></TR>
+										<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat:petScanData/validation/notes")</TD></TR>
+										<TR><TD>validated_by</TD><TD>$!item.getStringProperty("xnat:petScanData/validation/validated_by")</TD></TR>
+										<TR><TD>status</TD><TD>$!item.getStringProperty("xnat:petScanData/validation/status")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:petScanData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_addField_5_NUM_ROWS=$item.getChildItems("xnat:petScanData/parameters/addParam").size() - 1)
+							#if($xnat_addField_5_NUM_ROWS>=0)
+								#foreach($xnat_addField_5_COUNTER in [0..$xnat_addField_5_NUM_ROWS])
+<!-- BEGIN xnat:petScanData/parameters/addParam[$xnat_addField_5_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/parameters/addParam[$xnat_addField_5_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>addField</TD><TD>$!item.getStringProperty("xnat:petScanData/parameters/addParam[$xnat_addField_5_COUNTER]/addField")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:petScanData/parameters/addParam[$xnat_addField_5_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:petScanData/parameters/addParam[$xnat_addField_5_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_petScanData_frame_6_NUM_ROWS=$item.getChildItems("xnat:petScanData/parameters/frames/frame").size() - 1)
+							#if($xnat_petScanData_frame_6_NUM_ROWS>=0)
+								#foreach($xnat_petScanData_frame_6_COUNTER in [0..$xnat_petScanData_frame_6_NUM_ROWS])
+<!-- BEGIN xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_6_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_6_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>number</TD><TD>$!item.getProperty("xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_6_COUNTER]/number")</TD></TR>
+													<TR><TD>starttime</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_6_COUNTER]/starttime")</TD></TR>
+													<TR><TD>length</TD><TD>$!item.getDoubleProperty("xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_6_COUNTER]/length")</TD></TR>
+													<TR><TD>units</TD><TD>$!item.getStringProperty("xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_6_COUNTER]/units")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_6_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:petScanData -->
+		</TD>
+	</TR>
+</TABLE>

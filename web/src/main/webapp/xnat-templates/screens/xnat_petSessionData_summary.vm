@@ -1,0 +1,15 @@
+<div class="edit_title">PET Session Summary</div>
+	<table>
+		<tr>
+			<td>Patient ID</td>
+			<td>$!item.getStringProperty("xnat:petSessionData.patientID")</td>
+		</tr>
+		<tr>
+			<td>Study Type</td>
+			<td>$!item.getStringProperty("xnat:petSessionData.studyType")</td>
+		<tr>
+			<td>Date/time</td>
+			<td>$!item.getStringProperty("xnat:petSessionData/date") $!item.getStringProperty("xnat:petSessionData/time")</td>
+		</tr>
+	</table>
+</div>

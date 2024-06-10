@@ -1,0 +1,195 @@
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatProjectdata" *#
+<div class="warning">You are strongly advised not to create new custom variable sets. This feature would be deprecated in the future versions of XNAT. Please use the custom form feature</div>
+<DIV><a href='$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$om.getId()")'>$displayManager.getSingularDisplayNameForProject().toUpperCase(): $!om.getDisplayName()</a>&nbsp;&nbsp;>&nbsp;&nbsp;Protocols</DIV><BR>
+<TABLE>
+    <TR>
+        <TD valign="top" width="300">
+            <DIV class="edit_header2" style="line-height:18px;">$displayManager.getSingularDisplayNameForProject() Protocol Management</DIV>
+            The $displayManager.getSingularDisplayNameForProject().toLowerCase() protocol management page allows you to specify what variables are used by a given $displayManager.getSingularDisplayNameForProject().toLowerCase()
+            protocol. In addition to the default
+            variables, users can specify an unlimited number of additional variables.
+            These 'custom' variables are grouped together in sets, and can be re-used by other $displayManager.getPluralDisplayNameForProject().toLowerCase(),
+            allowing for inter-$displayManager.getSingularDisplayNameForProject().toLowerCase() standardization independent of the specified schema-model.
+            (The default setting of 'project-specific' prevents the variables from being shared with other $displayManager.getPluralDisplayNameForProject().toLowerCase().)
+            <br><br>
+            <b>Instructions:</b> Select the protocol you would like to modify. First, check the existing variable groups to see if the variable you desire already exists. If so, add the relevant groups by checking their boxes and clicking <b>Save</b>.
+            If the desired variables are not already there, create a new variable set using the link below to include the new variable.<br><br>
+        </TD>
+        <TD valign="top">
+            <script type="text/javascript" src="$content.getURI("scripts/DynamicJSLoad.js")"></script>
+            <script type="text/javascript" src="$content.getURI("scripts/debugWindow.js")"></script>
+            <script type="text/javascript" src="$content.getURI("scripts/ajaxProtocolManager.js")"></script>
+
+            <TABLE>
+                <TR>
+                    <TD NOWRAP><B>Add variable(s) to:</B></TD>
+                    <TD>
+                        <SELECT ID="protocols_sel">
+                            <OPTION VALUE="">Select...</OPTION>
+                        </SELECT>
+                    </TD>
+                </TR>
+                <TR>
+                    <TD colspan="2">
+                        <DIV class="mainContainer" style="border:0;">
+                            <DIV ID="div_bodys" class="mainContainerBody"></DIV>
+                        </DIV>
+                    </TD>
+                </TR>
+            </TABLE>
+            <TABLE width="100%">
+                <TR>
+                    <TD align="center"><button id="complete_page" type="button">Done</button></TD>
+                </TR>
+            </TABLE>
+            <SCRIPT type="text/javascript">
+                var protocols = [], createdProtocols = [];
+                var div_bodys = document.getElementById('div_bodys');
+                var protocols_sel = document.getElementById('protocols_sel');
+                var complete_pg_btn = document.getElementById('complete_page');
+                var omId = '${om.getId()}';
+
+                // reset container elements
+                div_bodys.innerHTML = '';
+                protocols_sel.innerHTML = '<option value="">Select...</option>';
+
+                XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(data){
+
+                    window.available_elements = data.sortedElements;
+                    window.browseableElements = data.elementMap;
+
+                    function addProtocolElements(protocolName, protocolId, dataType){
+                        if (createdProtocols.indexOf(dataType) === -1) {
+
+                            // add menu item
+                            protocols_sel.add(new Option(protocolName, protocolId));
+
+                            // add UI elements
+                            var bDIV = document.createElement("DIV");
+                            bDIV.className = "mainContainerSubBody";
+                            bDIV.style.display = "none";
+
+                            div_bodys.appendChild(bDIV);
+
+                            protocols.push(new ProtocolManager(protocolId, null, bDIV, { project: omId, dataType: dataType }));
+
+                            createdProtocols.push(dataType);
+                        }
+                    }
+
+                    #foreach($protocol in $om.getStudyprotocol())
+
+                        #set ($protocolId = "$protocol.getId()")
+                        #set ($protocolName = "$protocol.getName()")
+                        #set ($protocolDataType = "$protocol.getDataType()")
+
+                        ## console.log("protocolId: $protocolId");
+                        ## console.log("protocolName: $protocolName");
+                        ## console.log("protocolDataType: $protocolDataType");
+
+                        addProtocolElements('$protocolName', '$protocolId', '$protocolDataType');
+
+                    #end
+
+                    forEach(data.sortedElements, function(element){
+                        var elementName = element.elementName;
+                        if (createdProtocols.indexOf(elementName) === -1) {
+                            if (elementName === 'xnat:projectData' || elementName === 'xnat:subjectData' || element.isExperiment) {
+                                addProtocolElements(element.plural, omId + '_' + elementName, elementName);
+                            }
+                        }
+                    });
+
+                    function completePage(){
+                        if (DEBUG2) writeConsole("completePage()<br>");
+                        var stopped = false;
+                        var groupManagers = window.groupManagers;
+                        for (var groupManagersCounter = 0; groupManagersCounter < groupManagers.length; groupManagersCounter++) {
+                            var gm = groupManagers[groupManagersCounter];
+                            gm.onSave.subscribe(function(o){
+                                completePage();
+                            }, this, this);
+                            stopped = gm.save();
+                            if (DEBUG2) writeConsole("completePage(): fg needs save<br>");
+                            if (stopped) {
+                                break;
+                            }
+                        }
+
+                        if (!stopped) {
+                            for (var protCounter = 0; protCounter < protocols.length; protCounter++) {
+                                var pm = protocols[protCounter];
+                                if (pm.protocol != undefined && pm.protocol != null && pm.canSave()) {
+
+                                    pm.onSave.subscribe(function(o){
+                                        completePage();
+                                    }, this, this);
+
+                                    if (DEBUG2) writeConsole("completePage(): pm needs save<br>");
+                                    pm.save();
+                                    stopped = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (DEBUG2) writeConsole("completePage(): stopped:" + stopped + "<br>");
+                        if (!stopped) {
+                            location.href = '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$om.getId()")';
+                        }
+                    }
+                    // window.completePage = completePage;
+
+                    function selectProtocol(SELECTbox){
+                        if (SELECTbox.selectedIndex != 0) {
+                            protocols[(SELECTbox.selectedIndex - 1)].show();
+                        }
+                    }
+                    // window.selectProtocol = selectProtocol;
+
+                    // add event handlers here, rather than as an inline attributes
+                    complete_pg_btn.onclick = function(e){
+                        completePage(this);
+                    }
+
+                    window.verifyProtocolSetup = function(selection){
+                        // initialize array
+                        var undefined;
+
+                        // selected item can be a protocol name or an xsitype
+                        if (selection.protocol !== undefined) {
+                            var protocolMatches = window.protocolsManagers
+                                    .filter(function(mgr){ return selection.protocol === mgr.id });
+                        }
+                        else if (selection.xsitype !== undefined) {
+                            var protocolMatches = window.protocolsManagers
+                                    .filter(function(mgr){ return selection.xsitype === mgr.opts.dataType });
+                        }
+
+                        console.log('Matching protocols: ',protocolMatches);
+                        if (protocolMatches.length !== 1) {
+                            XNAT.ui.dialog.message({
+                                title: false,
+                                content: '<b>Error:</b> A temporary datatype configuration error has been detected. Please log out and log back in before continuing this operation.'
+                            });
+                            return false;
+                        }
+                        else {
+                            return true;
+                        }
+                    }
+
+                    protocols_sel.onchange = function(e){
+                        // verify that the window.protocolsManagers array is properly set up before continuing.
+                        var selectedProtocol = jq(this).find('option:selected').val();
+
+                        if(verifyProtocolSetup({ protocol: selectedProtocol })) selectProtocol(this);
+                    }
+                });
+            </SCRIPT>
+        </TD>
+    </TR>
+</TABLE>

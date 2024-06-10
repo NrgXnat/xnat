@@ -1,0 +1,70 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#if($assessor.canRead($user)==false)
+##handles data that is not viewable by this user.  On some servers, users can see that these exist (but not view the actual data)
+##on other servers, they shouldn't see that it exists at all.
+##By default, the user shouldn't see these.
+##To allow, site administrators should configure the uiLoginFailureMessage peroprty in siteConfiguration.properties
+#if($siteConfig.uiLoginFailureMessage)
+        #set($denied=true)
+    <TR BGCOLOR="FF9999">
+        #if($!assessor.getProperty("time"))
+            <TD><span class="hidden">$!assessor.getProperty("time")</span>$turbineUtils.formatLocalDateTime($!assessor.getProperty("time"))</TD>
+        #elseif($!assessor.getProperty("date"))
+            <TD><span class="hidden">$!assessor.getProperty("date")</span>$turbineUtils.formatDate($!assessor.getProperty("date"))</TD>
+        #else
+            <TD></TD>
+        #end
+
+        #if($assessor.getItem().instanceOf("xnat:imageAssessorData"))
+            <TD>&nbsp;&nbsp;$data.getSession().getAttribute("userHelper").getDisplayManager().getSingularDisplayNameForElement($assessor.getXSIType())</TD>
+        #else
+            <TD>$data.getSession().getAttribute("userHelper").getDisplayManager().getSingularDisplayNameForElement($assessor.getXSIType())</TD>
+        #end
+        <TD>$!assessor.getProjectDisplayID()</TD>
+        <TD>#if($!assessor.getIdentifier($project,true))$!assessor.getIdentifier($project,true)#elseif($assessor.getLabel())$!assessor.getLabel()#else$!assessor.getId()#end</TD>
+    </TR>
+    #end
+#else
+    #if(!$assessor.getItem().instanceOf("icr:roiCollectionData"))
+        #if($assessor.getProject()==$project)
+            <TR>
+            #else
+                #if($assessor.hasProject($project))
+                    #set($shared=true)
+                <TR BGCOLOR="FFCC99">
+                #else
+                <TR>
+                #end
+            #end
+            #if($!assessor.getProperty("time"))
+                <TD><span class="hidden">$!assessor.getProperty("time")</span>$turbineUtils.formatLocalDateTime($!assessor.getProperty("time"))</TD>
+            #elseif($!assessor.getProperty("date"))
+                <TD><span class="hidden">$!assessor.getProperty("date")</span>$turbineUtils.formatDate($!assessor.getProperty("date"))</TD>
+            #else
+                <TD></TD>
+            #end
+        <TD>
+            #set ( $assessorID = $!assessor.getProperty("ID"))
+            #set ( $assessorField = "${assessor.getXSIType()}.ID")
+            #set ( $url = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$!assessor.getXSIType()).addPathInfo('search_field',$assessorField).addPathInfo('search_value',$assessorID).addPathInfo('popup',$popup)" )
+
+            #if($assessor.hasProject($project))
+                #set ( $url= "$url/project/$project")
+            #end
+
+            #if($assessor.getItem().instanceOf("xnat:imageAssessorData"))
+                #if ($assessor.getXSIType().equalsIgnoreCase("behavioral:tasksSummaryData"))
+                    &nbsp;&nbsp;<a href="$url">Task</a>
+                #else
+                    &nbsp;&nbsp;<a href="$url">$data.getSession().getAttribute("userHelper").getDisplayManager().getSingularDisplayNameForElement($assessor.getXSIType())</a>
+                #end
+            #else
+                <a href="$url" title="$assessor.getIdentifier($!project)">$data.getSession().getAttribute("userHelper").getDisplayManager().getSingularDisplayNameForElement($assessor.getXSIType())</a>
+        #end
+
+        </TD>
+        <TD>$!assessor.getProjectDisplayID()</TD>
+        <TD>#if($!assessor.getIdentifier($project,true))$!assessor.getIdentifier($project,true)#elseif($assessor.getLabel())$!assessor.getLabel()#else$!assessor.getId()#end</TD>
+        </TR>
+    #end
+#end

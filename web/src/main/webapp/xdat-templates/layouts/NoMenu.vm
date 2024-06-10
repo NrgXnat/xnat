@@ -1,0 +1,21 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+<script>
+    window.loadDataTypes = false;
+</script>
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+
+<!-- path: xdat-templates/layouts/NoMenu -->
+
+            $navigation.setTemplate("/NoMenuTop.vm")
+
+            <div id="layout_content2" style="display:none;">Loading...</DIV>
+            <div id="layout_content">$screen_placeholder</DIV>
+
+            $navigation.setTemplate("/DefaultBottom.vm")
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

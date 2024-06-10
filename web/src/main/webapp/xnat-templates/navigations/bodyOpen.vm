@@ -1,0 +1,4 @@
+<!-- path: xnat-templates/navigations/bodyOpen -->
+## open <head> tag in htmlOpen.vm file
+</head>
+<body id="page_body" class="xnat yui-skin-sam">

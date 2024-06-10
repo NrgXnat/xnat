@@ -1,0 +1,178 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="dataType" type="java.lang.String" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="exptCounts" type="java.util.Hashtable" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="popup" type="java.lang.Boolean" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+
+#macro( uploadDicom $name )
+    #if ($!siteConfig.getBooleanValue("uiHideXnatDesktopClientDownload") && !$!siteConfig.getBooleanValue("uploadDicomViaModal"))
+        <a id="defaultUploader" href="$link.setPage("UploadOptions.vm")">$name</a>
+    #else
+        <a id="defaultUploader" class="uploadImages" data-project="$!projectId" data-subject="$!subjectLabel"
+           data-modal="$!siteConfig.getBooleanValue("uploadDicomViaModal")">
+            $name
+        </a>
+    #end
+#end
+
+#if($project)
+    #if($project.class.name == "java.lang.String")
+        #set($projectId = $project)
+    #else
+        #set($projectId = $project.getId())
+    #end
+#else
+    #if($om)
+        #if($om.getProject())
+            #set($projectId = $om.getProject())
+        #end
+    #end
+#end
+#set($userHelper = $data.getSession().getAttribute("userHelper"))
+#if($projectId && $userHelper.canEdit("xnat:subjectData/project", $projectId))
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/AutomationBasedUploader.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/imageUploader.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/lib/jquery-plugins/jquery.form.js")"></script>
+    <link type="text/css" rel="stylesheet" href="$content.getURI("style/uploaders/fileuploader.css")">
+
+    <script type="text/javascript">
+        XNAT.app = getObject(XNAT.app || {});
+        XNAT.app.upload = getObject(XNAT.app.upload || {});
+        XNAT.app.upload.datatypeHandlerMap = getObject(XNAT.app.upload.datatypeHandlerMap || {});
+        XNAT.app.upload.projectHandlerMap = getObject(XNAT.app.upload.projectHandlerMap || {});
+        let uploadSelectorModal;
+
+        ## Site-wide settings
+        ## curl -X POST --header 'Content-Type: application/json'
+        ##      -d '[ECOG|edf:ecogSessionData]' $URL/xapi/siteConfig/subjectUploadImagesFromActionsBox
+        ## curl -X POST --header 'Content-Type: application/json'
+        ##      -d '[ECOG|edf:ecogSessionData]' $URL/xapi/siteConfig/projectUploadImagesFromActionsBox
+        #set($importHandlers = [])
+        #if($importHandlerTypesWithUploadEnabled && "$!importHandlerTypesWithUploadEnabled"!="" &&
+            "$!importHandlerTypesWithUploadEnabled"!="{}")
+            #set($importHandlerTypesWithUploadEnabledLengthMinusOne = $importHandlerTypesWithUploadEnabled.length() - 1)
+            #set($importHandlerTypesWithUploadEnabledDropDown = $importHandlerTypesWithUploadEnabled.substring(1,
+                $importHandlerTypesWithUploadEnabledLengthMinusOne).split(","))
+            #foreach ($key in $importHandlerTypesWithUploadEnabledDropDown)
+                #set($importHandlerTypeArr = $key.trim().split("\|"))
+                #set($importHandlerType = $importHandlerTypeArr[0])
+                #set($datatype = $importHandlerTypeArr[1])
+                #set($junk = $importHandlers.add($importHandlerType))
+                XNAT.app.upload.datatypeHandlerMap["$datatype"] = "$importHandlerType";
+            #end
+        #end
+
+        const sitewideCustomHandlersLength = $!importHandlers.size();
+
+        function openUploaderSelectModalWithContents(contents) {
+            uploadSelectorModal = XNAT.dialog.open({
+                width: 450,
+                title: "Upload Images",
+                content: contents,
+                buttons: []
+            });
+        }
+
+        function openUploaderSelectModal(handlers) {
+            const uploaders = $.map(handlers, function(i, handler) {
+                return spawn('a.uploadImages', { data: {
+                        project: "$!projectId",
+                        subject: "$!subjectLabel",
+                        modal: true,
+                        importHandler: handler
+                    }});
+            });
+            openUploaderSelectModalWithContents(spawn('div.uploadSelector', uploaders));
+        }
+
+        function useOrShowDefaultUploader() {
+            if (sitewideCustomHandlersLength === 0) {
+                let uploaderLink = $('#defaultUploader');
+                if (uploaderLink.attr('href')) {
+                    window.location = uploaderLink.attr('href');
+                } else {
+                    uploaderLink.click();
+                }
+            } else {
+                openUploaderSelectModalWithContents($('#defaultUploaderContents').html());
+            }
+        }
+
+        function clickOrOpenUploadModal(waitDialog) {
+            const projectUploaders = XNAT.app.upload.projectHandlerMap["$!projectId"];
+            if (projectUploaders === XNAT.app.upload.defaultStr) {
+                useOrShowDefaultUploader();
+            } else {
+                try {
+                    const handlers = [];
+                    $.each(projectUploaders, function(key, value) {
+                        handlers.push(key);
+                        XNAT.app.upload.datatypeHandlerMap[value] = key;
+                    });
+                    if (handlers.length === 1) {
+                        const config = {
+                            project: "$!projectId",
+                            subject: "$!subjectLabel",
+                            modal: true
+                        };
+                        // needs "-" rather than camelCase
+                        config['import-handler'] = handlers[0];
+                        XNAT.app.upload.imageUploader.uploadImages(config);
+                    } else {
+                        openUploaderSelectModal(handlers);
+                    }
+                } catch(err) {
+                    console.log("Reverting to default uploader due to issue with project uploader config: " + err +
+                            ".\nProject uploaders: ", projectUploaders);
+                    useOrShowDefaultUploader();
+                }
+            }
+            waitDialog.close();
+        }
+
+        function handleUploadImagesMenu(){
+            const waitDialog = XNAT.ui.dialog.static.wait('Retrieving uploaders...');
+            if (XNAT.app.upload.projectHandlerMap.hasOwnProperty("$!projectId")) {
+                clickOrOpenUploadModal(waitDialog);
+            } else {
+                XNAT.app.upload.imageUploader.getProjectConfig("$!projectId", function() {
+                    clickOrOpenUploadModal(waitDialog);
+                }, function() {waitDialog.close();});
+            }
+        }
+
+        $(document).on("click", "#uploadImagesMenu", handleUploadImagesMenu);
+
+        $(document).on("click", "div.uploadSelector a", function(){
+            if (uploadSelectorModal) {
+                uploadSelectorModal.close();
+            }
+        });
+    </script>
+
+    <li class="yuimenuitem" id="uploadAction">
+        <a class="yuimenuitemlabel" id="uploadImagesMenu">Upload Images</a>
+    </li>
+
+    <div class="hidden">
+        #if($importHandlers.size() > 0)
+            <div id="defaultUploaderContents">
+                <div class="uploadSelector">
+                    <p>Select the type of images you wish to upload</p>
+                    #foreach ($importHandlerType in $importHandlers)
+                        <a class="uploadImages" data-project="$!projectId" data-subject="$!subjectLabel"
+                           data-import-handler="$!importHandlerType" data-modal="true">$importHandlerType</a>
+                        <br>
+                    #end
+                    #uploadDicom("DICOM or ECAT")
+                </div>
+            </div>
+        #else
+            #uploadDicom("Upload Images")
+        #end
+    </div>
+#end

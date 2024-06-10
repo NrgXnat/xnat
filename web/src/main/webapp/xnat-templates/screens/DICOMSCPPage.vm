@@ -1,0 +1,27 @@
+<table>
+<tr>
+    <td>
+        <h4>DICOM C-STORE Service Class User</h4>
+    </td>
+</tr>
+<tr>
+    <td valign="top" align="left">
+        <div style="width:500px">Any DICOM C-STORE SCU, including scanner consoles or DICOM applications like
+            <a href="http://www.osirix-viewer.com">OsiriX</a> or <a href="http://nrg.wustl.edu/software/dicom-browser">DicomBrowser</a>,
+            can send files directly to this server.
+        </div>
+</tr>
+<tr id="option4">
+    <td>
+        <br><b>DICOM C-STORE receiver (SCP) Specifications</b>
+        #foreach ($scp in $scps)
+            <ul>
+                <li>ID: $!scp.getScpId()</li>
+                <li>AE Title: $!scp.getAeTitle()</li>
+                <li>Port: $!scp.getPort()</li>
+            </ul>
+            <br>
+        #end
+    </td>
+</tr>
+    </table>

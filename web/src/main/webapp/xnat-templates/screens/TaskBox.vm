@@ -1,0 +1,31 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+<!-- BEGIN xnat-templates/screens/TaskBox.vm -->
+<DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create new $displayManager.getSingularDisplayNameForProject().toLowerCase()</A></DIV>
+<DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_super_search.vm")">Search</A></DIV>
+<DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_prearchives.vm")">Go to prearchive</A></DIV>
+<SCRIPT language="javascript">
+    function browse() {
+        if (document.getElementById("browseable_elements").selectedIndex > 0) {
+            window.location.href = '$link.setAction("SearchAction")/element/' + document.getElementById("browseable_elements").options[document.getElementById("browseable_elements").selectedIndex].value + '/querytype/new';
+        }
+    }
+</SCRIPT>
+<DIV class="containerItem"><A>Browse
+    <SELECT ID="browseable_elements" style="line-height:11px;font-size: 11px;">
+        <OPTION VALUE="">(SELECT)</OPTION>
+        #set ($userHelper = $data.getSession().getAttribute("userHelper"))
+        #set ($typeObjects = $userHelper.getBrowseableElementDisplays() )
+        #foreach ($typeObject in $typeObjects)
+            <OPTION VALUE="$typeObject.getElementName()">$typeObject.getSchemaElement().getElementSecurity().getPluralDescription()</OPTION>
+        #end
+    </SELECT>
+    <INPUT type="button" style="line-height:10px;" VALUE=">" ONCLICK="browse();"/>
+</DIV>
+<DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_UpdateUser.vm")">My XNAT</A></DIV>
+<DIV class="containerItem">
+    Upload: <A HREF="$link.setPage("ImageUpload.vm")">images</A> <A HREF="$link.setPage("XMLUpload.vm")">xml</A> <A HREF="$link.setPage("XDATScreen_uploadCSV.vm")">spreadsheet</A>
+</DIV>
+<!-- END xnat-templates/screens/TaskBox.vm -->

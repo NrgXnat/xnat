@@ -1,0 +1,37 @@
+#if($project!=$om.getProject())
+						<table align="left">
+								<tr>
+						            	<TH align="left">Primary $displayManager.getSingularDisplayNameForProject()</TH>
+						            	<TD>$!om.getProjectDisplayID()</TD>
+							</tr>
+								<tr>
+						            	<TH align="left"><label ID='${om.getXSIType()}_label'>ID within primary $displayManager.getSingularDisplayNameForProject().toLowerCase()</label></TH>
+						            	<TD>$!om.getLabel()</TD>
+							</tr>
+							</table>
+<DIV style="height:16px">&nbsp;</DIV>
+<DIV style="height:16px">&nbsp;</DIV>
+							#end
+<DIV style="height:16px">&nbsp;</DIV>
+
+
+#set($read_projects=$data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","read"))
+
+ #if($om.getSharing_share().size()>0)
+<DIV class="container" style="overflow:none">
+    <DIV class="withColor containerTitle">$displayManager.getSingularDisplayNameForProject() Participation</DIV>
+    <DIV class="containerBody">
+       <TABLE> 
+        <tr><th>$displayManager.getSingularDisplayNameForProject()</th><th>ID</th></tr>
+       #foreach($pp in $om.getSharing_share())
+        #if($read_projects.contains($pp.getProperty("project")))
+         <TR><TD>$pp.getProjectDisplayID()</TD>
+         <TD>
+           $!pp.getProperty("label")
+         </TD></TR>
+        #end
+       #end
+       </TABLE>
+    </DIV>
+</DIV>
+ #end

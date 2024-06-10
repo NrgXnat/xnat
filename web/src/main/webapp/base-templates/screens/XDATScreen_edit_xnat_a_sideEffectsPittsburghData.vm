@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">SideEffectsPittsburgh Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD colspan='2'>
+								#parse("/screens/xnat_edit_subjectAssessorData.vm")
+							</TD></TR>
+							<tr>
+								<TD colspan="2">#parse("/screens/EditProjectSpecificFields.vm")</TD>
+							</tr>
+							<TR><TD>age</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/age" $item "" $vr)</TD></TR>
+							<TR><TD>date</TD><TD>#xdatDateBox("xnat_a:sideEffectsPittsburghData/date" $item $vr $years)</TD></TR>
+							<TR><TD>time</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/time" $item "" $vr)</TD></TR>
+							<TR><TD>duration</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/duration" $item "" $vr)</TD></TR>
+							<TR><TD>delay</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/delay" $item "" $vr)</TD></TR>
+							<TR><TD>delay/ref_expt_id</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/delay/ref_expt_id" $item "" $vr)</TD></TR>
+							<TR><TD>note</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/note" $item "" $vr)</TD></TR>
+							<TR><TD>acquisition_site</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/acquisition_site" $item "" $vr)</TD></TR>
+							<TR><TD>visit_id</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/visit_id" $item "" $vr)</TD></TR>
+							<TR><TD>visit</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/visit" $item "" $vr)</TD></TR>
+							<TR><TD>version</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/version" $item "" $vr)</TD></TR>
+							<TR><TD>original</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/original" $item "" $vr)</TD></TR>
+							<TR><TD>protocol</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/protocol" $item "" $vr)</TD></TR>
+							<TR><TD>label</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/label" $item "" $vr)</TD></TR>
+							<TR><TD>motorTics</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/motorTics" $item "" $vr)</TD></TR>
+							<TR><TD>buccal_lingualMovements</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/buccal_lingualMovements" $item "" $vr)</TD></TR>
+							<TR><TD>picking_skin_fingers_nails_lip</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/picking_skin_fingers_nails_lip" $item "" $vr)</TD></TR>
+							<TR><TD>worried_anxious</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/worried_anxious" $item "" $vr)</TD></TR>
+							<TR><TD>dull_tired_listless</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/dull_tired_listless" $item "" $vr)</TD></TR>
+							<TR><TD>sedation</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/sedation" $item "" $vr)</TD></TR>
+							<TR><TD>stomachache</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/stomachache" $item "" $vr)</TD></TR>
+							<TR><TD>nausea_vomiting</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/nausea_vomiting" $item "" $vr)</TD></TR>
+							<TR><TD>crabby_irritable</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/crabby_irritable" $item "" $vr)</TD></TR>
+							<TR><TD>tearful_sad_depressed</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/tearful_sad_depressed" $item "" $vr)</TD></TR>
+							<TR><TD>hallucinations</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/hallucinations" $item "" $vr)</TD></TR>
+							<TR><TD>troubleSleeping</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/troubleSleeping" $item "" $vr)</TD></TR>
+							<TR><TD>lossOfAppetite</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/lossOfAppetite" $item "" $vr)</TD></TR>
+							<TR><TD>troubleConcentrating_distractible</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/troubleConcentrating_distractible" $item "" $vr)</TD></TR>
+							<TR><TD>dizziness_lightheadedness</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/dizziness_lightheadedness" $item "" $vr)</TD></TR>
+							<TR><TD>headaches</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/headaches" $item "" $vr)</TD></TR>
+							<TR><TD>socialWithdrawal</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/socialWithdrawal" $item "" $vr)</TD></TR>
+							<TR><TD>dryMouth</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/dryMouth" $item "" $vr)</TD></TR>
+							<TR><TD>palpitations</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/palpitations" $item "" $vr)</TD></TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat_a:sideEffectsPittsburghData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/investigator/title" $item "" $vr)</TD></TR>
+										<TR><TD>firstname</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/investigator/firstname" $item "" $vr)</TD></TR>
+										<TR><TD>lastname</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/investigator/lastname" $item "" $vr)</TD></TR>
+										<TR><TD>institution</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/investigator/institution" $item "" $vr)</TD></TR>
+										<TR><TD>department</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/investigator/department" $item "" $vr)</TD></TR>
+										<TR><TD>email</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/investigator/email" $item "" $vr)</TD></TR>
+										<TR><TD>phone</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/investigator/phone" $item "" $vr)</TD></TR>
+										<TR><TD>ID</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/investigator/ID" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat_a:sideEffectsPittsburghData/investigator/xnat_investigatorData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/investigator -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/validation/method" $item "" $vr)</TD></TR>
+										<TR><TD>date</TD><TD>#xdatDateBox("xnat_a:sideEffectsPittsburghData/validation/date" $item $vr $years)</TD></TR>
+										<TR><TD>notes</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/validation/notes" $item "" $vr)</TD></TR>
+										<TR><TD>validated_by</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/validation/validated_by" $item "" $vr)</TD></TR>
+										<TR><TD>status</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/validation/status" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat_a:sideEffectsPittsburghData/validation/xnat_validationData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_abstractResource_3_COUNTER in [0..5])
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>label</TD><TD>#xdatStringBox("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/label" $item "" $vr)</TD></TR>
+												<TR><TD>file_count</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/file_count" $item "" $vr)</TD></TR>
+												<TR><TD>file_size</TD><TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/xnat_abstractResource_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_abstractResource_tag_4_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/tag" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/xnat_abstractResource_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER]/tags/tag -->
+								</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_3_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/fields/field -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/fields/field</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>field</TD>
+								<TD>name</TD>
+							</TR>
+							#foreach($xnat_experimentData_field_4_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_4_COUNTER]/field" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_4_COUNTER]/name" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_4_COUNTER]/xnat_experimentData_field_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat_a:sideEffectsPittsburghData/fields/field -->
+			</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateSubjectAssessorForm();
+   return false;
+}
+</script>

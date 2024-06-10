@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">Entry Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>URI</TD><TD>#xdatStringBox("cat:entry/URI" $item "" $vr)</TD></TR>
+							<TR><TD>ID</TD><TD>#xdatStringBox("cat:entry/ID" $item "" $vr)</TD></TR>
+							<TR><TD>name</TD><TD>#xdatStringBox("cat:entry/name" $item "" $vr)</TD></TR>
+							<TR><TD>description</TD><TD>#xdatStringBox("cat:entry/description" $item "" $vr)</TD></TR>
+							<TR><TD>format</TD><TD>#xdatStringBox("cat:entry/format" $item "" $vr)</TD></TR>
+							<TR><TD>content</TD><TD>#xdatStringBox("cat:entry/content" $item "" $vr)</TD></TR>
+							<TR><TD>cachePath</TD><TD>#xdatStringBox("cat:entry/cachePath" $item "" $vr)</TD></TR>
+							<TR><TD>createdTime</TD><TD>#xdatTextBox("cat:entry/createdTime" $item "" $vr)</TD></TR>
+							<TR><TD>createdBy</TD><TD>#xdatStringBox("cat:entry/createdBy" $item "" $vr)</TD></TR>
+							<TR><TD>createdEventId</TD><TD>#xdatTextBox("cat:entry/createdEventId" $item "" $vr)</TD></TR>
+							<TR><TD>modifiedTime</TD><TD>#xdatTextBox("cat:entry/modifiedTime" $item "" $vr)</TD></TR>
+							<TR><TD>modifiedBy</TD><TD>#xdatStringBox("cat:entry/modifiedBy" $item "" $vr)</TD></TR>
+							<TR><TD>modifiedEventId</TD><TD>#xdatTextBox("cat:entry/modifiedEventId" $item "" $vr)</TD></TR>
+							<TR><TD>digest</TD><TD>#xdatStringBox("cat:entry/digest" $item "" $vr)</TD></TR>
+													#xdatHiddenBox("cat:entry/cat_entry_id" $item "")
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN cat:entry -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+<!-- BEGIN cat:entry/metaFields/metaField -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:entry/metaFields/metaField</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>metaField</TD>
+								<TD>name</TD>
+							</TR>
+							#foreach($cat_entry_metaField_1_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("cat:entry/metaFields/metaField[$cat_entry_metaField_1_COUNTER]/metaField" $item "" $vr)</TD>
+									<TD>#xdatTextBox("cat:entry/metaFields/metaField[$cat_entry_metaField_1_COUNTER]/name" $item "" $vr)</TD>
+									#xdatHiddenBox("cat:entry/metaFields/metaField[$cat_entry_metaField_1_COUNTER]/cat_entry_metaField_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END cat:entry/metaFields/metaField -->
+<!-- BEGIN cat:entry/tags/tag -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:entry/tags/tag</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>tag</TD>
+							</TR>
+							#foreach($cat_entry_tag_1_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("cat:entry/tags/tag[$cat_entry_tag_1_COUNTER]/tag" $item "" $vr)</TD>
+									#xdatHiddenBox("cat:entry/tags/tag[$cat_entry_tag_1_COUNTER]/cat_entry_tag_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END cat:entry/tags/tag -->
+			</TABLE>
+<!-- END cat:entry -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

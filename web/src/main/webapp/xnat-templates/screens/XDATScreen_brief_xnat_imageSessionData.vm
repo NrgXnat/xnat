@@ -1,0 +1,20 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("ScreenOnly.vm")
+<table>
+#if($session.getProject())<tr><th align="left">$displayManager.getSingularDisplayNameForProject():</th><td>$!session.getProject()</td></tr>#end
+#if($session.getLabel())<tr><th align="left">Label:</th><td>$!session.getLabel()</td></tr>#end
+#if($session.getSubjectId())<tr><th align="left">$displayManager.getSingularDisplayNameForSubject():</th><td>$!session.getSubjectId()</td></tr>#end
+<tr><th align="left">Patient ID:</th><td>$!session.getDcmpatientid()</td></tr>
+<tr><th align="left">Patient Name:</th><td>$!session.getDcmpatientname()</td></tr>
+<tr><th align="left">Modality:</th><td>$!session.getModality()</td></tr>
+<tr><th align="left">Date:</th><td>$turbineUtils.formatDate($!session.getDate())</td></tr>
+</table>
+<div>
+	<h3>Scans</h3>
+	<table>
+		<tr><th>ID</th><th>Description</th></tr>
+	#foreach($scan in $session.getScans_scan())
+	<tr><td>$!scan.getId()</td><td>$!scan.getSeriesDescription()</td></tr>
+	#end
+	</table>
+</div>

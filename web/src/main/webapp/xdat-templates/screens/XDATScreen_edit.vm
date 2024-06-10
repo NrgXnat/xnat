@@ -1,0 +1,12 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("Popup.vm")
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<p>
+<font color="red" size="3">Please create an edit page for $item.getXSIType()</font>
+</p>

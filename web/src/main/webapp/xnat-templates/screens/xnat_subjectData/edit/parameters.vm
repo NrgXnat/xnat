@@ -1,0 +1,24 @@
+<!-- BEGIN xnat-templates/screens/xnat_subjectData/edit/parameters.vm -->
+
+## CSS Link and JS script required for FormIO are in xnat-templates/navigations/BaseJS.vm file
+
+<br>
+
+<div id="formio" class="xnat-bootstrap"  data-id="$!om.getId()" data-type="$!om.getXSIType()" data-project="$!om.getProject()"></div>
+
+<script type="text/javascript"> 
+      var formOptions = { buttonSettings: {
+                             showCancel: false,
+                             showSubmit: false,
+                             showNext: false,
+                             showPrevious: false
+                           }};
+
+</script>
+
+#parse('screens/formioJSIncludes.vm')
+#parse('screens/formioIncludes.vm')
+
+
+
+<!-- END xnat-templates/screens/xnat_subjectData/edit/parameters.vm -->

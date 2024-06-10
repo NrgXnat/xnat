@@ -1,0 +1,49 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="last_login" type="java.util.Date" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+<!-- BEGIN NoninteractiveTop.vm -->
+$page.setBgColor($ui.bgcolor)
+
+<div id="user_bar" class="no_menu">
+    <div class="inner">
+        #if($last_login)
+            <span id="last_login">Last login: $turbineUtils.formatDateTime($last_login)</span>
+        #end
+        #if($user)
+            #if(!$siteConfig.requireLogin && $user.isGuest())
+                <span id="user_info">Logged in as: <span style="color:red;">Guest</span>
+            #else
+                #set($username = $user.getUsername())
+                #if($username != "" && $username != "guest")
+                    ## use default timout value from web.xml as the starting text in the "timeLeft" element
+                    #if(!$hideUserInfo)
+                        <span id="user_info">Logged in as: &nbsp;<i>$!turbineUtils.getDisplayedUserIdentifier($user)</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
+                    #end
+                    <script>
+                        window.loggedIn = true;
+                        window.isGuest = realValue('$!user.isGuest()');
+                    </script>
+                #end
+            #end
+        #end
+        <div class="clear"></div>
+    </div>
+</div>
+
+<div id="page_wrapper">
+
+<div id="header" class="main_header"><div class="pad">
+#if ($expired || $forgot || $disabled)
+        #parse("/screens/Logo.vm")
+#else
+    <a id="header_logo" href="$link.setPage("Index.vm")#if($data.getParameters().getString('par'))/par/$data.getParameters().getString('par')#end">
+        #parse("/screens/Logo.vm")
+    </a>
+#end
+</div></div>
+<!-- END NoninteractiveTop.vm -->

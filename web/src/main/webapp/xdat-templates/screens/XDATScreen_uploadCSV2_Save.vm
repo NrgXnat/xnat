@@ -1,0 +1,133 @@
+ <!--BEGIN XDATScreen_uploadCSV2_Save.vm CONTENT -->
+<script type="text/javascript">
+    //CONDITION CODE
+    var conditionCount=0;
+    var conditionTag;
+
+	#set($fields=$fm.getFields())
+	#set($allRows = $data.getSession().getAttribute("rows"))
+	#set($rowCount = $allRows.size())
+
+	var allRows = new Array();
+	   
+    function drawConditions() {
+        if (allRows.length > 0) {
+            var rowColor="#DEDEDE";
+            var htmlText = "<TABLE><TR><TH></TH>";
+            #set($fieldCount=0)
+	        #foreach($child in $fields)
+                htmlText += "<TH ALIGN='LEFT'>COLUMN $fieldCount</TH>";
+	            #set($fieldCount=$fieldCount +1)
+	        #end
+            htmlText += "<TH></TH></TR>";
+            let rowCount = 0;
+            allRows.forEach((row) => {
+              let rowTag = "<TR><TD ALIGN='LEFT'> Row[" + rowCount + "]</TD>";
+              row.forEach((col) => {
+                    rowTag += "<TD ALIGN='LEFT'><B>" + col + "</B></TD>";
+              });
+              rowTag +="<TD WIDTH=100><INPUT TYPE='BUTTON' VALUE='REMOVE' ONCLICK='removeCondition(" + rowCount +")'/></TD></TR>";
+              htmlText = htmlText + rowTag;
+              ++rowCount;
+            });
+            htmlText = htmlText + "</TABLE>";
+            conditionTag.innerHTML=htmlText;
+            if (rowColor=="#DEDEDE") {
+                 rowColor="#FFFFFF";
+            }else{
+                rowColor="#DEDEDE";
+            }
+        }else{
+            conditionTag.innerHTML="";
+        }
+        document.getElementById('preparing').innerHTML = "";
+        document.getElementById('preparing').style.display = 'none';
+    }
+
+
+
+    function removeCondition(removeIndex) {
+        allRows.splice(removeIndex,1);
+        populateHiddenForm();
+        drawConditions();
+    }
+
+
+    var formTag;
+    function populateHiddenForm(){
+        var htmlText ="";
+        let rowCount = 0;
+        allRows.forEach((row) => {
+            let rowValue = row.join();
+            let rowTag = "\r\n<INPUT TYPE='hidden' VALUE='" + rowValue + "' NAME='row" + rowCount + "'/>";
+            htmlText = htmlText + rowTag;
+            ++rowCount;
+        });
+        formTag.innerHTML=htmlText;
+    }
+</script>
+
+
+	#if ($data.message)
+        <DIV class="error">$data.message</DIV><br>
+    #end
+    <div  id="preparing"><font color="green"><B>Loading data. Please wait...&nbsp;</B></font></div><br/>
+    <table valign="top" width="90%" border="0" align="center" cellpadding="5" cellspacing="0" bgcolor="#DEDEDE">
+
+		     <tr bgcolor="#FFFFFF"><td><DIV class="edit_header1">Step 3: Uploaded data</div></td></tr>
+		     <tr bgcolor="#FFFFFF"><td>Select the project you wish to upload data to and click the 'Save' button at the bottom of the page to review the uploaded data.</td></tr>
+		     <tr bgcolor="#FFFFFF"><td>&nbsp;</td></tr>
+		     <tr bgcolor="#FFFFFF">
+		     </td></tr>
+		     <tr bgcolor="#FFFFFF"><td>
+
+        <form id="form1" name="form1" method="POST" action="$link.setAction("CSVUpload2")">
+        <INPUT TYPE="hidden" name="fm_id" value="$fm.getID()"/>
+        <input type="hidden" name="XNAT_CSRF" value="$!XNAT_CSRF">
+		      <DIV ID="CONDITIONS"></DIV>
+		      <DIV ID="formTags"></DIV>
+        <table border="0" align="center">
+        <TR>
+            <TD>$displayManager.getSingularDisplayNameForProject()</TD>
+            <TD>#parse("/screens/ProjectSelectBox.vm")</TD>
+        </TR>
+        <tr>
+            <td colspan="2">
+                <div align="center">
+                    <input type="submit" name="eventSubmit_doProcess" value="Save" />
+                    <input type="submit" name="Submit2" value="Cancel" />
+                </div>
+            </td>
+        </tr>
+        </table>
+        </form>
+    <hr/>
+    </td></tr>
+	</table>
+
+	<script type="text/javascript">
+	window.onload=function(){
+	   formTag = document.getElementById('formTags');
+	   conditionTag = document.getElementById('CONDITIONS');
+       let rowCols = new Array();
+	   #foreach($row in $allRows)
+            #foreach($col in $row)
+                #if ($col.contains("'"))
+                  #set($col = $col.replace("'","&#039;"))
+                #end
+                #if ($col.contains("<"))
+                   #set($col = $col.replace("<","&lt;"))
+                #end
+                #if ($col.contains(">"))
+                   #set($col = $col.replace(">","&gt;"))
+                #end
+                rowCols.push('$col');
+            #end
+            allRows.push(rowCols);
+            rowCols = new Array();
+        #end
+        drawConditions();
+        populateHiddenForm();
+	}
+</script>
+<!--END XDATScreen_uploadCSV2_Save.vm CONTENT -->

@@ -1,0 +1,48 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="last_login" type="java.util.Date" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+<script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
+
+		#elementActionsBoxNoEnd($element $search_field $search_value $user $item)
+		
+		#addCustomScreens("$element" "actionsBox") 
+
+				<script type="text/javascript">
+    var _a = [];
+#foreach ($assessor in $om.getMinimalLoadAssessors())
+													   _a.push({"label": window.available_elements_getByName("$assessor.getXSIType()").singular +" $!assessor.getLabel() ($!assessor.getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectId()/experiments/$om.getId()/assessors/$assessor.getId()" #if($assessor.canRead($user)),canRead:true#else,canRead:false#end,checked:true,xsiType:window.available_elements_getByName("$assessor.getXSIType()").singular,date:"$!assessor.getDate()",primary_label:"$!assessor.getIdentifier($project)"});
+#end
+   _a.push({"label": window.available_elements_getByName("$om.getXSIType()").singular +" $!om.getLabel() ($!om.getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectId()/experiments/$om.getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:window.available_elements_getByName("$om.getXSIType()").singular,date:"$!om.getDate()",primary_label:"$!om.getIdentifier($project)"});
+   													_a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getSubjectData().getIdentifier($project) ($!om.getSubjectData().getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectData().getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:"Subject",date:"",primary_label:"$!om.getSubjectData().getIdentifier($project)",allowDelete:false});
+													
+    var obj = {};
+    obj.uri = serverRoot + "/data/experiments/$!om.getId()";
+    obj.refresh = serverRoot + "/data/services/refresh/catalog?options=" + encodeURIComponent("populateStats,append,delete,checksum") + "&XNAT_CSRF=" + csrfToken + "&resource=/archive/experiments/$!om.getId()";
+    obj.objectId = "$!om.getId()";
+    obj.objectType = "experiment";
+				
+    #if ($turbineUtils.canEdit($user, $item))
+    obj.canEdit = true;
+    #else
+    obj.canEdit = false;
+    #end
+    #if ($turbineUtils.canDelete($user, $item))
+    obj.canDelete = true;
+    #else
+    obj.canDelete = false;
+    #end
+
+    obj.catalogs = {};
+    obj.catalogs.ids = [];
+    obj.allowDownload = ("$!user.checkRestrictedFeature("$!om.getProject()",'data_download')" == "true")
+    window.viewer = new FileViewer(obj);
+
+    function showFiles() {
+        window.viewer.render();
+    }
+</script>

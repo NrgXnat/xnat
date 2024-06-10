@@ -1,0 +1,13 @@
+<html>
+	<body>
+		<h3>$system: Error Thrown</h3>
+
+		<table>
+			<tr><th>HOST:</th><td>$server</td></tr>
+			<tr><th>USER:</th><td>$user</td></tr>
+			<tr><th>TIME:</th><td>$time</td></tr>
+			<tr><th>ERROR:</th><td>$error</td></tr>
+        </table>
+	</body>
+</html>
+

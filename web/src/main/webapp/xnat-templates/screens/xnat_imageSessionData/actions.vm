@@ -1,0 +1,24 @@
+<!-- BEGIN xnat-templates/screens/xnat_imageSessionData/actions.vm -->
+				#elementActionsBoxNoEnd($element $search_field $search_value $user $item)
+				#addCustomScreens("$element" "actionsBox") 
+				#parse($turbineUtils.getTemplateName("actionsBoxAddons","$om.getXSIType()",$!project))
+		 </ul>
+     </DIV>
+    </DIV>
+ <script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+
+				<script type="text/javascript">
+				var _a = new Array();
+#foreach ($assessor in $om.getMinimalLoadAssessors())
+													   _a.push({"label": window.available_elements_getByName("$assessor.getXSIType()").singular +" $!assessor.getLabel() ($!assessor.getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectId()/experiments/$om.getId()/assessors/$assessor.getId()" #if($assessor.canRead($user)),canRead:true#else,canRead:false#end,checked:true,xsiType:window.available_elements_getByName("$assessor.getXSIType()").singular,date:"$!assessor.getDate()",primary_label:"$!assessor.getIdentifier($project)"});
+#end
+   _a.push({"label": window.available_elements_getByName("$om.getXSIType()").singular +" $!om.getLabel() ($!om.getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectId()/experiments/$om.getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:window.available_elements_getByName("$om.getXSIType()").singular,date:"$!om.getDate()",primary_label:"$!om.getIdentifier($project)"});
+   													_a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getSubjectData().getIdentifier($project) ($!om.getSubjectData().getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectData().getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:"Subject",date:"",primary_label:"$!om.getSubjectData().getIdentifier($project)",allowDelete:false});
+
+    $(document).ready(function(){
+        #if(!$user.checkRestrictedFeature("$!om.getProject()", "data_download"))
+            $("li a[data-name='XDATScreen_download_sessions']").parent("li").hide();
+        #end
+    });
+				</script>
+<!-- END xnat-templates/screens/xnat_imageSessionData/actions.vm -->

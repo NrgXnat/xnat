@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("ImageRegionResource Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>ImageRegionResource Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>creator/firstname</TD><TD>$!item.getStringProperty("xnat:regionResource/creator/firstname")</TD></TR>
+							<TR><TD>creator/lastname</TD><TD>$!item.getStringProperty("xnat:regionResource/creator/lastname")</TD></TR>
+							<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:regionResource/name")</TD></TR>
+							<TR><TD>hemisphere</TD><TD>$!item.getStringProperty("xnat:regionResource/hemisphere")</TD></TR>
+							<TR><TD>session_id</TD><TD>$!item.getStringProperty("xnat:regionResource/session_id")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:regionResource -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:regionResource/file -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/file</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:regionResource/file/note")</TD></TR>
+										<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:regionResource/file/label")</TD></TR>
+										<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:regionResource/file/file_count")</TD></TR>
+										<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:regionResource/file/file_size")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE><TR><TD>
+										#set($xnat_abstractResource_tag_2_NUM_ROWS=$item.getChildItems("xnat:regionResource/file/tags/tag").size() - 1)
+										#if($xnat_abstractResource_tag_2_NUM_ROWS>=0)
+											#foreach($xnat_abstractResource_tag_2_COUNTER in [0..$xnat_abstractResource_tag_2_NUM_ROWS])
+<!-- BEGIN xnat:regionResource/file/tags/tag[$xnat_abstractResource_tag_2_COUNTER] -->
+												<TABLE>
+													<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/file/tags/tag[$xnat_abstractResource_tag_2_COUNTER]</font></TH></TR>
+													<TR>
+														<TD align="left" valign="top">
+															<TABLE>
+																<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:regionResource/file/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/tag")</TD></TR>
+																<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:regionResource/file/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/name")</TD></TR>
+															</TABLE>
+														</TD>
+													</TR>
+												</TABLE>
+<!-- END xnat:regionResource/file/tags/tag[$xnat_abstractResource_tag_2_COUNTER] -->
+											#end
+										#end
+									</TD></TR></TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:regionResource/file -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:regionResource/baseimage -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/baseimage</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:regionResource/baseimage/note")</TD></TR>
+										<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:regionResource/baseimage/label")</TD></TR>
+										<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:regionResource/baseimage/file_count")</TD></TR>
+										<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:regionResource/baseimage/file_size")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE><TR><TD>
+										#set($xnat_abstractResource_tag_4_NUM_ROWS=$item.getChildItems("xnat:regionResource/baseimage/tags/tag").size() - 1)
+										#if($xnat_abstractResource_tag_4_NUM_ROWS>=0)
+											#foreach($xnat_abstractResource_tag_4_COUNTER in [0..$xnat_abstractResource_tag_4_NUM_ROWS])
+<!-- BEGIN xnat:regionResource/baseimage/tags/tag[$xnat_abstractResource_tag_4_COUNTER] -->
+												<TABLE>
+													<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/baseimage/tags/tag[$xnat_abstractResource_tag_4_COUNTER]</font></TH></TR>
+													<TR>
+														<TD align="left" valign="top">
+															<TABLE>
+																<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:regionResource/baseimage/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/tag")</TD></TR>
+																<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:regionResource/baseimage/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/name")</TD></TR>
+															</TABLE>
+														</TD>
+													</TR>
+												</TABLE>
+<!-- END xnat:regionResource/baseimage/tags/tag[$xnat_abstractResource_tag_4_COUNTER] -->
+											#end
+										#end
+									</TD></TR></TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:regionResource/baseimage -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_regionResource_label_5_NUM_ROWS=$item.getChildItems("xnat:regionResource/subregionlabels/label").size() - 1)
+							#if($xnat_regionResource_label_5_NUM_ROWS>=0)
+								#foreach($xnat_regionResource_label_5_COUNTER in [0..$xnat_regionResource_label_5_NUM_ROWS])
+<!-- BEGIN xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_5_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_5_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_5_COUNTER]/label")</TD></TR>
+													<TR><TD>id</TD><TD>$!item.getProperty("xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_5_COUNTER]/id")</TD></TR>
+													<TR><TD>hemisphere</TD><TD>$!item.getStringProperty("xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_5_COUNTER]/hemisphere")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:regionResource/subregionlabels/label[$xnat_regionResource_label_5_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:regionResource -->
+		</TD>
+	</TR>
+</TABLE>

@@ -1,0 +1,26 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+
+<!-- path: xdat-templates/layouts/Default -->
+
+            $navigation.setTemplate("/DefaultTop.vm")
+        #if($siteConfig.uiShowLeftBarBrowse)
+                $navigation.setTemplate("/DefaultLeft.vm")
+        #end
+            $navigation.setTemplate("/Breadcrumb.vm")
+            <div id="layout_content2" style="display:none;">Loading...</div>
+            <div id="layout_content">
+                <!--BEGIN SCREEN CONTENT -->
+                $screen_placeholder
+                <!--END SCREEN CONTENT -->
+            </div>
+            $navigation.setTemplate("/DefaultBottom.vm")
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

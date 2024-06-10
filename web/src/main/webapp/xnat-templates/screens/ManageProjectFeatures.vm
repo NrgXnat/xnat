@@ -1,0 +1,35 @@
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="features" type="java.util.Collection" *#
+#* @vtlvariable name="feature" type="org.nrg.xdat.security.helpers.FeatureDefinitionI" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+<!-- Title: Features -->
+
+<table id="project-features" class="xnat-table features" width="100%" style="display:none;">
+    <thead>
+    <tr>
+        <th class="featureProject">Project</th>
+        <th class="featureGroup">Group</th>
+        #foreach($feature in $features)
+            <th class="featureEnabled">$feature.getName()</th>
+        #end
+    </tr>
+    </thead>
+    <tbody id="featureBody">
+    ## body built dynamically in manageFeatures.js
+    </tbody>
+</table>
+
+##moved common code to manageFeatures.js (also used in ManageGroupTypeFeatures.vm)
+<script type="text/javascript" src="$content.getURI("scripts/features/manageFeatures.js")"></script>
+
+<script>
+XNAT.app.featureMgr.level="group";
+XNAT.app.featureMgr.project="$!project";
+
+#foreach($feature in $features)
+XNAT.app.featureMgr.features.push({"key": "$!feature.key", "name": "$!feature.name", "desc": "$!feature.description", "banned": "$!feature.banned"});
+#end
+
+
+XNAT.app.featureMgr.init();
+</script>

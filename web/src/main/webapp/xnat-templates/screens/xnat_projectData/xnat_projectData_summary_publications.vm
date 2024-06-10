@@ -1,0 +1,86 @@
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+Publications:&nbsp;
+#if($project.getPublications_publication().size() > 0)
+    #set($primarys = $project.getPublicationsByType("PRIMARY"))
+    #set($refs = $project.getPublicationsByType("REFERENCE"))
+    #set($facts = $project.getPublicationsByType("FACT SHEET"))
+    #if($primarys.size()>0)
+    <DIV class="containerItem">
+        <table>
+            #foreach($res in $primarys)
+                <tr>
+                    <td>#if($res.getUri()) <A HREF="$res.getUri()">#end
+                        #if($res.getCitation())$res.getCitation()#else$res.getTitle()#end&nbsp;&nbsp;
+                        #if($res.getUri())</A>    #end
+                        #if($res.getPubmed())
+                            <A HREF="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=PureSearch&db=pubmed&details_term=$res.getPubmed()[UID]">PUBMED</A>    #end
+                        #if($res.getDoi()) DOI: $res.getDoi()&nbsp;&nbsp;    #end
+                        #if($res.getMedline()) MEDLINE: $res.getMedline()&nbsp;&nbsp;    #end
+                        #if($res.getOther()) OTHER: $res.getOther()&nbsp;&nbsp;    #end
+                    </td>
+                </tr>
+            #end
+        </table>
+    </DIV>
+    #end
+
+    #if($refs.size()>0)
+    <DIV class="containerItem">
+        <table>
+            #foreach($res in $refs)
+                <tr>
+                    <td>#if($res.getUri()) <A HREF="$res.getUri()">#end
+                        #if($res.getCitation())$res.getCitation()#else$res.getTitle()#end&nbsp;&nbsp;
+                        #if($res.getUri())</A>    #end
+                        #if($res.getPubmed())
+                            <A HREF="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=PureSearch&db=pubmed&details_term=$res.getPubmed()[UID]">PUBMED</A>    #end
+                        #if($res.getDoi()) DOI: $res.getDoi()    #end
+                        #if($res.getMedline()) MEDLINE: $res.getMedline()    #end
+                        #if($res.getOther()) OTHER: $res.getOther()    #end
+                    </td>
+                </tr>
+            #end
+        </table>
+    </DIV>
+    #end
+
+    #if($facts.size()>0)
+    <DIV class="containerItem">
+        <table>
+            #foreach($res in $facts)
+                <tr>
+                    <td>#if($res.getUri()) <A HREF="$res.getUri()">#end
+                        #if($res.getCitation())$res.getCitation()#else$res.getTitle()#end&nbsp;&nbsp;
+                        #if($res.getUri())</A>    #end
+                        #if($res.getPubmed())
+                            <A HREF="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=PureSearch&db=pubmed&details_term=$res.getPubmed()[UID]">PUBMED</A>    #end
+                        #if($res.getDoi()) DOI: $res.getDoi()    #end
+                        #if($res.getMedline()) MEDLINE: $res.getMedline()    #end
+                        #if($res.getOther()) OTHER: $res.getOther()    #end
+                    </td>
+                </tr>
+            #end
+        </table>
+    </DIV>
+    #end
+
+#else
+None
+#end
+#set($resources=$project.getResources_resource())
+#if($resources.size()>0)
+    #foreach($resource in $resources)
+        #if($resource.getUri())
+        <DIV class="containerItem">
+            <A title="$!resource.getDescription()" href="$resource.getUri()">Download $!resource.getLabel()</A></DIV>
+        #end
+
+    #end
+
+#end
+#if($data.getSession().getAttribute("userHelper").canCreate($project))
+<BR/><BR/><A ID="button2" href="$link.setAction("XDATActionRouter").addPathInfo(
+    "xdataction","publications").addPathInfo("search_element","xnat:projectData").addPathInfo(
+    "search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo(
+    "popup","$!popup")">Edit Publications</A>
+#end

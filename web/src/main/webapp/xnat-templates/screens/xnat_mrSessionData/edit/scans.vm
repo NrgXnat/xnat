@@ -1,0 +1,138 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+<!-- BEGIN /xnat-templates/screens/xnat_mrSessionData/edit/scans.vm -->
+#if($siteConfig.uiAllowScanAddition)
+<DIV class="edit_header1" style="margin-bottom:16px">Scans &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<input type="button" value="Add Scan" onclick="addScan(this)"/>
+</DIV>
+#end
+
+<table>
+    <thead>
+    <tr>
+        <th align=left></th>
+        <th align=left>Scan</th>
+        <th align=left>Type
+            <a onclick="xmodal.message('Scan Type', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
+        </th>
+        <th align=left>Quality</th>
+        <th align=left>Note</th>
+    </tr>
+    </thead>
+    #set ($scanCounter = 0)
+    <tbody id="scan_tbody">
+    </tbody>
+    <tr>
+
+			#if($om.getId())
+			<td colspan="5" style="padding-top:10px;"><b>Total:</b> $!om.getFormattedSessionReadableScanStats()</td>
+			#else
+			#end
+    </tr>
+</table>
+<div id="scans" style="position:absolute;top:50px;left:50px;"></div>
+<script type="text/javascript" src="$content.getURI("scripts/imageScanData/scan_tools.js")"></script>
+<script type="text/javascript">
+    jq(function(){
+        jq('body').addClass('scans');
+    });
+
+    function addScan(_button){
+    var tempScan = window.classMapping.newInstance("xnat:mrScanData");
+    window.scanSet.new_scans.push(tempScan);
+    window.scanSet.onLoad.fire();
+  }
+
+  var options = new Object();
+  options.session_id="$!om.getId()";
+
+    options.types=new Object();
+    options.types["xnat:mrScanData"]=new Object();
+    options.types["xnat:mrScanData"].values = new Array();
+    options.types["xnat:mrScanData"].uri=serverRoot + "/REST/scan_types?table=xnat_mrScanData";
+    options.types["xnat:mrScanData"].containsValue=function(_v){
+      for(var tC=0;tC<this.values.length;tC++){
+        if(this.values[tC].value==_v){
+          return true;
+        }
+      }
+      return false;
+    };
+ #set($scanTypes = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("select DISTINCT isd.type from xnat_mrsessiondata mr LEFT JOIN xnat_experimentData expt ON mr.id=expt.id LEFT JOIN xnat_imagescandata isd ON mr.id=isd.image_session_id LEFT JOIN xdat_meta_element xme ON isd.extension=xme.xdat_meta_element_id WHERE expt.project='$project' AND xme.element_name='xnat:mrScanData'"))
+   #if($scanTypes.size()>0)
+    #foreach($scanT in $scanTypes)
+      options.types["xnat:mrScanData"].values.push({"value":"#escapeAllUnescapeParam($!scanT.get(0))","display":"#escapeAllUnescapeParam($!scanT.get(0))"});
+    #end
+  #end
+
+#if($allowDataDeletion)
+   options.allowDataDeletion="$allowDataDeletion";
+#else
+   options.allowDataDeletion="true";
+#end
+
+  window.scanSet=new ScanSet(options);
+  if(window.classMapping==undefined)window.classMapping=new ClassMapping();
+
+        #set($numScans = $om.getSortedScans().size())
+        #if($numScans>0)
+            #set ($TOP_SCAN = $numScans - 1)
+            #foreach($scani in [0..$TOP_SCAN])
+                #set ($scan = $om.getSortedScans().get($scani))
+                #set ($scanId = "$!scan.getId()")
+            var tempScan = window.classMapping.newInstance("$!scan.getXSIType()");
+            tempScan.setProperty("ID", "#escapeAllUnescapeParam($!scan.getId())");
+                #if($scan.getType())
+                tempScan.setProperty("type", "#escapeAllUnescapeParam($!scan.getType())");
+                #else
+                tempScan.setProperty("type", "#escapeAllUnescapeParam($!scan.getSeriesDescription())");
+                #end
+            tempScan.setProperty("quality", "#escapeAllUnescapeParam($!scan.getQuality())");
+            tempScan.setProperty("note", "#escapeAllUnescapeParam($!scan.getNote())");
+            tempScan.setProperty("series_description", "#escapeAllUnescapeParam($!scan.getSeriesDescription())");
+            tempScan.setProperty("startTime", "#escapeAllUnescapeParam($!scan.getStarttime())");
+            tempScan.setProperty("parameters/imageType", "#escapeAllUnescapeParam($!scan.getParameters_imagetype())");
+            tempScan.setProperty("parameters/scanSequence", "#escapeAllUnescapeParam($!scan.getParameters_scansequence())");
+            tempScan.setProperty("parameters/seqVariant", "#escapeAllUnescapeParam($!scan.getParameters_seqvariant())");
+            tempScan.setProperty("parameters/scanOptions", "#escapeAllUnescapeParam($!scan.getParameters_scanoptions())");
+            tempScan.setProperty("parameters/acqType", "#escapeAllUnescapeParam($!scan.getParameters_acqtype())");
+            tempScan.setProperty("frames", "#escapeAllUnescapeParam($!scan.getFrames())");
+            tempScan.setProperty("parameters/flip", "#escapeAllUnescapeParam($!scan.getParameters_flip())");
+                #if($om.getId())
+                tempScan.stats = '$!scan.getFormattedReadableFileStats($user)';
+                #else
+                tempScan.stats = '<div id="scan${scan.getId()}Actions" data-scan-id="$scan.getId()" class="scanActions"></div>';
+                #end
+            tempScan.setProperty("xnat_imageScanData_id", "$!turbineUtils.unescapeParam($!scan.getProperty('xnat_imagescandata_id'))");
+            tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
+            window.scanSet.scans.push(tempScan);
+
+            if (!options.types["xnat:mrScanData"].containsValue("#escapeAllUnescapeParam($!scan.getType())")) {
+                options.types["xnat:mrScanData"].values.push({ "value": "#escapeAllUnescapeParam($!scan.getType())", "display": "#escapeAllUnescapeParam($!scan.getType())" });
+            }
+            #end
+        #end
+
+  window.scanSet.onLoad.subscribe(function(obj){
+    var listing=new scanListingEditor("scan_tbody",this);
+    listing.render();
+  });
+
+
+#if($siteConfig.uiAllowScanAddition)
+
+  if(window.scanSet.scans.length==0){
+    for(var newC=0;newC<5;newC++){
+      var tempScan = window.classMapping.newInstance("xnat:mrScanData");
+        tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
+      window.scanSet.new_scans.push(tempScan);
+    }
+  }
+#end
+
+XNAT.app.sTMod=$siteConfig.uiAllowScanTypeModification;
+
+  window.scanSet.onLoad.fire();
+</script>
+<!-- END /xnat-templates/screens/xnat_mrSessionData/edit/scans.vm -->

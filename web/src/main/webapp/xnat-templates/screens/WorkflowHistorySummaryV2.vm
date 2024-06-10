@@ -1,0 +1,145 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/ScreenOnly.vm")
+
+
+<!-- include only if not defined elsewhere -->
+<script type="text/javascript">
+        function toggle(id) {
+            if (YAHOO.util.Dom.hasClass(id, 'hidden')) {
+                // removes .hidden class to show element
+                YAHOO.util.Dom.removeClass(id,'hidden');
+            } else {
+                // adds class .hidden to element with given id
+                YAHOO.util.Dom.addClass(id, 'hidden');
+            }
+        }
+
+function toggle_ul(n){
+	var element = document.getElementById("ul_"+n);
+	if (element) { var a = document.getElementById("a_"+n); }
+	if(YAHOO.util.Dom.hasClass(element,"hidden")){
+		// show hidden items and toggle icon to "hide"
+		YAHOO.util.Dom.removeClass(element,"hidden");
+		a.style.backgroundPosition="right top";
+	}else{
+		// hide elements and toggle icon to "expand"
+		YAHOO.util.Dom.addClass(element,"hidden");
+		a.style.backgroundPosition="left top";
+	}
+}
+</script>
+
+
+<style type="text/css">
+	#auditTrail .auditTrailItem, #auditTrail .header {
+	  border-bottom:1px solid #888;
+	  font:11px Arial, Helvetica, sans-serif;
+	  margin-top:0;
+	  margin-bottom:0;
+	  padding: 4px;
+	  overflow:auto;
+	}
+	dl.auditTrailItem, item.auditTrailItem {
+		display:block;
+	}
+	#auditTrail dl dl 	{ margin:1px 0;	}
+	#auditTrail .header {
+		background-color: #ccc;
+		font-weight: bold;
+	}
+	#auditTrail dl dt, #auditTrail dl dd {
+		display:block;
+		float:left;
+		padding:4px 0;
+	}
+	.auditTrailItem:hover {
+		background-color:#fe9;
+	}
+	#auditTrail dd 	{ 	margin-left:20px; }
+	dt.auditIcon 	{	width:32px; height:16px;	}
+	dd.auditItem 	{	width:160px; font-weight:bold; position:relative;	}
+	dd.auditAgent 	{	width:100px;	}
+	dd.auditTime 	{	width:170px;	}
+	dt.DATA 	{	background:url($content.getURI("images/icon-file-16.png")) left center no-repeat;	}
+	dt.PROJECTADMIN {	background:url($content.getURI("images/icon-folder-16.png")) left center no-repeat;	}
+	dt.SITEADMIN 	{	background:url($content.getURI("images/icon-site-16.png")) left center no-repeat;	}
+	dt.ACCESS 	{	background:url($content.getURI("images/icon-user-16.png")) left center no-repeat;	}
+	
+	a.auditButton {
+		background:url($content.getURI("images/hide-expand.png")) left top no-repeat; 
+		display:inline-block;
+		height:11px; width:11px; 
+		overflow:hidden; 
+		position:absolute; left:-16px;
+	}
+	.workflow_history {
+		background-color:#fff;
+		border-bottom:none !important;
+		border-top:1px dotted #888;
+		clear:both;
+		overflow:auto;
+		padding-top:6px;
+	}
+	ul.workflow_history_details {
+		list-style-type:none;
+		padding:0 0 0 36px;
+	}
+	ul.workflow_history_details li {
+		position:relative;
+		width:290px
+	}
+	span.auditDatetime {
+		color:#888;
+		position:absolute;
+		left:318px;
+		white-space:nowrap;
+	}
+	#auditTrailLoading {
+		border-radius:10px; 
+		background-color:#888; 
+		color:white; 
+		margin-left:-100px; 
+		padding:25px; 
+		position:fixed; 
+			left:50%; 
+			top:50%; 
+		opacity:0.6;
+		width:200px; 
+	}
+	.hidden {
+		display:none !important;
+	}
+  
+    </style>
+
+	<div id="auditTrail">
+            <dl class="header">
+              <dl>
+                  <dt class="auditIcon"></dt>
+                  <dd class="auditItem">Change</dd>
+                  <dd class="auditAgent">Agent</dd>
+                  <dd class="auditTime">Timestamp</dd>
+                  <dd class="justification">Justification</dd>
+              </dl>
+            </dl>
+
+#set($level1=0)
+	#foreach($wv in $change_sets)
+
+            <dl class="auditTrailItem $!wv.getWorkflow().getCategory()" id="$wv.getDate()">
+                <dl>
+                    <dt class="auditIcon $!wv.getWorkflow().getCategory()"></dt>
+                    <dd class="auditItem">$!wv.getMessage() on <a href="/REST/services/audit/$!wv.getWorkflow().getDataType()/$!wv.getWorkflow().getId()">$!wv.getWorkflow().getId()</a> </dd>
+                    <dd class="auditAgent">by $!wv.getUsername()</dd>
+                    <dd class="auditTime">$!turbineUtils.formatDateTimeSeconds($wv.getDate())</dd>
+                </dl>
+				#if($!wv.getWorkflow().getJustification())
+				<dl>
+                    <dd class="justification">$!wv.getWorkflow().getJustification()</dd>
+                </dl>
+				#end
+	    </dl>
+	#end ## end foreach audit trail entry
+	</div> <!-- end AuditTrail -->
+
+

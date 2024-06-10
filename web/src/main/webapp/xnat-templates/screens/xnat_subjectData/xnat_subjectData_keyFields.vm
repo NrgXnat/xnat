@@ -1,0 +1,14 @@
+<!-- start /xnat-templates/screens/xnat_subjectData/xnat_subjectData_keyFields.vm -->
+
+<tr>
+    #formLabel("Accession #")
+    <td>$!subject.getId()</td>
+</tr>
+<tr>
+    #formLabel("Date Added")
+    <td>$turbineUtils.formatDateTime($!subject.InsertDate) ($!subject.InsertUser.Login)</td>
+</tr>
+#parse($turbineUtils.getTemplateName("_core_demographics","xnat:subjectData",$project))
+#parse($turbineUtils.getTemplateName("_addtl_demographics","xnat:subjectData",$project))
+
+<!-- end /xnat-templates/screens/xnat_subjectData/xnat_subjectData_keyFields.vm -->

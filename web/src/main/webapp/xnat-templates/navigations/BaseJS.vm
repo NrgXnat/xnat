@@ -1,0 +1,126 @@
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="appInfo" type="org.nrg.xnat.services.XnatAppInfo" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+#set ($appInfo = $turbineUtils.getBean("appInfo"))
+
+## Base JavaScript files
+
+<!-- START BaseJS.vm -->
+
+#set ($buildTime = "$appInfo.buildDate.getTime()")
+#set ($buildTimeTrim = "${buildTime.substring(0, 10)}")
+#set ($lastAccessed = "${data.session.lastAccessedTime}")
+
+#set ($SITE_ROOT = $content.getURI(""))
+#set ($debugParam = $data.getParameters().getString('debug'))
+#set ($jsDebugParam = $data.getParameters().getString('jsdebug'))
+#set ($DEBUG = ($debugParam == 'true' || $jsDebugParam == 'true'))
+
+#set ($js = "js?t=${buildTimeTrim}")
+#set ($css = "css?t=${buildTimeTrim}")
+
+#if ($DEBUG)
+    #set ($minjs = "${js}")
+    #set ($mincss = "${css}")
+#else
+    #set ($minjs = "min.${js}")
+    #set ($mincss = "min.${css}")
+#end
+
+## only load once
+#if ($!baseJS != true)
+
+    <!-- load polyfills before ANY other JavaScript -->
+    <script src="${SITE_ROOT}/scripts/polyfills.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/polyfills/FormData/formdata.min.${js}"></script>
+
+    <!-- XNAT global functions (no dependencies) -->
+    <script src="${SITE_ROOT}/scripts/globals.${js}"></script>
+
+    <!-- set global vars that are used often -->
+    <script>
+
+        var XNAT = XNAT || {};
+        var serverRoot = '$content.getURI("")';
+        var csrfToken = '$!data.getSession().getAttribute("XNAT_CSRF")';
+        var showReason = realValue('$!showReason');
+        var requireReason = realValue('$!requireReason');
+        var logoutUrl = '$link.setAction("LogoutUser")';
+        var cacheLastModified = realValue('$!cacheLastModified.getTime()');
+
+        XNAT.buildTime = ('${buildTime}' * 1)
+        XNAT.logoutUrl = logoutUrl;
+        XNAT.cacheLastModified = cacheLastModified;
+
+    </script>
+    ## separate script tags so not everything breaks if showReason or requireReason blows up
+
+    <!-- store username globally -->
+    <script>
+        #if($!user != "" && $user.isGuest())
+            window.username = 'guest';
+        #else
+            #set($username = $!user.getUsername())
+            #if($username != "" && $username != "guest")
+                window.username = '$!username';
+            #else
+                window.username = '';
+            #end
+        #end
+        console.log('username: ' + window.username);
+    </script>
+
+    <!-- set theme js vars -->
+    #if ($theme)
+    <script>
+        XNAT.theme = {};
+        XNAT.theme.name = '${theme}';
+        XNAT.themeName = XNAT.theme.name;
+    </script>
+    #end
+
+    <!-- required libraries -->
+    <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.${js}"></script>
+##    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.${minjs}"></script>
+##    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate.${minjs}"></script>
+##    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-3.5.1.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate-3.3.2.js"></script>
+    <script>
+        // alias jQuery to jq
+        var jq = jQuery;
+    </script>
+
+    <!-- jQuery plugins -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.${mincss}">
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.jquery.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.maskedinput.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.hasClasses.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dateFormat.${minjs}"></script>
+
+    <!-- other libraries -->
+    <script src="${SITE_ROOT}/scripts/lib/spawn/spawn.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/js.cookie.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/form2js/src/form2js.${js}"></script>
+    ## <script src="${SITE_ROOT}/scripts/lib/form2js/src/js2form.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/x2js/xml2json.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/DefiantJS/dist/defiant.${minjs}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jsonpath/jsonpath.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/lib/ace/ace.${js}"></script>
+
+    <!-- XNAT utility functions -->
+    <script src="${SITE_ROOT}/scripts/utils.${js}"></script>
+
+    #set ($baseJS = true)
+
+#else
+
+    <!-- BaseJS is loaded -->
+
+#end
+
+<!-- END BaseJS.vm -->

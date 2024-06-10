@@ -1,0 +1,21 @@
+<div class="edit_title">CT Session Summary</div>
+	<!-- TODO: put in CT-specific fields -->
+	<table>
+		<tr>
+			<td>Patient name</td>
+			<td>$!item.getStringProperty("xnat:ctSessionData/dcmPatientName")</td>
+		</tr>
+		<tr>
+			<td>Patient ID</td>
+			<td>$!item.getStringProperty("xnat:ctSessionData/dcmPatientId")</td>
+		</tr>
+		<tr>
+			<td>Date/time</td>
+			<td>$!item.getStringProperty("xnat:ctSessionData/date") $!item.getStringProperty("xnat:ctSessionData/time")</td>
+		</tr>
+		<tr>
+			<td>Accession number</td>
+			<td>$!item.getStringProperty("xnat:ctSessionData/dcmAccessionNumber")</td>
+		</tr>
+	</table>
+</div>

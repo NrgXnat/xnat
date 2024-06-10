@@ -1,0 +1,575 @@
+
+<div class="advanced-search-fields autogen"><div class="search-group by-criteria"><h3><label>Search by Criteria <input type="checkbox" class="search-method by-criteria" value="by-criteria"></label></h3>
+<div class="search-item">
+<h5>Subject:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBJECT_ID"))
+</div>
+<div class="search-item">
+<h5>ID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("EXPT_ID"))
+</div>
+<div class="search-item">
+<h5>Date:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DATE"))
+</div>
+<div class="search-item">
+<h5>Age:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("AGE"))
+</div>
+<div class="search-item">
+<h5>Project:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PROJECT"))
+</div>
+<div class="search-item">
+<h5>Inserted:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("INSERT_DATE"))
+</div>
+<div class="search-item">
+<h5>Creator:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("INSERT_USER"))
+</div>
+<div class="search-item">
+<h5>administrator:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ADMINISTRATOR"))
+</div>
+<div class="search-item">
+<h5>currentMajorDepressiveEpisode:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_CURRENTMAJORDEPRESSIVEEPISODE"))
+</div>
+<div class="search-item">
+<h5>pastMajorDepressiveEpisode:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_PASTMAJORDEPRESSIVEEPISODE"))
+</div>
+<div class="search-item">
+<h5>currentManicEpisode:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_CURRENTMANICEPISODE"))
+</div>
+<div class="search-item">
+<h5>pastManicEpisode:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_PASTMANICEPISODE"))
+</div>
+<div class="search-item">
+<h5>currentHypomanicEpisode:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_CURRENTHYPOMANICEPISODE"))
+</div>
+<div class="search-item">
+<h5>pastHypomanicEpisode:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_PASTHYPOMANICEPISODE"))
+</div>
+<div class="search-item">
+<h5>currentDysthmicEpisode:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_CURRENTDYSTHMICEPISODE"))
+</div>
+<div class="search-item">
+<h5>currentMoodDisorderDueToMedicalCondition:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_CURRENTMOODDISORDERDUETOMEDICALCONDITION"))
+</div>
+<div class="search-item">
+<h5>pastMoodDisorderDueToMedicalCondition:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_PASTMOODDISORDERDUETOMEDICALCONDITION"))
+</div>
+<div class="search-item">
+<h5>currentSubstanceInducedMoodDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_CURRENTSUBSTANCEINDUCEDMOODDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastSubstanceInducedMoodDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODEPISODES_PASTSUBSTANCEINDUCEDMOODDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentDelusions:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_CURRENTDELUSIONS"))
+</div>
+<div class="search-item">
+<h5>pastDelusions:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_PASTDELUSIONS"))
+</div>
+<div class="search-item">
+<h5>currentHallucinations:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_CURRENTHALLUCINATIONS"))
+</div>
+<div class="search-item">
+<h5>pastHallucinations:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_PASTHALLUCINATIONS"))
+</div>
+<div class="search-item">
+<h5>currentDisorganizedSpeechBehavior:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_CURRENTDISORGANIZEDSPEECHBEHAVIOR"))
+</div>
+<div class="search-item">
+<h5>pastDisorganizedSpeechBehavior:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_PASTDISORGANIZEDSPEECHBEHAVIOR"))
+</div>
+<div class="search-item">
+<h5>currentCatatonicBehavior:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_CURRENTCATATONICBEHAVIOR"))
+</div>
+<div class="search-item">
+<h5>pastCatatonicBehavior:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_PASTCATATONICBEHAVIOR"))
+</div>
+<div class="search-item">
+<h5>currentNegativeSymptoms:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_CURRENTNEGATIVESYMPTOMS"))
+</div>
+<div class="search-item">
+<h5>pastNegativeSymptoms:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICSYMPTOMS_PASTNEGATIVESYMPTOMS"))
+</div>
+<div class="search-item">
+<h5>currentSchizophrenia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIA"))
+</div>
+<div class="search-item">
+<h5>pastSchizophrenia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTSCHIZOPHRENIA"))
+</div>
+<div class="search-item">
+<h5>currentParanoidType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTPARANOIDTYPE"))
+</div>
+<div class="search-item">
+<h5>pastParanoidType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTPARANOIDTYPE"))
+</div>
+<div class="search-item">
+<h5>currentCatatonicType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTCATATONICTYPE"))
+</div>
+<div class="search-item">
+<h5>pastCatatonicType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTCATATONICTYPE"))
+</div>
+<div class="search-item">
+<h5>currentDisorganizedType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTDISORGANIZEDTYPE"))
+</div>
+<div class="search-item">
+<h5>pastDisorganizedType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTDISORGANIZEDTYPE"))
+</div>
+<div class="search-item">
+<h5>currentUndifferentiatedType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTUNDIFFERENTIATEDTYPE"))
+</div>
+<div class="search-item">
+<h5>pastUndifferentiatedType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTUNDIFFERENTIATEDTYPE"))
+</div>
+<div class="search-item">
+<h5>currentResidualType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTRESIDUALTYPE"))
+</div>
+<div class="search-item">
+<h5>pastResidualType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTRESIDUALTYPE"))
+</div>
+<div class="search-item">
+<h5>currentSchizophreniformDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIFORMDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastSchizophreniformDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTSCHIZOPHRENIFORMDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentSchizoaffectiveDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTSCHIZOAFFECTIVEDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastSchizoaffectiveDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTSCHIZOAFFECTIVEDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentDelusionalDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTDELUSIONALDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastDelusionalDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTDELUSIONALDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentBriefPsychoticDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTBRIEFPSYCHOTICDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastBriefPsychoticDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTBRIEFPSYCHOTICDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentPsychoticDisorderDueToMedicalCondition:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERDUETOMEDICALCONDITIO"))
+</div>
+<div class="search-item">
+<h5>pastPsychoticDisorderDueToMedicalCondition:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERDUETOMEDICALCONDITION"))
+</div>
+<div class="search-item">
+<h5>currentSubstanceInducedPsychoticDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTSUBSTANCEINDUCEDPSYCHOTICDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastSubstanceInducedPsychoticDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTSUBSTANCEINDUCEDPSYCHOTICDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentPsychoticDisorderNOS:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERNOS"))
+</div>
+<div class="search-item">
+<h5>pastPsychoticDisorderNOS:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERNOS"))
+</div>
+<div class="search-item">
+<h5>currentBipolar1Disorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_CURRENTBIPOLAR1DISORDER"))
+</div>
+<div class="search-item">
+<h5>pastBipolar1Disorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_PASTBIPOLAR1DISORDER"))
+</div>
+<div class="search-item">
+<h5>currentBipolar2Disorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_CURRENTBIPOLAR2DISORDER"))
+</div>
+<div class="search-item">
+<h5>pastBipolar2Disorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_PASTBIPOLAR2DISORDER"))
+</div>
+<div class="search-item">
+<h5>currentOtherBipolarDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_CURRENTOTHERBIPOLARDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastOtherBipolarDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_PASTOTHERBIPOLARDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentMajorDepressiveDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_CURRENTMAJORDEPRESSIVEDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastMajorDepressiveDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_PASTMAJORDEPRESSIVEDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentDepressiveDisorderNOS:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_CURRENTDEPRESSIVEDISORDERNOS"))
+</div>
+<div class="search-item">
+<h5>pastDepressiveDisorderNOS:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MOODDISORDERS_PASTDEPRESSIVEDISORDERNOS"))
+</div>
+<div class="search-item">
+<h5>currentAlcoholDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTALCOHOLDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>pastAlcoholDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTALCOHOLDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentAlcoholAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTALCOHOLABUSE"))
+</div>
+<div class="search-item">
+<h5>pastAlcoholAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTALCOHOLABUSE"))
+</div>
+<div class="search-item">
+<h5>currentAmphetamineDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>pastAmphetamineDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentAmphetamineAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEABUSE"))
+</div>
+<div class="search-item">
+<h5>pastAmphetamineAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEABUSE"))
+</div>
+<div class="search-item">
+<h5>currentCannabisDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTCANNABISDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>pastCannabisDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTCANNABISDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentCannabisAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTCANNABISABUSE"))
+</div>
+<div class="search-item">
+<h5>pastCannabisAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTCANNABISABUSE"))
+</div>
+<div class="search-item">
+<h5>currentCocaineDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTCOCAINEDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>pastCocaineDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTCOCAINEDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentCocaineAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTCOCAINEABUSE"))
+</div>
+<div class="search-item">
+<h5>pastCocaineAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTCOCAINEABUSE"))
+</div>
+<div class="search-item">
+<h5>currentHallucinogenDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>pastHallucinogenDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentHallucinogenAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENABUSE"))
+</div>
+<div class="search-item">
+<h5>pastHallucinogenAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENABUSE"))
+</div>
+<div class="search-item">
+<h5>currentOpioidDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTOPIOIDDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>pastOpioidDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTOPIOIDDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentOpioidAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTOPIOIDABUSE"))
+</div>
+<div class="search-item">
+<h5>pastOpioidAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTOPIOIDABUSE"))
+</div>
+<div class="search-item">
+<h5>currentPhencyclidineDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>pastPhencyclidineDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentPhencyclidineAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEABUSE"))
+</div>
+<div class="search-item">
+<h5>pastPhencyclidineAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEABUSE"))
+</div>
+<div class="search-item">
+<h5>currentSedativeHypnoticAnxiolyticDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICDEPENDEN"))
+</div>
+<div class="search-item">
+<h5>pastSedativeHypnoticAnxiolyticDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentSedativeHypnoticAnxiolyticAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICABUSE"))
+</div>
+<div class="search-item">
+<h5>pastSedativeHypnoticAnxiolyticAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICABUSE"))
+</div>
+<div class="search-item">
+<h5>currentPolysubstanceDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTPOLYSUBSTANCEDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>pastPolysubstanceDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTPOLYSUBSTANCEDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentOtherOrUnknownDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>pastOtherOrUnknownDependence:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNDEPENDENCE"))
+</div>
+<div class="search-item">
+<h5>currentOtherOrUnknownAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNABUSE"))
+</div>
+<div class="search-item">
+<h5>pastOtherOrUnknownAbuse:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNABUSE"))
+</div>
+<div class="search-item">
+<h5>currentPanicWithAgoraphobia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTPANICWITHAGORAPHOBIA"))
+</div>
+<div class="search-item">
+<h5>pastPanicWithAgoraphobia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTPANICWITHAGORAPHOBIA"))
+</div>
+<div class="search-item">
+<h5>currentPanicWithoutAgoraphobia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTPANICWITHOUTAGORAPHOBIA"))
+</div>
+<div class="search-item">
+<h5>pastPanicWithoutAgoraphobia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTPANICWITHOUTAGORAPHOBIA"))
+</div>
+<div class="search-item">
+<h5>currentAgoraphobiaWithoutPanicHx:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTAGORAPHOBIAWITHOUTPANICHX"))
+</div>
+<div class="search-item">
+<h5>pastAgoraphobiaWithoutPanicHx:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTAGORAPHOBIAWITHOUTPANICHX"))
+</div>
+<div class="search-item">
+<h5>currentSocialPhobia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTSOCIALPHOBIA"))
+</div>
+<div class="search-item">
+<h5>pastSocialPhobia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTSOCIALPHOBIA"))
+</div>
+<div class="search-item">
+<h5>currentSpecificPhobia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTSPECIFICPHOBIA"))
+</div>
+<div class="search-item">
+<h5>pastSpecificPhobia:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTSPECIFICPHOBIA"))
+</div>
+<div class="search-item">
+<h5>currentOCD:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTOCD"))
+</div>
+<div class="search-item">
+<h5>pastOCD:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTOCD"))
+</div>
+<div class="search-item">
+<h5>currentPTSD:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTPTSD"))
+</div>
+<div class="search-item">
+<h5>pastPTSD:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTPTSD"))
+</div>
+<div class="search-item">
+<h5>currentGeneralizedAnxietyDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTGENERALIZEDANXIETYDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentAnxietyDueToMedicalCondition:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTANXIETYDUETOMEDICALCONDITION"))
+</div>
+<div class="search-item">
+<h5>pastAnxietyDueToMedicalCondition:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTANXIETYDUETOMEDICALCONDITION"))
+</div>
+<div class="search-item">
+<h5>currentSubstanceInducedAnxietyDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTSUBSTANCEINDUCEDANXIETYDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastSubstanceInducedAnxietyDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTSUBSTANCEINDUCEDANXIETYDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentAnxietyDisorderNOS:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_CURRENTANXIETYDISORDERNOS"))
+</div>
+<div class="search-item">
+<h5>pastAnxietyDisorderNOS:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ANXIETYDISORDERS_PASTANXIETYDISORDERNOS"))
+</div>
+<div class="search-item">
+<h5>somatizationDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SOMATOFORMDISORDERS_SOMATIZATIONDISORDER"))
+</div>
+<div class="search-item">
+<h5>undifferentiatedSomatformDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SOMATOFORMDISORDERS_UNDIFFERENTIATEDSOMATFORMDISORDER"))
+</div>
+<div class="search-item">
+<h5>painDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SOMATOFORMDISORDERS_PAINDISORDER"))
+</div>
+<div class="search-item">
+<h5>hypochondriasis:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SOMATOFORMDISORDERS_HYPOCHONDRIASIS"))
+</div>
+<div class="search-item">
+<h5>bodyDysmorphicDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SOMATOFORMDISORDERS_BODYDYSMORPHICDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentAnorexiaNervosa:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("EATINGDISORDERS_CURRENTANOREXIANERVOSA"))
+</div>
+<div class="search-item">
+<h5>pastAnorexiaNervosa:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("EATINGDISORDERS_PASTANOREXIANERVOSA"))
+</div>
+<div class="search-item">
+<h5>currentBulimiaNervosa:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("EATINGDISORDERS_CURRENTBULIMIANERVOSA"))
+</div>
+<div class="search-item">
+<h5>pastBulimiaNervosa:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("EATINGDISORDERS_PASTBULIMIANERVOSA"))
+</div>
+<div class="search-item">
+<h5>currentBingeEatingDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("EATINGDISORDERS_CURRENTBINGEEATINGDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastBingeEatingDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("EATINGDISORDERS_PASTBINGEEATINGDISORDER"))
+</div>
+<div class="search-item">
+<h5>adjustmentDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ADJUSTMENTDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentAcuteStressDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("OPTIONAL_CURRENTACUTESTRESSDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastAcuteStressDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("OPTIONAL_PASTACUTESTRESSDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentMinorDepressiveDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("OPTIONAL_CURRENTMINORDEPRESSIVEDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastMinorDepressiveDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("OPTIONAL_PASTMINORDEPRESSIVEDISORDER"))
+</div>
+<div class="search-item">
+<h5>currentMixedAnxietyDepressiveDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("OPTIONAL_CURRENTMIXEDANXIETYDEPRESSIVEDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastMixedAnxietyDepressiveDisorder:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("OPTIONAL_PASTMIXEDANXIETYDEPRESSIVEDISORDER"))
+</div>
+<div class="search-item">
+<h5>pastSympomaticDetails:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("OPTIONAL_PASTSYMPOMATICDETAILS"))
+</div>
+<div class="clear"></div></div></div>

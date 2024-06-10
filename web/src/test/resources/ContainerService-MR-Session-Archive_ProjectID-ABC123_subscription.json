@@ -1,0 +1,15 @@
+
+{
+  "name": "RunSessionDebug",
+  "action-key": "org.nrg.containers.services.CommandActionProvider:4",
+  "active": true,
+    "attributes": {"command":"echo \"Test Complete\" > ~/TestComplete.txt",
+                 "output-file":"~/OutputFile.txt"},
+  "event-filter": {
+    "name": "FilterByProjectAndModality",
+    "event-type": "org.nrg.xnat.eventservice.events.SessionEvent",
+    "status": "CREATED",
+    "json-path-filter": "$[?(@.modality == \"MR\")]"
+  },
+  "act-as-event-user": false
+}

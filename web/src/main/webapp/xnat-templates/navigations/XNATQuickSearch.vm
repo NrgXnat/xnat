@@ -1,0 +1,51 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+<!-- search script -->
+<script type="text/javascript">
+    function submitQuickSearch(){
+        concealContent();
+        $('#quickSearchForm').submit();
+    }
+    $(document).on('click','#search_btn',function(e){
+        e.preventDefault();
+        submitQuickSearch();
+    });
+</script>
+<!-- end search script -->
+
+<style type="text/css">
+	#quickSearchForm .chosen-results {
+		max-height: 500px;
+	}
+	#quickSearchForm .chosen-results li {
+		padding-right: 20px;
+		white-space: nowrap;
+	}
+	#quickSearchForm .chosen-container .chosen-drop {
+		width: auto;
+		min-width: 180px;
+		max-width: 360px;
+	}
+    #quickSearchForm .chosen-container .chosen-drop .divider {
+        padding: 0;
+		overflow: hidden;
+	}
+    #advanced-search-topnav {
+        margin: 0 0.25em;
+        font-size: 12px;
+    }
+    #advanced-search-topnav a {
+        color: #66c7ff;
+        text-decoration: underline;
+    }
+</style>
+
+<form id="quickSearchForm" method="post" action="$link.setAction("QuickSearchAction")">
+    #if($siteConfig.uiAllowAdvancedSearch)
+        <span id="advanced-search-topnav">
+        <a href="$link.setPage("XDATScreen_search_wizard1.vm")">Advanced</a>
+    </span>
+    #end
+    <input id="searchValue" name="searchValue" type="text" size="20" value="$!field" placeholder="Search" />
+    <button type="button" id="search_btn" class="btn2"><i class="fa fa-search" title="Submit Search"></i></button>
+
+</form>

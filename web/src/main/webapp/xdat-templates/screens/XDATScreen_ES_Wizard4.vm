@@ -1,0 +1,116 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<p>
+<form name="form1" method="post" action="$link.setAction("ModifyItem")">
+<INPUT TYPE="hidden" NAME="popup" VALUE="$popup">
+#if($vr)
+    <div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+<table border="0" width="600">
+	<tr>
+		<TH align=center colspan=2>$!item.getProperty("xdat:element_security.element_name") Security Options<BR><BR></TH>
+		#xdatHiddenBox("xdat:element_security.element_name" $item "")
+	</tr>
+		#set($count = 0)
+		#foreach($ea in $item.getChildItems("xdat:element_security.element_actions.element_action"))
+			<input type="hidden" name="xdat:element_security.element_actions.element_action__${count}.element_action_name" VALUE="$item.getProperty("xdat:element_security.element_actions.element_action__${count}.element_action_name")"/>
+			<input type="hidden" name="xdat:element_security.element_actions.element_action__${count}.display_name" VALUE="$item.getProperty("xdat:element_security.element_actions.element_action__${count}.display_name")"/>
+			<input type="hidden" name="xdat:element_security.element_actions.element_action__${count}.sequence" VALUE="$item.getProperty("xdat:element_security.element_actions.element_action__${count}.sequence")"/>
+			#set($count = $count + 1)
+		#end
+	<TR>
+		<TD align=left>
+		<BR>Select the field(s) which will be used to secure this data type.<BR><BR>
+		<TABLE>
+			<TR><TD valign="top" colspan=2>
+			<script type="text/javascript">
+			<!--
+			function addField() // 1 visible, 0 hidden
+			{
+				var index = 0;
+			    if (document.getElementById)
+				{
+					var elementToChange = 'psf'+index;
+					while(document.getElementById(elementToChange).value!="")
+					{
+						index++;
+						elementToChange = 'psf'+index;
+					}
+					document.getElementById(elementToChange).value=document.getElementById('PSF_FIELDS').value;
+				}
+				else if (document.all)
+				{
+					var elementToChange = 'psf'+index;
+					while(document.all[elementToChange].value!="")
+					{
+						index++;
+						elementToChange = 'psf'+index;
+					}
+					document.all[elementToChange].value=document.all['PSF_FIELDS'].value;
+				}
+			}
+			// -->
+			</script>
+			<BR><BR>
+			Enter a field directly in the text fields on the left, or select the field from the provided list.<BR><BR>
+			<SELECT ID="PSF_FIELDS" name="PSF_FIELDS">
+				#foreach($dotSyntax in $fields)
+					<option value="$dotSyntax">$dotSyntax</option>
+				#end
+			</SELECT>
+			<INPUT type="BUTTON" VALUE="ADD" NAME="ADD_FIELD" ONCLICK="addField();"/>
+		</TD></TR>
+			<TR>
+				<TH colspan=2><BR>Security Fields</TH>
+			</TR>
+			#foreach($c in [0..10] )
+			<TR>
+				<TD>
+				#if($!item.getProperty("xdat:element_security.primary_security_fields.primary_security_field__${c}.xdat_primary_security_field_id"))
+				<INPUT TYPE="checkbox" NAME="REMOVE__${c}=xdat:primary_security_field.xdat_primary_security_field_id" VALUE="$!item.getProperty("xdat:element_security.primary_security_fields.primary_security_field__${c}.xdat_primary_security_field_id")"/>
+				#end
+				</TD>
+				<TD>
+				#if ($vr)
+					#if($vr.getField("xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field"))
+						<font color="red">&#8658</font>
+					#end
+				#end
+					#if ($item.getProperty("xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field"))
+						#if($item.isPKField("xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field") && (!$vr.getField("xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field")))
+						<input size="50" ID="psf$c" type="hidden" name="xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field" value="$item.getProperty("xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field")"/>
+						$item.getProperty("xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field")
+						#else
+						<input size="50" ID="psf$c" type="text" name="xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field" value="$item.getProperty("xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field")"/>
+						#end
+					#else
+					<input size="50" ID="psf$c" type="text" name="xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field" value=""/>
+					#end
+				##xdatTextBox("xdat:element_security.primary_security_fields.primary_security_field__${c}.primary_security_field" $item "" $vr)</TD>
+				#xdatHiddenBox("xdat:element_security.primary_security_fields.primary_security_field__${c}.xdat_primary_security_field_id" $item "")
+			</TR>
+			#end
+			</TABLE>
+		</TD>
+		
+	</TR>
+	<tr>
+		<td colspan=2 align="left"><BR>
+		#xdatHiddenBox("xdat:element_security.secondary_password" $item "")
+		#xdatHiddenBox("xdat:element_security.secure_ip" $item "")
+		#xdatHiddenBox("xdat:element_security.secure" $item "")
+		#xdatHiddenBox("xdat:element_security.browse" $item "")
+		#xdatHiddenBox("xdat:element_security.searchable" $item "")	
+		#xdatHiddenBox("xdat:element_security.element_security_set_element_se_xdat_security_id" $item "")		
+		
+		#xdatHiddenBox("xdat:element_security.accessible" $item "")
+		#xdatHiddenBox("xdat:element_security.usage" $item "")
+		#xdatHiddenBox("xdat:element_security.singular" $item "")
+		#xdatHiddenBox("xdat:element_security.plural" $item "")
+		#xdatHiddenBox("xdat:element_security.category" $item "")
+		#xdatEditProps($item $edit_screen)
+    		<input type="submit" name="eventSubmit_doPerform" value="Complete Setup"/>
+		</td>
+	</tr>
+</TABLE>
+</form>

@@ -1,0 +1,33 @@
+<tr>
+	<td>Stabilization Method</td>	<!-- align="left" -->
+	<td>
+		#if($stabilizations && $stabilizations.size()==0)
+			#xdatTextBox("xnat:mrSessionData.stabilization" $item "" $vr)
+		#else
+			#xdatSelectBoxWSingleValue("xnat:mrSessionData.stabilization" $item $stabilizations $vr)
+		#end
+	</td>
+	<td></td>	<!-- no hints available -->
+</tr>		
+	<tr>
+	<td>Reference Mark</td>	<!-- align="left" -->
+	<td>
+	#if($markers && $markers.size()==0)
+		#xdatTextBox("xnat:mrSessionData.marker" $item "" $vr)
+	#else
+		#xdatSelectBoxWSingleValue("xnat:mrSessionData.marker" $item $markers $vr)
+	#end
+	</td>
+	<td></td> <!-- no hints available -->
+</tr>		
+	<tr>
+	<td>Receiver coil</td>	<!-- align="left" -->
+	<td>
+	#if($coils && $coils.size()==0)
+		#xdatSelectBoxWSingleValue("xnat:mrSessionData.coil" $item $coils $vr)
+	#else
+		#xdatTextBox("xnat:mrSessionData.coil" $item "" $vr)
+	#end
+	</td>
+	<td></td> <!-- no hints available -->
+</tr>

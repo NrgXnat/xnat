@@ -1,0 +1,58 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- /xnat-templates/navigations/DefaultLeft.vm -->
+
+$navigation.setTemplate("LeftBarOptions.vm")
+
+
+<div id="l_tv" style="display:none;"></div>
+
+
+<script type="text/javascript">
+    //build element_array
+    var lTV = new LeftBarTreeView({treeview: "l_tv"});
+
+    lTV.loadNodeData = function( node, fnLoadComplete ){
+        var tabReqObject = node.data;
+        tabReqObject.label = node.label;
+        tabReqObject.node = node;
+        if (tabReqObject.URL != undefined) {
+            window.location = serverRoot + "/app/template/Search.vm/node/" + tabReqObject.ID;
+        }
+        else {
+            if (tabReqObject.ID != undefined && tabReqObject.ID == "ss") {
+                var callback = {
+                    cache: false, // Turn off caching for IE
+                    success: function( oResponse ){
+                        var oResults = eval("(" + oResponse.responseText + ")");
+                        if ((oResults.ResultSet.Result) && (oResults.ResultSet.Result.length)) {
+                            for ( var ssC = 0; ssC < oResults.ResultSet.Result.length; ssC++ ) {
+                                var cpNode = new YAHOO.widget.TextNode({
+                                    label: oResults.ResultSet.Result[ssC].brief_description,
+                                    ID: "ss." + oResults.ResultSet.Result[ssC].id,
+                                    SS_ID: oResults.ResultSet.Result[ssC].id,
+                                    URL: serverRoot + '/REST/search/saved/' + oResults.ResultSet.Result[ssC].id + '',
+                                    TITLE: oResults.ResultSet.Result[ssC].description
+                                }, oResponse.argument.node, false);
+                            }
+                        }
+                        oResponse.argument.fnLoadComplete();
+                    },
+                    failure: function( oResponse ){
+                        oResponse.argument.fnLoadComplete();
+                    },
+                    argument: {"node": node, "fnLoadComplete": fnLoadComplete}
+                };
+
+                //YAHOO.util.Connect.asyncRequest('GET',this.obj.URL,this.initCallback,null,this);
+                YAHOO.util.Connect.asyncRequest('GET', serverRoot + '/REST/search/saved?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp=' + (new Date()).getTime(), callback, null);
+            }
+            else {
+                fnLoadComplete();
+            }
+        }
+    }
+
+    lTV.init();
+
+</script>
+<!-- end /xnat-templates/navigations/DefaultLeft.vm -->

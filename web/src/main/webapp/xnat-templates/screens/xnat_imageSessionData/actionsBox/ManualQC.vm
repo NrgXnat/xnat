@@ -1,0 +1,11 @@
+
+##Developer: Tim Olsen tim@radiologics.com
+#if($siteConfig.getBooleanValue("uiShowAddManualQCAction"))
+	#if($om.getItem().getStatus()!="obsolete")
+		#if($data.getSession().getAttribute("userHelper").canEdit("xnat:qcManualAssessorData/project", $om.getProject()))
+			<li class="yuimenuitem manual_qc $!li_class">
+				<A HREF="${link.setAction("XDATActionRouter").addPathInfo("xdataction","XDATScreen_edit_xnat_qcManualAssessorData").addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup).addPathInfo("project","$!project")}" ><div class="ic"><img border="0" src="$content.getURI("images/e.gif")"/></div><div class="ic_spacer">&nbsp;</div>Add QC Entry</a>
+			</li>
+		#end
+	#end
+#end

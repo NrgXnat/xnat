@@ -1,0 +1,19 @@
+<!--BEGIN /xnat-templates/screens/xnat_ctSessionData/xnat_ctSessionData_reconstructions.vm -->
+
+#parse($turbineUtils.getTemplateName("_reconstructions","xnat:imageSessionData",$project))
+#if($om.getReconstructions_reconstructedimage().size()>0)
+<TR>
+	<TD align=left colspan=2 valign=top>
+	<A name="LINK${scanCounter}" HREF="#LINK${scanCounter}" onClick=" return blocking($scanCounter);"><img ID="IMG$scanCounter" src="$content.getURI("images/plus.jpg")" border=0> Quality Control Images</a>
+	<span ID="span$!scanCounter" style="position:relative; display:none;">
+		<table>
+		<!-- CT QC info could go here (see MR for examples) -->
+ 		</table>
+ 	</span>	
+	</TD>
+</TR>
+<tr>
+	<td align=left colspan=2 valign=top><BR/><BR/></td>
+</tr>
+#end
+<!--END /xnat-templates/screens/xnat_ctSessionData/xnat_ctSessionData_reconstructions.vm -->

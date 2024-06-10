@@ -1,0 +1,48 @@
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+<!--BEGIN xnat_imageSessionData_keyFields.vm -->
+
+#parse($turbineUtils.getTemplateName("_keyFields","xnat:subjectAssessorData", $project))
+
+#if($!item.getProperty("operator"))
+<tr>
+    <th align="left">Operator:</th>
+    <td>#escapeCleanHTML($!item.getProperty("operator"))</td>
+</tr>
+#end
+
+#set ($scannerString = "")
+
+#if($!item.getProperty("scanner"))
+    #set($scanner_ = $!item.getProperty("scanner"))
+#end
+
+#if($!item.getProperty("scanner.manufacturer"))
+    #set($scannerManufacturer = $!{item.getProperty("scanner.manufacturer")})
+#end
+
+#if($!item.getProperty("scanner.model"))
+    #set($scannerModel = $!{item.getProperty("scanner.model")})
+#end
+
+#if($!item.getProperty("scanner") || $!item.getProperty("scanner.model") || $!item.getProperty("scanner.manufacturer"))
+<tr>
+    <th align="left">Scanner Name:</th>
+    <td>#escapeCleanHTML("$!{scanner_}")</td>
+</tr>
+<tr>
+    <th align="left">Scanner Type:</th>
+    <td>#escapeCleanHTML("$!{scannerManufacturer}") #escapeCleanHTML("$!{scannerModel}")</td>
+</tr>
+#end
+
+#if($!item.getProperty("acquisition_site"))
+<tr>
+    <th align="left">Acquisition Site:</th>
+    <td>#escapeCleanHTML($!item.getProperty("acquisition_site"))</td>
+</tr>
+#end
+
+<!--END xnat_imageSessionData_keyFields.vm -->

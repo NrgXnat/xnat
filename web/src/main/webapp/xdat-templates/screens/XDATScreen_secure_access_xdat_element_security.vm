@@ -1,0 +1,50 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<Table border="0">
+<form name="form1" method="post" action="$link.setAction("ElementSecurityWizard")">
+							#set($elementName = $om.getElementName())
+							#set($permissionCount = 0)
+							<TR><TH align="left">User permissions for $elementName<BR><BR></TH></TR>
+							#foreach ($u in $allUsers)
+							#set($permissionCount = $permissionCount + 1)
+							#set($elementManager = $u.getPermissionItems($elementName))
+							#set($elementSQLName = $elementManager.get(2))
+							#set($username= $u.getLogin())
+							<TR><TD align="left"><A NAME="LINK${permissionCount}" HREF="#LINK${permissionCount}" onClick=" return blocking($permissionCount);"><img ID="IMG${permissionCount}" src="$content.getURI("images/plus.jpg")" border=0>&nbsp;&nbsp;$u.getFirstname() $u.getLastname() ($u.getLogin())</A></TD></TR>
+							<TR>
+								<TD>
+									<span ID="span$!permissionCount" style="position:relative;">
+									<TABLE border="0">
+											<TR><TH width="200">&nbsp;</TH><TH align="left">All<BR><INPUT type="checkbox" ONCLICK="${username}CheckAll(this,'C');"/></TH><TH align="left">All<BR><INPUT type="checkbox" ONCLICK="${username}CheckAll(this,'R');"/></TH><TH align="left">All<BR><INPUT type="checkbox" ONCLICK="${username}CheckAll(this,'E');"/></TH><TH align="left">All<BR><INPUT type="checkbox" ONCLICK="${username}CheckAll(this,'D');"/></TH><TH align="left">All<BR><INPUT type="checkbox" ONCLICK="${username}CheckAll(this,'A');"/></TH></TR>
+											<TR><TH width="200">&nbsp;</TH><TH>Create</TH><TH>Read</TH><TH>Edit</TH><TH>Delete</TH><TH>Activate</TH></TR>
+											#foreach ($perimissionItem in $elementManager.get(1))
+											<script language="JavaScript1.3">
+								function ${username}CheckAll(checkAll,type)
+								{
+									var change=null;
+									var node=null;
+									#foreach ($perimissionItem in $elementManager.get(1))
+										change = "${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_" + type;
+										node = document.getElementById(change);
+										node.checked=checkAll.checked;
+									#end
+								}
+							</script>
+											<TR>
+												<TD width="200">$perimissionItem.getDisplayName()
+												<INPUT type="hidden" name="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_type" value="equals"/></TD>
+												<TD><INPUT id="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_C" type="checkbox" name="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_C" #if($perimissionItem.canCreate())CHECKED #end /></TD>
+												<TD><INPUT id="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_R" type="checkbox" name="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_R" #if($perimissionItem.canRead())CHECKED #end /></TD>
+												<TD><INPUT id="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_E" type="checkbox" name="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_E" #if($perimissionItem.canEdit())CHECKED #end /></TD>
+												<TD><INPUT id="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_D" type="checkbox" name="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_D" #if($perimissionItem.canDelete())CHECKED #end /></TD>
+												<TD><INPUT id="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_A" type="checkbox" name="${username}_${perimissionItem.getFullFieldName()}_${perimissionItem.getValue()}_A" #if($perimissionItem.canActivate())CHECKED #end /></TD>
+											</TR>
+											#end
+										</TABLE>
+										</span>
+								</TD>
+							</TR>
+							<TR><TD align="left">&nbsp;&nbsp;</TD></TR>
+							#end
+							<INPUT type="hidden" name="element_name" value="$elementName"/>
+						</TABLE>
+						<input type="submit" name="eventSubmit_doStep5" value="Submit"/>

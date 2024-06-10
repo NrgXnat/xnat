@@ -1,0 +1,13 @@
+<DIV class="yui-skin-sam" style="">
+<div id='project_list' class='yuimenu'>
+  <div class='bd'>
+    <ul class='first-of-type'>
+    </ul>
+  </div>
+</div>
+</div>
+<script type="text/javascript">
+var menu = new YAHOO.widget.Menu("project_list",{visible:true, scrollincrement:5,position:"static"});
+var projList= new ProjectList(menu);
+projList.init();
+</script>

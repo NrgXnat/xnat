@@ -1,0 +1,76 @@
+<!-- BEGIN /xnat-templates/screens/xnat_imageSessionData/upload/scanners.vm -->
+
+#if (!$modalityParam)
+    #set ($modalityParam = $datatype.replaceAll(':', '_'))
+#end
+
+<script type="text/javascript">
+    window.ss=new Object();
+    #if($project)
+        window.ss.uri=serverRoot +"/REST/scanners?format=json&modality=${modalityParam}";
+    #end
+    window.ss.local_values=new Array();
+    window.ss.custom = new Array();
+    window.ss.valueField="scanner";
+</script>
+<script type="text/javascript">
+    ## Push the current scanner name into the array.
+    ## Use the custom array to insure that the value is displayed whether we
+    ## are using local_values or all_values (see customizableSelectBox.js lines 54-93)
+    #set($currScannerName=$!item.getStringProperty("${datatype}/scanner"))
+
+    if ('#escapeAll("$!currScannerName")') {
+        window.ss.custom.push('#escapeAll("$!currScannerName")');
+    }
+</script>
+
+## Push other scanner names into the array.
+#foreach ($pValue in $scanners)
+    #if($pValue.get(0))
+    ## using individual <script> tags prevents a single error from breaking the whole thing
+    <script type="text/javascript">
+        ## Don't add the current scanner name since we added it above.
+            #if($pValue.get(0) != $item.getStringProperty("${datatype}/scanner"))
+            try {
+                window.ss.local_values.push({
+                    scanner: '#escapeAll("$!pValue.get(0)")'
+                });
+            }
+            catch(e){
+                console.warn(e);
+            }
+            #end
+    </script>
+    #end
+#end
+
+##<!-- datatype: '$!datatype' -->
+
+    <div style="margin-bottom: 6px;">
+        #xdatComboBox("${datatype}.scanner" $item "window.ss" $vr) &nbsp;
+        <a onclick="xmodal.message('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><i class="fa fa-question-circle" style="font-size: 16px;"></i></a>
+    </div>
+    <div>
+        Manufacturer: #if($!item.getStringProperty("${datatype}/scanner/manufacturer")) #escapeAll($item.getStringProperty("${datatype}/scanner/manufacturer")) #else (undefined) #end <br>
+        Model: #if($item.getStringProperty("${datatype}/scanner/model")) #escapeAll($item.getStringProperty("${datatype}/scanner/model")) #else (undefined) #end
+    </div>
+
+#define ($scannerInfo)
+    #set ($scannerTmp = "")
+    #if($item.getStringProperty("${datatype}/scanner/manufacturer"))
+        $scannerTmp.concat(" ").concat($!item.getStringProperty("${datatype}/scanner/manufacturer"))
+    #end
+    #if($item.getStringProperty("${datatype}/scanner/model"))
+        $scannerTmp.concat(" ").concat($!item.getStringProperty("${datatype}/scanner/model"))
+    #end
+    #if($item.getStringProperty("${datatype}/scanner"))
+        $scannerTmp.concat(" ").concat($!item.getStringProperty("${datatype}/scanner"))
+    #end
+    #if ($scannerTmp != "")
+    &nbsp; (#escapeCleanHTML("$scannerTmp"))
+    #end
+#end
+
+$!scannerInfo.trim()
+
+<!-- END /xnat-templates/screens/xnat_imageSessionData/upload/scanners.vm -->

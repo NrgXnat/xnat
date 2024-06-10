@@ -1,0 +1,228 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#macro( propValueRow $name $prop )
+  #if ( $!item.getProperty("$prop") )
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getProperty("$prop")</td></tr>
+	#end
+#end
+
+<!-- TODO: better presentation -->
+#macro( propBoolValueRow $name $prop )
+	#if ($!item.getBooleanProperty("$prop"))
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getBooleanProperty("$prop")</td></tr>
+	#end
+#end
+
+#macro(tableHeaderNCols $header $subheads)
+<tr>
+	<th>$header</th>
+	#foreach($subhead in $subheads)
+	<th>$subhead</th>
+	#end
+</tr>
+#end
+
+#macro(tableValueRow $name $field)
+<tr>
+  <td class="table_attr_name">$name</td>
+	<td class="attr_value">$!item.getProperty($field)</td>
+</tr>
+#end
+
+<style type="text/css">
+td.attr_name { <!-- in imitation of xdat.css (th) -->
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	border-top-style: none;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 13px;
+	margin: 0px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.table_attr_name { <!-- much like attr_name, but not bold -->
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	border-top-style: none;
+	font-size: 11px;
+	line-height: 13px;
+	margin: 0px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.attr_value { <!-- in imitation of xdat.css (td) -->
+	font-family: verdana,geneva,helvetica;
+	font-size: 10px;
+	line-height: 14px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.subtable {
+	valign: top;
+}
+</style>
+
+$page.setTitle("Unified Parkinson's Disease Rating Scale: $!item.getProperty('xnat_a:updrs3Data.ID')")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+<br>
+
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+
+#if (!$project)
+#set($project=$item.getProperty("project"))
+#end
+
+#set($subject = $om.getSubjectData())
+#set($part_id = $subject.getStringProperty("ID"))
+
+<div class="edit_title">
+UPDRS3
+#if($project)
+	$!om.getIdentifier($project) <!-- TODO: this is a mess -->
+#else
+	$!item.getProperty("xnat_a:updrs3Data.ID")
+#end
+</div>
+
+<table width="100%">  <!-- FIXME: ugh, nested tables. -->
+	<tr>
+		<td valign="top"><table>
+			#propValueRow( "Date" "xnat_a:updrs3Data/date" )
+			#propValueRow( "Time" "xnat_a:updrs3Data/time" )
+			#propValueRow( "Visit ID" "xnat_a:updrs3Data/visit_id" )
+		</table></td>
+		<td valign="top"><table>
+			<tr>
+				<td class="attr_name">$displayManager.getSingularDisplayNameForSubject():</td>
+				<td>
+					<A CLASS=b HREF="$link.setAction('DisplayItemAction').addPathInfo('search_element','xnat:subjectData').addPathInfo('search_field','xnat:subjectData.ID').addPathInfo('search_value',$part_id).addPathInfo('popup','$!popup').addPathInfo('project','$!project')">
+					#if($project)
+						$!subject.getIdentifier($project)
+					#else
+						$!subject.getId()
+					#end
+					</A>
+				</td>
+			</tr>
+			#if($!subject.getGenderText())
+			<tr>
+				<td class="attr_name">Gender:</td>
+				<td class="attr_value">$subject.getGenderText()</td>
+			</tr>
+			#end
+			#propValueRow("Age" "xnat_a:updrs3Data/age")
+			#foreach($field in $subject.getAddid())
+			<tr>
+        <td class="attr_name">$field.getName():</td>
+				<td class="attr_value">
+					<A CLASS=b HREF="$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value",$part_id).addPathInfo("popup","$!popup").addPathInfo("project","$!project")">$field.getAddid()</A>
+				</td>
+			</tr>
+			#end
+		</table></td>
+		<td valign="top">
+#parse("/screens/xnat_experimentData_shareDisplay.vm")
+		</td>
+		<td valign="top">
+#parse($turbineUtils.getTemplateName("actions", $om.getXSIType(), $project))
+		</td>
+	</tr>
+</table>
+
+#if ($!item.getStringProperty("note"))
+<table>
+  <tr>
+		<td valign="top" class="attr_name">Notes:</td>
+		<td valign="top" class="attr_value">$!item.getStringProperty("note")</td>
+	</tr>
+</table>
+#end
+
+<br>
+
+<table>
+	#tableValueRow("Date" "xnat_a:updrs3Data/date")
+	#tableValueRow("Time" "xnat_a:updrs3Data/time")
+	#tableValueRow("Visit ID" "xnat_a:updrs3Data/visit_id")
+	#tableValueRow("Age" "xnat_a:updrs3Data/age")
+	#propBoolValueRow("Problem with ${displayManager.getSingularDisplayNameForImageSession()}?" "xnat_a:updrs3Data/problem")
+	#propBoolValueRow("In Scanner?" "xnat_a:updrs3Data/inScanner")
+	<tr><th>Clicker</th></tr>
+	#tableValueRow("Right" "xnat_a:updrs3Data/clicker/right")
+	#tableValueRow("Left" "xnat_a:updrs3Data/clicker/left")
+	#tableValueRow("Interval" "xnat_a:updrs3Data/clicker/interval")
+	<tr><th>Resting Tremors</th></tr>
+	#tableValueRow("Face" "xnat_a:updrs3Data/tremorRest/face")
+	#tableValueRow("Right Upper Extremities" "xnat_a:updrs3Data/tremorRest/rue")
+	#tableValueRow("Left Upper Extremities" "xnat_a:updrs3Data/tremorRest/lue")
+	#tableValueRow("Right Lower Extremities" "xnat_a:updrs3Data/tremorRest/rle")
+	#tableValueRow("Left Lower Extremities" "xnat_a:updrs3Data/tremorRest/lle")
+	<tr><th>Rigidity</th></tr>
+	#tableValueRow("Neck" "xnat_a:updrs3Data/rigidity/neck")
+	#tableValueRow("Right Upper Extremities" "xnat_a:updrs3Data/rigidity/rue")
+	#tableValueRow("Left Upper Extremities" "xnat_a:updrs3Data/rigidity/lue")
+	#tableValueRow("Right Lower Extremities" "xnat_a:updrs3Data/rigidity/rle")
+	#tableValueRow("Left Lower Extremities" "xnat_a:updrs3Data/rigidity/lle")
+	<tr><th>Hand Movements/Grip</th></tr>
+	#tableValueRow("Right Hand" "xnat_a:updrs3Data/handMovementsGrip/right")
+	#tableValueRow("Left Hand" "xnat_a:updrs3Data/handMovementsGrip/left")
+	<tr><th></th></tr>
+	#tableValueRow("Facial Expression" "xnat_a:updrs3Data/facialExpression")
+	#tableValueRow("Gait" "xnat_a:updrs3Data/gait")
+	#tableValueRow("Speech" "xnat_a:updrs3Data/speech")
+	#tableValueRow("Writing" "xnat_a:updrs3Data/writing")
+	#tableValueRow("Arising from Chair" "xnat_a:updrs3Data/ariseFromChair")
+	<tr><th>Action/Postural Tremor</th></tr>
+	#tableValueRow("Right" "xnat_a:updrs3Data/actionPosturalTremor/right")
+	#tableValueRow("Left" "xnat_a:updrs3Data/actionPosturalTremor/left")
+	<tr><th>Hands RAM (Pronation-Supination)</tr></th>
+	#tableValueRow("Right" "xnat_a:updrs3Data/handsRAM/right")
+	#tableValueRow("Left" "xnat_a:updrs3Data/handsRAM/left")
+	<tr><th>Finger Tap</th></tr>
+	#tableValueRow("Right" "xnat_a:updrs3Data/fingerTaps/right")
+	#tableValueRow("Left" "xnat_a:updrs3Data/fingerTaps/left")
+	<tr><th></th></tr>
+	#tableValueRow("Posture" "xnat_a:updrs3Data/posture")
+	#tableValueRow("Postural Stability" "xnat_a:updrs3Data/posturalStability")
+	<tr><th>Foot Taps (Leg Agility)</th></tr>
+	#tableValueRow("Right" "xnat_a:updrs3Data/footTaps/right")
+	#tableValueRow("Left" "xnat_a:updrs3Data/footTaps/left")
+	<tr><th></th></th>
+	#tableValueRow("Body Bradykinesia/Hypokinesia" "xnat_a:updrs3Data/bodyBradykinesiaHypokinesia")
+</table>
+
+
+#set($xnat_experimentData_field_4_NUM_ROWS=$item.getChildItems("xnat_a:updrs3Data/fields/field").size() - 1)
+#if($xnat_experimentData_field_4_NUM_ROWS>=0)
+	#foreach($xnat_experimentData_field_4_COUNTER in [0..$xnat_experimentData_field_4_NUM_ROWS])
+<!-- BEGIN xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_4_COUNTER] -->
+		<TABLE>
+			<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_4_COUNTER]</font></TH></TR>
+			<TR>
+				<TD align="left" valign="top">
+					<TABLE>
+						<TR><TD>field</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_4_COUNTER]/field")</TD></TR>
+						<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_4_COUNTER]/name")</TD></TR>
+					</TABLE>
+				</TD>
+			</TR>
+		</TABLE>
+<!-- END xnat_a:updrs3Data/fields/field[$xnat_experimentData_field_4_COUNTER] -->
+	#end
+#end
+
+<BR>#parse("/screens/ReportProjectSpecificFields.vm")

@@ -1,0 +1,30 @@
+<form name="form1" method="post" action="$link.setAction("ManageProjectPermissions")"> 
+<INPUT type="hidden" name="project" value="$om.getId()"/>
+<TABLE>
+#foreach($uArray in $users)
+ #if($uArray.get(3)==1)
+   <TR><TD colspan="5"><b>$uArray.get(1)</b> ($uArray.get(0)) : $uArray.get(2)</TD></TR>
+   <TR><TH></TH><TH>Create</TH><TH>Read</TH><TH>Edit</TH><TH>Delete</TH></TR>
+   #foreach($es in $uArray.get(5))
+   <TR><TD>$protocols.get($es.get(0))</TD>
+   <TD><INPUT TYPE="checkbox" name="$uArray.get(0)_$es.get(0)_c" #if($es.get(1)==1)CHECKED#end/></TD>
+   <TD><INPUT TYPE="checkbox" name="$uArray.get(0)_$es.get(0)_r" #if($es.get(2)==1)CHECKED#end/></TD>
+   <TD><INPUT TYPE="checkbox" name="$uArray.get(0)_$es.get(0)_e" #if($es.get(3)==1)CHECKED#end/></TD>
+   <TD><INPUT TYPE="checkbox" name="$uArray.get(0)_$es.get(0)_d" #if($es.get(4)==1)CHECKED#end/></TD>
+   <INPUT TYPE="hidden" name="$uArray.get(0)_$es.get(0)_id" VALUE="$!es.get(6)"/>
+   </TR>
+   #end
+   <TR><TH>&nbsp;</TH></TR>
+ #else 
+  #foreach($es in $uArray.get(5))
+   #if($es.get(1)==1)<INPUT TYPE="hidden" name="$uArray.get(0)_$es.get(0)_c" value="on"/>#end
+   #if($es.get(2)==1)<INPUT TYPE="hidden" name="$uArray.get(0)_$es.get(0)_r" value="on"/>#end
+   #if($es.get(3)==1)<INPUT TYPE="hidden" name="$uArray.get(0)_$es.get(0)_e" value="on"/>#end
+   #if($es.get(4)==1)<INPUT TYPE="hidden" name="$uArray.get(0)_$es.get(0)_d" value="on"/>#end
+   <INPUT TYPE="hidden" name="$uArray.get(0)_$es.get(0)_id" VALUE="$!es.get(6)"/>
+  #end
+ #end
+#end
+<TR><TH COLSPAN="5" align="right"><input type="submit" name="eventSubmit_doPerform" value="Submit" /></TH></TR>
+</TABLE>
+</FORM>

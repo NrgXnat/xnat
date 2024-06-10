@@ -1,0 +1,23 @@
+#set($exptCounts = $project.getExperimentCountByXSIType())
+
+#set($others = 0)
+#if ($project.getProtocolByDataType("xnat:subjectData").getName())
+<DIV class="containerItem">$!subject_count $project.getProtocolByDataType("xnat:subjectData").getName()</DIV>
+#else
+<DIV class="containerItem">$!subject_count xnat:subjectData</DIV>
+#end
+#foreach($key in $exptCounts.keySet())
+    #if ($project.getProtocolByDataType($key).getName())
+    <DIV class="containerItem">$exptCounts.get($key) $!project.getProtocolByDataType($key).getName()</DIV>
+    #else
+        #set($other=$other + $exptCounts.get($key))
+    #end
+#end
+#if($other == 0)
+<DIV class="containerItem" style="color:grey">$other Other Experiments</DIV>
+#end
+#if($canEditOrDeleteProject)
+<BR><A ID="button5" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","protocols").addPathInfo(
+    "search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo(
+    "search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Manage Custom Variables</A>
+#end

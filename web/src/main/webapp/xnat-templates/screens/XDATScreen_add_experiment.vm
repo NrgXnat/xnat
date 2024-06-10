@@ -1,0 +1,137 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.addAttribute("onLoad", "document.form1.destination.focus();")
+##<font face="$ui.sansSerifFonts" size="2">
+##<span class="ui_sansSerifFonts">
+
+<div id="add_experiment">
+
+    #if ($turbineUtils.GetPassedParameter("popup",$data))
+        #set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+    #else
+        #set ($popup = "false")
+    #end
+
+    #set ($projectDisplayName = $displayManager.getSingularDisplayNameForProject())
+    #set ($subjectDisplayName = $displayManager.getSingularDisplayNameForSubject())
+
+    <form id="form1" name="form1" method="post" action="$link.setAction("CreateExperiment")">
+
+        <input type="hidden" name="popup" value="$popup">
+
+        ## if we know the project AND subject...
+        #if($part_id && $project)
+
+            <p id="selected_project" class="selected">
+                <b class="label">$projectDisplayName: </b>
+                <span class="selected_label" title="$project"><b>$project</b></span>
+                <input type="hidden" id="project" name="project" value="$project">
+            </p>
+            <p id="selected_subject" class="selected">
+                <b class="label">$subjectDisplayName: </b>
+                <span class="selected_label" title="$part_id"><b></b></span>
+                <input type="hidden" id="part_id" name="part_id" value="$part_id">
+            </p>
+
+            <script type="text/javascript">
+                // REALLY stupid hack to get the subject LABEL
+                // HOW DO YOU GET THIS THROUGH VELOCITY?
+                (function(){
+                    var subject_id = '$part_id';
+                    jq.getJSON(serverRoot + '/data/archive/subjects/' + subject_id + '?format=json', function(obj){
+                        jq('#selected_subject').find('.selected_label b').text(obj.items[0]['data_fields']['label']);
+                    })
+                })();
+            </script>
+
+        ## if we ONLY know the project
+        #elseif($project)
+
+            <p id="selected_project" class="selected">
+                <b class="label">$projectDisplayName: </b>
+                <span class="selected_label" title="$project"><b>$project</b></span>
+                <input type="hidden" id="project" name="project" value="$project">
+            </p>
+
+            <p>
+                <b class="label">$subjectDisplayName: </b>
+                <select disabled id="part_id" name="part_id" data-placeholder="Select a Subject"></select>
+            </p>
+
+        ## if we don't know the project OR subject
+        #else
+
+            <p>
+                <span class="label">$projectDisplayName: </span>
+                <select disabled id="project" name="project" data-placeholder="Select a Project"></select>
+            </p>
+            <p>
+                <span class="label">$subjectDisplayName: </span>
+                <select disabled id="part_id" name="part_id" data-placeholder="Select a Subject"></select>
+            </p>
+
+        #end
+
+        <br>
+
+        <div id="expt_list">
+
+            <p class="label">
+                <b>What type of experiment are you entering?</b>
+                <br>
+                <i>(clicking anywhere in the experiment row will immediately create a new experiment)</i>
+            </p>
+
+            <div class="rows">
+
+                #if ( $data.Message )
+
+                    <div class="error">$data.message</div>
+
+                #end
+
+                <div id="expt_list_filter">
+                    <p><span class="label" style="display:inline;">Filter: </span>&nbsp;<input type="text" size="50" value="" placeholder="type here to filter the list below (press 'esc' to clear)"> &nbsp; <a id="filter_clear" class="btn2">clear</a> </p>
+                </div>
+
+                ## experiment types will be spawned here
+                <div id="expt-types">
+                    <div class="note waiting md">&nbsp; Loading experiment types...</div>
+                </div>
+
+            </div><!-- /rows -->
+
+        </div><!-- /expt_list -->
+
+        <input type="hidden" id="data_type" name="data_type" value="">
+        <br>
+        <input type="submit" name="eventSubmit_doSetup" value="Submit" style="display:none;visibility:hidden;">
+
+    </form>
+
+</div>
+<!-- /add_experiment -->
+
+<script src="$content.getURI('/scripts/xnat/app/addExperiment.js')"></script>
+<script>
+    XNAT.app.addExperiment.init('#expt-types');
+</script>
+
+<script type="text/javascript" src="$content.getURI('scripts/projectSubjectSelector.js')"></script>
+<script type="text/javascript">
+
+    window.context = {};
+
+    window.context.projectID = window.selectedProject = '$!project';
+    window.context.subjectID = window.selectedSubject = '$!part_id';
+
+    window.page = 'add_experiment';
+
+    jq.extend(true, XNAT.data.context, window.context);
+
+    XNAT.app.projectSubjectSelector(jq('#project'), jq('#part_id'), jq('input[name="eventSubmit_doSetup"]'), window.selectedProject, window.selectedSubject);
+
+    function verifyExptId(obj){
+        // empty function
+    }
+
+</script>

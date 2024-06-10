@@ -1,0 +1,223 @@
+
+<div class="advanced-search-fields autogen"><div class="search-group by-criteria"><h3><label>Search by Criteria <input type="checkbox" class="search-method by-criteria" value="by-criteria"></label></h3>
+<div class="search-item">
+<h5>image_session_ID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("IMAGE_SESSION_ID"))
+</div>
+<div class="search-item">
+<h5>note:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("NOTE"))
+</div>
+<div class="search-item">
+<h5>quality:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("QUALITY"))
+</div>
+<div class="search-item">
+<h5>condition:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("CONDITION"))
+</div>
+<div class="search-item">
+<h5>series_description:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SERIES_DESCRIPTION"))
+</div>
+<div class="search-item">
+<h5>documentation:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DOCUMENTATION"))
+</div>
+<div class="search-item">
+<h5>scanner:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SCANNER"))
+</div>
+<div class="search-item">
+<h5>manufacturer:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SCANNER_MANUFACTURER"))
+</div>
+<div class="search-item">
+<h5>model:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SCANNER_MODEL"))
+</div>
+<div class="search-item">
+<h5>modality:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("MODALITY"))
+</div>
+<div class="search-item">
+<h5>frames:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("FRAMES"))
+</div>
+<div class="search-item">
+<h5>operator:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("OPERATOR"))
+</div>
+<div class="search-item">
+<h5>startTime:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("STARTTIME"))
+</div>
+<div class="search-item">
+<h5>ID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ID"))
+</div>
+<div class="search-item">
+<h5>type:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("TYPE"))
+</div>
+<div class="search-item">
+<h5>UID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("UID"))
+</div>
+<div class="search-item">
+<h5>project:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PROJECT"))
+</div>
+<div class="search-item">
+<h5>Inserted:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("INSERT_DATE"))
+</div>
+<div class="search-item">
+<h5>Creator:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("INSERT_USER"))
+</div>
+<div class="search-item">
+<h5>units:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_VOXELRES_UNITS"))
+</div>
+<div class="search-item">
+<h5>x:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_VOXELRES_X"))
+</div>
+<div class="search-item">
+<h5>y:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_VOXELRES_Y"))
+</div>
+<div class="search-item">
+<h5>z:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_VOXELRES_Z"))
+</div>
+<div class="search-item">
+<h5>orientation:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_ORIENTATION"))
+</div>
+<div class="search-item">
+<h5>x:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_FOV_X"))
+</div>
+<div class="search-item">
+<h5>y:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_FOV_Y"))
+</div>
+<div class="search-item">
+<h5>intercept:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_RESCALE_INTERCEPT"))
+</div>
+<div class="search-item">
+<h5>slope:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_RESCALE_SLOPE"))
+</div>
+<div class="search-item">
+<h5>kvp:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_KVP"))
+</div>
+<div class="search-item">
+<h5>acquisitionNumber:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_ACQUISITIONNUMBER"))
+</div>
+<div class="search-item">
+<h5>imageType:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_IMAGETYPE"))
+</div>
+<div class="search-item">
+<h5>options:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_OPTIONS"))
+</div>
+<div class="search-item">
+<h5>collectionDiameter:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_COLLECTIONDIAMETER"))
+</div>
+<div class="search-item">
+<h5>distanceSourceToDetector:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_DISTANCESOURCETODETECTOR"))
+</div>
+<div class="search-item">
+<h5>distanceSourceToPatient:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_DISTANCESOURCETOPATIENT"))
+</div>
+<div class="search-item">
+<h5>gantryTilt:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_GANTRYTILT"))
+</div>
+<div class="search-item">
+<h5>tableHeight:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_TABLEHEIGHT"))
+</div>
+<div class="search-item">
+<h5>rotationDirection:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_ROTATIONDIRECTION"))
+</div>
+<div class="search-item">
+<h5>exposureTime:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_EXPOSURETIME"))
+</div>
+<div class="search-item">
+<h5>xrayTubeCurrent:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_XRAYTUBECURRENT"))
+</div>
+<div class="search-item">
+<h5>exposure:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_EXPOSURE"))
+</div>
+<div class="search-item">
+<h5>filter:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_FILTER"))
+</div>
+<div class="search-item">
+<h5>generatorPower:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_GENERATORPOWER"))
+</div>
+<div class="search-item">
+<h5>convolutionKernel:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_CONVOLUTIONKERNEL"))
+</div>
+<div class="search-item">
+<h5>single:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_COLLIMATIONWIDTH_SINGLE"))
+</div>
+<div class="search-item">
+<h5>total:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_COLLIMATIONWIDTH_TOTAL"))
+</div>
+<div class="search-item">
+<h5>tableSpeed:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_TABLESPEED"))
+</div>
+<div class="search-item">
+<h5>tableFeedPerRotation:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_TABLEFEEDPERROTATION"))
+</div>
+<div class="search-item">
+<h5>pitchFactor:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_PITCHFACTOR"))
+</div>
+<div class="search-item">
+<h5>modulation:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_ESTIMATEDDOSESAVING_MODULATION"))
+</div>
+<div class="search-item">
+<h5>estimatedDoseSaving:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_ESTIMATEDDOSESAVING"))
+</div>
+<div class="search-item">
+<h5>ctDIvol:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_CTDIVOL"))
+</div>
+<div class="search-item">
+<h5>derivation:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PARAMETERS_DERIVATION"))
+</div>
+<div class="search-item">
+<h5>dcmValidation:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DCMVALIDATION"))
+</div>
+<div class="search-item">
+<h5>status:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DCMVALIDATION_STATUS"))
+</div>
+<div class="clear"></div></div></div>

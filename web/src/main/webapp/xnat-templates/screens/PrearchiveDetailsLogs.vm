@@ -1,0 +1,11 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/ScreenOnly.vm")
+
+<table class="xnat-table alt1 rows-only">
+#foreach($row in $table.toArrayListOfLists())
+	<tr>
+		<td>$turbineUtils.formatDateTime($!row.get(1))</td>
+		<td>$!row.get(2)</td>
+	</tr>
+#end
+</table>

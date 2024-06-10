@@ -1,0 +1,16 @@
+implementations:
+  localdb:
+    default-name-key: authProviders.database.defaults.name
+    visible-by-default: true
+    implemenentation: org.nrg.xnat.security.provider.XnatDatabaseAuthenticationProvider
+
+  token:
+    default-name-key: authProviders.token.defaults.name
+    visible-by-default: false
+    implementation: org.nrg.xnat.security.alias.AliasTokenAuthenticationProvider
+
+  # Referencing the LDAP auth provider requires that the XNAT LDAP Authentication Provider plugin is installed.
+  ldap:
+      default-name-key: authProviders.ldap.defaults.name
+      visible-by-default: true
+      implementation: org.nrg.xnat.auth.ldap.provider.XnatLdapAuthenticationProvider

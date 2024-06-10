@@ -1,0 +1,24 @@
+
+#foreach($item in $newsEntries)
+<DIV class="containerItem">
+
+#if($item.getProperty("description"))
+<A name="LINKNEWS_$item.getProperty("xdat_newsEntry_id")" HREF="#LINKNEWS_$item.getProperty("xdat_newsEntry_id")" onClick=" return blocking('NEWS_$item.getProperty("xdat_newsEntry_id")');">			<img ID="IMGNEWS_$item.getProperty("xdat_newsEntry_id")" src="$content.getURI("images/plus.jpg")" border=0>
+#if($item.getDateProperty("date"))<DIV class="newsDate">$!turbineUtils.formatDate($item.getDateProperty("date")):&nbsp;</DIV>#end $item.getStringProperty("title") </A>
+#elseif($item.getStringProperty("link"))
+#if($item.getDateProperty("date"))<DIV class="newsDate">$!turbineUtils.formatDate($item.getDateProperty("date")):&nbsp;</DIV>#end
+<A target="_blank" href="$item.getStringProperty("link")">$item.getStringProperty("title")</A>
+#else
+#if($item.getDateProperty("date"))<DIV class="newsDate">$!turbineUtils.formatDate($item.getDateProperty("date")):&nbsp;</DIV>#end $item.getStringProperty("title")
+#end
+
+#if($item.getProperty("description"))
+<SPAN ID="spanNEWS_$item.getProperty("xdat_newsEntry_id")" style="position:relative; display:none;">
+$item.getStringProperty("description")
+#if($item.getStringProperty("link"))
+<A target="_blank" href="$item.getStringProperty("link")">... more</A>
+#end
+</SPAN>
+#end
+</DIV>
+#end

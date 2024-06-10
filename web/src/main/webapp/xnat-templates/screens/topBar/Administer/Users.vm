@@ -1,0 +1,3 @@
+<!-- Sequence: 30 -->
+
+<li><a href="${SITE_ROOT}/app/template/Page.vm?view=admin/users">Users</a></li>

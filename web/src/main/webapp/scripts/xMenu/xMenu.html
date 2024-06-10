@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<!--
+  ~ web: xMenu.html
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<!--[if lt IE 7 ]> <html class="ie ie6"> <![endif]-->
+<!--[if IE 7 ]>    <html class="ie ie7"> <![endif]-->
+<!--[if IE 8 ]>    <html class="ie ie8"> <![endif]-->
+<!--[if IE 9 ]>    <html class="ie ie9"> <![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en">
+<!--<![endif]-->
+<head>
+    <meta charset="UTF-8">
+    <title>xMenu</title>
+    <style type="text/css">
+        body { display: block !important ; margin: 0 ; padding: 0 ; font-family: Arial, Helvetica, sans-serif ; font-size: 12px ; position: relative ; }
+        #image_loader { position: absolute ; left: -9999px ; top: -9999px ; }
+        form.menu_demo { width: 800px ; margin: 100px auto ; }
+        div.menu_demo { margin: 60px ; padding: 60px ; text-align: left ; background: #fff ; border: 1px solid #d0d0d0 ; border-radius: 10px ; }
+        /*span.xmenu[data-menu-id='xmenu_demo'] { top: -13px ; }*/
+    </style>
+    <!-- jQuery -->
+    <script type="text/javascript" src="../lib/jquery/jquery-3.5.1.min.js"></script>
+    <!--<script type="text/javascript" src="jquery.utils.js"></script>-->
+    <!-- xMenu -->
+    <link type="text/css" rel="stylesheet" href="xMenu.css">
+    <script type="text/javascript" src="xMenu.js"></script>
+    <!-- page scripts -->
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $('#xmenu_demo_submit').click(function(){
+//                alert ($('option.selected'));
+                var selected = [];
+                $('option').each(function(){
+                    var name_val = {} ;
+                    if ($(this).hasClass('selected')){
+                        var select_name = $(this).closest('select').attr('name');
+                        var this_val = $(this).val();
+                        //name_val = {name:select_name.toString(),value:this_val.toString()} ;
+                        selected.push(this_val);
+                        //selected.push(name_val);
+                    }
+                });
+                //$('#xmenu_demo_form').submit();
+                alert (selected.join(', '));
+            });
+        });
+    </script>
+    <!-- custom CSS for menus on this page -->
+    <style type="text/css">
+        /* style for all menus - override inline on "xmenu_button" spans */
+        div.xmenu { }
+        div.xmenu > div { background: url('images/select-bg2.png') center right no-repeat ; border-color: #a4dcfb ; }
+        div.xmenu.open {  }
+        div.xmenu.open > div { background-image: url('images/select-bg-active2.png') ; border-color: #5db9f9 ; }
+        div.xmenu ul li a {  }
+        div.xmenu ul li a:hover { color: #000 ; background-color: #cbecff  ; }
+        div.xmenu ul li.image a { padding-left: 40px ; background-position: 8px -1px ; }
+        div.xmenu ul.open li:first-child { /* border-top-color: #5db9f9 ; */ }
+        div.xmenu ul.open li a.selected,
+        div.xmenu ul.open li a.selected:hover { background-color: #CBECFF ; }
+    </style>
+</head>
+<body>
+<div id="wrap">
+<form id="xmenu_demo_form" class="menu_demo" action="javascript:">
+
+    <div class="menu_demo">
+
+        <div id="xmenus">
+            <!--<button id="menu_maker">Convert Selects!</button>-->
+
+            <br>
+            <br>
+            <button id="turn_me_on">Enable the menu.</button>
+            <br>
+            <br>
+
+
+            <label for="disable_me">Select One:</label>
+            <select id="disable_me" name="disable_me" class="xmenu disabled">
+                <option value="option1" class="">Option 101</option>
+                <option value="option2" class="">Option 2 - Really long option description - it's totally possible.</option>
+                <option value="option3" class="default">Option 3</option>
+                <option value="option4" class="alert">Option 4</option>
+                <option value="option5" class="alert">Option 5</option>
+            </select>
+            <span class="button_content"></span>
+
+
+            <label for="demo">Select One:</label>
+            <select id="demo" name="demo" class="xmenu images">
+                <option value="option1" class="image" data-img="images/icon-subject-group.png">Option 1</option>
+                <option value="option2" class="image" data-img="images/icon-subject-group.png">Option 2 Option 2 Option 2 Option 2 Option 2 Option 2 Option 2 Option 2 Option 2 Option 2 </option>
+                <option value="option3" class="image" data-img="images/icon-subject-group.png">Option 3</option>
+                <option value="option4" class="image alert" data-img="images/icon-subject-group.png">Option 4</option>
+                <option value="option5" class="image alert" data-img="images/icon-subject-group.png">Option 5</option>
+                <option value="next_menu" class="image" data-img="images/icon-subject-group.png">Convert Next &lt;select&gt;</option>
+                <option value="option6" class="image" data-img="images/icon-subject-group.png">Option 6</option>
+                <option value="really_long" class="image" data-img="images/icon-subject-group.png">Really long option description - it's totally possible, and highly probable.</option>
+                <option value="option8" class="image" data-img="images/icon-subject-group.png">Option 8</option>
+                <option value="option9" class="image alert" data-img="images/icon-subject-group2.png">Option 4</option>
+                <option value="option10" class="image alert" data-img="images/icon-subject-group.png">Option 10</option>
+                <option value="option11" class="image alert" data-img="images/icon-subject-group.png">Option 11</option>
+                <option value="option12" class="image alert" data-img="images/icon-subject-group.png">Option 12</option>
+                <option value="option13" class="image alert" data-img="images/icon-subject-group3.png">Option 13</option>
+            </select>
+            <!-- for a custom button, put what what you want INSIDE the xmenu_button span -->
+            <!-- of course this can be an image -->
+            <span class="button_content custom_action" style="width:120px;height:24px;line-height:25px;padding-left:40px;background:transparent url('images/icon-subject-group.png') 8px -2px no-repeat;">
+                <!--<img src="../xModal/images/loading_anim.gif" alt="" style="position:relative;top:3px;vertical-align:text-bottom;">-->
+                <!--<img src="images/icon-subject-group.png" alt="" style="position:relative;top:3px;vertical-align:text-bottom;">-->
+                select&hellip;
+            </span>
+            <!-- add "custom_action" class for alternate behavior (not just selecting the option) -->
+
+
+
+
+
+            <style type="text/css">
+                .tool {
+                    border: 1px solid #F7F7F7 !important;
+                    border-radius: 6px 6px 6px 6px !important;
+                    cursor: pointer !important;
+                    float: left !important;
+                    height: 48px !important;
+                    margin-right: 8px !important;
+                    padding: 6px 6px 3px !important;
+                }
+                .tool label {
+                    color: #666666 !important;
+                    display: block !important;
+                    font-size: 12px !important;
+                    font-weight: bold !important;
+                    margin: 0 auto !important;
+                    text-align: center !important;
+                    white-space: nowrap !important;
+                }
+                .tool img {
+                    border: medium none !important;
+                    display: block !important;
+                    height: 32px !important;
+                    margin: 0 auto !important;
+                    width: 32px !important;
+                }
+                div.xmenu > div,
+                div.xmenu.open > div { background: #f0f0f0 ; }
+
+            </style>
+
+
+            <div class="tool">
+            <select class="xmenu" style="position:absolute;z-index:9999" size="15" id="group_selector">
+                <!--<option value="Select">Select</option><option value="">-------------</option>-->
+                <option class="group" value="&amp;xnat:subjectData.SUBJECT_LABEL==100307">Single Subject</option><option class="group" value="&amp;xnat:subjectData.SUBJECT_LABEL==100307|103414|105115|110411|111312|113619|115320|117122|118730|118932">10 Unrelated Subjects</option><option class="group" value="&amp;xnat:subjectData.SUBJECT_LABEL==100307|103414|105115|110411|111312|113619|115320|117122|118730|118932|123117|124422|125525|128632|129028|130013|133928|135932|136833|139637|149337|149539|151223|151627|156637|161731|192540|201111|209733|212318|214423|221319|298051|397760|414229|499566|528446|654754|672756|792564">40 Unrelated Subjects</option>
+            </select>
+
+            <span class="button_content static" style="background: url('images/tool-open-group.png') center 0 no-repeat;width:70px;height:48px;line-height:72px;vertical-align:bottom;text-align:center;">
+                Open Group
+            </span>
+
+                </div>
+
+
+
+
+
+
+
+            <script type="text/javascript">
+                $(document).ready(function(){
+
+                    var $body = $('body');
+
+                    // pass in selector of select(s) to make xMenus
+                    // using 'select.xmenu' will convert all <select> elements with "xmenu" class
+                    xMenuCreate('select.xmenu');
+
+                    var demo2_html = '' +
+                        '<label for="demo2">Select Another:</label>' +
+                        '<select id="demo2" name="demo2" class="xmenu">' +
+                        '   <option value="option1">Option 1</option>' +
+                        '   <option value="option2">Option 2</option>' +
+                        '   <option value="option3">Option 3</option>' +
+                        '   <option value="option4" class="image" data-img="images/icon-subject-group.png">Option 4</option>' +
+                        '   <option value="option5">Option 5</option>' +
+                        '</select>' +
+//                       <!-- for a custom button, put what what you want INSIDE the xmenu_button span -->
+//                       <!-- of course this can be an image -->
+//                       <!-- this menu will use default style: 120px width, 23px height, 24px line-height -->
+                        '<span class="button_content" style="">select&hellip;</span>' +
+                        '';
+
+
+                    $body.on('click','#demo_xmenu.open a',function(){
+
+                        xMenuSelect($(this));
+
+                        if (($(this).attr('data-value') === 'next_menu') && !($(this).hasClass('done'))){
+
+                            // add content from 'demo2_html' (defined above)
+                            $('#xmenus').append(demo2_html);
+                            // make an xmenu with that content
+                            xMenuCreate('#demo2');
+                            //$(this).closest('ul.xmenu').find('a').removeClass('done');
+                            $(this).addClass('done');
+                        }
+                        if ($(this).hasClass('alert')){
+                            alert($(this).text()+', value: '+$(this).attr('data-value'));
+                        }
+//                        if ($(this).hasClass('new_menu')){
+//                        }
+
+                    });
+
+                    // enable a disabled menu - remove 'disabled' class from <select> and xMenu <div>
+                    // and run xMenuCreate() function passing in id of <select> we're enabling
+                    $body.on('click','#turn_me_on',function(){
+                        $('#disable_me').removeClass('disabled');
+                        $('#disable_me_xmenu').removeClass('disabled');
+                        xMenuCreate($('#disable_me'));
+                    });
+
+                    $body.on('change','select.xmenu',function(){
+                        alert('Changed! Value: '+$(this).val());
+                    });
+
+                });
+            </script>
+
+            <!-- alternate we're not using now -->
+            <!--<span style="display:block;width:140px;height:24px;margin-left:10px;margin-right:10px;line-height:24px;vertical-align:middle">-->
+            <!--Choose an option.-->
+            <!--<img src="../xModal/images/loading_anim.gif" alt="">-->
+            <!--</span>-->
+
+            <br>
+            <br>
+
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            &nbsp;
+
+            <!-- a second menu -->
+
+
+
+
+        </div><!-- /#xmenus -->
+
+        <br>
+        <br>
+
+        <button id="xmenu_demo_submit">Be Done!</button>
+
+    </div>
+
+
+
+</form>
+</div>
+<div id="image_loader">
+    <img src="images/select-bg2.png" alt="">
+    <img src="images/select-bg-active2.png" alt="">
+</div>
+</body>
+</html>

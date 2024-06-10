@@ -1,0 +1,131 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<div class="tab-container" id="container1" VALIGN="top">
+  		 <table width="100%">
+  		  <tr>
+  		   <td>&nbsp;</td>
+  		  </tr>
+  		  <tr>
+  		   <td valign="top"><a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","super_search")" onmouseover="return true;">Standard Search</A></td>
+  		   <td valign="top"><H3>Super Search</H3></td>
+  		   <td valign="top"><a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","super_search")" onmouseover="return true;">Dynamic Super Search</A></td>
+  		  </tr>
+  		  <tr>
+  		   <td>&nbsp;</td>
+  		  </tr>
+  		 </table>
+  <h3><img src="$content.getURI("images/number_1.gif")" border=0> Select Data to Display</h3>
+  <table VALIGN="top">
+  	<tr>
+  		<td>
+  		<form name="searchForm" method="post" action="$link.setAction("DisplayMRSuperSearchAction")">
+  			<table><tr><td>
+  			<table>
+			  #set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplays())
+				  #foreach ($typeObject in $typeObjects)
+				  	<tr><td><B>$typeObject.getDescription()</B></td>
+				  	#if($typeObject.getVersions().get("brief") || $typeObject.getVersions().get("detailed"))
+				  		#if($typeObject.getVersions().get("brief"))
+				  		<td><input type="checkbox" name="super_$typeObject.getElementName()_brief" value="brief"/> Brief</td>
+				  		#else
+				  		<td><input type="checkbox" name="super_$typeObject.getElementName()_brief" value="brief" DISABLED/> Brief</td>
+				  		#end
+				  		#if($typeObject.getVersions().get("detailed"))
+				  		<td><input type="checkbox" name="super_$typeObject.getElementName()_detailed" value="detailed" onmouseup="document.searchForm.super_${typeObject.getElementName()}_brief.checked=!document.searchForm.super_${typeObject.getElementName()}_detailed.checked;"/> Detailed</td>
+				  		#else
+				  		<td><input type="checkbox" name="super_$typeObject.getElementName()_detailed" value="detailed" DISABLED/> Detailed</td>
+				  		#end
+				  		#else
+				  		<td><input type="checkbox" name="super_$typeObject.getElementName()_brief" value="brief" DISABLED/> Brief</td>
+				  								<td><input type="checkbox" name="super_$typeObject.getElementName()_detailed" value="detailed" onmouseup="document.searchForm.super_${typeObject.getElementName()}_brief.checked=!document.searchForm.super_${typeObject.getElementName()}_detailed.checked;"/> Detailed</td> 		
+				  #end		
+				  		
+				  	</tr>
+				  #end
+				  <tr><td colspan=4 align=right><input type="hidden" name="ELEMENT_0" value="xnat:mrSessionData"/></td></tr>
+			  </table>
+			  </td></tr></table>
+  		</td>
+  	</tr>
+  	<tr VALIGN="top">
+		<td>
+<table align="left">
+<tr>
+<td WIDTH="250">
+<h3><img src="$content.getURI("images/number_2.gif")" border=0> Enter $displayManager.getSingularDisplayNameForImageSession() or $displayManager.getSingularDisplayNameForSubject() IDs below. (Optional)</h3>
+(Ids can be separated with a comma or RTN)<BR>
+<input type="hidden" name="COMBO0_FIELDS" value="xnat:mrSessionData.SESSION_ID_in,xnat:subjectData.MAP_in,xnat:subjectData.LAB_ID_in"/>
+<TEXTAREA NAME="COMBO0" COLS=30 ROWS=20></TEXTAREA>
+</td>
+<td valign=top>
+<table align="left">
+  <tr>
+		<td colspan="2">
+			<h3><img src="$content.getURI("images/number_3.gif")" border=0> Enter Search Criteria</h3>
+		</td>
+  </tr>
+  <tr>
+			<td>$displayManager.getSingularDisplayNameForImageSession() ID</td>
+            <td class="cornflower_border">
+				#xdatSearchField($sessionElement $sessionElement.getDisplayField("SESSION_ID"))
+			</td>
+  </tr>
+  <tr>
+			<td>Investigator</td>
+      <td class="cornflower_border">
+				#xdatSearchField($sessionElement $sessionElement.getDisplayField("INVEST_ID"))
+			</td>
+  </tr>
+  <tr>
+			<td>$displayManager.getSingularDisplayNameForImageSession() Type</td>
+      <td class="cornflower_border">
+				#xdatSearchField($sessionElement $sessionElement.getDisplayField("TYPE"))
+			</td>
+  </tr>
+  <tr ID="ExptStartDate">
+			<td>Experiment Date</td>
+      <td class="cornflower_border">
+				#xdatSearchField($sessionElement $sessionElement.getDisplayField("DATE"))
+  			</td>
+</tr>
+<tr  ID="AgeExpt">
+		<td>Age at Experiment Date<//td>
+    <td class="cornflower_border">
+   		   		#xdatSearchField($sessionElement $sessionElement.getDisplayField("AGE"))
+  		  </td>
+</tr>	
+
+<tr  ID="BirthYear">
+		<td>Year of Birth</td>
+    <td class="cornflower_border">
+			#xdatSearchField($subjectElement $subjectElement.getDisplayField("DOB"))
+		</td>		
+</tr>
+	
+<tr>
+		<td>Map</td>
+    <td class="cornflower_border">
+			#xdatSearchField($subjectElement $subjectElement.getDisplayField("MAP"))
+		</td>
+</tr>
+<tr>
+		<td>Lab ID</td>
+    <td class="cornflower_border">
+			#xdatSearchField($subjectElement $subjectElement.getDisplayField("LAB_ID"))
+		</td>
+</tr>
+<tr>
+		<td colspan=2>
+		<input type="submit" name="eventSubmit_doPerform" value="Submit" />
+		</td>
+
+</tr>
+</table>
+<td>
+</tr>
+</table>
+	  		</td>
+	  		</form>
+	  	</tr>
+  	</tr>
+  </table>
+</div>

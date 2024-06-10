@@ -1,0 +1,7 @@
+
+<div class="clear"></div>
+<div id="xnat_power">
+    ## this content is rendered with javascript
+</div>
+
+## js moved to /scripts/xnat/init.js

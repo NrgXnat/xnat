@@ -1,0 +1,13 @@
+<!-- BEGIN /screens/xnat_subjectData/xnat_subjectData_edit_keyFields.vm -->
+<h3>Demographics</h3>
+<table>
+	#parse("/screens/xnat_subjectData/xnat_subjectData_edit_core_demographics.vm")
+	#parse($turbineUtils.getTemplateName("_edit_addtl_demographics","xnat:subjectData",$project))
+</table>
+## validation is now handled on XDATScreen_edit_xnat_subjectData.vm
+##		<script type="text/javascript">
+##		function validateKeyFields(){
+##		  return validateDemographics();
+##		}
+##		</script>
+<!-- END /screens/xnat_subjectData/xnat_subjectData_edit_keyFields.vm -->

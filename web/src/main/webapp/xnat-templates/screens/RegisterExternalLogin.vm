@@ -1,0 +1,161 @@
+#* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="parameter" type="java.lang.String" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="userInfo" type="org.nrg.xdat.exceptions.UsernameAuthMappingNotFoundException" *#
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("Login.vm")
+
+#set ($message = $data.getMessage())
+#set ($authMethod = $userInfo.authMethod.toUpperCase())
+
+<div class="clear" style="margin:2em 0;"></div>
+
+<div id="login_area">
+
+    <div id="login_welcome" class="login-box-container-flex">
+        <h2>Connect Your ${authMethod} Account With An XNAT Account</h2>
+        #if($turbineUtils.GetPassedParameter("par",$data))
+            <div class="note">
+                <strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.siteId account.
+            </div>
+        #end
+        <p>You've successfully logged in with your account <strong>${userInfo.username}</strong>, but this doesn't correspond with an existing $siteConfig.siteId user account. Please choose one of the options below to connect an $siteConfig.siteId account with your login. You will only have to do this once.</p>
+        <p><strong>Merge Your ${authMethod} account With:</strong></p>
+        <p>
+            <button class="btn btn-sm show-registration primary" title="Register a new account and merge your ${authMethod} account with it">A New $siteConfig.siteId Account</button>
+            <button class="btn btn-sm show-login" title="Log in to an existing account and merge your ${authMethod} account with it">An Existing $siteConfig.siteId Account</button>
+        </p>
+    </div>
+
+    <div id="register_box_container" class="login-box-container-fixed">
+        <h3><span>Register A New Account</span></h3>
+        <p>If you do not have an account on $siteConfig.siteId, register a new account with the form below and click <b>Submit</b>.</p>
+        <div class="clear" style="margin:2em 0;"></div>
+        <div id="register_box">
+            #if($message.startsWith("Registration error"))
+                <div class="warning" style="padding:15px;border-bottom:0">
+                    <strong>Note:</strong>
+                    <p style="margin:5px 3px 0;">$message</p>
+                </div>
+            #end
+
+            #set ($hidePassword = true)
+            #parse("/screens/register_box.vm")
+        </div>
+    </div>
+
+    <div id="login_box_container" class="hidden login-box-container-fixed">
+        <h3><span>Login To An Existing Account</span></h3>
+        <p>If you already have an account on $siteConfig.siteId, enter your login credentials below and click <b>Submit</b>.</p>
+        <div class="clear" style="margin:2em 0;"></div>
+
+        <div id="login_box">
+            #if($message.startsWith("Authentication failed"))
+                <div class="message">
+                    <strong>Note:</strong> $message
+                </div>
+            #end
+            <form method="post" action="$link.setAction("RegisterExternalLogin")" class="noHide friendlyForm validate" id="merge_form">
+                <input type="hidden" name="operation" value="merge">
+                <input type="hidden" name="authUsername" value="$userInfo.username">
+                <input type="hidden" name="authMethod" value="$userInfo.authMethod">
+                <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
+                <input type="hidden" name="authEmail" value="$userInfo.email">
+                <input type="hidden" name="authLastName" value="$userInfo.lastName">
+                <input type="hidden" name="authFirstName" value="$userInfo.firstName">
+                <p>
+                    <label for="username">User</label>
+                    <input type="text"
+                           id="username"
+                           name="username"
+                           title="User"
+                           class="validate onblur"
+                           data-validate="not-empty"
+                           data-message="Username cannot be blank.">
+                </p>
+                <p>
+                    <label for="password">Password</label>
+                    <input type="password"
+                           name="password"
+                           autocomplete="off"
+                           title="Password"
+                           class="validate onblur"
+                           data-validate="not-empty"
+                           data-message="Password cannot be blank.">
+                </p>
+
+                <p class="form-submit">
+                    <span id="register_forgot">
+                        <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
+                    </span>
+                    <button class="submit btn" id="loginButton" type="submit" name="login">Login</button>
+                </p>
+
+                #if($turbineUtils.GetPassedParameter("par",$data))
+                    #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
+                        #if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception" &&$key!="username" &&$key!="exception")
+                            #set ($parameter = $turbineUtils.GetPassedParameter($key, $data))
+                            <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!parameter)">
+                        #end
+                    #end
+                #end
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="clear"></div>
+
+<script>
+    function showRegisterBox(){
+        jq('.show-login').removeClass('primary');
+        jq('#login_box_container').addClass('hidden');
+        jq('.show-registration').addClass('primary');
+        jq('#register_box_container').removeClass('hidden');
+    }
+
+    function showLoginBox(){
+        jq('.show-registration').removeClass('primary');
+        jq('#register_box_container').addClass('hidden');
+        jq('.show-login').addClass('primary');
+        jq('#login_box_container').removeClass('hidden');
+    }
+
+    jq(document).on('click','.show-registration',function(){
+        showRegisterBox();
+    });
+
+    jq(document).on('click','.show-login',function(){
+        showLoginBox();
+    });
+
+    jq(document).ready(function(){
+        // if a(n) ${authMethod} user is using an email address as their username, truncate the front part of the email and remove any other interior puncutation before attempting to register it as an XNAT username
+        var registerUserLogin = document.getElementById('xdat:user.login'),
+            newLoginVal = registerUserLogin.value;
+
+        // find and replace punctuation allowed in email addresses
+        if (newLoginVal.match(/[.!#$%&'*\+-\/=?^_`{|}~\@]/g)) {
+            newLoginVal = newLoginVal.replace(/[.!#$%&'*\+-\/=?^_`{|}~\@]/g,'');
+            console.log('replaced email punctuation');
+        }
+
+        jq(registerUserLogin)
+                .val(newLoginVal)
+                .parents('#register_box')
+                .prepend(
+                    spawn(
+                        'div.message',
+                        'XNAT usernames cannot contain punctuation. You will still be able to log in using your ${authMethod} credentials upon account creation and verification.'
+        ));
+    })
+
+    #if ($message.startsWith("Authentication failed"))
+        // toggle login box if user attempted and failed to login and server returned an error message.
+        showLoginBox();
+    #else
+        showRegisterBox();
+    #end
+</script>

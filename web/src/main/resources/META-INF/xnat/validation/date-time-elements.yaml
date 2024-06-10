@@ -1,0 +1,8 @@
+dateFormats:
+    - MM/dd/yyyy
+    - MM-dd-yyyy
+    - yyyy-MM-dd
+    - yyyy/MM/dd
+
+dateTimeFormats:
+    - yyyy-MM-dd HH:mm:ss a

@@ -1,0 +1,32 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="typeObject" type="org.nrg.xdat.display.ElementDisplay" *#
+#* @vtlvariable name="typeObjects" type="java.util.List" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+<!-- BEGIN xdat-templates/navigations/SubMenu2.vm -->
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($userHelper = $data.getSession().getAttribute("userHelper"))
+#set ($typeObjects = $userHelper.getBrowseableElementDisplays() )
+#if ($typeObjects.size() > 0 && $user.checkRole("browse"))
+<table align="left" valign="top">
+    <tr>
+        <td>
+            <b style="text-decoration:underline">Browse</b><br>
+            <table align="left" valign="top">
+                #foreach ($typeObject in $typeObjects)
+                    <tr>
+                        <td valign="top"></td>
+                        <td align="left">
+                            <a href="$link.setAction("SearchAction").addPathInfo("element", $typeObject.getElementName()).addPathInfo("queryType","new")" onmouseover="return true;">$typeObject.getDescription()</a>
+                        </td>
+                    </tr>
+                #end
+            </table>
+            <br>
+        </td>
+    </tr>
+</table>
+<br>
+#end
+<!-- END xdat-templates/navigations/SubMenu2.vm -->

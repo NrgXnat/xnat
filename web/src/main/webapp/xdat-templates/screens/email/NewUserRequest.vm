@@ -1,0 +1,49 @@
+#* @vtlvariable name="pars" type="java.util.List" *#
+#* @vtlvariable name="server" type="java.lang.String" *#
+#* @vtlvariable name="system" type="java.lang.String" *#
+#* @vtlvariable name="username" type="java.lang.String" *#
+#* @vtlvariable name="comments" type="java.lang.String" *#
+#* @vtlvariable name="time" type="java.lang.String" *#
+#* @vtlvariable name="first" type="java.lang.String" *#
+#* @vtlvariable name="last" type="java.lang.String" *#
+#* @vtlvariable name="phone" type="java.lang.String" *#
+#* @vtlvariable name="lab" type="java.lang.String" *#
+#* @vtlvariable name="email" type="java.lang.String" *#
+<html>
+<head><title>New User Request</title></head>
+<body>
+    <table>
+        <thead>
+            <tr><th>New User Request</th></tr>
+        </thead>
+        <tbody>
+            <tr><th>Date:</th><td>$time</td></tr>
+            <tr><th>Site:</th><td>$system</td></tr>
+            <tr><th>Host:</th><td>$server</td></tr>
+            <tr><th>Username:</th><td>$username</td></tr>
+            <tr><th>First:</th><td>$first</td></tr>
+            <tr><th>Last:</th><td>$last</td></tr>
+            <tr><th>Phone:</th><td>$phone</td></tr>
+            <tr><th>Lab:</th><td>$lab</td></tr>
+            <tr><th>Email:</th><td>$email</td></tr>
+        </tbody>
+    </table>
+
+    <p>This account has been created but will be disabled until you enable the account. You must log in before enabling the account.</p>
+
+    #if($pars && $pars.size() > 0)
+    <p>The account has open project access requests for the following projects:</p>
+
+    <ul>
+        #foreach($par in $pars)
+            <li>$!par</li>
+        #end
+    </ul>
+    #end
+
+    <p><a href="$server/app/action/DisplayItemAction/search_value/$username/search_element/xdat:user/search_field/xdat:user.login">Review and Enable</a></p>
+
+    <p><b>User Comments:</b> $comments<br/>
+    $time, $username, $first, $last, $phone, $lab, $email</p>
+</body>
+</html>

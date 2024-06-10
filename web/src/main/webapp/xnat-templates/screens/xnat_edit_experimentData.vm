@@ -1,0 +1,9 @@
+	#parse("/screens/LoadProjectsJS.vm")
+	<input type="hidden" name="$!item.getXSIType()/ID" id="$!item.getXSIType()/ID" value="$!item.getProperty("ID")"/>
+	<hr>
+		   			#parse("screens/ProjectSelector.vm")
+<HR>
+<script type="text/javascript">
+var elementName="$!item.getXSIType()";
+</script>
+		<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/xnat_edit_experimentData.js')"></SCRIPT>

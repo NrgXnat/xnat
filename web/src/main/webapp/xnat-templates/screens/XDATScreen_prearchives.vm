@@ -1,0 +1,73 @@
+##
+## xnat-web: src/main/webapp/xnat-templates/screens/XDATScreen_prearchives.vm
+## XNAT http://www.xnat.org
+## Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
+## All Rights Reserved
+##
+## Released under the Simplified BSD.
+##
+
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+###set ($pageCSS = "style/prearchives.css")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<DIV id="error-message" class="error">$data.message</DIV><br>
+#end
+
+<BR>
+
+<script type="text/javascript">
+	window.XNAT.app.prearchive = {};
+	window.XNAT.app.prearchive.project="$!project";
+	window.XNAT.app.prearchive.hideArchiveBtn = (!$turbineUtils.isSiteAdmin($user) && $siteConfig.uiPrearchiveHideArchiveBtn);
+</script>
+
+<br>
+<div id="prearchive_table"></div>
+<div id="progress-bar"></div>
+<div id="col_table"></div>
+
+<br>
+<div id="direct-archive-table" class="data-table-wrapper clean" style="display: none"></div>
+<link rel="stylesheet" type="text/css" href="$content.getURI('scripts/xnat/app/scanTable/scanTable.css')"/>
+<script type="text/javascript" src="$content.getURI('scripts/prearchive/directArchive.js')"></script>
+
+#if($turbineUtils.isSiteAdmin($user) || $siteConfig.allowNonAdminsToClaimUnassignedSessions)
+<br>
+<h3 class="data-table-title">Find my study</h3><br>
+<div>If you do not see your data in the prearchive, you may have uploaded it without associating it with a project. If you want to find your data and move it to the appropriate project, please enter the Patient Name, Patient ID, or Study Date in the fields below and click the "Find" button:</div>
+<form  method="post" action="$link.setAction("FindStudy")">
+	<table>
+    <tr><td>Patient Name:</td>
+		<td><input type="text" name="patientName"></td></tr>
+	<tr><td>Patient ID:</td>
+		<td><input type="text" name="patientID"></td></tr>
+    <tr><td>Study Date:</td>
+        <td><span id="upload-datepicker" class="single us today" data-value="" data-validate="onblur" data-input-id="studyDate" data-input-name="studyDate"></span>
+    <script type="text/javascript">
+        jQuery('#upload-datepicker').data('value',XNAT.data.todaysDate.us);
+        XNAT.app.datePicker.init(jQuery('#upload-datepicker'))
+    </script></td></tr>
+    <tr><td><input type="submit" value="Find"></td></tr>
+    </table>
+</form>
+#end
+<div id="prearcs" class="prearcs"></div>
+<div id="serverRoot" title="$content.getURI('')"></div>
+<div id="project" title="$!project"></div>
+<div id="role" title="$!role"></div>
+<br>
+
+<script type="text/javascript" src="$content.getURI('scripts/qooxdoo/prearchiveui/build/script/prearchiveui.js')"></script>
+
+<div id="match-op" class="match-op"></div>
+
+
+##<!-- <script type="text/javascript" src="$content.getURI('scripts/xstypes.js')"></script> -->
+##<!-- <script type="text/javascript" src="$content.getURI('scripts/HtmlAlert.js')"></script> -->
+##<!-- <script type="text/javascript" src="$content.getURI('scripts/inbox.js')"></script> -->
+##<!-- <script type="text/javascript" src="$content.getURI('scripts/prearc.js')"></script> -->

@@ -1,0 +1,962 @@
+<script type="text/javascript">
+//subject CODE
+var subjectCount=0;
+var subjects=new Array();
+
+
+function xnat_subjectData(){
+  this.id ="";
+  this.project ="";
+  
+  this.pps = new Array();
+  this.addIDs = new Array();
+  
+  this.demographics = null;
+  
+  function populateFromDOM(dom){
+    var atts= dom.attributes;
+    var subjectId = atts.getNamedItem("ID").value;
+    if (subjectId)
+    {
+       this.id=subjectId;
+    }
+    
+    var projId = atts.getNamedItem("project").value;
+    if (projId)
+    {
+       this.project=projId;
+    }
+    
+    var projects= dom.getElementsByTagName("projects");
+    if (projects.length>0){
+       for (var x=0;x<projects[0].getElementsByTagName("project").length;x++)
+       {
+         var projectDOM = projects[0].getElementsByTagName("project")[x];
+         if (projectDOM!=undefined){
+           var ppObj = new xnat_projectParticipant();
+           ppObj.populateFromDOM(projectDOM);
+           this.pps.push(ppObj);
+         }
+       }
+    }
+    
+    var adds= dom.getElementsByTagName("addID");
+    if (adds.length>0){
+       for (var x=0;x<adds.length;x++)
+       {
+         var addidDOM = adds[x];
+         if (addidDOM!=undefined){
+          var addidObj = new xnat_subjectData_addId();
+          addidObj.populateFromDOM(addidDOM);
+          this.addIDs.push(ppObj);
+         }
+       }
+    }
+    
+    var demos= dom.getElementsByTagName("demographics");
+    if (demos.length>0){
+      this.demographics = new xnat_demographicData();
+      this.demographics.populateFromDOM(demos[0]);
+    }
+  }
+  
+  function identifierByProject(proj){
+    for(var c=0;c<this.pps.length;c++)
+    {
+      if (this.pps[c].project==proj){
+        return this.pps[c].identifier;
+      }
+    }
+    
+    return "";
+  }
+  
+  this.identifierByProject=identifierByProject;
+  this.populateFromDOM=populateFromDOM;
+}
+  
+
+function xnat_subjectData_addId(){
+  this.name ="";
+  this.addid ="";
+    
+  function populateFromDOM(dom){
+    var atts= dom.attributes;
+    var id = atts.getNamedItem("name").value;
+    if (id)
+    {
+       this.name=id;
+    }
+    
+    this.addid=dom.firstChild.nodeValue;
+  }
+  this.populateFromDOM=populateFromDOM;
+}
+
+function xnat_projectParticipant(){
+  this.identifier ="";
+  this.project ="";
+    
+  function populateFromDOM(dom){
+    var atts= dom.attributes;
+    var id = atts.getNamedItem("identifier").value;
+    if (id)
+    {
+       this.identifier=id;
+    }
+    
+    this.project=dom.firstChild.nodeValue;
+  }
+  this.populateFromDOM=populateFromDOM;
+}
+
+function xnat_demographicData(){
+  this.dob= "";
+  this.yob= "";
+  this.gender= "";
+  this.handedness= "";
+  this.education= "";
+  this.race= "";
+  this.ethnicity= "";
+  this.ses= "";
+  this.height= "";
+  this.weight= "";
+  this.gestational_age= "";
+  this.post_menstrual_age= "";
+  this.birth_weight= "";
+    
+    
+  function populateFromDOM(dom){
+    if(dom.getElementsByTagName("dob").length>0)
+    {
+      this.dob=getTextValue(dom.getElementsByTagName("dob")[0]);
+    }
+    if(dom.getElementsByTagName("yob").length>0)
+    {
+      this.yob=getTextValue(dom.getElementsByTagName("yob")[0]);
+    }
+    
+    if(dom.getElementsByTagName("gender").length>0)
+    {
+      this.gender=getTextValue(dom.getElementsByTagName("gender")[0]);
+    }
+    
+    if(dom.getElementsByTagName("handedness").length>0)
+    {
+      this.handedness=getTextValue(dom.getElementsByTagName("handedness")[0]);
+    }
+    
+    if(dom.getElementsByTagName("education").length>0)
+    {
+      this.education=getTextValue(dom.getElementsByTagName("education")[0]);
+    }
+    
+    if(dom.getElementsByTagName("race").length>0)
+    {
+      this.race=getTextValue(dom.getElementsByTagName("race")[0]);
+    }
+        
+    if(dom.getElementsByTagName("ethnicity").length>0)
+    {
+      this.ethnicity=getTextValue(dom.getElementsByTagName("ethnicity")[0]);
+    }
+    if(dom.getElementsByTagName("ses").length>0)
+    {
+      this.ses=getTextValue(dom.getElementsByTagName("ses")[0]);
+    }
+    if(dom.getElementsByTagName("height").length>0)
+    {
+      this.height=getTextValue(dom.getElementsByTagName("height")[0]);
+    }
+    if(dom.getElementsByTagName("weight").length>0)
+    {
+      this.weight=getTextValue(dom.getElementsByTagName("weight")[0]);
+    }
+    if(dom.getElementsByTagName("gestational_age").length>0)
+    {
+      this.gestational_age=getTextValue(dom.getElementsByTagName("gestational_age")[0]);
+    }
+    if(dom.getElementsByTagName("post_menstrual_age").length>0)
+    {
+      this.post_menstrual_age=getTextValue(dom.getElementsByTagName("post_menstrual_age")[0]);
+    }
+    if(dom.getElementsByTagName("birth_weight").length>0)
+    {
+      this.birth_weight=getTextValue(dom.getElementsByTagName("birth_weight")[0]);
+    }
+  }
+  this.populateFromDOM=populateFromDOM;
+}
+
+function getTextValue(dom)
+{
+   return dom.firstChild.nodeValue;
+}
+
+function matchSubject(subject)
+{
+	   var match=subjects[subject];
+
+   var matchesDIV = document.getElementById("subject_id");
+   matchesDIV.value=match.id;
+   
+   var smTableBody = document.getElementById("subject_match_table");
+   
+   while (smTableBody.firstChild) {
+     smTableBody.removeChild(smTableBody.firstChild);
+   }
+   
+   var tr1 = document.createElement("tr");
+   var th1 = document.createElement("th");
+   var td1 = document.createElement("td");
+   th1.innerHTML="ID";
+   td1.innerHTML=match.id;
+   tr1.appendChild(th1);
+   tr1.appendChild(td1);
+   smTableBody.appendChild(tr1);
+   
+   for(var i=0;i<match.pps.length;i++){
+    tr1 = document.createElement("tr");
+    th1 = document.createElement("th");
+    td1 = document.createElement("td");
+    th1.innerHTML=match.pps[i].project;
+    td1.innerHTML=match.pps[i].identifier;
+    tr1.appendChild(th1);
+    tr1.appendChild(td1);
+    smTableBody.appendChild(tr1);
+   }
+    tr1 = document.createElement("tr");
+    th1 = document.createElement("th");
+    td1 = document.createElement("td");
+    th1.innerHTML="Gender";
+    td1.innerHTML=match.demographics.gender;
+    tr1.appendChild(th1);
+    tr1.appendChild(td1);
+    smTableBody.appendChild(tr1);
+    
+    tr1 = document.createElement("tr");
+    th1 = document.createElement("th");
+    td1 = document.createElement("td");
+    th1.innerHTML="Hand";
+    td1.innerHTML=match.demographics.handedness;
+    tr1.appendChild(th1);
+    tr1.appendChild(td1);
+    smTableBody.appendChild(tr1);
+   subjectTab();
+}
+
+function sendSubjectSearch(){
+   var subjectBox = document.getElementById("subject_search");
+   if (subjectBox.value!="")
+   {
+   var url = "$content.getURI("servlet/AjaxServlet")?remote-class=org.nrg.xnat.ajax.SubjectFinder";
+   url = url + "&remote-method=execute";
+   url = url + "&subject_search="+subjectBox.value;
+   if (window.XMLHttpRequest) {
+       req = new XMLHttpRequest();
+   } else if (window.ActiveXObject) {
+       req = new ActiveXObject("Microsoft.XMLHTTP");
+   }
+   req.open("GET", url, true);
+   req.onreadystatechange = processSubjectSearchResults;
+   req.send(null);
+   var matchesDIV = document.getElementById("matches");
+   matchesDIV.innerHTML="";
+   var subjectDIV = document.getElementById("message");
+   subjectDIV.innerHTML="Searching...";
+   }
+}
+
+function processSubjectSearchResults() {
+    if (req.readyState == 4) {
+        if (req.status == 200) {
+            // handle response 
+            var xmlDoc = req.responseXML;
+            if (xmlDoc)
+            {
+    
+   var subjectDIV = document.getElementById("subject_match_msg");
+   subjectDIV.innerHTML="<b>The following $displayManager.getSingularDisplayNameForSubject().toLowerCase() was selected.</b><br><br>";
+   subjectDIV = document.getElementById("create_message");
+   subjectDIV.innerHTML="";
+   subjectDIV = document.getElementById("save_subject");
+   subjectDIV.disabled=false;
+               
+               var root = xmlDoc.getElementsByTagName("matchingSubjects")[0];
+               if (root)
+               {
+                 if (root.childNodes.length>0)
+                 {
+                   var counter=0;
+                   subjects=new Array();
+                   var subElements = root.getElementsByTagName("subject");
+                   for(var i=0;i<subElements.length;i++)
+                        {
+                     var subject = subElements[i];
+                     var matchingSubject = new xnat_subjectData();
+                     matchingSubject.populateFromDOM(subject);
+                     subjects.push(matchingSubject);
+                        }
+                        
+                   renderMatchingSubjects();
+                   
+                   var rootAttributes = root.attributes;
+                   if (rootAttributes)
+                   {
+                        var msg = rootAttributes.getNamedItem("message");
+                        if (msg)
+                        {
+                           msg = msg.value;
+                           if (msg.indexOf("Matched pre-existing")!=-1)
+                           {
+                           var subjectDIV = document.getElementById("message");
+                           subjectDIV.innerHTML="<br><font color='red'>" + msg + "</font><br>The following archive $displayManager.getPluralDisplayNameForSubject().toLowerCase() matched your search. Please select the correct $displayManager.getSingularDisplayNameForSubject().toLowerCase().";
+                           findTab();
+                           }else{
+                             if (msg.indexOf("Subject Stored.")!=-1)
+                             {
+                               var subjectDIV = document.getElementById("message");
+                               subjectDIV.innerHTML="The $displayManager.getSingularDisplayNameForSubject().toLowerCase() you entered was stored.";
+                               var subjectDIV = document.getElementById("subject_match_msg");
+                               subjectDIV.innerHTML="<b>The $displayManager.getSingularDisplayNameForSubject().toLowerCase() you entered was stored.</b><br><br>";
+                               matchSubject(0);
+                             }else{
+                               var subjectDIV = document.getElementById("message");
+                               subjectDIV.innerHTML=msg;
+                               findTab();
+                             }
+                           }
+                        }else{
+                           var subjectDIV = document.getElementById("message");
+                           subjectDIV.innerHTML="<br>The following archive $displayManager.getPluralDisplayNameForSubject().toLowerCase() matched your search. Please select the correct$displayManager.getSingularDisplayNameForSubject().toLowerCase().";
+                        }
+                   }else{
+                      var subjectDIV = document.getElementById("message");
+                      subjectDIV.innerHTML="<br>The following archive $displayManager.getPluralDisplayNameForSubject().toLowerCase() matched your search. Please select the correct $displayManager.getSingularDisplayNameForSubject().toLowerCase().";
+                   }
+                 }else{
+                   if (rootAttributes)
+                   {
+                        var msg = rootAttributes.getNamedItem("message").value;
+                        if (msg)
+                        {
+                           var subjectDIV = document.getElementById("message");
+                           subjectDIV.innerHTML="<br><font color='red'>" + msg + "</font>";
+                        }else{
+                   var subjectDIV = document.getElementById("message");
+                   subjectDIV.innerHTML="<br><font color='red'><b>No Matching $displayManager.getPluralDisplayNameForSubject() Found.</b></font>";
+                        }
+                   }else{
+                   var subjectDIV = document.getElementById("message");
+                   subjectDIV.innerHTML="<br><font color='red'><b>No Matching $displayManager.getPluralDisplayNameForSubject() Found.</b></font>";
+                   }
+                   var matchesDIV = document.getElementById("matches");
+                   document.getElementById("matches").style.display='none';
+                 }
+               }
+            }
+       }
+    }   
+}
+
+function indexOf(array,valueToMatch){
+   for(var k=0;k<array.length;k++){
+     if (array[k]==valueToMatch){
+       return k;
+     }
+   }
+   
+   return -1;
+}
+
+function renderMatchingSubjects(){
+   var projects= new Array();
+   
+   for (var i=0;i<subjects.length;i++)
+   {
+     var tempSub = subjects[i];
+     for (var j=0;j<tempSub.pps.length;j++)
+     {
+        if (indexOf(projects,tempSub.pps[j].project)==-1){
+           projects.push(tempSub.pps[j].project);
+                 }
+               }
+            }
+                   var matchesText="<table>";
+                   matchesText=matchesText + "<tr>";
+                   matchesText=matchesText + "<th>ID</th>";
+   for (var j=0;j<projects.length;j++)
+   {
+     matchesText=matchesText + "<th>" + projects[j] + "</th>";
+   }         
+                   matchesText=matchesText + "<th>Gender</th>";
+                   matchesText=matchesText + "<th>Hand</th>";
+                   matchesText=matchesText + "</tr>";
+      var evenOdd ="even";
+
+      for (var i=0;i<subjects.length;i++){
+        var tempSub = subjects[i];
+        matchesText+="<tr class=\""+ evenOdd + "\">";
+        
+        matchesText+="<td>" + tempSub.id + "</td>";
+        for (var j=0;j<projects.length;j++)
+        {
+          matchesText=matchesText + "<td>" + tempSub.identifierByProject(projects[j]) + "</td>";
+        }  
+               
+        matchesText+="<td>" + tempSub.demographics.gender + "</td>";
+        matchesText+="<td>" + tempSub.demographics.handedness + "</td>";
+        
+        matchesText=matchesText + "<td>";
+        if(tempSub.id!="*****")
+        matchesText=matchesText + "<input value=\"SELECT\" type=\"button\" ONCLICK=\"matchSubject('" + (i) + "');return false;\"/>";
+        matchesText=matchesText + "</td>";
+        matchesText=matchesText + "</tr>"; 
+        
+        if (evenOdd=="even"){
+           evenOdd="odd";
+        }else{
+           evenOdd="even";
+       }
+    }   
+                        
+      matchesText=matchesText + "</table>";
+                   
+                   
+      var matchesDIV = document.getElementById("matches");
+      matchesDIV.innerHTML=matchesText;
+      matchesDIV.style.display='block';
+}
+</script>
+<style type="text/css">
+</style>
+<div>
+<table cellspacing="0" cellpadding="0">
+<tr>
+<td NOWRAP>
+	<DIV ID="findLabel">
+	<input ID="findLabelOption" name="option" type="radio" ONCLICK="findTab();" checked/> <label for="findLabelOption"><b>Option 1: Find $displayManager.getSingularDisplayNameForSubject().toLowerCase() in archive</b></label>
+	</DIV>
+</td>
+</tr>
+ <tr>
+  <td valign="top">
+<span ID="subject_search_span">
+   <table>
+     <tr>
+      <td>$displayManager.getSingularDisplayNameForSubject()</td><td><input ID="subject_search" type="text" name="subject_search"/></td><td><input ONCLICK="sendSubjectSearch();return false;" type="button" name="subject_submit" value="Search"/></td>
+     </tr>
+     <tr>
+      <td colspan="3"><DIV ID="message"></DIV></td>
+     </tr>
+     <tr>
+      <td colspan="3"><DIV ID="matches" STYLE="width:420px;height:150px;background-color:#ffffff;overflow:auto;display:none;"></DIV></td>
+     </tr>
+   </table>
+</span>
+  </td>
+ </tr>
+<tr>
+<td NOWRAP>
+	<DIV ID="createLabel">
+	<input ID="createLabelOption" name="option" type="radio" ONCLICK="createTab();"/> <label for="createLabelOption"><b>Option 2: Create a new $displayManager.getSingularDisplayNameForSubject().toLowerCase()</b></label>
+	</DIV>
+</td>
+</tr>
+<tr>
+	<td>
+<span ID="subject_create_span">
+<table>
+     <tr>
+      <td colspan="3">						<font face="$ui.sansSerifFonts" size="3" style="line-height:20px;"><b>Create $displayManager.getSingularDisplayNameForSubject()</b></font></td>
+     </tr>
+     <tr>
+      <td colspan="3">						<DIV ID="create_message"></DIV></td>
+     </tr>
+    #if($project)
+<tr>
+			#formLabel("Project")
+<td>$project</td>
+</tr>
+    #else
+<tr>
+			#formLabel("Project")
+<td>
+#set($create_projects= $data.getSession().getAttribute("userHelper").getAllowedValues("xnat:subjectData","xnat:subjectData/project","create"))
+
+#if($create_projects.size()>0)
+<SELECT id="subject_project" name="subject_project">
+<option value="">(SELECT)</option>
+#foreach($proj in $create_projects)
+<option value="$proj">$proj</option>
+#end
+</SELECT>
+#else
+ERROR:  No $displayManager.getPluralDisplayNameForProject().toLowerCase() exist.  Please create a $displayManager.getSingularDisplayNameForProject().toLowerCase() before attempting to insert this item.
+#end
+</td>
+</tr>
+	  #end
+<tr>
+			#formLabel("Identifier")
+						<td><input type="text" name="identifier" ID="subject_identifier"/></td>
+</tr>
+     <tr>
+      <th align="left">Birth date:</th>
+  			<td NOWRAP>
+				#set($years = [ 1900..$!turbineUtils.getYear()])
+						#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+						#set($days = [ 1..31 ])
+						<font face="$ui.sansSerifFonts">
+							<select name="subject_bmonth" ID="subject_bmonth">
+								<option value="bad">(SELECT)</option>
+								#foreach ($month in $months)
+									#set ($monthCount = $velocityCount)
+					        		<option value="$monthCount">
+										$month
+									</option>
+								#end
+							</select>
+					
+							<select name="subject_bday" ID="subject_bday">
+								<option value="bad">(SELECT)</option>
+								#foreach ($day in $days)
+					        		<option value="$day">$day</option>
+								#end
+							</select>
+						</font>
+					
+						<select name="subject_byear" ID="subject_byear" >
+							<option value="bad">(SELECT)</option>
+							#foreach ($year in $years)
+					    		<option value="$year">$year</option>
+							#end
+						</select>
+  			</td>
+		</tr>
+		<tr>
+			#formLabel("DOB Estimated")
+			<td>
+				<input type="checkbox" name="subject_bestimate" ID="subject_bestimate">
+		    </td>
+		</tr>
+		<tr>
+			#formLabel("Gender")
+			<td>
+			<select name="subject_gender" ID="subject_gender">
+            		<option value="male">Male</option>
+            		<option value="female">Female</option>
+            		<option value="unknown">Unknown</option>
+			</select></td>
+		</tr>
+		
+    
+
+		<tr>
+			#formLabel("Handedness")
+			<td><select name="subject_hand" ID="subject_hand">
+            		<option value="right">Right</option>
+            		<option value="left">Left</option>
+            		<option value="ambidextrous" >Ambidextrous</option>
+            		<option value="unknown" >Unknown</option>
+			</select></td>
+		</tr>
+		<tr>
+			#formLabel("Cohort")
+			<td><input type="text" name="cohort" ID="subject_cohort"/></td>
+		</tr>
+		<tr><td colspan="2">
+		<TABLE>
+		  	    <TR>
+		  	     	
+		  	     <TD valign="top">
+		  	     	  <DIV class="container" style="width:160px;">
+		  	     	     <DIV class="withColor containerTitle">ADRC/PIB</DIV>
+		  	     	     <DIV class="containerBody">
+		  	     	     <table >
+		<tr>
+			#formLabel("Family")
+			<td>
+				<input type="text" size="10" name="subject_family" ID="subject_family"/>
+		    </td>
+		</tr>
+		            </table>
+		  	     	     </DIV>
+		  	     	  </DIV>
+</td><td valign="top">
+		  	     	  <DIV class="container" style="width:180px;">
+		  	     	     <DIV class="withColor containerTitle">Adult Demographics</DIV>
+		  	     	     <DIV class="containerBody" style="height:160px;max-height:160px;">
+		  	     	     <table>
+<tr>
+			#formLabel("Education")
+			<td>
+		<input name="education" ID="subject_education" size="10" type="text" />
+			</td>
+		</tr>
+		<tr>
+			#formLabel("Race")
+			<td>
+		<input name="race" ID="subject_race" size="10" type="text" />
+</td>
+		</tr>
+		<tr>
+			#formLabel("Ethnicity")
+			<td>
+		<input name="ethnicity" ID="subject_ethnicity" size="10" type="text" />
+</td>
+		</tr>
+		<tr>
+			#formLabel("SES")
+			<td>
+		<input name="ses" ID="subject_ses" size="10" type="text"/>
+				</td>
+		</tr>
+		<tr>
+			#formLabel("Height")
+			<td><input type="text" name="height" ID="subject_height" size="10"/></td>
+		</tr>
+		<tr>
+			#formLabel("Weight")
+			<td><input type="text" name="weight" ID="subject_weight" size="10"/></td>
+		</tr>
+		            </table>
+		  	     	     </DIV>
+		  	     	  </DIV>
+</td><td valign="top">
+		  	     	  <DIV class="container" style="width:240px;">
+		  	     	     <DIV class="withColor containerTitle">Baby Demographics</DIV>
+		  	     	     <DIV class="containerBody">
+		  	     	     <table>
+				<tr>
+			#formLabel("Gestational Age")
+			<td>
+		<input name="gestational_age" ID="subject_gestational_age" size="10" type="text" />
+				</td>
+		</tr>
+		<tr>
+			#formLabel("Post Menstrual Age")
+			<td>
+		<input name="post_menstrual_age" ID="subject_post_menstrual_age" size="10" type="text"/>
+</td>
+		</tr>
+		<tr>
+			#formLabel("Birth Weight")
+			<td>
+		<input name="birth_weight" ID="subject_birth_weight" size="10" type="text" />
+				</td>
+		</tr>
+		            </table>
+		  	     	     </DIV>
+		  	     	  </DIV>
+		  	     </TD>
+		  	    </TR>
+		  	   </TABLE>
+		</td></tr>
+				<tr>
+			  <td>&nbsp;</td><td>
+			  <input id="save_subject" type="button" onclick="submitSubjectStore();return false;" value="Save $displayManager.getSingularDisplayNameForSubject()"/></td>
+		</tr>
+   </table>
+</span>
+</td></tr></table>
+<span ID="subject_match_span">
+#if($part)
+
+#else
+ #set($part=$om.getSubjectData())
+#end
+<input ID="subject_id" type="hidden" name="$!{item.getXSIType()}.subject_ID" value="$!part.getId()" />
+<table  class="withColor">
+     <tr>
+      <td colspan="2" align="center"><DIV ID="subject_match_msg"><b>The following $displayManager.getSingularDisplayNameForSubject().toLowerCase() was selected.</b><br><br></DIV></td>
+     </tr>
+     <tr>
+      <td colspan="2" align="center">
+      <table  class="withColor">
+      <tbody ID="subject_match_table">
+     <tr>
+      <th align="left">ID:</th>
+      <td><DIV ID="id_display">
+      $!part.getId()
+      </DIV></td>
+     </tr>
+     #foreach($pp in $part.getProjects_project())
+     <tr>
+        <th align="left">$pp.getProject()</th>
+        <td>$pp.getIdentifier()</td>
+     #end
+     <tr>
+      <th align="left">Gender:</th>
+      <td><DIV ID="gender">$!part.getGenderText()</DIV></td>
+     </tr>
+     <tr>
+      <th align="left">Hand:</th>
+      <td><DIV ID="hand">$!part.getHandedText()</DIV></td>
+     </tr>
+     
+     </tbody>
+      </table>
+      </td>
+     </tr>
+     <tr>
+      <td colspan="2" align="center">&nbsp;<input type="button" value="Change $displayManager.getSingularDisplayNameForSubject()" ONCLICK="findTab();return false;"/></td>
+     </tr>
+</table>
+</span>
+<script type="text/javascript">
+
+function submitSubjectStore()
+{  
+  var index=document.getElementById("subject_bday").selectedIndex;
+  var bday = document.getElementById("subject_bday").options[index].value;
+    
+  index=document.getElementById("subject_bmonth").selectedIndex;
+  var bmonth = document.getElementById("subject_bmonth").options[index].value;
+    
+  index=document.getElementById("subject_byear").selectedIndex;
+  var byear = document.getElementById("subject_byear").options[index].value;
+    
+  var bestimate=document.getElementById("subject_bestimate");
+    
+  index=document.getElementById("subject_gender").selectedIndex;
+  var gender = document.getElementById("subject_gender").options[index].value;
+    
+  index=document.getElementById("subject_hand").selectedIndex;
+  var handed = document.getElementById("subject_hand").options[index].value;
+  
+	  
+    var cohort= document.getElementById("subject_cohort").value;
+    var family= document.getElementById("subject_family").value;
+    var education= document.getElementById("subject_education").value;
+    var race= document.getElementById("subject_race").value;
+    var ethnicity= document.getElementById("subject_ethnicity").value;
+    var ses= document.getElementById("subject_ses").value;
+    var height= document.getElementById("subject_height").value;
+    var weight= document.getElementById("subject_weight").value;
+    var identifier= document.getElementById("subject_identifier").value;
+    var gestational_age= document.getElementById("subject_gestational_age").value;
+    var post_menstrual_age= document.getElementById("subject_post_menstrual_age").value;
+    var birth_weight= document.getElementById("subject_birth_weight").value;
+    
+  var title = 'Subject Finder Validation';
+  
+  if (bestimate.checked)
+  {
+    if(byear=="bad")
+    {
+      xmodal.message(title, 'Please select a birth year.');
+      return;
+    }
+  }else{
+    if(bday=="bad")
+    {
+      xmodal.message(title, 'Please select a birth day.<br/><br/>If you are unsure of the birth day, specify the year and check the DOB Estimated box.');
+      return;
+    }
+    if(bmonth=="bad")
+    {
+      xmodal.message(title, 'Please select a birth month.<br/><br/>If you are unsure of the birth day, specify the year and check the DOB Estimated box.');
+      return;
+    }
+    if(byear=="bad")
+    {
+      xmodal.message(title, 'Please select a birth year.<br/><br/>If you are unsure of the birth day, specify the year and check the DOB Estimated box.');
+      return;
+    }
+  }
+  
+  if(gender=="bad")
+    {
+      xmodal.message(title, 'Please select a gender.');
+      return;
+    }
+  
+  if(handed=="bad")
+    {
+      xmodal.message(title, 'Please select a handedness.');
+      return;
+    }
+  
+    if(education!="" && !IsNumeric(education))
+    {
+      xmodal.message(title, 'Please enter a valid integer for education.');
+      return;
+    }
+    
+    if(ses!="" && !IsNumeric(ses))
+    {
+      xmodal.message(title, 'Please enter a valid integer for ses.');
+      return;
+    }
+    
+    if(height!="" && !IsNumeric(height))
+    {
+      xmodal.message(title, 'Please enter a valid integer for height.');
+      return;
+    }
+    
+    if(weight!="" && !IsNumeric(weight))
+    {
+      xmodal.message(title, 'Please enter a valid integer for weight.');
+      return;
+    }
+    
+    if(gestational_age!="" && !IsNumeric(gestational_age))
+    {
+      xmodal.message(title, 'Please enter a valid number for gestational age.');
+      return;
+    }
+    
+    if(post_menstrual_age!="" && !IsNumeric(post_menstrual_age))
+    {
+      xmodal.message(title, 'Please enter a valid number for post menstrual age.');
+      return;
+    }
+
+    if(birth_weight!="" && !IsNumeric(birth_weight))
+	{
+      xmodal.message(title, 'Please enter a valid number for birth weight.');
+      return;
+	}
+    
+    if(identifier=="")
+	{
+      xmodal.message(title, 'Please enter a valid identifier.');
+      return;
+    }
+	   
+    #if($project)
+      var project = "$project";
+    #else
+     index=document.getElementById("subject_project").selectedIndex;
+     var project = document.getElementById("subject_project").options[index].value;
+	   
+    if(project=="" || project==null)
+    {
+      xmodal.message(title, 'Please select a valid $displayManager.getSingularDisplayNameForProject().toLowerCase().');
+      return;
+    }
+	  #end
+  
+    var xmlString = "<Subject project=\"" + project + "\" xmlns=\"http://nrg.wustl.edu/xnat\" xmlns:xnat=\"http://nrg.wustl.edu/xnat\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">";
+    xmlString +="<projects><project identifier=\"" + identifier + "\">"+ project + "</project></projects>";
+    xmlString +="<demographics xsi:type=\"xnat:demographicData\">";
+  if (bestimate.checked)
+  {
+      xmlString +="<yob>"+byear+"</yob>";
+  }else{
+      xmlString +="<dob>"+bmonth+"/" + bday+"/" + byear +"</dob>";
+  }
+   if (gender!=null && gender!="")
+      xmlString +="<gender>"+gender+"</gender>";
+   if (hand!=null && hand!="")
+      xmlString +="<handedness>"+handed+"</handedness>";
+   if (ses!=null && ses!="")
+      xmlString +="<ses>"+ses+"</ses>";
+   if (education!=null && education!="")
+      xmlString +="<education>"+education+"</education>";
+   if (race!=null && race!="")
+      xmlString +="<race>"+race+"</race>";
+   if (ethnicity!=null && ethnicity!="")
+      xmlString +="<ethnicity>"+ethnicity+"</ethnicity>";
+   if (weight!=null && weight!="")
+      xmlString +="<weight>"+weight+"</weight>";
+   if (height!=null && height!="")
+      xmlString +="<height>"+height+"</height>";
+   if (gestational_age!=null && gestational_age!="")
+      xmlString +="<gestational_age>"+gestational_age+"</gestational_age>";
+   if (post_menstrual_age!=null && post_menstrual_age!="")
+      xmlString +="<post_menstrual_age>"+post_menstrual_age+"</post_menstrual_age>";
+   if (birth_weight!=null && birth_weight!="")
+      xmlString +="<birth_weight>"+birth_weight+"</birth_weight>";
+    
+    xmlString +="</demographics>";
+    if (cohort!=null && cohort!="")
+    {
+      xmlString +="<metadata xsi:type=\"xnat:subjectMetadata\">";
+      xmlString +="<cohort>"+cohort + "</cohort>";
+      xmlString +="</metadata>";
+    }
+    
+   if (family!=null && family!=""){
+      xmlString +="<fields>";
+      xmlString +="<field name=\"family\">"+family+"</field>";
+      xmlString +="</fields>";
+   }
+    xmlString +="</Subject>";
+    
+    
+   var url = "$content.getURI("servlet/AjaxServlet")";
+   url = url + "";
+    
+   if (window.XMLHttpRequest) {
+       req = new XMLHttpRequest();
+   } else if (window.ActiveXObject) {
+       req = new ActiveXObject("Microsoft.XMLHTTP");
+   }
+   req.open("POST", url, true);
+   req.onreadystatechange = processSubjectSearchResults;
+   req.setRequestHeader("Content-Type","application/x-www-form-urlencoded; charset=UTF-8");
+   
+   req.send("remote-class=org.nrg.xnat.ajax.StoreSubject&remote-method=execute&subject=" + xmlString);
+   
+   var matchesDIV = document.getElementById("matches");
+   matchesDIV.innerHTML="";
+   var subjectDIV = document.getElementById("message");
+   subjectDIV.innerHTML="Saving...";
+   var subjectDIV = document.getElementById("create_message");
+   subjectDIV.innerHTML="<font color='red'>Saving...</font>";
+   var subjectDIV = document.getElementById("save_subject");
+   subjectDIV.disabled=true;
+}
+
+function subjectTab()
+{
+   var spanDIV = document.getElementById("subject_search_span");
+   spanDIV.style.display = 'none';
+   spanDIV = document.getElementById("subject_match_span");
+   spanDIV.style.display='block';
+   spanDIV = document.getElementById("subject_create_span");
+   spanDIV.style.display='none';
+   
+   spanDIV = document.getElementById("findLabel");
+   spanDIV.style.display='none';
+   spanDIV = document.getElementById("createLabel");
+   spanDIV.style.display='none';
+}
+
+function findTab()
+{
+   var spanDIV = document.getElementById("subject_search_span");
+   spanDIV.style.display = 'block';
+   spanDIV = document.getElementById("subject_create_span");
+   spanDIV.style.display='none';
+   
+   spanDIV = document.getElementById("findLabel");
+   spanDIV.style.display='block';
+   spanDIV = document.getElementById("createLabel");
+   spanDIV.style.display='block';
+}
+
+function createTab()
+{
+   var spanDIV = document.getElementById("subject_search_span");
+   spanDIV.style.display = 'none';
+   spanDIV = document.getElementById("subject_create_span");
+   spanDIV.style.display='block';
+   
+   spanDIV = document.getElementById("findLabel");
+   spanDIV.style.display='block';
+   spanDIV = document.getElementById("createLabel");
+   spanDIV.style.display='block';
+}
+#if($part)
+subjectTab();
+#else
+   spanDIV = document.getElementById("subject_match_span");
+   spanDIV.style.display='none';
+   
+findTab();
+#end
+</script>

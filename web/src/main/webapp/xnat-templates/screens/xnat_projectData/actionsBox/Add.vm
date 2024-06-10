@@ -1,0 +1,57 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="dataType" type="java.lang.String" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="exptCounts" type="java.util.Hashtable" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#* @vtlvariable name="popup" type="java.lang.Boolean" *#
+#* @vtlvariable name="userHelper" type="org.nrg.xdat.security.services.UserHelperServiceI" *#
+
+<!-- Sequence: 5 -->
+
+#set($userHelper = $data.getSession().getAttribute("userHelper"))
+
+<!-- xnat_projectData/actionsBox/Add -->
+
+#if($userHelper.canEdit("xnat:subjectData/project", $project.getId()))
+<li class="yuimenuitem">
+    <a class="yuimenuitemlabel" href="#insertbox">Add</a>
+    <div id="insertbox" class="yuimenu">
+        <div class="bd">
+            <ul class="first-of-type" style="width: 170px;">
+                <li class="yuimenuitem">
+                    <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_xnat_subjectData.vm").addPathInfo(
+                        'project',$project.getId())">$displayManager.getSingularDisplayNameForSubject()</a>
+                </li>
+                #if(!$siteConfig.getBooleanValue("uiHideProjectActionsAddBrowseableElements"))
+                    #foreach($dataType in $exptCounts.keySet())
+                        #set($ed=$!userHelper.getBrowseableElementDisplay($dataType))
+                        #if ($ed.getSQLName())
+                            <li class="yuimenuitem">
+                                <a class="yuimenuitemlabel"
+                                    href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
+                                    'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
+                            </li>
+                        #end
+                    #end
+                    #set($key="xnat:mrSessionData")
+                    #if(!$exptCounts.containsKey($key))
+                        #set($ed=$!userHelper.getBrowseableElementDisplay($key))
+                        #if($ed.getSQLName())
+                            <li class="yuimenuitem">
+                                <a class="yuimenuitemlabel"
+                                    href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
+                                    'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
+                            </li>
+                        #end
+                    #end
+                #end
+                <li class="yuimenuitem">
+                    <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_add_experiment.vm").addPathInfo(
+                        'project',$project.getId())">More</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</li>
+#end

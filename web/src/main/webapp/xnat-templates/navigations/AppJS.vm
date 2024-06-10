@@ -1,0 +1,151 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="appInfo" type="org.nrg.xnat.services.XnatAppInfo" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="XNAT_CSRF" type="java.lang.String" *#
+#* @vtlvariable name="SITE_ROOT" type="java.lang.String" *#
+#* @vtlvariable name="css" type="java.lang.String" *#
+#* @vtlvariable name="mincss" type="java.lang.String" *#
+#* @vtlvariable name="js" type="java.lang.String" *#
+#* @vtlvariable name="minjs" type="java.lang.String" *#
+#* @vtlvariable name="lastAccessed" type="java.lang.String" *#
+
+## Main JavaScript and CSS files for XNAT
+
+<!-- START AppJS.vm -->
+
+## only load once
+#if ($!appJS != true)
+
+##    ## (allowing the 'app.css' file to be completely overridden seems risky, so it is disabled for now)
+##    ## If a theme has an 'app.css' stylesheet, it will be loaded *instead* of the main 'app.css' file.
+##    ## This makes it easier to start with a blank slate for styling.
+##    #if ($theme)
+##        #set ($APP_CSS = "/themes/${theme}/css/app.css")
+##        #if ($theme != "none" && $turbineUtils.resourceExists($APP_CSS))
+##            <link rel="stylesheet" type="text/css" href="$content.getURI($APP_CSS)">
+##        #else
+##            <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
+##        #end
+##    #else
+##        <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
+##    #end
+
+    <!-- Brand colors and app.css loaded first -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/brand.${css}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.${css}">
+
+    <!-- Icon sets -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/font-awesome.css?x=${lastAccessed}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.${css}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.${css}">
+
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xmodal-v1/xmodal.${css}">
+    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal-migrate.${js}"></script>
+
+    #if ($theme && $theme != "none")
+        <!-- Theme CSS -->
+        #set ($THEME_CSS = "/themes/${theme}/css/theme.css")
+        #if ($turbineUtils.resourceExists($THEME_CSS))
+            ## /themes/theme-name/css/theme.css
+            <!-- THEME_CSS: ${THEME_CSS} -->
+            <link rel="stylesheet" type="text/css" href="$content.getURI($THEME_CSS)">
+        #elseif ($!themedStyle)
+            <!-- Load active global theme style -->
+            ## /themes/theme-name/styles/theme.css -- why is this 'styles' instead of 'style'
+            <!-- themedStyle: $!themedStyle -->
+            <link rel="stylesheet" type="text/css" href="$content.getURI($themedStyle)">
+        #end
+    #end
+
+    <!-- XNAT JLAPI stylesheets -->
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xnat/ui/dialog.${css}">
+
+    <!-- XNAT JLAPI scripts -->
+    <script src="${SITE_ROOT}/scripts/xnat/util/sub64.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/parse.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/validate.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/url.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/xhr.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/cookie.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/event.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/element.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/storage.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/form.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/templates.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/input.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/select.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/table.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/panel.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/tabs.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/banner.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/popup.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/dialog.${js}"></script>
+
+    <!-- The Spawner! -->
+    <script src="${SITE_ROOT}/scripts/xnat/spawner.${js}"></script>
+
+    <!-- XNAT app scripts (do not load on login page) -->
+    #if (!$isLoginPage)
+
+    <script src="${SITE_ROOT}/scripts/xnat/app/codeEditor.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/pluginSettings.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/customPage.${js}"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/app/dataTypeAccess.${js}"></script>
+
+    <!-- window.available_elements -->
+    <script>
+
+        window.available_elements = [];
+        window.browseableElements = {};
+
+        if (!window.isLoginPage && window.loadDataTypes) {
+            console.log('getBrowseableElements');
+            XNAT.app.dataTypeAccess.getElements['browseable'].ready(function(data){
+                var getByName = window.available_elements.getByName;
+                window.available_elements = data.sortedElements;
+                window.available_elements.getByName = getByName;
+                window.browseableElements = data.elementMap;
+            });
+        }
+
+        window.available_elements_getByName = function (name) {
+            // return empty object if not found
+            return window.browseableElements[name] || {}
+        };
+
+        window.available_elements.getByName = window.available_elements_getByName;
+
+    </script>
+
+    #else
+    <!-- login page -->
+    #end
+
+    #if ($theme && $theme != "none")
+        <!-- Theme JS -->
+        #set ($THEME_JS = "/themes/${theme}/js/theme.js")
+        #if ($turbineUtils.resourceExists($THEME_JS))
+            ## /themes/theme-name/js/theme.js
+            <!-- THEME_JS: $!THEME_JS -->
+            <script type="text/javascript" src="$content.getURI($THEME_JS)"></script>
+        #elseif ($themedScript && $turbineUtils.resourceExists($themedScript))
+            <!-- Load active global theme script -->
+            <!-- themedScript: $!themedScript -->
+            <script type="text/javascript" src="$content.getURI($themedScript)"></script>
+        #end
+    #end
+
+    <!-- JS functions to initialize XNAT -->
+    <script src="${SITE_ROOT}/scripts/xnat/init.${js}"></script>
+
+    #set ($appJS = true)
+
+#else
+
+    <!-- AppJS is loaded -->
+
+#end
+
+<!-- END AppJS.vm -->
+

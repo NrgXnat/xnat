@@ -1,0 +1,180 @@
+<!--  start: screens/XDATScreen_search_wizard1.vm -->
+
+<form class="search-wizard" name="searchWizard1s" method="post" action="$link.setPage("XDATScreen_search_wizard2.vm")">
+
+    <h2 style="margin:0 0 20px;">Advanced Search</h2>
+
+    <ol class="steps">
+        <li class="step1">
+
+            <h3>Select Pivot Data-type to search</h3>
+
+            <p>The Pivot Data-type is the root type which you are searching. There will be one row per instance of
+                this data-type. All other included data-types will be joined to this data-type.</p>
+
+##            #set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplaysByPluralDesc())
+
+            <select id="exptType" name="ELEMENT_0" ONCHANGE="">
+##                <option value="!" disabled>&nbsp;</option>
+##                #foreach ($typeObject in $typeObjects)
+##                    #if(!$typeObject.getElementName().equals("xnat:projectData"))
+##                        <option value="$typeObject.getElementName()"
+##                            #if($typeObject.getElementName()=="xnat:mrSessionData") selected #end>
+##                            $typeObject.getElementSecurity().getPluralDescription()
+##                        </option>
+##                    #end
+##                #end
+            </select>
+
+##            <script type="text/javascript">
+##                menuInit('#exptType', { width: '200px', placeholder_text_single: 'Select', disable_search_threshold: 7 } );
+##            </script>
+
+        </li>
+
+        <li class="step2">
+
+            <h3>Select Additional Data-types</h3>
+
+            <p>What other types of data would you like to see? Select the other types from the list below (as well
+                as the level of fields you would like to see). The additional types will be joined to your
+                selected pivot data-type.</p>
+
+            <div id="addl-data-types-container">
+                <!-- 'addl-data-types' table renders here -->
+            </div>
+
+##            <table class="addl-data-types" cellpadding="3" style="border-collapse:collapse;">
+##                #foreach ($typeObject in $typeObjects)
+##                    #if(!$typeObject.getElementName().equals("xnat:projectData"))
+##                        <tr>
+##                            <td><b>$typeObject.getElementSecurity().getPluralDescription()</b></td>
+##                            <td nowrap><input type="radio" name="super_$typeObject.getElementName()" value="" checked> None</td>
+##                            #if($typeObject.getVersions().get("brief") || $typeObject.getVersions().get("detailed"))
+##                                #if($typeObject.getVersions().get("brief"))
+##                                    <td nowrap><input type="radio" name="super_$typeObject.getElementName()" value="brief"> Brief</td>
+##                                #else
+##                                    <td nowrap><input type="radio" name="super_$typeObject.getElementName()" value="brief" disabled> Brief</td>
+##                                #end
+##                                #if($typeObject.getVersions().get("detailed"))
+##                                    <td nowrap><input type="radio" name="super_$typeObject.getElementName()" value="detailed"> Detailed</td>
+##                                #else
+##                                    <td nowrap><input type="radio" name="super_$typeObject.getElementName()" value="detailed" disabled> Detailed</td>
+##                                #end
+##                            #else
+##                                <td nowrap><input type="radio" name="super_$typeObject.getElementName()" value="brief" disabled> Brief</td>
+##                                <td nowrap><input type="radio" name="super_$typeObject.getElementName()" value="detailed"> Detailed</td>
+##                            #end
+##                            <!--<td nowrap><input type="radio" name="super_$typeObject.getElementName()" value="all"> All</td>-->
+##                        </tr>
+##                    #end
+##                #end
+##            </table>
+
+        </li>
+    </ol>
+
+    <input type="submit" name="eventSubmit_doPerform" style="float:right;" value="Next">
+
+    <div class="clear"></div>
+
+</form>
+
+<script type="text/javascript">
+    (function(){
+
+        var exptTypeMenu = jq('#exptType');
+        var exptTypesContainer = jq('#addl-data-types-container');
+
+        XNAT.app.dataTypeAccess.getElements['searchableByPluralDesc'].ready(function(elements){
+
+            var sortedElements = elements.sortedElements;
+
+            var exptTypes = [];
+
+            // initialize add'l types table
+            var addlTypesTable = XNAT.table({
+                className: 'addl-data-types',
+                cellpadding: 3,
+                style: { borderCollapse: 'collapse' }
+            });
+
+            // add tbody
+            addlTypesTable.tbody();
+
+            forEach(sortedElements, function(element, i){
+
+                var elementName = element.elementName;
+
+                // don't process 'projectData'
+                if (elementName !== 'xnat:projectData') {
+
+                    // create the menu item to append later
+                    exptTypes.push(spawn('option', {
+                        value: elementName,
+                        selected: /mrSessionData/i.test(elementName)
+                    }, element.plural))
+
+                    // create the table row
+                    addlTypesTable.tr()
+                                  .td({}, [['b', element.plural]])
+                                  .td({ className: 'nowrap' }, [
+                                      ['label', [
+                                          ['input|type=radio|checked', {
+                                              name: 'super_' + elementName,
+                                              value: ''
+                                          }],
+                                          '&nbsp;',
+                                          'None'
+                                      ]]
+                                  ]);
+
+                    var briefDisabled = '|disabled';
+                    var detailedDisabled = '';
+
+                    // not sure about the logic here...
+                    if (element.supportsBrief || !element.supportsDetailed) {
+                        if (element.supportsBrief) {
+                            briefDisabled = '';
+                        }
+                        if (!element.supportsDetailed) {
+                            detailedDisabled = '|disabled'
+                        }
+                    }
+
+                    // 'brief' radio button
+                    addlTypesTable.td({ className: 'nowrap' }, [
+                        ['label|class=' + briefDisabled.slice(1), [
+                            ['input|type=radio|value=brief' + briefDisabled + '|name=super_' + elementName ],
+                            '&nbsp;',
+                            'Brief'
+                        ]]
+                    ]);
+                    // 'detailed' radio button
+                    addlTypesTable.td({ className: 'nowrap' }, [
+                        ['label|class=' + detailedDisabled.slice(1), [
+                            ['input|type=radio|value=detailed' + detailedDisabled + '|name=super_' + elementName ],
+                            '&nbsp;',
+                            'Detailed'
+                        ]]
+                    ]);
+
+                }
+
+            });
+
+            // render the menu
+            exptTypeMenu.empty().append(exptTypes);
+
+            // initialize the 'Chosen' plugin
+            menuInit(exptTypeMenu, { width: '200px', placeholder_text_single: 'Select', disable_search_threshold: 7 } );
+
+            // render the 'addl-data-types' table
+            addlTypesTable.render(exptTypesContainer.empty());
+
+        });
+
+    })();
+</script>
+
+<!--  end: screens/XDATScreen_search_wizard1.vm -->

@@ -1,0 +1,11 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("ScreenOnly.vm")
+<br>
+
+#if ($data.getMessage()!="File Uploaded.")
+<DIV class="error">$data.message</DIV><br>
+#else
+<script type="text/javascript">
+  window.parent.location="$link.setPage("$destination").addPathInfo("search_field","$search_field").addPathInfo("search_element","$search_element").addPathInfo("search_value","$search_value").addPathInfo("uploadID","$uploadID").addPathInfo("project","$!project")";
+</script>
+#end

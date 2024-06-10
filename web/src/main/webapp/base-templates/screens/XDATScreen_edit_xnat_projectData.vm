@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">Project Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>name</TD><TD>#xdatStringBox("xnat:projectData/name" $item "" $vr)</TD></TR>
+							<TR><TD>description</TD><TD>#xdatStringBox("xnat:projectData/description" $item "" $vr)</TD></TR>
+							<TR><TD>keywords</TD><TD>#xdatStringBox("xnat:projectData/keywords" $item "" $vr)</TD></TR>
+							<TR><TD>ID</TD><TD>#xdatStringBox("xnat:projectData/ID" $item "" $vr)</TD></TR>
+							<TR><TD>secondary_ID</TD><TD>#xdatStringBox("xnat:projectData/secondary_ID" $item "" $vr)</TD></TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:projectData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+<!-- BEGIN xnat:projectData/aliases/alias -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/aliases/alias</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>alias</TD>
+								<TD>source</TD>
+							</TR>
+							#foreach($xnat_projectData_alias_1_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:projectData/aliases/alias[$xnat_projectData_alias_1_COUNTER]/alias" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/aliases/alias[$xnat_projectData_alias_1_COUNTER]/source" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:projectData/aliases/alias[$xnat_projectData_alias_1_COUNTER]/xnat_projectData_alias_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:projectData/aliases/alias -->
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_publicationResource_1_COUNTER in [0..5])
+<!-- BEGIN xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>label</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/label" $item "" $vr)</TD></TR>
+												<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/file_count" $item "" $vr)</TD></TR>
+												<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/xnat_abstractResource_id" $item "")
+												<TR><TD>title</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/title" $item "" $vr)</TD></TR>
+												<TR><TD>citation</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/citation" $item "" $vr)</TD></TR>
+												<TR><TD>abstract</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/abstract" $item "" $vr)</TD></TR>
+												<TR><TD>commentary</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/commentary" $item "" $vr)</TD></TR>
+												<TR><TD>isPrimary</TD><TD>#xdatBooleanRadio("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/isPrimary" $item false $vr)</TD></TR>
+												<TR><TD>doi</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/doi" $item "" $vr)</TD></TR>
+												<TR><TD>pubmed</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/pubmed" $item "" $vr)</TD></TR>
+												<TR><TD>medline</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/medline" $item "" $vr)</TD></TR>
+												<TR><TD>uri</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/uri" $item "" $vr)</TD></TR>
+												<TR><TD>other</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/other" $item "" $vr)</TD></TR>
+												<TR><TD>type</TD><TD>#xdatStringBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/type" $item "" $vr)</TD></TR>
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_abstractResource_tag_2_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/tag" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/xnat_abstractResource_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER]/tags/tag -->
+								</TABLE>
+<!-- END xnat:projectData/publications/publication[$xnat_publicationResource_1_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_abstractResource_2_COUNTER in [0..5])
+<!-- BEGIN xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>label</TD><TD>#xdatStringBox("xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/label" $item "" $vr)</TD></TR>
+												<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/file_count" $item "" $vr)</TD></TR>
+												<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/xnat_abstractResource_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_abstractResource_tag_3_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/tag" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/xnat_abstractResource_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER]/tags/tag -->
+								</TABLE>
+<!-- END xnat:projectData/resources/resource[$xnat_abstractResource_2_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+<!-- BEGIN xnat:projectData/studyProtocol -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/studyProtocol</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>ID</TD>
+								<TD>name</TD>
+								<TD>description</TD>
+								<TD>data-type</TD>
+							</TR>
+							#foreach($xnat_abstractProtocol_3_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:projectData/studyProtocol[$xnat_abstractProtocol_3_COUNTER]/ID" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/studyProtocol[$xnat_abstractProtocol_3_COUNTER]/name" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/studyProtocol[$xnat_abstractProtocol_3_COUNTER]/description" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/studyProtocol[$xnat_abstractProtocol_3_COUNTER]/data-type" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:projectData/studyProtocol[$xnat_abstractProtocol_3_COUNTER]/xnat_abstractProtocol_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:projectData/studyProtocol -->
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:projectData/PI -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/PI</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>#xdatStringBox("xnat:projectData/PI/title" $item "" $vr)</TD></TR>
+										<TR><TD>firstname</TD><TD>#xdatStringBox("xnat:projectData/PI/firstname" $item "" $vr)</TD></TR>
+										<TR><TD>lastname</TD><TD>#xdatStringBox("xnat:projectData/PI/lastname" $item "" $vr)</TD></TR>
+										<TR><TD>institution</TD><TD>#xdatStringBox("xnat:projectData/PI/institution" $item "" $vr)</TD></TR>
+										<TR><TD>department</TD><TD>#xdatStringBox("xnat:projectData/PI/department" $item "" $vr)</TD></TR>
+										<TR><TD>email</TD><TD>#xdatStringBox("xnat:projectData/PI/email" $item "" $vr)</TD></TR>
+										<TR><TD>phone</TD><TD>#xdatStringBox("xnat:projectData/PI/phone" $item "" $vr)</TD></TR>
+										<TR><TD>ID</TD><TD>#xdatStringBox("xnat:projectData/PI/ID" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat:projectData/PI/xnat_investigatorData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:projectData/PI -->
+					</TD>
+				</TR>
+<!-- BEGIN xnat:projectData/investigators/investigator -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/investigators/investigator</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>title</TD>
+								<TD>firstname</TD>
+								<TD>lastname</TD>
+								<TD>institution</TD>
+								<TD>department</TD>
+								<TD>email</TD>
+								<TD>phone</TD>
+								<TD>ID</TD>
+							</TR>
+							#foreach($xnat_investigatorData_4_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:projectData/investigators/investigator[$xnat_investigatorData_4_COUNTER]/title" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/investigators/investigator[$xnat_investigatorData_4_COUNTER]/firstname" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/investigators/investigator[$xnat_investigatorData_4_COUNTER]/lastname" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/investigators/investigator[$xnat_investigatorData_4_COUNTER]/institution" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/investigators/investigator[$xnat_investigatorData_4_COUNTER]/department" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/investigators/investigator[$xnat_investigatorData_4_COUNTER]/email" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/investigators/investigator[$xnat_investigatorData_4_COUNTER]/phone" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/investigators/investigator[$xnat_investigatorData_4_COUNTER]/ID" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:projectData/investigators/investigator[$xnat_investigatorData_4_COUNTER]/xnat_investigatorData_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:projectData/investigators/investigator -->
+<!-- BEGIN xnat:projectData/fields/field -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/fields/field</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>field</TD>
+								<TD>name</TD>
+							</TR>
+							#foreach($xnat_projectData_field_4_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:projectData/fields/field[$xnat_projectData_field_4_COUNTER]/field" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:projectData/fields/field[$xnat_projectData_field_4_COUNTER]/name" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:projectData/fields/field[$xnat_projectData_field_4_COUNTER]/xnat_projectData_field_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:projectData/fields/field -->
+			</TABLE>
+<!-- END xnat:projectData -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

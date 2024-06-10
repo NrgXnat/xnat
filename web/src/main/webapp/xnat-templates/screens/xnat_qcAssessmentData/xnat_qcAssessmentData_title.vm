@@ -1,0 +1,6 @@
+
+#set ($type = $om.getType())
+
+			   
+#parse($turbineUtils.getTemplateName("title",$om.getXSIType(),$project,$type))
+

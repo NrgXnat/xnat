@@ -1,0 +1,10 @@
+<!-- Sequence: 50 -->
+
+## sample file to add form elements to project-subject selector
+
+<!--
+<tr>
+    <th>Input Label</th>
+    <td><input id="test_input" name="test_input" type="text"></td>
+</tr>
+-->

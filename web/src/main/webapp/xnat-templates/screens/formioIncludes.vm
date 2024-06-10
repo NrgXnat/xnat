@@ -1,0 +1,33 @@
+<!-- BEGIN xnat-templates/screens/formioIncludes.vm -->
+#parse('screens/formioIncludesBase.vm')
+
+<script type="text/javascript"> 
+   console.log('IN xnat-templates/screens/formioIncludes.vm');
+</script>
+
+
+<script type="text/javascript">
+ 	window.customFormComponents = new CustomVariableFormComponents();
+    window.customFormComponents.init();
+
+    YAHOO.util.Event.onDOMReady(function(){
+		_addFormValidation(window.customFormComponents.formsIOValidator);
+	});
+
+    window.addEventListener('load', function() {
+       //This odd style is required as the ID contains colon and /
+       var projectSelectElement = document.getElementById(projectFieldName);
+       if(typeof projectSelectElement !== 'undefined' && projectSelectElement !== null && projectSelectElement.tagName === 'SELECT') {
+              $(document.getElementById(projectFieldName)).chosen().change(handleProjectChange);
+       }
+     });
+
+     function handleProjectChange() {
+           window.customFormComponents.updateOnProjectChange();
+     }
+</script>
+
+
+
+
+<!-- END xnat-templates/screens/formioIncludes.vm -->

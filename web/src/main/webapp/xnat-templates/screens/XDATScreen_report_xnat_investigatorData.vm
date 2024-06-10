@@ -1,0 +1,63 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+
+#set ( $exptHeadings = ["Date", "Type", "ID", "Investigator" ] )
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+    #set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+#else
+    #set ($popup = "false")
+#end
+<TABLE width="100%">
+    <TR>
+        <TD>
+            <table width="100%">
+                <TR>
+                    <TD align="left" valign="middle">
+                        <b>Investigator Details</b>
+                    </TD>
+                </TR>
+            </TABLE>
+        </TD>
+    </TR>
+    <TR>
+        <TD>
+            <TABLE width="100%">
+                <TR>
+                    <TD valign="top">
+                        <table align="left">
+                            <tr>
+                                <TH align="left">ID</TH>
+                                <TD>#escapeCleanHTML($!item.getProperty("ID"))</TD>
+                            </tr>
+                            <tr>
+                                <TH align="left">Name</TH>
+                                <TD>#escapeCleanHTML($!item.getProperty("title")) #escapeCleanHTML($!item.getProperty("firstname")) #escapeCleanHTML($!item.getProperty("lastname"))</TD>
+                            </tr>
+                            <tr>
+                                <TH align="left">Institution</TH>
+                                <TD>#escapeCleanHTML($!item.getProperty("institution"))</TD>
+                            </tr>
+                            <tr>
+                                <TH align="left">Department</TH>
+                                <TD>#escapeCleanHTML($!item.getProperty("department"))</TD>
+                            </tr>
+                            <tr>
+                                <TH align="left">Email</TH>
+                                #define ($emailAddr)
+                                    #escapeAll($!item.getProperty("email"))
+                                #end
+                                <TD><A href="mailto:$emailAddr.trim()">$emailAddr.trim()</A></TD>
+                            </tr>
+                            <tr>
+                                <TH align="left">Phone</TH>
+                                <TD>#escapeCleanHTML($!item.getProperty("phone"))</TD>
+                            </tr>
+                        </table>
+                    </TD>
+                    <TD valign="top" align="right">
+                        #elementActionsBox($element $search_field $search_value $user $item)
+                    </TD>
+                </TR>
+            </TABLE>
+        </TD>
+    </TR>
+</TABLE>

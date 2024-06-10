@@ -1,0 +1,46 @@
+<!-- BEGIN META-INF/resources/templates/screens/reportPageActionEnablers.vm -->
+<script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
+<script>
+    // enable "Manage Files" action
+    var obj = {};
+    obj.uri = serverRoot + "/data/experiments/$!om.getId()";
+    obj.refresh = serverRoot + "/data/services/refresh/catalog?options=" + encodeURIComponent("populateStats,append,delete,checksum") + "&XNAT_CSRF=" + csrfToken + "&resource=/archive/experiments/$!om.getId()";
+    obj.objectId = "$!om.getId()";
+    obj.objectType = "experiment";
+
+        #if ($turbineUtils.canEdit($user, $item))
+        obj.canEdit = true;
+        #else
+        obj.canEdit = false;
+        #end
+        #if ($turbineUtils.canDelete($user, $item))
+        obj.canDelete = true;
+        #else
+        obj.canDelete = false;
+        #end
+
+    obj.catalogs = {};
+    obj.catalogs.ids = [];
+    obj.allowDownload = ("$!user.checkRestrictedFeature("$!om.getProject()",'data_download')" == "true")
+    window.viewer = new FileViewer(obj);
+
+    function showFiles() {
+        window.viewer.render();
+    }
+</script>
+<!-- enable restDelete() function -->
+<script type="text/javascript">
+    var _a = [];
+
+    _a.push({
+        "label": window.available_elements_getByName("$om.getXSIType()").singular +" $!om.getLabel() ($!om.getId())",
+        "ru":"/data/projects/${project}/experiments/$om.getId()",
+        "redirect":serverRoot+"/data/projects/$!{project}?format=html",
+        canRead:true,
+        checked:true,
+        xsiType:window.available_elements_getByName("$om.getXSIType()").singular,
+        date:"$!om.getDate()",
+        primary_label:"$!om.getIdentifier($project)"
+    });
+</script>
+<!-- END META-INF/resources/templates/screens/reportPageActionEnablers.vm -->

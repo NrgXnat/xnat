@@ -1,0 +1,66 @@
+<!-- BEGIN /xnat-templates/screens/xnat_imageSessionData/upload/xnat_imageSessionData_fields.vm -->
+
+<tr valign="top">
+	<th align="left"><p style="margin-top: 0.5em">Scanner Name</p></th>
+
+	#set($currentScanner=$item.getProperty("scanner"))
+	#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id LEFT JOIN xnat_imageScanData scan ON isd.id=scan.image_session_id WHERE xme.element_name='${datatype}' AND scan.scanner='$currentScanner'"))
+
+	#if($scanners.size()==0)
+		#if($project)
+			#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM ${om.getItem().getGenericSchemaElement().getSQLName()} mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id LEFT JOIN xnat_experimentData expt ON isd.id=expt.id WHERE expt.project='$project'"))
+			#if($scanners.size()==0)
+				#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM ${om.getItem().getGenericSchemaElement().getSQLName()} mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id"))
+			#end
+		#else
+			#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM ${om.getItem().getGenericSchemaElement().getSQLName()} mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id"))
+		#end
+	#end
+
+	#if($scanners.size()==0)
+		<td> #xdatTextBox("${datatype}.scanner" $item "" $vr)</td>
+	#else
+		<td>
+			#if (!$datatype)
+				#set ($datatype = 'xnat:imageSessionData')
+			#end
+			#set ($modalityParam = ${om.getItem().getGenericSchemaElement().getSQLName()})
+			#parse('/screens/xnat_imageSessionData/upload/scanners.vm')
+		</td>
+	#end
+</tr>
+
+<tr>
+	<th>Acquisition Site</th>
+	<td>
+	 #xdatTextBox("${datatype}.acquisition_site" $item "" $vr)
+	</td>
+	<td></td>
+</tr>
+<tr>
+			 <td colspan="2"><div style="line-height:8px">&nbsp;</div></td>
+		</tr>
+		<tr name="additional_fields" style="display:none">
+			 <td>Operator</td>
+			 <td>
+		  	#if ($vr)
+	    		#if($vr.getField("${datatype}.operator"))
+		      	<font color="red">&#8658</font>
+	    		#end
+  			#end
+	  		#if ($item.getProperty("${datatype}.operator"))
+	  			<input type="text" name="${datatype}.operator"
+	    	  #if ($item.getProperty("${datatype}.operator")=="null")
+		      	value=""
+		      #else
+		      	value="$item.getProperty("${datatype}.operator")"
+		      #end
+		      />
+	  		#else
+	    		<input type="text" name="${datatype}.operator" value=""/>
+	  		#end
+		  </td>
+		  <td></td> <!-- no hints available -->
+		</tr>
+
+<!-- END /xnat-templates/screens/xnat_imageSessionData/upload/xnat_imageSessionData_fields.vm -->

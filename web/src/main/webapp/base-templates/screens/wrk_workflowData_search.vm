@@ -1,0 +1,83 @@
+
+<div class="advanced-search-fields autogen"><div class="search-group by-criteria"><h3><label>Search by Criteria <input type="checkbox" class="search-method by-criteria" value="by-criteria"></label></h3>
+<div class="search-item">
+<h5>data_type:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("DATA_TYPE"))
+</div>
+<div class="search-item">
+<h5>Workflow ID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("WORKFLOW_ID"))
+</div>
+<div class="search-item">
+<h5>ID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("ID"))
+</div>
+<div class="search-item">
+<h5>ExternalID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("EXTERNALID"))
+</div>
+<div class="search-item">
+<h5>current_step_launch_time:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("CURRENT_STEP_LAUNCH_TIME"))
+</div>
+<div class="search-item">
+<h5>current_step_id:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("CURRENT_STEP_ID"))
+</div>
+<div class="search-item">
+<h5>status:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("STATUS"))
+</div>
+<div class="search-item">
+<h5>pipeline_name:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PIPELINE_NAME"))
+</div>
+<div class="search-item">
+<h5>next_step_id:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("NEXT_STEP_ID"))
+</div>
+<div class="search-item">
+<h5>step_description:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("STEP_DESCRIPTION"))
+</div>
+<div class="search-item">
+<h5>launch_time:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("LAUNCH_TIME"))
+</div>
+<div class="search-item">
+<h5>percentageComplete:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PERCENTAGECOMPLETE"))
+</div>
+<div class="search-item">
+<h5>Job ID:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("JOB_ID"))
+</div>
+<div class="search-item">
+<h5>Modified:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("LAST_MODIFIED"))
+</div>
+<div class="search-item">
+<h5>Session:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SESSION_LABEL"))
+</div>
+<div class="search-item">
+<h5>Project:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("PROJECT"))
+</div>
+<div class="search-item">
+<h5>Subject:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("SUBJECT_LABEL"))
+</div>
+<div class="search-item">
+<h5>Userfullname:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("USERFULLNAME"))
+</div>
+<div class="search-item">
+<h5>Userlogin:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("USERLOGIN"))
+</div>
+<div class="search-item">
+<h5>Useremail:</h5>
+#xdatSearchField($schemaElement $schemaElement.getDisplayField("USEREMAIL"))
+</div>
+<div class="clear"></div></div></div>

@@ -1,0 +1,53 @@
+<!-- start: screens/xnat_projectData_search.vm -->
+
+<style type="text/css">
+    #project-advanced-search input { width: 90%; }
+</style>
+
+<div id="project-advanced-search" class="advanced-search-fields" style="margin-top:0;">
+
+##    <h3>Enter Search Criteria</h3>
+
+##    <div class="search-group by-criteria">
+
+    <table cellspacing="0" width="100%">
+        <tr>
+            <td>
+                <h5>ID:</h5>
+                #xdatSearchField($schemaElement $schemaElement.getDisplayField("ID"))
+            </td>
+            <td>
+                <h5>Title:</h5>
+                #xdatSearchField($schemaElement $schemaElement.getDisplayField("NAME"))
+            </td>
+            <td>
+                <h5>Description:</h5>
+                #xdatSearchField($schemaElement $schemaElement.getDisplayField("DESCRIPTION"))
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <h5>Keywords:</h5>
+                #xdatSearchField($schemaElement $schemaElement.getDisplayField("KEYWORDS"))
+            </td>
+            <td colspan="2">
+                <h5>Investigator:</h5>
+                #set($queryResults = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList(
+                    "SELECT lastname, lastname || ', ' || firstname FROM xnat_investigatorData ORDER BY lastname"))
+                <select id="project-investigator" class="xnat-menu" data-menu-opts="width:220px" name="${schemaElement.getFullXMLName()}.PROJECT_INVS_equals">
+                    <option value="">(SELECT)</option>
+                    #foreach($inv in $queryResults)
+                        <option value="$inv.get(1)">$inv.get(1)</option>
+                    #end
+                </select>
+            </td>
+        </tr>
+    </table>
+
+##    </div>
+
+##    <div class="clear"></div>
+
+</div>
+
+<!-- end: screens/xnat_projectData_search.vm -->

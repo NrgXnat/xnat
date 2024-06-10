@@ -1,0 +1,274 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("PETSession Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>PETSession Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:petSessionData/ID")</TD></TR>
+							<TR><TD>session_type</TD><TD>$!item.getStringProperty("xnat:petSessionData/session_type")</TD></TR>
+							<TR><TD>modality</TD><TD>$!item.getStringProperty("xnat:petSessionData/modality")</TD></TR>
+							<TR><TD>date</TD><TD>$!item.getProperty("xnat:petSessionData/date")</TD></TR>
+							<TR><TD>time</TD><TD>$!item.getProperty("xnat:petSessionData/time")</TD></TR>
+							<TR><TD>scanner</TD><TD>$!item.getStringProperty("xnat:petSessionData/scanner")</TD></TR>
+							<TR><TD>operator</TD><TD>$!item.getStringProperty("xnat:petSessionData/operator")</TD></TR>
+							<TR><TD>studyType</TD><TD>$!item.getStringProperty("xnat:petSessionData/studyType")</TD></TR>
+							<TR><TD>patientID</TD><TD>$!item.getStringProperty("xnat:petSessionData/patientID")</TD></TR>
+							<TR><TD>patientName</TD><TD>$!item.getStringProperty("xnat:petSessionData/patientName")</TD></TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:petSessionData -->
+			<TABLE>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+									#if($item.getProperty("xnat:petSessionData/investigator/firstname"))
+				<TR>
+					<TD align="left" valign="top">
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:mrSessionData/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">Investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TH align="left">Firstname</TH><TD>$!item.getStringProperty("xnat:petSessionData/investigator/firstname")</TD></TR>
+										<TR><TH align="left">Lastname</TH><TD>$!item.getStringProperty("xnat:petSessionData/investigator/lastname")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:mrSessionData/investigator -->
+					</TD>
+				</TR>
+			#end
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+#set ($scanCounter = 0)
+					<TD align="left" valign="top">
+					#set($dynamic=$om.getDynamicEmissionScan())
+					#if($dynamic)
+									<TABLE>
+																	<TR><TH align="left"><BR>		<A name="LINK${scanCounter}" HREF="#LINK${scanCounter}" onClick=" return blocking($scanCounter);">
+			<img ID="IMG$scanCounter" src="$content.getURI("images/plus.jpg")" border=0><font face="$ui.sansSerifFonts" size="2"> Dynamic Emission Series</font>
+</A></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+		<span ID="span$!scanCounter" style="position:relative; display:none;">
+<TABLE>
+													<TR><TD>Orientation</TD><TD>$!dynamic.getProperty("parameters/orientation")</TD></TR>
+													<TR><TD>Scan Time</TD><TD>$!dynamic.getProperty("startTime")</TD></TR>
+													<TR><TD>Original File Name</TD><TD>$!dynamic.getStringProperty("parameters/originalFileName")</TD></TR>
+													<TR><TD>System Type</TD><TD>$!dynamic.getProperty("parameters/systemType")</TD></TR>
+													<TR><TD>File Type</TD><TD>$!dynamic.getProperty("parameters/fileType")</TD></TR>
+													<TR><TD>Transaxial FOV</TD><TD>$!dynamic.getProperty("parameters/transaxialFOV")</TD></TR>
+													<TR><TD>Acq Type</TD><TD>$!dynamic.getProperty("parameters/acqType")</TD></TR>
+													<TR><TD>Facility</TD><TD>$!dynamic.getStringProperty("parameters/facility")</TD></TR>
+													<TR><TD>Num Planes</TD><TD>$!dynamic.getProperty("parameters/numPlanes")</TD></TR>
+													<TR><TD>Num Gates</TD><TD>$!dynamic.getProperty("parameters/numGates")</TD></TR>
+													<TR><TD>Plane Separation</TD><TD>$!dynamic.getProperty("parameters/planeSeparation")</TD></TR>
+													<TR><TD>Bin Size</TD><TD>$!dynamic.getProperty("parameters/binSize")</TD></TR>
+													<TR><TD>Data Type</TD><TD>$!dynamic.getProperty("parameters/dataType")</TD></TR>
+													<TR><TD>Dimensions x</TD><TD>$!dynamic.getProperty("parameters/dimensions/x")</TD></TR>
+													<TR><TD>Dimensions y</TD><TD>$!dynamic.getProperty("parameters/dimensions/y")</TD></TR>
+													<TR><TD>Dimensions z</TD><TD>$!dynamic.getProperty("parameters/dimensions/z")</TD></TR>
+													<TR><TD>Dimensions num</TD><TD>$!dynamic.getProperty("parameters/dimensions/num")</TD></TR>
+													<TR><TD>Offset x</TD><TD>$!dynamic.getProperty("parameters/offset/x")</TD></TR>
+													<TR><TD>Offset y</TD><TD>$!dynamic.getProperty("parameters/offset/y")</TD></TR>
+													<TR><TD>Offset z</TD><TD>$!dynamic.getProperty("parameters/offset/z")</TD></TR>
+													<TR><TD>Recon Zoom</TD><TD>$!dynamic.getProperty("parameters/reconZoom")</TD></TR>
+													<TR><TD>Pixel Size x</TD><TD>$!dynamic.getProperty("parameters/pixelSize/x")</TD></TR>
+													<TR><TD>Pixel Size y</TD><TD>$!dynamic.getProperty("parameters/pixelSize/y")</TD></TR>
+													<TR><TD>Pixel Size z</TD><TD>$!dynamic.getProperty("parameters/pixelSize/z")</TD></TR>
+													<TR><TD>Filter Code</TD><TD>$!dynamic.getProperty("parameters/filterCode")</TD></TR>
+													<TR><TD>Resolution x</TD><TD>$!dynamic.getProperty("parameters/resolution/x")</TD></TR>
+													<TR><TD>Resolution y</TD><TD>$!dynamic.getProperty("parameters/resolution/y")</TD></TR>
+													<TR><TD>Resolution z</TD><TD>$!dynamic.getProperty("parameters/resolution/z")</TD></TR>
+													<TR><TD>Num RElements</TD><TD>$!dynamic.getProperty("parameters/numRElements")</TD></TR>
+													<TR><TD>Num Angles</TD><TD>$!dynamic.getProperty("parameters/numAngles")</TD></TR>
+													<TR><TD>ZRotation Angle</TD><TD>$!dynamic.getProperty("parameters/ZRotationAngle")</TD></TR>
+													<TR><TD>Processing Code</TD><TD>$!dynamic.getProperty("parameters/processingCode")</TD></TR>
+													<TR><TD>Gate Duration</TD><TD>$!dynamic.getProperty("parameters/gateDuration")</TD></TR>
+													<TR><TD>RWave Offset</TD><TD>$!dynamic.getProperty("parameters/rWaveOffset")</TD></TR>
+													<TR><TD>Num Accepted Beats</TD><TD>$!dynamic.getProperty("parameters/numAcceptedBeats")</TD></TR>
+													<TR><TD>Filter cutoff</TD><TD>$!dynamic.getProperty("parameters/filter/cutoff")</TD></TR>
+													<TR><TD>Annotation</TD><TD>$!dynamic.getStringProperty("parameters/annotation")</TD></TR>
+													<TR><TD>MT_1_1</TD><TD>$!dynamic.getProperty("parameters/MT_1_1")</TD></TR>
+													<TR><TD>MT_1_2</TD><TD>$!dynamic.getProperty("parameters/MT_1_2")</TD></TR>
+													<TR><TD>MT_1_3</TD><TD>$!dynamic.getProperty("parameters/MT_1_3")</TD></TR>
+													<TR><TD>MT_1_4</TD><TD>$!dynamic.getProperty("parameters/MT_1_4")</TD></TR>
+													<TR><TD>MT_2_1</TD><TD>$!dynamic.getProperty("parameters/MT_2_1")</TD></TR>
+													<TR><TD>MT_2_2</TD><TD>$!dynamic.getProperty("parameters/MT_2_2")</TD></TR>
+													<TR><TD>MT_2_3</TD><TD>$!dynamic.getProperty("parameters/MT_2_3")</TD></TR>
+													<TR><TD>MT_2_4</TD><TD>$!dynamic.getProperty("parameters/MT_2_4")</TD></TR>
+													<TR><TD>MT_3_1</TD><TD>$!dynamic.getProperty("parameters/MT_3_1")</TD></TR>
+													<TR><TD>MT_3_2</TD><TD>$!dynamic.getProperty("parameters/MT_3_2")</TD></TR>
+													<TR><TD>MT_3_3</TD><TD>$!dynamic.getProperty("parameters/MT_3_3")</TD></TR>
+													<TR><TD>MT_3_4</TD><TD>$!dynamic.getProperty("parameters/MT_3_4")</TD></TR>
+													<TR><TD>RFilter cutoff</TD><TD>$!dynamic.getProperty("parameters/RFilter/cutoff")</TD></TR>
+													<TR><TD>RFilter resolution</TD><TD>$!dynamic.getProperty("parameters/RFilter/resolution")</TD></TR>
+													<TR><TD>RFilter code</TD><TD>$!dynamic.getProperty("parameters/RFilter/code")</TD></TR>
+													<TR><TD>RFilter order</TD><TD>$!dynamic.getProperty("parameters/RFilter/order")</TD></TR>
+													<TR><TD>ZFilter cutoff</TD><TD>$!dynamic.getProperty("parameters/ZFilter/cutoff")</TD></TR>
+													<TR><TD>ZFilter resolution</TD><TD>$!dynamic.getProperty("parameters/ZFilter/resolution")</TD></TR>
+													<TR><TD>ZFilter code</TD><TD>$!dynamic.getProperty("parameters/ZFilter/code")</TD></TR>
+													<TR><TD>ZFilter order</TD><TD>$!dynamic.getProperty("parameters/ZFilter/order")</TD></TR>
+													<TR><TD>Scatter Type</TD><TD>$!dynamic.getProperty("parameters/scatterType")</TD></TR>
+													<TR><TD>Recon Type</TD><TD>$!dynamic.getProperty("parameters/reconType")</TD></TR>
+													<TR><TD>Recon Views</TD><TD>$!dynamic.getProperty("parameters/reconViews")</TD></TR>
+													<TR><TD>Bed Position</TD><TD>$!dynamic.getProperty("parameters/bedPosition")</TD></TR>
+													<TR><TD>Ecat CalibrationFactor</TD><TD>$!dynamic.getProperty("parameters/ecatCalibrationFactor")</TD></TR>
+													<TR><TD>Ecat Validation</TD><TD>$!dynamic.getStringProperty("ecatValidation")</TD></TR>
+													<TR><TD>Ecat Validation status</TD><TD>$!dynamic.getBooleanProperty("ecatValidation/status")</TD></TR>
+																										<TR><TD>File</TD>																						<TD>
+													#set($xnat_abstractResource_9_NUM_ROWS=$dynamic.getChildItems("file").size())
+													#if($xnat_abstractResource_9_NUM_ROWS>0)
+																										  #set($file = $dynamic.getChildItems("file").get(0))
+																										  $file.getProperty("URI") ($file.getProperty("format"))
+																										#end
+																																																			</TD></TR>
+												</TABLE>
+												</span>
+												</TD>
+												</TR>										
+										</TABLE>
+										#else
+									<TABLE>
+																	<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" color="red" size="2">Dynamic Emission Series Missing</font></TH></TR>
+																	</TABLE>
+					#end
+					</TD>
+				</TR>
+				
+				<TR>
+#set ($scanCounter = 1)
+					<TD align="left" valign="top">
+					#set($trans=$om.getTransmissionScan())
+					#if($trans)
+									<TABLE>
+																	<TR><TH align="left"><BR>		<A name="LINK${scanCounter}" HREF="#LINK${scanCounter}" onClick=" return blocking($scanCounter);">
+			<img ID="IMG$scanCounter" src="$content.getURI("images/plus.jpg")" border=0><font face="$ui.sansSerifFonts" size="2"> Transmission Series</font>
+</A></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+		<span ID="span$!scanCounter" style="position:relative; display:none;">
+<TABLE>
+													<TR><TD>Orientation</TD><TD>$!trans.getProperty("parameters/orientation")</TD></TR>
+													<TR><TD>Start Time</TD><TD>$!trans.getProperty("startTime")</TD></TR>
+													<TR><TD>Original File Name</TD><TD>$!trans.getStringProperty("parameters/originalFileName")</TD></TR>
+													<TR><TD>System Type</TD><TD>$!trans.getProperty("parameters/systemType")</TD></TR>
+													<TR><TD>File Type</TD><TD>$!trans.getProperty("parameters/fileType")</TD></TR>
+													<TR><TD>Transaxial FOV</TD><TD>$!trans.getProperty("parameters/transaxialFOV")</TD></TR>
+													<TR><TD>Acq Type</TD><TD>$!trans.getProperty("parameters/acqType")</TD></TR>
+													<TR><TD>Facility</TD><TD>$!trans.getStringProperty("parameters/facility")</TD></TR>
+													<TR><TD>Num Planes</TD><TD>$!trans.getProperty("parameters/numPlanes")</TD></TR>
+													<TR><TD>Num Gates</TD><TD>$!trans.getProperty("parameters/numGates")</TD></TR>
+													<TR><TD>Plane Separation</TD><TD>$!trans.getProperty("parameters/planeSeparation")</TD></TR>
+													<TR><TD>Bin Size</TD><TD>$!trans.getProperty("parameters/binSize")</TD></TR>
+													<TR><TD>Data Type</TD><TD>$!trans.getProperty("parameters/dataType")</TD></TR>
+													<TR><TD>Dimensions x</TD><TD>$!trans.getProperty("parameters/dimensions/x")</TD></TR>
+													<TR><TD>Dimensions y</TD><TD>$!trans.getProperty("parameters/dimensions/y")</TD></TR>
+													<TR><TD>Dimensions z</TD><TD>$!trans.getProperty("parameters/dimensions/z")</TD></TR>
+													<TR><TD>Dimensions num</TD><TD>$!trans.getProperty("parameters/dimensions/num")</TD></TR>
+													<TR><TD>Offset x</TD><TD>$!trans.getProperty("parameters/offset/x")</TD></TR>
+													<TR><TD>Offset y</TD><TD>$!trans.getProperty("parameters/offset/y")</TD></TR>
+													<TR><TD>Offset z</TD><TD>$!trans.getProperty("parameters/offset/z")</TD></TR>
+													<TR><TD>Recon Zoom</TD><TD>$!trans.getProperty("parameters/reconZoom")</TD></TR>
+													<TR><TD>Pixel Size x</TD><TD>$!trans.getProperty("parameters/pixelSize/x")</TD></TR>
+													<TR><TD>Pixel Size y</TD><TD>$!trans.getProperty("parameters/pixelSize/y")</TD></TR>
+													<TR><TD>Pixel Size z</TD><TD>$!trans.getProperty("parameters/pixelSize/z")</TD></TR>
+													<TR><TD>Filter Code</TD><TD>$!trans.getProperty("parameters/filterCode")</TD></TR>
+													<TR><TD>Resolution x</TD><TD>$!trans.getProperty("parameters/resolution/x")</TD></TR>
+													<TR><TD>Resolution y</TD><TD>$!trans.getProperty("parameters/resolution/y")</TD></TR>
+													<TR><TD>Resolution z</TD><TD>$!trans.getProperty("parameters/resolution/z")</TD></TR>
+													<TR><TD>Num RElements</TD><TD>$!trans.getProperty("parameters/numRElements")</TD></TR>
+													<TR><TD>Num Angles</TD><TD>$!trans.getProperty("parameters/numAngles")</TD></TR>
+													<TR><TD>ZRotation Angle</TD><TD>$!trans.getProperty("parameters/ZRotationAngle")</TD></TR>
+													<TR><TD>Processing Code</TD><TD>$!trans.getProperty("parameters/processingCode")</TD></TR>
+													<TR><TD>Gate Duration</TD><TD>$!trans.getProperty("parameters/gateDuration")</TD></TR>
+													<TR><TD>RWave Offset</TD><TD>$!trans.getProperty("parameters/rWaveOffset")</TD></TR>
+													<TR><TD>Num Accepted Beats</TD><TD>$!trans.getProperty("parameters/numAcceptedBeats")</TD></TR>
+													<TR><TD>Filter cutoff</TD><TD>$!trans.getProperty("parameters/filter/cutoff")</TD></TR>
+													<TR><TD>Annotation</TD><TD>$!trans.getStringProperty("parameters/annotation")</TD></TR>
+													<TR><TD>MT_1_1</TD><TD>$!trans.getProperty("parameters/MT_1_1")</TD></TR>
+													<TR><TD>MT_1_2</TD><TD>$!trans.getProperty("parameters/MT_1_2")</TD></TR>
+													<TR><TD>MT_1_3</TD><TD>$!trans.getProperty("parameters/MT_1_3")</TD></TR>
+													<TR><TD>MT_1_4</TD><TD>$!trans.getProperty("parameters/MT_1_4")</TD></TR>
+													<TR><TD>MT_2_1</TD><TD>$!trans.getProperty("parameters/MT_2_1")</TD></TR>
+													<TR><TD>MT_2_2</TD><TD>$!trans.getProperty("parameters/MT_2_2")</TD></TR>
+													<TR><TD>MT_2_3</TD><TD>$!trans.getProperty("parameters/MT_2_3")</TD></TR>
+													<TR><TD>MT_2_4</TD><TD>$!trans.getProperty("parameters/MT_2_4")</TD></TR>
+													<TR><TD>MT_3_1</TD><TD>$!trans.getProperty("parameters/MT_3_1")</TD></TR>
+													<TR><TD>MT_3_2</TD><TD>$!trans.getProperty("parameters/MT_3_2")</TD></TR>
+													<TR><TD>MT_3_3</TD><TD>$!trans.getProperty("parameters/MT_3_3")</TD></TR>
+													<TR><TD>MT_3_4</TD><TD>$!trans.getProperty("parameters/MT_3_4")</TD></TR>
+													<TR><TD>RFilter cutoff</TD><TD>$!trans.getProperty("parameters/RFilter/cutoff")</TD></TR>
+													<TR><TD>RFilter resolution</TD><TD>$!trans.getProperty("parameters/RFilter/resolution")</TD></TR>
+													<TR><TD>RFilter code</TD><TD>$!trans.getProperty("parameters/RFilter/code")</TD></TR>
+													<TR><TD>RFilter order</TD><TD>$!trans.getProperty("parameters/RFilter/order")</TD></TR>
+													<TR><TD>ZFilter cutoff</TD><TD>$!trans.getProperty("parameters/ZFilter/cutoff")</TD></TR>
+													<TR><TD>ZFilter resolution</TD><TD>$!trans.getProperty("parameters/ZFilter/resolution")</TD></TR>
+													<TR><TD>ZFilter code</TD><TD>$!trans.getProperty("parameters/ZFilter/code")</TD></TR>
+													<TR><TD>ZFilter order</TD><TD>$!trans.getProperty("parameters/ZFilter/order")</TD></TR>
+													<TR><TD>Scatter Type</TD><TD>$!trans.getProperty("parameters/scatterType")</TD></TR>
+													<TR><TD>Recon Type</TD><TD>$!trans.getProperty("parameters/reconType")</TD></TR>
+													<TR><TD>Recon Views</TD><TD>$!trans.getProperty("parameters/reconViews")</TD></TR>
+													<TR><TD>Bed Position</TD><TD>$!trans.getProperty("parameters/bedPosition")</TD></TR>
+													<TR><TD>Ecat CalibrationFactor</TD><TD>$!trans.getProperty("parameters/ecatCalibrationFactor")</TD></TR>
+													<TR><TD>Ecat Validation</TD><TD>$!trans.getStringProperty("ecatValidation")</TD></TR>
+													<TR><TD>Ecat Validation status</TD><TD>$!trans.getBooleanProperty("ecatValidation/status")</TD></TR>
+																										<TR><TD>File</TD>																						<TD>
+													#set($xnat_abstractResource_9_NUM_ROWS=$dynamic.getChildItems("file").size())
+													#if($xnat_abstractResource_9_NUM_ROWS>0)
+																										  #set($file = $dynamic.getChildItems("file").get(0))
+																										  $file.getProperty("URI") ($file.getProperty("format"))
+																										#end
+																																																			</TD></TR>
+												</TABLE>
+												</span>
+												</TD>
+												</TR>										
+										</TABLE>
+										#else
+									<TABLE>
+																	<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" color="red" size="2">Transmission Series Missing</font></TH></TR>
+																	</TABLE>
+					#end
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:petSessionData -->
+		</TD>
+	</TR>
+</TABLE>
+			

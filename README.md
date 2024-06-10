@@ -92,5 +92,27 @@ task we will use the `git subtree` command (see [git-subtree][]).
 With this command, we merge the `develop` branch of `xnat-web` (along with all its commit history)
 into our repo in the subdirectory `xnat-web`.
 
+### How will the build work?
+This is still a bit unclear. It seems like we will be using the concept of a gradle [composite build][],
+which is a top-level build that can include other builds. But maybe that is not correct. Maybe we should
+be structuring this as a [multiproject build][]. The two are similar. A composite build seems to keep
+a bit more distance between the projects, because they are run entirely separately and don't share any
+configuration, where a multiproject build runs one "build" that will build the projects with shared
+configuration.
+
+I'm thinking that a composite build would be easier to bootstrap, since we already have separate builds,
+but what we actually want is a multiproject build. We do have a lot of shared state and shared configuration
+and we should take advantage of that. That's another conclusion:
+
+**The monorepo will be structured as a gradle multiproject build**
+
+That doesn't actually answer the question, though. How will the build _work_?
+
+We need to have a `settings.gradle` file at the root level that will `include` the builds from the
+subprojects/subdirectories. And then from that top-level build we will somehow build all the subprojects.
+Still working out those details.
+
+[composite build]: https://docs.gradle.org/current/userguide/composite_builds.html
+[multiproject build]: https://docs.gradle.org/current/userguide/multi_project_builds.html
 [git-subtree]: https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt
 [xnat-web]: https://bitbucket.org/xnatdev/xnat-web

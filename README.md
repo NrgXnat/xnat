@@ -110,7 +110,14 @@ That doesn't actually answer the question, though. How will the build _work_?
 
 We need to have a `settings.gradle` file at the root level that will `include` the builds from the
 subprojects/subdirectories. And then from that top-level build we will somehow build all the subprojects.
-Still working out those details.
+
+To run some gradle task `<task>` in a subproject, say `web`, you can run
+
+    ./gradlew web:<task>
+
+For example, to build the XNAT war, we run
+
+    ./gradlew web:war
 
 [composite build]: https://docs.gradle.org/current/userguide/composite_builds.html
 [multiproject build]: https://docs.gradle.org/current/userguide/multi_project_builds.html

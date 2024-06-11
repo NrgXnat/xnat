@@ -97,6 +97,10 @@ for dep in tree.xpath(
         # Remove the "-plugin" from the end
         version = version[:-len("-plugin")]
 
+    # Special handling for jetbrains annotations
+    if artifactId == "annotations" and groupId == "org.jetbrains":
+        alias = "jetbrains-annotations"
+
     dependencies[alias] = \
         f'{{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
 

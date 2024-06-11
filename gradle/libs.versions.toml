@@ -435,7 +435,7 @@ jaxrpc-api = { module = "javax.xml:jaxrpc-api", version = "1.1" }
 jai-imageio = { module = "com.sun.media:jai_imageio", version.ref = "jai-imageio" }
 javax-mail = { module = "com.sun.mail:javax.mail", version.ref = "javax-mail" }
 jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 metainf-services = { module = "org.kohsuke.metainf-services:metainf-services", version.ref = "metainf-services" }
 groovy-all = { module = "org.codehaus.groovy:groovy-all", version.ref = "groovy" }
 jython = { module = "org.python:jython", version.ref = "jython" }

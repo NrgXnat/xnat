@@ -49,7 +49,7 @@ for dep in tree.xpath(
     version_attr = "version" if version_ref is None else "version.ref"
 
     # No dots allowed in library alias
-    alias = artifactId.replace(".", "-")
+    alias = artifactId.replace(".", "-").lower()
 
     # Special handling for dcm4che5, otherwise we will get duplicate artifactIds
     if version == "dcm4che5":

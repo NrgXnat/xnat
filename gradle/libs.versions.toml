@@ -188,10 +188,10 @@ mizer = { module = "org.nrg.dicom:mizer", version.ref = "xnat" }
 dicom-edit4 = { module = "org.nrg.dicom:dicom-edit4", version.ref = "xnat" }
 dicom-edit6 = { module = "org.nrg.dicom:dicom-edit6", version.ref = "nrg.dicom-edit6" }
 dicomtools = { module = "org.nrg:dicomtools", version.ref = "xnat" }
-DicomImageUtils = { module = "org.nrg:DicomImageUtils", version.ref = "xnat" }
-ExtAttr = { module = "org.nrg:ExtAttr", version.ref = "xnat" }
-PrearcImporter = { module = "org.nrg:PrearcImporter", version.ref = "xnat" }
-SessionBuilders = { module = "org.nrg:SessionBuilders", version.ref = "xnat" }
+dicomimageutils = { module = "org.nrg:DicomImageUtils", version.ref = "xnat" }
+extattr = { module = "org.nrg:ExtAttr", version.ref = "xnat" }
+prearcimporter = { module = "org.nrg:PrearcImporter", version.ref = "xnat" }
+sessionbuilders = { module = "org.nrg:SessionBuilders", version.ref = "xnat" }
 dicom-xnat = { module = "org.nrg:dicom-xnat", version.ref = "xnat" }
 dicom-xnat-mx = { module = "org.nrg:dicom-xnat-mx", version.ref = "xnat" }
 dicom-xnat-sop = { module = "org.nrg:dicom-xnat-sop", version.ref = "xnat" }
@@ -212,9 +212,9 @@ xdat-beans = { module = "org.nrg.xdat:xdat-beans", version.ref = "xnat" }
 data-client = { module = "org.nrg.xnat:data-client", version.ref = "xnat" }
 plexiviewer = { module = "org.nrg.xnat:plexiviewer", version.ref = "xnat" }
 ximgview-plugin = { module = "org.nrg.xnatx.plugins:ximgview-plugin", version = "1.0.2" }
-pipelineBase = { module = "org.nrg:pipelineBase", version = "1.0" }
-pipelineBuild = { module = "org.nrg:pipelineBuild", version = "1.0" }
-pipelineWorkflow = { module = "org.nrg:pipelineWorkflow", version = "1.0" }
+pipelinebase = { module = "org.nrg:pipelineBase", version = "1.0" }
+pipelinebuild = { module = "org.nrg:pipelineBuild", version = "1.0" }
+pipelineworkflow = { module = "org.nrg:pipelineWorkflow", version = "1.0" }
 xnat_pipeline = { module = "org.nrg.xnat.pipeline:xnat_pipeline", version.ref = "xnat" }
 xnat_tools = { module = "org.nrg.xnat.pipeline:xnat_tools", version.ref = "xnat" }
 catalog = { module = "org.nrg.xnat.pipeline:catalog", version.ref = "xnat" }
@@ -223,7 +223,7 @@ xnat-pipeline = { module = "org.nrg.xnat.pipeline:xnat-pipeline", version.ref = 
 xnat-tools = { module = "org.nrg.xnat.pipeline:xnat-tools", version.ref = "xnat" }
 imagingtools = { module = "org.nrg.xnat.pipeline:imagingtools", version.ref = "xnat" }
 pipeline-client = { module = "org.nrg.xnat.pipeline:pipeline-client", version.ref = "xnat" }
-pipelineXNAT = { module = "org.nrg:pipelineXNAT", version = "1.0" }
+pipelinexnat = { module = "org.nrg:pipelineXNAT", version = "1.0" }
 base = { module = "org.nrg.xnat.pipeline:base", version = "1.0" }
 build = { module = "org.nrg.xnat.pipeline:build", version = "1.0" }
 workflow = { module = "org.nrg.xnat.pipeline:workflow", version = "1.0" }
@@ -283,7 +283,7 @@ httpcore-nio = { module = "org.apache.httpcomponents:httpcore-nio", version.ref 
 httpcore = { module = "org.apache.httpcomponents:httpcore", version.ref = "httpcomponents-core" }
 httpmime = { module = "org.apache.httpcomponents:httpmime", version.ref = "httpcomponents-mime" }
 org-eclipse-jgit = { module = "org.eclipse.jgit:org.eclipse.jgit", version.ref = "eclipse-jgit" }
-UserAgentUtils = { module = "eu.bitwalker:UserAgentUtils", version.ref = "user-agent-utils" }
+useragentutils = { module = "eu.bitwalker:UserAgentUtils", version.ref = "user-agent-utils" }
 dom4j = { module = "dom4j:dom4j", version.ref = "dom4j" }
 aopalliance = { module = "aopalliance:aopalliance", version.ref = "aopalliance" }
 aspectjweaver = { module = "org.aspectj:aspectjweaver", version.ref = "aspectj" }
@@ -405,7 +405,7 @@ antlr = { module = "org.antlr:antlr", version.ref = "antlr3" }
 antlr-runtime = { module = "org.antlr:antlr-runtime", version.ref = "antlr3" }
 antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr4" }
 antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr4" }
-HikariCP = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 hsqldb = { module = "org.hsqldb:hsqldb", version.ref = "hsqldb" }
 turbine = { module = "turbine:turbine", version.ref = "turbine" }
 torque = { module = "torque:torque", version.ref = "torque" }

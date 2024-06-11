@@ -75,6 +75,11 @@ for dep in tree.xpath(
         # Add "pipeline-" to the beginning
         alias = "pipeline-" + alias
 
+    # Special handling for imagej
+    if alias == "ij":
+        # Just no
+        alias = "imagej"
+
     # Special handling for gradle-X-plugin version ref, which is incorrect
     if version.startswith("gradle-") and version.endswith("-plugin"):
         # Remove the "-plugin" from the end

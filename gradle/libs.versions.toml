@@ -415,7 +415,7 @@ jcs = { module = "jcs:jcs", version.ref = "jcs" }
 avalon-framework-impl = { module = "avalon-framework:avalon-framework-impl", version.ref = "avalon" }
 jargon = { module = "org.dspace:jargon", version.ref = "jargon" }
 json = { module = "org.json:json", version.ref = "json" }
-ij = { module = "net.imagej:ij", version.ref = "imagej" }
+imagej = { module = "net.imagej:ij", version.ref = "imagej" }
 jzlib = { module = "com.jcraft:jzlib", version.ref = "jzlib" }
 joda-time = { module = "joda-time:joda-time", version.ref = "joda-time" }
 nifti-io = { module = "nifti_io:nifti_io", version.ref = "nifti-io" }

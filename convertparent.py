@@ -48,16 +48,19 @@ for dep in tree.xpath(
     version = raw_version if version_ref is None else version_ref
     version_attr = "version" if version_ref is None else "version.ref"
 
+    # No dots allowed in library alias
+    alias = artifactId.replace(".", "-")
+
     # Special handling for dcm4che5, otherwise we will get duplicate artifactIds
     if version == "dcm4che5":
-        artifactId = artifactId.replace("dcm4che", "dcm4che5")
+        alias = alias.replace("dcm4che", "dcm4che5")
 
     # Special handling for axis, otherwise we will get duplicate artifactIds
-    if artifactId[0:4] == "axis":
-        artifactId = ("axis-" if groupId == "axis" else "apache-") + artifactId
+    if alias[0:4] == "axis":
+        alias = ("axis-" if groupId == "axis" else "apache-") + artifactId
 
     dependencies.append(
-        f'{artifactId} = {{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
+        f'{alias} = {{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
     )
 
 with open(outfile, 'w') as f:

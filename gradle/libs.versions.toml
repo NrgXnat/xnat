@@ -446,8 +446,8 @@ jython = { module = "org.python:jython", version.ref = "jython" }
 jython-standalone = { module = "org.python:jython-standalone", version.ref = "jython" }
 jruby = { module = "org.jruby:jruby", version.ref = "jruby" }
 dependency-management-plugin = { module = "io.spring.gradle:dependency-management-plugin", version.ref = "gradle-dependency-management" }
-gradle-cargo-plugin = { module = "com.bmuschko:gradle-cargo-plugin", version.ref = "gradle-cargo-plugin" }
-gradle-tomcat-plugin = { module = "com.bmuschko:gradle-tomcat-plugin", version.ref = "gradle-tomcat-plugin" }
+gradle-cargo-plugin = { module = "com.bmuschko:gradle-cargo-plugin", version.ref = "gradle-cargo" }
+gradle-tomcat-plugin = { module = "com.bmuschko:gradle-tomcat-plugin", version.ref = "gradle-tomcat" }
 gradle-git-version = { module = "com.palantir.gradle.gitversion:gradle-git-version", version.ref = "gradle-git" }
 tomcat-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat-embed" }
 tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat-embed" }

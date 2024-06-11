@@ -65,6 +65,11 @@ for dep in tree.xpath(
     if alias[0:4] == "axis":
         alias = ("axis-" if groupId == "axis" else "apache-") + artifactId
 
+    # Special handling for gradle-X-plugin version ref, which is incorrect
+    if version.startswith("gradle-") and version.endswith("-plugin"):
+        # Remove the "-plugin" from the end
+        version = version[:-len("-plugin")]
+
     dependencies[alias] = \
         f'{{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
 

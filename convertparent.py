@@ -80,6 +80,18 @@ for dep in tree.xpath(
         # Just no
         alias = "imagej"
 
+    # Special handling for deps with numbers: hibernate-types-XX
+    if alias.startswith("hibernate-types-"):
+        # Remove the last hyphen, make it hibernate-typesXX
+        split_alias = alias.split("-")
+        alias = f"{split_alias[0]}-{split_alias[1]}{split_alias[2]}"
+
+    # Special handling for deps with numbers: hibernate-jpa-X-X-api
+    if alias.startswith("hibernate-jpa-"):
+        # Make it hibernate-jpaXX-api
+        split_alias = alias.split("-")
+        alias = f"{split_alias[0]}-{"".join(split_alias[1:-1])}-{split_alias[-1]}"
+
     # Special handling for gradle-X-plugin version ref, which is incorrect
     if version.startswith("gradle-") and version.endswith("-plugin"):
         # Remove the "-plugin" from the end

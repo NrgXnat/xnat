@@ -259,11 +259,11 @@ springfox-swagger-ui = { module = "io.springfox:springfox-swagger-ui", version.r
 javadoc-coverage = { module = "com.manoelcampos:javadoc-coverage", version.ref = "javadoc-coverage" }
 hibernate-core = { module = "org.hibernate:hibernate-core", version.ref = "hibernate" }
 hibernate-envers = { module = "org.hibernate:hibernate-envers", version.ref = "hibernate" }
-hibernate-jpa-2-1-api = { module = "org.hibernate.javax.persistence:hibernate-jpa-2.1-api", version.ref = "hibernate-jpa-2-1" }
+hibernate-jpa21-api = { module = "org.hibernate.javax.persistence:hibernate-jpa-2.1-api", version.ref = "hibernate-jpa-2-1" }
 hibernate-validator = { module = "org.hibernate:hibernate-validator", version.ref = "hibernate-validator" }
 hibernate-commons-annotations = { module = "org.hibernate.common:hibernate-commons-annotations", version.ref = "hibernate-commons" }
 hibernate-ehcache = { module = "org.hibernate:hibernate-ehcache", version.ref = "hibernate" }
-hibernate-types-43 = { module = "com.vladmihalcea:hibernate-types-43", version.ref = "vladmihalcea-hibernate-types" }
+hibernate-types43 = { module = "com.vladmihalcea:hibernate-types-43", version.ref = "vladmihalcea-hibernate-types" }
 ehcache-core = { module = "net.sf.ehcache:ehcache-core", version.ref = "ehcache" }
 jena-core = { module = "org.apache.jena:jena-core", version.ref = "jena" }
 jena-tdb = { module = "org.apache.jena:jena-tdb", version.ref = "jena-tdb" }

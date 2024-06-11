@@ -76,7 +76,7 @@ httpcomponents-client = "4.5.13"
 httpcomponents-core = "4.4.6"
 httpcomponents-mime = "4.5.14"
 imagej = "1.53c"
-jai_imageio = "1.1"
+jai-imageio = "1.1"
 itext = "2.1.7"
 jackson = "2.13.5"
 java-uuid-generator = "3.1.4"
@@ -121,7 +121,7 @@ mockito-jupiter = "4.0.0"
 powermock = "2.0.5"
 easymock = "1.2_Java1.3"
 wiremock = "2.21.0"
-nifti_io = "1.0"
+nifti-io = "1.0"
 org-apache-regexp = "1.5.0"
 org-postgresql = "42.2.10"
 datasource-proxy = "1.6"
@@ -215,12 +215,10 @@ ximgview-plugin = { module = "org.nrg.xnatx.plugins:ximgview-plugin", version = 
 pipelinebase = { module = "org.nrg:pipelineBase", version = "1.0" }
 pipelinebuild = { module = "org.nrg:pipelineBuild", version = "1.0" }
 pipelineworkflow = { module = "org.nrg:pipelineWorkflow", version = "1.0" }
-xnat_pipeline = { module = "org.nrg.xnat.pipeline:xnat_pipeline", version.ref = "xnat" }
-xnat_tools = { module = "org.nrg.xnat.pipeline:xnat_tools", version.ref = "xnat" }
-catalog = { module = "org.nrg.xnat.pipeline:catalog", version.ref = "xnat" }
-client = { module = "org.nrg.xnat.pipeline:client", version.ref = "xnat" }
 xnat-pipeline = { module = "org.nrg.xnat.pipeline:xnat-pipeline", version.ref = "xnat" }
 xnat-tools = { module = "org.nrg.xnat.pipeline:xnat-tools", version.ref = "xnat" }
+catalog = { module = "org.nrg.xnat.pipeline:catalog", version.ref = "xnat" }
+client = { module = "org.nrg.xnat.pipeline:client", version.ref = "xnat" }
 imagingtools = { module = "org.nrg.xnat.pipeline:imagingtools", version.ref = "xnat" }
 pipeline-client = { module = "org.nrg.xnat.pipeline:pipeline-client", version.ref = "xnat" }
 pipelinexnat = { module = "org.nrg:pipelineXNAT", version = "1.0" }
@@ -229,7 +227,7 @@ build = { module = "org.nrg.xnat.pipeline:build", version = "1.0" }
 workflow = { module = "org.nrg.xnat.pipeline:workflow", version = "1.0" }
 xnatsrb = { module = "org.nrg.xnat:xnatsrb", version = "1.0.1" }
 xnatfs = { module = "org.nrg.xnat:xnatfs", version = "1.5.1" }
-batch_launch_plugin = { module = "org.nrg.xnatx.plugins:batch_launch_plugin", version.ref = "batch-launch" }
+batch-launch-plugin = { module = "org.nrg.xnatx.plugins:batch_launch_plugin", version.ref = "batch-launch" }
 container-service = { module = "org.nrg.xnatx.plugins:container-service", version.ref = "container-service" }
 dicom-query-retrieve = { module = "org.nrg.xnatx.plugins:dicom-query-retrieve", version.ref = "dqr" }
 ml-plugin = { module = "org.nrg.xnatx.plugins:ml-plugin", version.ref = "ml" }
@@ -424,7 +422,7 @@ json = { module = "org.json:json", version.ref = "json" }
 ij = { module = "net.imagej:ij", version.ref = "imagej" }
 jzlib = { module = "com.jcraft:jzlib", version.ref = "jzlib" }
 joda-time = { module = "joda-time:joda-time", version.ref = "joda-time" }
-nifti_io = { module = "nifti_io:nifti_io", version.ref = "nifti_io" }
+nifti-io = { module = "nifti_io:nifti_io", version.ref = "nifti-io" }
 com-springsource-org-apache-regexp = { module = "org.apache.regexp:com.springsource.org.apache.regexp", version.ref = "org-apache-regexp" }
 cargo-core-api-module = { module = "org.codehaus.cargo:cargo-core-api-module", version.ref = "cargo" }
 activation = { module = "javax.activation:activation", version.ref = "javax-activation" }
@@ -438,7 +436,7 @@ javax-servlet-api = { module = "javax.servlet:javax.servlet-api", version.ref = 
 jstl = { module = "javax.servlet:jstl", version.ref = "jstl" }
 validation-api = { module = "javax.validation:validation-api", version.ref = "javax-validation" }
 jaxrpc-api = { module = "javax.xml:jaxrpc-api", version = "1.1" }
-jai_imageio = { module = "com.sun.media:jai_imageio", version.ref = "jai_imageio" }
+jai-imageio = { module = "com.sun.media:jai_imageio", version.ref = "jai-imageio" }
 javax-mail = { module = "com.sun.mail:javax.mail", version.ref = "javax-mail" }
 jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
 annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }

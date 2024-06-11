@@ -41,7 +41,7 @@ versions = {
 }
 
 # Collect dependencies
-dependencies = []
+dependencies = {}
 
 for dep in tree.xpath(
         "/pom:project/pom:dependencyManagement/pom:dependencies/pom:dependency", namespaces=ns
@@ -65,9 +65,8 @@ for dep in tree.xpath(
     if alias[0:4] == "axis":
         alias = ("axis-" if groupId == "axis" else "apache-") + artifactId
 
-    dependencies.append(
-        f'{alias} = {{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
-    )
+    dependencies[alias] = \
+        f'{{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
 
 with open(outfile, 'w') as f:
     f.write("[versions]\n")
@@ -76,5 +75,5 @@ with open(outfile, 'w') as f:
             f.write(f"{v_key} = \"{v_value}\"\n")
 
     f.write("\n[libraries]\n")
-    for d in dependencies:
-        f.write(d + "\n")
+    for d_key, d_value in dependencies.items():
+        f.write(f"{d_key} = {d_value}\n")

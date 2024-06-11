@@ -101,6 +101,10 @@ for dep in tree.xpath(
     if artifactId == "annotations" and groupId == "org.jetbrains":
         alias = "jetbrains-annotations"
 
+    # Special handling for "test"
+    if artifactId == "test" and groupId == "org.nrg":
+        alias = "nrg-test"
+
     dependencies[alias] = \
         f'{{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
 

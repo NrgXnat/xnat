@@ -182,7 +182,7 @@ mail = { module = "org.nrg:mail", version.ref = "xnat" }
 notify = { module = "org.nrg:notify", version.ref = "xnat" }
 config = { module = "org.nrg:config", version.ref = "xnat" }
 transaction = { module = "org.nrg:transaction", version.ref = "xnat" }
-test = { module = "org.nrg:test", version.ref = "xnat" }
+nrg-test = { module = "org.nrg:test", version.ref = "xnat" }
 nrg-all = { module = "org.nrg:nrg-all", version.ref = "xnat" }
 mizer = { module = "org.nrg.dicom:mizer", version.ref = "xnat" }
 dicom-edit4 = { module = "org.nrg.dicom:dicom-edit4", version.ref = "xnat" }

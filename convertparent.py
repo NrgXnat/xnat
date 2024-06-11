@@ -42,10 +42,20 @@ for dep in tree.xpath(
 ):
     artifactId = dep.xpath('pom:artifactId', namespaces=ns)[0].text
     groupId = dep.xpath('pom:groupId', namespaces=ns)[0].text
+
     raw_version = dep.xpath('pom:version', namespaces=ns)[0].text
     version_ref = get_version_ref(raw_version, versions)
     version = raw_version if version_ref is None else version_ref
     version_attr = "version" if version_ref is None else "version.ref"
+
+    # Special handling for dcm4che5, otherwise we will get duplicate artifactIds
+    if version == "dcm4che5":
+        artifactId = artifactId.replace("dcm4che", "dcm4che5")
+
+    # Special handling for axis, otherwise we will get duplicate artifactIds
+    if artifactId[0:4] == "axis":
+        artifactId = ("axis-" if groupId == "axis" else "apache-") + artifactId
+
     dependencies.append(
         f'{artifactId} = {{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
     )

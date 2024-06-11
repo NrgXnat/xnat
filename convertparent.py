@@ -66,6 +66,6 @@ with open(outfile, 'w') as f:
         if not v_value.startswith("${"):  # Skip version refs, e.g. ${xnat.version}
             f.write(f"{v_key} = \"{v_value}\"\n")
 
-    f.write("\n[dependencies]\n")
+    f.write("\n[libraries]\n")
     for d in dependencies:
         f.write(d + "\n")

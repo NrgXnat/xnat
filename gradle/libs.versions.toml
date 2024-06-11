@@ -174,7 +174,7 @@ javadoc-coverage = "1.1.1"
 micrometer-core = "1.12.4"
 datasource-micrometer = "1.0.3"
 
-[dependencies]
+[libraries]
 framework = { module = "org.nrg:framework", version.ref = "xnat" }
 automation = { module = "org.nrg:automation", version.ref = "xnat" }
 prefs = { module = "org.nrg:prefs", version.ref = "xnat" }

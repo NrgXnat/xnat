@@ -8,11 +8,17 @@ except ModuleNotFoundError as e:
     print("Must install lxml for this script to work.")
     sys.exit(1)
 
+
+def standardize(raw: str) -> str:
+    return raw.replace(".", "-").replace("_", "-").lower()
+
+
 def get_version_ref(dependency_version: str, versions: dict[str, str]) -> str:
     """Find"""
     ref = None
     while dependency_version is not None and dependency_version.startswith("${"):
         ref = dependency_version[2:-len(".version")-1]  # Strip "${" and ".version}"
+        ref = standardize(ref)
         dependency_version = versions.get(ref)
     return ref
 
@@ -29,7 +35,7 @@ tree = etree.parse(infile)
 # Collect a list of versions in the form
 #   xnat = "1.8.11-SNAPSHOT"
 versions = {
-    el.tag[len(pom)+2:-len(".version")] : el.text
+    standardize(el.tag[len(pom)+2:-len(".version")]) : el.text
     for el in tree.xpath("/pom:project/pom:properties/*", namespaces=ns)
     if el.tag.endswith('.version') and not 'java.' in el.tag
 }
@@ -49,7 +55,7 @@ for dep in tree.xpath(
     version_attr = "version" if version_ref is None else "version.ref"
 
     # No dots allowed in library alias
-    alias = artifactId.replace(".", "-").lower()
+    alias = standardize(artifactId)
 
     # Special handling for dcm4che5, otherwise we will get duplicate artifactIds
     if version == "dcm4che5":

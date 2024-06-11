@@ -1,6 +1,6 @@
 [versions]
 xnat = "1.8.11-SNAPSHOT"
-nrg.dicom-edit6 = "6.7.0-SNAPSHOT"
+nrg-dicom-edit6 = "6.7.0-SNAPSHOT"
 ohif-viewer = "3.0.0"
 container-service = "3.0.0"
 dqr = "1.0.0"
@@ -69,7 +69,7 @@ auto-value = "1.7.4"
 h2 = "1.4.200"
 eclipse-jgit = "4.5.4.201711221230-r"
 hibernate-commons = "4.0.5.Final"
-hibernate-jpa-2.1 = "1.0.2.Final"
+hibernate-jpa-2-1 = "1.0.2.Final"
 hibernate-validator = "4.3.2.Final"
 hibernate = "4.3.11.Final"
 httpcomponents-client = "4.5.13"
@@ -122,8 +122,8 @@ powermock = "2.0.5"
 easymock = "1.2_Java1.3"
 wiremock = "2.21.0"
 nifti_io = "1.0"
-org.apache.regexp = "1.5.0"
-org.postgresql = "42.2.10"
+org-apache-regexp = "1.5.0"
+org-postgresql = "42.2.10"
 datasource-proxy = "1.6"
 log4jdbc = "0.2.0"
 quartz = "2.3.2"
@@ -186,7 +186,7 @@ test = { module = "org.nrg:test", version.ref = "xnat" }
 nrg-all = { module = "org.nrg:nrg-all", version.ref = "xnat" }
 mizer = { module = "org.nrg.dicom:mizer", version.ref = "xnat" }
 dicom-edit4 = { module = "org.nrg.dicom:dicom-edit4", version.ref = "xnat" }
-dicom-edit6 = { module = "org.nrg.dicom:dicom-edit6", version.ref = "nrg.dicom-edit6" }
+dicom-edit6 = { module = "org.nrg.dicom:dicom-edit6", version.ref = "nrg-dicom-edit6" }
 dicomtools = { module = "org.nrg:dicomtools", version.ref = "xnat" }
 dicomimageutils = { module = "org.nrg:DicomImageUtils", version.ref = "xnat" }
 extattr = { module = "org.nrg:ExtAttr", version.ref = "xnat" }
@@ -265,7 +265,7 @@ springfox-swagger-ui = { module = "io.springfox:springfox-swagger-ui", version.r
 javadoc-coverage = { module = "com.manoelcampos:javadoc-coverage", version.ref = "javadoc-coverage" }
 hibernate-core = { module = "org.hibernate:hibernate-core", version.ref = "hibernate" }
 hibernate-envers = { module = "org.hibernate:hibernate-envers", version.ref = "hibernate" }
-hibernate-jpa-2-1-api = { module = "org.hibernate.javax.persistence:hibernate-jpa-2.1-api", version.ref = "hibernate-jpa-2.1" }
+hibernate-jpa-2-1-api = { module = "org.hibernate.javax.persistence:hibernate-jpa-2.1-api", version.ref = "hibernate-jpa-2-1" }
 hibernate-validator = { module = "org.hibernate:hibernate-validator", version.ref = "hibernate-validator" }
 hibernate-commons-annotations = { module = "org.hibernate.common:hibernate-commons-annotations", version.ref = "hibernate-commons" }
 hibernate-ehcache = { module = "org.hibernate:hibernate-ehcache", version.ref = "hibernate" }
@@ -425,7 +425,7 @@ ij = { module = "net.imagej:ij", version.ref = "imagej" }
 jzlib = { module = "com.jcraft:jzlib", version.ref = "jzlib" }
 joda-time = { module = "joda-time:joda-time", version.ref = "joda-time" }
 nifti_io = { module = "nifti_io:nifti_io", version.ref = "nifti_io" }
-com-springsource-org-apache-regexp = { module = "org.apache.regexp:com.springsource.org.apache.regexp", version.ref = "org.apache.regexp" }
+com-springsource-org-apache-regexp = { module = "org.apache.regexp:com.springsource.org.apache.regexp", version.ref = "org-apache-regexp" }
 cargo-core-api-module = { module = "org.codehaus.cargo:cargo-core-api-module", version.ref = "cargo" }
 activation = { module = "javax.activation:activation", version.ref = "javax-activation" }
 javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation" }
@@ -459,7 +459,7 @@ cargo-core-uberjar = { module = "org.codehaus.cargo:cargo-core-uberjar", version
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
 spotbugs = { module = "com.github.spotbugs:spotbugs", version.ref = "spotbugs" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
-postgresql = { module = "org.postgresql:postgresql", version.ref = "org.postgresql" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "org-postgresql" }
 datasource-proxy = { module = "net.ttddyy:datasource-proxy", version.ref = "datasource-proxy" }
 log4jdbc-file = { module = "com.github.marcosemiao.log4jdbc:log4jdbc-file", version.ref = "log4jdbc" }
 hamcrest-core = { module = "org.hamcrest:hamcrest-core", version.ref = "hamcrest" }

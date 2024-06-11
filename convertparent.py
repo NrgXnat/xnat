@@ -65,6 +65,16 @@ for dep in tree.xpath(
     if alias[0:4] == "axis":
         alias = ("axis-" if groupId == "axis" else "apache-") + artifactId
 
+    # Special handling for org.nrg:pipelineX
+    if groupId == "org.nrg" and artifactId.startswith("pipeline"):
+        # Rename pipelineX to pipeline-X
+        alias = "pipeline-" + alias[len("pipeline"):]
+
+    # Special handling for org.nrg.xnat.pipeline:X
+    if groupId == "org.nrg.xnat.pipeline" and not artifactId.startswith("pipeline"):
+        # Add "pipeline-" to the beginning
+        alias = "pipeline-" + alias
+
     # Special handling for gradle-X-plugin version ref, which is incorrect
     if version.startswith("gradle-") and version.endswith("-plugin"):
         # Remove the "-plugin" from the end
@@ -72,6 +82,10 @@ for dep in tree.xpath(
 
     dependencies[alias] = \
         f'{{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
+
+# Special-case this javadoc coverage plugin so I don't have to go digging through the plugins section
+dependencies["javadoc-coverage"] = \
+    '{ module = "com.manoelcampos:javadoc-coverage", version.ref = "javadoc-coverage" }'
 
 with open(outfile, 'w') as f:
     f.write("[versions]\n")

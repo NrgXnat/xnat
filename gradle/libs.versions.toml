@@ -362,11 +362,11 @@ log4j = { module = "log4j:log4j", version.ref = "log4j" }
 log4j-bom = { module = "org.apache.logging.log4j:log4j-bom", version.ref = "log4j2" }
 javamelody-core = { module = "net.bull.javamelody:javamelody-core", version.ref = "javamelody" }
 axis-axis = { module = "axis:axis", version.ref = "axis" }
-axis-axis-ant = { module = "axis:axis-ant", version.ref = "axis" }
-axis-axis-schema = { module = "axis:axis-schema", version = "1.3" }
+axis-ant = { module = "axis:axis-ant", version.ref = "axis" }
+axis-schema = { module = "axis:axis-schema", version = "1.3" }
 apache-axis = { module = "org.apache.axis:axis", version.ref = "axis" }
-apache-axis-jaxrpc = { module = "org.apache.axis:axis-jaxrpc", version.ref = "axis" }
-apache-axis-saaj = { module = "org.apache.axis:axis-saaj", version.ref = "axis" }
+axis-jaxrpc = { module = "org.apache.axis:axis-jaxrpc", version.ref = "axis" }
+axis-saaj = { module = "org.apache.axis:axis-saaj", version.ref = "axis" }
 msv-core = { module = "net.java.dev.msv:msv-core", version.ref = "msv" }
 xsdlib = { module = "net.java.dev.msv:xsdlib", version.ref = "msv" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }

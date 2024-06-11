@@ -62,7 +62,7 @@ for dep in tree.xpath(
         alias = alias.replace("dcm4che", "dcm4che5")
 
     # Special handling for axis, otherwise we will get duplicate artifactIds
-    if alias[0:4] == "axis":
+    if artifactId == "axis":
         alias = ("axis-" if groupId == "axis" else "apache-") + artifactId
 
     # Special handling for org.nrg:pipelineX

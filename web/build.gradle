@@ -135,8 +135,8 @@ dependencies {
     annotationProcessor "org.nrg:framework"
     annotationProcessor "com.google.auto.value:auto-value"
 
-    api platform("org.nrg:parent:${vXnat}")
-    implementation platform("org.nrg:parent:${vXnat}")
+    // Each project has a dependency on the platform
+    api(platform(project(":parent")))
 
     // NRG dependencies first.
     api "org.nrg.xdat:core"

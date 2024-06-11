@@ -21,7 +21,10 @@ ns = {"pom": pom}
 left_tag_strip = "{" + pom + "}"
 right_tag_strip = ".version"
 
-tree = etree.parse("parent/pom.xml")
+infile = "parent/pom.xml"
+outfile = "gradle/libs.versions.toml"
+
+tree = etree.parse(infile)
 
 # Collect a list of versions in the form
 #   xnat = "1.8.11-SNAPSHOT"
@@ -47,7 +50,7 @@ for dep in tree.xpath(
         f'{artifactId} = {{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
     )
 
-with open('libs.versions.toml', 'w') as f:
+with open(outfile, 'w') as f:
     f.write("[versions]\n")
     for v_key, v_value in versions.items():
         if not v_value.startswith("${"):  # Skip version refs, e.g. ${xnat.version}

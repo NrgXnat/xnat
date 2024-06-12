@@ -124,7 +124,9 @@ configurations.all {
 
 dependencies {
     annotationProcessor libs.framework
+    annotationProcessor libs.auto.value
     annotationProcessor libs.auto.value.annotations
+    implementation libs.auto.value.annotations
 
     implementation libs.validation.api
     annotationProcessor libs.validation.api
@@ -289,7 +291,6 @@ dependencies {
     implementation libs.logback.classic
     implementation libs.logback.core
     implementation libs.logstash.logback.encoder
-    implementation libs.auto.value.annotations
 
     providedCompile libs.jsr305
     providedCompile libs.javax.servlet.api

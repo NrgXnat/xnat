@@ -126,6 +126,9 @@ dependencies {
     annotationProcessor libs.framework
     annotationProcessor libs.auto.value.annotations
 
+    implementation libs.validation.api
+    annotationProcessor libs.validation.api
+
     annotationProcessor libs.lombok
     testAnnotationProcessor libs.lombok
 

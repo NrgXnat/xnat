@@ -1,0 +1,12 @@
+plugins {
+    id 'java-platform'
+    id 'version-catalog'
+}
+
+dependencies {
+    // The platform declares constraints on all components that
+    // require alignment
+    constraints {
+        api(project(":web"))
+    }
+}

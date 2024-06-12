@@ -118,221 +118,219 @@ configurations {
     }
 }
 
-dependencyManagement {
-    imports {
-        mavenBom "org.nrg:parent:${vXnat}"
-    }
-    generatedPomCustomization {
-        enabled = false
-    }
-}
-
 configurations.all {
     resolutionStrategy.force "org.mockito:mockito-core:${dependencyManagement.importedProperties["mockito.version"] as String}"
 }
 
 dependencies {
-    annotationProcessor "org.nrg:framework"
-    annotationProcessor "com.google.auto.value:auto-value"
+    annotationProcessor libs.org.nrg.framework
+    annotationProcessor libs.com.google.auto.value.auto.value
+    annotationProcessor libs.com.google.auto.value.auto.value.annotations
+    implementation libs.com.google.auto.value.auto.value.annotations
 
-    api platform("org.nrg:parent:${vXnat}")
-    implementation platform("org.nrg:parent:${vXnat}")
+    implementation libs.javax.validation.validation.api
+    annotationProcessor libs.javax.validation.validation.api
+
+    annotationProcessor libs.org.projectlombok.lombok
+    testAnnotationProcessor libs.org.projectlombok.lombok
+
+    // Each project has a dependency on the platform
+    api(platform(project(":parent")))
 
     // NRG dependencies first.
-    api "org.nrg.xdat:core"
-    api "org.nrg.xnat:xnat-data-models"
-    api "org.nrg:framework"
-    api "org.springframework.security:spring-security-ldap"
-    api "org.springframework.security.oauth:spring-security-oauth2"
-    api "org.springframework.security:spring-security-jwt"
-    api "org.springframework:spring-web"
-    api "org.springframework:spring-jms"
-    api "org.springframework:spring-jdbc"
-    api "org.springframework:spring-beans"
-    api "org.springframework:spring-context"
-    api "org.springframework:spring-core"
+    api libs.org.nrg.xdat.core
+    api libs.org.nrg.xnat.xnat.data.models
+    api libs.org.nrg.framework
+    api libs.org.springframework.security.spring.security.ldap
+    api libs.org.springframework.security.oauth.spring.security.oauth2
+    api libs.org.springframework.security.spring.security.jwt
+    api libs.org.springframework.spring.web
+    api libs.org.springframework.spring.jms
+    api libs.org.springframework.spring.jdbc
+    api libs.org.springframework.spring.beans
+    api libs.org.springframework.spring.context
+    api libs.org.springframework.spring.core
 
-    implementation "org.nrg.xnat:spawner"
-    implementation "org.nrg.xdat:core"
-    implementation "org.nrg:framework"
-    implementation "org.nrg:transaction"
-    implementation "org.nrg:prefs"
-    implementation "org.nrg:config"
-    implementation "org.nrg:automation"
-    implementation "org.nrg:dicomtools"
-    implementation "org.nrg.dicom:dicom-edit4"
-    implementation "org.nrg.dicom:dicom-edit6"
-    implementation "org.nrg:mail"
-    implementation "org.nrg:notify"
+    implementation libs.org.nrg.xnat.spawner
+    implementation libs.org.nrg.xdat.core
+    implementation libs.org.nrg.framework
+    implementation libs.org.nrg.transaction
+    implementation libs.org.nrg.prefs
+    implementation libs.org.nrg.config
+    implementation libs.org.nrg.automation
+    implementation libs.org.nrg.dicomtools
+    implementation libs.org.nrg.dicom.dicom.edit4
+    implementation libs.org.nrg.dicom.dicom.edit6
+    implementation libs.org.nrg.mail
+    implementation libs.org.nrg.notify
 
-    implementation "org.nrg:dicom-xnat-mx"
-    implementation "org.nrg:dicom-xnat-sop"
-    implementation "org.nrg:dicom-xnat-util"
-    implementation "org.nrg:ecat4xnat"
-    implementation "org.nrg:ExtAttr"
-    implementation "org.nrg:DicomImageUtils"
-    implementation "org.nrg:PrearcImporter"
-    implementation "org.nrg:SessionBuilders"
+    implementation libs.org.nrg.dicom.xnat.mx
+    implementation libs.org.nrg.dicom.xnat.sop
+    implementation libs.org.nrg.dicom.xnat.util
+    implementation libs.org.nrg.ecat4xnat
+    implementation libs.org.nrg.extattr
+    implementation libs.org.nrg.dicomimageutils
+    implementation libs.org.nrg.prearcimporter
+    implementation libs.org.nrg.sessionbuilders
 
-    implementation("org.nrg.xnat:plexiviewer") {
+    implementation(libs.org.nrg.xnat.plexiviewer) {
         transitive = false
     }
 
-    implementation "org.nrg:pipelineBase"
-    implementation "org.nrg:pipelineBuild"
-    implementation "org.nrg:pipelineWorkflow"
-    implementation "org.nrg:pipelineXNAT"
-    implementation "org.nrg.xnat.pipeline:pipeline-client"
-    implementation "org.nrg.xnat.pipeline:xnat-pipeline"
-    implementation "org.nrg.xnat.pipeline:xnat-tools"
+    implementation libs.org.nrg.pipelinebase
+    implementation libs.org.nrg.pipelinebuild
+    implementation libs.org.nrg.pipelineworkflow
+    implementation libs.org.nrg.pipelinexnat
+    implementation libs.org.nrg.xnat.pipeline.pipeline.client
+    implementation libs.org.nrg.xnat.pipeline.xnat.pipeline
+    implementation libs.org.nrg.xnat.pipeline.xnat.tools
 
-    implementation "dcm4che:dcm4che-core"
-    implementation "dcm4che:dcm4che-image"
-    implementation "dcm4che:dcm4che-imageio"
-    implementation "dcm4che:dcm4che-imageio-rle"
-    implementation "dcm4che:dcm4che-iod"
-    implementation "dcm4che:dcm4che-net"
-    implementation "net.imagej:ij"
-    implementation "org.dcm4che:dcm4che-core"
-    implementation "org.dcm4che:dcm4che-image"
-    implementation "org.dcm4che:dcm4che-imageio"
+    implementation libs.dcm4che.dcm4che.core
+    implementation libs.dcm4che.dcm4che.image
+    implementation libs.dcm4che.dcm4che.imageio
+    implementation libs.dcm4che.dcm4che.imageio.rle
+    implementation libs.dcm4che.dcm4che.iod
+    implementation libs.dcm4che.dcm4che.net
+    implementation libs.net.imagej.ij
+    implementation libs.org.dcm4che.dcm4che.core
+    implementation libs.org.dcm4che.dcm4che.image
+    implementation libs.org.dcm4che.dcm4che.imageio
 
-    implementation "org.springframework:spring-aop"
-    implementation "org.springframework:spring-context-support"
-    implementation "org.springframework:spring-jms"
-    implementation "org.springframework:spring-messaging"
-    implementation "org.springframework:spring-orm"
-    implementation "org.springframework:spring-oxm"
-    implementation "org.springframework:spring-tx"
-    implementation "org.springframework:spring-webmvc"
+    implementation libs.org.springframework.spring.aop
+    implementation libs.org.springframework.spring.context.support
+    implementation libs.org.springframework.spring.jms
+    implementation libs.org.springframework.spring.messaging
+    implementation libs.org.springframework.spring.orm
+    implementation libs.org.springframework.spring.oxm
+    implementation libs.org.springframework.spring.tx
+    implementation libs.org.springframework.spring.webmvc
 
-    implementation "io.springfox:springfox-swagger2"
-    implementation "io.springfox:springfox-swagger-ui"
+    implementation libs.io.springfox.springfox.swagger2
+    implementation libs.io.springfox.springfox.swagger.ui
 
-    implementation "org.springframework.security:spring-security-acl"
-    implementation "org.springframework.security:spring-security-aspects"
-    implementation "org.springframework.security:spring-security-config"
-    implementation "org.springframework.security:spring-security-taglibs"
-    implementation "org.springframework.ldap:spring-ldap-core"
+    implementation libs.org.springframework.security.spring.security.acl
+    implementation libs.org.springframework.security.spring.security.aspects
+    implementation libs.org.springframework.security.spring.security.config
+    implementation libs.org.springframework.security.spring.security.taglibs
+    implementation libs.org.springframework.ldap.spring.ldap.core
 
-    implementation "org.hibernate:hibernate-core"
-    implementation "org.hibernate:hibernate-ehcache"
-    implementation "org.hibernate:hibernate-validator"
-    implementation "org.hibernate:hibernate-envers"
-    implementation "net.sf.ehcache:ehcache-core"
-    implementation "com.vladmihalcea:hibernate-types-43"
+    implementation libs.org.hibernate.hibernate.core
+    implementation libs.org.hibernate.hibernate.ehcache
+    implementation libs.org.hibernate.hibernate.validator
+    implementation libs.org.hibernate.hibernate.envers
+    implementation libs.net.sf.ehcache.ehcache.core
+    implementation libs.com.vladmihalcea.hibernate.types.v43
 
-    implementation "org.aspectj:aspectjweaver"
-    implementation "org.aspectj:aspectjrt"
+    implementation libs.org.aspectj.aspectjweaver
+    implementation libs.org.aspectj.aspectjrt
 
-    implementation "com.noelios.restlet:com.noelios.restlet"
-    implementation "com.noelios.restlet:com.noelios.restlet.ext.servlet"
-    implementation "org.restlet:org.restlet.ext.fileupload"
+    implementation libs.com.noelios.restlet.com.noelios.restlet
+    implementation libs.com.noelios.restlet.com.noelios.restlet.ext.servlet
+    implementation libs.org.restlet.org.restlet.ext.fileupload
 
-    implementation "com.fasterxml.jackson.core:jackson-annotations"
-    implementation "com.fasterxml.jackson.core:jackson-core"
-    implementation "com.fasterxml.jackson.core:jackson-databind"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
-    implementation "com.fasterxml.jackson.module:jackson-module-parameter-names"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
-    implementation "com.jayway.jsonpath:json-path"
-    implementation "org.json:json"
+    implementation libs.com.fasterxml.jackson.core.jackson.annotations
+    implementation libs.com.fasterxml.jackson.core.jackson.core
+    implementation libs.com.fasterxml.jackson.core.jackson.databind
+    implementation libs.com.fasterxml.jackson.dataformat.jackson.dataformat.yaml
+    implementation libs.com.fasterxml.jackson.datatype.jackson.datatype.hibernate4
+    implementation libs.com.fasterxml.jackson.datatype.jackson.datatype.guava
+    implementation libs.com.fasterxml.jackson.module.jackson.module.parameter.names
+    implementation libs.com.fasterxml.jackson.datatype.jackson.datatype.jdk8
+    implementation libs.com.fasterxml.jackson.datatype.jackson.datatype.jsr310
+    implementation libs.com.jayway.jsonpath.json.path
+    implementation libs.org.json.json
 
-    implementation "commons-beanutils:commons-beanutils"
-    implementation "commons-codec:commons-codec"
-    implementation "commons-collections:commons-collections"
-    implementation "commons-configuration:commons-configuration"
-    implementation "commons-digester:commons-digester"
-    implementation "commons-discovery:commons-discovery"
-    implementation "commons-fileupload:commons-fileupload"
-    implementation "commons-net:commons-net"
+    implementation libs.commons.beanutils.commons.beanutils
+    implementation libs.commons.codec.commons.codec
+    implementation libs.commons.collections.commons.collections
+    implementation libs.commons.configuration.commons.configuration
+    implementation libs.commons.digester.commons.digester
+    implementation libs.commons.discovery.commons.discovery
+    implementation libs.commons.fileupload.commons.fileupload
+    implementation libs.commons.net.commons.net
 
-    implementation "org.apache.commons:commons-configuration2"
-    implementation "org.apache.commons:commons-math"
-    implementation "org.apache.commons:commons-text"
-    implementation "org.apache.httpcomponents:httpclient"
-    implementation "org.apache.httpcomponents:httpcore"
-    implementation "org.apache.httpcomponents:httpcore-nio"
-    implementation "org.apache.httpcomponents:httpmime"
-    implementation "org.apache.commons:commons-pool2"
+    implementation libs.org.apache.commons.commons.configuration2
+    implementation libs.org.apache.commons.commons.math
+    implementation libs.org.apache.commons.commons.text
+    implementation libs.org.apache.httpcomponents.httpclient
+    implementation libs.org.apache.httpcomponents.httpcore
+    implementation libs.org.apache.httpcomponents.httpcore.nio
+    implementation libs.org.apache.httpcomponents.httpmime
+    implementation libs.org.apache.commons.commons.pool2
 
-    implementation "org.codehaus.groovy:groovy-all"
+    implementation libs.org.codehaus.groovy.groovy.all
 
-    implementation "eu.bitwalker:UserAgentUtils"
-    implementation "com.twmacinta:fast-md5"
-    implementation "com.h2database:h2"
-    implementation "com.lowagie:itext"
-    implementation "net.java.dev.msv:msv-core"
-    implementation "gnu.getopt:java-getopt"
-    implementation "org.quartz-scheduler:quartz"
-    implementation "org.reflections:reflections"
-    implementation "org.apache.xmlbeans:xmlbeans"
-    implementation "org.apache.xmlbeans:xmlbeans-xpath"
-    implementation "org.apache.xbean:xbean-spring"
-    implementation "net.java.dev.msv:xsdlib"
-    implementation "javax.servlet:jstl"
-    implementation "com.google.code.gson:gson"
-    implementation "com.google.guava:guava"
-    implementation "org.postgresql:postgresql"
-    implementation "net.ttddyy:datasource-proxy"
-    implementation "org.apache.activemq:activemq-broker"
-    implementation "org.apache.activemq:activemq-spring"
-    implementation "org.apache.activemq:activemq-kahadb-store"
-    implementation "org.apache.activemq:activemq-jdbc-store"
-    implementation "io.micrometer:micrometer-core"
-    implementation "io.micrometer:micrometer-registry-prometheus"
+    implementation libs.eu.bitwalker.useragentutils
+    implementation libs.com.twmacinta.fast.md5
+    implementation libs.com.h2database.h2
+    implementation libs.com.lowagie.itext
+    implementation libs.net.java.dev.msv.msv.core
+    implementation libs.gnu.getopt.java.getopt
+    implementation libs.org.quartz.scheduler.quartz
+    implementation libs.org.reflections.reflections
+    implementation libs.org.apache.xmlbeans.xmlbeans
+    implementation libs.org.apache.xmlbeans.xmlbeans.xpath
+    implementation libs.org.apache.xbean.xbean.spring
+    implementation libs.net.java.dev.msv.xsdlib
+    implementation libs.javax.servlet.jstl
+    implementation libs.com.google.code.gson.gson
+    implementation libs.com.google.guava.guava
+    implementation libs.org.postgresql.postgresql
+    implementation libs.net.ttddyy.datasource.proxy
+    implementation libs.org.apache.activemq.activemq.broker
+    implementation libs.org.apache.activemq.activemq.spring
+    implementation libs.org.apache.activemq.activemq.kahadb.store
+    implementation libs.org.apache.activemq.activemq.jdbc.store
+    implementation libs.io.micrometer.micrometer.core
+    implementation libs.io.micrometer.micrometer.registry.prometheus
 
-    implementation "org.slf4j:slf4j-api"
-    implementation "org.slf4j:jul-to-slf4j"
-    implementation "org.slf4j:jcl-over-slf4j"
-    implementation "org.slf4j:log4j-over-slf4j"
-    implementation "ch.qos.logback:logback-classic"
-    implementation "ch.qos.logback:logback-core"
-    implementation "net.logstash.logback:logstash-logback-encoder"
-    implementation "com.google.auto.value:auto-value-annotations"
+    implementation libs.org.slf4j.slf4j.api
+    implementation libs.org.slf4j.jul.to.slf4j
+    implementation libs.org.slf4j.jcl.over.slf4j
+    implementation libs.org.slf4j.log4j.over.slf4j
+    implementation libs.ch.qos.logback.logback.classic
+    implementation libs.ch.qos.logback.logback.core
+    implementation libs.net.logstash.logback.logstash.logback.encoder
 
-    providedCompile "com.google.code.findbugs:jsr305"
-    providedCompile "javax.servlet:javax.servlet-api"
-    providedCompile "org.jetbrains:annotations"
-    providedCompile "org.kohsuke.metainf-services:metainf-services"
+    providedCompile libs.com.google.code.findbugs.jsr305
+    providedCompile libs.javax.servlet.javax.servlet.api
+    providedCompile libs.org.jetbrains.annotations
+    providedCompile libs.org.kohsuke.metainf.services.metainf.services
 
-    runtimeOnly "org.apache.ant:ant"
-    runtimeOnly "axis:axis-ant"
-    runtimeOnly "axis:axis-schema"
-    runtimeOnly "cglib:cglib"
-    runtimeOnly "com.zaxxer:HikariCP"
-    runtimeOnly "org.hsqldb:hsqldb"
-    runtimeOnly "com.sun.media:jai_imageio"
-    runtimeOnly "net.bull.javamelody:javamelody-core"
-    runtimeOnly "org.javassist:javassist"
-    runtimeOnly "org.python:jython-standalone"
+    runtimeOnly libs.org.apache.ant.ant
+    runtimeOnly libs.axis.axis.ant
+    runtimeOnly libs.axis.axis.schema
+    runtimeOnly libs.cglib.cglib
+    runtimeOnly libs.com.zaxxer.hikaricp
+    runtimeOnly libs.org.hsqldb.hsqldb
+    runtimeOnly libs.com.sun.media.jai.imageio
+    runtimeOnly libs.net.bull.javamelody.javamelody.core
+    runtimeOnly libs.org.javassist.javassist
+    runtimeOnly libs.org.python.jython.standalone
 
-    tomcat "org.apache.tomcat.embed:tomcat-embed-core",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli",
-            "org.apache.tomcat.embed:tomcat-embed-jasper"
+    tomcat libs.org.apache.tomcat.embed.tomcat.embed.core,
+            libs.org.apache.tomcat.embed.tomcat.embed.logging.juli,
+            libs.org.apache.tomcat.embed.tomcat.embed.jasper
 
-    cargo "org.codehaus.cargo:cargo-core-uberjar",
-            "org.codehaus.cargo:cargo-ant",
-            "org.slf4j:jcl-over-slf4j",
-            "org.slf4j:slf4j-api",
-            "ch.qos.logback:logback-classic",
-            "ch.qos.logback:logback-core"
+    cargo libs.org.codehaus.cargo.cargo.core.uberjar,
+            libs.org.codehaus.cargo.cargo.ant,
+            libs.org.slf4j.jcl.over.slf4j,
+            libs.org.slf4j.slf4j.api,
+            libs.ch.qos.logback.logback.classic,
+            libs.ch.qos.logback.logback.core
 
-    testImplementation "org.nrg:test"
-    testImplementation "junit:junit"
-    testImplementation "org.springframework:spring-test"
-    testImplementation "org.assertj:assertj-core"
-    testImplementation "org.springframework.security:spring-security-test"
-    testImplementation "org.springframework.security:spring-security-config"
-    testImplementation "org.hamcrest:hamcrest"
-    testImplementation "org.mockito:mockito-core"
-    testImplementation "org.powermock:powermock-api-mockito2"
-    testImplementation "org.powermock:powermock-module-junit4"
+    testImplementation libs.org.nrg.test
+    testImplementation libs.junit.junit
+    testImplementation libs.org.springframework.spring.test
+    testImplementation libs.org.assertj.assertj.core
+    testImplementation libs.org.springframework.security.spring.security.test
+    testImplementation libs.org.springframework.security.spring.security.config
+    testImplementation libs.org.hamcrest.hamcrest
+    testImplementation libs.org.mockito.mockito.core
+    testImplementation libs.org.powermock.powermock.api.mockito2
+    testImplementation libs.org.powermock.powermock.module.junit4
 
-    javadocCoverage "com.manoelcampos:javadoc-coverage"
+    javadocCoverage libs.com.manoelcampos.javadoc.coverage
 }
 
 idea {
@@ -341,11 +339,6 @@ idea {
         outputDir = compileJava.destinationDir
         testOutputDir = compileTestJava.destinationDir
     }
-}
-
-lombok {
-    version = dependencyManagement.importedProperties["lombok.version"] as String
-    sha256 = dependencyManagement.importedProperties["lombok.checksum"] as String
 }
 
 tomcatRun.contextPath = "/"

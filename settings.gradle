@@ -7,4 +7,5 @@
 
 rootProject.name = 'xnat'
 
-include 'web'
+include(':parent')
+include(':web')

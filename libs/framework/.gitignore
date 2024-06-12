@@ -1,0 +1,9 @@
+*.iml
+*.log
+/target
+.classpath
+.project
+/.settings
+/.idea
+/build/
+dep*.txt

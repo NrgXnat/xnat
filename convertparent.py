@@ -9,6 +9,12 @@ except ModuleNotFoundError as e:
     sys.exit(1)
 
 
+def standardize_version_numbers(raw: str) -> str:
+    return "-".join(
+        "v" + component if component.isdigit() else component for component in raw.split("-")
+    )
+
+
 def standardize(raw: str) -> str:
     return raw.replace(".", "-").replace("_", "-").lower()
 
@@ -46,8 +52,8 @@ dependencies = {}
 for dep in tree.xpath(
         "/pom:project/pom:dependencyManagement/pom:dependencies/pom:dependency", namespaces=ns
 ):
-    artifactId = dep.xpath('pom:artifactId', namespaces=ns)[0].text
-    groupId = dep.xpath('pom:groupId', namespaces=ns)[0].text
+    artifact_id = dep.xpath('pom:artifactId', namespaces=ns)[0].text
+    group_id = dep.xpath('pom:groupId', namespaces=ns)[0].text
 
     raw_version = dep.xpath('pom:version', namespaces=ns)[0].text
     version_ref = get_version_ref(raw_version, versions)
@@ -55,61 +61,25 @@ for dep in tree.xpath(
     version_attr = "version" if version_ref is None else "version.ref"
 
     # No dots allowed in library alias
-    alias = standardize(artifactId)
+    group_alias = standardize(group_id)
+    artifact_alias = standardize(artifact_id)
 
-    # Special handling for dcm4che5, otherwise we will get duplicate artifactIds
-    if version == "dcm4che5":
-        alias = alias.replace("dcm4che", "dcm4che5")
-
-    # Special handling for axis, otherwise we will get duplicate artifactIds
-    if artifactId == "axis":
-        alias = ("axis-" if groupId == "axis" else "apache-") + artifactId
-
-    # Special handling for org.nrg:pipelineX
-    if groupId == "org.nrg" and artifactId.startswith("pipeline"):
-        # Rename pipelineX to pipeline-X
-        alias = "pipeline-" + alias[len("pipeline"):]
-
-    # Special handling for org.nrg.xnat.pipeline:X
-    if groupId == "org.nrg.xnat.pipeline" and not artifactId.startswith("pipeline"):
-        # Add "pipeline-" to the beginning
-        alias = "pipeline-" + alias
-
-    # Special handling for imagej
-    if alias == "ij":
-        # Just no
-        alias = "imagej"
-
-    # Special handling for deps with numbers: hibernate-types-XX
-    if alias.startswith("hibernate-types-"):
-        # Remove the last hyphen, make it hibernate-typesXX
-        split_alias = alias.split("-")
-        alias = f"{split_alias[0]}-{split_alias[1]}{split_alias[2]}"
-
-    # Special handling for deps with numbers: hibernate-jpa-X-X-api
-    if alias.startswith("hibernate-jpa-"):
-        # Make it hibernate-jpaXX-api
-        split_alias = alias.split("-")
-        alias = f"{split_alias[0]}-{"".join(split_alias[1:-1])}-{split_alias[-1]}"
+    # Special handling for deps with numbers: hibernate-types-XX and hibernate-jpa-X-X-api
+    if (artifact_alias.startswith("hibernate-types-") or
+            artifact_alias.startswith("hibernate-jpa-")):
+        artifact_alias = standardize_version_numbers(artifact_alias)
 
     # Special handling for gradle-X-plugin version ref, which is incorrect
     if version.startswith("gradle-") and version.endswith("-plugin"):
         # Remove the "-plugin" from the end
         version = version[:-len("-plugin")]
 
-    # Special handling for jetbrains annotations
-    if artifactId == "annotations" and groupId == "org.jetbrains":
-        alias = "jetbrains-annotations"
-
-    # Special handling for "test"
-    if artifactId == "test" and groupId == "org.nrg":
-        alias = "nrg-test"
-
+    alias = group_alias + "-" + artifact_alias
     dependencies[alias] = \
-        f'{{ module = "{groupId}:{artifactId}", {version_attr} = "{version}" }}'
+        f'{{ module = "{group_id}:{artifact_id}", {version_attr} = "{version}" }}'
 
 # Special-case this javadoc coverage plugin so I don't have to go digging through the plugins section
-dependencies["javadoc-coverage"] = \
+dependencies["com-manoelcampos-javadoc-coverage"] = \
     '{ module = "com.manoelcampos:javadoc-coverage", version.ref = "javadoc-coverage" }'
 
 with open(outfile, 'w') as f:

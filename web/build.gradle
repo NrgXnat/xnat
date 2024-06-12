@@ -452,7 +452,7 @@ test {
 }
 
 jacoco {
-    toolVersion = dependencyManagement.importedProperties["jacoco.version"] as String
+    toolVersion = libs.versions.jacoco.get()
 }
 
 jacocoTestReport {

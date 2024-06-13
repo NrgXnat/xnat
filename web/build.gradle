@@ -156,7 +156,7 @@ dependencies {
     implementation project(':framework')
     implementation libs.org.nrg.transaction
     implementation project(':prefs')
-    implementation libs.org.nrg.config
+    implementation project(':config')
     implementation project(':automation')
     implementation libs.org.nrg.dicomtools
     implementation libs.org.nrg.dicom.dicom.edit4

@@ -15,3 +15,5 @@ include(':prefs')
 project(':prefs').projectDir = 'libs/prefs' as File
 include(':automation')
 project(':automation').projectDir = 'libs/automation' as File
+include(':config')
+project(':config').projectDir = 'libs/config' as File

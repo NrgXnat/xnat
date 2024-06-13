@@ -16,5 +16,6 @@ dependencies {
         api(project(':test'))
         api(project(':mail'))
         api(project(':notify'))
+        api(project(':extattr'))
     }
 }

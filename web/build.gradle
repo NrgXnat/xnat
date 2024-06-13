@@ -168,7 +168,7 @@ dependencies {
     implementation libs.org.nrg.dicom.xnat.sop
     implementation libs.org.nrg.dicom.xnat.util
     implementation libs.org.nrg.ecat4xnat
-    implementation libs.org.nrg.extattr
+    implementation project(':extattr')
     implementation libs.org.nrg.dicomimageutils
     implementation libs.org.nrg.prearcimporter
     implementation libs.org.nrg.sessionbuilders

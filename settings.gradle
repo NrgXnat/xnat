@@ -25,3 +25,5 @@ include(':mail')
 project(':mail').projectDir = 'libs/mail' as File
 include(':notify')
 project(':notify').projectDir = 'libs/notify' as File
+include(':extattr')
+project(':extattr').projectDir = 'libs/extattr' as File

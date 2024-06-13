@@ -15,5 +15,6 @@ dependencies {
         api(project(':transaction'))
         api(project(':test'))
         api(project(':mail'))
+        api(project(':notify'))
     }
 }

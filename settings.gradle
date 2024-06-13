@@ -19,3 +19,5 @@ include(':config')
 project(':config').projectDir = 'libs/config' as File
 include(':transaction')
 project(':transaction').projectDir = 'libs/transaction' as File
+include(':test')
+project(':test').projectDir = 'libs/test' as File

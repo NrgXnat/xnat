@@ -13,5 +13,6 @@ dependencies {
         api(project(':automation'))
         api(project(':config'))
         api(project(':transaction'))
+        api(project(':test'))
     }
 }

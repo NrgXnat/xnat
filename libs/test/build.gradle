@@ -28,34 +28,19 @@ dependencies {
     // Each project has a dependency on the platform
     api(platform(project(":parent")))
 
-    compileOnly libs.org.projectlombok.lombok
-    annotationProcessor libs.org.projectlombok.lombok
-    testCompileOnly libs.org.projectlombok.lombok
-    testAnnotationProcessor libs.org.projectlombok.lombok
-
-    annotationProcessor project(':framework')
-    api project(':framework')
-
-    api libs.org.hibernate.hibernate.ehcache
-    api libs.net.sf.ehcache.ehcache.core
-    api libs.commons.beanutils.commons.beanutils
-    api libs.org.apache.commons.commons.configuration2
-    api libs.org.javassist.javassist
-    testImplementation project(':test')
-    testImplementation libs.org.springframework.spring.test
-    testImplementation libs.junit.junit
-    testImplementation libs.org.assertj.assertj.core
-    testImplementation libs.com.h2database.h2
+    api libs.org.springframework.spring.jdbc
+    api libs.com.fasterxml.jackson.core.jackson.databind
+    api libs.org.apache.commons.commons.lang3
+    api libs.commons.io.commons.io
+    api libs.com.h2database.h2
+    api libs.org.slf4j.slf4j.api
     testImplementation libs.org.slf4j.slf4j.simple
-    testImplementation libs.org.postgresql.postgresql
-    testImplementation libs.cglib.cglib
-
-    compileOnly libs.com.google.code.findbugs.jsr305
+    testImplementation libs.org.slf4j.jul.to.slf4j
 }
 
 group = 'org.nrg'
 version = '1.8.11-SNAPSHOT'
-description = 'NRG Preferences'
+description = 'NRG Test Framework'
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 java {

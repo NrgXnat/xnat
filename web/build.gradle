@@ -319,7 +319,7 @@ dependencies {
             libs.ch.qos.logback.logback.classic,
             libs.ch.qos.logback.logback.core
 
-    testImplementation libs.org.nrg.test
+    testImplementation project(':test')
     testImplementation libs.junit.junit
     testImplementation libs.org.springframework.spring.test
     testImplementation libs.org.assertj.assertj.core

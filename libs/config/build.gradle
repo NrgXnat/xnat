@@ -42,7 +42,7 @@ dependencies {
     api libs.org.javassist.javassist
     api libs.com.google.guava.guava
     api libs.com.fasterxml.jackson.core.jackson.databind
-    testImplementation libs.org.nrg.test
+    testImplementation project(':test')
     testImplementation project(':prefs')
     testImplementation libs.com.h2database.h2
     testImplementation libs.org.postgresql.postgresql

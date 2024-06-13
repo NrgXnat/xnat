@@ -154,7 +154,7 @@ dependencies {
     implementation libs.org.nrg.xnat.spawner
     implementation libs.org.nrg.xdat.core
     implementation project(':framework')
-    implementation libs.org.nrg.transaction
+    implementation project(':transaction')
     implementation project(':prefs')
     implementation project(':config')
     implementation project(':automation')

@@ -21,3 +21,5 @@ include(':transaction')
 project(':transaction').projectDir = 'libs/transaction' as File
 include(':test')
 project(':test').projectDir = 'libs/test' as File
+include(':mail')
+project(':mail').projectDir = 'libs/mail' as File

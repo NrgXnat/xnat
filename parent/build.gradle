@@ -14,5 +14,6 @@ dependencies {
         api(project(':config'))
         api(project(':transaction'))
         api(project(':test'))
+        api(project(':mail'))
     }
 }

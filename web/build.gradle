@@ -161,7 +161,7 @@ dependencies {
     implementation libs.org.nrg.dicomtools
     implementation libs.org.nrg.dicom.dicom.edit4
     implementation libs.org.nrg.dicom.dicom.edit6
-    implementation libs.org.nrg.mail
+    implementation project(':mail')
     implementation libs.org.nrg.notify
 
     implementation libs.org.nrg.dicom.xnat.mx

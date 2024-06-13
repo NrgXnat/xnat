@@ -1,0 +1,124 @@
+<!--
+  ~ ExtAttr: pom.xml
+  ~ XNAT https://www.xnat.org
+  ~ Copyright (c) 2020, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.nrg</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.8.11-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>ExtAttr</artifactId>
+    <version>1.8.11-SNAPSHOT</version>
+
+    <name>External Attribute library</name>
+    <description>
+        Library for converting native image metadata formats (e.g., DICOM, ECAT)
+        into a unified external format (usually XNAT).
+    </description>
+
+    <url>https://nrg.wustl.edu</url>
+
+    <issueManagement>
+        <url>https://issues.xnat.org</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <id>karchie</id>
+            <name>Kevin A. Archie</name>
+            <email>karchie@wustl.edu</email>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <id>rherrick</id>
+            <name>Rick Herrick</name>
+            <email>rick.herrick@wustl.edu</email>
+            <timezone>-6</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://bitbucket.org/nrg/extattr</url>
+    </scm>
+
+    <organization>
+        <name>Washington University Neuroinformatics Research Group</name>
+        <url>https://nrg.wustl.edu</url>
+    </organization>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>org.nrg.maven.artifacts.release</id>
+            <name>XNAT Release Maven Repo</name>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-release</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>org.nrg.maven.artifacts.snapshot</id>
+            <name>xnat snapshot maven repo</name>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
+</project>

@@ -25,6 +25,9 @@ repositories {
 }
 
 dependencies {
+    // Each project has a dependency on the platform
+    api(platform(project(":parent")))
+
     api project(':framework')
 
     api libs.org.codehaus.groovy.groovy.all

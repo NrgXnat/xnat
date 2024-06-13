@@ -9,5 +9,9 @@ dependencies {
     constraints {
         api(project(":web"))
         api(project(":framework"))
+        api(project(':prefs'))
+        api(project(':automation'))
+        api(project(':config'))
+        api(project(':transaction'))
     }
 }

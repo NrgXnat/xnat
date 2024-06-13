@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ transaction: pom.xml
+  ~ XNAT https://www.xnat.org
+  ~ Copyright (c) 2020, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.nrg</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.8.11-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>transaction</artifactId>
+
+    <name>NRG Transaction Library</name>
+    <description>Provide chainable transactions that can be run and rolled back.</description>
+
+    <scm>
+        <url>https://bitbucket.org/xnatdev/transaction</url>
+        <connection>scm:git:git://bitbucket.org/xnatdev/transaction.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:xnatdev/transaction.git</developerConnection>
+    </scm>
+
+    <issueManagement>
+        <system>JIRA</system>
+        <url>https://issues.xnat.org</url>
+    </issueManagement>
+
+    <licenses>
+        <license>
+            <name>Simplified BSD License</name>
+            <url>https://www.opensource.org/licenses/BSD-2-Clause</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Neuroinformatics Research Group</name>
+        <url>https://nrg.wustl.edu</url>
+    </organization>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+
+        <!-- BEGIN Test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- END Test dependencies -->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <!-- plugin>
+                <artifactId>maven-jarsigner-plugin</artifactId>
+            </plugin -->
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>org.nrg.maven.artifacts.release</id>
+            <name>XNAT Release Maven Repo</name>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-release</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>org.nrg.maven.artifacts.snapshot</id>
+            <name>xnat snapshot maven repo</name>
+            <url>https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
+</project>

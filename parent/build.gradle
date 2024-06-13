@@ -8,5 +8,6 @@ dependencies {
     // require alignment
     constraints {
         api(project(":web"))
+        api(project(":framework"))
     }
 }

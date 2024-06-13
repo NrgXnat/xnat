@@ -60,6 +60,7 @@ public class XnatMixInAnnotationProcessor extends NrgAbstractAnnotationProcessor
         final Map<String, String> properties = new LinkedHashMap<>();
         for (final String targetClass : targetClasses) {
             properties.put(targetClass, mixInClass);
+            System.out.println("Adding " + mixInClass + " to " + targetClass);
         }
         return properties;
     }

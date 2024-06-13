@@ -123,7 +123,7 @@ configurations.all {
 }
 
 dependencies {
-    annotationProcessor libs.org.nrg.framework
+    annotationProcessor project(':framework')
     annotationProcessor libs.com.google.auto.value.auto.value
     annotationProcessor libs.com.google.auto.value.auto.value.annotations
     implementation libs.com.google.auto.value.auto.value.annotations
@@ -140,7 +140,7 @@ dependencies {
     // NRG dependencies first.
     api libs.org.nrg.xdat.core
     api libs.org.nrg.xnat.xnat.data.models
-    api libs.org.nrg.framework
+    api project(':framework')
     api libs.org.springframework.security.spring.security.ldap
     api libs.org.springframework.security.oauth.spring.security.oauth2
     api libs.org.springframework.security.spring.security.jwt
@@ -153,7 +153,7 @@ dependencies {
 
     implementation libs.org.nrg.xnat.spawner
     implementation libs.org.nrg.xdat.core
-    implementation libs.org.nrg.framework
+    implementation project(':framework')
     implementation libs.org.nrg.transaction
     implementation libs.org.nrg.prefs
     implementation libs.org.nrg.config

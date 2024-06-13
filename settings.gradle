@@ -9,3 +9,5 @@ rootProject.name = 'xnat'
 
 include(':parent')
 include(':web')
+include(':framework')
+project(':framework').projectDir = 'libs/framework' as File

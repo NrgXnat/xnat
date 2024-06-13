@@ -27,3 +27,5 @@ include(':notify')
 project(':notify').projectDir = 'libs/notify' as File
 include(':extattr')
 project(':extattr').projectDir = 'libs/extattr' as File
+include(':dicomtools')
+project(':dicomtools').projectDir = 'libs/dicomtools' as File

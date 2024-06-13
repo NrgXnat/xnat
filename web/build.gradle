@@ -158,7 +158,7 @@ dependencies {
     implementation project(':prefs')
     implementation project(':config')
     implementation project(':automation')
-    implementation libs.org.nrg.dicomtools
+    implementation project(':dicomtools')
     implementation libs.org.nrg.dicom.dicom.edit4
     implementation libs.org.nrg.dicom.dicom.edit6
     implementation project(':mail')

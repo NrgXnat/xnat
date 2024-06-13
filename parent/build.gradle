@@ -17,5 +17,6 @@ dependencies {
         api(project(':mail'))
         api(project(':notify'))
         api(project(':extattr'))
+        api(project(':dicomtools'))
     }
 }

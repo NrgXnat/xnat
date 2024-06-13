@@ -155,7 +155,7 @@ dependencies {
     implementation libs.org.nrg.xdat.core
     implementation project(':framework')
     implementation libs.org.nrg.transaction
-    implementation libs.org.nrg.prefs
+    implementation project(':prefs')
     implementation libs.org.nrg.config
     implementation libs.org.nrg.automation
     implementation libs.org.nrg.dicomtools

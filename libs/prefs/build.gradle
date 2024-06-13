@@ -30,7 +30,9 @@ dependencies {
     testCompileOnly libs.org.projectlombok.lombok
     testAnnotationProcessor libs.org.projectlombok.lombok
 
-    api libs.org.nrg.framework
+    annotationProcessor project(':framework')
+    api project(':framework')
+
     api libs.org.hibernate.hibernate.ehcache
     api libs.net.sf.ehcache.ehcache.core
     api libs.commons.beanutils.commons.beanutils

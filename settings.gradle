@@ -11,3 +11,5 @@ include(':parent')
 include(':web')
 include(':framework')
 project(':framework').projectDir = 'libs/framework' as File
+include(':prefs')
+project(':prefs').projectDir = 'libs/prefs' as File

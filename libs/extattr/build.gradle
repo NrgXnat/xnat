@@ -26,7 +26,7 @@ repositories {
 
 dependencies {
     // Each project has a dependency on the platform
-    api(platform(project(":parent")))
+    api platform(project(":parent"))
 
     api libs.org.apache.commons.commons.lang3
     api libs.com.google.guava.guava

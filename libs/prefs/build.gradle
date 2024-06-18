@@ -26,22 +26,22 @@ repositories {
 
 dependencies {
     // Each project has a dependency on the platform
-    api(platform(project(":parent")))
+    api platform(project(":parent"))
 
     compileOnly libs.org.projectlombok.lombok
     annotationProcessor libs.org.projectlombok.lombok
     testCompileOnly libs.org.projectlombok.lombok
     testAnnotationProcessor libs.org.projectlombok.lombok
 
-    annotationProcessor project(':framework')
-    api project(':framework')
+    annotationProcessor project(':libs:framework')
+    api project(':libs:framework')
 
     api libs.org.hibernate.hibernate.ehcache
     api libs.net.sf.ehcache.ehcache.core
     api libs.commons.beanutils.commons.beanutils
     api libs.org.apache.commons.commons.configuration2
     api libs.org.javassist.javassist
-    testImplementation project(':test')
+    testImplementation project(':libs:test')
     testImplementation libs.org.springframework.spring.test
     testImplementation libs.junit.junit
     testImplementation libs.org.assertj.assertj.core

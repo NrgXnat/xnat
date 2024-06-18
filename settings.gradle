@@ -9,25 +9,14 @@ rootProject.name = 'xnat'
 
 include(':parent')
 include(':web')
-include(':framework')
-project(':framework').projectDir = 'libs/framework' as File
-include(':prefs')
-project(':prefs').projectDir = 'libs/prefs' as File
-include(':automation')
-project(':automation').projectDir = 'libs/automation' as File
-include(':config')
-project(':config').projectDir = 'libs/config' as File
-include(':transaction')
-project(':transaction').projectDir = 'libs/transaction' as File
-include(':test')
-project(':test').projectDir = 'libs/test' as File
-include(':mail')
-project(':mail').projectDir = 'libs/mail' as File
-include(':notify')
-project(':notify').projectDir = 'libs/notify' as File
-include(':extattr')
-project(':extattr').projectDir = 'libs/extattr' as File
-include(':dicomtools')
-project(':dicomtools').projectDir = 'libs/dicomtools' as File
-include(':xdat')
-project(':xdat').projectDir = 'libs/xdat' as File
+include(':libs:framework')
+include(':libs:prefs')
+include(':libs:automation')
+include(':libs:config')
+include(':libs:transaction')
+include(':libs:test')
+include(':libs:mail')
+include(':libs:notify')
+include(':libs:extattr')
+include(':libs:dicomtools')
+include(':libs:xdat')

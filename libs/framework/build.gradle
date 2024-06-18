@@ -80,7 +80,7 @@ dependencies {
     testImplementation libs.com.h2database.h2
     compileOnly libs.javax.servlet.javax.servlet.api
     testImplementation libs.javax.servlet.javax.servlet.api
-    testAnnotationProcessor project(':framework')
+    testAnnotationProcessor project(':libs:framework')
 }
 
 group = 'org.nrg'

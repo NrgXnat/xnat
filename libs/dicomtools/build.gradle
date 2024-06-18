@@ -26,11 +26,11 @@ repositories {
 
 dependencies {
     // Each project has a dependency on the platform
-    api(platform(project(":parent")))
+    api platform(project(":parent"))
 
-    api project(':config')
-    api project(':framework')
-    api project(':extattr')
+    api project(':libs:config')
+    api project(':libs:framework')
+    api project(':libs:extattr')
 
     api libs.dcm4che.dcm4che.core
     api libs.dcm4che.dcm4che.net
@@ -38,7 +38,7 @@ dependencies {
     api libs.org.hsqldb.hsqldb
     api libs.com.google.code.findbugs.jsr305
 
-    testImplementation project(':automation')
+    testImplementation project(':libs:automation')
     testImplementation libs.javax.inject.javax.inject
     testImplementation libs.org.assertj.assertj.core
     testImplementation libs.org.apache.ant.ant

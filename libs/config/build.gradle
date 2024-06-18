@@ -26,13 +26,13 @@ repositories {
 
 dependencies {
     // Each project has a dependency on the platform
-    api(platform(project(":parent")))
+    api platform(project(":parent"))
 
     api libs.org.projectlombok.lombok
     annotationProcessor libs.org.projectlombok.lombok
     testAnnotationProcessor libs.org.projectlombok.lombok
 
-    api project(':prefs')
+    api project(':libs:prefs')
     api libs.commons.beanutils.commons.beanutils
     api libs.org.springframework.spring.orm
     api libs.org.springframework.spring.context
@@ -42,8 +42,8 @@ dependencies {
     api libs.org.javassist.javassist
     api libs.com.google.guava.guava
     api libs.com.fasterxml.jackson.core.jackson.databind
-    testImplementation project(':test')
-    testImplementation project(':prefs')
+    testImplementation project(':libs:test')
+    testImplementation project(':libs:prefs')
     testImplementation libs.com.h2database.h2
     testImplementation libs.org.postgresql.postgresql
     testImplementation libs.org.slf4j.slf4j.simple

@@ -123,7 +123,7 @@ configurations.all {
 }
 
 dependencies {
-    annotationProcessor project(':framework')
+    annotationProcessor project(':libs:framework')
     annotationProcessor libs.com.google.auto.value.auto.value
     annotationProcessor libs.com.google.auto.value.auto.value.annotations
     implementation libs.com.google.auto.value.auto.value.annotations
@@ -135,12 +135,12 @@ dependencies {
     testAnnotationProcessor libs.org.projectlombok.lombok
 
     // Each project has a dependency on the platform
-    api(platform(project(":parent")))
+    api platform(project(":parent"))
 
     // NRG dependencies first.
-    api project(':xdat')
+    api project(':libs:xdat')
     api libs.org.nrg.xnat.xnat.data.models
-    api project(':framework')
+    api project(':libs:framework')
     api libs.org.springframework.security.spring.security.ldap
     api libs.org.springframework.security.oauth.spring.security.oauth2
     api libs.org.springframework.security.spring.security.jwt
@@ -152,23 +152,23 @@ dependencies {
     api libs.org.springframework.spring.core
 
     implementation libs.org.nrg.xnat.spawner
-    implementation project(':xdat')
-    implementation project(':framework')
-    implementation project(':transaction')
-    implementation project(':prefs')
-    implementation project(':config')
-    implementation project(':automation')
-    implementation project(':dicomtools')
+    implementation project(':libs:xdat')
+    implementation project(':libs:framework')
+    implementation project(':libs:transaction')
+    implementation project(':libs:prefs')
+    implementation project(':libs:config')
+    implementation project(':libs:automation')
+    implementation project(':libs:dicomtools')
     implementation libs.org.nrg.dicom.dicom.edit4
     implementation libs.org.nrg.dicom.dicom.edit6
-    implementation project(':mail')
-    implementation project(':notify')
+    implementation project(':libs:mail')
+    implementation project(':libs:notify')
 
     implementation libs.org.nrg.dicom.xnat.mx
     implementation libs.org.nrg.dicom.xnat.sop
     implementation libs.org.nrg.dicom.xnat.util
     implementation libs.org.nrg.ecat4xnat
-    implementation project(':extattr')
+    implementation project(':libs:extattr')
     implementation libs.org.nrg.dicomimageutils
     implementation libs.org.nrg.prearcimporter
     implementation libs.org.nrg.sessionbuilders
@@ -319,7 +319,7 @@ dependencies {
             libs.ch.qos.logback.logback.classic,
             libs.ch.qos.logback.logback.core
 
-    testImplementation project(':test')
+    testImplementation project(':libs:test')
     testImplementation libs.junit.junit
     testImplementation libs.org.springframework.spring.test
     testImplementation libs.org.assertj.assertj.core

@@ -7,17 +7,17 @@ dependencies {
     // The platform declares constraints on all components that
     // require alignment
     constraints {
-        api(project(":web"))
-        api(project(":framework"))
-        api(project(':prefs'))
-        api(project(':automation'))
-        api(project(':config'))
-        api(project(':transaction'))
-        api(project(':test'))
-        api(project(':mail'))
-        api(project(':notify'))
-        api(project(':extattr'))
-        api(project(':dicomtools'))
-        api(project(':xdat'))
+        api project(':web')
+        api project(':libs:framework')
+        api project(':libs:prefs')
+        api project(':libs:automation')
+        api project(':libs:config')
+        api project(':libs:transaction')
+        api project(':libs:test')
+        api project(':libs:mail')
+        api project(':libs:notify')
+        api project(':libs:extattr')
+        api project(':libs:dicomtools')
+        api project(':libs:xdat')
     }
 }

@@ -95,15 +95,15 @@ configurations {
 
 dependencies {
     // Each project has a dependency on the platform
-    api(platform(project(":parent")))
+    api platform(project(":parent"))
 
-    api project(':notify')
-    api project(':config')
-    api project(':mail')
-    api project(':automation')
-    api project(':framework')
-    annotationProcessor project(':framework')
-    testAnnotationProcessor project(':framework')
+    api project(':libs:notify')
+    api project(':libs:config')
+    api project(':libs:mail')
+    api project(':libs:automation')
+    api project(':libs:framework')
+    annotationProcessor project(':libs:framework')
+    testAnnotationProcessor project(':libs:framework')
 
     api libs.org.projectlombok.lombok
     annotationProcessor libs.org.projectlombok.lombok
@@ -153,7 +153,7 @@ dependencies {
     api libs.org.apache.ant.ant
     api libs.net.sf.ehcache.ehcache.core
     api libs.org.postgresql.postgresql
-    testImplementation project(':test')
+    testImplementation project(':libs:test')
     testImplementation libs.junit.junit
     testImplementation libs.org.mockito.mockito.all
     testImplementation libs.org.springframework.spring.test

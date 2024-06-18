@@ -18,5 +18,6 @@ dependencies {
         api(project(':notify'))
         api(project(':extattr'))
         api(project(':dicomtools'))
+        api(project(':xdat'))
     }
 }

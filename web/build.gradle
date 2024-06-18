@@ -138,7 +138,7 @@ dependencies {
     api(platform(project(":parent")))
 
     // NRG dependencies first.
-    api libs.org.nrg.xdat.core
+    api project(':xdat')
     api libs.org.nrg.xnat.xnat.data.models
     api project(':framework')
     api libs.org.springframework.security.spring.security.ldap
@@ -152,7 +152,7 @@ dependencies {
     api libs.org.springframework.spring.core
 
     implementation libs.org.nrg.xnat.spawner
-    implementation libs.org.nrg.xdat.core
+    implementation project(':xdat')
     implementation project(':framework')
     implementation project(':transaction')
     implementation project(':prefs')

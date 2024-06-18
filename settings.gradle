@@ -29,3 +29,5 @@ include(':extattr')
 project(':extattr').projectDir = 'libs/extattr' as File
 include(':dicomtools')
 project(':dicomtools').projectDir = 'libs/dicomtools' as File
+include(':xdat')
+project(':xdat').projectDir = 'libs/xdat' as File

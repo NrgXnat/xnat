@@ -1,0 +1,13 @@
+*.iml
+*.log
+.classpath
+.idea
+.project
+.settings/org.eclipse.jdt.core.prefs
+/.gradle
+/.settings
+/bin/
+/build
+/ide-bin/
+/target
+dep*.txt

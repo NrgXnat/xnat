@@ -24,12 +24,87 @@ repositories {
     }
 }
 
+configurations {
+    configureEach {
+//        exclude group: "ant", module: "ant"
+//        exclude group: "avalon-logkit"
+//        exclude group: "berkeleydb"
+//        exclude group: "com.github.jai-imageio"
+//        exclude group: "com.google.code.findbugs", module: "annotations"
+//        exclude group: "com.metaparadigm"
+//        exclude group: "com.sun.jdmk", module: "jmxtools"
+//        exclude group: "com.sun.jmx", module: "jmxri"
+//        exclude group: "commons-beanutils", module: "commons-beanutils-core"
+//        exclude group: "commons-betwixt"
+//        exclude group: "commons-dbcp"
+//        exclude group: "commons-email"
+//        exclude group: "commons-logging"
+//        exclude group: "commons-messenger"
+//        exclude group: "commons-pool"
+//        exclude group: "edu.ucar", module: "netcdf"
+//        exclude group: "excalibur-component"
+//        exclude group: "excalibur-instrument"
+//        exclude group: "excalibur-logger"
+//        exclude group: "excalibur-pool"
+        exclude group: "fulcrum", module: "fulcrum-yaafi"
+//        exclude group: "geronimo-spec"
+//        exclude group: "hsqldb"
+//        exclude group: "imagej"
+//        exclude group: "jakarta-regexp"
+//        exclude group: "jamon"
+//        exclude group: "javax.jms", module: "jms"
+//        exclude group: "javax.mail", module: "mail"
+//        exclude group: "javax.servlet", module: "servlet-api"
+        exclude group: "javax.sql", module: "jdbc-stdext"
+        exclude group: "javax.transaction", module: "jta"
+//        exclude group: "javax.xml", module: "jsr173"
+//        exclude group: "jdbc", module: "jdbc"
+//        exclude group: "jmock"
+//        exclude group: "jms", module: "jms"
+//        exclude group: "jndi"
+//        exclude group: "jython"
+//        exclude group: "log4j", module: "log4j"
+//        exclude group: "mockobjects"
+//        exclude group: "mysql"
+//        exclude group: "net.sf.saxon"
+//        exclude group: "ojb", module: "ojb"
+//        exclude group: "org.apache.geronimo.specs"
+//        exclude group: "org.apache.struts"
+//        exclude group: "org.nrg", module: "nrg"
+//        exclude group: "org.nrg", module: "nrgutil"
+//        exclude group: "org.nrg", module: "plexiviewer"
+//        exclude group: "org.nrg.xdat", module: "beans"
+//        exclude group: "org.nrg.xnat", module: "web"
+//        exclude group: "org.slf4j", module: "slf4j-log4j12"
+//        exclude group: "quartz"
+//        exclude group: "resources", module: "resources"
+//        exclude group: "servletapi"
+//        exclude group: "stax", module: "stax-api"
+//        exclude group: "tomcat"
+        exclude group: "velocity", module: "texen"
+//        exclude group: "xalan"
+//        exclude group: "xerces"
+//        exclude group: "xml-apis"
+//        exclude group: "xml-resolver"
+//        exclude group: "xmlrpc"
+//        exclude module: "log4j-slf4j-impl"
+//        exclude module: "pipelineCNDAXNAT"
+//        exclude module: "slf4j-simple"
+    }
+}
+
 dependencies {
     api project(':notify')
     api project(':config')
     api project(':mail')
-    api project(':framework')
     api project(':automation')
+    api project(':framework')
+    annotationProcessor project(':framework')
+    testAnnotationProcessor project(':framework')
+
+    api libs.org.projectlombok.lombok
+    annotationProcessor libs.org.projectlombok.lombok
+
     api libs.org.springframework.spring.web
     api libs.org.springframework.spring.jms
     api libs.org.springframework.spring.context.support
@@ -82,7 +157,7 @@ dependencies {
     testImplementation libs.org.assertj.assertj.core
     testImplementation libs.com.h2database.h2
     testImplementation libs.org.hibernate.hibernate.ehcache
-    compileOnly libs.org.projectlombok.lombok
+
     compileOnly libs.com.google.code.findbugs.jsr305
 }
 

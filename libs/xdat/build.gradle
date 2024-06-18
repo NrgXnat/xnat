@@ -94,6 +94,9 @@ configurations {
 }
 
 dependencies {
+    // Each project has a dependency on the platform
+    api(platform(project(":parent")))
+
     api project(':notify')
     api project(':config')
     api project(':mail')

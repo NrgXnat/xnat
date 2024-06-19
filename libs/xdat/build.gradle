@@ -102,6 +102,7 @@ dependencies {
     api project(':libs:mail')
     api project(':libs:automation')
     api project(':libs:framework')
+    api libs.org.nrg.xnat.xnatsrb
     annotationProcessor project(':libs:framework')
     testAnnotationProcessor project(':libs:framework')
 
@@ -144,7 +145,6 @@ dependencies {
     api libs.com.lowagie.itext
     api libs.fop.fop
     api libs.org.dspace.jargon
-    api libs.org.nrg.xnat.xnatsrb
     api libs.org.json.json
     api libs.commons.io.commons.io
     api libs.commons.codec.commons.codec

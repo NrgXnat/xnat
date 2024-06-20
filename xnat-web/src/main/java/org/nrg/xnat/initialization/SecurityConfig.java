@@ -90,6 +90,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService,
                           final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource,
                           final NamedParameterJdbcTemplate template, final DataSource dataSource, final SecurityPreferences securityPreferences) {
+        log.info("Creating SecurityConfig");
+
         _preferences = preferences;
         _appInfo = appInfo;
         _aliasTokenService = aliasTokenService;

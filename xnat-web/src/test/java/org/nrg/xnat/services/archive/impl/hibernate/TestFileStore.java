@@ -38,6 +38,19 @@ import java.nio.file.Paths;
 @PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*", "org.xml.sax.*"})
 @ContextConfiguration(classes = {TestFileStoreConfig.class, SerializerConfig.class})
 public class TestFileStore {
+    private FileStorePreferences _preferences;
+    private FileStore            _fileStore;
+
+    @Autowired
+    public void setFileStore(final FileStore fileStore) {
+        _fileStore = fileStore;
+    }
+
+    @Autowired
+    public void setFileStorePreferences(final FileStorePreferences preferences) {
+        _preferences = preferences;
+    }
+
     @After
     public void cleanup() throws IOException {
         FileUtils.deleteDirectory(Paths.get(_preferences.getFileStorePath()).toFile());
@@ -60,7 +73,7 @@ public class TestFileStore {
     public void testFileStoreCreate() throws IOException, ResourceAlreadyExistsException {
         final URI           fullPath = Paths.get(_preferences.getFileStorePath(), SPLIT_1234_SHA_256).toUri();
         final Resource      dicom    = BasicXnatResourceLocator.getResource(DICOM_4_1_URI);
-        final FileStoreInfo info     = _fileStore.create(new FileInputStream(dicom.getFile()), COORDS_1234);
+        final FileStoreInfo info     = _fileStore.create(Files.newInputStream(dicom.getFile().toPath()), COORDS_1234);
         assertThat(info).isNotNull()
                         .hasFieldOrPropertyWithValue("checksum", DICOM_4_1_SHA_256)
                         .hasFieldOrPropertyWithValue("size", DICOM_4_1_SIZE)
@@ -71,45 +84,57 @@ public class TestFileStore {
 
     @Test
     public void testFileStoreUpdate() throws IOException, ResourceAlreadyExistsException, NotFoundException {
-        final URI           fullPath = Paths.get(_preferences.getFileStorePath(), SPLIT_ABCD_SHA_256).toUri();
-        final Resource      dicom41  = BasicXnatResourceLocator.getResource(DICOM_4_1_URI);
-        final Resource      dicom42  = BasicXnatResourceLocator.getResource(DICOM_4_2_URI);
-        final FileStoreInfo info41   = _fileStore.create(new FileInputStream(dicom41.getFile()), COORDS_ABCD);
-        assertThat(info41).isNotNull()
-                          .hasFieldOrPropertyWithValue("checksum", DICOM_4_1_SHA_256)
-                          .hasFieldOrPropertyWithValue("size", DICOM_4_1_SIZE)
-                          .hasFieldOrPropertyWithValue("storeUri", fullPath)
-                          .hasFieldOrPropertyWithValue("coordinates", JOINED_ABCD);
+        final URI      fullPath = Paths.get(_preferences.getFileStorePath(), SPLIT_ABCD_SHA_256).toUri();
+        final Resource dicom41  = BasicXnatResourceLocator.getResource(DICOM_4_1_URI);
+        final Resource dicom42  = BasicXnatResourceLocator.getResource(DICOM_4_2_URI);
+
+        try (final InputStream inputStream = Files.newInputStream(dicom41.getFile().toPath())) {
+            final FileStoreInfo info41 = _fileStore.create(inputStream, COORDS_ABCD);
+            assertThat(info41).isNotNull()
+                              .hasFieldOrPropertyWithValue("checksum", DICOM_4_1_SHA_256)
+                              .hasFieldOrPropertyWithValue("size", DICOM_4_1_SIZE)
+                              .hasFieldOrPropertyWithValue("storeUri", fullPath)
+                              .hasFieldOrPropertyWithValue("coordinates", JOINED_ABCD);
+        }
         assertThat(Paths.get(fullPath).toFile()).exists();
-        final FileStoreInfo info42 = _fileStore.update(new FileInputStream(dicom42.getFile()), COORDS_ABCD);
-        assertThat(info42).isNotNull()
-                          .hasFieldOrPropertyWithValue("checksum", DICOM_4_2_SHA_256)
-                          .hasFieldOrPropertyWithValue("size", DICOM_4_2_SIZE)
-                          .hasFieldOrPropertyWithValue("storeUri", fullPath)
-                          .hasFieldOrPropertyWithValue("coordinates", JOINED_ABCD);
+        try (final InputStream inputStream = Files.newInputStream(dicom42.getFile().toPath())) {
+            final FileStoreInfo info42 = _fileStore.update(inputStream, COORDS_ABCD);
+            assertThat(info42).isNotNull()
+                              .hasFieldOrPropertyWithValue("checksum", DICOM_4_2_SHA_256)
+                              .hasFieldOrPropertyWithValue("size", DICOM_4_2_SIZE)
+                              .hasFieldOrPropertyWithValue("storeUri", fullPath)
+                              .hasFieldOrPropertyWithValue("coordinates", JOINED_ABCD);
+        }
     }
 
     @Test(expected = NotFoundException.class)
     public void testFileStoreDelete() throws IOException, ResourceAlreadyExistsException, NotFoundException {
-        final URI           fullPath = Paths.get(_preferences.getFileStorePath(), SPLIT_DCBA_SHA_256).toUri();
-        final Resource      dicom41  = BasicXnatResourceLocator.getResource(DICOM_4_1_URI);
-        final Resource      dicom42  = BasicXnatResourceLocator.getResource(DICOM_4_2_URI);
-        final FileStoreInfo info41   = _fileStore.create(new FileInputStream(dicom41.getFile()), COORDS_DCBA);
-        final long          info41Id = info41.getId();
-        assertThat(info41).isNotNull()
-                          .hasFieldOrPropertyWithValue("checksum", DICOM_4_1_SHA_256)
-                          .hasFieldOrPropertyWithValue("size", DICOM_4_1_SIZE)
-                          .hasFieldOrPropertyWithValue("storeUri", fullPath)
-                          .hasFieldOrPropertyWithValue("coordinates", JOINED_DCBA);
+        final URI      fullPath = Paths.get(_preferences.getFileStorePath(), SPLIT_DCBA_SHA_256).toUri();
+        final Resource dicom41  = BasicXnatResourceLocator.getResource(DICOM_4_1_URI);
+        final Resource dicom42  = BasicXnatResourceLocator.getResource(DICOM_4_2_URI);
+
+        final FileStoreInfo info41;
+        try (final InputStream inputStream = Files.newInputStream(dicom41.getFile().toPath())) {
+            info41 = _fileStore.create(inputStream, COORDS_DCBA);
+            assertThat(info41).isNotNull()
+                              .hasFieldOrPropertyWithValue("checksum", DICOM_4_1_SHA_256)
+                              .hasFieldOrPropertyWithValue("size", DICOM_4_1_SIZE)
+                              .hasFieldOrPropertyWithValue("storeUri", fullPath)
+                              .hasFieldOrPropertyWithValue("coordinates", JOINED_DCBA);
+        }
         assertThat(Paths.get(fullPath).toFile()).exists();
+
+        final long info41Id = info41.getId();
+
         final FileStoreInfo info42;
-        try {
-            info42 = _fileStore.update(new FileInputStream(dicom42.getFile()), COORDS_DCBA);
+        try (final InputStream inputStream = Files.newInputStream(dicom42.getFile().toPath())) {
+            info42 = _fileStore.update(inputStream, COORDS_DCBA);
         } catch (NotFoundException e) {
             fail("Got not found exception for coordinates \"" + JOINED_DCBA + "\" but this should exist.");
             return;
         }
-        final long          info42Id = info41.getId();
+
+        final long info42Id = info41.getId();
         assertThat(info42).isNotNull()
                           .hasFieldOrPropertyWithValue("id", info41Id)
                           .hasFieldOrPropertyWithValue("checksum", DICOM_4_2_SHA_256)
@@ -119,7 +144,7 @@ public class TestFileStore {
         final Path outputFile = Files.createTempFile(Paths.get(_preferences.getFileStorePath()), "testRetrieve-", ".dcm");
         try {
             try (final InputStream input = _fileStore.open(COORDS_DCBA);
-                 final OutputStream output = new FileOutputStream(outputFile.toFile())) {
+                 final OutputStream output = Files.newOutputStream(outputFile.toFile().toPath())) {
                 IOUtils.copy(input, output);
                 assertThat(outputFile.toFile()).exists().hasSize(DICOM_4_2_SIZE);
             }
@@ -153,10 +178,4 @@ public class TestFileStore {
     private static final String   DICOM_4_2_URI           = "classpath:dicom/1.MR.head_DHead.4.2.20061214.091206.156000.0918517980.dcm";
     private static final String   DICOM_4_2_SHA_256       = "D853B36A608CC333C8667410FEF6B12F648FDB0467EF788E526206D9C82009B6";
     private static final long     DICOM_4_2_SIZE          = 191864;
-
-    @Autowired
-    private FileStorePreferences _preferences;
-
-    @Autowired
-    private FileStore _fileStore;
 }

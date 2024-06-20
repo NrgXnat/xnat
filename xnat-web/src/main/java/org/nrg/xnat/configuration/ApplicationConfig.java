@@ -42,18 +42,12 @@ import org.nrg.xnat.services.PETTracerUtils;
 import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.tracking.services.EventTrackingDataService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.ehcache.EhCacheCacheManager;
-import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
-import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean;
@@ -89,11 +83,14 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnat.task", "org.nrg.xnat.tracking", "org.nrg.xnat.archive", "org.nrg.xnat.services.customfields.impl",
                 "org.nrg.xnat.features"})
 @Import({FeaturesConfig.class, ReactorConfig.class, ComputeConfig.class})
-@EnableCaching
 @Getter
 @Accessors(prefix = "_")
 @Slf4j
 public class ApplicationConfig {
+    public ApplicationConfig() {
+        log.info("Creating ApplicationConfig");
+    }
+
     @Autowired
     public void setAsyncOperationsPreferences(final AsyncOperationsPreferences asyncOperationsPreferences) {
         _asyncOperationsPreferences = asyncOperationsPreferences;
@@ -107,11 +104,6 @@ public class ApplicationConfig {
     @Bean
     public ThemeService themeService(final SerializerService serializer, final ServletContext context) {
         return new ThemeServiceImpl(serializer, context);
-    }
-
-    @Bean
-    public CacheManager cacheManager() {
-        return new EhCacheCacheManager(ehCacheManagerFactory().getObject());
     }
 
     @Bean(name = {"threadPoolExecutorFactoryBean", "executorService"})
@@ -154,13 +146,6 @@ public class ApplicationConfig {
         bean.setWaitForTasksToCompleteOnShutdown(true);
         bean.setThreadFactory(threadPoolExecutorFactoryBean());
         return bean;
-    }
-
-    @Bean
-    public EhCacheManagerFactoryBean ehCacheManagerFactory() {
-        final EhCacheManagerFactoryBean factory = new EhCacheManagerFactoryBean();
-        factory.setConfigLocation(new DefaultResourceLoader().getResource(_cacheConfiguration));
-        return factory;
     }
 
     @Bean
@@ -243,8 +228,6 @@ public class ApplicationConfig {
                                new PeriodicTrigger(1, TimeUnit.DAYS));
     }
 
-    @Value("${ehcache.configuration:xnat-cache.xml}")
-    private String                     _cacheConfiguration;
     private AsyncOperationsPreferences _asyncOperationsPreferences;
     private Path                       _xnatHome;
 }

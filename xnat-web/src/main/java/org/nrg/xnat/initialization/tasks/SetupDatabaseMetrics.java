@@ -1,5 +1,6 @@
 package org.nrg.xnat.initialization.tasks;
 
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,31 +29,49 @@ public class SetupDatabaseMetrics extends AbstractInitializingTask {
 
     @Override
     protected void callImpl() throws InitializingTaskException {
-
         DataSource dataSource = jdbcTemplate.getDataSource();
-        String dbName = null;
-        try {
-            if (dataSource instanceof  BasicDataSource) {
-                final String uri = ((BasicDataSource)dataSource).getUrl();
-                int lastIndexOfSlash = uri.lastIndexOf("/");
-                if (lastIndexOfSlash == -1) {
-                    dbName = uri;
-                } else {
-                    dbName = uri.substring(lastIndexOfSlash);
-                    if (!dbName.isEmpty() && dbName.startsWith("/")) {
-                        dbName = dbName.substring(1);
-                    }
-                }
-            }
-        } catch(Exception e) {
-            log.error("Unable to extract database name from the configuration property url", e);
+        if (dataSource == null) {
+            log.error("No data source found for instrument database metrics");
+            return;
         }
-        log.info("Using {} for PostgesSQLDatabaseMetrics" , dbName );
-        new PostgreSQLDatabaseMetrics(dataSource,dbName).bindTo(meterRegistry);
+        final String uri = getUri(dataSource);
+        String dbName = getDatabaseName(uri);
+        if (dbName == null) {
+            log.error("No database name found for instrument database metrics");
+            return;
+        }
 
+        log.info("Using {} for PostgesSQLDatabaseMetrics" , dbName);
+        new PostgreSQLDatabaseMetrics(dataSource,dbName).bindTo(meterRegistry);
+    }
+
+    private String getUri(DataSource dataSource) {
+        if (dataSource instanceof HikariDataSource) {
+            return ((HikariDataSource)dataSource).getJdbcUrl();
+        } else if (dataSource instanceof BasicDataSource) {
+            return ((BasicDataSource)dataSource).getUrl();
+        } else {
+            return null;
+        }
+    }
+
+    private String getDatabaseName(String uri) {
+        if (uri == null) {
+            return null;
+        }
+        String dbName = null;
+        int lastIndexOfSlash = uri.lastIndexOf("/");
+        if (lastIndexOfSlash == -1) {
+            dbName = uri;
+        } else {
+            dbName = uri.substring(lastIndexOfSlash);
+            if (dbName.startsWith("/")) {
+                dbName = dbName.substring(1);
+            }
+        }
+        return dbName;
     }
 
     private final JdbcTemplate jdbcTemplate;
     private final MeterRegistry meterRegistry;
-
 }

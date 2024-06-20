@@ -333,7 +333,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                 createWorkFlowEntry(user, customVariableFormAppliesTo, rowId.getFormId(), "Form Enabled");
                 enabled = true;
                 triggerEvent(customVariableFormAppliesTo.getCustomVariableForm(),
-                        customVariableFormAppliesTo.getCustomVariableAppliesTo().getDataType(), UPDATE);
+                             customVariableFormAppliesTo.getCustomVariableAppliesTo().getDataType(), UPDATE);
             }
         } catch (Exception e) {
             if (e instanceof InsufficientPermissionsException) {
@@ -365,7 +365,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                 objectSaver.saveCustomVariableFormAppliesTo(customVariableFormAppliesTo);
                 createWorkFlowEntry(user, customVariableFormAppliesTo, rowId.getFormId(), "Form disabled");
                 triggerEvent(customVariableFormAppliesTo.getCustomVariableForm(),
-                        customVariableFormAppliesTo.getCustomVariableAppliesTo().getDataType(), UPDATE);
+                             customVariableFormAppliesTo.getCustomVariableAppliesTo().getDataType(), UPDATE);
                 disabled = true;
             }
         } catch (Exception e) {
@@ -440,7 +440,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                     objectSaver.saveCustomVariableFormAppliesTo(customVariableFormAppliesTo);
                     status = CustomFormsConstants.DISABLED_STATUS_STRING;
                     triggerEvent(customVariableFormAppliesTo.getCustomVariableForm(),
-                            customVariableFormAppliesTo.getCustomVariableAppliesTo().getDataType(), UPDATE);
+                                 customVariableFormAppliesTo.getCustomVariableAppliesTo().getDataType(), UPDATE);
                 } else {
                     deleteSafely(rowId, customVariableFormAppliesTo);
                     deleteForm(rowId);
@@ -448,7 +448,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                     //Delete all project entries which have opted out of this form
                     deleteOptedOutSafely(rowId);
                     triggerEvent(customVariableFormAppliesTo.getCustomVariableForm(),
-                            customVariableFormAppliesTo.getCustomVariableAppliesTo().getDataType(), DELETE);
+                                 customVariableFormAppliesTo.getCustomVariableAppliesTo().getDataType(), DELETE);
                 }
                 createWorkFlowEntry(user, customVariableFormAppliesTo, rowId.getFormId(), String.format("Form %s STATUS: %s",rowId.getFormId(), status));
             }

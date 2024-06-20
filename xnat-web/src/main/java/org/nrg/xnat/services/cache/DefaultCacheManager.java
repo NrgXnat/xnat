@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatImagescandata;
@@ -22,7 +23,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.XnatAppInfo;
-import org.springframework.cache.Cache;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -30,6 +30,7 @@ import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import javax.cache.Cache;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,14 +67,14 @@ public class DefaultCacheManager implements CacheManager, Initializing {
 
     private final AtomicBoolean _initialized = new AtomicBoolean();
 
-    private final Cache                      _cache;
+    private final Cache<String, Object>      _cache;
     private final XnatAppInfo                _appInfo;
     private final XnatUserProvider           _primaryAdminUserProvider;
     private final DatabaseHelper             _helper;
     private final NamedParameterJdbcTemplate _template;
 
-    public DefaultCacheManager(final org.springframework.cache.CacheManager cacheManager, final XnatAppInfo appInfo, final XnatUserProvider primaryAdminUserProvider, final DatabaseHelper helper, final NamedParameterJdbcTemplate template) {
-        _cache                    = cacheManager.getCache(CACHE_NAME);
+    public DefaultCacheManager(final JCacheHelper cacheHelper, final XnatAppInfo appInfo, final XnatUserProvider primaryAdminUserProvider, final DatabaseHelper helper, final NamedParameterJdbcTemplate template) {
+        _cache                    = cacheHelper.getCache(CACHE_NAME, String.class, Object.class);
         _appInfo                  = appInfo;
         _primaryAdminUserProvider = primaryAdminUserProvider;
         _helper                   = helper;
@@ -192,8 +193,8 @@ public class DefaultCacheManager implements CacheManager, Initializing {
     @Override
     public void clearXsiType(final String xsiType) {
         final String  prefix = xsiType + CACHE_ID_SEPARATOR;
-        final List<?> keys   = getNativeCache().getKeysNoDuplicateCheck();
-        keys.stream().filter(key -> key instanceof String && StringUtils.startsWith((String) key, prefix)).forEach(_cache::evict);
+        final List<?> keys   = Arrays.asList("foo", "bar"); // CACHING: getNativeCache().getKeysNoDuplicateCheck();
+        keys.stream().filter(key -> key instanceof String && StringUtils.startsWith((String) key, prefix)).map(String.class::cast).forEach(_cache::remove);
     }
 
     /**
@@ -208,14 +209,14 @@ public class DefaultCacheManager implements CacheManager, Initializing {
         final String cacheId = getCacheId(xsiType, id);
         log.debug("Going to try to retrieve an object with the cache ID {}", cacheId);
 
-        final Cache.ValueWrapper wrapper = _cache.get(cacheId);
-        if (wrapper == null) {
+        final Object value = _cache.get(cacheId);
+        if (value == null) {
             log.info("Someone tried to retrieve something from the cache, but the requested cache ID {} wasn't found", cacheId);
             return null;
         }
 
-        log.info("Someone requested cached data for cache ID {}", cacheId);
-        return wrapper.get();
+        log.info("Someone requested cached data for cache ID {}, found an object of type {}", cacheId, value.getClass());
+        return value;
     }
 
     /**
@@ -230,14 +231,9 @@ public class DefaultCacheManager implements CacheManager, Initializing {
         final String cacheId = getCacheId(xsiType, id);
         log.debug("Caching an object with the cache ID {}", cacheId);
 
-        final Cache.ValueWrapper wrapper = _cache.putIfAbsent(cacheId, item);
-        if (wrapper == null) {
-            log.debug("Cached object with ID {}", cacheId);
-            return item;
-        }
+        _cache.put(cacheId, item);
 
-        log.debug("Tried to cache object with ID {} but it looks like that's already cached, returning existing cached item", cacheId);
-        return wrapper.get();
+        return item;
     }
 
     /**
@@ -251,22 +247,19 @@ public class DefaultCacheManager implements CacheManager, Initializing {
         final String cacheId = getCacheId(xsiType, id);
         log.debug("Going to try to remove an object with the cache ID {}", cacheId);
 
-        final Object cached = _cache.get(cacheId);
-        if (cached != null) {
-            _cache.evict(cacheId);
-        }
-        return cached;
+        return _cache.getAndRemove(cacheId);
     }
 
-    /**
+    // CACHING:
+    /*
      * Gets the underlying native cache implementation to allow some advanced operations. Cache access should be done
      * with the Spring cache abstraction wherever possible!
      *
      * @return The native cache implementation.
-     */
     private net.sf.ehcache.Cache getNativeCache() {
         return (net.sf.ehcache.Cache) _cache.getNativeCache();
     }
+     */
 
     private boolean verifyXdatMetaElementTable() {
         try {
@@ -440,7 +433,7 @@ public class DefaultCacheManager implements CacheManager, Initializing {
      *     <li><pre>xnat:imageScanData</pre></li>
      *     <li><pre>xnat:abstractResource</pre></li>
      * </ul>
-     *
+     * <p>
      * Note that <pre>xnat:imageSessionData</pre> and <pre>xnat:imageScanData</pre> are <em>not</em> included in the
      * returned list. If an error is encountered trying to retrieve the schema elements, the returned optional is empty.
      *

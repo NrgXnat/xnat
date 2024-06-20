@@ -13,6 +13,7 @@ import com.google.common.collect.Maps;
 
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.NotificationsPreferences;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
@@ -40,7 +41,7 @@ public class AutoRunEmailHandler extends PipelineEmailHandlerAbst implements Con
      * @param eventBus    the event bus
      * @param preferences The notifications preferences object.
      */
-    @Inject
+    @Autowired
     public AutoRunEmailHandler(EventBus eventBus, final NotificationsPreferences preferences) {
         _preferences = preferences;
         eventBus.on(R(WorkflowStatusEvent.class.getName() + "[.]?(" + PersistentWorkflowUtils.COMPLETE + "|" + PersistentWorkflowUtils.FAILED + ")"), this);

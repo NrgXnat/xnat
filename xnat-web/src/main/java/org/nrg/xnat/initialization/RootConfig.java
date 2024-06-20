@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.beans.XnatPluginBeanManager;
 import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.datacache.SerializerRegistry;
+import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
@@ -35,6 +36,9 @@ import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.services.logging.LoggingService;
 import org.nrg.xnat.services.logging.impl.DefaultLoggingService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.jcache.JCacheCacheManager;
+import org.springframework.cache.jcache.config.JCacheConfigurerSupport;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -51,6 +55,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 
 import static lombok.AccessLevel.PRIVATE;
+import static org.nrg.framework.jcache.JCacheHelper.JCACHE_PROVIDER_DEFAULT;
+import static org.nrg.framework.jcache.JCacheHelper.JCACHE_PROVIDER_ENV;
 
 /**
  * Configuration for the XNAT root application context. This contains all the infrastructure for initializing
@@ -65,7 +71,21 @@ import static lombok.AccessLevel.PRIVATE;
 @Getter(PRIVATE)
 @Accessors(prefix = "_")
 @Slf4j
-public class RootConfig {
+public class RootConfig extends JCacheConfigurerSupport {
+    @Value("${" + JCACHE_PROVIDER_ENV + ":" + JCACHE_PROVIDER_DEFAULT + "}")
+    private String _cacheProvider;
+
+    public RootConfig() {
+        super();
+        log.info("Creating RootConfig");
+    }
+
+    @Bean
+    @Override
+    public org.springframework.cache.CacheManager cacheManager() {
+        return new JCacheCacheManager(JCacheHelper.getCachingProvider(_cacheProvider).getCacheManager());
+    }
+
     @Bean
     public XnatAppInfo appInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref, final XnatNode node, final XnatNodeInfoService nodeInfoService) throws IOException {
         return new XnatAppInfo(preferences, context, environment, serializerService, template, openUrlsPref, node, nodeInfoService);

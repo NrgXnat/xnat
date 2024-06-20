@@ -5,6 +5,7 @@ import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.services.ContextService;
+import org.nrg.framework.test.OrmTestConfiguration;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 import org.nrg.prefs.resolvers.SimplePrefsEntityResolver;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -30,8 +31,8 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
-import org.springframework.orm.hibernate4.HibernateTransactionManager;
-import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
+import org.springframework.orm.hibernate5.HibernateTransactionManager;
+import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import reactor.bus.EventBus;
 
@@ -42,7 +43,7 @@ import java.util.Properties;
 import javax.sql.DataSource;
 
 @Configuration
-@Import({HibernateConfig.class, ObjectMapperConfig.class, SerializerConfig.class})
+@Import({OrmTestConfiguration.class, ObjectMapperConfig.class, SerializerConfig.class})
 @ComponentScan({"org.nrg.prefs.repositories", "org.nrg.prefs.transformers"})
 public class EventServiceTestConfig {
     @Bean
@@ -60,9 +61,8 @@ public class EventServiceTestConfig {
         return new HibernatePreferenceService(toolService());
     }
 
-    @SuppressWarnings("rawtypes")
     @Bean
-    public NrgPreferenceService nrgPreferenceService(final List<PreferenceTransformer> transformers, final Map<String, PreferenceEntityResolver> resolvers) {
+    public NrgPreferenceService nrgPreferenceService(final List<PreferenceTransformer<?>> transformers, final Map<String, PreferenceEntityResolver> resolvers) {
         return new DefaultNrgPreferenceService(toolService(), preferenceService(), transformers, resolvers);
     }
 

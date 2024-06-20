@@ -2,11 +2,17 @@ package org.nrg.xnat.customforms.daos;
 
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
-import org.hibernate.NonUniqueObjectException;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.engine.spi.LoadQueryInfluencers;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.internal.CriteriaImpl;
+import org.hibernate.internal.SessionImpl;
+import org.hibernate.loader.OuterJoinLoader;
+import org.hibernate.loader.criteria.CriteriaLoader;
+import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.nrg.framework.constants.Scope;
-import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
+import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.nrg.xnat.customforms.pojo.UserOptionsPojo;
 import org.nrg.xnat.customforms.pojo.formio.RowIdentifier;
 import org.nrg.xnat.customforms.utils.CustomFormHibernateUtils;
@@ -17,13 +23,15 @@ import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nullable;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Predicate;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
@@ -35,21 +43,35 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
     public void saveOrUpdate(CustomVariableFormAppliesTo customVariableFormAppliesTo) {
         final long cvatId = customVariableFormAppliesTo.getCustomVariableAppliesTo().getId();
         long cvfId = customVariableFormAppliesTo.getCustomVariableForm().getId();
-        try {
-            final Criteria criteria = getCriteriaWithAlias();
-            criteria.add(Restrictions.eq("cvat.id", cvatId));
-            criteria.add(Restrictions.eq("cvf.id", cvfId));
 
-            if (!criteria.list().isEmpty()) {
-                update(customVariableFormAppliesTo);
-            } else {
-                create(customVariableFormAppliesTo);
-            }
-        } catch (NonUniqueObjectException e) {
-            getSession().merge(customVariableFormAppliesTo);
+        QueryBuilder<CustomVariableFormAppliesTo> builder = getQueryBuilder();
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.eq("cvat.id", cvatId));
+        predicates.add(builder.eq("cvf.id", cvfId));
+        builder.where(builder.and(predicates));
+        if (!builder.getResults().isEmpty()) {
+            update(customVariableFormAppliesTo);
+        } else {
+            create(customVariableFormAppliesTo);
         }
     }
 
+    public static String toSql(Criteria criteria) {
+        String sql = "";
+        try {
+            CriteriaImpl c = (CriteriaImpl) criteria;
+            SessionImpl s = (SessionImpl) c.getSession();
+            SessionFactoryImplementor factory = s.getSessionFactory();
+            String[] implementors = factory.getImplementors(c.getEntityOrClassName());
+            CriteriaLoader loader = new CriteriaLoader((OuterJoinLoadable) factory.getEntityPersister(implementors[0]), factory, c, implementors[0], new LoadQueryInfluencers());
+            Field f = OuterJoinLoader.class.getDeclaredField("sql");
+            f.setAccessible(true);
+            sql = (String) f.get(loader);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return sql;
+    }
     /**
      * Finds a row from the join table, by FormID and AppliesToID
      * @param rowId - the Row Identifier @see org.nrg.xnat.customforms.pojo.formio.RowIdentifier;
@@ -57,10 +79,12 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
      */
     @Nullable
     public CustomVariableFormAppliesTo findByRowIdentifier(RowIdentifier rowId) {
-        Criteria criteria = getCriteriaWithAlias();
-        criteria.add(Restrictions.eq("cvat.id", rowId.getAppliesToId()));
-        criteria.add(Restrictions.eq("cvf.id", rowId.getFormId()));
-        CustomVariableFormAppliesTo unique = (CustomVariableFormAppliesTo) criteria.uniqueResult();
+        QueryBuilder<CustomVariableFormAppliesTo> builder = getQueryBuilder();
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.eq("cvat.id", rowId.getAppliesToId()));
+        predicates.add(builder.eq("cvf.id", rowId.getFormId()));
+        builder.where(builder.and(predicates));
+        CustomVariableFormAppliesTo unique = builder.getResult().orElse(null);
         initializeChild(unique);
         return unique;
     }
@@ -74,11 +98,13 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
 
     @Nullable
     public CustomVariableFormAppliesTo findForProject(final String projectId, final long formId) {
-        Criteria criteria = getCriteriaWithAlias();
-        criteria.add(Restrictions.eq("cvat.scope", Scope.Project));
-        criteria.add(Restrictions.eq("cvat.entityId", projectId));
-        criteria.add(Restrictions.eq("cvf.id", formId));
-        CustomVariableFormAppliesTo unique = (CustomVariableFormAppliesTo) criteria.uniqueResult();
+        QueryBuilder<CustomVariableFormAppliesTo> builder = getQueryBuilder();
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.eq("cvat.scope", Scope.Project));
+        predicates.add(builder.eq("cvat.entityId", projectId));
+        predicates.add(builder.eq("cvf.id", formId));
+        builder.where(builder.and(predicates));
+        CustomVariableFormAppliesTo unique = builder.getResult().orElse(null);
         initializeChild(unique);
         return unique;
     }
@@ -92,9 +118,13 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
      */
 
     public List<CustomVariableFormAppliesTo> findAllFormsByExclusion(final UserOptionsPojo userOptionsPojo,  final long excludedFormId) {
-        Criteria criteria = getCriteria(userOptionsPojo, null, true);
-        criteria.add(Restrictions.ne("cvf.id", excludedFormId));
-        List<CustomVariableFormAppliesTo> results = criteria.list();
+        QueryBuilder<CustomVariableFormAppliesTo> builder = getQueryBuilder();
+        List<Predicate> predicates = new ArrayList<>();
+        addPrediates(userOptionsPojo, null, true, predicates, builder);
+        predicates.add(builder.ne("cvf.id", excludedFormId));
+        builder.where(builder.and(predicates));
+        List<CustomVariableFormAppliesTo> results = builder.getResults();
+
         initializeList(results);
         return results == null ? Collections.emptyList() : results;
     }
@@ -108,23 +138,30 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
      */
 
     public List<CustomVariableFormAppliesTo> findAllSpecificProjectForm(final UserOptionsPojo userOptionsPojo, final List<String> entityIds, final long formId) {
-        Criteria criteria = getCriteria(userOptionsPojo, Scope.Project, true);
+        QueryBuilder<CustomVariableFormAppliesTo> builder = getQueryBuilder();
+        List<Predicate> predicates = new ArrayList<>();
+        addPrediates(userOptionsPojo, Scope.Project, true, predicates, builder);
         if (entityIds != null) {
-            criteria.add(Restrictions.in("cvat.entityId", entityIds));
+            predicates.add(builder.in("cvat.entityId", entityIds));
         }
-        criteria.add(Restrictions.eq("cvf.id", formId));
-        List<CustomVariableFormAppliesTo> results = criteria.list();
+        predicates.add(builder.eq("cvf.id", formId));
+        builder.where(builder.and(predicates));
+        List<CustomVariableFormAppliesTo> results = builder.getResults();
+
         initializeList(results);
         return results == null ? Collections.emptyList() : results;
     }
 
     public List<CustomVariableForm> findAllDistinctFormsByDatatype(final String dataType, final String status) {
-        Criteria criteria = getCriteriaWithAlias();
+        QueryBuilder<CustomVariableFormAppliesTo> builder = getQueryBuilder();
+        List<Predicate> predicates = new ArrayList<>();
         if (status != null) {
-            criteria.add(Restrictions.eq("cfa.status",status));
+            predicates.add(builder.eq("status",status));
         }
-        criteria.add(Restrictions.eq("cvat.dataType", dataType));
-        List<CustomVariableFormAppliesTo> results = criteria.list();
+        predicates.add(builder.eq("cvat.dataType", dataType));
+        builder.where(builder.and(predicates));
+        List<CustomVariableFormAppliesTo> results = builder.getResults();
+
         initializeList(results);
         List<CustomVariableForm> forms = new ArrayList<CustomVariableForm>();
         if (null != results) {
@@ -138,7 +175,7 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         return forms;
     }
 
-    public static <T> Predicate<T> DistinctByKey(
+    public static <T> java.util.function.Predicate<T> DistinctByKey(
             Function<? super T, ?> keyExtractor) {
 
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
@@ -167,10 +204,31 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         return criteria;
     }
 
+    private void addPrediates(final UserOptionsPojo userOptionsPojo, final Scope scope, boolean restrictOnlyDataType, final List<Predicate> predicates, final QueryBuilder<CustomVariableFormAppliesTo> builder) {
+        predicates.add(builder.ne("status", CustomFormsConstants.OPTED_OUT_STATUS_STRING));
+        if (scope != null) {
+            predicates.add(builder.eq("cvat.scope", scope));
+        }
+        predicates.add(builder.eq("cvat.dataType", userOptionsPojo.getDataType()));
+        if (!restrictOnlyDataType && userOptionsPojo.getProtocol() != null) {
+            predicates.add(builder.eq("cvat.protocol", userOptionsPojo.getProtocol()));
+        }
+        if (!restrictOnlyDataType && userOptionsPojo.getVisit() != null) {
+            predicates.add(builder.eq("cvat.visit", userOptionsPojo.getVisit()));
+        }
+        if (!restrictOnlyDataType && userOptionsPojo.getSubType() != null) {
+            predicates.add(builder.eq("cvat.subType", userOptionsPojo.getSubType()));
+        }
+        if (!restrictOnlyDataType && userOptionsPojo.getScanType() != null) {
+            predicates.add(builder.eq("cvat.scanType", userOptionsPojo.getScanType()));
+        }
+    }
+
     public List<CustomVariableFormAppliesTo> findByFormId(final long formId) {
-        Criteria criteria = getCriteriaWithAlias();
-        criteria.add(Restrictions.eq("cvf.id", formId));
-        List<CustomVariableFormAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
+        QueryBuilder<CustomVariableFormAppliesTo> builder = getQueryBuilder();
+        builder.where(builder.eq("cvf.id", formId));
+        List<CustomVariableFormAppliesTo> results = builder.getResults();
+
         initializeList(results);
         return results == null ? Collections.emptyList() : results;
     }
@@ -183,10 +241,10 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
      */
 
     public List<CustomVariableFormAppliesTo> findByFormIdAndStatus(final long formId, final String status) {
-        Criteria criteria = getCriteriaWithAlias();
-        criteria.add(Restrictions.eq("cfa.status", status));
-        criteria.add(Restrictions.eq("cvf.id", formId));
-        List<CustomVariableFormAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
+        QueryBuilder<CustomVariableFormAppliesTo> builder = getQueryBuilder();
+        builder.where(builder.and(builder.eq("cvf.id", formId), builder.eq("status", status)));
+        List<CustomVariableFormAppliesTo> results = builder.getResults();
+
         initializeList(results);
         return results == null ? Collections.emptyList(): results;
     }
@@ -217,9 +275,10 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
      */
 
     public List<CustomVariableFormAppliesTo> findByAppliesToId(final long appliesToId) {
-        final Criteria criteria = getCriteriaWithAlias();
-        criteria.add(Restrictions.eq("cvat.id", appliesToId));
-        List<CustomVariableFormAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
+        QueryBuilder<CustomVariableFormAppliesTo> builder = getQueryBuilder();
+        builder.where(builder.eq("cvat.id", appliesToId));
+        List<CustomVariableFormAppliesTo> results = builder.getResults();
+
         initializeList(results);
         return results == null ? Collections.emptyList() : results;
     }
@@ -246,6 +305,12 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         return criteria;
     }
 
+    private QueryBuilder<CustomVariableFormAppliesTo> getQueryBuilder() {
+        QueryBuilder<CustomVariableFormAppliesTo> builder =  newQueryBuilder();
+        builder.join("customVariableAppliesTo", "cvat", JoinType.INNER);
+        builder.join("customVariableForm", "cvf", JoinType.INNER);
+        return builder;
+    }
     /**
      * Unproxy and initialize child objects
      * @param obj - the parent whose children are to be initialized

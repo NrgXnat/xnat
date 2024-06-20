@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.PermissionsServiceImpl;
@@ -39,7 +40,12 @@ import static org.nrg.xft.identifier.IDGeneratorFactory.*;
                 "org.nrg.xnat.services.system.impl.hibernate", "org.nrg.xnat.services.triage",
                 "org.nrg.xnat.services.validation", "org.nrg.xnat.snapshot.generator.impl",
                 "org.nrg.xnat.snapshot.services.impl", "org.nrg.xnat.services.security",})
+@Slf4j
 public class XnatServicesConfig {
+    public XnatServicesConfig() {
+        log.info("Creating XnatServicesConfig");
+    }
+
     @Bean
     public PermissionsServiceI permissionsService(final DataTypeAwareEventService eventService,
                                                   final NamedParameterJdbcTemplate template,

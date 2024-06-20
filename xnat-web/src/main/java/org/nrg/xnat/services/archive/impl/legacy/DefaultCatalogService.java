@@ -31,6 +31,7 @@ import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.services.impl.ValidationHandler;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
@@ -83,8 +84,7 @@ import org.nrg.xnat.utils.ThreadAndProcessFileLock;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
+import javax.cache.Cache;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.core.io.Resource;
@@ -121,10 +121,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DefaultCatalogService implements CatalogService {
     @Autowired
-    public DefaultCatalogService(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate parameterized, final CacheManager cacheManager, final UserDataCache userDataCache) {
+    public DefaultCatalogService(final SiteConfigPreferences preferences, final NamedParameterJdbcTemplate parameterized, final JCacheHelper cacheHelper, final UserDataCache userDataCache) {
         _preferences = preferences;
         _parameterized = parameterized;
-        _cache = cacheManager.getCache(CATALOG_SERVICE_CACHE);
+        _cache = cacheHelper.getCache(CATALOG_SERVICE_CACHE, String.class, File.class);
         _userDataCache = userDataCache;
     }
 
@@ -1599,9 +1599,9 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private CatCatalogI getFromCache(final UserI user, final String catalogId) {
-        final Cache.ValueWrapper cached = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId));
+        final File file = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId));
         try {
-            if (cached == null) {
+            if (file == null) {
                 final File cacheFile = _userDataCache.getUserDataCacheFile(user, Paths.get("catalogs", catalogId + ".xml"));
                 if (cacheFile.exists()) {
                     final CatCatalogBean catalog = new CatalogUtils.CatalogData(cacheFile, null).catBean;
@@ -1609,7 +1609,6 @@ public class DefaultCatalogService implements CatalogService {
                     return catalog;
                 }
             } else {
-                final File file = (File) cached.get();
                 if (file.exists()) {
                     return new CatalogUtils.CatalogData(file, null).catBean;
                 }
@@ -2158,7 +2157,7 @@ public class DefaultCatalogService implements CatalogService {
 
     private final SiteConfigPreferences      _preferences;
     private final NamedParameterJdbcTemplate _parameterized;
-    private final Cache                      _cache;
+    private final Cache<String, File>        _cache;
     private final UserDataCache              _userDataCache;
     private       RemoteFilesService         _remoteFilesService = null;
 }

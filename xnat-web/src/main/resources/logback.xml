@@ -45,6 +45,15 @@
             <fileNamePattern>${xnat.home}/logs/cache.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
+    <appender name="cache-events" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${xnat.home}/logs/cache-events.log</File>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/cache-events.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
     <appender name="events" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <append>false</append>
         <file>${xnat.home}/logs/events.log</file>
@@ -378,9 +387,6 @@
     <logger name="org.apache.xalan" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
     </logger>
-    <logger name="net.sf.ehcache" additivity="false" level="WARN">
-        <appender-ref ref="cache"/>
-    </logger>
     <logger name="org.nrg.xnat.event" additivity="false" level="WARN">
         <appender-ref ref="events"/>
     </logger>
@@ -455,9 +461,6 @@
     </logger>
     <logger name="org.nrg.pipeline.launch" additivity="false" level="INFO">
         <appender-ref ref="launch"/>
-    </logger>
-    <logger name="org.springframework.cache" additivity="false" level="ERROR">
-        <appender-ref ref="cache"/>
     </logger>
     <logger name="org.nrg.xft" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
@@ -570,9 +573,6 @@
     <logger name="org.springframework.scheduling" additivity="false" level="ERROR">
         <appender-ref ref="scheduler"/>
     </logger>
-    <logger name="org.nrg.xnat.services.cache" additivity="false" level="WARN">
-        <appender-ref ref="cache"/>
-    </logger>
     <logger name="org.springframework.orm" additivity="false" level="ERROR">
         <appender-ref ref="orm"/>
     </logger>
@@ -617,6 +617,24 @@
     </logger>
     <logger name="org.nrg.xnat.customforms.customvariable.migration" additivity="false" level="INFO">
         <appender-ref ref="customvariablemigration"/>
+    </logger>
+    <logger name="javax.cache" additivity="false" level="WARN">
+        <appender-ref ref="cache"/>
+    </logger>
+    <logger name="org.springframework.cache" additivity="false" level="WARN">
+        <appender-ref ref="cache"/>
+    </logger>
+    <logger name="org.ehcache" additivity="false" level="WARN">
+        <appender-ref ref="cache"/>
+    </logger>
+    <logger name="org.nrg.xdat.services.cache" additivity="false" level="WARN">
+        <appender-ref ref="cache"/>
+    </logger>
+    <logger name="org.nrg.xnat.services.cache" additivity="false" level="WARN">
+        <appender-ref ref="cache"/>
+    </logger>
+    <logger name="org.nrg.framework.jcache.DefaultGenericCacheEntryListener" additivity="false" level="WARN">
+        <appender-ref ref="cache-events"/>
     </logger>
     <logger name="org.nrg.xnat.micrometer" additivity="false" level="INFO">
         <appender-ref ref="observation"/>

@@ -10,55 +10,85 @@
 package org.nrg.xnat.configuration;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.SessionFactory;
-import org.hibernate.cache.spi.RegionFactory;
-import org.hibernate.cfg.ImprovedNamingStrategy;
-import org.nrg.framework.beans.Beans;
+import org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategy;
 import org.nrg.framework.beans.XnatPluginBeanManager;
-import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.jcache.DefaultHibernateEntityCacheKeyGenerator;
+import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
-import org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy;
+import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
+import org.nrg.framework.orm.hibernate.PrefixedPhysicalNamingStrategy;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.orm.hibernate4.HibernateTransactionManager;
+import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Properties;
+
+import static org.nrg.framework.jcache.JCacheHelper.JCACHE_PROVIDER_DEFAULT;
+import static org.nrg.framework.jcache.JCacheHelper.JCACHE_PROVIDER_ENV;
+import static org.nrg.framework.jcache.JCacheHelper.JCACHE_URI_DEFAULT;
+import static org.nrg.framework.jcache.JCacheHelper.JCACHE_URI_ENV;
+import static org.nrg.framework.jcache.JCacheHelper.REDISSON_URI_DEFAULT;
 
 @Configuration
 @EnableTransactionManagement(proxyTargetClass = true)
+@EnableCaching
+@ComponentScan("org.nrg.framework.jcache")
 @Slf4j
 public class OrmConfig {
+    @Value("${hibernate.dialect:org.hibernate.dialect.PostgreSQL10Dialect}")
+    private String  _dialect;
+    @Value("${hibernate.hbm2ddl.auto:create-drop}")
+    private String  _hbm2ddlAuto;
+    @Value("${hibernate.show-sql:false}")
+    private boolean _showSql;
+    @Value("${hibernate.cache.use_second_level_cache:true}")
+    private boolean _useSecondLevelCache;
+    @Value("${hibernate.cache.use_query_cache:true}")
+    private boolean _useQueryCache;
+    @Value("${hibernate.cache.region.factory_class:org.hibernate.cache.jcache.internal.JCacheRegionFactory}")
+    private String  _regionFactoryClass;
+    @Value("${" + JCACHE_PROVIDER_ENV + ":" + JCACHE_PROVIDER_DEFAULT + "}")
+    private String  _cacheProvider;
+    @Value("${" + JCACHE_URI_ENV + ":" + JCACHE_URI_DEFAULT + "}")
+    private String  _cacheUri;
+
     @Bean
-    public ImprovedNamingStrategy namingStrategy() {
-        return new PrefixedTableNamingStrategy("xhbm");
+    public KeyGenerator defaultHibernateEntityCacheKeyGenerator() {
+        return new DefaultHibernateEntityCacheKeyGenerator();
     }
 
     @Bean
-    public PropertiesFactoryBean hibernateProperties(final Environment environment) {
-        final Properties properties = Beans.getNamespacedProperties(environment, "hibernate", false);
-        if (properties.size() == 0) {
-            if (log.isDebugEnabled()) {
-                final StringBuilder message = new StringBuilder("No Hibernate properties specified, using default properties:\n");
-                for (final String property : DEFAULT_HIBERNATE_PROPERTIES.stringPropertyNames()) {
-                    message.append(" * ").append(property).append(": ").append(DEFAULT_HIBERNATE_PROPERTIES.getProperty(property)).append("\n");
-                }
-                log.debug(message.toString());
-            }
-            properties.putAll(DEFAULT_HIBERNATE_PROPERTIES);
-        }
+    public PropertiesFactoryBean hibernateProperties() {
+        final Properties properties = new Properties();
+        properties.setProperty("hibernate.dialect", _dialect);
+        properties.setProperty("hibernate.hbm2ddl.auto", _hbm2ddlAuto);
+        properties.setProperty("hibernate.show_sql", Boolean.toString(_showSql));
+        properties.setProperty("hibernate.cache.use_second_level_cache", Boolean.toString(_useSecondLevelCache));
+        properties.setProperty("hibernate.cache.use_query_cache", Boolean.toString(_useQueryCache));
+        properties.setProperty("hibernate.cache.region.factory_class", _regionFactoryClass);
+        properties.setProperty(JCACHE_PROVIDER_ENV, _cacheProvider);
+        properties.setProperty(JCACHE_URI_ENV, JCacheHelper.IS_REDISSON.test(_cacheProvider) && StringUtils.equals(JCACHE_URI_DEFAULT, _cacheUri) ? REDISSON_URI_DEFAULT : _cacheUri);
+        properties.setProperty("hibernate.javax.cache.missing_cache_strategy", "create");
 
         final PropertiesFactoryBean bean = new PropertiesFactoryBean();
         bean.setProperties(properties);
@@ -66,37 +96,25 @@ public class OrmConfig {
     }
 
     @Bean
-    public RegionFactory regionFactory(final Properties hibernateProperties) throws NrgServiceException {
-        final String className = hibernateProperties.getProperty("hibernate.cache.region.factory_class", DEFAULT_REGION_FACTORY_CLASS);
-        try {
-            final Class<? extends RegionFactory> clazz = Class.forName(className).asSubclass(RegionFactory.class);
-            try {
-                final Constructor<? extends RegionFactory> constructor = clazz.getConstructor(Properties.class);
-                return constructor.newInstance(hibernateProperties);
-            } catch (NoSuchMethodException e) {
-                return clazz.newInstance();
-            }
-        } catch (ClassNotFoundException e) {
-            log.error("Couldn't find the specified cache region factory class '{}'", className, e);
-            throw new NrgServiceException(NrgServiceError.ConfigurationError, "Couldn't find the specified cache region factory class '" + className + "'", e);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            log.error("An error occurred trying to create an instance of the '{}' class", className, e);
-            throw new NrgServiceException(NrgServiceError.ConfigurationError, "An error occurred trying to create an instance of the '" + className + "' class", e);
-        }
+    public PhysicalNamingStrategy physicalNamingStrategy() {
+        return new PrefixedPhysicalNamingStrategy("xhbm");
     }
 
-        @Bean
-    public FactoryBean<SessionFactory> sessionFactory(final Environment environment, final DataSource dataSource, final RegionFactory regionFactory, final XnatPluginBeanManager manager) throws NrgServiceException {
+    @Bean
+    public FactoryBean<SessionFactory> sessionFactory(final DataSource dataSource, final XnatPluginBeanManager manager, @Autowired(required = false) final List<HibernateEntityPackageList> packageLists) {
+        final Properties properties;
         try {
-            final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean(manager, XNAT_ENTITIES_PACKAGES);
-            bean.setDataSource(dataSource);
-            bean.setCacheRegionFactory(regionFactory);
-            bean.setHibernateProperties(hibernateProperties(environment).getObject());
-            bean.setNamingStrategy(namingStrategy());
-            return bean;
+            properties = hibernateProperties().getObject();
         } catch (IOException e) {
-            throw new NrgServiceException(NrgServiceError.Unknown, "An error occurred trying to retrieve the Hibernate properties", e);
+            throw new NrgServiceRuntimeException("An error occurred trying to get the Hibernate properties", e);
         }
+        final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean(manager, XNAT_ENTITIES_PACKAGES);
+        bean.setDataSource(dataSource);
+        bean.setHibernateProperties(properties);
+        bean.setPhysicalNamingStrategy(physicalNamingStrategy());
+        bean.setImplicitNamingStrategy(new ImplicitNamingStrategyLegacyHbmImpl());
+        bean.setEntityPackageLists(packageLists);
+        return bean;
     }
 
     @Bean
@@ -115,14 +133,10 @@ public class OrmConfig {
         return new DatabaseHelper(template, transactionTemplate);
     }
 
-    private static final String     XNAT_ENTITIES_PACKAGES       = "META-INF/xnat/entities/**/*-entity-packages.txt";
-    private static final String     DEFAULT_REGION_FACTORY_CLASS = "org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory";
-    private static final Properties DEFAULT_HIBERNATE_PROPERTIES = new Properties() {{
-        setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect");
-        setProperty("hibernate.hbm2ddl.auto", "update");
-        setProperty("hibernate.show_sql", "false");
-        setProperty("hibernate.cache.use_second_level_cache", "true");
-        setProperty("hibernate.cache.region.factory_class", DEFAULT_REGION_FACTORY_CLASS);
-        setProperty("hibernate.cache.use_query_cache", "true");
-    }};
+    @Bean
+    public EntityManager entityManager(final FactoryBean<SessionFactory> sessionFactory) throws Exception {
+        return sessionFactory.getObject().createEntityManager();
+    }
+
+    private static final String XNAT_ENTITIES_PACKAGES = "META-INF/xnat/entities/**/*-entity-packages.txt";
 }

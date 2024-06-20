@@ -11,6 +11,7 @@ package org.nrg.xnat.helpers.merge.anonymize;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -18,16 +19,16 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+import javax.cache.Cache;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -38,13 +39,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DefaultAnonUtils implements AnonUtils {
     @Autowired
-    public DefaultAnonUtils(final ConfigService configService, final CacheManager cacheManager) throws Exception {
+    public DefaultAnonUtils(final ConfigService configService, final JCacheHelper cacheHelper) throws Exception {
         if (_instance != null) {
             throw new Exception("The AnonUtils service is already initialized, try calling getInstance() instead.");
         }
-        _instance = this;
+        _instance      = this;
         _configService = configService;
-        _cache = cacheManager.getCache(ANON_SCRIPT_CACHE);
+        _cache         = cacheHelper.getCache(ANON_SCRIPT_CACHE, String.class, Configuration.class);
     }
 
     public static AnonUtils getService() {
@@ -76,18 +77,15 @@ public class DefaultAnonUtils implements AnonUtils {
     }
 
     public static void invalidateSitewideAnonCache() {
-        _instance._cache.evict(SITE_WIDE);
+        _instance._cache.remove(SITE_WIDE);
     }
 
     public static Configuration getCachedSitewideAnon() throws Exception {
-        final Cache.ValueWrapper cached = _instance._cache.get(SITE_WIDE);
-        if (null != cached) {
-            return (Configuration) cached.get();
-        } else {
+        return ObjectUtils.getIfNull(_instance._cache.get(SITE_WIDE), () -> {
             final Configuration configuration = getService().getSiteWideScriptConfiguration();
             _instance._cache.put(SITE_WIDE, configuration);
             return configuration;
-        }
+        });
     }
 
     @Override
@@ -98,7 +96,7 @@ public class DefaultAnonUtils implements AnonUtils {
     @Override
     public Configuration getProjectScriptConfiguration(final String projectId) {
         final boolean isSiteWide = StringUtils.isBlank(projectId);
-        final String path = isSiteWide ? SITE_WIDE_PATH : DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
+        final String  path       = isSiteWide ? SITE_WIDE_PATH : DicomEdit.buildScriptPath(DicomEdit.ResourceScope.PROJECT, projectId);
         if (log.isDebugEnabled()) {
             log.debug("Retrieving script for tool {} path {} for project {}", DicomEdit.ToolName, path, projectId);
         }
@@ -115,8 +113,8 @@ public class DefaultAnonUtils implements AnonUtils {
 
     @Override
     public boolean isProjectScriptEnabled(final String projectId) {
-        final Configuration config = getProjectScriptConfiguration(projectId);
-        final boolean enabled = config != null && config.getStatus().equals(Configuration.ENABLED_STRING);
+        final Configuration config  = getProjectScriptConfiguration(projectId);
+        final boolean       enabled = config != null && config.getStatus().equals(Configuration.ENABLED_STRING);
         if (log.isDebugEnabled()) {
             if (StringUtils.isNotBlank(projectId)) {
                 log.debug("Retrieved status {} for the site-wide anonymization script", enabled);
@@ -154,21 +152,20 @@ public class DefaultAnonUtils implements AnonUtils {
     }
 
     @Override
-    public String getStudyScript(String studyId) throws ConfigServiceException{
+    public String getStudyScript(String studyId) throws ConfigServiceException {
         if (log.isDebugEnabled()) {
             log.debug("Getting {} script for study: {}", DicomEdit.ToolName, studyId);
         }
-        final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
-        final boolean enabled = StringUtils.equals(_configService.getStatus(DicomEdit.ToolName, path, Scope.Site, studyId),Configuration.ENABLED_STRING);
-        if(enabled) {
+        final String  path    = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
+        final boolean enabled = StringUtils.equals(_configService.getStatus(DicomEdit.ToolName, path, Scope.Site, studyId), Configuration.ENABLED_STRING);
+        if (enabled) {
             return _configService.getConfigContents(DicomEdit.ToolName, path, Scope.Site, studyId);
-        }
-        else{
+        } else {
             return null;
         }
     }
 
-    public static void setStudyScript(String login, String script, String studyId) throws ConfigServiceException{
+    public static void setStudyScript(String login, String script, String studyId) throws ConfigServiceException {
         final String path = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.STUDY, studyId);
         if (log.isDebugEnabled()) {
             log.debug("User {} is setting {} script for project {}", login, DicomEdit.ToolName, studyId);
@@ -260,13 +257,13 @@ public class DefaultAnonUtils implements AnonUtils {
         }
     }
 
-    private static final String DEFAULT_ANON_SCRIPT       = "classpath*:META-INF/xnat/defaults/**/id.das";
-    private static final String SITE_WIDE_PATH            = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null);
-    private static final String SITE_WIDE                 = "site-wide";
-    private static final String ANON_SCRIPT_CACHE         = DefaultAnonUtils.class.getSimpleName() + "ScriptsCache";
+    private static final String DEFAULT_ANON_SCRIPT = "classpath*:META-INF/xnat/defaults/**/id.das";
+    private static final String SITE_WIDE_PATH      = DicomEdit.buildScriptPath(DicomEdit.ResourceScope.SITE_WIDE, null);
+    private static final String SITE_WIDE           = "site-wide";
+    private static final String ANON_SCRIPT_CACHE   = DefaultAnonUtils.class.getSimpleName() + "ScriptsCache";
 
     private static DefaultAnonUtils _instance;
 
-    private final Cache         _cache;
-    private final ConfigService _configService;
+    private final Cache<String, Configuration> _cache;
+    private final ConfigService                _configService;
 }

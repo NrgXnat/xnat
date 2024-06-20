@@ -10,6 +10,7 @@ import org.nrg.xdat.forms.models.pojo.FormFieldPojo;
 import org.nrg.xdat.forms.services.FormIOJsonService;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xft.identifier.Identifier;
 import org.nrg.xnat.customforms.helpers.CustomFormDisplayFieldHelper;
 import org.nrg.xnat.customforms.helpers.CustomFormHelper;
 import org.nrg.xnat.customforms.service.CustomVariableFormService;
@@ -125,11 +126,12 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
         final String dataType = schemaElement.getFullXMLName();
         final String fieldIdRoot  = displayHelper.getFieldIdRoot(dataType, formUUID);
         final ElementDisplay elementDisplay  = schemaElement.getDisplay();
-        Hashtable displayItemHash  = elementDisplay.getDisplayFieldHash();
+        final Map<String, Identifier> displayItemHash;
+        displayItemHash = elementDisplay.getDisplayFieldHash();
         if (displayItemHash == null) {
             return;
         }
-        final Collection<String> formFieldIds = (Collection<String>) displayItemHash.keySet().stream().filter(id -> ((String)id).startsWith(fieldIdRoot)).collect(Collectors.toSet());
+        final Collection<String> formFieldIds = displayItemHash.keySet().stream().filter(id -> id.startsWith(fieldIdRoot)).collect(Collectors.toSet());
         formFieldIds.forEach(f -> removeDisplayField(schemaElement, f));
     }
 

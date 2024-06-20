@@ -13,16 +13,16 @@ import lombok.extern.slf4j.Slf4j;
 import net.ttddyy.dsproxy.listener.logging.DefaultQueryLogEntryCreator;
 import net.ttddyy.dsproxy.listener.logging.SLF4JQueryLoggingListener;
 import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
 import org.hibernate.engine.jdbc.internal.Formatter;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceException;
-import org.postgresql.Driver;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -39,16 +39,47 @@ import java.util.Properties;
 @Configuration
 @Slf4j
 public class DatabaseConfig {
+    private static final String DEFAULT_DATASOURCE_URL          = "jdbc:postgresql://localhost/xnat";
+    private static final String DEFAULT_DATASOURCE_USERNAME     = "xnat";
+    private static final String DEFAULT_DATASOURCE_PASSWORD     = "xnat";
+    private static final String DEFAULT_DATASOURCE_CLASS        = "com.zaxxer.hikari.HikariDataSource";
+    private static final String DEFAULT_DATASOURCE_DRIVER       = "org.postgresql.Driver";
+    private static final String DEFAULT_DATASOURCE_INITIAL_SIZE = "20";
+    private static final String DEFAULT_DATASOURCE_MAX_TOTAL    = "40";
+    private static final String DEFAULT_DATASOURCE_MAX_IDLE     = "10";
+
+    @Value("${datasource.class:" + DEFAULT_DATASOURCE_CLASS + "}")
+    private String _dataSourceImpl;
+    @Value("${datasource.driver:" + DEFAULT_DATASOURCE_DRIVER + "}")
+    private String _dataSourceClass;
+    @Value("${datasource.url:${datasource.jdbcUrl:" + DEFAULT_DATASOURCE_URL + "}}")
+    private String _dataSourceUrl;
+    @Value("${datasource.username:" + DEFAULT_DATASOURCE_USERNAME + "}")
+    private String _dataSourceUsername;
+    @Value("${datasource.password:" + DEFAULT_DATASOURCE_PASSWORD + "}")
+    private String _dataSourcePassword;
+
+    private Environment _environment;
+
+    public DatabaseConfig() {
+        log.info("Creating DatabaseConfig");
+    }
+
+    @Autowired
+    public void setEnvironment(Environment environment) {
+        _environment = environment;
+    }
+
     @Bean
-    public DataSource dataSource(final Environment environment) throws NrgServiceException {
-        final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
+    public DataSource dataSource() {
+        final Properties properties = Beans.getNamespacedProperties(_environment, "datasource", true);
         final DataSource dataSource = getConfiguredDataSource(properties);
         return BooleanUtils.toBoolean(properties.getProperty("useLoggingProxy", "false")) ? getProxiedDataSource(dataSource, properties) : dataSource;
     }
 
     @Bean
-    public JdbcTemplate jdbcTemplate(final DataSource dataSource) {
-        return new JdbcTemplate(dataSource);
+    public JdbcTemplate jdbcTemplate() {
+        return new JdbcTemplate(dataSource());
     }
 
     @Bean
@@ -81,7 +112,7 @@ public class DatabaseConfig {
         return builder.build();
     }
 
-    private DataSource getConfiguredDataSource(final Properties properties) throws NrgServiceException {
+    private DataSource getConfiguredDataSource(final Properties properties) {
         setDefaultDatasourceProperties(properties);
         final String dataSourceClassName = properties.getProperty("class");
         try {
@@ -91,41 +122,43 @@ public class DatabaseConfig {
                 try {
                     properties.put("driver", Class.forName(driver).newInstance());
                 } catch (ClassNotFoundException e) {
-                    throw new NrgServiceException(NrgServiceError.ConfigurationError, "Couldn't find the specified JDBC driver class name: " + driver);
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Couldn't find the specified JDBC driver class name: " + driver);
                 }
             }
             return Beans.getInitializedBean(properties, dataSourceClazz);
         } catch (ClassNotFoundException e) {
-            throw new NrgServiceException(NrgServiceError.ConfigurationError, "Couldn't find the specified data-source class name: " + dataSourceClassName);
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Couldn't find the specified data-source class name: " + dataSourceClassName);
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-            throw new NrgServiceException(NrgServiceError.ConfigurationError, "An error occurred trying to access a property in the specified data-source class: " + dataSourceClassName, e);
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "An error occurred trying to access a property in the specified data-source class: " + dataSourceClassName, e);
         }
     }
 
-    private static void setDefaultDatasourceProperties(final Properties properties) {
+    private void setDefaultDatasourceProperties(final Properties properties) {
         // Configure some defaults if they're not already set.
         if (!properties.containsKey("class")) {
-            log.info("No value set for the XNAT datasource class, using the default setting {}", DEFAULT_DATASOURCE_CLASS);
-            properties.setProperty("class", DEFAULT_DATASOURCE_CLASS);
+            log.info("No value set for the XNAT datasource class, using the configured setting {}", _dataSourceImpl);
+            properties.setProperty("class", _dataSourceImpl);
         }
         if (!properties.containsKey("driver")) {
-            log.info("No value set for the XNAT datasource driver, using default setting {}", DEFAULT_DATASOURCE_DRIVER);
-            properties.setProperty("driver", DEFAULT_DATASOURCE_DRIVER);
+            log.info("No value set for the XNAT datasource driver, using configured setting {}", _dataSourceClass);
+            properties.setProperty("driver", _dataSourceClass);
         }
         if (!properties.containsKey("username")) {
-            log.info("No value set for the XNAT datasource username, using default setting {}. Note that you can set the username to an empty value if you really need an empty string.", DEFAULT_DATASOURCE_USERNAME);
-            properties.setProperty("username", DEFAULT_DATASOURCE_USERNAME);
+            log.info("No value set for the XNAT datasource username, using default setting {}. Note that you can set the username to an empty value if you really need an empty string.", _dataSourceUsername);
+            properties.setProperty("username", _dataSourceUsername);
         }
         if (!properties.containsKey("password")) {
             log.info("No value set for the XNAT datasource password, using default setting. Note that you can set the password to an empty value if you really need an empty string.");
-            properties.setProperty("password", DEFAULT_DATASOURCE_PASSWORD);
+            properties.setProperty("password", _dataSourcePassword);
         }
+
+        properties.putIfAbsent("url", _dataSourceUrl);
+        properties.putIfAbsent("jdbcUrl", _dataSourceUrl);
 
         final String dataSourceClass = properties.getProperty("class");
 
-        if (StringUtils.equals(dataSourceClass, HIKARI_DATASOURCE_CLASS)) {
+        if (StringUtils.equals(dataSourceClass, DEFAULT_DATASOURCE_CLASS)) {
             // If the HikariDataSource class is specified, then set some default database connection pooling parameters.
-            convertDataSourceConfigProperty(properties, "jdbcUrl", "url", DEFAULT_DATASOURCE_URL);
             convertDataSourceConfigProperty(properties, "minimumIdle", "initialSize", DEFAULT_DATASOURCE_INITIAL_SIZE);
             convertDataSourceConfigProperty(properties, "maximumPoolSize", "maxTotal", DEFAULT_DATASOURCE_MAX_TOTAL);
         } else {
@@ -133,7 +166,6 @@ public class DatabaseConfig {
                 log.warn("Unrecognized data source class {}, setting default values corresponding to DBCP2's settings", dataSourceClass);
             }
             // If HikariDataSource is NOT specified, then set some default database connection pooling parameters for DBCP2.
-            convertDataSourceConfigProperty(properties, "url", "jdbcUrl", DEFAULT_DATASOURCE_URL);
             convertDataSourceConfigProperty(properties, "initialSize", "minimumIdle", DEFAULT_DATASOURCE_INITIAL_SIZE);
             convertDataSourceConfigProperty(properties, "maxTotal", "maximumPoolSize", DEFAULT_DATASOURCE_MAX_TOTAL);
             // There's no directly correspondence for DBCP2's maxIdle in HikariCP
@@ -169,14 +201,4 @@ public class DatabaseConfig {
 
         private static final Formatter FORMATTER = FormatStyle.BASIC.getFormatter();
     }
-
-    private static final String DEFAULT_DATASOURCE_URL          = "jdbc:postgresql://localhost/xnat";
-    private static final String DEFAULT_DATASOURCE_USERNAME     = "xnat";
-    private static final String DEFAULT_DATASOURCE_PASSWORD     = "xnat";
-    private static final String DEFAULT_DATASOURCE_CLASS        = BasicDataSource.class.getName();
-    private static final String DEFAULT_DATASOURCE_DRIVER       = Driver.class.getName();
-    private static final String DEFAULT_DATASOURCE_INITIAL_SIZE = "20";
-    private static final String DEFAULT_DATASOURCE_MAX_TOTAL    = "40";
-    private static final String DEFAULT_DATASOURCE_MAX_IDLE     = "10";
-    private static final String HIKARI_DATASOURCE_CLASS         = "com.zaxxer.hikari.HikariDataSource";
 }

@@ -31,6 +31,10 @@ import java.util.List;
 @EnableAsync
 @Slf4j
 public class SchedulerConfig implements SchedulingConfigurer {
+    public SchedulerConfig() {
+        log.info("Creating SchedulerConfig");
+    }
+
     @Bean(destroyMethod = "shutdown")
     public ThreadPoolTaskScheduler taskScheduler() {
         final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();

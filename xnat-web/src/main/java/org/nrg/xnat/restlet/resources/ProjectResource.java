@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;

@@ -9,16 +9,15 @@
 
 package org.nrg.xnat.event.listeners;
 
-import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.automation.event.entities.AutomationCompletionEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
-import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -28,16 +27,12 @@ import static reactor.bus.selector.Selectors.type;
  * The Class AutomatedScriptHandler.
  */
 @Service
+@Slf4j
 public class AutomationCompletionEventListener implements Consumer<Event<AutomationCompletionEvent>> {
-
-    /**
-     * The Constant logger.
-     */
-    private static final Logger logger = LoggerFactory.getLogger(AutomationCompletionEventListener.class);
     /**
      * cache of completed events
      */
-    private List<AutomationCompletionEvent> completedCache = Lists.newArrayList();
+    private final List<AutomationCompletionEvent> completedCache = new ArrayList<>();
     /**
      * HOW LONG WILL WE LET OBJECTS STAY IN CACHE?
      */
@@ -48,7 +43,7 @@ public class AutomationCompletionEventListener implements Consumer<Event<Automat
      *
      * @param eventBus the event bus
      */
-    @Inject
+    @Autowired
     public AutomationCompletionEventListener(final EventBus eventBus) {
         eventBus.on(type(AutomationCompletionEvent.class), this);
     }
@@ -56,12 +51,10 @@ public class AutomationCompletionEventListener implements Consumer<Event<Automat
     @Override
     public void accept(Event<AutomationCompletionEvent> event) {
         cleanUpCache();
-        if (logger.isDebugEnabled()) {
-            logger.debug("Received event " + event.getId() + " - CURRENT TIME: " + System.currentTimeMillis());
-        }
+        log.debug("Received event {} - CURRENT TIME: {}", event.getId(), System.currentTimeMillis());
         if (event.getData().getEventCompletionTime() == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("WARNING:  AutomationCompletionEvent - eventCompletionTime is null");
+            if (log.isDebugEnabled()) {
+                log.debug("WARNING:  AutomationCompletionEvent - eventCompletionTime is null");
             }
         }
         completedCache.add(event.getData());
@@ -73,9 +66,7 @@ public class AutomationCompletionEventListener implements Consumer<Event<Automat
         while (i.hasNext()) {
             final AutomationCompletionEvent thisEvent = i.next();
             if (thisEvent.getEventCompletionTime() == null || ((currentTime - thisEvent.getEventCompletionTime()) > CACHE_TIME_MILLIS)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("cleanUpCache - removed item " + thisEvent.getId() + " - CURRENT TIME: " + currentTime);
-                }
+                log.debug("cleanUpCache - removed item {} - CURRENT TIME: {}", thisEvent.getId(), currentTime);
                 i.remove();
             }
         }
@@ -90,9 +81,7 @@ public class AutomationCompletionEventListener implements Consumer<Event<Automat
                 return thisEvent;
             }
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug("getEvent - item not found " + id);
-        }
+        log.debug("getEvent - item not found {}", id);
         return null;
     }
 

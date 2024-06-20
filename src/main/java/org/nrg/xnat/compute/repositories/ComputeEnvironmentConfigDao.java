@@ -6,12 +6,15 @@ import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
+import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.nrg.xnat.compute.entities.ComputeEnvironmentConfigEntity;
 import org.nrg.xnat.compute.entities.ComputeEnvironmentScopeEntity;
 import org.nrg.xnat.compute.entities.HardwareConfigEntity;
+import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import javax.persistence.criteria.JoinType;
 import java.util.Collections;
 import java.util.List;
 
@@ -92,11 +95,11 @@ public class ComputeEnvironmentConfigDao extends AbstractHibernateDAO<ComputeEnv
      */
     public List<ComputeEnvironmentConfigEntity> findByType(String type) {
         // Need to use a criteria query because the configTypes field is a collection.
-        Criteria criteria = getSession().createCriteria(ComputeEnvironmentConfigEntity.class)
-                .createCriteria("configTypes")
-                .add(Restrictions.eq("elements", type));
+        QueryBuilder<ComputeEnvironmentConfigEntity> builder =  newQueryBuilder();
+        builder.join("configTypes", "configTypes", JoinType.INNER);
+        builder.where(builder.eq("configTypes.elements", type));
 
-        List<ComputeEnvironmentConfigEntity> entities = criteria.list();
+        List<ComputeEnvironmentConfigEntity> entities = builder.getResults();
 
         if (entities == null) {
             return Collections.emptyList();

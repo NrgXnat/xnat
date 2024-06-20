@@ -23,12 +23,12 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.utils.XnatHttpUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Arrays;
@@ -58,7 +58,7 @@ public class NotificationsApi extends AbstractXapiRestController {
                                                        + "modify the existing server configuration. You can completely replace the configuration "
                                                        + "by calling the POST version of this method.";
 
-    @Inject
+    @Autowired
     public NotificationsApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final NotificationsPreferences notificationsPrefs, final XnatAppInfo appInfo, final SerializerService serializer) {
         super(userManagementService, roleHolder);
         _notificationsPrefs = notificationsPrefs;

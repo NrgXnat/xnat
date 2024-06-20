@@ -18,17 +18,9 @@ import org.nrg.xnat.services.archive.ResourceMitigationReport;
 import org.nrg.xnat.services.archive.ResourceSurveyReport;
 import org.springframework.jdbc.core.RowMapper;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
+import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -154,7 +146,7 @@ public class ResourceSurveyRequest extends AbstractHibernateEntity {
         rsnStatus = status;
     }
 
-    @Positive
+    @Min(1)
     private int resourceId;
 
     @Builder.Default

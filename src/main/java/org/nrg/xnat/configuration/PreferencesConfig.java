@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.config.daos.ConfigurationDAO;
 import org.nrg.config.daos.ConfigurationDataDAO;
 import org.nrg.config.services.ConfigService;
@@ -28,7 +29,12 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 @ComponentScan({"org.nrg.config.daos", "org.nrg.prefs.repositories"})
 @Import(NrgPrefsConfiguration.class)
+@Slf4j
 public class PreferencesConfig {
+    public PreferencesConfig() {
+        log.info("Creating PreferencesConfig");
+    }
+
     @Bean
     public ConfigService configService(final ConfigurationDAO configurationDAO, final ConfigurationDataDAO dataDAO, final PlatformTransactionManager transactionManager, final JdbcTemplate template) {
         return new DefaultConfigService(configurationDAO, dataDAO, transactionManager, template);

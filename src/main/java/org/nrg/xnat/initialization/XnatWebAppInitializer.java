@@ -42,6 +42,11 @@ import static org.apache.commons.lang3.ArrayUtils.EMPTY_CLASS_ARRAY;
 @SuppressWarnings("unused")
 @Slf4j
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+    public XnatWebAppInitializer() {
+        super();
+        log.info("Creating XnatWebAppInitializer");
+    }
+
     public static ServletContext getServletContext() {
         return SERVLET_CONTEXT;
     }

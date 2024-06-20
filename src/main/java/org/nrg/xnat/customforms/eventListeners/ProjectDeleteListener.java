@@ -10,7 +10,6 @@ import org.nrg.xft.event.XftItemEventI;
 import org.nrg.xnat.customforms.service.CustomVariableAppliesToService;
 import org.nrg.xnat.customforms.service.CustomVariableFormAppliesToService;
 import org.nrg.xnat.customforms.service.CustomVariableFormService;
-import org.nrg.xnat.customforms.utils.CustomFormsConstants;
 import org.nrg.xnat.entities.CustomVariableAppliesTo;
 import org.nrg.xnat.entities.CustomVariableForm;
 import org.nrg.xnat.entities.CustomVariableFormAppliesTo;

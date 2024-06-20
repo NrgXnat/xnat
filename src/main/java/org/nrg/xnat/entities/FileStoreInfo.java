@@ -1,15 +1,11 @@
 package org.nrg.xnat.entities;
 
-import static org.nrg.xnat.services.archive.impl.hibernate.HibernateFileStoreService.joinCoordinates;
-import static org.nrg.xnat.services.archive.impl.hibernate.HibernateFileStoreService.splitCoordinates;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.Cacheable;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -19,10 +15,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.nrg.xnat.services.archive.impl.hibernate.HibernateFileStoreService.joinCoordinates;
+
 @SuppressWarnings("JpaDataSourceORMInspection")
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"coordinates"}))
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+@Cacheable
 @Audited
 @Slf4j
 public class FileStoreInfo extends AbstractHibernateEntity {

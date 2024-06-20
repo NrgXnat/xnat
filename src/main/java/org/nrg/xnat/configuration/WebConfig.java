@@ -62,6 +62,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
                      @Qualifier("threadPoolExecutorFactoryBean") final ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean,
                      final AsyncOperationsPreferences preferences,
                      final XnatMicrometerHandlerInterceptorAdapter handlerInterceptorAdapter) {
+        log.info("Creating WebConfig");
         _threadPoolFactory = threadPoolExecutorFactoryBean;
         _preferences = preferences;
         _objectMapper = objectMapperBuilder.build();

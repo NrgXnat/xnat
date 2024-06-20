@@ -1,103 +1,82 @@
 package org.nrg.xnat.customforms.daos;
 
-import org.hibernate.Criteria;
 import org.hibernate.Hibernate;
-import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.constants.Scope;
-import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
-import org.nrg.xapi.model.users.User;
+import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.nrg.xnat.customforms.pojo.UserOptionsPojo;
-import org.nrg.xnat.customforms.utils.CustomFormsConstants;
 import org.nrg.xnat.entities.CustomVariableAppliesTo;
-import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 import org.springframework.stereotype.Repository;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.persistence.criteria.Predicate;
 import javax.transaction.Transactional;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 @Transactional
 public class CustomVariableAppliesToRepository extends AbstractHibernateDAO<CustomVariableAppliesTo> {
 
-    /**
-     * Overriden method to find rows by a given id
-     * @param id - the id to match
-     * @return - the matched row - CustomVaribleAppliesTo
-     */
+    public static final String SCOPE     = "scope";
+    public static final String ENTITY_ID = "entityId";
+    public static final String DATA_TYPE = "dataType";
+    public static final String PROTOCOL  = "protocol";
+    public static final String VISIT = "visit";
+    public static final String SUB_TYPE = "subType";
 
+    /**
+     * Overridden method to find rows by a given id
+     *
+     * @param id - the id to match
+     * @return - the matched row - CustomVariableAppliesTo
+     */
     @Override
     public CustomVariableAppliesTo findById(final long id) {
-        CustomVariableAppliesTo found = super.findById(id);
-        if (null != found) {
-            initializeChild(found);
-        }
-        return found;
+        return initializeChild(super.findById(id));
     }
 
     /**
      * Get all rows of the AppliesTo table
+     *
      * @return - all rows or Null if empty
      */
+    @SuppressWarnings("unused")
     public List<CustomVariableAppliesTo> getAllCustomVariableAppliesTo() {
-        Criteria criteria = getCriteriaForType();
-        List<CustomVariableAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
-        initializeChildren(results);
-        return results;
+        return initializeChildren(findAll());
     }
 
     /**
      * Find rows by a property
+     *
      * @param property - the property name
-     * @param value - the value of the property
+     * @param value    - the value of the property
      * @return - matched rows - List of CustomVariableAppliesTo
      */
+    @Nonnull
     @Override
     public List<CustomVariableAppliesTo> findByProperty(final String property, final Object value) {
-        final Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.eq(property, value));
-        List<CustomVariableAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
-        initializeChildren(results);
-        return results;
+        return initializeChildren(super.findByProperty(property, value));
     }
 
     /**
      * Find rows by a properties
+     *
      * @param properties - Map of property name and value
-     * @return - matched rows - List of CustomVaribleAppliesTo
+     * @return - matched rows - List of CustomVariableAppliesTo
      */
-
+    @Nonnull
     @Override
     public List<CustomVariableAppliesTo> findByProperties(final Map<String, Object> properties) {
-        final Criteria criteria = getCriteriaForType();
-        for (final String property : properties.keySet()) {
-            final Object value = properties.get(property);
-            criteria.add(Restrictions.eq(property, value));
-        }
-        List<CustomVariableAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
-        initializeChildren(results);
-        return results;
-    }
-
-
-    private void initializeChildren(List<CustomVariableAppliesTo> results) {
-        if (results != null) {
-            for (CustomVariableAppliesTo a : results) {
-                initializeChild(a);
-            }
-        }
-    }
-
-
-
-    private void initializeChild(CustomVariableAppliesTo obj) {
-        Hibernate.initialize(obj.getCustomVariableFormAppliesTos());
+        return initializeChildren(super.findByProperties(properties));
     }
 
     /**
      * Convenience method to evict from session; since we Lazy load
+     *
      * @param appliesTo - the object to evict
      */
     public void evict(CustomVariableAppliesTo appliesTo) {
@@ -106,50 +85,51 @@ public class CustomVariableAppliesToRepository extends AbstractHibernateDAO<Cust
 
     @Nullable
     public List<CustomVariableAppliesTo> findByOptions(final UserOptionsPojo userOptionsPojo, final String entityId, final boolean imposeIsNull) {
-        final Criteria criteria = getCriteria(userOptionsPojo, entityId, imposeIsNull);
-        List<CustomVariableAppliesTo> results = super.emptyToNull(GenericUtils.convertToTypedList(criteria.list(), getParameterizedType()));
-        initializeChildren(results);
-        return results;
+        return initializeChildren(getCriteria(userOptionsPojo, entityId, imposeIsNull).getResults());
     }
 
-    private Criteria getCriteria(final UserOptionsPojo userOptionsPojo, final String entityId, final boolean imposeIsNull) {
-        Criteria criteria  = getSession().createCriteria(CustomVariableAppliesTo.class);
+    private List<CustomVariableAppliesTo> initializeChildren(List<CustomVariableAppliesTo> results) {
+        if (results == null) {
+            return null;
+        }
+        return results.stream().map(this::initializeChild).collect(Collectors.toList());
+    }
+
+    private CustomVariableAppliesTo initializeChild(CustomVariableAppliesTo appliesTo) {
+        if (appliesTo != null) {
+            Hibernate.initialize(appliesTo.getCustomVariableFormAppliesTos());
+            appliesTo.getCustomVariableFormAppliesTos().forEach(cvfa-> {
+                Hibernate.initialize(cvfa);
+                Hibernate.initialize(cvfa.getCustomVariableForm());
+            });
+        }
+        return appliesTo;
+    }
+
+    private QueryBuilder<CustomVariableAppliesTo> getCriteria(final UserOptionsPojo userOptionsPojo, final String entityId, final boolean imposeIsNull) {
+        final QueryBuilder<CustomVariableAppliesTo> builder    = newQueryBuilder();
+        final List<Predicate>                       predicates = new ArrayList<>();
         if (null == entityId) {
-            criteria.add(Restrictions.eq("scope", Scope.Site));
-        }else {
-            criteria.add(Restrictions.eq("scope", Scope.Project));
-            criteria.add(Restrictions.eq("entityId", entityId));
+            predicates.add(builder.eq(SCOPE, Scope.Site));
+        } else {
+            predicates.add(builder.eq(SCOPE, Scope.Project));
+            predicates.add(builder.eq(ENTITY_ID, entityId));
         }
-        addToCriteria(criteria,userOptionsPojo, imposeIsNull);
-        return criteria;
+
+        composePredicate(builder, predicates, imposeIsNull, DATA_TYPE, userOptionsPojo.getDataType());
+        composePredicate(builder, predicates, imposeIsNull, PROTOCOL, userOptionsPojo.getProtocol());
+        composePredicate(builder, predicates, imposeIsNull, VISIT, userOptionsPojo.getVisit());
+        composePredicate(builder, predicates, imposeIsNull, SUB_TYPE, userOptionsPojo.getSubType());
+
+        builder.where(builder.and(predicates));
+        return builder;
     }
 
-    private void addToCriteria(Criteria criteria, final UserOptionsPojo userOptionsPojo, boolean imposeIsNull) {
-        final String dataType = userOptionsPojo.getDataType();
-        final String protocol = userOptionsPojo.getProtocol();
-        final String visit = userOptionsPojo.getVisit();
-        final String subType = userOptionsPojo.getSubType();
-        if (imposeIsNull && (dataType == null)) {
-            criteria.add(Restrictions.isNull("dataType"));
-        }else if (dataType != null) {
-            criteria.add(Restrictions.eq("dataType", dataType));
+    private void composePredicate(QueryBuilder<CustomVariableAppliesTo> builder, List<Predicate> predicates, boolean imposeIsNull, String property, Object value) {
+        if (imposeIsNull && value == null) {
+            predicates.add(builder.isNull(property));
+        } else if (value != null) {
+            predicates.add(builder.eq(property, value));
         }
-        if (imposeIsNull && (protocol == null)) {
-            criteria.add(Restrictions.isNull("protocol"));
-        }else if (protocol != null) {
-            criteria.add(Restrictions.eq("protocol", protocol));
-        }
-        if (imposeIsNull && (visit == null)) {
-            criteria.add(Restrictions.isNull("visit"));
-        }else if (visit != null) {
-            criteria.add(Restrictions.eq("visit", visit));
-        }
-        if (imposeIsNull && (subType == null)) {
-            criteria.add(Restrictions.isNull("subType"));
-        }else if (subType != null) {
-            criteria.add(Restrictions.eq("subType", subType));
-        }
-
     }
-
 }

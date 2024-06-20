@@ -26,7 +26,7 @@ public interface SubscriptionDeliveryEntityService extends BaseHibernateService<
 
     void setTriggeringEvent(Long deliveryId, String eventName, String status, Boolean isXsiType, String xnatType, String xsiUri, String objectLabel);
 
-    Integer count(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
+    long count(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 
     SubscriptionDelivery get(Long id, String projectId) throws NotFoundException;
 

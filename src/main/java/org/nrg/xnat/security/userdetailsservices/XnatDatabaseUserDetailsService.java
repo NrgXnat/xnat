@@ -10,7 +10,7 @@
 package org.nrg.xnat.security.userdetailsservices;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import javax.validation.constraints.NotNull;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.services.AliasTokenService;

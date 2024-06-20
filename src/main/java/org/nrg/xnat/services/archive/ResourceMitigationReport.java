@@ -11,8 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -76,7 +76,7 @@ public class ResourceMitigationReport {
         return StringUtils.isNotBlank(_catalogWriteError) || StringUtils.isNotBlank(_resourceSaveError) || _totalFileErrors > 0;
     }
 
-    @Positive
+    @Min(1L)
     long _resourceSurveyRequestId;
 
     @NonNull

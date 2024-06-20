@@ -10,20 +10,17 @@
 package org.nrg.xnat.daos;
 
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
-import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.entities.HostInfo;
 import org.springframework.stereotype.Repository;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.List;
 
 @Repository
 @Slf4j
 public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
+    public static final String HOST_NAME = "hostName";
     private final String _hostName;
 
     public HostInfoDAO() {
@@ -33,7 +30,7 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
 
     /**
      * Gets the host number for the specified host name.
-     *
+     * <p>
      * If there's no existing {@link HostInfo} entry for the specified host name, this method creates a new entry for the
      * host name if the <b>setValue</b> parameter is set to true and returns the host number for that new entry.
      * Otherwise, the returned host number is just an empty string.
@@ -44,10 +41,8 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
      * @return The host number for the specified host name.
      */
     public String getHostNumber(final String hostName, final boolean setValue) {
-        final Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.eq("hostName", hostName));
-        final List<HostInfo> infos = GenericUtils.convertToTypedList(criteria.list(), HostInfo.class);
-        if (infos.isEmpty()) {
+        HostInfo info = findByUniqueProperty(HOST_NAME, hostName);
+        if (info == null) {
             if (!setValue) {
                 log.debug("Found no results for host {} and I was told not to set the value so returning empty string (note that I think the host name is {})", hostName, _hostName);
                 return "";
@@ -57,9 +52,9 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
             log.debug("Found no results for host {}, set value and got host number {} (note that I think the host name is {})", hostName, hostNumber, _hostName);
             return hostNumber;
         }
-        final long   hostNumber = infos.get(0).getId();
+        final long   hostNumber = info.getId();
         final String formatted  = String.format("%02d", hostNumber);
-        log.debug("Found {} results for host {}, returning ID {} from first entry, formatted that will be: {} (note that I think the host name is {})", infos.size(), hostName, hostNumber, formatted, _hostName);
+        log.debug("Found host {}, returning ID {} from first entry, formatted that will be: {} (note that I think the host name is {})", hostName, hostNumber, formatted, _hostName);
         return formatted;
     }
 

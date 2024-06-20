@@ -216,11 +216,12 @@ dependencies {
     implementation "org.springframework.ldap:spring-ldap-core"
 
     implementation "org.hibernate:hibernate-core"
-    implementation "org.hibernate:hibernate-ehcache"
+    implementation "org.hibernate:hibernate-jcache"
     implementation "org.hibernate:hibernate-validator"
     implementation "org.hibernate:hibernate-envers"
-    implementation "net.sf.ehcache:ehcache-core"
-    implementation "com.vladmihalcea:hibernate-types-43"
+    implementation "org.ehcache:ehcache"
+    implementation "org.redisson:redisson"
+    implementation "com.vladmihalcea:hibernate-types-55"
 
     implementation "org.aspectj:aspectjweaver"
     implementation "org.aspectj:aspectjrt"
@@ -233,7 +234,6 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-core"
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate4"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
     implementation "com.fasterxml.jackson.module:jackson-module-parameter-names"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8"
@@ -296,7 +296,6 @@ dependencies {
 
     providedCompile "com.google.code.findbugs:jsr305"
     providedCompile "javax.servlet:javax.servlet-api"
-    providedCompile "org.jetbrains:annotations"
     providedCompile "org.kohsuke.metainf-services:metainf-services"
 
     runtimeOnly "org.apache.ant:ant"

@@ -65,7 +65,7 @@ public interface EventService {
     Subscription activateSubscription(long id) throws NotFoundException;
     Subscription deactivateSubscription(long id) throws NotFoundException;
 
-    Integer getSubscriptionDeliveriesCount(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
+    long getSubscriptionDeliveriesCount(String projectId, Long subscriptionId, Boolean includeFilterMismatches);
 
     List<SubscriptionDeliverySummary> getSubscriptionDeliverySummary(String projectId);
 

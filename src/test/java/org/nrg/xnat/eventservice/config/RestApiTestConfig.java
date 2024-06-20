@@ -33,9 +33,6 @@ public class RestApiTestConfig extends WebMvcConfigurerAdapter {
     }
 
     @Bean
-    public NamedParameterJdbcTemplate template() { return Mockito.mock(NamedParameterJdbcTemplate.class);}
-
-    @Bean
     public UserManagementServiceI mockUserManagementServiceI() {
         return Mockito.mock(UserManagementServiceI.class);
     }

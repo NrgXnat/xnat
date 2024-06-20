@@ -14,8 +14,6 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.envers.Audited;
@@ -34,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Entity
 @Table
 @Audited
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+@Cacheable
 @AllArgsConstructor
 @NoArgsConstructor
 public class ArchiveProcessorInstance extends AbstractHibernateEntity {

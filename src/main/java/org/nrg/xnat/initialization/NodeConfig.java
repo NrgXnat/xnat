@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.initialization;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.node.XnatNode;
 import org.nrg.xnat.node.NodeCheckInRunner;
@@ -25,8 +26,12 @@ import java.util.Properties;
  * Sets up the database configuration for XNAT.
  */
 @Configuration
+@Slf4j
 public class NodeConfig {
-	
+	public NodeConfig() {
+        log.info("Creating NodeConfig");
+    }
+
     /**
      * Xnat node.
      *

@@ -12,13 +12,12 @@ package org.nrg.xnat.node.entities;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.Cacheable;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.task.entities.XnatTaskInfo;
 
@@ -27,7 +26,7 @@ import org.nrg.xnat.task.entities.XnatTaskInfo;
  */
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"nodeId","hostName"}))
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+@Cacheable
 public class XnatNodeInfo extends AbstractHibernateEntity {
 	
 	/** The Constant serialVersionUID. */
@@ -82,9 +81,8 @@ public class XnatNodeInfo extends AbstractHibernateEntity {
 	 *
 	 * @param nodeId the node id
 	 */
-	public XnatNodeInfo(final String nodeId) {
-		super();
-		this.nodeId = nodeId;
+	public XnatNodeInfo(final String nodeId, final String hostName) {
+		this(nodeId, hostName, null, null);
 	}
 	
 	/**

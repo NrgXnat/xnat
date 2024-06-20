@@ -9,21 +9,25 @@
 
 package org.nrg.xnat.services.cache;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.ehcache.CacheException;
-import net.sf.ehcache.Ehcache;
-import net.sf.ehcache.Element;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.orm.DatabaseHelper;
-import org.nrg.xdat.om.*;
-import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
+import org.nrg.framework.services.SerializerService;
+import org.nrg.xdat.om.XdatUser;
+import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.om.XnatDatatypeprotocol;
+import org.nrg.xdat.om.XnatInvestigatordata;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.XDATUser;
@@ -47,8 +51,9 @@ import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.XftStringUtils;
+import org.nrg.xnat.services.cache.extractors.DataExtractor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
+import org.springframework.cache.Cache;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -59,10 +64,19 @@ import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
@@ -70,26 +84,52 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.nrg.xdat.entities.UserRole.ROLE_ADMINISTRATOR;
-import static org.nrg.xdat.security.helpers.AccessLevel.*;
-import static org.nrg.xdat.security.helpers.Groups.*;
-import static org.nrg.xdat.security.helpers.Roles.*;
-import static org.nrg.xft.event.XftItemEventI.*;
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Collaborator;
+import static org.nrg.xdat.security.helpers.AccessLevel.DataAccess;
+import static org.nrg.xdat.security.helpers.AccessLevel.DataAdmin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Delete;
+import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
+import static org.nrg.xdat.security.helpers.AccessLevel.Member;
+import static org.nrg.xdat.security.helpers.AccessLevel.Owner;
+import static org.nrg.xdat.security.helpers.AccessLevel.Read;
+import static org.nrg.xdat.security.helpers.Groups.OPERATION_ADD_USERS;
+import static org.nrg.xdat.security.helpers.Groups.OPERATION_REMOVE_USERS;
+import static org.nrg.xdat.security.helpers.Groups.getGroup;
+import static org.nrg.xdat.security.helpers.Roles.ADDED_ROLES;
+import static org.nrg.xdat.security.helpers.Roles.DELETED_ROLES;
+import static org.nrg.xdat.security.helpers.Roles.OPERATION_ADD_ROLE;
+import static org.nrg.xdat.security.helpers.Roles.OPERATION_ADD_ROLES;
+import static org.nrg.xdat.security.helpers.Roles.OPERATION_DELETE_ROLE;
+import static org.nrg.xdat.security.helpers.Roles.OPERATION_DELETE_ROLES;
+import static org.nrg.xdat.security.helpers.Roles.OPERATION_MODIFIED_ROLES;
+import static org.nrg.xdat.security.helpers.Roles.ROLE;
+import static org.nrg.xdat.security.helpers.Roles.ROLES;
+import static org.nrg.xft.event.XftItemEventI.CREATE;
+import static org.nrg.xft.event.XftItemEventI.DELETE;
+import static org.nrg.xft.event.XftItemEventI.OPERATION;
+import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 @SuppressWarnings({"Duplicates", "deprecation"})
 @Service("userProjectCache")
 @Slf4j
 public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandlerMethod implements UserProjectCache, Initializing {
+    public static final String CACHE_PROJECTS            = "projects";
+    public static final String CACHE_PROJECT_USER_ACCESS = "projectUserAccess";
+
     @Autowired
-    public DefaultUserProjectCache(final CacheManager cacheManager, final GroupsAndPermissionsCache cache, final NamedParameterJdbcTemplate template) {
-        super(cacheManager,
+    public DefaultUserProjectCache(final JCacheHelper helper, final GroupsAndPermissionsCache cache, final SerializerService serializer, final NamedParameterJdbcTemplate template, final List<DataExtractor<?, ?>> extractors) {
+        super(helper,
+              extractors.stream().filter(extractor -> StringUtils.equals(extractor.getCacheGroup(), UserProjectCache.CACHE_NAME)).collect(Collectors.toList()),
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatInvestigatordata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP.or(XftItemEventCriteria.IS_ALL_DATA_ADMIN_OR_ACCESS)).build(),
               XftItemEventCriteria.builder().xsiType(XdatUser.SCHEMA_ELEMENT_NAME).action(UPDATE).predicate(PREDICATE_IS_ROLE_OPERATION).build());
-        _cache = cache;
-        _template = template;
-        _helper = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
+        _cache      = cache;
+        _serializer = serializer;
+        _template   = template;
+        _helper     = new DatabaseHelper((JdbcTemplate) _template.getJdbcOperations());
     }
 
     @Override
@@ -128,44 +168,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     @Override
     public Map<String, String> getInitializationStatus() {
         return ImmutableMap.of("count", Integer.toString(_aliasMapping.size()));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void notifyElementRemoved(final Ehcache cache, final Element element) throws CacheException {
-        log.debug("Cache {} had element '{}' with type '{}' removed", cache.getName(), element.getObjectKey(), element.getObjectValue().getClass());
-        handleCacheRemoveEvent(cache, element, "removed");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void notifyElementExpired(final Ehcache cache, final Element element) {
-        log.debug("Cache {} had element '{}' with type '{}' expired", cache.getName(), element.getObjectKey(), element.getObjectValue().getClass());
-        handleCacheRemoveEvent(cache, element, "expired");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void notifyElementEvicted(final Ehcache cache, final Element element) {
-        log.debug("Cache {} had element '{}' with type '{}' evicted", cache.getName(), element.getObjectKey(), element.getObjectValue().getClass());
-        handleCacheRemoveEvent(cache, element, "evicted");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void notifyRemoveAll(final Ehcache cache) {
-        log.debug("Cache {} had all elements removed", cache.getName());
-        if (isProjectCacheEvent(cache)) {
-            _aliasMapping.clear();
-        }
     }
 
     /**
@@ -261,23 +263,13 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 log.info("User '{}' attempted to retrieve the project '{}' with ID or alias '{}', but the user doesn't have at least read access to that project. Returning null.", userId, projectId, idOrAlias);
                 return null;
             }
-        } else {
-            userId = "<none>";
         }
 
-        final ProjectCache projectCache = getProjectCache(projectId);
-        if (projectCache != null) {
-            log.debug("Found cached project '{}' for ID or alias '{}' for user '{}'.", projectId, idOrAlias, userId);
-            final XnatProjectdata project = projectCache.getProject();
-            if (user != null) {
-                project.setUser(user);
-            }
-            return project;
-        } else {
-            log.info("Resolved ID or alias '{}' to project ID '{}' for user '{}', but getProjectCache() returned null. This probably means that the cache entry is being initialized but was caught in the thundering herd. This method will return null.", idOrAlias, projectId, userId);
-            // If we made it here, the project is either inaccessible to the user or doesn't exist. In either case, return null.
-            return null;
+        XnatProjectdata project = getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
+        if (user != null) {
+            project.setUser(user);
         }
+        return project;
     }
 
     @Override
@@ -355,7 +347,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             case CREATE:
                 log.debug("Created new project, caching ID '{}' and initializing project cache entry", projectId);
                 _aliasMapping.put(projectId, projectId);
-                initializeProjectCache(projectId);
+                getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
                 break;
 
             case DELETE:
@@ -397,16 +389,19 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             }
             return true;
         }
+
         final Pair<String, String> idAndAccess = Groups.getProjectIdAndAccessFromGroupId(eventId);
         if (idAndAccess.equals(ImmutablePair.<String, String>nullPair())) {
             log.info("Got a non-project-related group event, which I'm not supposed to handle: {}", event);
             return false;
         }
-        final String      projectId = idAndAccess.getLeft();
-        final AccessLevel access    = AccessLevel.getAccessLevel(idAndAccess.getRight());
+
+        final String projectId = idAndAccess.getLeft();
         if (StringUtils.isBlank(projectId)) {
             return false;
         }
+
+        final AccessLevel access = AccessLevel.getAccessLevel(idAndAccess.getRight());
 
         // When groups are created for projects, the groups are created *before* the project. We need to check whether the
         // project is already cached, so we don't try to refresh the cache before the project's actually in.
@@ -424,25 +419,36 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
 
         //noinspection unchecked
-        final Collection<String> users        = (Collection<String>) properties.get(Groups.USERS);
-        final ProjectCache       projectCache = getProjectCache(projectId);
-        if (StringUtils.equals(operation, OPERATION_ADD_USERS)) {
-            if (projectCache == null) {
+        final Collection<String> users          = (Collection<String>) properties.get(Groups.USERS);
+        final boolean            isAddOperation = StringUtils.equals(operation, OPERATION_ADD_USERS);
+        final XnatProjectdata    project        = getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
+        if (project == null) {
+            if (isAddOperation) {
                 log.debug("Users had access level {} added for project {}, but that project's not in the cache: {}", access, projectId, users);
-                return true;
-            }
-            for (final String username : users) {
-                projectCache.addUser(username, access);
-            }
-        } else {
-            if (projectCache == null) {
+            } else {
                 log.debug("Users had access level {} revoked for project {}, but that project's not in the cache: {}", access, projectId, users);
-                return true;
             }
-            for (final String username : users) {
-                projectCache.removeUser(username, access);
+            return true;
+        }
+
+        final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
+        for (final String username : users) {
+            if (isAddOperation) {
+                userAccessLevels.computeIfAbsent(username, (key) -> new ArrayList<>()).add(access);
+            } else {
+                final List<AccessLevel> levels = userAccessLevels.get(username);
+                if (levels != null) {
+                    levels.remove(access);
+                }
             }
         }
+
+        try {
+            cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+        } catch (IOException e) {
+            throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+        }
+
         return true;
     }
 
@@ -508,9 +514,20 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     private boolean handleDataTypeProtocolEvent(final XftItemEventI event) {
-        log.info("Got the {} event for the data-type protocol {}. This should only happen when changes to the protocol affected field definition groups that are non-project specific. Clearing the cache because all projects need to be updated.", event.getAction(), event.getId());
-        clearCache();
+        log.info("Got the {} event for the data-type protocol {}. This should only happen when changes to the protocol affected field definition groups that are non-project specific.", event.getAction(), event.getId());
         return true;
+    }
+
+    private Map<String, ArrayList<AccessLevel>> getUserAccessLevelsForProject(final String projectId) {
+        final String serialized = getCacheItem(CACHE_PROJECT_USER_ACCESS, projectId, String.class);
+        if (StringUtils.isBlank(serialized)) {
+            return Collections.emptyMap();
+        }
+        try {
+            return _serializer.deserializeJson(serialized, USER_ACCESS_LEVEL_TYPE_REF);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Object convertStringToMappedTypeObject(final GenericWrapperField field, final String value) {
@@ -593,24 +610,24 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 // If the user is an admin, add the user ID to the admin list and return true.
                 if (user.isSiteAdmin()) {
                     _siteAdmins.add(userId);
-                    isSiteAdmin = true;
-                    isDataAdmin = false;
+                    isSiteAdmin  = true;
+                    isDataAdmin  = false;
                     isDataAccess = false;
                 } else if (user.isDataAdmin()) {
                     _dataAdmins.add(userId);
-                    isSiteAdmin = false;
-                    isDataAdmin = true;
+                    isSiteAdmin  = false;
+                    isDataAdmin  = true;
                     isDataAccess = false;
                 } else if (user.isDataAccess()) {
                     _dataAccess.add(userId);
-                    isSiteAdmin = false;
-                    isDataAdmin = false;
+                    isSiteAdmin  = false;
+                    isDataAdmin  = false;
                     isDataAccess = true;
                 } else {
                     // Not an admin but let's track that we've retrieved the user by adding it to the non-admin list.
                     _nonAdmins.add(userId);
-                    isSiteAdmin = false;
-                    isDataAdmin = false;
+                    isSiteAdmin  = false;
+                    isDataAdmin  = false;
                     isDataAccess = false;
                 }
             } catch (UserNotFoundException e) {
@@ -624,17 +641,17 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             }
         } else {
             // Set the user to null. It will only get initialized later in the initProjectCache() method if required.
-            user = null;
-            isSiteAdmin = _siteAdmins.contains(userId);
-            isDataAdmin = _dataAdmins.contains(userId);
+            user         = null;
+            isSiteAdmin  = _siteAdmins.contains(userId);
+            isDataAdmin  = _dataAdmins.contains(userId);
             isDataAccess = _dataAccess.contains(userId);
         }
 
         try {
-            final ProjectCache projectCache = getProjectCache(projectId);
+            final XnatProjectdata project = get(user, projectId);
 
             // If the project cache is null, the project doesn't exist.
-            if (projectCache == null || projectCache.getProject() == null) {
+            if (project == null) {
                 return false;
             }
 
@@ -643,12 +660,19 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 return true;
             }
 
+            final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
+
             // If the user isn't already cached...
-            if (!projectCache.hasUser(userId)) {
+            if (!userAccessLevels.containsKey(userId)) {
                 // Cache the user!
-                projectCache.addUser(userId, getUserProjectAccess(ObjectUtils.defaultIfNull(user, new XDATUser(userId)), projectId));
+                userAccessLevels.put(userId, new ArrayList<>(Permissions.getAllUserProjectAccess(ObjectUtils.defaultIfNull(user, new XDATUser(userId)), projectId)));
+                try {
+                    cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+                } catch (IOException e) {
+                    throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+                }
             }
-            return CollectionUtils.containsAny(projectCache.getUserAccessLevels(userId), ACCESS_LEVELS.get(accessLevel));
+            return CollectionUtils.containsAny(userAccessLevels.get(userId), ACCESS_LEVELS.get(accessLevel));
         } catch (UserInitException e) {
             log.error("Something bad happened trying to retrieve the user {}", userId, e);
         } catch (UserNotFoundException e) {
@@ -703,106 +727,19 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return _template.queryForList(QUERY_GET_PROJECT_ALIASES, new MapSqlParameterSource("projectId", projectId), String.class);
     }
 
-    /**
-     * Gets the cache for the project identified by the project ID. If the project doesn't exist, this method returns null. Otherwise, it checks the project cache
-     * and, if the project is already there, just returns the corresponding project cache. If the project isn't already in the cache, this method tries to find the
-     * project by ID. If it's not found, it returns null as before but, if it is found, the project is cached.
-     *
-     * @param projectId The ID of the project to retrieve.
-     *
-     * @return The project cache consisting of the project as the "left" or "key" value and a map of users and their access level to the project as the "right" or "value" value.
-     */
-    @Nullable
-    private ProjectCache getProjectCache(final String projectId) {
-        // If we've already mapped and cached the project...
-        if (_projectsAndAliases.containsKey(projectId)) {
-            log.debug("Project ID '{}' is cached, returning project cache for that ID.", projectId);
-
-            // And then return the project cache.
-            final ProjectCache projectCache = getCachedProjectCache(projectId);
-            if (projectCache != null && projectCache.getProject() != null) {
-                return projectCache;
-            }
-            log.info("Found cached project ID '{}', but there's no project cache entry or the project cache is null. Initializing the cache entry.", projectId);
-        }
-
-        return initializeProjectCache(projectId);
-    }
-
-    /**
-     * Initializes the cache for the specified project.
-     *
-     * @param projectId The ID of the project to retrieve.
-     *
-     * @return Returns a new cache object for the indicated project if it exists, null otherwise.
-     */
-    @Nullable
-    private synchronized ProjectCache initializeProjectCache(final String projectId) {
-        // Get the canonical project ID using the submitted project ID. This should return the same value.
-        final String canonicalProjectId = getCanonicalProjectId(projectId);
-        if (StringUtils.isBlank(canonicalProjectId)) {
-            log.error("There is no project that has an ID or alias of: {}", projectId, new Exception());
-            return null;
-        } else if (!StringUtils.equals(projectId, canonicalProjectId)) {
-            log.error("Got canonical project ID '{}' for so-called project ID '{}', but this method requires the canonical project ID. You're doing it wrong.", canonicalProjectId, projectId);
-            return null;
-        }
-
-        final ProjectCache cachedProjectCache = getCachedProjectCache(projectId);
-        if (cachedProjectCache != null) {
-            log.info("Found cache entry for project ID '{}', this was probably initialized by another thread.", projectId);
-            return cachedProjectCache;
-        }
-
-        log.info("Locking and initializing project cache for ID '{}'", projectId);
-        final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, null, false);
-        if (project == null) {
-            log.error("Could not find a project for the ID '{}'", projectId);
-            return null;
-        }
-
-        // Hooray, we found the project, so let's cache the ID and all the aliases.
-        cacheProjectIdsAndAliases(projectId);
-
-        // Create the project cache and user list.
-        final ProjectCache projectCache = new ProjectCache(project);
-
-        // This caches all the users from the standard user groups and their permissions ahead of time in the most efficient way possible.
-        for (final String accessLevel : USER_GROUP_SUFFIXES.keySet()) {
-            final List<AccessLevel> accessLevelPermissions = USER_GROUP_SUFFIXES.get(accessLevel);
-            for (final String userIdByAccess : _template.queryForList(QUERY_USERS_BY_GROUP, getProjectAccessParameterSource(projectId, accessLevel), String.class)) {
-                log.debug("Caching user {} for access level {} on project {}", userIdByAccess, accessLevel, projectId);
-                projectCache.addUser(userIdByAccess, accessLevelPermissions);
-            }
-        }
-
-        log.debug("Caching project cache for {}", projectId);
-        cacheObject(projectId, projectCache);
-
-        return projectCache;
-    }
-
     private void refreshProjectCache(final String projectId) {
         evictProjectCache(projectId);
-        initializeProjectCache(projectId);
+        getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
     }
 
     private void evictProjectCache(final String projectId) {
-        final ProjectCache projectCache = getCachedProjectCache(projectId);
-        if (projectCache == null || projectCache.getProject() == null) {
+        final XnatProjectdata project = getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
+        if (project == null) {
             log.info("No cache found for the project '{}', nothing much to be done.", projectId);
         } else {
             log.info("Found project cache for project {}, evicting the project cache.", projectId);
-            evict(projectId);
+            evict(CACHE_PROJECTS, projectId);
         }
-    }
-
-    private ProjectCache getCachedProjectCache(final String cacheId) {
-        return getCachedObject(cacheId, ProjectCache.class);
-    }
-
-    private void handleCacheRemoveEvent(final Ehcache cache, final Element element, final String event) {
-        log.debug("Handling cache remove event in cache {} with element {} and event {}", cache.getName(), element.getObjectKey(), event);
     }
 
     private void cacheProjectIdsAndAliases(final String projectId) {
@@ -819,99 +756,26 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         log.debug("Just cached ID and aliases for project {}: {}", projectId, aliases);
     }
 
-    @SuppressWarnings("unused")
-    private static XnatProjectdata getProjectCacheEventInstance(final Element element) {
-        return ((ProjectCache) element.getObjectValue()).getProject();
-    }
-
-    private static boolean isProjectCacheEvent(final Ehcache cache) {
+    private static boolean isProjectCacheEvent(final Cache cache) {
         return StringUtils.equals(CACHE_NAME, cache.getName());
     }
 
     @SuppressWarnings("unused")
-    private static boolean isProjectCacheEvent(final Ehcache cache, final Element element) {
-        return isProjectCacheEvent(cache) && (element == null || element.getObjectValue() instanceof ProjectCache);
+    private static boolean isProjectCacheEvent(final Cache cache, final Object element) {
+        return isProjectCacheEvent(cache) && (element == null || element instanceof XnatProjectdata);
     }
 
-    private static List<AccessLevel> getUserProjectAccess(final UserI user, final String projectId) {
-        final List<AccessLevel> levels = new ArrayList<>();
-        if (Permissions.canDeleteProject(user, projectId)) {
-            levels.add(Delete);
-        } else if (Permissions.canEditProject(user, projectId)) {
-            levels.add(Edit);
-        } else if (Permissions.canReadProject(user, projectId)) {
-            levels.add(Read);
-        }
-        // If no levels have been added, the user CAN'T be an owner, member, or collaborator, as there
-        // would be at least one level already added, so just return the list without checking that.
-        if (levels.isEmpty()) {
-            return levels;
-        }
-        final String access = Permissions.getUserProjectAccess(user, projectId);
-        if (StringUtils.isNotBlank(access)) {
-            switch (access) {
-                case OWNER_GROUP:
-                    levels.add(Owner);
-                    break;
-                case MEMBER_GROUP:
-                    levels.add(Member);
-                    break;
-                case COLLABORATOR_GROUP:
-                    levels.add(Collaborator);
-                    break;
-                default:
-                    log.warn("Unknown access group for user {} and project {}: {}", user.getUsername(), projectId, access);
-            }
-        }
-        return levels;
-    }
 
     private static MapSqlParameterSource getProjectAccessParameterSource(final String projectId, final String accessLevel) {
         return new MapSqlParameterSource(QUERY_KEY_PROJECT_ID, projectId).addValue(QUERY_KEY_ACCESS_LEVEL, accessLevel);
     }
 
-    private static class ProjectCache {
-        ProjectCache(final XnatProjectdata project) {
-            _project = project;
-        }
-
-        public XnatProjectdata getProject() {
-            return _project;
-        }
-
-        public void removeUser(final String username, final AccessLevel access) {
-            _userCache.remove(username, access);
-        }
-
-        @SuppressWarnings("unused")
-        public void removeUser(final String username) {
-            _userCache.removeAll(username);
-        }
-
-        boolean hasUser(final String userId) {
-            return _userCache.containsKey(userId);
-        }
-
-        Collection<AccessLevel> getUserAccessLevels(final String userId) {
-            return _userCache.get(userId);
-        }
-
-        void addUser(final String userId, final List<AccessLevel> userProjectAccess) {
-            _userCache.putAll(userId, userProjectAccess);
-        }
-
-        void addUser(final String userId, final AccessLevel userProjectAccess) {
-            _userCache.put(userId, userProjectAccess);
-        }
-
-        private final XnatProjectdata _project;
-
-        private final ArrayListMultimap<String, AccessLevel> _userCache = ArrayListMultimap.create();
-    }
-
     private static final Predicate<XftItemEventI> PREDICATE_IS_ROLE_OPERATION = event -> {
         final Map<String, ?> properties = event.getProperties();
         return !properties.isEmpty() && StringUtils.equalsAny((String) properties.get(OPERATION), OPERATION_ADD_ROLE, OPERATION_DELETE_ROLE);
+    };
+
+    private static final TypeReference<HashMap<String, ArrayList<AccessLevel>>> USER_ACCESS_LEVEL_TYPE_REF = new TypeReference<HashMap<String, ArrayList<AccessLevel>>>() {
     };
 
     private static final List<AccessLevel>                   DELETABLE_ACCESS                 = Arrays.asList(Owner, Delete, Admin);
@@ -924,7 +788,6 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private static final Map<String, List<AccessLevel>>      USER_GROUP_SUFFIXES              = ImmutableMap.of("owner", DELETABLE_ACCESS, "member", WRITABLE_ACCESS, "collaborator", READABLE_ACCESS);
     private static final String                              QUERY_KEY_PROJECT_ID             = "projectId";
     private static final String                              QUERY_KEY_ACCESS_LEVEL           = "accessLevel";
-    private static final String                              CACHE_NAME                       = "UserProjectCacheManagerCache";
     private static final String                              QUERY_GET_PROJECT_BY_ID_OR_ALIAS = "SELECT DISTINCT id " +
                                                                                                 "FROM xnat_projectdata " +
                                                                                                 "  LEFT JOIN xnat_projectdata_alias a on xnat_projectdata.id = a.aliases_alias_xnat_projectdata_id " +
@@ -965,6 +828,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private final AtomicBoolean                     _initialized        = new AtomicBoolean(false);
 
     private final GroupsAndPermissionsCache  _cache;
+    private final SerializerService          _serializer;
     private final NamedParameterJdbcTemplate _template;
     private final DatabaseHelper             _helper;
 }

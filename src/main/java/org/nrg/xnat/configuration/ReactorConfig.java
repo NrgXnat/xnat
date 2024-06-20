@@ -31,11 +31,13 @@ import reactor.core.dispatch.WorkQueueDispatcher;
 @ComponentScan("org.nrg.xft.event.methods")
 @Slf4j
 public class ReactorConfig {
-    private final AsyncOperationsPreferences preferences;
     public static final String REACTOR_DISPATCHER_THREAD_FACTORY = "reactorDispatcher";
+
+    private final AsyncOperationsPreferences preferences;
 
     @Autowired
     public ReactorConfig(AsyncOperationsPreferences preferences) {
+        log.info("Creating ReactorConfig");
         this.preferences = preferences;
     }
 

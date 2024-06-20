@@ -11,8 +11,6 @@ package org.nrg.xnat.configuration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.dcm.id.ClassicDicomObjectIdentifier;
-import org.nrg.dicom.dicomedit.DE6ScriptFactory;
-import org.nrg.dicom.dicomedit.ScriptApplicatorFactory;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.security.user.XnatUserProvider;
@@ -43,16 +41,6 @@ public class DicomImportConfig {
                                                                         final UserProjectCache userProjectCache) {
         final String name = messageSource.getMessage("dicomConfig.defaultObjectIdentifier", new Object[]{ClassicDicomObjectIdentifier.class.getSimpleName()}, "Default DICOM object identifier ({0})", Locale.getDefault());
         return new ClassicDicomObjectIdentifier(name, receivedFileUserProvider, userProjectCache);
-    }
-
-    @Bean
-    public DE6ScriptFactory scriptFactory() {
-        return new DE6ScriptFactory();
-    }
-
-    @Bean
-    public ScriptApplicatorFactory scriptApplicatorFactory(DE6ScriptFactory scriptFactory) {
-        return new ScriptApplicatorFactory(scriptFactory);
     }
 
     @Bean

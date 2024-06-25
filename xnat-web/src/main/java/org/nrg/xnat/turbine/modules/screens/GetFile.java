@@ -34,9 +34,6 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.turbine.utils.CatalogSet;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 
-import edu.sdsc.grid.io.srb.SRBFile;
-import edu.sdsc.grid.io.srb.SRBFileInputStream;
-
 public class GetFile extends RawScreen {
     static org.apache.log4j.Logger logger = Logger.getLogger(GetFile.class);
 
@@ -125,25 +122,6 @@ public class GetFile extends RawScreen {
                              while ((len = in.read(buf)) > 0) {
                                  data.getResponse().getOutputStream().write(buf, 0, len);
                              }
-
-                         }
-                     }else if (o instanceof SRBFile){
-                         SRBFile f = (SRBFile)o;
-                         if (f.exists()){
-                             TurbineUtils.setContentDisposition(data.getResponse(), f.getName(), false);
-
-                             byte[] tempBUF = new byte[FileUtils.LARGE_DOWNLOAD];
-                             SRBFileInputStream is = new SRBFileInputStream(f);
-                             // Transfer bytes from the file to the ZIP file
-                             int len;
-
-                             startTime = Calendar.getInstance().getTimeInMillis();
-
-                             while ((len = is.read(tempBUF)) > 0) {
-                                 data.getResponse().getOutputStream().write(tempBUF, 0, len);
-                                 data.getResponse().getOutputStream().flush();
-                             }
-
 
                          }
                      }

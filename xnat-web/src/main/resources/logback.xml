@@ -104,15 +104,6 @@
             <fileNamePattern>${xnat.home}/logs/xapi.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
-    <appender name="pipeline" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>${xnat.home}/logs/pipeline.log</File>
-        <encoder>
-            <pattern>%d - %m%n</pattern>
-        </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${xnat.home}/logs/pipeline.log.%d{yyyy-MM-dd}</fileNamePattern>
-        </rollingPolicy>
-    </appender>
     <appender name="automation" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${xnat.home}/logs/automation.log</File>
         <encoder>
@@ -420,9 +411,6 @@
     <logger name="org.nrg.xdat.preferences" additivity="false" level="WARN">
         <appender-ref ref="configuration"/>
     </logger>
-    <logger name="org.nrg.pipeline" additivity="false" level="ERROR">
-        <appender-ref ref="pipeline"/>
-    </logger>
     <logger name="net.sf.saxon" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
     </logger>
@@ -459,7 +447,7 @@
     <logger name="org.springframework.http" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>
-    <logger name="org.nrg.pipeline.launch" additivity="false" level="INFO">
+    <logger name="org.nrg.pipeline" additivity="false" level="INFO">
         <appender-ref ref="launch"/>
     </logger>
     <logger name="org.nrg.xft" additivity="false" level="ERROR">

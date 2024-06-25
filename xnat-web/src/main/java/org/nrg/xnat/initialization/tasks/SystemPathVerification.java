@@ -15,7 +15,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.preferences.PipelinePreferences;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.slf4j.Logger;
@@ -42,16 +41,15 @@ public class SystemPathVerification extends AbstractInitializingTask {
                                   final MailService mailService,
                                   final SiteConfigPreferences config,
                                   final XnatAppInfo appInfo,
-                                  final PipelinePreferences pipelinePreferences,
                                   final MeterRegistry meterRegistry) {
         _template = template;
         _helper = new DatabaseHelper(this._template);
         _mailService = mailService;
         _config = config;
         _appInfo = appInfo;
-        _pipelinePreferences = pipelinePreferences;
         _meterRegistry = meterRegistry;
     }
+
     @Override
     public String getTaskName() {
         return "System Path Verification";
@@ -91,10 +89,6 @@ public class SystemPathVerification extends AbstractInitializingTask {
         errors.addAll(validatePath(_config.getBuildPath(), "Build", false));
         errors.addAll(validatePath(_config.getPrearchivePath(), "Prearchive", false));
 
-        if (_pipelinePreferences.isAutoRunEnabled() || _pipelinePreferences.isAllowAutoRunProjectOverride()) {
-            errors.addAll(validatePath(_config.getPipelinePath(), "Pipeline", false));
-        }
-
         if (errors.size() > 0) {
             // Send warning email to admin and issue browser notification
             notify(errors, resourceCount);
@@ -105,7 +99,6 @@ public class SystemPathVerification extends AbstractInitializingTask {
             bindDiskSpaceMetrics(_config.getCachePath(), "cachePath");
             bindDiskSpaceMetrics(_config.getFtpPath(), "ftpPath");
             bindDiskSpaceMetrics(_config.getBuildPath(), "buildPath");
-            bindDiskSpaceMetrics(_config.getPipelinePath(), "pipelinePath");
             bindDiskSpaceMetrics(_config.getInboxPath(), "inboxPath");
             bindDiskSpaceMetrics(_config.getTriagePath(), "triagePath");
         }
@@ -179,6 +172,5 @@ public class SystemPathVerification extends AbstractInitializingTask {
     private final MailService _mailService;
     private final SiteConfigPreferences _config;
     private final XnatAppInfo _appInfo;
-    private final PipelinePreferences _pipelinePreferences;
     private final MeterRegistry _meterRegistry;
 }

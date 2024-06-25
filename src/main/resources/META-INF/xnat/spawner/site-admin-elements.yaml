@@ -129,15 +129,6 @@ siteHomeLayout:
     name: siteHomeLayout
     label: Site Home Layout
 
-processingUrl:
-    kind: panel.input.text
-    name: processingUrl
-    label: Processing Url
-    validation: allow-empty url onblur
-    description: >
-        The address to be used for processing. If this is left blank, pipelines will use the site
-        URL. If your pipelines need to connect to an internal URL, different from your external
-        site URL, provide one here.
 
 adminEmail:
     kind: panel.element
@@ -1883,44 +1874,6 @@ dicomNaming:
                 compatibility or handling non-compliant scenarios.
 
 
-## PIPELINE SETTINGS
-
-pipelineSettings:
-    kind: panel.form
-    label: Pipeline Settings
-    method: POST
-    contentType: json
-    url: /xapi/siteConfig
-    contents:
-        ${processingUrl}
-
-autoRunSettings:
-    kind: panel.form
-    label: AutoRun
-    method: POST
-    contentType: json
-    url: /xapi/pipelines
-    contents:
-        autoRunEnabled:
-            kind: panel.input.switchbox
-            name: autoRunEnabled
-            label: Launch AutoRun
-            onText: AutoRun Enabled
-            offText: AutoRun Disabled
-            description: >
-                Determines whether XNAT should launch the AutoRun pipeline as new sessions are archived. Requires the pipeline engine
-                to be installed at the location stored in the <b>pipelinePath</b> site configuration option.
-
-        allowAutoRunProjectOverride:
-            kind: panel.input.switchbox
-            name: allowAutoRunProjectOverride
-            label: Allow Project Override
-            onText: Project Override Enabled
-            offText: Project Override Disabled
-            description: >
-                Determines whether Project Owners can enable or disable the AutoRun pipeline for their projects, regardless of the
-                site-wide setting.
-
 ## DICOM SCP RECEIVERS
 
 dicomScpEditor:
@@ -2834,13 +2787,6 @@ root:
             group: manageData
             contents:
                 ${dicomNaming}
-        pipelinesTab:
-            kind: tab
-            label: Pipeline Settings
-            group: advanced
-            contents:
-                ${pipelineSettings}
-                ${autoRunSettings}
         dicomScpReceiversTab:
             kind: tab
             label: DICOM SCP Receivers

@@ -11,9 +11,6 @@ package org.nrg.xnat.initialization;
 
 import ch.qos.logback.classic.servlet.LogbackServletContextListener;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.axis.transport.http.AdminServlet;
-import org.apache.axis.transport.http.AxisHTTPSessionListener;
-import org.apache.axis.transport.http.AxisServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.nrg.framework.beans.XnatPluginBean;
@@ -66,7 +63,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         super.onStartup(context);
 
         context.addListener(XnatSessionEventPublisher.class);
-        context.addListener(AxisHTTPSessionListener.class);
 
         Turbine.setTurbineServletConfig(new XnatTurbineConfig(context));
 
@@ -76,8 +72,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         addServlet(Turbine.class, 2, "/app/*");
         addServlet(XNATRestletServlet.class, 2, "/REST/*", "/data/*");
         addServlet(XDATAjaxServlet.class, 4, "/ajax/*", "/servlet/XDATAjaxServlet", "/servlet/AjaxServlet");
-        addServlet(AxisServlet.class, 5, "/servlet/AxisServlet", "*.jws", "/services/*");
-        addServlet(AdminServlet.class, 6, "/servlet/AdminServlet");
         addServlet(ArchiveServlet.class, 7, "/archive/*");
         addServlet(XnatMetricsServlet.class, 8, "/metrics");
     }

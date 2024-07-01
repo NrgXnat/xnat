@@ -255,14 +255,26 @@ function unescapeXML(val) {
       function sanitizeNestedFormData(formComponent, formData) {
           if (Array.isArray(formComponent.components) && formComponent.components.length) {
               // Recursing through child components
-              for (const childFormComponent of formComponent.components) {
-                  sanitizeNestedFormData(childFormComponent, formData[formComponent.key]);
+              try {
+                  for (const childFormComponent of formComponent.components) {
+                      sanitizeNestedFormData(childFormComponent, formData[formComponent.key]);
+                  }
+              } catch(err) {
+                  for (const childFormComponent of formComponent.components) {
+                      sanitizeNestedFormData(childFormComponent, childFormComponent[formComponent.key]);
+                  }
               }
           } else {
               if (formComponentTypesToSanitize.includes(formComponent.type)) {
                   // Sanitize!
-                  if (formData != undefined && formData.hasOwnProperty(formComponent.key)) {
-                     formData[formComponent.key] = escapeHtml(formData[formComponent.key]);
+                  try {
+                      if (formData != undefined && formData.hasOwnProperty(formComponent.key)) {
+                         formData[formComponent.key] = escapeHtml(formData[formComponent.key]);
+                      } else if (formComponent != undefined && formComponent.hasOwnProperty(formComponent.key)) {
+                           formComponent[formComponent.key] = escapeHtml(formComponent[formComponent.key]);
+                      }
+                   } catch (err) {
+                    console.log("Could not sanitize " + formComponent.key);
                   }
               }
           }

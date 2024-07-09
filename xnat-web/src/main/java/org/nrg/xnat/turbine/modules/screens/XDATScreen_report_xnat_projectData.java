@@ -64,7 +64,7 @@ public class XDATScreen_report_xnat_projectData extends SecureReport {
             context.put("autoRunEnabled", false);
             context.put("autoRunOverrideAllowed", false);
 
-            setDefaultTabs("xnat_projectData_summary_details", "xnat_projectData_summary_management", "xnat_projectData_summary_manage", "xnat_projectData_summary_pipeline", "xnat_projectData_summary_history");
+            setDefaultTabs("xnat_projectData_summary_details", "xnat_projectData_summary_management", "xnat_projectData_summary_manage", "xnat_projectData_summary_history");
             cacheTabs(context, "xnat_projectData/tabs");
             //Has Dynamic Variables?
             CustomFormManagerService formManagerService = XDAT.getContextService().getBeanSafely(CustomFormManagerService.class);

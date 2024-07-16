@@ -54,7 +54,7 @@ import java.util.Map;
 @EnableWebMvc
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @Slf4j
-@ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization", "org.nrg.xapi.pages", "org.nrg.xnat.micrometer.web.handler"})
+@ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization", "org.nrg.xapi.pages", "org.nrg.xnat.micrometer.web.handler", "org.nrg.xnat.micrometer.api"})
 public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Autowired

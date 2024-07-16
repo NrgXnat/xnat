@@ -1,20 +1,15 @@
 package org.nrg.xnat.compute.repositories;
 
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Criteria;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
-import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
-import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.nrg.xnat.compute.entities.ComputeEnvironmentConfigEntity;
 import org.nrg.xnat.compute.entities.ComputeEnvironmentScopeEntity;
 import org.nrg.xnat.compute.entities.HardwareConfigEntity;
-import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import javax.persistence.criteria.JoinType;
 import java.util.Collections;
 import java.util.List;
 
@@ -94,12 +89,13 @@ public class ComputeEnvironmentConfigDao extends AbstractHibernateDAO<ComputeEnv
      * @return The list of compute environment configs that have the specified type.
      */
     public List<ComputeEnvironmentConfigEntity> findByType(String type) {
-        // Need to use a criteria query because the configTypes field is a collection.
-        QueryBuilder<ComputeEnvironmentConfigEntity> builder =  newQueryBuilder();
-        builder.join("configTypes", "configTypes", JoinType.INNER);
-        builder.where(builder.eq("configTypes.elements", type));
+        log.debug("Finding compute environment configs by type: {}", type);
 
-        List<ComputeEnvironmentConfigEntity> entities = builder.getResults();
+        List<ComputeEnvironmentConfigEntity> entities = getSession()
+                .createQuery("FROM ComputeEnvironmentConfigEntity c WHERE :type IN elements(c.configTypes)",
+                             ComputeEnvironmentConfigEntity.class)
+                .setParameter("type", type)
+                .getResultList();
 
         if (entities == null) {
             return Collections.emptyList();

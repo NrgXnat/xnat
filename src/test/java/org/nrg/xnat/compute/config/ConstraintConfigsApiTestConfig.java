@@ -18,7 +18,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @Configuration
 @EnableWebMvc
 @EnableWebSecurity
-@Import({MockConfig.class, RestApiTestConfig.class})
+@Import({MockConfig.class, RestApiTestConfig.class, HibernateConfig.class})
 public class ConstraintConfigsApiTestConfig extends WebSecurityConfigurerAdapter {
 
     @Bean

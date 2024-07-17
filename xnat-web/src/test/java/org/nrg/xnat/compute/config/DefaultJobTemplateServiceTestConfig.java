@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import({MockConfig.class})
+@Import({MockConfig.class, HibernateConfig.class})
 public class DefaultJobTemplateServiceTestConfig {
 
     @Bean

@@ -48,13 +48,11 @@ public class ArchiveProcessorInstanceDAO extends AbstractHibernateDAO<ArchivePro
 
     public List<ArchiveProcessorInstance> getEnabledSiteArchiveProcessorsForAe(String aeAndPort) {
         QueryBuilder<ArchiveProcessorInstance> builder = newQueryBuilder();
-        builder.join("scpWhitelist");
-        builder.join("scpBlacklist");
         final List<Predicate> predicates = new ArrayList<>();
         predicates.add(builder.eq("scope", Scope.Site.code()));
         predicates.add(builder.eq("enabled", true));
-        predicates.add(builder.or(builder.isEmpty("scpWhitelist"), builder.eq("scpWhitelist.elements", aeAndPort)));
-        predicates.add(builder.or(builder.isEmpty("scpBlacklist"), builder.ne("scpBlacklist.elements", aeAndPort)));
+        predicates.add(builder.or(builder.isEmpty("scpWhitelist"), builder.isMember("scpWhitelist", aeAndPort)));
+        predicates.add(builder.or(builder.isEmpty("scpBlacklist"), builder.isNotMember("scpBlacklist", aeAndPort)));
         builder.where(builder.and(predicates));
         return builder.getResults();
     }

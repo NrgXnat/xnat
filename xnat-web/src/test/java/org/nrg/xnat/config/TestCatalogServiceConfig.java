@@ -25,7 +25,6 @@ import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.services.archive.RemoteFilesService;
 import org.nrg.xnat.services.archive.impl.legacy.DefaultCatalogService;
-import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -91,11 +90,6 @@ public class TestCatalogServiceConfig {
     @Bean
     public RemoteFilesService remoteFilesService() {
         return Mockito.mock(RemoteFilesService.class);
-    }
-
-    @Bean
-    public CacheManager cacheManager() {
-        return Mockito.mock(CacheManager.class);
     }
 
     @Bean

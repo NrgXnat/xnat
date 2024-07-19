@@ -1,5 +1,6 @@
 package org.nrg.xnat.compute.config;
 
+import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -16,6 +17,11 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 @Configuration
 public class MockConfig {
+
+    @Bean
+    public SessionFactory sessionFactory() {
+        return Mockito.mock(SessionFactory.class);
+    }
 
     @Bean
     public NamedParameterJdbcTemplate mockNamedParameterJdbcTemplate() {

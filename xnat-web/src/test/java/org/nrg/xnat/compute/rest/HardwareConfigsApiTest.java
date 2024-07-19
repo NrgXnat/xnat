@@ -69,7 +69,7 @@ public class HardwareConfigsApiTest {
     }
 
     @After
-    public void after() throws Exception {
+    public void after() {
         // Reset the mock
         Mockito.reset(
                 mockRoleService,

@@ -122,7 +122,9 @@ public class SubscriptionDeliveryEntityDao extends AbstractHibernateDAO<Subscrip
         if (statusToExclude != null) {
             predicates.add(builder.ne(STATUS, statusToExclude));
         }
-        return builder.count(predicates);
+        builder.where(predicates.toArray(new Predicate[0]));
+        List<SubscriptionDeliveryEntity> results =builder.getResults();
+        return results.size();
     }
 
     private static final String BASE_QUERY_SUMMARY_DELIVERIES          = "SELECT NEW org.nrg.xnat.eventservice.entities.SubscriptionDeliverySummaryEntity(D.id, D.eventType, D.subscription.id, D.subscription.name, D.actionUserLogin, D.projectId, D.triggeringEventEntity.objectLabel, D.status, D.errorState, D.statusTimestamp) FROM SubscriptionDeliveryEntity as D WHERE D.status != :statusToExclude";

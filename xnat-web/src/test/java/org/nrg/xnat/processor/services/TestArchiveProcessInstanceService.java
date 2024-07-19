@@ -12,6 +12,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -33,6 +34,7 @@ public class TestArchiveProcessInstanceService {
     }
 
     @Test
+    @DirtiesContext
     public void createBasicEntity() {
         final ArchiveProcessorInstance entity = new ArchiveProcessorInstance();
         entity.setLabel("processor");
@@ -43,9 +45,16 @@ public class TestArchiveProcessInstanceService {
         entity.setScope("site");
         entity.setProjectIdsList(Arrays.asList("one", "two", "three"));
         _service.create(entity);
+
+        final List<ArchiveProcessorInstance> allProcessors = _service.getAllSiteProcessors();
+        assertThat(allProcessors).isNotNull().isNotEmpty().hasSize(1);
+
+        final List<ArchiveProcessorInstance> studyRemappingArchiveProcessors = _service.getAllSiteProcessorsForClass(StudyRemappingArchiveProcessor.class.getCanonicalName());
+        assertThat(studyRemappingArchiveProcessors).isNotNull().isNotEmpty().hasSize(1);
     }
 
     @Test
+    @DirtiesContext
     public void getAllSiteProcessorsForClass() {
         final ArchiveProcessorInstance entity1 = new ArchiveProcessorInstance();
         entity1.setLabel("processor1");

@@ -129,6 +129,16 @@ siteHomeLayout:
     name: siteHomeLayout
     label: Site Home Layout
 
+processingUrl:
+    kind: panel.input.text
+    name: processingUrl
+    label: Processing Url
+    validation: allow-empty url onblur
+    description: >
+        The address to be used for processing. If this is left blank, pipelines will use the site
+        URL. If your pipelines need to connect to an internal URL, different from your external
+        site URL, provide one here.
+
 
 adminEmail:
     kind: panel.element
@@ -1873,6 +1883,16 @@ dicomNaming:
                 "dicomFileNameTemplate" configuration setting. However, using file name is offered for backward 
                 compatibility or handling non-compliant scenarios.
 
+## PIPELINE SETTINGS
+
+pipelineSettings:
+    kind: panel.form
+    label: Pipeline Settings
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        ${processingUrl}
 
 ## DICOM SCP RECEIVERS
 
@@ -2787,6 +2807,12 @@ root:
             group: manageData
             contents:
                 ${dicomNaming}
+        pipelinesTab:
+            kind: tab
+            label: Pipeline Settings
+            group: advanced
+            contents:
+                ${pipelineSettings}
         dicomScpReceiversTab:
             kind: tab
             label: DICOM SCP Receivers

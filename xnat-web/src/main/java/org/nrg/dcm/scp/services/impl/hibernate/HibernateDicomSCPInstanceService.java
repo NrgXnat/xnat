@@ -28,6 +28,7 @@ public class HibernateDicomSCPInstanceService extends AbstractHibernateEntitySer
         return getDao().findByProperty("port", port);
     }
 
+
     /**
      * findByAETitleAndPort
      * *
@@ -70,5 +71,24 @@ public class HibernateDicomSCPInstanceService extends AbstractHibernateEntitySer
         return String.join(":", new ExtractorFromRuleProvider(new RoutingExpressionFromMultilineStringProvider(Arrays.asList(instance.getProjectRoutingExpression(),
                                                                                                                              instance.getSubjectRoutingExpression(),
                                                                                                                              instance.getSessionRoutingExpression()))).validate());
+    }
+
+    /**
+    * @param instance to be updated
+     *
+     */
+
+    public void update(final DicomSCPInstance instance) {
+        getDao().update(instance);
+    }
+
+    /**
+     * Dicom SCP Instance to be found by id
+     */
+
+    public DicomSCPInstance findById(final long id) {
+        DicomSCPInstance instance = getDao().findById(id);
+        getDao().initialize(instance);
+        return instance;
     }
 }

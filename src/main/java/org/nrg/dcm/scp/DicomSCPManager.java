@@ -132,12 +132,12 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     }
 
     public Map<String, DicomSCPInstance> getDicomSCPInstances() {
-        return _dicomSCPInstanceService.getAll().stream()
+        return _dicomSCPInstanceService.getAllWithDisabled().stream()
                                        .collect(Collectors.toMap(ds -> String.valueOf(ds.getId()), Function.identity()));
     }
 
     public List<DicomSCPInstance> getDicomSCPInstancesList() {
-        return _dicomSCPInstanceService.getAll();
+        return _dicomSCPInstanceService.getAllWithDisabled();
     }
 
     /**
@@ -158,6 +158,34 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         }
         throw new NotFoundException("Could not find DICOM SCP instance with ID " + instance.getId());
     }
+
+    /**
+     * Updates the submitted {@link DicomSCPInstance DICOM SCP instance} definition. If the {@link DicomSCPInstance#getId()
+     * instance ID} matches an existing DICOM SCP instance, that instance will be updated. If not, the {@link NotFoundException}
+     *
+     * Enabled field is ignored while updating unlike the updateDicomSCPInstance method
+     *
+     * @param instance The instance to be set.
+     *
+     * @throws NotFoundException When an instance with the same ID does not already exist.
+     *
+     */
+    @SuppressWarnings("unused")
+    public DicomSCPInstance update(final DicomSCPInstance instance, final boolean lookup) throws NotFoundException {
+        if (instance == null) {
+            throw new NotFoundException("Instance is null");
+        }
+        if (lookup) {
+            DicomSCPInstance foundInstance = findById(instance.getId());
+            if (foundInstance == null) {
+                throw new NotFoundException("Could not find DICOM SCP instance with ID " + instance.getId());
+            }
+        }
+        log.debug("Updating Dicom SCP Instance ", instance.getId());
+        _dicomSCPInstanceService.update(instance);
+        return instance;
+    }
+
 
     /**
      * Sets the submitted {@link DicomSCPInstance DICOM SCP instance} definition. If the {@link DicomSCPInstance#getId()
@@ -316,6 +344,22 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         }
         // TODO: Huh. entity returned by retrieve is a proxy object. Dunno why.
         // Do a useless read of a property so lazy loading happens in the context of this session.
+        log.debug("Got DICOM SCP instance with ID {}, AE title is {} and port is {}", id, entity.getAeTitle(), entity.getPort());
+        return entity;
+    }
+
+    /**
+     * Finds a Dicom SCP Instance by Id
+     * @param id - id of the Dicom SCP Instance to be found
+     * @return the DicomSCPInstance with the passed id or NotFoundException
+     * @throws NotFoundException
+     */
+
+    public DicomSCPInstance findById(final long id) throws NotFoundException {
+        DicomSCPInstance entity = _dicomSCPInstanceService.findById(id);
+        if (entity == null) {
+            throw new NotFoundException("DicomSCPInstance(id: " + id + ")");
+        }
         log.debug("Got DICOM SCP instance with ID {}, AE title is {} and port is {}", id, entity.getAeTitle(), entity.getPort());
         return entity;
     }
@@ -505,7 +549,8 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
             } else {
                 _dicomSCPStore.stop(instance.getPort());
             }
-            return saveDicomSCPInstance(instance);
+            _dicomSCPInstanceService.update(instance);
+            return instance;
         } catch (NrgServiceException e) {
             // Shouldn't happen: we just retrieved it and enabled doesn't count towards duplicate properties.
             return instance;

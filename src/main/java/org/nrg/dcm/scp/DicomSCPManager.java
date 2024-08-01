@@ -151,9 +151,10 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      *                           and port.
      */
     @SuppressWarnings("unused")
-    public DicomSCPInstance updateDicomSCPInstance(final DicomSCPInstance instance) throws NotFoundException {
+    public DicomSCPInstance updateDicomSCPInstance(final DicomSCPInstance instance) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException {
         if (hasDicomSCPInstance(instance.getId())) {
             _dicomSCPInstanceService.update(instance);
+            cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
             return instance;
         }
         throw new NotFoundException("Could not find DICOM SCP instance with ID " + instance.getId());
@@ -171,7 +172,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      *
      */
     @SuppressWarnings("unused")
-    public DicomSCPInstance update(final DicomSCPInstance instance, final boolean lookup) throws NotFoundException {
+    public DicomSCPInstance update(final DicomSCPInstance instance, final boolean lookup) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException {
         if (instance == null) {
             throw new NotFoundException("Instance is null");
         }
@@ -183,6 +184,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         }
         log.debug("Updating Dicom SCP Instance ", instance.getId());
         _dicomSCPInstanceService.update(instance);
+        cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
         return instance;
     }
 
@@ -550,6 +552,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
                 _dicomSCPStore.stop(instance.getPort());
             }
             _dicomSCPInstanceService.update(instance);
+            cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
             return instance;
         } catch (NrgServiceException e) {
             // Shouldn't happen: we just retrieved it and enabled doesn't count towards duplicate properties.

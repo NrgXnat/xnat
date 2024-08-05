@@ -16,7 +16,6 @@ import com.google.common.primitives.Chars;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xnat.micrometer.web.handler.XnatMicrometerHandlerInterceptorAdapter;
 import org.nrg.xnat.preferences.AsyncOperationsPreferences;
 import org.nrg.xnat.web.converters.XftBeanHttpMessageConverter;
 import org.nrg.xnat.web.converters.XftObjectHttpMessageConverter;
@@ -54,15 +53,12 @@ import java.util.Map;
 @EnableWebMvc
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @Slf4j
-@ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization", "org.nrg.xapi.pages", "org.nrg.xnat.micrometer.web.handler", "org.nrg.xnat.micrometer.api"})
+@ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization", "org.nrg.xapi.pages"})
 public class WebConfig extends WebMvcConfigurerAdapter {
-
     @Autowired
     public WebConfig(final Jackson2ObjectMapperBuilder objectMapperBuilder,
                      @Qualifier("threadPoolExecutorFactoryBean") final ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean,
-                     final AsyncOperationsPreferences preferences,
-                     final XnatMicrometerHandlerInterceptorAdapter handlerInterceptorAdapter) {
-        log.info("Creating WebConfig");
+                     final AsyncOperationsPreferences preferences) {
         _threadPoolFactory = threadPoolExecutorFactoryBean;
         _preferences = preferences;
         _objectMapper = objectMapperBuilder.build();
@@ -70,9 +66,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         _marshaller = new Jaxb2Marshaller();
         _marshaller.setClassesToBeBound(SiteConfigPreferences.class);
         _marshaller.setMarshallerProperties(MARSHALLER_PROPERTIES);
-        _xnatHandlerInterceptorAdapter = handlerInterceptorAdapter;
     }
-
 
     @Override
     public void addResourceHandlers(final ResourceHandlerRegistry registry) {
@@ -84,13 +78,6 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         registry.addResourceHandler("/images/**", "/pdf/**", "/resources/**", "/scripts/**", "/style/**", "/themes/**", "/favicon.ico")
                 .addResourceLocations("/images/", "/pdf/", "/resources/", "/scripts/", "/style/", "/themes/", "/favicon.ico")
                 .setCachePeriod(31556926);
-    }
-
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(_xnatHandlerInterceptorAdapter)
-                .addPathPatterns("/**")
-                .order(0);
     }
 
     @Override
@@ -207,6 +194,4 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     private final Jaxb2Marshaller               _marshaller;
     private final ThreadPoolExecutorFactoryBean _threadPoolFactory;
     private       ObjectMapper                  _objectMapper;
-    private final XnatMicrometerHandlerInterceptorAdapter _xnatHandlerInterceptorAdapter;
-
 }

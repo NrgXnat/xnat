@@ -26,28 +26,20 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
-
 
 @Component
 public class SystemPathVerification extends AbstractInitializingTask {
-
     @Autowired
     public SystemPathVerification(final JdbcTemplate template,
                                   final MailService mailService,
                                   final SiteConfigPreferences config,
-                                  final XnatAppInfo appInfo,
-                                  final MeterRegistry meterRegistry) {
+                                  final XnatAppInfo appInfo) {
         _template = template;
-        _helper = new DatabaseHelper(this._template);
+        _helper = new DatabaseHelper(_template);
         _mailService = mailService;
         _config = config;
         _appInfo = appInfo;
-        _meterRegistry = meterRegistry;
     }
 
     @Override
@@ -94,13 +86,6 @@ public class SystemPathVerification extends AbstractInitializingTask {
             notify(errors, resourceCount);
         } else {
             _config.setPathErrorWarning("");
-            bindDiskSpaceMetrics(_config.getArchivePath(), "archivePath");
-            bindDiskSpaceMetrics(_config.getPrearchivePath(), "prearchivePath");
-            bindDiskSpaceMetrics(_config.getCachePath(), "cachePath");
-            bindDiskSpaceMetrics(_config.getFtpPath(), "ftpPath");
-            bindDiskSpaceMetrics(_config.getBuildPath(), "buildPath");
-            bindDiskSpaceMetrics(_config.getInboxPath(), "inboxPath");
-            bindDiskSpaceMetrics(_config.getTriagePath(), "triagePath");
         }
     }
 
@@ -158,19 +143,11 @@ public class SystemPathVerification extends AbstractInitializingTask {
         }
     }
 
-    private void bindDiskSpaceMetrics(final String filePath, final String pathName) {
-        File file = new File(filePath);
-        if (file.exists()) {
-            new DiskSpaceMetrics(file, Collections.singletonList(Tag.of(pathName, filePath))).bindTo(_meterRegistry);
-        }
-    }
-
     private static final Logger logger = LoggerFactory.getLogger(SystemPathVerification.class);
 
-    private final DatabaseHelper _helper;
-    private final JdbcTemplate _template;
-    private final MailService _mailService;
+    private final DatabaseHelper        _helper;
+    private final JdbcTemplate          _template;
+    private final MailService           _mailService;
     private final SiteConfigPreferences _config;
     private final XnatAppInfo _appInfo;
-    private final MeterRegistry _meterRegistry;
 }

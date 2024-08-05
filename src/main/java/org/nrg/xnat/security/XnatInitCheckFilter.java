@@ -28,7 +28,6 @@ import java.io.IOException;
 
 @Slf4j
 public class XnatInitCheckFilter extends OncePerRequestFilter {
-
     @Autowired
     public XnatInitCheckFilter(final XnatAppInfo appInfo) {
         super();

@@ -427,7 +427,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private boolean isSmallServer(){
-        return getTotalCounts().get(XnatSubjectdata.SCHEMA_ELEMENT_NAME) < SMALL_SERVER_SUBJ_COUNT;
+        return getTotalCounts().getOrDefault(XnatSubjectdata.SCHEMA_ELEMENT_NAME, 0L) < SMALL_SERVER_SUBJ_COUNT;
     }
 
     @Override
@@ -820,7 +820,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return false;
         }
 
-        initReadableCountsForProjectUsers(projectIds, action, event.getXsiType());
+        initReadableCountsForProjectUsers(projectIds);
         return true;
     }
 
@@ -985,8 +985,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     isTargetProjectPublic ? "target project is public" : "target project is not public");
         }
 
-        initReadableCountsForProjectUsers(projectIds, action, event.getXsiType());
-
+        initReadableCountsForProjectUsers(projectIds);
         return true;
     }
 
@@ -1026,25 +1025,13 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return ACTIONS.stream().collect(Collectors.toMap(Function.identity(), action -> ObjectUtils.getIfNull(getActionElementDisplays(username, action), Collections::emptyList)));
     }
 
-    private void initReadableCountsForProjectUsers(final Set<String> projectIds, final String action, final String dataType) {
+    private void initReadableCountsForProjectUsers(final Set<String> projectIds) {
         final Set<String> users = getProjectUsers(projectIds);
         for (final String username : users) {
+            evict(CACHE_BROWSEABLES, username);
             evict(CACHE_READABLE_COUNTS, username);
             final Map<String, Long> cachedCounts = getReadableCounts(username);
             log.debug("Initialized readable counts for user {}, finding {} different counts", users, cachedCounts.size());
-            // CACHING: Not sure if we need to do this stuff anymore with extractor initialization.
-            /*
-            if (cachedCounts == null || cachedCounts.size() == 0) {
-                initReadableCountsForUser(username);
-            } else if (StringUtils.equals(CREATE, action) && (!cachedCounts.containsKey(dataType) || cachedCounts.get(dataType) == 0)) {
-                //we only need to worry about this if it is null or 0
-                initReadableCountsForUser(username);
-            } else if (StringUtils.equals(DELETE, action)) {
-                //do we need this?  Only if its going from 1 to 0, but we don't know that if counts aren't refreshed as they get closer to 1
-                //leaving it, but if it becomes an issue in profiling, then we could consider removing it.
-                initReadableCountsForUser(username);
-            }
-            */
         }
     }
 

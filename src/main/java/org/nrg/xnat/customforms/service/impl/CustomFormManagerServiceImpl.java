@@ -494,9 +494,10 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
         final String visit = formAppliesTo.getCustomVariableAppliesTo().getVisit();
         final String subType = formAppliesTo.getCustomVariableAppliesTo().getSubType();
         UserOptionsPojo userOptionsPojo = new UserOptionsPojo(dataType, protocol, visit, subType);
+        CustomVariableForm form = formAppliesTo.getCustomVariableForm();
+        List<CustomVariableFormAppliesTo> formAppliesTos = customVariableFormAppliesToService.findByFormId(form.getId());
         for (String project : projects) {
-            CustomVariableForm form = formAppliesTo.getCustomVariableForm();
-            List<CustomVariableFormAppliesTo> overlappingFormAppliesTos = customVariableFormAppliesToService.findByFormId(form.getId()).stream()
+            List<CustomVariableFormAppliesTo> overlappingFormAppliesTos = formAppliesTos.stream()
                     .filter(apTo -> Objects.nonNull(apTo.getCustomVariableAppliesTo().getEntityId()))
                     .filter(apTo -> apTo.getCustomVariableAppliesTo().getEntityId().equals(project))
                     .collect(Collectors.toList());
@@ -505,7 +506,7 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
                 deleteSafely(overlappingAppliesTo.getRowIdentifier(), overlappingAppliesTo);
             } else {
                 CustomVariableAppliesTo customVariableAppliesTo = getCustomVariableAppliesTo(userOptionsPojo, project);
-                savedAll = objectSaver.saveOnlyAppliesToAndAssign(customVariableAppliesTo, formAppliesTo.getCustomVariableForm(), user, formStatus);
+                savedAll = objectSaver.saveOnlyAppliesToAndAssign(customVariableAppliesTo, form, user, formStatus);
             }
             createWorkFlowEntry(user, project, rowIdentifier.getFormId(), "Form Added");
         }
@@ -1100,19 +1101,26 @@ public class CustomFormManagerServiceImpl implements CustomFormManagerService {
 
     private CustomVariableAppliesTo getCustomVariableAppliesTo(final UserOptionsPojo userOptions,
                                                                final String entityId) {
-        CustomVariableAppliesTo customVariableAppliesTo = new CustomVariableAppliesTo();
-        customVariableAppliesTo.setDataType(userOptions.getDataType());
-        if (null != userOptions.getProtocol()) customVariableAppliesTo.setProtocol(userOptions.getProtocol());
-        if (null != userOptions.getVisit()) customVariableAppliesTo.setVisit(userOptions.getVisit());
-        if (null != userOptions.getSubType()) customVariableAppliesTo.setSubType(userOptions.getSubType());
-        if (null != userOptions.getScanType()) customVariableAppliesTo.setScanType(userOptions.getScanType());
+        Scope scope = Scope.Site;
         if (entityId != null) {
-            customVariableAppliesTo.setScope(Scope.Project);
-            customVariableAppliesTo.setEntityId(entityId);
-        } else {
-            customVariableAppliesTo.setScope(Scope.Site);
+            scope = Scope.Project;
         }
-        return customVariableAppliesTo;
+        final List<CustomVariableAppliesTo> existingAppliesTo = selectionService.findAllByScopeEntityIdDataType(scope, entityId, userOptions.getDataType());
+        if (existingAppliesTo != null && existingAppliesTo.size() > 0) {
+            return existingAppliesTo.get(0);
+        } else {
+            CustomVariableAppliesTo customVariableAppliesTo = new CustomVariableAppliesTo();
+            customVariableAppliesTo.setDataType(userOptions.getDataType());
+            if (null != userOptions.getProtocol()) customVariableAppliesTo.setProtocol(userOptions.getProtocol());
+            if (null != userOptions.getVisit()) customVariableAppliesTo.setVisit(userOptions.getVisit());
+            if (null != userOptions.getSubType()) customVariableAppliesTo.setSubType(userOptions.getSubType());
+            if (null != userOptions.getScanType()) customVariableAppliesTo.setScanType(userOptions.getScanType());
+            if (entityId != null) {
+                customVariableAppliesTo.setEntityId(entityId);
+            }
+            customVariableAppliesTo.setScope(scope);
+            return customVariableAppliesTo;
+        }
     }
 
     private UserI getAuthorizedUser(final UserI user) {

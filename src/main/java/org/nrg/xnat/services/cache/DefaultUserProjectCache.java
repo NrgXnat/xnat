@@ -648,7 +648,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
 
         try {
-            final XnatProjectdata project = get(user, projectId);
+            final XnatProjectdata project = getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
 
             // If the project cache is null, the project doesn't exist.
             if (project == null) {

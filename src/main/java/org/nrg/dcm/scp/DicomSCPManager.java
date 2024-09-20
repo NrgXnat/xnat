@@ -13,17 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.nrg.dcm.DicomFileNamer;
-import org.nrg.dcm.id.CompositeDicomObjectIdentifier;
-import org.nrg.dcm.id.ReceiverAwareIdentifier;
-import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicatePropertiesException;
-import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicateTitleAndPortException;
-import org.nrg.dcm.scp.exceptions.DicomNetworkException;
-import org.nrg.dcm.scp.exceptions.DicomScpInvalidAeTitleException;
-import org.nrg.dcm.scp.exceptions.DicomScpInvalidRoutingExpressionException;
-import org.nrg.dcm.scp.exceptions.DicomScpInvalidWhitelistedItemException;
-import org.nrg.dcm.scp.exceptions.DicomScpUnknownDOIException;
-import org.nrg.dcm.scp.exceptions.DicomScpUnsupportedRoutingExpressionException;
-import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
+import org.nrg.dcm.id.*;
+import org.nrg.dcm.scp.exceptions.*;
 import org.nrg.dcm.scp.services.DicomSCPInstanceService;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.exceptions.NotFoundException;
@@ -36,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -58,6 +50,7 @@ import java.util.stream.Collectors;
  * DicomSCPManager
  */
 @Service
+@Transactional
 @Slf4j
 public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     private final ApplicationContext                                  _context;
@@ -65,9 +58,9 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     private final DicomSCPStore                                       _dicomSCPStore;
     private final DicomSCPInstanceService                             _dicomSCPInstanceService;
     private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _dicomObjectIdentifierMap;
-    private final String                                              _primaryDicomObjectIdentifierBeanId;
-    private final Set<String>                                         _dicomObjectIdentifierBeanIds;
-    private       boolean                                             _isEnableDicomReceiver;
+    private final String      _primaryDicomObjectIdentifierBeanId;
+    private final Set<String> _dicomObjectIdentifierBeanIds;
+    private       boolean     _isEnableDicomReceiver;
 
     private static final Pattern AE_TITLE_PATTERN                 = Pattern.compile("(?=[^\\\\]*[^\\s\\\\]+$)(?=^[^\\s\\\\]+[^\\\\]*)[ -~]{1,16}");
     private static final String  ENABLE_DICOM_RECEIVER_PREFERENCE = "enableDicomReceiver";
@@ -148,7 +141,6 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      * @param instance The instance to be set.
      *
      * @throws NotFoundException When an instance with the same ID does not already exist.
-     *                           and port.
      */
     @SuppressWarnings("unused")
     public DicomSCPInstance updateDicomSCPInstance(final DicomSCPInstance instance) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException {
@@ -182,12 +174,11 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
                 throw new NotFoundException("Could not find DICOM SCP instance with ID " + instance.getId());
             }
         }
-        log.debug("Updating Dicom SCP Instance ", instance.getId());
+        log.debug("Updating Dicom SCP Instance {}", instance.getId());
         _dicomSCPInstanceService.update(instance);
         cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
         return instance;
     }
-
 
     /**
      * Sets the submitted {@link DicomSCPInstance DICOM SCP instance} definition. If the {@link DicomSCPInstance#getId()
@@ -456,10 +447,10 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     @Nullable
     public DicomObjectIdentifier<XnatProjectdata> getDicomObjectIdentifier(final String beanId) {
         return StringUtils.isBlank(beanId)
-               ? getDefaultDicomObjectIdentifier()
-               : _dicomObjectIdentifierBeanIds.contains(beanId)
-                 ? getDicomObjectIdentifiers().get(beanId)
-                 : null;
+                ? getDefaultDicomObjectIdentifier()
+                : _dicomObjectIdentifierBeanIds.contains(beanId)
+                ? getDicomObjectIdentifiers().get(beanId)
+                : null;
     }
 
     public DicomObjectIdentifier<XnatProjectdata> getDefaultDicomObjectIdentifier() {
@@ -480,8 +471,8 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
                                                             .orElseThrow(() -> new IllegalArgumentException(String.format("Unknown DicomSCPInstances with aeTitle '%s' and port %d", aeTitle, port)));
         DicomObjectIdentifier<XnatProjectdata> doi = _dicomObjectIdentifierMap.get(instance.getIdentifier());
         return doi instanceof ReceiverAwareIdentifier ?
-               ((ReceiverAwareIdentifier<? extends DicomObjectIdentifier<XnatProjectdata>>) doi).forInstance(instance) :
-               doi;
+                ((ReceiverAwareIdentifier<? extends DicomObjectIdentifier<XnatProjectdata>>) doi).forInstance(instance) :
+                doi;
     }
 
 
@@ -551,9 +542,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
             } else {
                 _dicomSCPStore.stop(instance.getPort());
             }
-            _dicomSCPInstanceService.update(instance);
-            cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
-            return instance;
+            return saveDicomSCPInstance(instance);
         } catch (NrgServiceException e) {
             // Shouldn't happen: we just retrieved it and enabled doesn't count towards duplicate properties.
             return instance;

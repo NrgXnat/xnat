@@ -33,52 +33,57 @@ public class ReadableCountsExtractor extends AbstractGroupsAndPermissionsCacheDa
                                                                        "FROM pg_class " +
                                                                        "WHERE oid = 'public.wrk_workflowdata'::regclass";
 
-    private static final String QUERY_USER_READABLE_SUBJECT_COUNT    = "SELECT SUM(subjs.COUNT) AS ELEMENT_COUNT "
-            + " FROM xdat_element_access xea  "
-            + " LEFT JOIN xdat_usergroup grp ON xea.xdat_usergroup_xdat_usergroup_id=grp.xdat_usergroup_id "
-            + " LEFT JOIN xdat_user_groupid gid ON grp.id=gid.groupid "
-            + " LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id=fms.permissions_allow_set_xdat_elem_xdat_element_access_id "
-            + " LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.read_element=1 AND 'xnat:subjectData/project'=xfm.field "
-            + " JOIN ( "
-            + " SELECT project, COUNT(id) FROM xnat_subjectData GROUP BY project UNION SELECT project, COUNT(subject_id) FROM xnat_projectParticipant GROUP BY project "
-            + " ) subjs ON xfm.field_value=subjs.project "
-            + " WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds) OR xea.xdat_user_xdat_user_id IN (:userIds)";
-    private static final String QUERY_USER_READABLE_EXPERIMENT_COUNT = "SELECT xea.element_name, SUM(expts.SUM) AS ELEMENT_COUNT "
-            + " FROM xdat_element_access xea  "
-            + " LEFT JOIN xdat_usergroup grp ON xea.xdat_usergroup_xdat_usergroup_id=grp.xdat_usergroup_id "
-            + " LEFT JOIN xdat_user_groupid gid ON grp.id=gid.groupid "
-            + " LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id=fms.permissions_allow_set_xdat_elem_xdat_element_access_id "
-            + " LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.read_element=1 AND xea.element_name || '/project'=xfm.field "
-            + " JOIN ( "
-            + " SELECT project, element_name, SUM(COUNT) FROM ( "
-            + "  SELECT project, element_name, COUNT(id)  "
-            + "  FROM xnat_experimentData  "
-            + "  LEFT JOIN xdat_meta_element xme ON xnat_experimentData.extension=xme.xdat_meta_element_id  "
-            + "  GROUP BY project, element_name "
-            + "  UNION  "
-            + "  SELECT shr.project, element_name, COUNT(expt.id)  "
-            + "  FROM xnat_experimentData_share shr  "
-            + "  LEFT JOIN xnat_experimentData expt ON shr.sharing_share_xnat_experimentda_id=expt.id  "
-            + "  LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY shr.project, element_name "
-            + " ) SRCH GROUP BY project,element_name "
-            + " ) expts ON xfm.field_value=expts.project AND xea.element_name=expts.element_name "
-            + " WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds) OR xea.xdat_user_xdat_user_id IN (:userIds) "
-            + " GROUP BY xea.element_name";
-    private static final String QUERY_USER_READABLE_SCAN_COUNT       = "SELECT xea.element_name, SUM(expts.SUM) AS ELEMENT_COUNT    "
-            + " FROM xdat_element_access xea  "
-            + " LEFT JOIN xdat_usergroup grp ON xea.xdat_usergroup_xdat_usergroup_id=grp.xdat_usergroup_id "
-            + " LEFT JOIN xdat_user_groupid gid ON grp.id=gid.groupid "
-            + " LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id=fms.permissions_allow_set_xdat_elem_xdat_element_access_id "
-            + " LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.read_element=1 AND xea.element_name || '/project'=xfm.field "
-            + " JOIN (   "
-            + "  SELECT project, element_name, SUM(COUNT) FROM (   "
-            + "   SELECT project, element_name, COUNT(id) FROM xnat_imageScandata LEFT JOIN xdat_meta_element xme ON xnat_imageScandata.extension=xme.xdat_meta_element_id GROUP BY project, element_name   "
-            + "   UNION    "
-            + "   SELECT shr.project, element_name, COUNT(expt.id) FROM xnat_imageScandata_share shr LEFT JOIN xnat_imageScandata expt ON shr.sharing_share_xnat_imagescandat_xnat_imagescandata_id=expt.xnat_imagescandata_id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY shr.project, element_name   "
-            + "  ) SRCH GROUP BY project,element_name   "
-            + " ) expts ON xfm.field_value=expts.project AND xea.element_name=expts.element_name   "
-            + " WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds) OR xea.xdat_user_xdat_user_id IN (:userIds)   "
-            + " GROUP BY xea.element_name";
+    private static final String QUERY_USER_READABLE_SUBJECT_COUNT    = "SELECT SUM(subjs.COUNT) AS ELEMENT_COUNT " +
+                                                                       "FROM xdat_element_access xea " +
+                                                                       "         LEFT JOIN xdat_usergroup grp ON xea.xdat_usergroup_xdat_usergroup_id = grp.xdat_usergroup_id " +
+                                                                       "         LEFT JOIN xdat_user_groupid gid ON grp.id = gid.groupid " +
+                                                                       "         LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                       "         LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.read_element = 1 AND 'xnat:subjectData/project' = xfm.field " +
+                                                                       "         JOIN (SELECT project, COUNT(id) FROM xnat_subjectData GROUP BY project UNION SELECT project, COUNT(subject_id) FROM xnat_projectParticipant GROUP BY project) subjs ON xfm.field_value IN (subjs.project, '*') " +
+                                                                       "WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds) " +
+                                                                       "   OR xea.xdat_user_xdat_user_id IN (:userIds)";
+    private static final String QUERY_USER_READABLE_EXPERIMENT_COUNT = "SELECT xea.element_name, SUM(expts.SUM) AS ELEMENT_COUNT " +
+                                                                       "FROM xdat_element_access xea " +
+                                                                       "         LEFT JOIN xdat_usergroup grp ON xea.xdat_usergroup_xdat_usergroup_id = grp.xdat_usergroup_id " +
+                                                                       "         LEFT JOIN xdat_user_groupid gid ON grp.id = gid.groupid " +
+                                                                       "         LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                       "         LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.read_element = 1 AND xea.element_name || '/project' = xfm.field " +
+                                                                       "         JOIN (SELECT project, element_name, SUM(COUNT) " +
+                                                                       "               FROM (SELECT project, element_name, COUNT(id) " +
+                                                                       "                     FROM xnat_experimentData " +
+                                                                       "                              LEFT JOIN xdat_meta_element xme ON xnat_experimentData.extension = xme.xdat_meta_element_id " +
+                                                                       "                     GROUP BY project, element_name " +
+                                                                       "                     UNION " +
+                                                                       "                     SELECT shr.project, element_name, COUNT(expt.id) " +
+                                                                       "                     FROM xnat_experimentData_share shr " +
+                                                                       "                              LEFT JOIN xnat_experimentData expt ON shr.sharing_share_xnat_experimentda_id = expt.id " +
+                                                                       "                              LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
+                                                                       "                     GROUP BY shr.project, element_name) SRCH " +
+                                                                       "               GROUP BY project, element_name) expts ON xfm.field_value IN (expts.project, '*') AND xea.element_name = expts.element_name " +
+                                                                       "WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds) " +
+                                                                       "   OR xea.xdat_user_xdat_user_id IN (:userIds) " +
+                                                                       "GROUP BY xea.element_name";
+    private static final String QUERY_USER_READABLE_SCAN_COUNT       = "SELECT xea.element_name, SUM(expts.SUM) AS ELEMENT_COUNT " +
+                                                                       "FROM xdat_element_access xea " +
+                                                                       "         LEFT JOIN xdat_usergroup grp ON xea.xdat_usergroup_xdat_usergroup_id = grp.xdat_usergroup_id " +
+                                                                       "         LEFT JOIN xdat_user_groupid gid ON grp.id = gid.groupid " +
+                                                                       "         LEFT JOIN xdat_field_mapping_set fms ON xea.xdat_element_access_id = fms.permissions_allow_set_xdat_elem_xdat_element_access_id " +
+                                                                       "         LEFT JOIN xdat_field_mapping xfm ON fms.xdat_field_mapping_set_id = xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND xfm.read_element = 1 AND xea.element_name || '/project' = xfm.field " +
+                                                                       "         JOIN (SELECT project, element_name, SUM(COUNT) " +
+                                                                       "               FROM (SELECT project, element_name, COUNT(id) " +
+                                                                       "                     FROM xnat_imageScandata " +
+                                                                       "                              LEFT JOIN xdat_meta_element xme ON xnat_imageScandata.extension = xme.xdat_meta_element_id " +
+                                                                       "                     GROUP BY project, element_name " +
+                                                                       "                     UNION " +
+                                                                       "                     SELECT shr.project, element_name, COUNT(expt.id) " +
+                                                                       "                     FROM xnat_imageScandata_share shr " +
+                                                                       "                              LEFT JOIN xnat_imageScandata expt ON shr.sharing_share_xnat_imagescandat_xnat_imagescandata_id = expt.xnat_imagescandata_id " +
+                                                                       "                              LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id " +
+                                                                       "                     GROUP BY shr.project, element_name) SRCH " +
+                                                                       "               GROUP BY project, element_name) expts ON xfm.field_value IN (expts.project, '*') AND xea.element_name = expts.element_name " +
+                                                                       "WHERE gid.groups_groupid_xdat_user_xdat_user_id IN (:userIds) " +
+                                                                       "   OR xea.xdat_user_xdat_user_id IN (:userIds) " +
+                                                                       "GROUP BY xea.element_name";
 
 
     private static final ResultSetExtractor<Map<String, Long>> ELEMENT_COUNT_EXTRACTOR = results -> {

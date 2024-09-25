@@ -121,7 +121,7 @@ public class SubscriptionDeliveryEntityServiceImpl extends AbstractHibernateEnti
     }
 
     @Override
-    public Integer count(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
+    public long count(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
         return getDao().count(projectId, subscriptionId, includeFilterMismatches == null || !includeFilterMismatches ? TimedEventStatusEntity.Status.OBJECT_FILTER_MISMATCH_HALT : null);
     }
 

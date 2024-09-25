@@ -23,7 +23,7 @@ import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.io.StopTagInputHandler;
 import org.dcm4che2.util.TagUtils;
-import org.jetbrains.annotations.NotNull;
+import javax.validation.constraints.NotNull;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dicomtools.filters.DicomFilterService;

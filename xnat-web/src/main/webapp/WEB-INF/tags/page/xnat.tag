@@ -837,14 +837,14 @@ ${bodyTop}
 
 <script type="text/javascript">
 
-    <c:import url="/xapi/siteConfig/buildInfo" var="buildInfo" scope="session"/>
-
-    extend(true, XNAT, {
-        data: {
-            siteConfig: {
-                buildInfo: ${buildInfo}
+    XNAT.xhr.get(serverRoot + '/xapi/siteConfig/buildInfo', function(data){
+        extend(true, XNAT, {
+            data: {
+                siteConfig: {
+                    buildInfo: data
+                }
             }
-        }
+        });
     });
 
     XNAT.version = XNAT.app.version = XNAT.data.siteConfig.buildInfo.version;

@@ -243,9 +243,29 @@ var XNAT = getObject(XNAT || {});
             classes: 'filter'
         });
 
+        const projectSelectCheckBox = spawn('input.project-select', {
+            type: 'checkbox',
+            name: 'project-select',
+            checked: false,
+            onclick: function () {
+                if ($(this).is(':checked')) {
+                    markChecked(true);
+                } else {
+                    markChecked(false);
+                }
+            }
+        });
+
+        function markChecked(checkedStatus) {
+            $.each(projectsList, function(i, project) {
+                let checkBoxElt = document.getElementById('assign-' + project.id);
+                checkBoxElt.checked = checkedStatus;
+            });
+        }
+
         $.each(columnIds, function(i, c) {
             if (labelMap[c].checkboxes) {
-                projectsTable.td("", "");
+                projectsTable.td("", spawn('div.center', [projectSelectCheckBox]));
             } else {
                 document.head.appendChild(spawn('style|type=text/css', 'tr.filter-' + c + '{display:none;}'));
                 var $filterInput = $.spawn('input.filter-data', {

@@ -248,9 +248,9 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
     @Override
     public synchronized void triggerArchive() {
-        // This method only runs on node assigned the direct archive task, and it is synchronized so it cannot overlap itself
-        // A session could still be sent into building/archiving twice if addl files were received after the build started,
-        // and this will be handled by sending the later files to the prearchive
+        // This method only runs on node assigned the direct archive task, and it is synchronized, so it cannot overlap
+        // itself. A session could still be sent into building/archiving twice if additional files were received after
+        // the build started, and this will be handled by sending the later files to the prearchive
         List<SessionData> sessions = directArchiveSessionHibernateService.findReadyForArchive();
         if(sessions == null) {
             return;

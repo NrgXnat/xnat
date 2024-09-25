@@ -9,9 +9,6 @@
 
 package org.nrg.xnat.services;
 
-import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
-import static org.nrg.xnat.utils.FileUtils.nodeToList;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -32,6 +29,7 @@ import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xnat.node.entities.XnatNodeInfo;
 import org.nrg.xnat.node.services.XnatNodeInfoService;
 import org.nrg.xnat.preferences.PluginOpenUrlsPreference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
@@ -45,7 +43,6 @@ import org.springframework.util.AntPathMatcher;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -60,16 +57,27 @@ import java.sql.Types;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
+import static org.nrg.xnat.utils.FileUtils.nodeToList;
+
 @Component
 @Slf4j
 public class XnatAppInfo {
-    @Inject
+    @Autowired
     public XnatAppInfo(final SiteConfigPreferences preferences, final ServletContext context, final Environment environment, final SerializerService serializerService, final JdbcTemplate template, final PluginOpenUrlsPreference openUrlsPref, final XnatNode node, final XnatNodeInfoService nodeInfoService) throws IOException {
         _preferences = preferences;
         _template = template;
@@ -276,7 +284,7 @@ public class XnatAppInfo {
                                 log.error("Error getting site config preferences.", e);
                             }
                         } else {
-                            log.warn("Preference " + preference + " was null.");
+                            log.warn("Preference {} was null.", preference);
                         }
                     }
                 }
@@ -775,7 +783,7 @@ public class XnatAppInfo {
 
             return refererUri;
         } catch (URISyntaxException e) {
-            log.info("Couldn't check referer URI because of a syntax exception: " + request.getRequestURL().toString(), e);
+            log.info("Couldn't check referer URI because of a syntax exception: {}", request.getRequestURL().toString(), e);
             return null;
         }
     }

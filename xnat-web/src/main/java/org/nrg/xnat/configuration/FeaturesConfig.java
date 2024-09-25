@@ -29,6 +29,10 @@ import static org.nrg.xdat.security.services.RoleServiceI.DEFAULT_ROLE_SERVICE;
 @Configuration
 @Slf4j
 public class FeaturesConfig {
+    public FeaturesConfig() {
+        log.info("Creating FeaturesConfig");
+    }
+
     @Bean
     public FeatureServiceI featureService(final SiteConfigPreferences preferences) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         final String serviceImpl = StringUtils.defaultIfBlank(preferences.getFeatureService(), DEFAULT_FEATURE_SERVICE);

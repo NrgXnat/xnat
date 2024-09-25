@@ -187,7 +187,7 @@ public class SearchFieldListResource extends SecureResource{
 
 	@Override
 	public Representation getRepresentation(Variant variant) {
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+		Hashtable<String,Object> params= new Hashtable<>();
 		params.put("title", "Search Fields");
 
 		params.put("element_name", elementName);
@@ -208,13 +208,8 @@ public class SearchFieldListResource extends SecureResource{
 
 				params.put("versions", ed.getVersionsJSON());
 
-				ArrayList displays = ed.getSortedFields();
-
-				Iterator iter = displays.iterator();
-
-				while (iter.hasNext())
-				{
-				   DisplayField df = (DisplayField)iter.next();
+				final List<DisplayField> displays = ed.getSortedFields();
+				for (final DisplayField df : displays) {
 				   if(df.isSearchable()){
 					   String id = df.getId();
 					   if (customFormDisplayFieldHelper.isCustomFieldDisplayField(id, en)) {

@@ -43,6 +43,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 @Api("XNAT DICOM SCP management API")
 @XapiRestController
@@ -50,9 +52,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Slf4j
 public class DicomSCPApi extends AbstractXapiRestController {
     @Autowired
-    public DicomSCPApi(final DicomSCPManager manager, final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
+    public DicomSCPApi(final DicomSCPManager manager, final UserManagementServiceI userManagementService,
+                       final RoleHolder roleHolder, final ObjectMapper objectMapper) {
         super(userManagementService, roleHolder);
         _manager = manager;
+        _objectMapper = objectMapper;
     }
 
     @ApiOperation(value = "Get map of all configured DICOM object identifiers and names.", notes = "This function returns a map of all DICOM object identifiers defined for the current system along with each identifier's readable name. The default identifier will be the first in the list.", response = String.class, responseContainer = "Map")
@@ -180,12 +184,17 @@ public class DicomSCPApi extends AbstractXapiRestController {
                                                            value = "{\"aeTitle\": \"TITLE\", \"port\": 8104, \"enabled\": true}"
                                                        )
                                                    }))
-                                                   @RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomScpInvalidAeTitleException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidRoutingExpressionException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException {
+                                                   @RequestBody final String instanceJson) throws NotFoundException, DICOMReceiverWithDuplicatePropertiesException, DicomScpInvalidAeTitleException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidRoutingExpressionException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException, JsonProcessingException{
         // Set the ID to the value specified in the REST call. If ID not specified on PUT, value will be zero, so we
         // need to make sure it's set to the proper value. If they submit it under the wrong ID well...
-        instance.setId(id);
-//        return _manager.updateDicomSCPInstance(instance);
-        return _manager.saveDicomSCPInstance(instance);
+        try {
+            DicomSCPInstance existing = _manager.findById(id);
+            DicomSCPInstance updatedInstance = _objectMapper.readerForUpdating(existing).readValue(instanceJson);
+            return _manager.update(updatedInstance, false);
+        } catch(Exception e) {
+            log.error("Encountered exception while updating dicom scp instance {}", id, e);
+            throw e;
+        }
     }
 
     @ApiOperation(value = "Deletes the DICOM SCP receiver definition object with the specified ID.", notes = "This call will stop the receiver if it's currently running.")
@@ -248,4 +257,5 @@ public class DicomSCPApi extends AbstractXapiRestController {
     }
 
     private final DicomSCPManager _manager;
+    private final ObjectMapper _objectMapper;
 }

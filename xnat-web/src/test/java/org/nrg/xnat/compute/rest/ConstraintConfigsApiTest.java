@@ -45,7 +45,6 @@ public class ConstraintConfigsApiTest {
     @Autowired private ConstraintConfigService mockConstraintConfigService;
 
     private MockMvc mockMvc;
-    private UserI mockUser;
     private Authentication mockAuthentication;
 
     private ConstraintConfig constraintConfig;
@@ -55,7 +54,7 @@ public class ConstraintConfigsApiTest {
         mockMvc = MockMvcBuilders.webAppContextSetup(wac).apply(springSecurity()).build();
 
         // Mock the user
-        mockUser = Mockito.mock(UserI.class);
+        final UserI mockUser = Mockito.mock(UserI.class);
         when(mockUser.getLogin()).thenReturn("mockUser");
         when(mockUser.getEmail()).thenReturn("mockUser@mockuser.com");
         when(mockUser.getPassword()).thenReturn("mockUserPassword");

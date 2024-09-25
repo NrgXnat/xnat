@@ -10,6 +10,8 @@ import java.util.List;
  * Extends the item cache interface to define it specifically for the project class.
  */
 public interface UserProjectCache extends UserItemCache<XnatProjectdata> {
+    String CACHE_NAME = "userProjectCache";
+
     /**
      * Indicates whether the specified user can delete the project identified by the specified ID or alias. Note that this returns false if
      * the project can't be found by the specified ID or alias or the username can't be located.

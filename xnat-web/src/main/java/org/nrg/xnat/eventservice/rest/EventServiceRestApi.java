@@ -21,8 +21,18 @@ import org.nrg.xnat.eventservice.events.EventServiceEvent;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionAccessException;
 import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.exceptions.UnauthorizedException;
-import org.nrg.xnat.eventservice.model.*;
-import org.nrg.xnat.eventservice.services.EventSchedulingService;
+import org.nrg.xnat.eventservice.model.Action;
+import org.nrg.xnat.eventservice.model.EventPropertyNode;
+import org.nrg.xnat.eventservice.model.EventServicePrefs;
+import org.nrg.xnat.eventservice.model.JsonPathFilterNode;
+import org.nrg.xnat.eventservice.model.ProjectSubscriptionCreator;
+import org.nrg.xnat.eventservice.model.SimpleEvent;
+import org.nrg.xnat.eventservice.model.Subscription;
+import org.nrg.xnat.eventservice.model.SubscriptionCreator;
+import org.nrg.xnat.eventservice.model.SubscriptionDelivery;
+import org.nrg.xnat.eventservice.model.SubscriptionDeliverySummary;
+import org.nrg.xnat.eventservice.model.SubscriptionDisplay;
+import org.nrg.xnat.eventservice.model.SubscriptionUpdate;
 import org.nrg.xnat.eventservice.services.EventService;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityPaginatedRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +60,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
-@SuppressWarnings("deprecation")
 @Slf4j
 @Api("API for the XNAT Event Service")
 @XapiRestController
@@ -236,7 +245,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered/count", method = GET)
     @ResponseBody
-    public Integer getDeliveredSubscriptionsCount(
+    public long getDeliveredSubscriptionsCount(
             final @RequestParam(value = "project", required = false) String projectId,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch) {
@@ -274,7 +283,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/delivered/count", method = GET)
     @ResponseBody
-    public Integer getDeliveredProjectSubscriptionsCount(
+    public long getDeliveredProjectSubscriptionsCount(
             final @PathVariable @Project String project,
             final @RequestParam(value = "subscription-id", required = false) Long subscriptionId,
             final @RequestParam(value = "include-filter-mismatch", required = false) Boolean includeFilterMismatch) {

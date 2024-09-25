@@ -15,6 +15,7 @@ import javax.persistence.*;
 import java.util.*;
 
 @Entity
+@NamedQueries({@NamedQuery(name = "getPortsWithEnabledInstances", query = "SELECT DISTINCT i.port FROM DicomSCPInstance i WHERE i.enabled = true")})
 public class DicomSCPInstance extends AbstractHibernateEntity {
     private String  _aeTitle;
     private int     _port;

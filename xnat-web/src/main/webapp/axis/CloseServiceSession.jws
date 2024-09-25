@@ -1,7 +1,0 @@
-
-public class CloseServiceSession{
-    public String execute(String session) throws java.rmi.RemoteException 
-    {
-        return org.nrg.xdat.services.CloseServiceSession.Execute(session);
-    }
-}

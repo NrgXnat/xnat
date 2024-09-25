@@ -45,15 +45,12 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
-import org.nrg.xnat.srb.XNATDirectory;
 
 /**
  * @author timo
  *
  */
-public class ArcGet extends
-org.apache.turbine.modules.screens.RawScreen
-{
+public class ArcGet extends org.apache.turbine.modules.screens.RawScreen {
     static org.apache.log4j.Logger logger = Logger.getLogger(ArcGet.class);
     
    /**
@@ -83,20 +80,18 @@ created in buildPDF.
             String processed = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("proc",data));
             String quality = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("quality",data));
             String unzip = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("unzip",data));
-            if (unzip==null){
+            if (unzip == null) {
                 unzip="false";
             }
             try {
                 UserI user = TurbineUtils.getUser(data);
-                if(user==null){
-                    if (username != null && password !=null)
-                    {
+                if(user == null) {
+                    if (username != null && password != null) {
                         user = Authenticator.Authenticate(new Authenticator.Credentials(username,password));
                         data.getSession().invalidate();
                     }
                 }
-                if (user != null)
-                {
+                if (user != null) {
                 	
                 		SecureAction.isCsrfTokenOk(data.getRequest(),false);
                 	
@@ -119,12 +114,10 @@ created in buildPDF.
                         FileWriter fw = new FileWriter(temp);
                         
                         ArrayList<XnatImagesessiondata> al = XnatImagesessiondata.getXnatImagesessiondatasByField("xnat:imageSessionData.ID",id,user,true);
-                        if (al.size()== 0)
-                        {
+                        if (al.size()== 0) {
                         	al = XnatImagesessiondata.getXnatImagesessiondatasByField("xnat:imageSessionData/label",id,user,true);
                         	
-                        	if (al.size()== 0)
-                            {
+                        	if (al.size()== 0) {
                                 fw.write("INVALID SESSION ID '" + id +"'.");
 
                                 fw.flush();
@@ -149,125 +142,21 @@ created in buildPDF.
                 		        hasOptions = false;
                 		    }
                                 if (mr.hasSRBData()){
-                                    mr.loadSRBFiles();
-                                    
-                                    if (!hasOptions){
-                                        XNATDirectory srbDIR = mr.getSRBDirectory();
-
-                                        zip.write(srbDIR);
-                                    }else{
-                                        if (raw == null){
-                                            //files = mr.getFileTracker().createHash(mr.getId());
-                                        }else{
-                                            if (raw.trim().equalsIgnoreCase("ALL")){
-                                                Hashtable fileGroups = mr.getFileGroups();
-                                                for (Enumeration e = fileGroups.keys(); e.hasMoreElements();) {
-                                                    String key = (String)e.nextElement();
-                                                    if (key.toLowerCase().contains("scan")){
-                                                        XNATDirectory filesA = (XNATDirectory)fileGroups.get(key);
-                                                        zip.write(filesA);
-                                                    }
-                                                }
-                                            }else{
-                                                Hashtable fileGroups = mr.getFileGroups();
-                                                raw = raw.trim();
-                                                ArrayList rawTypes = XftStringUtils.CommaDelimitedStringToArrayList(raw);
-                                                Iterator iter= rawTypes.iterator();
-                                                while (iter.hasNext())
-                                                {
-                                                    String rType = (String)iter.next();
-                                                    ArrayList<XnatImagescandata> scans= mr.getScansByType(rType);
-                                                    if (scans!=null && scans.size()>0)
-                                                    {
-                                                        for(XnatImagescandata scan: scans){
-                                                            String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(), "-", ""), "*", "AST");
-                                                            XNATDirectory filesA = (XNATDirectory)fileGroups.get("scan" +parsedScanID);
-                                                            zip.write(filesA);
-
-                                                            fw.write("Including " +filesA.getSize() + " Raw Files for " + scan.getId() +" (" + rType + ").\n");
-                                                        }
-                                                    }else{
-                                                        fw.write("No " +rType + " Raw Scans Found.\n");
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        
-                                        if (null == processed){
-                                            //files = mr.getFileTracker().createHash(mr.getId());
-                                        } else {
-                                            if (processed.trim().equalsIgnoreCase("ALL")){
-                                        	Hashtable fileGroups = mr.getFileGroups();
-                                        	for (final Map.Entry e : (Collection<Map.Entry>)fileGroups.entrySet()) {
-                                        	    final String key = (String)e.getKey();
-                                        	    if (key.toLowerCase().indexOf("recon")!=-1){
-                                        		XNATDirectory filesA = (XNATDirectory)e.getValue();
-                                        		zip.write(filesA);
-                                        	    }
-                                        	}
-                                            } else {
-                                        	Hashtable fileGroups = mr.getFileGroups();
-                                        	processed = processed.trim();
-                                        	for (final String rType : XftStringUtils.CommaDelimitedStringToArrayList(processed)) {
-                                        	    Collection<XnatReconstructedimagedata> scans= mr.getReconstructionsByType(rType);
-                                        	    if (scans.isEmpty()) {
-                                        		fw.write("No " +rType + " Processed Images Found.\n");
-                                        	    } else {
-                                        		for (final XnatReconstructedimagedata scan : scans) {
-                                        		    final String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
-                                        		    final XNATDirectory filesA = (XNATDirectory)fileGroups.get("recon" +parsedScanID);
-                                        		    zip.write(filesA);
-                                        		    fw.write("Including " +filesA.getSize() + " Processed Files for " + scan.getId() +" (" + rType + ").\n");                                                	    
-                                        		}
-                                        	    }
-                                        	}
-                                            }
-                                        }
-                                    }
-
-//                                    File tempFile = File.createTempFile("srbTransfer", "");
-//                                    tempFile.delete();
-//                                    File tempSession = new File(tempFile.getAbsolutePath() + File.separator + mr.getId());
-//                                    tempSession.mkdirs();
-                                    
-//                                    Iterator enumer = files.iterator();
-//                                    while(enumer.hasNext())
-//                                    {
-//                                        XNATDirectory key = (XNATDirectory)enumer.next();
-//                                        try {
-//                                            zip.write(key);
-//                                            successful++;
-//                                        } catch (Throwable e1) {
-//                                            logger.error("",e1);
-//                                        }
-//                                    }
-//                                    
-
-                                    
-                                    
-                                    fw.write("\nFiles loaded successfully.\n");
-                                    if (failed>0)
-                                    {
-                                        fw.write(failed +" file(s) failed.\n");
-                                    }
+                                    fw.write("\nFailed: The XNAT SRB file access is no longer supported.\n");
                                     fw.flush();
                                     fw.close();
-                                    
                                     zip.write("README.txt",temp);
-                                    
                                     // Complete the ZIP file
                                     zip.close();
-//                                    FileUtils.DeleteFile(tempSession);
-                                }else{
+                                } else {
                                     String archive = mr.getArchivePath();
                                     File archiveF = new File(archive);
-                                    if (archiveF.exists())
-                                    {
+                                    if (archiveF.exists()) {
                                         mr.loadLocalFiles();
                                         Hashtable files = new Hashtable();
-                                        if (!hasOptions){
+                                        if (!hasOptions) {
                                             files = mr.getFileTracker().createHash(mr.getArchiveDirectoryName());
-                                        }else{
+                                        } else {
                                             ArrayList images = new ArrayList();
                                             if (raw == null && (quality !=null && !quality.equalsIgnoreCase("ALL"))){
                                                 raw="ALL";

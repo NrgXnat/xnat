@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import edu.sdsc.grid.io.GeneralFile;
+import org.apache.commons.lang3.NotImplementedException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -31,7 +31,6 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
-import org.nrg.xnat.srb.XNATDirectory;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.UserUtils;
 
@@ -184,56 +183,24 @@ public class DownloadImages extends SecureAction {
                                 
                                 catalog.addEntries_entry(entry);
                             }else{
-                                XNATDirectory dir = (XNATDirectory)o;
-                                
-                                
-                                for (Map.Entry<String,GeneralFile> entryF: dir.getRelativeFiles().entrySet()) {
-                                    
-                                    String relative = entryF.getKey();
-                                    
-                                    if(relative.indexOf(mr.getArchiveDirectoryName())!=-1)
-                                    {
-                                        relative = relative.substring(relative.indexOf(mr.getArchiveDirectoryName()));
-                                    }
-                                        
-                                    String identifier = "/file/" + counter++;
-                                    CatEntryBean entry = new CatEntryBean();
-                                    entry.setUri(url + identifier);
-                                    
-                                    fileMap.put(identifier, entryF.getValue());
-                                    
-                                    entry.setName(entryF.getValue().getName());
-                                    CatalogUtils.setCatEntryBeanMetafields(entry, relative,
-                                            Long.toString(entryF.getValue().length()));
-                                    
-                                    CatEntryMetafieldBean meta = new CatEntryMetafieldBean();
-                                    meta.setMetafield(key);
-                                    meta.setName("GROUP");
-                                    entry.addMetafields_metafield(meta);
-                                    
-                                    catalog.addEntries_entry(entry);
-                                }
+                                throw new NotImplementedException("The XNAT SRB function is no longer supported.");
                             }
-                            
                         }
                     }
                 }
                 
 
                 Enumeration enumer = data.getParameters().keys();
-                while (enumer.hasMoreElements())
-                {
+                while (enumer.hasMoreElements()) {
                     String key = (String)enumer.nextElement();
                     String id = null;
-                    if (key.startsWith("file_"))
-                    {
+                    if (key.startsWith("file_")) {
                         id = key.substring(5);
-                    }else if (key.startsWith("dir_file_"))
-                    {
+                    } else if (key.startsWith("dir_file_")) {
                         id = key.substring(9);
                     }
                     
-                    if(id!=null){
+                    if(id!=null) {
                         int index = mr.getFileTracker().getIDIndex(id);
                         String relativePath = mr.getFileTracker().getRelativePath(index);
                         File f = mr.getFileTracker().getFile(index);
@@ -246,7 +213,7 @@ public class DownloadImages extends SecureAction {
                         String path = f.getAbsolutePath();
                         if (path.indexOf(File.separator + project.getId())!=-1){
                             path = path.substring(path.indexOf(File.separator + project.getId()) + 1);
-                        }else{
+                        } else {
                             if (path.indexOf(File.separator + mr.getArchiveDirectoryName())!=-1){
                                 path = path.substring(path.indexOf(File.separator + mr.getArchiveDirectoryName()) + 1);
                             }
@@ -276,52 +243,9 @@ public class DownloadImages extends SecureAction {
                 sw.flush();
                 sw.close();
             }else{
-                if (mr.hasSRBData()){
-                    long startTime1 = Calendar.getInstance().getTimeInMillis();
-                    mr.loadSRBFiles();
-
-                    log.info("Finished loading SRB Files: {} ms", System.currentTimeMillis() - startTime1);
-                    startTime1 = Calendar.getInstance().getTimeInMillis();
-                    
-                    ArrayList<XNATDirectory> al = new ArrayList<XNATDirectory>();
-                    Hashtable fileGroups = mr.getFileGroups();
-                    for (Enumeration e = fileGroups.keys(); e.hasMoreElements();) {
-                        String key = (String)e.nextElement();
-                        if (TurbineUtils.HasPassedParameter(key,data)){
-                            XNATDirectory files = (XNATDirectory)fileGroups.get(key);
-                            al.add(files);
-                        }
-                    }
-
-                    log.info("Finished file groups: {} ms", System.currentTimeMillis() - startTime1);
-                    startTime1 = Calendar.getInstance().getTimeInMillis();
-                                               
-                    ZipI zip = null;
-                    OutputStream outStream = response.getOutputStream();
-                    if (tar)
-                    {
-                        zip = new TarUtils();
-                    }else{
-                        zip = new ZipUtils();
-                    }
-                    
-                    zip.setOutputStream(outStream,COMPRESSION);
-                                    
-                    for(XNATDirectory sub : al){
-                        try {
-                            zip.write(sub);
-                            log.info("Loaded ({}): {} ms", sub.getPath(), System.currentTimeMillis() - startTime1);
-                            startTime1 = Calendar.getInstance().getTimeInMillis();
-                        } catch (Throwable e) {
-                            log.error("", e);
-                        }
-                    }
-                    
-                                          
-                    // Complete the ZIP file
-                    zip.close();
-                    
-                }else{
+                if (mr.hasSRBData()) {
+                    throw new NotImplementedException("The XNAT SRB function is no longer supported.");
+                } else {
                     ArrayList al = new ArrayList();
                     mr.loadLocalFiles();
 

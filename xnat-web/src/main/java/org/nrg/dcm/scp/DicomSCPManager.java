@@ -14,8 +14,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.id.*;
-import org.nrg.dcm.scp.daos.DicomSCPInstanceService;
 import org.nrg.dcm.scp.exceptions.*;
+import org.nrg.dcm.scp.services.DicomSCPInstanceService;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -32,8 +32,15 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -43,19 +50,20 @@ import java.util.stream.Collectors;
  * DicomSCPManager
  */
 @Service
+@Transactional
 @Slf4j
 public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
-    private final ApplicationContext _context;
-    private final Executor _executor;
-    private final DicomSCPStore      _dicomSCPStore;
-    private final DicomSCPInstanceService _dicomSCPInstanceService;
+    private final ApplicationContext                                  _context;
+    private final Executor                                            _executor;
+    private final DicomSCPStore                                       _dicomSCPStore;
+    private final DicomSCPInstanceService                             _dicomSCPInstanceService;
     private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _dicomObjectIdentifierMap;
-    private final String _primaryDicomObjectIdentifierBeanId;
+    private final String      _primaryDicomObjectIdentifierBeanId;
     private final Set<String> _dicomObjectIdentifierBeanIds;
-    private boolean _isEnableDicomReceiver;
+    private       boolean     _isEnableDicomReceiver;
 
-    private static final Pattern AE_TITLE_PATTERN = Pattern.compile("(?=[^\\\\]*[^\\s\\\\]+$)(?=^[^\\s\\\\]+[^\\\\]*)[ -~]{1,16}");
-    private static final String ENABLE_DICOM_RECEIVER_PREFERENCE = "enableDicomReceiver";
+    private static final Pattern AE_TITLE_PATTERN                 = Pattern.compile("(?=[^\\\\]*[^\\s\\\\]+$)(?=^[^\\s\\\\]+[^\\\\]*)[ -~]{1,16}");
+    private static final String  ENABLE_DICOM_RECEIVER_PREFERENCE = "enableDicomReceiver";
 
     @Autowired
     public DicomSCPManager(final DicomScpExecutor dicomScpExecutor,
@@ -66,9 +74,9 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
                            final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier,
                            final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
         super(receivedFileUserProvider, ENABLE_DICOM_RECEIVER_PREFERENCE);
-        _executor = dicomScpExecutor;
+        _executor                = dicomScpExecutor;
         _dicomSCPInstanceService = dicomSCPInstanceService;
-        _context = context;
+        _context                 = context;
 
         String primaryBeanId = null;
 
@@ -116,15 +124,13 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         return _executor;
     }
 
-    @Transactional
     public Map<String, DicomSCPInstance> getDicomSCPInstances() {
-        return _dicomSCPInstanceService.findAll().stream()
-                .collect(Collectors.toMap(ds -> String.valueOf(ds.getId()), Function.identity()));
+        return _dicomSCPInstanceService.getAllWithDisabled().stream()
+                                       .collect(Collectors.toMap(ds -> String.valueOf(ds.getId()), Function.identity()));
     }
 
-    @Transactional
     public List<DicomSCPInstance> getDicomSCPInstancesList() {
-        return _dicomSCPInstanceService.findAll();
+        return _dicomSCPInstanceService.getAllWithDisabled();
     }
 
     /**
@@ -133,18 +139,45 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      * is thrown.
      *
      * @param instance The instance to be set.
-     * @throws NotFoundException                               When an instance with the same ID does not already exist.
-     * @throws DICOMReceiverWithDuplicateTitleAndPortException When the new instance is enabled and there's
-     *                                                         already an enabled instance with the same AE title
-     *                                                         and port.
+     *
+     * @throws NotFoundException When an instance with the same ID does not already exist.
      */
-    @Transactional
-    public DicomSCPInstance updateDicomSCPInstance(final DicomSCPInstance instance) throws NotFoundException, IOException {
+    @SuppressWarnings("unused")
+    public DicomSCPInstance updateDicomSCPInstance(final DicomSCPInstance instance) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException {
         if (hasDicomSCPInstance(instance.getId())) {
-            _dicomSCPInstanceService.saveOrUpdate(instance);
+            _dicomSCPInstanceService.update(instance);
+            cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
             return instance;
         }
         throw new NotFoundException("Could not find DICOM SCP instance with ID " + instance.getId());
+    }
+
+    /**
+     * Updates the submitted {@link DicomSCPInstance DICOM SCP instance} definition. If the {@link DicomSCPInstance#getId()
+     * instance ID} matches an existing DICOM SCP instance, that instance will be updated. If not, the {@link NotFoundException}
+     *
+     * Enabled field is ignored while updating unlike the updateDicomSCPInstance method
+     *
+     * @param instance The instance to be set.
+     *
+     * @throws NotFoundException When an instance with the same ID does not already exist.
+     *
+     */
+    @SuppressWarnings("unused")
+    public DicomSCPInstance update(final DicomSCPInstance instance, final boolean lookup) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException {
+        if (instance == null) {
+            throw new NotFoundException("Instance is null");
+        }
+        if (lookup) {
+            DicomSCPInstance foundInstance = findById(instance.getId());
+            if (foundInstance == null) {
+                throw new NotFoundException("Could not find DICOM SCP instance with ID " + instance.getId());
+            }
+        }
+        log.debug("Updating Dicom SCP Instance {}", instance.getId());
+        _dicomSCPInstanceService.update(instance);
+        cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
+        return instance;
     }
 
     /**
@@ -152,19 +185,19 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      * instance ID} matches an existing DICOM SCP instance, that instance will be updated.
      *
      * @param instance The instance to be set.
+     *
      * @throws DICOMReceiverWithDuplicateTitleAndPortException When the new instance is enabled and there's
      *                                                         already an enabled instance with the same AE title
      *                                                         and port.
      */
-    @Transactional
     public DicomSCPInstance saveDicomSCPInstance(final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException, DicomScpInvalidRoutingExpressionException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException {
         final long instanceId = instance.getId();
         log.debug("Saving DicomScpInstance {}: {}", instanceId, instance);
 
-        if( ! hasKnownDicomObjectIdentifier(instance)) {
+        if (!hasKnownDicomObjectIdentifier(instance)) {
             throw new DicomScpUnknownDOIException(instance);
         }
-        if( isCustomRoutingRequestedButPrevented(instance)) {
+        if (isCustomRoutingRequestedButPrevented(instance)) {
             throw new DicomScpUnsupportedRoutingExpressionException(instance);
         }
 
@@ -172,7 +205,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
 
         // If existing and submitted are the same, then no change.
         if (!isNewInstance) {
-            DicomSCPInstance existing = _dicomSCPInstanceService.findById(instanceId);
+            DicomSCPInstance existing = _dicomSCPInstanceService.retrieve(instanceId);
             if (existing.equals(instance)) {
                 log.trace("No change found for existing DicomSCPInstance {}, just returning", instanceId);
                 return instance;
@@ -180,7 +213,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         }
 
         final String aeTitle = instance.getAeTitle();
-        final int port = instance.getPort();
+        final int    port    = instance.getPort();
 
         if (!AE_TITLE_PATTERN.matcher(aeTitle).matches()) {
             throw new DicomScpInvalidAeTitleException("Invalid AE-title: " + aeTitle);
@@ -242,27 +275,26 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     }
 
     private boolean hasKnownDicomObjectIdentifier(DicomSCPInstance instance) {
-        DicomObjectIdentifier doi = _dicomObjectIdentifierMap.get( instance.getIdentifier());
-        return doi != null;
+        return _dicomObjectIdentifierMap.get(instance.getIdentifier()) != null;
     }
 
     /**
      * Don't allow routing expressions to be enabled on a DOI that does not support them.
      * True if custom routing expressions are not supported by the instance but custom routing expressions are enabled.
-     * @param instance
+     *
+     * @param instance The DICOM SCP instance to test
+     *
      * @return true if custom routing configuration should be prevented.
      */
     private boolean isCustomRoutingRequestedButPrevented(DicomSCPInstance instance) {
-        DicomObjectIdentifier doi = _dicomObjectIdentifierMap.get( instance.getIdentifier());
-        return instance.isRoutingExpressionsEnabled() && !doi.isCustomRoutingSupported();
+        return instance.isRoutingExpressionsEnabled() && !_dicomObjectIdentifierMap.get(instance.getIdentifier()).isCustomRoutingSupported();
     }
 
-    @Transactional
     public void deleteDicomSCPInstances(final Set<Integer> ids) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException {
         log.debug("Got request to delete {} DicomSCPInstances: {}", ids.size(), StringUtils.join(ids, ", "));
-        final Map<String, DicomSCPInstance> instances = getDicomSCPInstances();
-        final Set<String> stringIds = ids.stream().map(id -> Integer.toString(id)).collect(Collectors.toSet());
-        final Set<String> invalidIds = stringIds.stream().filter(stringId -> !instances.containsKey(stringId)).collect(Collectors.toSet());
+        final Map<String, DicomSCPInstance> instances  = getDicomSCPInstances();
+        final Set<String>                   stringIds  = ids.stream().map(id -> Integer.toString(id)).collect(Collectors.toSet());
+        final Set<String>                   invalidIds = stringIds.stream().filter(stringId -> !instances.containsKey(stringId)).collect(Collectors.toSet());
         if (!invalidIds.isEmpty()) {
             throw new NotFoundException("Got request to delete DICOM SCP instances with ID(s): " + String.join(", ", stringIds) + ". The following IDs are invalid identifiers: " + String.join(", ", invalidIds));
         }
@@ -278,7 +310,6 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         cycleDicomSCPPorts(ports);
     }
 
-    @Transactional
     public void deleteDicomSCPInstance(final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException {
         try {
             deleteDicomSCPInstances(Collections.singleton(id));
@@ -291,46 +322,57 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      * Indicates whether a {@link DicomSCPInstance DICOM SCP instance} with the indicated ID exists.
      *
      * @param id The ID of the DICOM SCP instance to check.
+     *
      * @return Returns true if the instance exists, false otherwise.
      */
-    @Transactional
     public boolean hasDicomSCPInstance(final long id) {
         return _dicomSCPInstanceService.exists("id", id);
     }
 
     @Nonnull
-    @Transactional
     public DicomSCPInstance getDicomSCPInstance(final long id) throws NotFoundException {
+        DicomSCPInstance entity = _dicomSCPInstanceService.retrieve(id);
+        if (entity == null) {
+            throw new NotFoundException("DicomSCPInstance(id: " + id + ")");
+        }
+        // TODO: Huh. entity returned by retrieve is a proxy object. Dunno why.
+        // Do a useless read of a property so lazy loading happens in the context of this session.
+        log.debug("Got DICOM SCP instance with ID {}, AE title is {} and port is {}", id, entity.getAeTitle(), entity.getPort());
+        return entity;
+    }
+
+    /**
+     * Finds a Dicom SCP Instance by Id
+     * @param id - id of the Dicom SCP Instance to be found
+     * @return the DicomSCPInstance with the passed id or NotFoundException
+     * @throws NotFoundException
+     */
+
+    public DicomSCPInstance findById(final long id) throws NotFoundException {
         DicomSCPInstance entity = _dicomSCPInstanceService.findById(id);
         if (entity == null) {
             throw new NotFoundException("DicomSCPInstance(id: " + id + ")");
         }
-        // TODO: Huh. entity returned by findById is a proxy object. Dunno why.
-        // Do a useless read of a property so lazy loading happens in the context of this session.
-        String title = entity.getAeTitle();
+        log.debug("Got DICOM SCP instance with ID {}, AE title is {} and port is {}", id, entity.getAeTitle(), entity.getPort());
         return entity;
     }
 
     @Nonnull
-    @Transactional
     public DicomSCPInstance getDicomSCPInstance(final String aeTitle, final int port) throws NotFoundException {
         return _dicomSCPInstanceService.findByAETitleAndPort(aeTitle, port)
-                .orElseThrow(() -> new NotFoundException(String.format("No such instance with aeTitle '%s' and port %d", aeTitle, port)));
+                                       .orElseThrow(() -> new NotFoundException(String.format("No such instance with aeTitle '%s' and port %d", aeTitle, port)));
     }
 
-    @Transactional
     public List<DicomSCPInstance> getEnabledDicomSCPInstancesByPort(final int port) {
-        return _dicomSCPInstanceService.findAllEnabled().stream().filter(ds -> ds.getPort() == port).collect(Collectors.toList());
+        return _dicomSCPInstanceService.findByAllByPort(port);
     }
 
-    @Transactional
-    public DicomSCPInstance enableDicomSCPInstance(final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException, IOException {
+    public DicomSCPInstance enableDicomSCPInstance(final int id) throws NotFoundException {
         log.debug("Enabling DicomSCPInstance {}", id);
         return toggleEnabled(true, id);
     }
 
-    @Transactional
-    public DicomSCPInstance disableDicomSCPInstance(final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException, IOException {
+    public DicomSCPInstance disableDicomSCPInstance(final int id) throws NotFoundException {
         log.debug("Disabling DicomSCPInstance {}", id);
         return toggleEnabled(false, id);
     }
@@ -339,7 +381,6 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      * This starts all configured DICOM SCP instances, as long as the {@link SiteConfigPreferences#isEnableDicomReceiver()}
      * preference setting is set to true.
      */
-    @Transactional
     public List<Triple<String, Integer, Boolean>> start() throws UnknownDicomHelperInstanceException, DicomNetworkException {
         return _isEnableDicomReceiver ? cycleDicomSCPPorts(_dicomSCPInstanceService.getPortsWithEnabledInstances()) : Collections.emptyList();
     }
@@ -352,8 +393,9 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      * isCustomProcessing
      * Cache this because CStore asks this a lot.
      *
-     * @param aeTitle
-     * @param port
+     * @param aeTitle The AE title of the instance to check
+     * @param port    The port of the instance to check
+     *
      * @return false if SCP instance is unknown
      */
     public boolean isCustomProcessing(String aeTitle, int port) {
@@ -365,8 +407,9 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      * isDirectArchive
      * Cache this because CStore asks this a lot.
      *
-     * @param aeTitle
-     * @param port
+     * @param aeTitle The AE title of the instance to check
+     * @param port    The port of the instance to check
+     *
      * @return false if SCP instance is unknown
      */
     public boolean isDirectArchive(String aeTitle, int port) {
@@ -378,8 +421,9 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      * isAnonymizationEnabled
      * Cache this because CStore asks this a lot.
      *
-     * @param aeTitle
-     * @param port
+     * @param aeTitle The AE title of the instance to check
+     * @param port    The port of the instance to check
+     *
      * @return false if SCP instance is unknown
      */
     public boolean isAnonymizationEnabled(String aeTitle, int port) {
@@ -390,9 +434,9 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     // for API
     public Map<String, String> getDicomObjectIdentifierBeans() {
         return _dicomObjectIdentifierBeanIds.stream()
-                .filter(_dicomObjectIdentifierMap::containsKey)
-                .collect(Collectors.toMap(java.util.function.Function.identity(),
-                        beanId -> _dicomObjectIdentifierMap.get(beanId) instanceof CompositeDicomObjectIdentifier ? ((CompositeDicomObjectIdentifier) _dicomObjectIdentifierMap.get(beanId)).getName() : beanId));
+                                            .filter(_dicomObjectIdentifierMap::containsKey)
+                                            .collect(Collectors.toMap(java.util.function.Function.identity(),
+                                                                      beanId -> _dicomObjectIdentifierMap.get(beanId) instanceof CompositeDicomObjectIdentifier ? ((CompositeDicomObjectIdentifier) _dicomObjectIdentifierMap.get(beanId)).getName() : beanId));
     }
 
     public Map<String, DicomObjectIdentifier<XnatProjectdata>> getDicomObjectIdentifiers() {
@@ -416,14 +460,15 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     /**
      * getDicomObjectIdentifier
      *
-     * @param aeTitle
-     * @param port
+     * @param aeTitle The AE title of the instance to check
+     * @param port    The port of the instance to check
+     *
      * @return a DOI for the specified instance or null if the instance does not exist.
      */
     @Nullable
     public DicomObjectIdentifier<XnatProjectdata> getDicomObjectIdentifier(final String aeTitle, int port) {
         DicomSCPInstance instance = _dicomSCPInstanceService.findByAETitleAndPort(aeTitle, port)
-                .orElseThrow(() -> new IllegalArgumentException(String.format("Unknown DicomSCPInstances with aeTitle '%s' and port %d", aeTitle, port)));
+                                                            .orElseThrow(() -> new IllegalArgumentException(String.format("Unknown DicomSCPInstances with aeTitle '%s' and port %d", aeTitle, port)));
         DicomObjectIdentifier<XnatProjectdata> doi = _dicomObjectIdentifierMap.get(instance.getIdentifier());
         return doi instanceof ReceiverAwareIdentifier ?
                 ((ReceiverAwareIdentifier<? extends DicomObjectIdentifier<XnatProjectdata>>) doi).forInstance(instance) :
@@ -456,9 +501,8 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         }
     }
 
-    @Transactional
     public Set<Integer> getPortsWithEnabledInstances() {
-        return _dicomSCPInstanceService.findAllEnabled().stream().map(DicomSCPInstance::getPort).collect(Collectors.toSet());
+        return _dicomSCPInstanceService.getPortsWithEnabledInstances();
     }
 
     protected DicomObjectIdentifier<XnatProjectdata> getIdentifier(final String identifier) throws UnknownDicomHelperInstanceException {
@@ -485,7 +529,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     }
 
     @Nonnull
-    private DicomSCPInstance toggleEnabled(final boolean enabled, final int id) throws NotFoundException, IOException {
+    private DicomSCPInstance toggleEnabled(final boolean enabled, final int id) throws NotFoundException {
         log.debug("Handling request to {} instance {}", enabled ? "enable" : "disable", id);
         final DicomSCPInstance instance = getDicomSCPInstance(id);
         if (enabled == instance.isEnabled()) {

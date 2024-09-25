@@ -62,6 +62,10 @@ public class PropertiesConfig {
     public static final List<String> CONFIG_PATHS      = Collections.unmodifiableList(Arrays.asList("", XNAT_CONF_FILE, Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(EXT_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString()));
     public static final List<String> NODE_CONFIG_PATHS = Collections.unmodifiableList(Arrays.asList("", NODE_CONF_FILE, Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(EXT_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString()));
 
+    public PropertiesConfig() {
+        log.info("Creating PropertiesConfig");
+    }
+
     @Bean
     public static PropertySourcesPlaceholderConfigurer properties(final Environment environment) {
         _environment = environment;

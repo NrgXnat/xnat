@@ -8,7 +8,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.dcm4che2.io.StopTagInputHandler;
-import org.jetbrains.annotations.NotNull;
+import javax.validation.constraints.NotNull;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dicomtools.utilities.DicomUtils;

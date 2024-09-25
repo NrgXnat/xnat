@@ -11,6 +11,7 @@ package org.nrg.xnat.task.entities;
 
 import java.util.Date;
 
+import javax.persistence.Cacheable;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
@@ -18,8 +19,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.node.entities.XnatNodeInfo;
 
@@ -28,7 +27,7 @@ import org.nrg.xnat.node.entities.XnatNodeInfo;
  */
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"taskId", "xnatNodeInfoId"}))
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+@Cacheable
 public class XnatTaskInfo extends AbstractHibernateEntity {
 	
 	/** The Constant serialVersionUID. */

@@ -2,10 +2,8 @@ package org.nrg.xnat.customforms.service.impl;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Hibernate;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.xapi.model.users.User;
 import org.nrg.xnat.customforms.daos.CustomVariableAppliesToRepository;
 import org.nrg.xnat.customforms.pojo.UserOptionsPojo;
 import org.nrg.xnat.customforms.service.CustomVariableAppliesToService;

@@ -10,13 +10,14 @@
 package org.nrg.xnat.services.archive.impl.hibernate;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
+import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,47 +26,35 @@ import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.St
 
 @Repository
 public class DicomInboxImportRequestDAO extends AbstractHibernateDAO<DicomInboxImportRequest> {
-    @SuppressWarnings("unchecked")
-    @Transactional
-    @Override
-    public DicomInboxImportRequest findById(final long id) {
-        final Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.eq("id", id));
-        final List<DicomInboxImportRequest> reqs = criteria.list();
-        if (reqs != null && !reqs.isEmpty()) {
-            return reqs.get(0);
-        } else {
-            return null;
-        }
-    }
+    public static final String STATUS   = "status";
+    public static final String USERNAME = "username";
 
     @Transactional
     public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequests() {
-        return findDicomInboxInportRequests(null, true);
+        return findDicomInboxImportRequests(null, true);
     }
 
     @Transactional
     public List<DicomInboxImportRequest> findAllOutstandingDicomInboxImportRequestsForUser(final String username) {
-        return findDicomInboxInportRequests(username, true);
+        return findDicomInboxImportRequests(username, true);
     }
 
     @Transactional
     public List<DicomInboxImportRequest> findAllDicomInboxImportRequestsForUser(final String username) {
-        return findDicomInboxInportRequests(username, false);
+        return findDicomInboxImportRequests(username, false);
     }
 
-    private List<DicomInboxImportRequest> findDicomInboxInportRequests(final String username, final boolean limitToOutstanding) {
-        final Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
-        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+    private List<DicomInboxImportRequest> findDicomInboxImportRequests(final String username, final boolean limitToOutstanding) {
+        List<Predicate>                       predicates = new ArrayList<>();
+        QueryBuilder<DicomInboxImportRequest> builder    = newQueryBuilder();
         if (limitToOutstanding) {
-            criteria.add(Restrictions.not(Restrictions.in("status", NOT_OUTSTANDING_VALUES)));
+            predicates.add(builder.not(builder.in(STATUS, NOT_OUTSTANDING_VALUES)));
         }
         if (StringUtils.isNotBlank(username)) {
-            criteria.add(Restrictions.eq("username", username));
+            predicates.add(builder.eq(USERNAME, username));
         }
-        //noinspection unchecked
-        return (List<DicomInboxImportRequest>) criteria.list();
+        builder.where(builder.and(predicates));
+        return builder.getResults();
     }
 
     private static final List<DicomInboxImportRequest.Status> NOT_OUTSTANDING_VALUES = Arrays.asList(Failed, Completed);

@@ -1,5 +1,6 @@
 package org.nrg.xnat.services.archive;
 
+import org.nrg.pipeline.PipelineLaunchParameters;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xft.security.UserI;
 
@@ -27,4 +28,5 @@ public interface PipelineService {
      * @return Returns <b>true</b> if the AutoRun pipeline was successfully launched, <b>false</b> otherwise
      */
     boolean launchAutoRun(XnatExperimentdata experiment, boolean suppressEmail, UserI user, boolean waitFor);
+
 }

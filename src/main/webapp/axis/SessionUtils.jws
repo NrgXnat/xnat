@@ -1,8 +1,0 @@
-
-public class SessionUtils{
-
-    public java.util.ArrayList getSessionScanIds(String _id) throws java.rmi.RemoteException
-    {
-        return org.nrg.xnat.services.SessionUtils.GetSessionScanIds(_id);
-    }
-}

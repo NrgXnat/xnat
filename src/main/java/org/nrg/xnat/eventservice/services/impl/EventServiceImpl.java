@@ -499,7 +499,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Integer getSubscriptionDeliveriesCount(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
+    public long getSubscriptionDeliveriesCount(String projectId, Long subscriptionId, Boolean includeFilterMismatches) {
         return subscriptionDeliveryEntityService.count(projectId, subscriptionId, includeFilterMismatches);
     }
 

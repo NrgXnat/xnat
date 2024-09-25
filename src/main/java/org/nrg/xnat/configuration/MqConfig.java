@@ -67,6 +67,10 @@ public class MqConfig {
     @Value("${amq.usage.store:0}")
     private long _storeUsage;
 
+    public MqConfig() {
+        log.info("Creating MqConfig");
+    }
+
     @Bean
     @Primary
     public Destination defaultRequest() {

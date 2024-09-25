@@ -9,7 +9,7 @@
 
 package org.nrg.xapi.rest;
 
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;

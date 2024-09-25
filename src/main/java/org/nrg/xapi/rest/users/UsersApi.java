@@ -21,12 +21,17 @@ import org.nrg.xapi.exceptions.*;
 import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.model.users.UserAuth;
 import org.nrg.xapi.model.users.UserFactory;
-import org.nrg.xapi.rest.*;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AuthDelegate;
+import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xapi.rest.UserGroup;
+import org.nrg.xapi.rest.Username;
 import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xnat.security.provider.XnatAuthenticationProviderApiPojo;
 import org.nrg.xdat.security.services.PermissionsServiceI;
@@ -37,15 +42,19 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserChangeRequestService;
+import org.nrg.xdat.services.XdatUserAuthService;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.XnatProviderManager;
+import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.security.authentication.ProviderNotFoundException;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -57,7 +66,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.MediaType.*;
@@ -80,7 +88,8 @@ public class UsersApi extends AbstractXapiRestController {
                     final NamedParameterJdbcTemplate jdbcTemplate,
                     final SiteConfigPreferences siteConfig,
                     final UserChangeRequestService userChangeRequestService,
-                    final XnatProviderManager manager) {
+                    final XnatProviderManager manager,
+                    final XdatUserAuthService service) {
         super(userManagementService, roleHolder);
         _sessionRegistry = sessionRegistry;
         _aliasTokenService = aliasTokenService;
@@ -90,6 +99,7 @@ public class UsersApi extends AbstractXapiRestController {
         _siteConfig = siteConfig;
         _userChangeRequestService = userChangeRequestService;
         _manager = manager;
+        _service = service;
     }
 
     @ApiOperation(value = "Get list of users.",
@@ -311,6 +321,7 @@ public class UsersApi extends AbstractXapiRestController {
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."));
 
             if (BooleanUtils.isTrue(model.getVerified()) && BooleanUtils.isTrue(model.getEnabled())) {
+                setupAuthoriation(user);
                 //When a user is enabled and verified, send a new user email
                 try {
                     AdminUtils.sendNewUserEmailMessage(user.getUsername(), user.getEmail());
@@ -320,7 +331,7 @@ public class UsersApi extends AbstractXapiRestController {
             }
             return _factory.getUser(user);
         } catch (Exception e) {
-            throw new UserInitException("Error occurred creating user " + user.getLogin(), e);
+            throw new UserInitException("Error occurred creating user " + user.getLogin() + " Cause: " + e.getMessage(), e);
         }
     }
 
@@ -406,9 +417,14 @@ public class UsersApi extends AbstractXapiRestController {
                 user.setLastname(model.getLastName());
                 isDirty.set(true);
             }
-            if (model.getAuthorization() != null && !model.getAuthorization().equals(user.getAuthorization())) {
-                user.setAuthorization(model.getAuthorization());
-                isDirty.set(true);
+            if (model.getAuthorization() != null) {
+                if (!hasValidAuthorizationInformation(model)) {
+                    throw new XapiException(HttpStatus.BAD_REQUEST, "Invalid authorization information");
+                }
+                if (!model.getAuthorization().equals(user.getAuthorization())) {
+                    user.setAuthorization(model.getAuthorization());
+                    isDirty.set(true);
+                }
             }
             final Boolean enabled = model.getEnabled();
             final Boolean verified = model.getVerified();
@@ -447,6 +463,7 @@ public class UsersApi extends AbstractXapiRestController {
                 getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Modified, "", ""));
             }
             if (BooleanUtils.toBooleanDefaultIfNull(model.getVerified(), false) && BooleanUtils.toBooleanDefaultIfNull(model.getEnabled(), false) && (!oldEnabledFlag || !oldVerifiedFlag)) {
+                setupAuthoriation(user);
                 //When a user is enabled and verified, send a new user email
                 try {
                     AdminUtils.sendAdminEmail("User " + user.getUsername() + " updated", "The user account " + user.getUsername() + " was updated by the user " + getSessionUser().getUsername() + ".");
@@ -912,6 +929,9 @@ public class UsersApi extends AbstractXapiRestController {
         } catch (UserNotFoundException ignored) {
             // This is actually what we want.
         }
+        if (model.getAuthorization() !=null && !hasValidAuthorizationInformation(model)) {
+            throw new DataFormatException("Invalid authorization information");
+        }
     }
 
     private int getLastModifiedInterval() {
@@ -927,6 +947,50 @@ public class UsersApi extends AbstractXapiRestController {
             throw new DataFormatException("Invalid username");
         }
         return User.getUser(_jdbcTemplate, username);
+    }
+
+    private void setupAuthoriation(final UserI user) throws ProviderNotFoundException, UserInitException, UserNotFoundException {
+        if (user == null) {
+            return;
+        }
+        final String username = user.getUsername();
+        if (Users.isGuest(username)) {
+            return;
+        }
+        final UserAuthI userAuth = user.getAuthorization();
+        if (userAuth != null && hasValidAuthorizationInformation(user)) {
+            final XdatUserAuth auth = new XdatUserAuth(userAuth.getAuthUser(), userAuth.getAuthMethod(), userAuth.getAuthMethodId());
+            auth.setXdatUsername(username);
+            try {
+                _service.create(auth);
+            } catch(Exception e) {
+                log.error("Unable to create authorization for the user", e);
+                throw e;
+            }
+        }
+    }
+
+    private boolean hasValidAuthorizationInformation(final UserI user) {
+        return hasValidAuthorizationInformation(user.getAuthorization());
+    }
+
+    private boolean hasValidAuthorizationInformation(final User user) {
+        return hasValidAuthorizationInformation(user.getAuthorization());
+    }
+
+    private boolean hasValidAuthorizationInformation(final UserAuthI userAuth) {
+        if (userAuth != null) {
+            final String authUser = userAuth.getAuthUser();
+            final String authMethod = userAuth.getAuthMethod();
+            final String authProviderId = userAuth.getAuthMethodId();
+            if (authUser != null && authMethod != null && authProviderId != null) {
+                final XnatAuthenticationProvider provider = _manager.getProvider(authMethod, authProviderId);
+                if (provider != null) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static class SessionInfoToIdFunction implements Function<SessionInformation, String> {
@@ -956,4 +1020,5 @@ public class UsersApi extends AbstractXapiRestController {
     private final SiteConfigPreferences      _siteConfig;
     private final UserChangeRequestService   _userChangeRequestService;
     private final XnatProviderManager        _manager;
+    private final XdatUserAuthService        _service;
 }

@@ -10,7 +10,7 @@
 package org.nrg.xapi.rest;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import javax.validation.constraints.NotNull;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;

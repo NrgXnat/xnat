@@ -1,9 +1,0 @@
-$data.setLayoutTemplate("/Popup.vm")
-
-<form name="BuildSpecification" method="post" action="$link.setAction("BuildPipelineActions")" >
-
-Click on Reload to reload the BuildSpecification document
-
- <input type="submit" name="eventSubmit_doReload" value="Refresh" />
- 
- </form>

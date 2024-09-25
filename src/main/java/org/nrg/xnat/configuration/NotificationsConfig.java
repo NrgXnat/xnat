@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.mail.services.EmailRequestLogService;
@@ -33,7 +34,12 @@ import java.util.Map;
 
 @Configuration
 @ComponentScan({"org.nrg.mail.services", "org.nrg.notify.services.impl", "org.nrg.notify.daos"})
+@Slf4j
 public class NotificationsConfig {
+    public NotificationsConfig() {
+        log.info("Creating NotificationsConfig");
+    }
+
     @Bean
     public TriggerTask resetEmailRequests(final EmailRequestLogService service) {
         return new TriggerTask(new ResetEmailRequests(service), new PeriodicTrigger(900000));

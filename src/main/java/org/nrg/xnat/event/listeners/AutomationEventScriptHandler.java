@@ -182,17 +182,12 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
         if (shouldSkipEvent(eventData)) {
             return;
         }
-
         handleAsPersistentEventIfMarkedPersistent(eventData);
-
         final Map<String, String> methodInvocationResults = invokeMethods(eventData);
-
         automationService.incrementEventId(eventData.getExternalId(), eventData.getSrcEventClass(), eventData.getEventId());
-
         for (final Map.Entry<String, String> entry : methodInvocationResults.entrySet()) {
             automationService.addValueToStoredFilters(eventData.getExternalId(), eventData.getSrcEventClass(), entry.getKey(), entry.getValue());
         }
-
         launchScripts(eventData, methodInvocationResults);
     }
 

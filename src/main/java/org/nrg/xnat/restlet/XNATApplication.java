@@ -141,10 +141,6 @@ public class XNATApplication extends Application {
     private void addRoutes(final Router router) {
         attachArchiveURI(router, "/investigators", InvestigatorListResource.class);
 
-        //BEGIN ---- Pipelines section
-        attachArchiveURI(router, "/projects/{PROJECT_ID}/pipelines", ProjectPipelineListResource.class);
-        attachArchiveURI(router, "/projects/{PROJECT_ID}/pipelines/{STEP_ID}/experiments/{EXPT_ID}", ProjtExptPipelineResource.class);
-        //END ---- Pipelines section
         attachArchiveURI(router, "/config/edit/image/dicom/{RESOURCE}", DicomEdit.class);
         attachArchiveURI(router, "/config/edit/projects/{PROJECT_ID}/image/dicom/{RESOURCE}", DicomEdit.class);
         //attachArchiveURI(router, "/config/edit/studies/{STUDY_ID}/image/dicom/{RESOURCE}", DicomEdit.class); //Not yet supported

@@ -1,8 +1,6 @@
 package org.nrg.xnat.services.messaging.archive;
 
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 
@@ -15,7 +13,7 @@ import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.St
 @Slf4j
 @Entity
 @Table
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+@Cacheable
 public class DicomInboxImportRequest extends AbstractHibernateEntity {
     public static final String IMPORT_REQUEST_ID = "importRequestId";
 

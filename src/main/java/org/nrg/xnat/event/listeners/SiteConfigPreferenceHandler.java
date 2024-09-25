@@ -13,6 +13,7 @@ import org.nrg.prefs.events.AbstractPreferenceHandler;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
 import org.nrg.xdat.preferences.PreferenceEvent;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.bus.EventBus;
 
@@ -25,7 +26,7 @@ public class SiteConfigPreferenceHandler extends AbstractPreferenceHandler<Prefe
     private       String                        _toolId  = SiteConfigPreferences.SITE_CONFIG_TOOL_ID;
     private final List<PreferenceHandlerMethod> _methods = new ArrayList<>();
 
-    @Inject
+    @Autowired
     public SiteConfigPreferenceHandler(final EventBus eventBus) {
         super(eventBus);
     }

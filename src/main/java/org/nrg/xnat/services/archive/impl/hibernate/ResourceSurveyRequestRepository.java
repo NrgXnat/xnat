@@ -2,14 +2,14 @@ package org.nrg.xnat.services.archive.impl.hibernate;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
-import org.nrg.framework.generics.GenericUtils;
+import org.nrg.framework.ajax.PaginatedRequest;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
+import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.nrg.xnat.entities.ResourceSurveyRequest;
 import org.springframework.stereotype.Repository;
 
+import javax.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +20,14 @@ import java.util.stream.Collectors;
 @Repository
 @Slf4j
 public class ResourceSurveyRequestRepository extends AbstractHibernateDAO<ResourceSurveyRequest> {
+    public static final  String PROPERTY_ID            = "id";
     private static final String PROPERTY_PROJECT_ID    = "projectId";
     private static final String PROPERTY_EXPERIMENT_ID = "experimentId";
     private static final String PROPERTY_REQUEST_TIME  = "requestTime";
+    public static final  String PROPERTY_RESOURCE_ID   = "resourceId";
+    public static final  String PROPERTY_CLOSING_DATE  = "closingDate";
+    public static final  String PROPERTY_STATUS        = "rsnStatus";
+    public static final  String PROPERTY_TIMESTAMP     = "timestamp";
 
     public ResourceSurveyRequestRepository() {
         super();
@@ -30,9 +35,9 @@ public class ResourceSurveyRequestRepository extends AbstractHibernateDAO<Resour
     }
 
     public List<ResourceSurveyRequest> findByIds(final List<Long> requestIds) {
-        final Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.in("id", requestIds));
-        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
+        QueryBuilder<ResourceSurveyRequest> builder = newQueryBuilder();
+        builder.where(builder.and(builder.in(PROPERTY_ID, requestIds)));
+        return builder.getResults();
     }
 
     public Optional<ResourceSurveyRequest> findByResourceId(final int resourceId) {
@@ -44,30 +49,28 @@ public class ResourceSurveyRequestRepository extends AbstractHibernateDAO<Resour
     }
 
     public List<ResourceSurveyRequest> findByResourceIds(final List<Integer> resourceIds) {
-        final Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.in("resourceId", resourceIds));
-        criteria.add(Restrictions.isNull("closingDate"));
-        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
+        QueryBuilder<ResourceSurveyRequest> builder = newQueryBuilder();
+        builder.where(builder.and(builder.in(PROPERTY_RESOURCE_ID, resourceIds), builder.isNull(PROPERTY_CLOSING_DATE)));
+        return builder.getResults();
     }
 
     public Optional<ResourceSurveyRequest> findByResourceIdAndStatus(final int resourceId, final ResourceSurveyRequest.Status status) {
-        final Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.eq("resourceId", resourceId));
+        QueryBuilder<ResourceSurveyRequest> builder    = newQueryBuilder();
+        List<Predicate>                     predicates = new ArrayList<>();
+        predicates.add(builder.eq(PROPERTY_RESOURCE_ID, resourceId));
         if (status != null) {
-            criteria.add(Restrictions.eq("rsn_status", status));
+            predicates.add(builder.eq(PROPERTY_STATUS, status));
         }
-        criteria.addOrder(Order.desc("timestamp")).setMaxResults(1);
-        return Optional.ofNullable((ResourceSurveyRequest) criteria.uniqueResult());
+        builder.where(builder.and(predicates));
+        builder.orderBy(desc(PROPERTY_TIMESTAMP));
+        return builder.getResult();
     }
 
     public List<ResourceSurveyRequest> findAllByResourceIdAndStatus(final int resourceId, final ResourceSurveyRequest.Status status) {
-        final Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.eq("resourceId", resourceId));
-        if (status != null) {
-            criteria.add(Restrictions.eq("rsn_status", status));
-        }
-        criteria.addOrder(Order.desc("timestamp"));
-        return GenericUtils.convertToTypedList(criteria.list(), ResourceSurveyRequest.class);
+        return findByProperties(status != null
+                                ? parameters(PROPERTY_RESOURCE_ID, resourceId, PROPERTY_STATUS, status)
+                                : parameters(PROPERTY_RESOURCE_ID, resourceId),
+                                Pair.of(PaginatedRequest.SortDir.DESC, PROPERTY_TIMESTAMP));
     }
 
     public List<ResourceSurveyRequest> findAllByProjectId(final String projectId) {
@@ -112,9 +115,9 @@ public class ResourceSurveyRequestRepository extends AbstractHibernateDAO<Resour
      * @return A pair with a list of distinct project IDs and a list of any invalid request IDs.
      */
     public Pair<List<String>, List<Long>> findRequestProjects(final List<Long> requestIds) {
-        final Map<Long, String> resources = GenericUtils.convertToTypedList(getSession().getNamedQuery("findRequestIdAndProject").setParameterList("requestIds", requestIds).list(), Object.class)
-                                                        .stream()
-                                                        .collect(Collectors.toMap(object -> (Long) ((Object[]) object)[0], object -> (String) ((Object[]) object)[1]));
+        final Map<Long, String> resources = createNamedQuery("findRequestIdAndProject", Object[].class).setParameter("requestIds", requestIds)
+                .getResultStream()
+                .collect(Collectors.toMap(object -> (Long) object[0], object -> (String) object[1]));
         return Pair.of(resources.values().stream().distinct().sorted().collect(Collectors.toList()), requestIds.stream().distinct().filter(requestId -> !resources.containsKey(requestId)).collect(Collectors.toList()));
     }
 
@@ -127,9 +130,9 @@ public class ResourceSurveyRequestRepository extends AbstractHibernateDAO<Resour
      * @return A pair with a list of request IDs and a list of any invalid resource IDs.
      */
     public Pair<Map<Long, Integer>, List<Integer>> findResourceRequestIds(final List<Integer> resourceIds) {
-        final Map<Long, Integer> resources = GenericUtils.convertToTypedList(getSession().getNamedQuery("findRequestAndResourceId").setParameterList("resourceIds", resourceIds).list(), Object.class)
-                                                         .stream()
-                                                         .collect(Collectors.toMap(object -> (Long) ((Object[]) object)[0], object -> (Integer) ((Object[]) object)[1]));
+        final Map<Long, Integer> resources = createNamedQuery("findRequestAndResourceId", Object[].class).setParameterList("resourceIds", resourceIds)
+                .getResultStream()
+                .collect(Collectors.toMap(object -> (Long) object[0], object -> (Integer) object[1]));
         return Pair.of(resources, resourceIds.stream().distinct().filter(resourceId -> !resources.containsValue(resourceId)).collect(Collectors.toList()));
     }
 
@@ -141,14 +144,17 @@ public class ResourceSurveyRequestRepository extends AbstractHibernateDAO<Resour
      * @return A list of IDs for open requests in the specified project.
      */
     public List<Long> findResourceRequestIds(final String projectId) {
-        return GenericUtils.convertToTypedList(getSession().getNamedQuery("findRequestsForProject").setString("projectId", projectId).list(), Long.class);
+        return  createNamedQuery("findRequestsForProject", Long.class).setParameter("projectId", projectId).getResultStream().collect(Collectors.toList());
     }
 
+
     private List<ResourceSurveyRequest> findByObjectIdAndStatusAndOpen(final String property, final String objectId, final boolean openOnly, final List<ResourceSurveyRequest.Status> statuses) {
-        final Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.eq(property, objectId));
+        QueryBuilder<ResourceSurveyRequest> builder = newQueryBuilder();
+
+        final List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.eq(property, objectId));
         if (openOnly) {
-            criteria.add(Restrictions.isNull("closingDate"));
+            predicates.add(builder.isNull(PROPERTY_CLOSING_DATE));
         }
         switch (Optional.ofNullable(statuses).orElseGet(Collections::emptyList).size()) {
             case 0:
@@ -160,14 +166,15 @@ public class ResourceSurveyRequestRepository extends AbstractHibernateDAO<Resour
                 if (log.isDebugEnabled()) {
                     log.debug("Returning {} requests with status {}  where {} == {}", openOnly ? "all open" : "all", statuses.get(0), property, objectId);
                 }
-                criteria.add(Restrictions.eq("rsnStatus", statuses.get(0)));
+                predicates.add(builder.eq(PROPERTY_STATUS, statuses.get(0)));
                 break;
             default:
                 if (log.isDebugEnabled()) {
                     log.debug("Returning {} requests with statuses {}  where {} == {}", openOnly ? "all open" : "all", statuses.stream().map(Objects::toString).collect(Collectors.joining(", ")), property, objectId);
                 }
-                criteria.add(Restrictions.in("rsnStatus", statuses));
+                predicates.add(builder.in(PROPERTY_STATUS, statuses));
         }
-        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
+        builder.where(builder.and(predicates));
+        return builder.getResults();
     }
 }

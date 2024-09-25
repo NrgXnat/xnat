@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.automation.runners.ScriptRunnerOutputAdapter;
 import org.nrg.automation.services.AutomationEventIdsIdsService;
 import org.nrg.automation.services.AutomationEventIdsService;
@@ -32,7 +33,11 @@ import java.util.Map;
 
 @Configuration
 @ComponentScan({"org.nrg.automation.daos", "org.nrg.automation.repositories", "org.nrg.automation.services.impl.hibernate"})
+@Slf4j
 public class AutomationConfig {
+    public AutomationConfig() {
+        log.info("Creating AutomationConfig");
+    }
 
     @Bean
     public ScriptRunnerService scriptRunnerService(final ScriptService scriptService, final ScriptTriggerService triggerService) {

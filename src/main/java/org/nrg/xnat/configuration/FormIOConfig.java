@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,8 +25,11 @@ import org.springframework.context.annotation.Configuration;
 				"org.nrg.xnat.customforms.eventListeners",
 				"org.nrg.xnat.customforms.customvariable.migration",
 	            "org.nrg.xnat.customforms.service"})
+@Slf4j
 public class FormIOConfig {
-
+	public FormIOConfig() {
+		log.info("Creating FormIOConfig");
+	}
 }
 
 

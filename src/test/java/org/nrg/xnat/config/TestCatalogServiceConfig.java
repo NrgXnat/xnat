@@ -5,8 +5,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
+import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import org.mockito.Mockito;
+import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.framework.services.NrgEventServiceI;
@@ -24,7 +25,6 @@ import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.nrg.xnat.services.archive.RemoteFilesService;
 import org.nrg.xnat.services.archive.impl.legacy.DefaultCatalogService;
-import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -73,28 +73,23 @@ public class TestCatalogServiceConfig {
     @Bean
     public CatalogService catalogService(final SiteConfigPreferences preferences,
                                          final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                         final CacheManager cacheManager,
+                                         final JCacheHelper cacheHelper,
                                          final UserDataCache userDataCache) {
-        return new DefaultCatalogService(preferences, namedParameterJdbcTemplate, cacheManager, userDataCache);
+        return new DefaultCatalogService(preferences, namedParameterJdbcTemplate, cacheHelper, userDataCache);
     }
 
     @Bean
     public DefaultCatalogService catalogServiceNoRemote(final SiteConfigPreferences preferences,
                                                         final NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                                        final CacheManager cacheManager,
+                                                        final JCacheHelper cacheHelper,
                                                         final UserDataCache userDataCache) {
         // return type DefaultCatalogService so we can re-set RemoteFilesService to null
-        return new DefaultCatalogService(preferences, namedParameterJdbcTemplate, cacheManager, userDataCache);
+        return new DefaultCatalogService(preferences, namedParameterJdbcTemplate, cacheHelper, userDataCache);
     }
 
     @Bean
     public RemoteFilesService remoteFilesService() {
         return Mockito.mock(RemoteFilesService.class);
-    }
-
-    @Bean
-    public CacheManager cacheManager() {
-        return Mockito.mock(CacheManager.class);
     }
 
     @Bean
@@ -130,6 +125,6 @@ public class TestCatalogServiceConfig {
                 .failOnEmptyBeans(false)
                 .featuresToEnable(JsonParser.Feature.ALLOW_SINGLE_QUOTES, JsonParser.Feature.ALLOW_YAML_COMMENTS)
                 .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS, SerializationFeature.WRITE_NULL_MAP_VALUES)
-                .modulesToInstall(new Hibernate4Module(), new GuavaModule());
+                .modulesToInstall(new Hibernate5Module(), new GuavaModule());
     }
 }

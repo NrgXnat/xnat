@@ -9,12 +9,17 @@
 
 package org.nrg.xnat.initialization;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.xapi.configuration.RestApiConfig;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
 @Import(RestApiConfig.class)
+@Slf4j
 public class ControllerConfig {
+    public ControllerConfig() {
+        log.info("Creating ControllerConfig");
+    }
 }
 

@@ -14,17 +14,17 @@ import org.nrg.prefs.events.AbstractPreferenceHandler;
 import org.nrg.prefs.events.PreferenceHandlerMethod;
 import org.nrg.xdat.preferences.NotificationsPreferences;
 import org.nrg.xdat.preferences.PreferenceEvent;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.bus.EventBus;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @Slf4j
 public class NotificationsPreferenceHandler extends AbstractPreferenceHandler<PreferenceEvent> {
-    @Inject
+    @Autowired
     public NotificationsPreferenceHandler(final EventBus eventBus) {
         super(eventBus);
     }
@@ -36,7 +36,7 @@ public class NotificationsPreferenceHandler extends AbstractPreferenceHandler<Pr
 
     @Override
     public void setToolId(String toolId) {
-        log.info("Someone tried to set my tool ID to {}, but the tool ID can't be changed.");
+        log.info("Someone tried to set my tool ID to {}, but the tool ID can't be changed.", toolId);
     }
 
     @Override

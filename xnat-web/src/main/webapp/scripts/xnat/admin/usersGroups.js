@@ -786,6 +786,9 @@ var XNAT = getObject(XNAT);
         var doEdit = _load && data.username;
 
         function checkUserAccountIsManagedInternally() {
+            if (data.username === "") {
+                return false;
+            }
             let isUserAccountManagedInternally = false;
             XNAT.xhr.get({
                 url: XNAT.url.restUrl('xapi/users/authDetails/'+data.username),

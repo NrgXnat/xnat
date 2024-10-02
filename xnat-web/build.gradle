@@ -290,7 +290,7 @@ dependencies {
     runtimeOnly "org.python:jython-standalone"
 
     tomcat "org.apache.tomcat.embed:tomcat-embed-core",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli",
+            "org.apache.tomcat.embed:tomcat-embed-logging-juli:9.0.0.M6",
             "org.apache.tomcat.embed:tomcat-embed-jasper"
 
     cargo "org.codehaus.cargo:cargo-core-uberjar",

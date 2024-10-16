@@ -59,6 +59,7 @@ a:active,
 .xnat-bootstrap .wizard-page {
     background-color: var(--XNAT-gray-100);
     border: 1px solid var(--XNAT-gray-200);
+    overflow-x: auto;
     padding: 1em;
 }
 
@@ -76,19 +77,21 @@ a:active,
 }
 .xnat-bootstrap .formio-read-only .form-group {
     margin-bottom: 0;
-    display: table-row;
+    display: block;
 }
 .xnat-bootstrap .formio-read-only label {
     font-weight: bold;
-    display: table-cell;
+    display: block;
     line-height: 1.3;
     min-width: 150px;
-    padding: 0 10px 10px 0;
+    padding: 10px 0 0;
 }
 .xnat-bootstrap .formio-read-only .form-group div[ref=element],
 .xnat-bootstrap .formio-read-only .form-group > div[ref=value] {
-    display: table-cell;
+    display: block;
     padding-bottom: 10px;
+    white-space: normal;
+    word-break: break-all; 
 }
 .xnat-bootstrap .formio-read-only .form-group .form-text {
     display: none;

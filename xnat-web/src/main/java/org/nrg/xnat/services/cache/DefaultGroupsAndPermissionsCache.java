@@ -408,6 +408,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     @Override
     public Map<String, Long> getReadableCounts(final String username) {
+        updateUserLastUpdateCacheIfEmpty(CACHE_READABLE_COUNTS, username);
         return getCacheMap(CACHE_READABLE_COUNTS, username, String.class, Long.class);
     }
 
@@ -418,6 +419,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     @Override
     public Map<String, ElementDisplay> getBrowseableElementDisplays(final String username) {
+        updateUserLastUpdateCacheIfEmpty(CACHE_BROWSEABLES, username);
         return getCacheMap(CACHE_BROWSEABLES, username, String.class, ElementDisplay.class);
     }
 
@@ -624,6 +626,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public void refreshGroupsForUser(final String username) throws UserNotFoundException {
         forceCacheList(CACHE_USER_GROUPS, username, String.class);
+        getUserLastUpdateCache().put(username, new Date());
     }
 
     @Override
@@ -678,6 +681,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     @Override
     public void clearUserCache(final String username) {
         USER_CACHES.forEach(cacheName -> evict(cacheName, username));
+        getUserLastUpdateCache().put(username, new Date());
     }
 
     @Override
@@ -884,6 +888,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 clearUserCache(username);
                 ACTIONS.forEach(a -> evictCacheMapPartition(CACHE_ACTIONS, a, username));
                 log.info("Initializing user group IDs cache entry for user '{}'", username);
+                updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
                 final List<String> groupIds = getCacheList(CACHE_USER_GROUPS, username, String.class);
                 log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
                 ACTIONS.forEach(a -> getActionElementDisplays(username, a));
@@ -1031,6 +1036,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             evict(CACHE_BROWSEABLES, username);
             evict(CACHE_READABLE_COUNTS, username);
             final Map<String, Long> cachedCounts = getReadableCounts(username);
+            getUserLastUpdateCache().put(username, new Date());
             log.debug("Initialized readable counts for user {}, finding {} different counts", users, cachedCounts.size());
         }
     }
@@ -1122,15 +1128,18 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         log.debug("Updating browseable element displays for user {}", username);
         final Map<String, ElementDisplay> browseables = getBrowseablesExtractor().extract(username);
         getBrowseablesCache().put(username, browseables);
+        getUserLastUpdateCache().put(username, new Date());
         return browseables;
     }
 
     private Map<String, ElementAccessManager> getElementAccessManagers(final String username) {
+        updateUserLastUpdateCacheIfEmpty(CACHE_ACCESS_MANAGERS, username);
         return getCacheMap(CACHE_ACCESS_MANAGERS, username, String.class, ElementAccessManager.class);
     }
 
     @Nonnull
     private Map<String, UserGroupI> getMutableGroupsForUser(final String username) throws UserNotFoundException {
+        updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
         return getCacheList(CACHE_USER_GROUPS, username, String.class).stream()
                 .map(this::get)
                 .filter(Objects::nonNull)
@@ -1138,6 +1147,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private List<String> getGroupIdsForUser(final String username) throws UserNotFoundException {
+        updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
         final List<String> groupIds = getCacheList(CACHE_USER_GROUPS, username, String.class);
         if (log.isTraceEnabled()) {
             log.trace("Found {} groups for user '{}': {}", groupIds.size(), username, StringUtils.join(groupIds, ", "));
@@ -1145,6 +1155,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             log.info("Found {} groups for user '{}'", groupIds.size(), username);
         }
         return groupIds;
+    }
+
+    private void updateUserLastUpdateCacheIfEmpty(String cacheId, String username) {
+        if (isCacheEmpty(cacheId, username)) {
+            getUserLastUpdateCache().put(username, new Date());
+        }
     }
 
     private Set<String> evictGroup(final String groupId) {

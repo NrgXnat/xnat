@@ -388,7 +388,7 @@ userLoginsSessionControls:
             validation: cron onblur
             description: >
                 How often to check alias tokens for timeout (0 0 * * * * means it runs every hour). Uses basic
-                <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+                <a target="_blank" href="https://docs.spring.io/spring-framework/reference/integration/scheduling.html#scheduling-cron-expression">Cron notation</a> (lists and ranges aren't supported).
         sessionTimeoutMessage:
             kind: panel.textarea
             name: sessionTimeoutMessage
@@ -437,7 +437,7 @@ userLoginsSessionControls:
             validation: cron onblur
             description: >
                 How often to check if the Failed Logins Lockout Duration time has expired so locked out users can be allowed to log in again (0 0 * * * * means it runs every hour). Uses basic
-                <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+                <a target="_blank" href="https://docs.spring.io/spring-framework/reference/integration/scheduling.html#scheduling-cron-expression">Cron notation</a> (lists and ranges aren't supported).
         canResetFailedLoginsWithForgotPassword:
             kind: panel.input.switchbox
             name: canResetFailedLoginsWithForgotPassword
@@ -465,7 +465,7 @@ userLoginsSessionControls:
             validation: cron onblur
             description: >
                 How often to check user accounts for inactivity (0 0 1 * * * means it runs at 1AM every day). Uses basic
-                <a target="_blank" href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html">Cron notation</a> (lists and ranges aren't supported).
+                <a target="_blank" href="https://docs.spring.io/spring-framework/reference/integration/scheduling.html#scheduling-cron-expression">Cron notation</a> (lists and ranges aren't supported).
         userClientIdentificationSubhead:
             kind: panel.subhead
             text: User Client Identification

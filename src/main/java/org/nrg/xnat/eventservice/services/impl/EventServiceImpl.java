@@ -87,6 +87,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public Subscription createSubscription(Subscription subscription) throws SubscriptionValidationException, SubscriptionAccessException {
         throwIfDisabled();
+        subscriptionService.validate(subscription);
         Subscription created = subscriptionService.createSubscription(subscription);
         scheduleEventsForSubscription(created);
         return created;
@@ -614,6 +615,7 @@ public class EventServiceImpl implements EventService {
             throw new SubscriptionAccessException("Event Service disabled.");
         }
     }
+
 
     public static SimpleEvent toPojo(@Nonnull EventServiceEvent<?> event) {
         return SimpleEvent.builder()

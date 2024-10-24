@@ -455,11 +455,11 @@ var XNAT = getObject(XNAT || {});
                 kind: 'panel.input.text',
                 name: 'schedule',
                 label: 'Cron Trigger',
-                validation: 'required cron onblur',
+                validation: 'required not-empty cron onblur',
                 id: 'subscription-event-schedule',
                 description: "How often to trigger this event (0 0 * * * * means it runs every hour). Uses basic " +
-                "<a target='_blank' href='http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html'>Cron notation</a> " +
-                "(Note: Wildcards, ranges, step values, and lists are not allowed in the second or minute field)."
+                "<a target='_blank' href='https://docs.spring.io/spring-framework/reference/integration/scheduling.html#scheduling-cron-expression'>Cron notation</a> " +
+                "(Warning: Scheduling jobs less than one hour apart may overwhelm the system)."
             },
             subEventScheduleDescription: {
                 kind: 'panel.input.text',
@@ -976,6 +976,14 @@ var XNAT = getObject(XNAT || {});
                         var formData, jsonFormData = {}, projectArray = [];
                         var formArrayData = obj.dialog$.find('form').serializeArray();
                         formArrayData.map(function(x){jsonFormData[x.name] = x.value;});
+
+                        if (jsonFormData['status'] === 'CRON' && jsonFormData['schedule'] === '') {
+                                XNAT.ui.dialog.message({
+                                    title: false,
+                                    content: '<h4>Form Validation Errors Found</h4><p>Please enter a valid value for: <b>Cron Trigger</b></p>'
+                                });
+                                return false;
+                        }
 
                         // accommodate multiple selected projects
                         formArrayData.filter(function(item){

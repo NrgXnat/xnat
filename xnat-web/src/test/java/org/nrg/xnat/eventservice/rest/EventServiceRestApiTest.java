@@ -71,6 +71,39 @@ public class EventServiceRestApiTest {
         "}"
             ;
 
+    private String siteCronSchedule = "{" +
+        " \"name\": \"Test21\",\n" +
+        " \"active\": false,\n" +
+            "\"action-key\": \"org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction\",\n" +
+            "\"attributes\": {\"param1\": \"d1\", \"param2\": \"d2\"},\n" +
+        "\"event-filter\": { \n" +
+                "\"event-type\": \"org.nrg.xnat.eventservice.events.ScheduledEvent\", \n" +
+                "\"project-ids\": [],\n" +
+        "\"status\": \"CRON\",\n" +
+                "\"schedule\": \"\",\n" +
+                "\"schedule-description\": \"TestMeNo1\", \n" +
+                "\"payload-filter\": \"\"\n" +
+    "}\n" +
+    "}\n"
+        ;
+
+
+    private String siteLessThan1MinuteCronSchedule = "{" +
+            " \"name\": \"Test21_2\",\n" +
+            " \"active\": false,\n" +
+            "\"action-key\": \"org.nrg.xnat.eventservice.actions.EventServiceLoggingAction:org.nrg.xnat.eventservice.actions.EventServiceLoggingAction\",\n" +
+            "\"attributes\": {\"param1\": \"d1\", \"param2\": \"d2\"},\n" +
+            "\"event-filter\": { \n" +
+            "\"event-type\": \"org.nrg.xnat.eventservice.events.ScheduledEvent\", \n" +
+            "\"project-ids\": [],\n" +
+            "\"status\": \"CRON\",\n" +
+            "\"schedule\": \"*/10 * * * * *\",\n" +
+            "\"schedule-description\": \"TestMeNo2\", \n" +
+            "\"payload-filter\": \"\"\n" +
+            "}\n" +
+            "}\n"
+            ;
+
     private String projectSubscription =
         "{\n" +
                 "  \"name\": \"Site Test\",\n" +
@@ -151,6 +184,59 @@ public class EventServiceRestApiTest {
         assertThat(response, is(notNullValue()));
 
     }
+
+
+    @Test
+    @Ignore
+    public void testTooFrequenctScheduleForCronSubscription() throws Exception {
+        final String path = "/events/subscription";
+
+        final MockHttpServletRequestBuilder request =
+                post(path)
+                        .content(siteLessThan1MinuteCronSchedule)
+                        .contentType(JSON)
+                        .accept(XML)
+                        .with(authentication(ADMIN_AUTH))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().is4xxClientError())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(response, is(notNullValue()));
+
+    }
+
+    @Test
+    @DirtiesContext
+    @Ignore
+    public void testEmptyScheduleForCronSubscription() throws Exception {
+        final String path = "/events/subscription";
+
+        final MockHttpServletRequestBuilder request =
+                post(path)
+                        .content(siteCronSchedule)
+                        .contentType(JSON)
+                        .accept(XML)
+                        .with(authentication(ADMIN_AUTH))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().is4xxClientError())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(response, is(notNullValue()));
+
+    }
+
 
     @Test
     public void createProjectSubscription() throws Exception {

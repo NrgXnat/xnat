@@ -288,6 +288,7 @@ dependencies {
     runtimeOnly "net.bull.javamelody:javamelody-core"
     runtimeOnly "org.javassist:javassist"
     runtimeOnly "org.python:jython-standalone"
+    runtimeOnly "org.bouncycastle:bcpkix-jdk18on"
 
     tomcat "org.apache.tomcat.embed:tomcat-embed-core",
             "org.apache.tomcat.embed:tomcat-embed-logging-juli:9.0.0.M6",

@@ -10,6 +10,7 @@
 package org.nrg.xnat.servlet;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.framework.utilities.SanitizeUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.bean.CatCatalogBean;
@@ -370,6 +371,9 @@ public class ArchiveServlet extends HttpServlet {
     protected void doGetOrPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         log.debug("PathInfo: " + req.getPathInfo());
         String path = req.getPathInfo();
+        if (SanitizeUtils.containsPathTraversal(path)) {
+            return;
+        }
         if (path.startsWith("/")) {
             path = path.substring(1);
         }
@@ -390,18 +394,22 @@ public class ArchiveServlet extends HttpServlet {
                 if (user != null) {
                     login = user.getLogin();
                 }
-                String filePath = UserUtils.retrieveCacheFileLink(cacheId, dbName, login);
-                if (filePath != null) {
-                    File f = new File(filePath);
-                    if (f.exists()) {
-                        writeFile(f, res);
-                    }
-                }
+                writeToResponse(res, cacheId, dbName, login);
             } catch (Exception e) {
                 log.error("", e);
             }
         } else if (user != null) {
             getDataFile(user, path, res);
+        }
+    }
+
+    private void writeToResponse(HttpServletResponse res, String cacheId, String dbName, String login) throws Exception {
+        String filePath = UserUtils.retrieveCacheFileLink(cacheId, dbName, login);
+        if (filePath != null) {
+            File f = new File(filePath);
+            if (f.exists()) {
+                writeFile(f, res);
+            }
         }
     }
 

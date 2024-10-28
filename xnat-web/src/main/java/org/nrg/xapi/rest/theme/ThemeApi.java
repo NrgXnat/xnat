@@ -13,6 +13,7 @@ import io.swagger.annotations.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.utilities.SanitizeUtils;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.entities.ThemeConfig;
@@ -135,9 +136,16 @@ public class ThemeApi extends AbstractXapiRestController {
         if (StringUtils.equals(theme, "null")) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        if (SanitizeUtils.containsPathTraversal(theme)){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         if (!_themeService.themeExists(theme)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        return deleteThemeAndReturnResponseEntity(theme);
+    }
+
+    private ResponseEntity<ThemeConfig> deleteThemeAndReturnResponseEntity(String theme) {
         try {
             final File file = new File(_themeService.getThemesPath() + File.separator + theme);
             FileUtils.deleteDirectory(file);
@@ -148,7 +156,7 @@ public class ThemeApi extends AbstractXapiRestController {
                     _themeService.setTheme((ThemeConfig) null);
                 }
                 if (themeConfig != null) {
-                    new ResponseEntity<>(themeConfig, HttpStatus.OK);
+                    return new ResponseEntity<>(themeConfig, HttpStatus.OK);
                 }
             }
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

@@ -7,16 +7,16 @@
  * Released under the Simplified BSD.
  */
 function dynamicJSLoad(name,file){
-	if(eval("window."+name)==undefined){
+	if(window[name]==undefined){
 		var url = serverRoot+"/scripts/" + file;
-		if(eval("window." + name)==undefined){
+		if(window[name]==undefined){
 	    	var e=document.createElement("script");
 			e.src=url;
 			e.type="text/javascript";
 			document.getElementsByTagName("head")[0].appendChild(e);
 	    }
 	    
-	    if(eval("window." + name)==undefined){
+	    if(window[name]==undefined){
 	    	if (window.XMLHttpRequest) {
 		       req = new XMLHttpRequest();
 		    } else if (window.ActiveXObject) {
@@ -32,7 +32,7 @@ function dynamicJSLoad(name,file){
 		    			window.eval(req.responseText); 
 		    			window[name]=eval(name);
 	    			
-		    			if(eval("window." + name)==undefined){
+		    			if(window[name]==undefined){
 		    			//	logEntry("Failed to load " + name + " (Ready-State:" + req.readyState + "." + req.status + ")");
 		    			}else{
 		    			//	logEntry("Loaded " + name + " from 2nd method.");

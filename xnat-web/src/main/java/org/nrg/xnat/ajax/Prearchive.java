@@ -9,6 +9,35 @@
 
 package org.nrg.xnat.ajax;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.Element;
+import org.nrg.framework.utilities.SanitizeUtils;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.model.ArcProjectI;
+import org.nrg.xdat.om.ArcArchivespecification;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.security.SecurityManager;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
+import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.FileUtils;
+import org.nrg.xnat.archive.PrearcImporterFactory;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.xml.sax.SAXException;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
@@ -29,35 +58,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import lombok.extern.slf4j.Slf4j;
-import org.apache.log4j.Logger;
-import org.dom4j.Document;
-import org.dom4j.Element;
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.model.ArcProjectI;
-import org.nrg.xdat.om.ArcArchivespecification;
-import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.security.SecurityManager;
-import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xdat.security.helpers.UserHelper;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
-import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
-import org.nrg.xnat.archive.PrearcImporterFactory;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
-import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.xml.sax.SAXException;
 
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 
@@ -319,7 +319,14 @@ public final class Prearchive {
 			return;
 		}
 
-		final String name = (String) req.getParameter("prearc");
+		final String name = req.getParameter("prearc");
+		if (SanitizeUtils.containsPathTraversal(name)) {
+			log.info("prearchive is null or path traversal detected");
+			try {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "prearchive is null or path traversal detected");
+			} catch (IOException ignore) {}
+			return;
+		}
 		log.debug("received session list request for user " + login + " prearchive " + name);
 
 		if (!canCreate(user, name, null)) {
@@ -330,6 +337,10 @@ public final class Prearchive {
 			return;
 		}
 
+		handleSessions(response, name, user);
+	}
+
+	private void handleSessions(HttpServletResponse response, String name, UserI user) {
 		final ArcArchivespecification arcspec = ArcSpecManager.GetInstance();
 		final File prearc = getPrearcRoot(name);
 
@@ -338,7 +349,7 @@ public final class Prearchive {
 			try {
 				response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			} catch (IOException ignore) {}
-			return;   
+			return;
 		}
 
 		if (!prearc.canRead()) {
@@ -622,10 +633,14 @@ public final class Prearchive {
 
 		final String name = (String) req.getParameter("prearc");
 
+		removeProcess(req, response, name, user);
+	}
+
+	private void removeProcess(HttpServletRequest req, HttpServletResponse response, String name, UserI user) {
 		final File prearc = getPrearcRoot(name);
 
 		try {
-			removeSession(user, response, name, prearc, (String)req.getParameter("path"));
+			removeSession(user, response, name, prearc, (String) req.getParameter("path"));
 		} catch (PrearcOpException e) {
 			e.sendErrorLogInfo(response);
 		}
@@ -647,8 +662,29 @@ public final class Prearchive {
 			return;
 		}
 
+		final String fromProject = req.getParameter("from");
+		final String toProject = req.getParameter("to");
+		if (SanitizeUtils.containsPathTraversal(fromProject) || SanitizeUtils.containsPathTraversal(toProject)) {
+			log.info("from or to project is null or path traversal detected");
+			try {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "from or to project is null or path traversal detected");
+			} catch (IOException ignore) {}
+			return;
+		}
 
-		final String fromProject = (String) req.getParameter("from");
+		final String path = req.getParameter("path");
+		if (SanitizeUtils.containsPathTraversal(path)) {
+			log.info("path is null/empty or path traversal detected");
+			try {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "path is null/empty or path traversal detected");
+			} catch (IOException ignore) {}
+			return;
+		}
+
+		moveProcess(response, toProject, fromProject, path, user, login);
+	}
+
+	private void moveProcess(HttpServletResponse response, String toProject, String fromProject, String path, UserI user, String login) {
 		final File fromPrearc = getPrearcRoot(fromProject);
 		if (null == fromPrearc || !fromPrearc.isDirectory()) {
 			log.info("move request from invalid prearchive " + fromProject);
@@ -658,7 +694,6 @@ public final class Prearchive {
 			return;
 		}
 
-		final String toProject = (String) req.getParameter("to");
 		final File toPrearc = getPrearcRoot(toProject);
 		if (null == toPrearc || !toPrearc.isDirectory()) {
 			log.info("move request to invalid prearchive " + fromProject);
@@ -672,15 +707,6 @@ public final class Prearchive {
 			log.warn("attempted to move session from prearchive " + fromPrearc + " to same prearchive.");
 			try {
 				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "cannot move session from and to the same prearchive");
-			} catch (IOException ignore) {}
-			return;
-		}
-
-		final String path = (String) req.getParameter("path");
-		if (path == null || "".equals(path)) {
-			log.info("received session move request from " + login + " with empty path");
-			try {
-				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "no session specified");
 			} catch (IOException ignore) {}
 			return;
 		}

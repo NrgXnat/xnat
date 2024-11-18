@@ -34,6 +34,7 @@ import org.nrg.xnat.eventservice.services.*;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.bus.Event;
@@ -48,6 +49,8 @@ import reactor.fn.Predicate;
 import javax.annotation.Nonnull;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.Transient;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -187,9 +190,9 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
             try{
                 final String schedule = subscription.eventFilter().schedule();
                 final String status   = subscription.eventFilter().status();
-                if(!StringUtils.isEmpty(schedule) && ScheduledEvent.Status.CRON.name().equals(status)) {
+                if(ScheduledEvent.Status.CRON.name().equals(status)) {
                     log.debug("Validating cron expression {} for subscription {}", schedule, subscription.id());
-                    validateCronExpression(schedule);
+                    validateCronExpression(subscription.eventFilter());
                 }
             }catch(Throwable t){
                 log.error("Invalid Cron Expression. " + t.getMessage());
@@ -215,26 +218,33 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
         return subscription;
     }
 
-    private void validateCronExpression(String cronTrigger) throws SubscriptionValidationException{
-            if(!org.springframework.util.StringUtils.hasLength(cronTrigger)){
-                throw new SubscriptionValidationException("Cron trigger must not be null or empty.");
-            }
-
-            final List<String> cronExpression = Arrays.asList(cronTrigger.split(" "));
-            if(cronExpression.size() != 6){
-                throw new SubscriptionValidationException("Invalid cron expression. Expected 6 fields but found: " + cronExpression.size());
-            }
-
-            final String secondField = cronExpression.get(0);
-            if(secondField.contains("*") || secondField.contains("/") || secondField.contains("-") || secondField.contains(",")){
-                throw new SubscriptionValidationException("Cron expression must not have a wildcard(*), range(-), step value(/), or list(,) in second field.");
-            }
-
-            final String minuteField = cronExpression.get(1);
-            if(minuteField.contains("*") || minuteField.contains("/") || minuteField.contains("-") || minuteField.contains(",")){
-                throw new SubscriptionValidationException("Cron expression must not have a wildcard(*), range(-), step value(/), or list(,) in the minute field.");
+    private void validateCronExpression(EventFilter eventFilter) throws SubscriptionValidationException{
+            try {
+                final CronExpression cronTrigger = CronExpression.parse(eventFilter.schedule());
+                throwIfScheduleTooFrequent(cronTrigger);
+            } catch(IllegalArgumentException iae) {
+                throw new SubscriptionValidationException(iae.getMessage(), iae);
             }
     }
+
+
+    private void throwIfScheduleTooFrequent(final CronExpression cronTrigger) throws SubscriptionValidationException{
+        try {
+            final long allowedFrequencyInMinutes = 1;
+            final long allowedFrequencyInMillis = 60000;
+            LocalDateTime currentTime = LocalDateTime.now();
+            LocalDateTime firstExecution = cronTrigger.next(currentTime);
+            LocalDateTime secondExecution = cronTrigger.next(firstExecution);
+            Duration duration = Duration.between(firstExecution, secondExecution);
+            long runFrequencyMinutes = duration.toMillis();
+            if (runFrequencyMinutes <= allowedFrequencyInMillis) {
+                throw new SubscriptionValidationException(String.format("Cron jobs can not be scheduled less than %s minute", allowedFrequencyInMinutes));
+            }
+        } catch(IllegalArgumentException iae) {
+            throw new SubscriptionValidationException(iae.getMessage(), iae);
+        }
+    }
+
 
     @Override
     public JsonPath compileJsonPathFilter(String jsonPathPredicate) throws InvalidPathException {

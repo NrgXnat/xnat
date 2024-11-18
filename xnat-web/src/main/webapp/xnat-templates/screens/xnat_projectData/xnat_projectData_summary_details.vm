@@ -82,6 +82,7 @@
                 className: 'xnat-bootstrap',
                 width: 800,
                 height:800,
+                maxBtn: true,
                 beforeShow: function(obj) {
                     projectFormComponents.loadCustomFormComponents('null','null','moreDetailsFormIO');
                 },

@@ -23,6 +23,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
+import org.nrg.framework.utilities.SanitizeUtils;
 import org.nrg.xapi.authorization.GuestUserAccessXapiAuthorization;
 import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.InitializationException;
@@ -132,7 +133,10 @@ public class SchemaApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "{namespace}/{schema}", produces = {MediaType.APPLICATION_XML_VALUE}, method = {RequestMethod.GET})
     // TODO: Eventually these should return XML Document objects that are appropriately converted. Spring doesn't have a converter for that by default.
     public String getRequestedDataTypeSchema(@PathVariable("namespace") final String namespace, @PathVariable("schema") final String schema) throws IOException, NotFoundException, InsufficientPrivilegesException {
-        final Resource resource = BasicXnatResourceLocator.getResource("classpath:schemas/" + namespace + "/" + schema + ".xsd");
+        if (SanitizeUtils.containsPathTraversal(namespace) || SanitizeUtils.containsPathTraversal(schema)) {
+            throw new IllegalArgumentException("Invalid namespace or schema specification");
+        }
+        final Resource resource = getResource(namespace, schema);
         if (resource == null || !resource.exists()) {
             throw new NotFoundException("classpath:schemas/" + namespace + "/" + schema + ".xsd");
         }
@@ -142,6 +146,10 @@ public class SchemaApi extends AbstractXapiRestController {
         try (final InputStream input = resource.getInputStream()) {
             return new Scanner(input, "UTF-8").useDelimiter("\\A").next();
         }
+    }
+
+    private Resource getResource(String namespace, String schema) {
+        return BasicXnatResourceLocator.getResource("classpath:schemas/" + SanitizeUtils.sanitizeFilePath(namespace) + "/" + SanitizeUtils.sanitizeFilePath(schema) + ".xsd");
     }
 
     @ApiOperation(value = "Gets a list of the available data types on the system.",

@@ -138,6 +138,12 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
         return ObjectUtils.getIfNull(cache.get(itemId), new CacheItemSupplier<>(cache, extractor, cacheId, itemId, itemClass, parameters));
     }
 
+    protected <K, V> boolean isCacheEmpty(final String cacheId, final K itemId) {
+        DataExtractor<K, V> extractor = (DataExtractor<K, V>) getExtractors().get(cacheId);
+        Cache<K, V>         cache     = getCache(cacheId, extractor.getKeyType(), extractor.getValueType());
+        return !cache.containsKey(itemId);
+    }
+
     protected <K, V> List<V> getCacheList(final String cacheId, final K itemId, final Class<V> listItemClass, final Object... parameters) {
         log.debug("Retrieving list with ID {} and item class {} from cache {}", itemId, listItemClass, cacheId);
         //noinspection unchecked

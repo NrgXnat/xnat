@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.utilities.SanitizeUtils;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
@@ -136,10 +137,12 @@ public class LoggingApi extends AbstractXapiRestController {
     public ResponseEntity<StreamingResponseBody> downloadLogFiles(@RequestBody final Map<String, String> parameters) throws IOException {
         final String  pathSpec          = parameters.get("path");
         final String  logFileSpec       = parameters.get("logFileSpec");
+        if (SanitizeUtils.containsPathTraversal(pathSpec) || SanitizeUtils.containsPathTraversal(logFileSpec)) {
+            throw new IllegalArgumentException("Invalid path or log file specification");
+        }
         final boolean includeEmptyFiles = BooleanUtils.toBooleanDefaultIfNull(BooleanUtils.toBooleanObject(parameters.get("includeEmptyFiles")), false);
 
-        final Path                       path        = StringUtils.isBlank(pathSpec) ? _xnatHome.resolve("logs") : Paths.get(pathSpec);
-        final FileVisitorPathResourceMap resourceMap = StringUtils.isBlank(logFileSpec) ? new FileVisitorPathResourceMap(path) : (new FileVisitorPathResourceMap(path, logFileSpec));
+        final FileVisitorPathResourceMap resourceMap = getFileVisitorPathResourceMap(pathSpec, logFileSpec);
         if (includeEmptyFiles) {
             resourceMap.setIncludeEmptyFiles(true);
         }
@@ -155,6 +158,12 @@ public class LoggingApi extends AbstractXapiRestController {
                                      return resourceMap;
                                  }
                              });
+    }
+
+    private FileVisitorPathResourceMap getFileVisitorPathResourceMap(String pathSpec, String logFileSpec) {
+        final Path                       path        = StringUtils.isBlank(pathSpec) ? _xnatHome.resolve("logs") : Paths.get(pathSpec);
+        final FileVisitorPathResourceMap resourceMap = StringUtils.isBlank(logFileSpec) ? new FileVisitorPathResourceMap(path) : (new FileVisitorPathResourceMap(path, logFileSpec));
+        return resourceMap;
     }
 
     private final LoggingService _logging;

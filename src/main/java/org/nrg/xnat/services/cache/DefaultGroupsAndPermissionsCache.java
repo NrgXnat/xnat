@@ -1139,11 +1139,15 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     @Nonnull
     private Map<String, UserGroupI> getMutableGroupsForUser(final String username) throws UserNotFoundException {
+        // XNAT-8309 Calling updateUserLastUpdateCacheIfEmpty() then returning the result of this next call inline
+        // causes the setup page to fail to load. This is a workaround to get the cached/retrieved value first then
+        // updating the last-update cache before returning it.
+        final Map<String, UserGroupI> groups = getCacheList(CACHE_USER_GROUPS, username, String.class).stream()
+                                                                                                      .map(this::get)
+                                                                                                      .filter(Objects::nonNull)
+                                                                                                      .collect(Collectors.toMap(UserGroupI::getId, Function.identity()));
         updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
-        return getCacheList(CACHE_USER_GROUPS, username, String.class).stream()
-                .map(this::get)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(UserGroupI::getId, Function.identity()));
+        return groups;
     }
 
     private List<String> getGroupIdsForUser(final String username) throws UserNotFoundException {

@@ -1051,17 +1051,17 @@ var XNAT = getObject(XNAT);
                                     applyFn = (applyFn+'').trim();
                                     // strings that start with 'function' will be assumed to be a function
                                     if (/^[(]?function/.test(applyFn)) {
-                                        itemVal = eval('(' + applyFn + ')').apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                        itemVal = window[applyFn].apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
                                     // wrap eval() expression in {( expr )} or (( expr ))
                                     else if (XNAT.parse.REGEX.evalTest.test(applyFn)) {
                                         applyFn = applyFn.replace(XNAT.parse.REGEX.evalTrim, '');
-                                        itemVal = eval(applyFn).apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                        itemVal = window[applyFn].apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
                                     // or start with standard Spawner 'eval' string
                                     else if (EVALREGEX.test(applyFn)) {
                                         applyFn = applyFn.replace(EVALREGEX, '');
-                                        itemVal = eval('(' + applyFn + ')').apply(item, [].concat(itemVal, _tr)) || itemVal;
+                                        itemVal = window[applyFn].apply(item, [].concat(itemVal, _tr)) || itemVal;
                                     }
                                     else if ((applyFn = lookupObjectValue(window, applyFn))) {
                                         //           ^^^ correct, we're doing assignment in an 'if' statement
@@ -1114,7 +1114,7 @@ var XNAT = getObject(XNAT);
                     if (cellObj.$) {
                         var $td = $(_td);
                         if (typeof cellObj.$ === 'string') {
-                            eval('$(newTable.last.td).'+(cellObj.$).trim());
+                            window['$(newTable.last.td).' + (cellObj.$).trim()];
                         }
                         else {
                             forOwn(cellObj.$, function(method, args){

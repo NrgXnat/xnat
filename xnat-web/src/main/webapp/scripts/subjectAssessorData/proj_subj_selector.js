@@ -50,7 +50,7 @@ function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _def
 
     this.completeInit = function (o) {
         try {
-            this.projectResultSet = eval("(" + o.responseText + ")");
+            this.projectResultSet = JSON.parse(o.responseText);
         } catch (e) {
             this.displayError("ERROR " + o.status + ": Failed to parse " + XNAT.app.displayNames.singular.project.toLowerCase() + " list.");
         }
@@ -116,7 +116,7 @@ function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _def
             var subjCallback = {
                 success: function (o) {
                     try {
-                        o.argument.subjectResultSet = eval("(" + o.responseText + ")");
+                        o.argument.subjectResultSet = JSON.parse(o.responseText);
                         o.argument.subjectResultSet.ResultSet.Result.sort(function (a, b) {
                                 if (a["label"] < b["label"]) {
                                     return -1;
@@ -230,7 +230,7 @@ function ProjectSubjectSelector(_proj_select, _subj_select, _submit_button, _def
                 success: function (o) {
 
                     try {
-                        var resultset = (eval("(" + o.responseText + ")")).ResultSet;
+                        var resultset = JSON.parse(o.responseText).ResultSet;
                         if (resultset.totalRecords == "0") {
                             if (window.psm != undefined) {
                                 window.psm.exptResultSet = [];

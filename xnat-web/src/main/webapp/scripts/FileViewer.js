@@ -328,7 +328,7 @@ function FileViewer(_obj){
    		XNAT.ui.dialog.close("catalogs");
    		this.clearCatalogs();
 
-    	var catalogs= eval("(" + o.responseText +")").ResultSet.Result;
+    	var catalogs= JSON.parse(o.responseText).ResultSet.Result;
 
     	for(var catC=0;catC<catalogs.length;catC++){
     		var scan=this.getScan(catalogs[catC].category,catalogs[catC].cat_id);
@@ -969,7 +969,7 @@ YAHOO.extend(YAHOO.widget.CatalogNode, YAHOO.widget.TaskNode, {
 			this.setDynamicLoad(function(node, fnLoadComplete){
 		 		var callback={
 			      success:function(oResponse){
-			        oResponse.argument.catNode.cat.files = (eval("(" + oResponse.responseText + ")")).ResultSet.Result;
+			        oResponse.argument.catNode.cat.files = JSON.parse(oResponse.responseText).ResultSet.Result;
 			        oResponse.argument.catNode.cat.files = oResponse.argument.catNode.cat.files.sort(function(a,b){ return (a.Name.toLowerCase() < b.Name.toLowerCase()) ? -1 : 1 });
 			        oResponse.argument.catNode.renderFiles();
 			        oResponse.argument.fnLoadComplete();

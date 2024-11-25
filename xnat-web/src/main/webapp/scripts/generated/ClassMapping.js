@@ -45,12 +45,9 @@ function ClassMapping(){
 
             name = name.replace(':', '_');
             if (window[name] === undefined) {
-                eval(
-                    "dynamicJSLoad(name,'generated/" + name + ".js')"
-                );
+                "dynamicJSLoad(name,'generated/" + name + ".js')"
             }
-            eval("var xsiType = new " + name + "()");
-            return xsiType;
+            return new window[name]();
 
             /********************************************************
              * These cannot, but they don't seem to be used in the UI

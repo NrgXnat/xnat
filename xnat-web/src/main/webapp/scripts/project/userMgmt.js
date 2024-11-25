@@ -144,7 +144,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 	};
 	
 	this.handleGroupLoad=function(response){
-		this.groups= eval("(" + response.responseText +")").ResultSet.Result;
+		this.groups= JSON.parse(response.responseText).ResultSet.Result;
 		
 		var tmpUploadFrm='' +
             '<div id="grp_dialog" style="visibility:hidden">' +
@@ -255,7 +255,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 
 	this.completeInit=function(o){
 		try{
-			this.userResultSet= eval("(" + o.responseText +")");
+			this.userResultSet= JSON.parse(o.responseText);
 			this.render();
 		}catch(e){
 			this.displayError("ERROR " + o.status+ ": Failed to parse " + XNAT.app.displayNames.singular.project.toLowerCase() + " user list.");
@@ -304,7 +304,7 @@ function UserManager(user_mgmt_div_id, pID, retrieveAllUsers){
 
 	this.completeAllUsers=function(o){
 		try{
-			this.allUserResultSet= eval("(" + o.responseText +")");
+			this.allUserResultSet= JSON.parse(o.responseText);
 			this.setFormDisabled(false);
 			this.allLoader.close();
 			document.getElementById("popup_all_users_button").disabled=false;

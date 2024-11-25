@@ -219,7 +219,7 @@ function loadrecons(session_id,project,tbody_id){
 
 function completereconLoad(obj1){
 	closeModalPanel("recon_summary");
-	var recons= eval("(" + obj1.responseText +")").ResultSet.Result;
+	var recons= JSON.parse(obj1.responseText).ResultSet.Result;
 	renderRecons(recons,this.arguments.tbody_id,this.arguments.session_id,this.arguments.project);
 }
 

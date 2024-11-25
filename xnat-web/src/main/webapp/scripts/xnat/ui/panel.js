@@ -839,7 +839,7 @@ var XNAT = getObject(XNAT || {});
                         callback = opts.success||opts.callback;
                         try {
                         if (typeof callback === 'string') {
-                            callback = eval(callback);
+                            callback = window[callback];
                         }
                             callback.apply(this, arguments);
                         }

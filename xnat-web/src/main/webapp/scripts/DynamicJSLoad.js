@@ -29,9 +29,9 @@ function dynamicJSLoad(name,file){
 	    	if (req!==false) {    
 	    		if (req.status==200) {        
 	    			// eval the code in the global space (man this has cost me time to figure out how to do it grrr)                        
-		    			window.eval(req.responseText); 
-		    			window[name]=eval(name);
-	    			
+					var scriptContent = req.responseText;
+					window.eval(scriptContent);
+
 		    			if(window[name]==undefined){
 		    			//	logEntry("Failed to load " + name + " (Ready-State:" + req.readyState + "." + req.status + ")");
 		    			}else{
@@ -47,5 +47,5 @@ function dynamicJSLoad(name,file){
 	    }
 	}
 	
-	return eval("new " + name);
+	return new window[name]();
 }

@@ -128,7 +128,7 @@ function SearchXMLManager(_xml){
 
 	this.processValues=function(o){
 		closeModalPanel("load_cv");
-		var resultset= eval("(" + o.responseText +")");
+		var resultset= JSON.parse(o.responseText);
 		o.argument.oColumn.currentValues=resultset.ResultSet.Result;
 		this.renderFilterForm2(o.argument.element_name,o.argument.field_id,o.argument.oColumn);
 			}
@@ -426,7 +426,7 @@ function SearchXMLManager(_xml){
 					var fieldCallback={
 						success:function(o){
 							closeModalPanel("load_fields");
-							var resultset= eval("(" + o.responseText +")");
+							var resultset= JSON.parse(o.responseText);
 							this.versionMap[o.argument]=resultset.ResultSet.versions.DisplayVersions.versions;
 							this.fieldMap[o.argument]= resultset.ResultSet.Result;
 
@@ -895,7 +895,7 @@ function SearchXMLManager(_xml){
 	  	var fcb={
 			success:function(o){
 				try{
-					var resultset= eval("(" + o.responseText +")");
+					var resultset= JSON.parse(o.responseText);
 					this.pFs=resultset.ResultSet.Result;
 					this.renderPotentialFields();
 				}catch(e){

@@ -35,7 +35,7 @@ function restLister(_info) {
 
     this.processScans = function (o) {
         this.info.scans = [];
-        var contents = eval("(" + o.responseText + ")").ResultSet.Result;
+        var contents = JSON.parse(o.responseText).ResultSet.Result;
         for (var i = 0; i < contents.length; i++) {
             if (contents[i].category == this.info.category) {
                 this.info.scans.push(contents[i]);
@@ -67,7 +67,7 @@ function restLister(_info) {
     }
 
     this.processFiles = function (o) {
-        var allFiles = eval("(" + o.responseText + ")").ResultSet.Result;
+        var allFiles = JSON.parse(o.responseText).ResultSet.Result;
         var cid = allFiles[0].cat_ID;//same for each element in allFiles
 //		if (cid==null && allFiles[0].URI!=null) {
 //			var tmp = allFiles[0].URI.replace(this.info.uri + "/" + this.info.category + "/", "");

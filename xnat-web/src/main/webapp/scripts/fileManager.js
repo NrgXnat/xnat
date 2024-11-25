@@ -222,7 +222,7 @@ function fileManager(_resource){
    	    var countCallback={
 			success:function(obj){
 			    closeModalPanel("refresh_file");
-				this.resource.files=eval("(" + obj.responseText +")").ResultSet.Result;
+				this.resource.files=JSON.parse(obj.responseText).ResultSet.Result;
 				this.refreshFileCounts();
 				this.render();
 			},

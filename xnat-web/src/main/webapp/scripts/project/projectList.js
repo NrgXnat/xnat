@@ -55,7 +55,7 @@ function ProjectList(_menu, _options){
 	
 	this.completeInit=function(o){
 		try{
-		    this.projectResultSet= eval("(" + o.responseText +")");
+		    this.projectResultSet= JSON.parse(o.responseText);
 		}catch(e){
 			this.displayError("ERROR " + o.status+ ": Failed to parse " + XNAT.app.displayNames.singular.project.toLowerCase() + " list.");
 		}

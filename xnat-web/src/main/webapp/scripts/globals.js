@@ -617,7 +617,7 @@ function strReplace(str){
         if (jsdebug) console.log(part);
         if (jsdebug) console.log(pt);
         try {
-            return firstDefined(eval(pt), part);
+            return firstDefined(window[pt](), part);
         }
         catch(e){
             if (jsdebug) console.log(e);

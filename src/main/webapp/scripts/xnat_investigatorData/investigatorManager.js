@@ -28,7 +28,7 @@ function InvestigatorManager(){
 	
 	this.completeInit=function(o){
 		try{
-		    this.investigatorResultSet=ResultSet= eval("(" + o.responseText +")");
+		    this.investigatorResultSet=ResultSet= JSON.parse(o.responseText);
 		    this.investigators=this.investigatorResultSet.ResultSet.Result;
 		    this.investigatorsLoaded.fire();
 		}catch(e){

@@ -51,7 +51,7 @@ XNAT.app.archiveValidator={
 	     return -1;
 	},
 	handleValidation:function(o){
-		var validation= eval("(" + o.responseText +")");
+		var validation= JSON.parse(o.responseText);
 		var show=new Array();
 		var matched=false;
 		var failed=false;

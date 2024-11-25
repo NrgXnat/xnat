@@ -807,11 +807,11 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                             for (var index = 0, total = menuOptions.length; index < total; index++) {
                                 try {
                                     var menuOption = menuOptions[index];
-                                    var fnName = 'this.search.handle' + menuOption.label.replace(/\s+/g, '');
-                                    eval(fnName + ' = menuOption.handler');
+                                    var fnName = 'handle' + menuOption.label.replace(/\s+/g, '');
+                                    this.search[fnName] = menuOption.handler;
                                     submenuitems.push({
                                         text: menuOption.label,
-                                        onclick: { fn: eval(fnName), scope: this.search }
+                                        onclick: { fn: this.search[fnName], scope: this.search }
                                     });
                                 }
                                 catch(e) {

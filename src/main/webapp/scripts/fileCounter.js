@@ -56,7 +56,7 @@ function fileCounter(_options) {
 	this.processResults=function(o){
 		try{
 			this.openItem.destination.style.fontWeight="500";
-			this.openItem.files= eval("(" + o.responseText +")").ResultSet.Result;
+			this.openItem.files= JSON.parse(o.responseText).ResultSet.Result;
 			
 			this.openItem.destination.innerHTML="";
 			

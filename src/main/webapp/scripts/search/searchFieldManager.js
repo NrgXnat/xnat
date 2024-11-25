@@ -107,7 +107,7 @@ function SearchFieldManager(div_id){
 	
 	this.processResults=function(o){
 		closeModalPanel("load_fields");
-		var resultset= eval("(" + o.responseText +")");
+		var resultset= JSON.parse(o.responseText);
 		this.versionMap[o.argument]=resultset.ResultSet.versions.DisplayVersions.versions;
 		this.fieldMap[o.argument]= resultset.ResultSet.Result;
 		this.onLoad.fire({element_name:o.argument,list:this.fieldMap[o.argument]});
@@ -180,7 +180,7 @@ function SearchFieldManager(div_id){
 	};
 	
 	this.completeInit=function(o){
-		var loadResults= eval("(" + o.responseText +")");
+		var loadResults= JSON.parse(o.responseText);
 		this.fieldSets.push(loadResults.ResultSet);
 		this.render();
 	};

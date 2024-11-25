@@ -495,7 +495,7 @@ var XNAT = getObject(XNAT);
                        .trim();
             try {
                 // --- DO THE eval() --- //
-                obj.result = eval('(' + val + ')');
+                obj.result = JSON.parse(val);
                 if (obj.result === undef) {
                     obj.result = val;
                 }

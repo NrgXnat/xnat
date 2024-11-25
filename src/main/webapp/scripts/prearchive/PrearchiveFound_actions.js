@@ -64,7 +64,7 @@ XNAT.app.prearchiveActions={
 	},
 	handleProjectsLoad:function(o){
 		this.projects=[];
-		var projectResults= eval("(" + o.responseText +")");
+		var projectResults= JSON.parse(o.responseText);
 		for(var pC=0;pC<projectResults.ResultSet.Result.length;pC++){
 			this.projects.push(projectResults.ResultSet.Result[pC]);
 		}
@@ -140,7 +140,7 @@ XNAT.app.validator={
 	     return -1;
 	},
 	handleValidation:function(o){
-		var validation= eval("(" + o.responseText +")");
+		var validation= JSON.parse(o.responseText);
 		this.show=[];
 		var matched=false;
 		var failed=false;

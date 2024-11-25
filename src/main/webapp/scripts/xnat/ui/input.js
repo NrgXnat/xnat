@@ -44,7 +44,7 @@ var XNAT = getObject(XNAT);
         }
         var val = '';
         try {
-            val = eval((lookup || '').trim()) || ''
+            val = new Function('return ' + (lookup || '').trim())() || '';
         }
         catch(e) {
             val = '';

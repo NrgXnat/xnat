@@ -570,7 +570,7 @@ var XNAT = getObject(XNAT||{}),
         // @? will get values from another source
         $inputs.filter('[value^="@?"]').each(function(){
             var source = this.value.replace(/^@\?[:=\s]*/, '');
-            this.value = eval(source);
+            this.value = window[source];
         });
 
         // replace [[param]] strings in url with

@@ -194,7 +194,7 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
         }
 
         this.controls.length = 0;
-        var resultSet = eval("(" + data + ")");
+        var resultSet = JSON.parse(data);
         for (var index = 0; index < this.settings.length; index++) {
             var setting = this.settings[index];
             var control = document.getElementById(setting);
@@ -202,13 +202,13 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
                 control = document.getElementsByName(setting);
                 this.controls.push(setting);
                 for (var j = 0; j < control.length; j++) {
-                    if(control[j].value == eval('resultSet.ResultSet.Result["' + setting+'"]')){
+                    if(control[j].value === resultSet.ResultSet.Result["setting"]){
                         $(control[j]).trigger("click");
                     }
                 }
             } else {
-                control.defaultValue = eval('resultSet.ResultSet.Result["' + setting+'"]');
-                if(control.tagName.toLowerCase()=='select'){
+                control.defaultValue = resultSet.ResultSet.Result["setting"];
+                if(control.tagName.toLowerCase()==='select'){
                     control.value = control.defaultValue;
                 }
                 this.controls.push(control);
@@ -261,8 +261,8 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
                 control.value = control.defaultValue;
                 jq('#' + control.id + 'Label').html(control.defaultValue);
             } else if (typeof control == 'string') { //handle radio buttons
-                var defaults = eval("("+window.configurationData+")");
-                var def = eval('defaults.ResultSet.Result["'+control+'"]');
+                var defaults = JSON.parse(window.configurationData);
+                var def = defaults.ResultSet.Result["control"];
                 control = $('[name="' + control + '"]');
                 for (var j = 0; j < control.length; j++) {
                     if(control[j].value == def){

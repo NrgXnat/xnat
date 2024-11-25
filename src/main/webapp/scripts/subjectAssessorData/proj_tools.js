@@ -58,7 +58,7 @@ function ProjectLoader(_options) {
 
     this.completeInit = function (o) {
         try {
-            this.list = eval("(" + o.responseText + ")").ResultSet.Result;
+            this.list = JSON.parse(o.responseText).ResultSet.Result;
 
             if (this.options.selects != undefined) {
                 for (var selectC = 0; selectC < this.options.selects.length; selectC++) {
@@ -126,7 +126,7 @@ function SubjectLoader(_options) {
 
     this.completeInit = function (o) {
         try {
-            this.list = eval("(" + o.responseText + ")").ResultSet.Result;
+            this.list = JSON.parse(o.responseText).ResultSet.Result;
             this.list.sort(sortByLabel);
             this.onLoadComplete.fire();
 
@@ -178,7 +178,7 @@ function ExptLoader() {
 
     this.completeInit = function (o) {
         try {
-            this.list = eval("(" + o.responseText + ")").ResultSet.Result;
+            this.list = JSON.parse(o.responseText).ResultSet.Result;
             this.onLoadComplete.fire();
         } catch (e) {
             this.displayError("ERROR " + o.status + ": Failed to parse experiment list.");

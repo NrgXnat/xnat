@@ -184,7 +184,7 @@ XNAT.app._label.labelLoaderP=function(){
 	
 	this.completeInit=function(o){
 		try{
-		    this.list= eval("(" + o.responseText +")").ResultSet.Result;
+		    this.list= JSON.parse(o.responseText).ResultSet.Result;
 			this.onload();
 		}catch(e){
 			this.displayError("ERROR " + o.status+ ": Failed to parse current label  list.");

@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet.resources;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
@@ -17,8 +17,6 @@ import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
 import org.nrg.xdat.model.XnatImagescandataShareI;
 import org.nrg.xdat.om.*;
-import org.nrg.xdat.om.base.BaseXnatExperimentdata;
-import org.nrg.xdat.om.base.BaseXnatImagescandata;
 import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTItem;
@@ -47,9 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -211,7 +206,7 @@ public class ScanResource extends ItemResource {
                 if (session != null) {
                     scan.setImageSessionId(session.getId());
                 } else {
-                    if (scan.getImageSessionId() != null && !scan.getImageSessionId().equals("")) {
+                    if (StringUtils.isNotBlank(scan.getImageSessionId())) {
                         session = (XnatImagesessiondata) XnatExperimentdata.getXnatExperimentdatasById(scan.getImageSessionId(), user, false);
 
                         if (session == null && proj != null) {
@@ -253,8 +248,16 @@ public class ScanResource extends ItemResource {
                         existing = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(scan.getXnatImagescandataId(), user, completeDocument);
                     }
 
-                    if (existing != null && scan.getId() != null) {
-                        existing=queryForScan(user,scan.getId(),scan.getImageSessionId());
+                    final String newImageSessionId = scan.getImageSessionId();
+                    if (existing != null) {
+                        final String existingImageSessionId = existing.getImageSessionId();
+                        if (!StringUtils.equals(existingImageSessionId, newImageSessionId)) {
+                            getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "The image session ID for the scan with ID " + scan.getXnatImagescandataId() + " does not match the image session ID in the database.");
+                            return;
+                        }
+                        if (scan.getId() != null) {
+                            existing=queryForScan(user, scan.getId(), newImageSessionId);
+                        }
                     }
                 }
 

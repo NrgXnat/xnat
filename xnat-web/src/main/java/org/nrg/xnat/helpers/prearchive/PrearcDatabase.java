@@ -75,6 +75,7 @@ public final class PrearcDatabase {
     private static final String QUERY_DEPRECATE_PREARC_TABLE       = "ALTER TABLE " + PrearcDatabase.tableWithSchema + " RENAME TO " + PrearcDatabase.table + "_deprecated";
     private static final String QUERY_MIGRATE_PREARC_TABLE         = "INSERT INTO " + PrearcDatabase.tableWithSchema + " (%1$s) SELECT %1$s FROM " + PrearcDatabase.tableWithSchema + "_deprecated";
     private static final String QUERY_DROP_DEPRECATED_PREARC_TABLE = "DROP TABLE " + PrearcDatabase.tableWithSchema + "_deprecated";
+    private static final String QUERY_IS_INITIALIZED               = "SELECT value::BOOLEAN FROM xhbm_preference p LEFT JOIN xhbm_tool t on t.id = tool WHERE t.tool_id = 'siteConfig' AND p.name = 'initialized'";
 
     // an object that synchronizes the cache with some permanent store
     private static SessionDataDelegate sessionDelegate;
@@ -156,16 +157,18 @@ public final class PrearcDatabase {
 
                 if (!tableExists()) { // create the table if it does not currently exist
                     PrearcDatabase.createTable();
-                } else { // check to see if the table has the correct set of columns (older versions may not)
-                    PrearcDatabase.correctTable(); // if not, correct the table by adding the required columns
+                } else {
+                    // Only try this stuff if the system is marked as initialized: there should be no rows to correct or delete if not.
+                    if ((Boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_IS_INITIALIZED, "value", null, null)) {
+                        // check to see if the table has the correct set of columns (older versions may not)
+                        PrearcDatabase.correctTable(); // if not, correct the table by adding the required columns
+                        if (recreateDBMSTablesFromScratch) {
+                            PrearcDatabase.deleteRows();
+                        }
+                        PrearcDatabase.populateTable(); // add rows to the table from the prearchive directory if not already present
+                        PrearcDatabase.pruneDatabase(); // remove rows from the table if they are not present in the prearchive directory
+                    }
                 }
-
-                if (recreateDBMSTablesFromScratch) {
-                    PrearcDatabase.deleteRows();
-                }
-
-                PrearcDatabase.populateTable(); // add rows to the table from the prearchive directory if not already present
-                PrearcDatabase.pruneDatabase(); // remove rows from the table if they are not present in the prearchive directory
 
                 PrearcDatabase.ready = true;
             }

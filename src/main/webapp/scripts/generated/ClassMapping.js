@@ -45,7 +45,7 @@ function ClassMapping(){
 
             name = name.replace(':', '_');
             if (window[name] === undefined) {
-                "dynamicJSLoad(name,'generated/" + name + ".js')"
+                dynamicJSLoad(name,'generated/" + name + ".js');
             }
             return new window[name]();
 

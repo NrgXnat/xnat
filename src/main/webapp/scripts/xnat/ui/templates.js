@@ -40,7 +40,7 @@ var XNAT = getObject(XNAT);
         }
         var val = '';
         try {
-            val = (window[lookup.trim()] || '');
+            val = window[(lookup || '').trim()] || '';
         }
         catch (e) {
             val = '';

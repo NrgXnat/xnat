@@ -69,6 +69,9 @@ var XNAT = getObject(XNAT || {});
         username = (username) ? '/'+username : '';
         return XNAT.url.csrfUrl('/xapi/access/cache/flush'+username);
     };
+    userCache.customFieldUrl = customFieldUrl = function () {
+        return XNAT.url.restUrl('/xapi/customforms/displayfields/reload');
+    };
 
     $(document).on('click','.flush-user-cache',function(e){
         e.preventDefault();
@@ -90,7 +93,7 @@ var XNAT = getObject(XNAT || {});
 
                 // add a call to reset the custom form display field cache
                 XNAT.xhr.post({
-                    url: '/xapi/customforms/displayfields/reload',
+                    url: XNAT.app.userCache.customFieldUrl(),
                     success: function(data){
                         xmodal.loading.close();
                         XNAT.ui.banner.top(3000,'Successfully updated cached data','success');

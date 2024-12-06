@@ -1112,7 +1112,7 @@ public abstract class SecureResource extends Resource {
             if (XDAT.getContextService().getBean(InteractiveAgentDetector.class).isInteractiveAgent(httpServletRequest)) {
                 final RequestCache cache = new HttpSessionRequestCache();
                 cache.saveRequest(httpServletRequest, null);
-                response.redirectTemporary("/app/template/Login.vm");
+                response.redirectTemporary(XDAT.getSiteUrl()+"/app/template/Login.vm");
             }
         } else {
             if (StringUtils.isBlank(message)) {

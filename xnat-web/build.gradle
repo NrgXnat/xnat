@@ -245,7 +245,7 @@ dependencies {
     implementation "org.apache.httpcomponents:httpcore-nio"
     implementation "org.apache.httpcomponents:httpmime"
     implementation "org.apache.commons:commons-pool2"
-
+    implementation "org.apache.commons:commons-compress"
     implementation "org.codehaus.groovy:groovy-all"
 
     implementation "eu.bitwalker:UserAgentUtils"

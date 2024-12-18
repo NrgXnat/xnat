@@ -36,7 +36,7 @@
 
 
 <script type="text/javascript"> 
-   var formOptions = {  readOnly:true,
+   var formOptions = {  xnatReadOnly: true,
                         renderMode: 'html',
                         buttonSettings: {
                              showCancel: false,

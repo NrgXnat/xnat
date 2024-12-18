@@ -57,7 +57,7 @@
 <a id="moreDetailsBtn" href="#!">View Custom Field(s)</a>
 <script type="text/javascript">
    var oMoreDetailsBtn = new YAHOO.widget.Button("moreDetailsBtn");
-   var formOptions = { readOnly:true,
+   var formOptions = {  xnatReadOnly: true,
                        renderMode:'html',
                        buttonSettings: {
                              showCancel: false,

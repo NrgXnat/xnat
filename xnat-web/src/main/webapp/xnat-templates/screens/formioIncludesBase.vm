@@ -204,7 +204,7 @@ function unescapeXML(val) {
                   Formio.createForm(htmlDivElt, components, formOptions).then(function(form) {
                       let formDataCopy = JSON.parse(JSON.stringify(formData));
                       if (typeof formOptions !== "undefined") {
-                          if (formOptions.readOnly) {
+                          if (formOptions.xnatReadOnly) {
                               sanitizeFormDataForDisplay(components, formDataCopy);
                           }
                       }
@@ -343,7 +343,7 @@ function unescapeXML(val) {
 			let configEndpoint = 'xapi/customforms/element?xsiType=$!om.getXSIType()';
 			let includePreviousNextButtons = true;
 			if (typeof formOptions !== "undefined") {
-                if (formOptions.readOnly) {
+                if (formOptions.xnatReadOnly) {
                    includePreviousNextButtons  = false;
                 }
 			}

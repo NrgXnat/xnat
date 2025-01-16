@@ -101,7 +101,7 @@ public class SessionXMLRebuilder extends AbstractXnatTask {
                                 log.info("Update #{}: prearchive session {} is {} minutes old, greater than configured interval {}, creating JMS queue entry for {} to archive {}", updatedSessionCount, sessionData, diff, _interval, user.getUsername(), sessionData.getExternalUrl());
                                 PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(user, Rebuild, sessionData, sessionDir));
                             } else if (diff >= (_interval * 10)) {
-                                log.error(String.format("Prearchive session locked for an abnormally large time within CACHE_DIR/prearc_locks/%1$s/%2$s/%3$s", sessionData.getProject(), sessionData.getTimestamp(), sessionData.getName()));
+                                log.error(String.format("Prearchive session locked for an abnormally large time within %s", PrearcUtils.getLockFolderForSession(triple)));
                             } else if (diff < _interval) {
                                 log.debug("Prearchive session {} is {} minutes old, less than configured interval {}, remaining in RECEIVING status", sessionData, diff, _interval);
                             }

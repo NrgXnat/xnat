@@ -13,6 +13,7 @@ import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
 
+import com.google.common.util.concurrent.Striped;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
@@ -60,11 +61,16 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.Charset;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -788,13 +794,21 @@ public class PrearcUtils {
      * @return True if the session still appears to be receiving new files, false otherwise.
      */
     public static boolean isSessionReceiving(final SessionDataTriple session) {
-        final File lockFolder = org.nrg.xnat.utils.FileUtils.buildCacheSubDir("prearc_locks", session.getProject(), session.getTimestamp(), session.getFolderName());
-        if (!lockFolder.exists()) {
-            return false;
+        // Not acquiring the Striped session lock here because:
+        // - Checking for presence of lockfiles doesn't need to be synchronized with creating more lockfiles,
+        // - This check happens before the session would be sent to building (where lockFolder would be deleted)
+        // - If this were to run concurrently with lockFolder being deleted, that'd cause an exception, we'd
+        //   conservatively return true, and we'd come back to try this method again next iteration
+        final File lockFolder = getLockFolderForSession(session);
+        try (Stream<Path> entries = Files.list(lockFolder.toPath())) {
+            return entries.findFirst().isPresent();
+        } catch (NoSuchFileException e) {
+            return false;  // Directory doesn't exist
+        } catch (Exception e) {
+            log.warn("Encountered issue checking for lockfiles that indicate a session is receiving for {}: {}. " +
+                    "Returning 'true' to be conservative.", session, lockFolder, e);
+            return true;
         }
-
-        final File[] locks = lockFolder.listFiles();
-        return locks != null && locks.length > 0;
     }
 
     public static void buildSession(SessionData sd) throws PrearcDatabase.SyncFailedException {
@@ -931,7 +945,22 @@ public class PrearcUtils {
         newSession.setPreventAutoCommit(existingSession.getPreventAutoCommit());
     }
 
-    private final static Object syncLock = new Object();
+    private static final int NUM_LOCKS = 128;
+
+    @SuppressWarnings("UnstableApiUsage")
+    // Striped is marked as @Beta in our guava version, but not in current version
+    private static final Striped<Lock> lockFileSyncLock = Striped.lazyWeakLock(NUM_LOCKS);
+
+    /**
+     * Get the directory into which we'll store a temporary lockfile to ensure concurrent DICOM sends don't write to
+     * the same file in the prearchive
+     * @param session the prearchive session identifier (triple)
+     * @return the lock file directory
+     */
+    public static File getLockFolderForSession(final SessionDataTriple session) {
+        return org.nrg.xnat.utils.FileUtils.buildCacheSubDir("prearc_locks", session.getProject(),
+                session.getTimestamp() + session.getFolderName());
+    }
 
     /**
      * This method will attempt to create a lock for the referenced file, and return a PrearcFileLock for managing the lock.
@@ -959,7 +988,7 @@ public class PrearcUtils {
     public static PrearcFileLock lockFile(final SessionDataTriple session, final String filename) throws SessionFileLockException, IOException {
         //putting these in a subdirectory of the cache space
         //this will allow other features to see if there are any locks in this session.
-        final File lockFolder = org.nrg.xnat.utils.FileUtils.buildCacheSubDir("prearc_locks", session.getProject(), session.getTimestamp(), session.getFolderName());
+        final File lockFolder = getLockFolderForSession(session);
 
         if (!lockFolder.exists()) {
             lockFolder.mkdirs();
@@ -970,7 +999,10 @@ public class PrearcUtils {
         final FileOutputStream stream;
         final FileChannel      channel;
 
-        synchronized (syncLock) {
+        // Acquire lock on the lock file, which is used to prevent concurrent DICOM sends from attempting to write
+        // to the same file.
+        final Lock lockfileLock = obtainAndLockStripedLockForPrearchiveSession(session);
+        try {
             //the lock will be lost if this stream is closed.
             stream = new FileOutputStream(lockFile);
             channel = stream.getChannel();
@@ -985,46 +1017,58 @@ public class PrearcUtils {
                 stream.close();
                 throw new SessionFileLockException(session, filename, e);
             }
+        } finally {
+            releaseStripedLockForPrearchiveSession(session, lockfileLock);
         }
 
         return new PrearcFileLock(lockFile, lock, stream);
     }
 
     /**
-     * Used to delete the empty directories that are generated by the prearc import processes
+     * Delete the empty directories that are generated by the prearc import processes
+     * Update XNAT-8361: leave project directories in place because locking to delete these causes a performance bottleneck
      *
      * @param session The session to be cleaned.
      */
     public static void cleanLockDirs(final SessionDataTriple session) {
-        final File project   = org.nrg.xnat.utils.FileUtils.buildCacheSubDir("prearc_locks", session.getProject());
-        final File timestamp = new File(project, session.getTimestamp());
-        final File name      = new File(timestamp, session.getFolderName());
+        final File lockFolder = getLockFolderForSession(session);
 
-        synchronized (syncLock) {
-            //synchronized to prevent overlap with .lockFile()
-            if (name.exists()) {
-                final String[] names = name.list();
-                if (names == null || names.length == 0) {
-                    try {
-                        FileUtils.deleteDirectory(name);
-                        if (timestamp.exists()) {
-                            final String[] timestamps = timestamp.list();
-                            if (timestamps == null || timestamps.length == 0) {
-                                FileUtils.deleteDirectory(timestamp);
-                                if (project.exists()) {
-                                    final String[] projects = project.list();
-                                    if (projects == null || projects.length == 0) {
-                                        FileUtils.deleteDirectory(project);
-                                    }
-                                }
-                            }
-                        }
-                    } catch (IOException e) {
-                        log.error("Couldn't clean temporary lock directories in the cache folder.", e);
-                    }
-                }
-            }
+        // Acquire lock to prevent #lockFile(SessionDataTriple, String) method from attempting to write to this directory
+        // while we're in the middle of clearing it
+        final Lock lockfileLock = obtainAndLockStripedLockForPrearchiveSession(session);
+        try {
+            deleteDirectoryIfEmpty(lockFolder);
+        } finally {
+            releaseStripedLockForPrearchiveSession(session, lockfileLock);
         }
+    }
+
+    private static boolean deleteDirectoryIfEmpty(final File directory) {
+        try {
+            Files.delete(directory.toPath());
+            return true;
+        } catch (DirectoryNotEmptyException e) {
+            return false;
+        } catch (NoSuchFileException e) {
+            // Directory doesn't exist, treat this as "successfully deleted since the end state is what was desired
+            return true;
+        } catch (IOException e) {
+            log.warn("Issue deleting temporary prearchive lock directory {}", directory, e);
+            return false;
+        }
+    }
+
+    private static Lock obtainAndLockStripedLockForPrearchiveSession(final SessionDataTriple session) {
+        @SuppressWarnings("UnstableApiUsage") final Lock lockfileLock = lockFileSyncLock.get(session);
+        log.debug("Acquiring lock for prearchive session {}", session);
+        lockfileLock.lock();
+        log.debug("Acquired lock for prearchive session {}", session);
+        return lockfileLock;
+    }
+
+    private static void releaseStripedLockForPrearchiveSession(final SessionDataTriple session, final Lock lockfileLock) {
+        log.debug("Releasing lock for prearchive session {}", session);
+        lockfileLock.unlock();
     }
 
     /**

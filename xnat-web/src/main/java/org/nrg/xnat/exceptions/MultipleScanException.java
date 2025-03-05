@@ -15,5 +15,10 @@ package org.nrg.xnat.exceptions;
  *
  */
 public class MultipleScanException extends Exception {
-
+    public MultipleScanException() {
+        super();
+    }
+    public MultipleScanException(String message) {
+        super(message);
+    }
 }

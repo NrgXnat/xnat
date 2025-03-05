@@ -80,24 +80,29 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
 		final XNATSessionBuilder builder= new XNATSessionBuilder(scanDir,xml,tempMR.getImageSessionData().getProject(),isInPrearchive);
 		builder.call();
 		
-	    if(!xml.exists() || xml.length()==0){
-	    	new Exception("Unable to locate DICOM or ECAT files");
+	    if (!xml.exists() || xml.length() == 0) {
+            throw new Exception("Unable to locate DICOM or ECAT files");
 	    }
 	    
 		final SAXReader reader = new SAXReader(user);
 		final XFTItem temp2 = reader.parse(xml.getAbsolutePath());
 		final XnatImagesessiondata newmr = (XnatImagesessiondata)BaseElement.GetGeneratedItem(temp2);
-		XnatImagescandata newscan=null;
+		XnatImagescandata newscan;
         
-		
-    	if(newmr.getScans_scan().size()>1){
-    		throw new MultipleScanException();
-    	}else{
-    		newscan=(XnatImagescandata)newmr.getScans_scan().get(0);
+    	if (newmr.getScans_scan().size() > 1) {
+			newscan = (XnatImagescandata) newmr.getScans_scan().stream()
+					.filter(s -> tempMR.getId().equals(s.getId()))
+					.findFirst()
+					.orElseThrow(() ->
+							new MultipleScanException("Multiple scans present, but none match requested id " +
+									tempMR.getId()));
+    	} else {
+    		newscan = (XnatImagescandata) newmr.getScans_scan().get(0);
     	}
-             
-    	if(!tempMR.getXSIType().equals(newscan.getXSIType())){
-			throw new Exception(String.format("Modification of scan modality ({} to {}) not supported.",tempMR.getXSIType(),newscan.getXSIType()));
+
+    	if (!tempMR.getXSIType().equals(newscan.getXSIType())) {
+			throw new Exception(String.format("Modification of scan modality (%s to %s) not supported.",
+					tempMR.getXSIType(), newscan.getXSIType()));
 		}
     	
         newscan.copyValuesFrom(tempMR);

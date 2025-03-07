@@ -1541,6 +1541,41 @@ registrationOptionsPanel:
             description: >
                 User comments, if allowed, are displayed in the email notifications sent to the site administrator.
 
+captchaOptionsPanel:
+    kind: panel.form
+    label: CAPTCHA Options
+    url: /xapi/siteConfig
+    method: POST
+    contentType: json
+    contents:
+        captchaOptionsMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    These settings control whether <a href="https://developers.google.com/recaptcha" target="_blank">Google 
+                    reCAPTCHA</a> is enabled on the <strong>User Registration</strong> page.<br><br>
+                    <strong>Important:</strong> To use reCAPTCHA, you must register your site with Google and obtain site and
+                    secret keys. When <a href="https://cloud.google.com/security/products/recaptcha" target="_blank">creating 
+                    your keys</a>, make sure you set <strong>reCAPTCHA type</strong> to <strong>score-based (v3)</strong>.
+        uiNewUserRequireCaptcha:
+            kind: panel.input.switchbox
+            label: "Enable reCAPTCHA on User Registration page"
+            onText: Require
+            offText: Not Required
+            checked: false
+            description: >
+                Enforce requirement of a reCAPTCHA in the User Registration page.
+        uiNewUserCaptchaPublic:
+            kind: panel.input.text
+            name: uiNewUserCaptchaPublic
+            label: Google reCAPTCHA Site (Public) Key
+        uiNewUserCaptchaPrivate:
+            kind: panel.input.text
+            name: uiNewUserCaptchaPrivate
+            label: Google reCAPTCHA Secret Key
+
 ## SESSION UPLOAD
 
 uploadChannels:
@@ -2771,6 +2806,7 @@ root:
             group: manageAccess
             contents:
                 ${registrationOptionsPanel}
+                ${captchaOptionsPanel}
         #        manageDataTypes:
         #            kind: tab
         #            name: manageDataTypes

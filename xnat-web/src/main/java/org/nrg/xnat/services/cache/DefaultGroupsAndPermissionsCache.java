@@ -8,8 +8,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
-import javax.validation.constraints.NotNull;
-import javax.annotation.Nullable;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.jcache.JCacheHelper;
@@ -64,7 +62,9 @@ import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.cache.Cache;
+import javax.validation.constraints.NotNull;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.text.DateFormat;
@@ -824,7 +824,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             return false;
         }
 
-        initReadableCountsForProjectUsers(projectIds);
+        initReadableCountsForProjectUsers(projectIds, action, event.getXsiType());
         return true;
     }
 
@@ -990,7 +990,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     isTargetProjectPublic ? "target project is public" : "target project is not public");
         }
 
-        initReadableCountsForProjectUsers(projectIds);
+        initReadableCountsForProjectUsers(projectIds, action, event.getXsiType());
         return true;
     }
 
@@ -1030,15 +1030,29 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return ACTIONS.stream().collect(Collectors.toMap(Function.identity(), action -> ObjectUtils.getIfNull(getActionElementDisplays(username, action), Collections::emptyList)));
     }
 
-    private void initReadableCountsForProjectUsers(final Set<String> projectIds) {
+    private void initReadableCountsForProjectUsers(final Set<String> projectIds, final String action, final String dataType) {
         final Set<String> users = getProjectUsers(projectIds);
         for (final String username : users) {
-            evict(CACHE_BROWSEABLES, username);
-            evict(CACHE_READABLE_COUNTS, username);
-            final Map<String, Long> cachedCounts = getReadableCounts(username);
-            getUserLastUpdateCache().put(username, new Date());
-            log.debug("Initialized readable counts for user {}, finding {} different counts", users, cachedCounts.size());
+            final Map<String, Long> cachedCounts = getReadableCountsCache().get(username);
+            if (cachedCounts == null || cachedCounts.isEmpty()) {
+                initReadableCountsForUser(username);
+            } else if (StringUtils.equals(EVENT_CREATE, action) && (!cachedCounts.containsKey(dataType) || cachedCounts.get(dataType) == 0)) {
+                //we only need to worry about this if it is null or 0
+                initReadableCountsForUser(username);
+            } else if (StringUtils.equals(EVENT_DELETE, action)) {
+                //do we need this?  Only if its going from 1 to 0, but we don't know that if counts aren't refreshed as they get closer to 1
+                //leaving it, but if it becomes an issue in profiling, then we could consider removing it.
+                initReadableCountsForUser(username);
+            }
         }
+    }
+
+    private void initReadableCountsForUser(final String username) {
+        evict(CACHE_BROWSEABLES, username);
+        evict(CACHE_READABLE_COUNTS, username);
+        final Map<String, Long> readableCounts = getReadableCounts(username);
+        getUserLastUpdateCache().put(username, new Date());
+        log.debug("Initialized readable counts for user {}, finding {} different counts", username, readableCounts.size());
     }
 
     private List<String> getProjectOwners(final String projectId) {

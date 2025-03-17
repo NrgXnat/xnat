@@ -166,7 +166,7 @@ BEGIN
             SELECT
                 pViewSchema,
                 pViewName,
-                'GRANT ' || privilege_type || ' ON ' || table_schema || '.' || table_name || ' TO ' || grantee
+                'GRANT ' || privilege_type || ' ON ' || table_schema || '.' || table_name || ' TO "' || grantee || '"'
             FROM
                 information_schema.role_table_grants
             WHERE

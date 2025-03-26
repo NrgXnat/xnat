@@ -9,7 +9,7 @@
 
 buildscript {
     ext {
-        vXnat = "1.9.1.2-RC-SNAPSHOT"
+        vXnat = "1.9.1.2"
     }
 }
 
@@ -31,7 +31,7 @@ plugins {
 }
 
 group "org.nrg.xnat"
-version "1.9.1.2-RC-SNAPSHOT"
+version "1.9.1.2"
 description "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve."
 
 repositories {

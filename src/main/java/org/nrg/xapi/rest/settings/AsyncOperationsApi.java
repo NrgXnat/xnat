@@ -15,6 +15,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.NoContentException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -27,6 +28,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,14 +68,16 @@ public class AsyncOperationsApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set async operations preferences."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(consumes = {APPLICATION_FORM_URLENCODED_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = Admin)
-    public int setAsyncOperationsPreferences(@ApiParam(value = "The map of async operations preferences to be set.", required = true) @RequestBody final Map<String, Object> preferences) throws NoContentException, InvalidPreferenceName {
+    public int setAsyncOperationsPreferences(@ApiParam(value = "The map of async operations preferences to be set.", required = true) @RequestBody final Map<String, Object> preferences) throws NoContentException, InvalidPreferenceName, DataFormatException {
         if (preferences.isEmpty()) {
             throw new NoContentException("You must specify one or more async operations preferences to be set.");
         }
 
+        validateAsyncOperationsPreferences(preferences);
+
         final AtomicInteger count = new AtomicInteger();
         for (final Map.Entry<String, Object> entry : preferences.entrySet()) {
-            final String value = ObjectUtils.defaultIfNull(entry.getValue(), "").toString();
+            final String value   = ObjectUtils.defaultIfNull(entry.getValue(), "").toString();
             final String current = _preferences.set(value, entry.getKey());
             if (!StringUtils.equals(value, current)) {
                 count.incrementAndGet();
@@ -112,6 +117,20 @@ public class AsyncOperationsApi extends AbstractXapiRestController {
             return oldValue;
         } catch (InvalidPreferenceName invalidPreferenceName) {
             throw new NotFoundException("There is no preference with the name " + preference + " associated with the async operations preferences.");
+        }
+    }
+
+    private void validateAsyncOperationsPreferences(final Map<String, Object> preferences) throws DataFormatException {
+        final int frequency = preferences.containsKey(AsyncOperationsPreferences.CLEANUP_FREQUENCY) ? (int) preferences.get(AsyncOperationsPreferences.CLEANUP_FREQUENCY) : _preferences.getEventTrackingDataCleanupFrequency();
+        final int ttl       = preferences.containsKey(AsyncOperationsPreferences.CLEANUP_TTL) ? (int) preferences.get(AsyncOperationsPreferences.CLEANUP_TTL) : _preferences.getEventTrackingDataCleanupFrequency();
+        if (frequency <= 0) {
+            throw new DataFormatException("The cleanup frequency must be a positive integer.");
+        }
+        if (ttl <= 0) {
+            throw new DataFormatException("The cleanup time-to-live must be a positive integer.");
+        }
+        if (Duration.of(ttl, ChronoUnit.DAYS).compareTo(Duration.of(frequency, ChronoUnit.HOURS)) < 0) {
+            throw new DataFormatException("The cleanup frequency must be greater than the time-to-live.");
         }
     }
 

@@ -11,6 +11,7 @@ package org.nrg.xnat.tracking.services;
 
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.preferences.AsyncOperationsPreferences;
 import org.nrg.xnat.tracking.entities.EventTrackingDataPojo;
 import org.nrg.xnat.tracking.model.TrackableEvent;
 
@@ -54,7 +55,7 @@ public interface EventTrackingDataService {
     void createOrUpdate(TrackableEvent eventData) throws IllegalAccessException;
 
     /**
-     * Remove entries older than 1 month
+     * Remove entries older than the number of days configured in {@link AsyncOperationsPreferences#getEventTrackingDataCleanupTtl()}.
      */
     void cleanupOldEntries();
 }

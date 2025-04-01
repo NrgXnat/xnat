@@ -2373,6 +2373,45 @@ reactorWorkQueueDispatcherRingBufferSizePower:
             after: >
                 <p class="description">Sets the size of the event buffer.</p>
 
+eventTrackingDataCleanup:
+    kind: panel.form
+    name: eventTrackingDataCleanup
+    label: Event Tracking Cleanup
+    method: POST
+    contentType: json
+    url: /xapi/asyncOps
+    contents:
+        eventTrackingDataCleanupDescription:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    These entries control how often the system runs the event-tracking clean-up process as well as the threshold for
+                    how long an event-tracking entry should be kept before being deleted. The default is to run the clean-up process
+                    every 24 hours (i.e. once a day) and keep entries for 30 days.
+                    <br><br>
+                    <strong>Updating the frequency in this panel requires a Tomcat restart to be applied.</strong>
+        eventTrackingDataCleanupFrequency:
+            kind: panel.input.number
+            label: Frequency (in hours)
+            validation: integer onblur
+            placeholder: Frequency in hours
+            afterElement: <span class="after">hours</span>
+            description: >
+                This controls how often the system runs the event-tracking clean-up process. This value should be 
+                specified in hours and defaults to 24 hours (i.e. once a day). Note that a system restart is required 
+                for this value to take effect.
+        eventTrackingDataCleanupTtl:
+            kind: panel.input.number
+            label: Time to live
+            validation: integer onblur
+            placeholder: Time to live in days
+            afterElement: <span class="after">days</span>
+            description: >
+                This controls the threshold for how long an event-tracking entry should be kept before being deleted. 
+                The default is to keep entries for 30 days.
+
 ## EVENT SERVICE
 
 eventServiceConfig:
@@ -2874,6 +2913,8 @@ root:
             group: advanced
             contents:
                 ${asyncOperations}
+                ${eventTrackingDataCleanup}
+
         #        automationTab:
         #            kind: tab
         #            name: automationTab

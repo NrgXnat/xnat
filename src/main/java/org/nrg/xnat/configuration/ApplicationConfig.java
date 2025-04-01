@@ -222,9 +222,9 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public TriggerTask cleanupEventTracking(final EventTrackingDataService eventTrackingDataService) {
+    public TriggerTask cleanupEventTracking(final EventTrackingDataService eventTrackingDataService, final AsyncOperationsPreferences preferences) {
         return new TriggerTask(eventTrackingDataService::cleanupOldEntries,
-                               new PeriodicTrigger(1, TimeUnit.DAYS));
+                               new PeriodicTrigger(preferences.getEventTrackingDataCleanupFrequency(), TimeUnit.HOURS));
     }
 
     private AsyncOperationsPreferences _asyncOperationsPreferences;

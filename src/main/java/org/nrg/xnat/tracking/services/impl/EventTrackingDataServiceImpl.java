@@ -13,6 +13,7 @@ import com.google.common.util.concurrent.Striped;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.preferences.AsyncOperationsPreferences;
 import org.nrg.xnat.tracking.entities.EventTrackingDataPojo;
 import org.nrg.xnat.tracking.model.TrackableEvent;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
@@ -26,15 +27,16 @@ import java.util.concurrent.locks.Lock;
 @Slf4j
 @Service
 public class EventTrackingDataServiceImpl implements EventTrackingDataService {
-    private final EventTrackingDataHibernateService eventTrackingDataHibernateService;
-    private static final int NUM_LOCKS = 256;
+    private static final int           NUM_LOCKS = 256;
+    private static final Striped<Lock> LOCKS     = Striped.lazyWeakLock(NUM_LOCKS);
 
-    @SuppressWarnings("UnstableApiUsage")  // Striped is marked as @Beta in our guava version, but not in current version
-    private static final Striped<Lock> LOCKS = Striped.lazyWeakLock(NUM_LOCKS);
+    private final EventTrackingDataHibernateService eventTrackingDataHibernateService;
+    private final AsyncOperationsPreferences asyncOperationsPreferences;
 
     @Autowired
-    public EventTrackingDataServiceImpl(final EventTrackingDataHibernateService eventTrackingDataHibernateService) {
+    public EventTrackingDataServiceImpl(final EventTrackingDataHibernateService eventTrackingDataHibernateService, final AsyncOperationsPreferences asyncOperationsPreferences) {
         this.eventTrackingDataHibernateService = eventTrackingDataHibernateService;
+        this.asyncOperationsPreferences = asyncOperationsPreferences;
     }
 
     /**
@@ -81,9 +83,9 @@ public class EventTrackingDataServiceImpl implements EventTrackingDataService {
      */
     @Override
     public void cleanupOldEntries() {
-        // Remove entries >1 month old
+        // Remove entries > asyncOperationsPreferences.getEventTrackingDataCleanupTtl() days ago
         Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.MONTH, -1);
+        cal.add(Calendar.DAY_OF_MONTH, -1 * asyncOperationsPreferences.getEventTrackingDataCleanupTtl());
         eventTrackingDataHibernateService.deleteEntriesOlderThan(cal.getTime());
     }
 }

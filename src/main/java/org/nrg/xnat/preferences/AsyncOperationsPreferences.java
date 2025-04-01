@@ -3,6 +3,8 @@ package org.nrg.xnat.preferences;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XnatMixIn;
 import org.nrg.framework.beans.ProxiedBeanMixIn;
+import org.nrg.framework.configuration.ConfigPaths;
+import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
@@ -15,10 +17,14 @@ import org.nrg.prefs.services.NrgPreferenceService;
 @XnatMixIn(ProxiedBeanMixIn.class)
 @Slf4j
 public class AsyncOperationsPreferences extends AbstractPreferenceBean {
-    public static final String ASYNC_OPS_TOOL_ID = "asyncOps";
+    private static final long serialVersionUID = 6172806826130883716L;
 
-    public AsyncOperationsPreferences(final NrgPreferenceService preferenceService) {
-        super(preferenceService);
+    public static final String ASYNC_OPS_TOOL_ID = "asyncOps";
+    public static final String CLEANUP_FREQUENCY = "eventTrackingDataCleanupFrequency";
+    public static final String CLEANUP_TTL = "eventTrackingDataCleanupTtl";
+
+    public AsyncOperationsPreferences(final NrgPreferenceService preferenceService, final ConfigPaths configFolderPaths, final OrderedProperties initPrefs) {
+        super(preferenceService, configFolderPaths, initPrefs);
     }
 
     @NrgPreference(defaultValue = "-1")
@@ -115,6 +121,34 @@ public class AsyncOperationsPreferences extends AbstractPreferenceBean {
             setIntegerValue(reactorWorkQueueDispatcherRingBufferSizePower, "reactorWorkQueueDispatcherRingBufferSizePower");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name reactorWorkQueueDispatcherRingBufferSizePower: something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "24")
+    public int getEventTrackingDataCleanupFrequency() {
+        return getIntegerValue(CLEANUP_FREQUENCY);
+    }
+
+    @SuppressWarnings("unused")
+    public void setEventTrackingDataCleanupFrequency(final int eventTrackingDataCleanupFrequency) {
+        try {
+            setIntegerValue(eventTrackingDataCleanupFrequency, CLEANUP_FREQUENCY);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name " + CLEANUP_FREQUENCY + ": something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "30")
+    public int getEventTrackingDataCleanupTtl() {
+        return getIntegerValue(CLEANUP_TTL);
+    }
+
+    @SuppressWarnings("unused")
+    public void setEventTrackingDataCleanupTtl(final int eventTrackingDataCleanupTtl) {
+        try {
+            setIntegerValue(eventTrackingDataCleanupTtl, CLEANUP_TTL);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name " + CLEANUP_TTL + ": something is very wrong here.", e);
         }
     }
 }

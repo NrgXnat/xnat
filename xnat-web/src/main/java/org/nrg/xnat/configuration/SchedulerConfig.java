@@ -89,7 +89,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
                     log.warn("Didn't start instance of {}. Check for relevant errors in XNAT logs.", method.getClass().getName());
                 }
             } catch (Throwable e) {
-                log.error("An error occurred trying to start the preference handler method " + method.getClass().getName(), e);
+                log.error("An error occurred trying to start the preference handler method {}", method.getClass().getName(), e);
             }
         }
     }

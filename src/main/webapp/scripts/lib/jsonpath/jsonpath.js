@@ -77,9 +77,7 @@ function jsonPath(obj, expr, arg) {
          }
       },
       eval: function(x, _v, _vname) {
-         try {
-            let result = x.replace(/(^|[^\\])@/g, "$1_v").replace(/\\@/g, "@");
-            return $ && _v && window[result]; }  // issue 7 : resolved ..
+         try { return $ && _v && eval(x.replace(/(^|[^\\])@/g, "$1_v").replace(/\\@/g, "@"));}  // issue 7 : resolved ..
          catch(e) { throw new SyntaxError("jsonPath: " + e.message + ": " + x.replace(/(^|[^\\])@/g, "$1_v").replace(/\\@/g, "@")); }  // issue 7 : resolved ..
       }
    };

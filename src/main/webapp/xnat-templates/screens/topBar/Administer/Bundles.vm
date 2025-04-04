@@ -1,3 +1,4 @@
 <!-- Sequence: 85 -->
-
+#if($user.isSiteAdmin())
 <li><a href="${SITE_ROOT}/app/template/Page.vm?view=admin/stored-searches">Stored Searches</a></li>
+#end

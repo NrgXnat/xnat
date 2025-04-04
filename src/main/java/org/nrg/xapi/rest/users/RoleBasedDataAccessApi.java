@@ -24,7 +24,7 @@ import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.customforms.security.CustomFormUserXapiAuthorization;
+import org.nrg.xapi.authorization.PrivilegedUserXapiAuthorization;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -94,7 +94,7 @@ public class RoleBasedDataAccessApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "/projects",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             method = RequestMethod.GET, restrictTo = Authorizer)
-    @AuthDelegate(CustomFormUserXapiAuthorization.class)
+    @AuthDelegate(PrivilegedUserXapiAuthorization.class)
     public ResponseEntity<List<Map<String, Object>>> getSiteProjects() throws UserInitException, UserNotFoundException{
         final String query = "SELECT proj.ID, proj.name, proj.description,proj.secondary_id, inv.firstname || ' ' || inv.lastname as investigator FROM xnat_projectData proj LEFT JOIN xnat_investigatordata inv ON proj.pi_xnat_investigatordata_id=inv.xnat_investigatordata_id;";
         List<Map<String, Object>> resultSet = jdbcTemplate.queryForList(query, EmptySqlParameterSource.INSTANCE);
@@ -112,7 +112,7 @@ public class RoleBasedDataAccessApi extends AbstractXapiRestController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.TEXT_PLAIN_VALUE,
             method = RequestMethod.POST, restrictTo = Authorizer)
-    @AuthDelegate(CustomFormUserXapiAuthorization.class)
+    @AuthDelegate(PrivilegedUserXapiAuthorization.class)
     public List<Map<String, Object>> getSelectedProjects(final @RequestBody String listOfProjects) throws UserInitException, UserNotFoundException {
         return jdbcTemplate.queryForList(QUERY_PROJECTS,
                 new MapSqlParameterSource("projectIds",

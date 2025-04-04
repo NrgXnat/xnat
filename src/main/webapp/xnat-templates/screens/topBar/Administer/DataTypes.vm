@@ -1,3 +1,4 @@
 <!-- Sequence: 50 -->
-
+#if($user.isSiteAdmin())
 <li><a href="${SITE_ROOT}/app/template/XDATScreen_dataTypes.vm">Data Types</a></li>
+#end

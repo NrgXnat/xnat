@@ -1,3 +1,4 @@
 <!-- Sequence: 40 -->
-
+#if($user.isSiteAdmin())
 <li><a href="${SITE_ROOT}/app/template/XDATScreen_groups.vm">Groups</a></li>
+#end

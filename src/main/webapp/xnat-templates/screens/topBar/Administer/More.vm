@@ -1,3 +1,4 @@
 <!-- Sequence: 90 -->
-
+#if($user.isSiteAdmin())
 <li><a href="${SITE_ROOT}/app/template/XDATScreen_admin_options.vm">More...</a></li>
+#end

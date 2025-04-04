@@ -12,6 +12,7 @@
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 #* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="timeLeft" type="java.lang.String" *#
+
 <!-- START: xnat-templates/navigations/DefaultTop.vm -->
 #if($popup)
 

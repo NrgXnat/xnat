@@ -1,5 +1,5 @@
 <!-- Sequence: 89 -->
 
-#if($siteConfig.getBooleanValue("uiShowAdminManageSiteFeatures"))
+#if($user.isSiteAdmin() && $siteConfig.getBooleanValue("uiShowAdminManageSiteFeatures"))
 <li><a href="$link.setPage("ManageFeatures.vm")">Manage Features</a></li>
 #end

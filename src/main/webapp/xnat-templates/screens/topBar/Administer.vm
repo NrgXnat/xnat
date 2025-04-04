@@ -1,10 +1,19 @@
 <!-- Sequence: 40 -->
-#if($turbineUtils.isSiteAdmin($user))
 
-<li><a href="#adminbox">Administer</a>
-    <ul>
+<li id="administer_link"><a href="#adminbox">Administer</a>
+    <ul class="administer_link_list">
         #addGlobalCustomScreens("topBar/Administer")
     </ul>
 </li>
 
-#end
+<script>
+ $(document).ready(function(){
+    var administerLinkList = $('ul.administer_link_list');
+    var links = administerLinkList.find('li').length;
+    var hiddenLinks = administerLinkList.find('li.hidden').length;
+    var openLinks = links - hiddenLinks;
+    if(!openLinks) {
+        $('#administer_link').hide();
+      }
+  });
+</script>

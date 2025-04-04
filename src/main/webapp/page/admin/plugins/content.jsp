@@ -5,14 +5,8 @@
 
 <%--@elvariable id="hibernateSpawnerService" type="org.nrg.xnat.spawner.services.SpawnerService"--%>
 
-<c:set var="redirect">
-    <div class="error">Not authorized. Redirecting...</div>
-    <script> window.location.href = '<c:url value="/"/>' </script>
-</c:set>
-
-<pg:restricted msg="${redirect}">
-
-    <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
+    <c:set var="loggedInUser" value="${sessionScope.userHelper.user.username}"/>
+    <c:import url="/xapi/users/${loggedInUser}/roles" var="loggedInUserRoles"/>
 
     <div id="page-body">
         <div class="pad">
@@ -51,55 +45,81 @@
                     XNAT.app = getObject(XNAT.app || {});
                     XNAT.app.pluginSettings = getObject(XNAT.app.pluginSettings || {});
                     XNAT.app.pluginSettings.siteTabConfigs = [];
+                    XNAT.app.pluginSettings.restrictedSiteTabConfigs = [];
                     function returnValue(value){ return value }
+                    var isPermittedToView = false;
                 </script>
 
-                <c:catch var="jspError">
+                   <c:catch var="jspError">
+
 
                     <%-- don't worry about getting the list of plugins...
                          ...any Spawner namespace with :siteSettings will get processed --%>
 
                     <c:forEach items="${hibernateSpawnerService.namespaces}" var="namespace">
                         <%-- only get 'siteSettings' items --%>
-                        <script>console.log('namespace: ${namespace}')</script>
                         <c:if test="${fn:endsWith(namespace, 'siteSettings')}">
-                            <c:import url="/xapi/spawner/resolve/${namespace}/siteSettings" var="pluginTabsConfig"/>
-                            <c:if test="${empty pluginTabsConfig}">
+                             <c:catch var="jspResponseError1">
+                                <c:import url="/xapi/spawner/resolve/${namespace}/siteSettings" var="pluginTabsConfig"/>
+                            </c:catch>
+                            <c:if test="${not empty jspError1 && empty pluginTabsConfig}">
                                 <%-- originally 'siteSettings' was the expected name of
                                      the root element, but now 'root' is preferred --%>
-                                <script>console.log('(no "siteSettings" property; using "root")')</script>
+                                <c:catch var="jspResponseError2">
                                 <c:import url="/xapi/spawner/resolve/${namespace}/root" var="pluginTabsConfig"/>
+                                </c:catch>
                             </c:if>
-                            <script>
-                                (function(){
-                                    var config = returnValue(${pluginTabsConfig});
-                                    if (!config) return;
-                                    if (config.hasOwnProperty('siteSettings')) {
-                                        XNAT.app.pluginSettings.siteTabConfigs.push(config['siteSettings'])
-                                    }
-                                    else if (config.hasOwnProperty('root')) {
-                                        XNAT.app.pluginSettings.siteTabConfigs.push(config['root'])
-                                    }
-                                })();
-                            </script>
+                            <c:if test="${empty jspError1 && empty jspError2}">
+                                <script>
+                                    (function(){
+                                        var config = returnValue(${pluginTabsConfig});
+                                        var userRoles = returnValue(${loggedInUserRoles});
+                                        if (!config) return;
+                                        if (config.hasOwnProperty('siteSettings')) {
+                                           if (config['siteSettings'].hasOwnProperty('meta') && config['siteSettings']['meta'].hasOwnProperty('restricted')) {
+                                             var restrictedTo = config['siteSettings']['meta']['restricted'];
+                                             var restrictedToArray = restrictedTo.split(",");
+                                             if (userRoles.some(role => restrictedToArray.includes(role))) {
+                                                isPermittedToView = true;
+                                                XNAT.app.pluginSettings.siteTabConfigs.push(config['siteSettings']);
+                                             } else {
+                                                if (userRoles.includes('Administrator')) {
+                                                  isPermittedToView = true;
+                                                }
+                                                XNAT.app.pluginSettings.restrictedSiteTabConfigs.push(config['siteSettings']);
+                                             }
+                                           } else if (userRoles.includes('Administrator')){
+                                              isPermittedToView = true;
+                                              XNAT.app.pluginSettings.siteTabConfigs.push(config['siteSettings']);
+                                           }
+                                        } else if (config.hasOwnProperty('root')) {
+                                            XNAT.app.pluginSettings.siteTabConfigs.push(config['root'])
+                                        }
+                                    })();
+                                </script>
+                            </c:if>
                         </c:if>
                     </c:forEach>
 
                 </c:catch>
 
-                <c:if test="${not empty jspError}">
+                <c:if test="${not empty jspError || not empty jspError1 || not empty jspError2}">
                     <script>
                         console.error('JSP error:');
-                        console.error('${jspError}');
+                        console.error('${jspError} ${jspError1} ${jspError2}');
                     </script>
                 </c:if>
 
                 <script>
                     (function(){
+                        if (!isPermittedToView) {
+                            window.location.href = '<c:url value="/"/>'
+                        }
                         var siteSettingsTabs = {};
                         // alias for brevity
                         var tabConfigs = XNAT.app.pluginSettings.siteTabConfigs;
-                        if (tabConfigs.length) {
+                        var restrictedTabConfigs = XNAT.app.pluginSettings.restrictedSiteTabConfigs;
+                        if (tabConfigs.length != 0) {
                             // show the 'Plugin Settings' item in the 'Administer' menu
                             $('#view-plugin-settings').show().hidden(false);
                             forEach(tabConfigs, function(tabConfig){
@@ -121,6 +141,44 @@
                                 // merge all configs into a single config object
                                 extend(true, siteSettingsTabs, tabConfig);
                             });
+                        }
+                        if (restrictedTabConfigs.length != 0) {
+                            if (isPermittedToView) {
+                              $('#view-plugin-settings').show().hidden(false);
+                                  forEach(restrictedTabConfigs, function(restrictedTabConfig){
+                                      var restrictedTabConfigModified = "{" +
+                                                                             "\"kind\": \"tabs\"," +
+                                                                             "\"groups\": {" +
+                                                                               "\"restrictedTabs\": \"" + restrictedTabConfig['label'] + "\"" +
+                                                                             "}," +
+                                                                             "\"contents\": {" +
+                                                                               "\"restrictedTab\": {" +
+                                                                                 "\"kind\": \"tab\"," +
+                                                                                 "\"group\": \"restrictedTabs\"," +
+                                                                                 "\"label\": \"Restricted Access\"," +
+                                                                                 "\"contents\": { " +
+                                                                                   "\"accessSettingInfo\": {" +
+                                                                                     "\"kind\": \"panel\"," +
+                                                                                     "\"name\": \"accessSettingInfo\"," +
+                                                                                     "\"label\": \"Restricted Access\"," +
+                                                                                     "\"contents\": {" +
+                                                                                       "\"info\": {" +
+                                                                                         "\"tag\": \"p\"," +
+                                                                                         "\"element\": {" +
+                                                                                           "\"style\": \"margin: 15px 0 30px\"" +
+                                                                                         "}," +
+                                                                                         "\"contents\": \"Access is restricted to role(s):  <b>"  + restrictedTabConfig['meta']['restricted'] + "</b> <br><br> <a href='/app/template/Page.vm?view=admin/users'>Go to User Administration</a> to grant this role to your user profile to administer this feature.\""+
+                                                                                       "}" +
+                                                                                     "}" +
+                                                                                   "}" +
+                                                                                 "}" +
+                                                                               "}" +
+                                                                             "}" +
+                                                                         "}";
+                                      extend(true, siteSettingsTabs, JSON.parse(restrictedTabConfigModified));
+                                  });
+                            }
+                        }
                             // make sure these properties are set correctly
                             siteSettingsTabs.kind = 'tabs';
                             siteSettingsTabs.name = 'siteSettingsTabs';
@@ -137,7 +195,6 @@
                                         $(tabSelector).first().trigger('click');
                                     });
                                 })
-                        }
                     })();
                 </script>
 
@@ -149,4 +206,3 @@
 
     <div id="xnat-scripts"></div>
 
-</pg:restricted>

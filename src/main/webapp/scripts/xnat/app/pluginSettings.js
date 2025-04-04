@@ -48,6 +48,7 @@ var XNAT = getObject(XNAT);
     };
 
 
+
     // are there ANY plugins with site-level settings?
     // set this to true to stop checking and
     // show the "Plugin Settings" menu item
@@ -60,8 +61,6 @@ var XNAT = getObject(XNAT);
         });
     }
     pluginSettings.showAdminMenuItem = showAdminMenuItem;
-
-
 
     // render settings tabs (for any context)
     // this MUST be called in the context of a Spawner instance
@@ -113,8 +112,6 @@ var XNAT = getObject(XNAT);
         });
     };
 
-
-
     // get REST data and cache it, returning already cached data if available
     function getCacheData(url, force){
         var URL = XNAT.url.restUrl(url);
@@ -157,8 +154,8 @@ var XNAT = getObject(XNAT);
 
 
     // retrieve list of spawner namespaces
-    function getSpawnerNamespaces(){
-        return getCacheData('/xapi/spawner/namespaces');
+    function getSpawnerNamespaces(append){
+        return getCacheData('/xapi/spawner/namespaces' + append);
     }
 
 
@@ -174,8 +171,6 @@ var XNAT = getObject(XNAT);
     // 3b) does the namespace root match a plugin name?
     // 3c) render the plugin's project settings tab(s)
 
-
-
     /**
      * Render settings 'type' for each installed plugin
      * with a matching Spawner namespace and 'type' element
@@ -186,7 +181,7 @@ var XNAT = getObject(XNAT);
 
         types = types || ['siteSettings', 'projectSettings'];
 
-        return getSpawnerNamespaces().done(function(namespaces){
+        return getSpawnerNamespaces('').done(function(namespaces){
             // --- CALLBACK --- //
             namespaces.forEach(function(namespace){
                 getInstalledPlugins().done(function(plugins){
@@ -251,7 +246,7 @@ var XNAT = getObject(XNAT);
         if (pluginSettings.hasAdminMenuItem === true) {
             return;
         }
-        getSpawnerNamespaces().done(function(namespaces){
+        getSpawnerNamespaces('/restricted').done(function(namespaces){
             // plugins with site-level settings
             // MUST have a site-settings.yaml file
             var nsSiteSettings = namespaces.filter(function(ns){
@@ -268,7 +263,7 @@ var XNAT = getObject(XNAT);
         if (pluginSettings.hasProjectActionItem === true) {
             return;
         }
-        getSpawnerNamespaces().done(function(namespaces){
+        getSpawnerNamespaces('').done(function(namespaces){
             // plugins with project-level settings
             // MUST have a project-settings.yaml file
             var nsProjectSettings = namespaces.filter(function(ns){

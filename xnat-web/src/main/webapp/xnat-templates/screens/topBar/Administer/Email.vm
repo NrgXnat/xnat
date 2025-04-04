@@ -1,3 +1,4 @@
 <!-- Sequence: 60 -->
-
+#if($user.isSiteAdmin())
 <li><a href="${SITE_ROOT}/app/template/XDATScreen_email.vm">Send Email</a></li>
+#end

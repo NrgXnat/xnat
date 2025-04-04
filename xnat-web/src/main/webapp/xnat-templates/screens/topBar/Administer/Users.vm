@@ -1,3 +1,4 @@
 <!-- Sequence: 30 -->
-
+#if($user.isSiteAdmin())
 <li><a href="${SITE_ROOT}/app/template/Page.vm?view=admin/users">Users</a></li>
+#end

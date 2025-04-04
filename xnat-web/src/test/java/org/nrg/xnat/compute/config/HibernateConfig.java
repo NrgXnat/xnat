@@ -27,7 +27,8 @@ public class HibernateConfig {
         //  as they do not cascade.
         // See https://hibernate.atlassian.net/browse/HHH-13711
         // Solution from https://github.com/hibernate/hibernate-orm/pull/3093#issuecomment-562752874
-        properties.put("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
+        // See for auto Dialect Resolution https://docs.jboss.org/hibernate/orm/5.6/userguide/html_single/Hibernate_User_Guide.html#portability-dialectresolver
+        //properties.put("hibernate.dialect", "org.nrg.framework.test.ImprovedH2Dialect");
         properties.put("hibernate.hbm2ddl.auto", "create");
         properties.put("hibernate.cache.use_second_level_cache", false);
         properties.put("hibernate.cache.use_query_cache", false);

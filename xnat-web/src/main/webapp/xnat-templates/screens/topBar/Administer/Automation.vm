@@ -1,5 +1,5 @@
 <!-- Sequence: 80 -->
 
-#if(!$siteConfig.getBooleanValue("uiHideAdministerAutomation"))
+#if($user.isSiteAdmin() && !$siteConfig.getBooleanValue("uiHideAdministerAutomation"))
 	<li><a href="${SITE_ROOT}/app/template/Scripts.vm">Automation</a></li>
 #end

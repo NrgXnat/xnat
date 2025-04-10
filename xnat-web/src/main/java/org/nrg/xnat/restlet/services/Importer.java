@@ -110,6 +110,11 @@ public class Importer extends SecureResource {
         return true;
     }
 
+    @Override
+    public boolean allowPut() {
+        return false;
+    }
+
     List<FileWriterWrapperI> fw = new ArrayList<>();
 
     String handler = null;

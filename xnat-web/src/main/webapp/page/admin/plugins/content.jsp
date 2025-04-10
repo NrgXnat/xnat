@@ -167,7 +167,7 @@
                                                                                          "\"element\": {" +
                                                                                            "\"style\": \"margin: 15px 0 30px\"" +
                                                                                          "}," +
-                                                                                         "\"contents\": \"Access is restricted to role(s):  <b>"  + restrictedTabConfig['meta']['restricted'] + "</b> <br><br> <a href='/app/template/Page.vm?view=admin/users'>Go to User Administration</a> to grant this role to your user profile to administer this feature.\""+
+                                                                                         "\"contents\": \"Access is restricted to role(s):  <b>"  + restrictedTabConfig['meta']['restricted'] + "</b> <br><br> <a href='" + XNAT.app.siteRoot + "app/template/Page.vm?view=admin/users'>Go to User Administration</a> to grant this role to your user profile to administer this feature.\""+
                                                                                        "}" +
                                                                                      "}" +
                                                                                    "}" +

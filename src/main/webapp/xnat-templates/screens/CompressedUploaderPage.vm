@@ -7,16 +7,22 @@
             success: function(siteConfig){
                 handler = siteConfig['uiDefaultCompressedUploaderImporter'];
                 document.getElementById('import-handler').value = handler;
-                hiddenIgnoreUnparsable(handler);
+                hiddenItemsByHandler(handler);
             }
         });
     }
 
-    function hiddenIgnoreUnparsable(handler) {
+    function hiddenItemsByHandler(handler) {
         if (handler === "DICOM-zip") {
             document.getElementById("ignoreUnparsableTr").hidden = false;
+            document.getElementById("custom-labeling").hidden = false;
+            document.getElementById("subject-labeling").hidden = false;
+            document.getElementById("session-labeling").hidden = false;
         } else {
             document.getElementById("ignoreUnparsableTr").hidden = true;
+            document.getElementById("custom-labeling").hidden = true;
+            document.getElementById("subject-labeling").hidden = true;
+            document.getElementById("session-labeling").hidden = true;
         }
     }
 
@@ -61,6 +67,33 @@
         }
     }
 
+    $(document).on('click','.toggleSessionLabeling',function(){
+        if ($(this).val() === 'derived') {
+            $('.optional-labeling')
+                .addClass('hidden')
+                .find('input').prop('disabled','disabled').prop('required',false);
+        } else {
+            $('.optional-labeling')
+                .removeClass('hidden')
+                .find('input').prop('disabled',false).prop('required','required');
+        }
+    });
+
+    $(document).on('click','.info-labeling-options',function(){
+        XNAT.dialog.open({
+            "title": "Customized Labeling on Compressed Uploads",
+            "width": 450,
+            "content": "For a single session, you can specify a custom label for subject and session rather than relying on importing values from DICOM fields during import. Custom labeling depends on using the DICOM-Zip importer, and this feature should not be used if multiple sessions are packed in a single ZIP file &ndash; the resulting upload will create a merge error in the Prearchive. ",
+            "buttons": [
+                {
+                    "label": "OK",
+                    "isDefault": true,
+                    "close": true
+                }
+            ]
+        })
+    });
+
     var checkProgressFinal = 0;
 
     function validateForm() {
@@ -76,6 +109,15 @@
         if (document.getElementById("project").selectedIndex === 0) {
             xmodal.message('Upload Action', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
             return false;
+        }
+        var handler = document.getElementById('import-handler').value;
+        if (handler === "DICOM-zip") {
+            var customSubjectLabel = $('#uploadFORM').find('input[name=subject]');
+            var customSessionLabel = $('#uploadFORM').find('input[name=session]');
+            if ((customSubjectLabel.prop('required') && !customSubjectLabel.val().length) || (customSessionLabel.prop('required') && !customSessionLabel.val().length)) {
+                xmodal.message('Upload Action', 'If you are customizing labels for $displayManager.getSingularDisplayNameForSubject().toLowerCase() and $displayManager.getSingularDisplayNameForImageSession().toLowerCase(), both inputs require a value.');
+                return false;
+            }
         }
         return true;
     }
@@ -107,6 +149,11 @@
         formDataArchive.append("src", usrResPath);
         formDataArchive.append("http-session-listener", uploadID);
         let ignoreUnparsable = document.getElementById("Ignore-UnparsableUI");
+        let handler = document.getElementById('import-handler').value;
+        if (handler !== "DICOM-zip") {
+            formDataArchive.delete("subject");
+            formDataArchive.delete("session");
+        }
         if (ignoreUnparsable.checked) {
             formDataArchive.append("Ignore-Unparsable", "true");
         } else {
@@ -241,10 +288,29 @@
             <tr>
                 <th align="left">Importer handler</th>
                 <td>
-                    <select id="import-handler" name="import-handler" onchange="hiddenIgnoreUnparsable(this.value);">
-                        <option value="DICOM-zip">DICOM</option>
+                    <select id="import-handler" name="import-handler" onchange="hiddenItemsByHandler(this.value);">
+                        <option value="DICOM-zip">DICOM Zip</option>
                         <option value="SI">Classic Session Importer (Deprecated)</option>
                     </select>
+                </td>
+            </tr>
+            <tr id="custom-labeling">
+                <th align="left">Custom Labeling <i class="fa fa-question-circle info-labeling-options" style="color: #084fab; cursor: pointer"></i></th>
+                <td>
+                    <label><input type="radio" name="toggleSessionLabeling" class="toggleSessionLabeling" value="derived" checked="checked" style="padding-right: 1.5em" /> Extract From DICOM (Default)</label>
+                    <label><input type="radio" name="toggleSessionLabeling" class="toggleSessionLabeling" value="manual" />Customize</label>
+                </td>
+            </tr>
+            <tr class="hidden optional-labeling" id="subject-labeling">
+                <th align="left">$displayManager.getSingularDisplayNameForSubject() ID</th>
+                <td>
+                    <input type="text" name="subject" disabled />
+                </td>
+            </tr>
+            <tr class="hidden optional-labeling" id="session-labeling">
+                <th align="left">$displayManager.getSingularDisplayNameForImageSession() Label</th>
+                <td>
+                    <input type="text" name="session" disabled />
                 </td>
             </tr>
             <tr id="ignoreUnparsableTr">
@@ -263,9 +329,9 @@
             <tr>
                 <th align="left">Destination</th>
                 <td>
-                    <label><input id="pc_0" type='radio' name='prearchive_code' value='0'
+                    <label><input id="pc_0" type='radio' name='prearchive_code' value='0' style="padding-right: 1.5em"
                                   #if(!$session)CHECKED#end onchange="evaluateDestination(this)"/>
-                        Prearchive</label>&nbsp;&nbsp;&nbsp;
+                        Prearchive</label>
                     <label><input id="pc_2" type='radio' name='prearchive_code' value='1'
                                   #if($session)CHECKED#end onchange="evaluateDestination(this)"/>
                         Archive</label>

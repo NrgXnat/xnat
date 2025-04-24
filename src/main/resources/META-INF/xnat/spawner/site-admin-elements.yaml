@@ -1725,7 +1725,7 @@ seriesImportFilter:
         cautionMessage:
             tag: div.warning.bold
             content: >
-                Caution: This feature has been deprecated as of XNAT 1.8.10 and will be removed from future versions. Series filtering and rejection can now be managed natively within DicomEdit anonymization scripts. See <a href="https://wiki.xnat.org/documentation/how-to-write-a-series-import-filter" target="_blank">documentation for details</a>. (Note: Support for modality maps will not be preserved.)
+                Caution: This feature has been deprecated as of XNAT 1.8.10 and will be removed from XNAT in the 1.10 release. Series filtering and rejection can now be managed natively within DicomEdit anonymization scripts. See <a href="https://wiki.xnat.org/documentation/how-to-write-a-series-import-filter" target="_blank">documentation for details</a>. (Note: Support for modality maps will not be preserved.)
         enableSitewideSeriesImportFilter:
             kind: panel.input.switchbox
             name: enableSitewideSeriesImportFilter

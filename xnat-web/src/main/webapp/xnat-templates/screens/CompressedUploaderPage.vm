@@ -94,6 +94,10 @@
         })
     });
 
+    $(document).on('blur','input.invalid',function(){
+        if ($(this).val().length) $(this).removeClass('invalid');
+    });
+
     var checkProgressFinal = 0;
 
     function validateForm() {
@@ -116,6 +120,8 @@
             var customSessionLabel = $('#uploadFORM').find('input[name=session]');
             if ((customSubjectLabel.prop('required') && !customSubjectLabel.val().length) || (customSessionLabel.prop('required') && !customSessionLabel.val().length)) {
                 xmodal.message('Upload Action', 'If you are customizing labels for $displayManager.getSingularDisplayNameForSubject().toLowerCase() and $displayManager.getSingularDisplayNameForImageSession().toLowerCase(), both inputs require a value.');
+                if (!customSubjectLabel.val().length) customSubjectLabel.addClass('invalid');
+                if (!customSessionLabel.val().length) customSessionLabel.addClass('invalid');
                 return false;
             }
         }

@@ -192,14 +192,25 @@
 
 <script type="text/javascript">
     jq(function(){
-        if (XNAT.cookie.get('WARNING_BAR') == 'CLOSED'){
-            jq('#attention_icon').show();
-        }
-        else {
-            jq('#warning_bar').show();
-        }
+        var alertEnabled = true;
+        $.get({url : serverRoot+'/xapi/siteConfig/topPageAlert?XNAT_CSRF='+csrfToken}).done(function(xhr) {
+            alertEnabled = xhr;
+            if (alertEnabled){
+                XNAT.cookie.set('WARNING_BAR', 'OPEN');
+                XNAT.cookie.set('NOTIFICATION_MESSAGE', 'OPEN');
+                $.post({url : serverRoot+'/xapi/siteConfig/topPageAlert/false?XNAT_CSRF='+csrfToken});
+            }
+            if (XNAT.cookie.get('WARNING_BAR') === 'OPEN'){
+                jq('#warning_bar').show();
+            }
+            else {
+                jq('#attention_icon').show();
+            }
+        });
+
         jq('#attention_icon').click(function(){
             jq('#warning_bar').slideToggle(200);
+            XNAT.cookie.set('WARNING_BAR', 'OPEN');
         });
         jq('#warning_bar .close').click(function(){
             XNAT.cookie.set('WARNING_BAR', 'CLOSED');
@@ -286,12 +297,6 @@
             }
         });
         mainNavBackdrop.on('click', mainNavClose);
-
-        // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
-        jq('#logout_user').click(function(){
-            XNAT.cookie.set('WARNING_BAR', 'OPEN');
-            XNAT.cookie.set('NOTIFICATION_MESSAGE', 'OPEN');
-        });
 
     });
 

@@ -42,6 +42,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,12 +69,20 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @Slf4j
 public class SiteConfigApi extends AbstractXapiRestController {
     @Autowired
-    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo, final SiteConfigAccess access, final NamedParameterJdbcTemplate template) {
+    public SiteConfigApi(
+            final SiteConfigPreferences preferences,
+            final UserManagementServiceI userManagementService,
+            final RoleHolder roleHolder,
+            final XnatAppInfo appInfo,
+            final SiteConfigAccess access,
+            final NamedParameterJdbcTemplate template,
+            final ServletContext servletContext) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
         _access = access;
         _template = template;
+        this.servletContext = servletContext;
     }
 
     @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -283,6 +292,22 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return _appInfo.getFormattedUptime();
     }
 
+    @ApiOperation(value = "Check if the top page alert enabled")
+    @ApiResponses({@ApiResponse(code = 200, message = "If the top page alert enabled."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = "topPageAlert", method = GET)
+    public boolean getTopAlertEnabled() {
+        return (Boolean)servletContext.getAttribute("topPageAlertEnabled");
+    }
+
+    @ApiOperation(value = "Enabel/Disable the top page alert")
+    @ApiResponses({@ApiResponse(code = 200, message = "Enable/Disable the top page alert."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = "topPageAlert/{flag}", method = POST)
+    public void disableTopPageAlert(@PathVariable(name = "flag") final boolean flag) {
+        servletContext.setAttribute("topPageAlertEnabled", flag);
+    }
+
     private List<? extends Set<String>> findPrefsGroups(final Set<String> keySet) {
         final List<Set<String>> includedPrefsGroups = new ArrayList<>();
         for (final Set<String> group : PREFS_GROUPS) {
@@ -313,4 +338,5 @@ public class SiteConfigApi extends AbstractXapiRestController {
     private final XnatAppInfo                _appInfo;
     private final SiteConfigAccess           _access;
     private final NamedParameterJdbcTemplate _template;
+    private final ServletContext servletContext;
 }

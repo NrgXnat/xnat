@@ -10,7 +10,11 @@
 package org.nrg.xapi.rest.settings;
 
 import com.google.common.collect.ImmutableSet;
-import io.swagger.annotations.*;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -18,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.authorization.SiteConfigPreferenceXapiAuthorization;
+import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -38,14 +43,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
-import static org.springframework.http.MediaType.*;
+import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
@@ -96,11 +109,12 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(consumes = {APPLICATION_FORM_URLENCODED_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = Admin)
-    public void setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) {
+    public void setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) throws DataFormatException {
         // Is this call initializing the system?
         final boolean isInitialized  = _appInfo.isInitialized();
         final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && getInitializedValue(properties.get("initialized"));
 
+        validateReCaptcha(properties);
         // First try to handle any submitted preferences that should be handled as a group.
         final List<? extends Set<String>> includedPrefsGroups = findPrefsGroups(properties.keySet());
         if (!includedPrefsGroups.isEmpty()) {
@@ -156,6 +170,16 @@ public class SiteConfigApi extends AbstractXapiRestController {
             if (isInitializing) {
                 // Now make the initialized setting true. This will kick off the initialized event handler.
                 _preferences.setInitialized(true);
+            }
+        }
+    }
+
+    private static void validateReCaptcha(Map<String, Object> properties) throws DataFormatException {
+        if (Boolean.TRUE.equals(properties.get("uiNewUserRequireCaptcha"))) {
+            Object privateKey = properties.get("uiNewUserCaptchaPrivate");
+            Object publicKey = properties.get("uiNewUserCaptchaPublic");
+            if (StringUtils.isBlank(String.valueOf(privateKey)) || StringUtils.isBlank(String.valueOf(publicKey))) {
+                throw new DataFormatException("ReCAPTCHA keys can not be empty.");
             }
         }
     }

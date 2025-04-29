@@ -11,12 +11,14 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -28,6 +30,7 @@ import org.springframework.security.web.savedrequest.SavedRequest;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -40,6 +43,7 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
     private static final String  GOOGLE_RECAPTCHA_URL = "https://www.google.com/recaptcha/api/siteverify";
     private static final String  USER_AGENT           = "Mozilla/5.0";
     private static final Pattern PATTERN_ACCEPT_PAR   = Pattern.compile("^.*AcceptProjectAccess/par/(?<parId>[A-z0-9-]{36})\\?hash=(?<hash>[A-z0-9]{32})");
+    public static final String EXTENSIONS = "org.nrg.xdat.register.validators.extensions";
 
     public XDATRegisterUser() {
         super();
@@ -74,14 +78,50 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
             context.put("pars", projectIds);
         }
 
-        if (siteConfig.getBooleanValue("uiNewUserRequireCaptcha") && !verify(parameters.get("g-recaptcha"), siteConfig.getValue("uiNewUserCaptchaPrivate"))) {
+        if (siteConfig.getUiNewUserRequireCaptcha() && !verify(parameters.get("g-recaptcha"), siteConfig.getValue("uiNewUserCaptchaPrivate"))) {
             data.setMessage("Invalid captcha");
             data.setScreenTemplate("Error.vm");
             log.warn("Invalid captcha: {}", parameters.get("g-recaptcha"));
             return;
         }
 
+        //allow injection of new validation implementations
+        final List<RegistrationValidatorI> compliantExtensions=getValidators();
+        if(!CollectionUtils.isEmpty(compliantExtensions)){
+            for (RegistrationValidatorI validator : compliantExtensions) {
+                if (!validator.validate(data, context)) {
+                    data.setScreenTemplate("Error.vm");
+                    log.warn("Validation failed: {}", validator.getClass().getName());
+                    return;
+                }
+            }
+        }
+
         super.doPerform(data, context);
+    }
+
+    public interface RegistrationValidatorI {
+        boolean validate(final RunData data, final Context context);
+    }
+
+    private List<RegistrationValidatorI> getValidators() throws IOException, ClassNotFoundException {
+        final List<RegistrationValidatorI> compliantExtensions=new ArrayList<>();
+
+        final List<Class<?>> classes = Reflection.getClassesForPackage(EXTENSIONS);
+        if (!CollectionUtils.isEmpty(classes)) {
+            for(final Class<?> clazz : classes) {
+                if (RegistrationValidatorI.class.isAssignableFrom(clazz)) {
+                    try {
+                        compliantExtensions.add((RegistrationValidatorI) clazz.newInstance());
+                    } catch (Throwable e) {
+                        log.error("Validation initialization failed: {}", RegistrationValidatorI.class.getName());
+                    }
+                } else {
+                    log.error("Reflection: {}.{} is NOT an implementation of RegistrationValidatorI", EXTENSIONS, clazz.getName());
+                }
+            }
+        }
+        return compliantExtensions;
     }
 
     @Override

@@ -90,7 +90,7 @@
     </p>
 
 
-    #if($siteConfig.uiNewUserRequireCaptcha)
+    #if($siteConfig.uiNewUserRequireCaptcha == true)
 
         <input type="hidden" name="g-recaptcha" id="g-recaptcha"/>
         <script src="https://www.google.com/recaptcha/api.js?render=$siteConfig.uiNewUserCaptchaPublic"></script>
@@ -105,8 +105,9 @@
                 });
             });
         </script>
-
     #end
+
+    #addGlobalCustomScreens("register_form")
 </form>
 
 <script>

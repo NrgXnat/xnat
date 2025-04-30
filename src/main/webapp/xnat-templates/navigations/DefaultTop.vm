@@ -157,7 +157,10 @@
              <div id="warning_bar" style="display:none;">
                  <span class="close"><i class="fa fa-close"></i></span>
                  <span>
-                     Your system has a series import filter running. This feature has been deprecated in favor of Instance File Removal in DicomEdit scripts and will be removed in XNAT 1.10.
+                     Your system has a series import filter running
+                     <span class="tip_text">(<i>what does this mean?</i>)
+                        <span class="tip shadowed">This feature has been deprecated in favor of Instance File Removal in DicomEdit scripts and will be removed in XNAT 1.10.</span>
+                    </span>
                  </span>
              </div>
          #end

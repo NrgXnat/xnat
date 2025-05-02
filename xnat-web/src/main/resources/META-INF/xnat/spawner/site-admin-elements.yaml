@@ -2102,6 +2102,27 @@ dicomScpReceivers:
         dicomScpManagerScript:
             tag: script|src="~/scripts/xnat/admin/dicomScpManager.js"
 
+## Logging configuration
+loggingConfigurationPanel:
+    kind: panel
+    name: loggingConfigurationPanel
+    label: Manage Logging Configuration
+    footer: false
+    contents:
+        loggingConfigurationMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    All installed logfile appenders and loggers are listed in the table below. Site admins can change the log levels in real time by using the "Set Level" selector. <strong>Please note: These log level settings will be reset to their defaults on Tomcat restart.</strong><br><br>
+                    Click on any filename to download the most recent instance of that file, or download a zip archive of all current log files:
+                    <a href="~/xapi/logs/download" download="xnat-logs.zip">Download All Logs</a>.
+        loggingConfiguration:
+            tag: "div#logging-configuration"
+        loggingConfigurationScript:
+            tag: script|src="~/scripts/xnat/admin/loggingConfiguration.js"
+
 ## FILE SYSTEM
 
 fileSystemSettingsWarning:
@@ -2895,6 +2916,12 @@ root:
             contents:
                 ${dicomScpReceiversGlobal}
                 ${dicomScpReceivers}
+        loggingConfigurationTab:
+            kind: tab
+            label: Logging Configuration
+            group: advanced
+            contents:
+                ${loggingConfigurationPanel}
         fileSystemTab:
             kind: tab
             label: File System

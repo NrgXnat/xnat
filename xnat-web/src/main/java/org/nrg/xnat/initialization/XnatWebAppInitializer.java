@@ -51,9 +51,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     public void onStartup(final ServletContext context) throws ServletException {
         context.addListener(new LogbackServletContextListener());
 
-        // By default, show alerts on top page when Tomcat is started.
-        context.setAttribute("topPageAlertEnabled", Boolean.TRUE);
-
         context.setInitParameter("org.restlet.component", "org.nrg.xnat.restlet.XNATComponent");
 
         // If the context path is not empty (meaning this isn't the root application), then we'll get true: Restlet will

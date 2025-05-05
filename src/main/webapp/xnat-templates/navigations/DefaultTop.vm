@@ -140,7 +140,7 @@
         #end
         <div class="clear"></div>
         
-        #if ($siteConfig.pathErrorWarning != "")
+        #if ($siteConfig.pathErrorWarning != "" && $turbineUtils.isSiteAdmin($user))
             <div id="warning_bar" style="display:none;">
                 <span class="close"><i class="fa fa-close"></i></span>
                 <span>
@@ -153,13 +153,21 @@
                 </span>
             </div>
         #end
-         #if ($siteConfig.enableSitewideSeriesImportFilter == true || $siteConfig.enableProjectsSeriesImportFilter ==true)
+         #if ($turbineUtils.isSiteAdmin($user) && ($siteConfig.enableSitewideSeriesImportFilter == true || $siteConfig.enableProjectsSeriesImportFilter !=""))
              <div id="warning_bar" style="display:none;">
                  <span class="close"><i class="fa fa-close"></i></span>
                  <span>
                      Your system has a series import filter running
                      <span class="tip_text">(<i>what does this mean?</i>)
-                        <span class="tip shadowed">This feature has been deprecated in favor of Instance File Removal in DicomEdit scripts and will be removed in XNAT 1.10.</span>
+                        <span class="tip shadowed">
+                            This feature has been deprecated in favor of Instance File Removal in DicomEdit scripts and will be removed in XNAT 1.10.<br>
+                            #if ($siteConfig.enableSitewideSeriesImportFilter == true)
+                                <br>Site-wide Series Import Filter is enabled.
+                            #end
+                            #if ($siteConfig.enableProjectsSeriesImportFilter !="")
+                                <br>Projects:<br> $siteConfig.enableProjectsSeriesImportFilter
+                            #end
+                        </span>
                     </span>
                  </span>
              </div>
@@ -195,25 +203,14 @@
 
 <script type="text/javascript">
     jq(function(){
-        var alertEnabled = true;
-        $.get({url : serverRoot+'/xapi/siteConfig/topPageAlert?XNAT_CSRF='+csrfToken}).done(function(xhr) {
-            alertEnabled = xhr;
-            if (alertEnabled){
-                XNAT.cookie.set('WARNING_BAR', 'OPEN');
-                XNAT.cookie.set('NOTIFICATION_MESSAGE', 'OPEN');
-                $.post({url : serverRoot+'/xapi/siteConfig/topPageAlert/false?XNAT_CSRF='+csrfToken});
-            }
-            if (XNAT.cookie.get('WARNING_BAR') === 'OPEN'){
-                jq('#warning_bar').show();
-            }
-            else {
-                jq('#attention_icon').show();
-            }
-        });
-
+        if (XNAT.cookie.get('WARNING_BAR') == 'CLOSED'){
+            jq('#attention_icon').show();
+        }
+        else {
+            jq('#warning_bar').show();
+        }
         jq('#attention_icon').click(function(){
             jq('#warning_bar').slideToggle(200);
-            XNAT.cookie.set('WARNING_BAR', 'OPEN');
         });
         jq('#warning_bar .close').click(function(){
             XNAT.cookie.set('WARNING_BAR', 'CLOSED');
@@ -300,6 +297,12 @@
             }
         });
         mainNavBackdrop.on('click', mainNavClose);
+
+        // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
+        jq('#logout_user').click(function(){
+            XNAT.cookie.set('WARNING_BAR', 'OPEN');
+            XNAT.cookie.set('NOTIFICATION_MESSAGE', 'OPEN');
+        });
 
     });
 

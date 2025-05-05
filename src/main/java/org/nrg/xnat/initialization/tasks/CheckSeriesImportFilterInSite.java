@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -37,15 +38,19 @@ public class CheckSeriesImportFilterInSite extends AbstractInitializingTask {
 
     @Override
     protected void callImpl() throws InitializingTaskException {
-        List<Configuration> configurations = configService.getConfigsByTool(TOOL_NAME);
-        if (CollectionUtils.isEmpty(configurations)) {
-            siteConfigPreferences.setEnableProjectsSeriesImportFilter(false);
-        } else {
-            siteConfigPreferences.setEnableProjectsSeriesImportFilter(getLatestVersionStatus(configurations));
-        }
+        setEnableProjectsSeriesImportFilter();
     }
 
-    public static boolean getLatestVersionStatus(List<Configuration> data) {
+    public void setEnableProjectsSeriesImportFilter() {
+        List<Configuration> configurations = configService.getConfigsByTool(TOOL_NAME);
+        String enabledProjects = CollectionUtils.isEmpty(configurations)
+                ? ""
+                : String.join(",", getEnabledProjects(configurations));
+
+        siteConfigPreferences.setEnableProjectsSeriesImportFilter(enabledProjects);
+    }
+
+    public static List<String> getEnabledProjects(List<Configuration> data) {
         return data.stream()
                 .filter(config -> Scope.Project.equals(config.getScope()) && StringUtils.isNotEmpty(config.getEntityId()))
                 .collect(Collectors.toMap(
@@ -53,8 +58,10 @@ public class CheckSeriesImportFilterInSite extends AbstractInitializingTask {
                         config -> config,
                         (existing, replacement) -> replacement.getVersion() > existing.getVersion() ? replacement : existing
                 ))
-                .values()
+                .entrySet()
                 .stream()
-                .anyMatch(config -> SERIES_IMPORT_FILTER_ENABLED.equals(config.getStatus()));
+                .filter(entry -> SERIES_IMPORT_FILTER_ENABLED.equals(entry.getValue().getStatus()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 }

@@ -130,7 +130,7 @@ public class AsyncOperationsApi extends AbstractXapiRestController {
             throw new DataFormatException("The cleanup time-to-live must be a positive integer.");
         }
         if (Duration.of(ttl, ChronoUnit.DAYS).compareTo(Duration.of(frequency, ChronoUnit.HOURS)) < 0) {
-            throw new DataFormatException("The cleanup frequency must be greater than the time-to-live.");
+            throw new DataFormatException("The cleanup frequency must be be set to a smaller time interval than the time-to-live.");
         }
     }
 

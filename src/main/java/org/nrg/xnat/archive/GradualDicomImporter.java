@@ -339,7 +339,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             // Build the scan label
             final String seriesNum = dicom.getString(Tag.SeriesNumber);
             final String seriesUID = dicom.getString(Tag.SeriesInstanceUID);
-            final String scan = Restructurer.determineScanSubdir(seriesNum, seriesUID);
+            final String scan = Restructurer.determineScanSubdir(StringUtils.startsWith(seriesNum, "+")? "_"+seriesNum.substring(1): seriesNum, seriesUID);
 
             final String source = getString(_parameters, SENDER_ID_PARAM, _user.getLogin());
 

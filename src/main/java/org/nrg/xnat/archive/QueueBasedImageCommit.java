@@ -91,7 +91,7 @@ public class QueueBasedImageCommit extends ArchiveStatusProducer implements Call
         _parameters.put(PARAM_ALLOW_SESSION_MERGE, allowSessionMerge);
         _parameters.put(PARAM_OVERRIDE_EXCEPTIONS, overrideExceptions);
         if (destination != null) {
-            _parameters.put(PARAM_DESTINATION, destination);
+            _parameters.put(PARAM_DESTINATION, destination.getUri());
         }
         _archiveOperationId = getControlString();
         _archiveEventListener = XDAT.getContextService().getBean(ArchiveEventListener.class);

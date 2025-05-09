@@ -49,9 +49,15 @@ import org.restlet.resource.ResourceException;
 
 import javax.annotation.Nullable;
 import java.net.MalformedURLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 import static lombok.AccessLevel.PROTECTED;
+import static org.nrg.xnat.helpers.uri.URIManager.PROJECT_ID;
 
 @Getter(PROTECTED)
 @Setter(PROTECTED)
@@ -105,6 +111,7 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
                 return;
             }
 
+            populateDestination();
             if (!_sources.isEmpty()) {
                 for (final String source : _sources) {
                     final URIManager.DataURIA data;
@@ -115,8 +122,14 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
                         getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e.getMessage());
                         return;
                     }
+
                     if (data instanceof URIManager.ArchiveURI) {
                         getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Invalid src URI (" + source + ")");
+                        return;
+                    }
+
+                    if (!isSameProject(data)) {
+                        getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Project mismatch: source and destination must refer to the same project. You should change the project in the Prearchive prior to running this Archive operation.");
                         return;
                     }
 
@@ -128,20 +141,6 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
                         throw new ResourceException(Status.SERVER_ERROR_INTERNAL, data.getUri() + " invalid.");
                     }
                 }
-            } else if (_destination != null) {
-                final URIManager.DataURIA data;
-                try {
-                    data = UriParserUtils.parseURI(_destination);
-                    assert data != null;
-                } catch (MalformedURLException e) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e.getMessage());
-                    return;
-                }
-                if (data instanceof URIManager.PrearchiveURI) {
-                    getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Invalid _destination URI (" + _destination + ")");
-                    return;
-                }
-                _additionalValues.putAll(data.getProps());
             } else {
                 for (final String session : _sessionFolder) {
                     try {
@@ -197,6 +196,37 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
         } catch (Exception e) {
             log.error("", e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
+        }
+    }
+
+    private boolean isSameProject(URIManager.DataURIA src) {
+        Object dataProjectObj = src.getProps().get(PROJECT_ID);
+        Object destProjectObj = _additionalValues.get(PROJECT_ID);
+
+        if (dataProjectObj instanceof String && destProjectObj instanceof String) {
+            String dataProject = (String) dataProjectObj;
+            String destProject = (String) destProjectObj;
+
+            return StringUtils.equalsIgnoreCase(destProject, dataProject);
+        }
+        return true;
+    }
+
+    private void populateDestination() {
+        if (_destination == null) {
+            return;
+        }
+        final URIManager.DataURIA data;
+        try {
+            data = UriParserUtils.parseURI(_destination);
+            assert data != null;
+            if (data instanceof URIManager.PrearchiveURI) {
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Invalid _destination URI (" + _destination + ")");
+                return;
+            }
+            _additionalValues.putAll(data.getProps());
+        } catch (MalformedURLException e) {
+            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e.getMessage());
         }
     }
 

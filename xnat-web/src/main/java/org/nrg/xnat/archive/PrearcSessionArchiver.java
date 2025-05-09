@@ -9,10 +9,6 @@
 
 package org.nrg.xnat.archive;
 
-import static org.nrg.dcm.xnat.CatalogBuilder.*;
-import static org.nrg.xft.event.XftItemEventI.CREATE;
-import static org.nrg.xft.event.XftItemEventI.UPDATE;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -23,7 +19,6 @@ import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.io.StopTagInputHandler;
 import org.dcm4che2.util.TagUtils;
-import javax.validation.constraints.NotNull;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dicomtools.filters.DicomFilterService;
@@ -31,8 +26,20 @@ import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.model.*;
-import org.nrg.xdat.om.*;
+import org.nrg.xdat.model.CatCatalogI;
+import org.nrg.xdat.model.CatDcmentryI;
+import org.nrg.xdat.model.CatEntryI;
+import org.nrg.xdat.model.XnatAbstractresourceI;
+import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.model.XnatResourcecatalogI;
+import org.nrg.xdat.om.ArcProject;
+import org.nrg.xdat.om.WrkWorkflowdata;
+import org.nrg.xdat.om.XnatAbstractresource;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -49,7 +56,6 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
-import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.SessionMergingConfigMapper;
@@ -71,17 +77,31 @@ import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.data.Status;
 import org.xml.sax.SAXException;
 
+import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.nrg.dcm.xnat.CatalogBuilder.RESOURCE_FORMAT;
+import static org.nrg.dcm.xnat.CatalogBuilder.RESOURCE_LABEL_DICOM;
+import static org.nrg.dcm.xnat.CatalogBuilder.SCANS_DIR;
+import static org.nrg.xft.event.XftItemEventI.CREATE;
+import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
 @Slf4j
 public class PrearcSessionArchiver extends ArchiveStatusProducer implements Callable<String> {
@@ -199,6 +219,10 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
 
         if (StringUtils.isEmpty(label)) {
             label = (String) params.get(LABEL2);
+        }
+
+        if (StringUtils.isEmpty(label)) {
+            label = (String) params.get(URIManager.EXPT_ID);
         }
 
         if (StringUtils.isEmpty(label) && !SessionData.UPLOADER.equals(params.get(URIManager.SOURCE))) {

@@ -129,6 +129,8 @@ var XNAT = getObject(XNAT);
             content: spawn(item.detailsTag),
             destroyOnClose: false,
             protected: true,
+            scroll: true,
+            maxBtn: true,
             buttons: [
                 {
                     label: 'Close',

@@ -903,6 +903,13 @@ notifications:
             onText: Enabled
             offText: Disabled
             description: "If enabled, the primary administrator will receive a copy of error, issue, new user, and update notifications."
+        suppressJMSFailureNotifications:
+            kind: panel.input.switchbox
+            name: suppressJMSFailureNotifications
+            label: "Suppress JMS Error email notifications"
+            onText: Suppress Notifications
+            offText: Allow Notifications
+            description: "JMS errors are always entered in the logs. This setting determines whether JMS errors should also trigger a notification email, or whether those emails should be suppressed."
 
 notificationEmails:
     kind: panel.form

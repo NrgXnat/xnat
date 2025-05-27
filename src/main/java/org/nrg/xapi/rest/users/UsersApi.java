@@ -319,7 +319,13 @@ public class UsersApi extends AbstractXapiRestController {
         }
 
         try {
-            getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."));
+            XdatUserAuth newUserAuth = null;
+            if (user.getAuthorization() != null) {
+                try {
+                    newUserAuth = (XdatUserAuth)user.getAuthorization();
+                } catch(ClassCastException ignored) {}
+            }
+            getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."), newUserAuth);
 
             if (BooleanUtils.isTrue(model.getVerified()) && BooleanUtils.isTrue(model.getEnabled())) {
                 setupAuthorization(user);

@@ -1630,7 +1630,7 @@ uploadChannels:
                         <p class="description">DICOM-zip is recommended for consistency with other upload mechanisms (C-STORE, XNAT Desktop Client), 
                         and despite its name, it does support tar, tar.gz, tgz, as well.</p> 
                         <p class="description">Session Importer (SI) is deprecated but offered for backward consistency
-                        e.g., if they’re uploading a lot of ECAT. </p>
+                        e.g., if they're uploading a lot of ECAT.</p>
         uiHideXnatUploadAssistantDownload:
             kind: panel.input.switchbox
             label: "Hide XNAT Upload Assistant"

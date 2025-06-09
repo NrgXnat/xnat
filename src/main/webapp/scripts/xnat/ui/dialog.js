@@ -657,12 +657,12 @@ window.xmodal = getObject(window.xmodal);
             var dlgHt, hdrHt, ftrHt, innerHt;
 
             if (this.dialog$ && this.dialog$.is(':visible')) {
-                dlgHt = this.dialog$.is(':visible') ? this.dialog$.outerHeight() : 500;
-                hdrHt = this.header$ && this.header$.length && this.header$.is(':visible') ? this.header$.outerHeight() || 0 : 0;
-                ftrHt = this.footer$ && this.footer$.length && !isFragment(this.footer0) ? this.footer$.outerHeight() || 0 : 0;
+                dlgHt = this.dialog$.is(':visible') ? this.dialog$.innerHeight() : 500;
+                hdrHt = this.header$ && this.header$.length && this.header$.is(':visible') ? this.header$.innerHeight() || 0 : 0;
+                ftrHt = this.footer$ && this.footer$.length && !isFragment(this.footer0) ? this.footer$.innerHeight() || 0 : 0;
             }
 
-            innerHt = dlgHt - ftrHt - hdrHt - 2;
+            innerHt = dlgHt - ftrHt - hdrHt;
 
             // only set max-height if the content overflows the available vertical space
             if (this.dialogBody$.outerHeight() > innerHt) {

@@ -1,5 +1,27 @@
 package org.nrg.xnat.utils;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.util.concurrent.Striped;
+import lombok.extern.slf4j.Slf4j;
+
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 /**
  * Provides a class that locks a file so that only a single thread or
  * process may access it.  Note that all the classes have to try to get the
@@ -23,68 +45,64 @@ package org.nrg.xnat.utils;
  *
  * <p>
  *
- * See also https://github.com/SunLabsAST/Minion/blob/master/src/com/sun/labs/minion/util/FileLock.java
+ * See SunLabsAST's
+ * <a href="https://github.com/SunLabsAST/Minion/blob/master/src/com/sun/labs/minion/util/FileLock.java">FileLock.java</a>
  *
  */
-
-import com.google.common.base.MoreObjects;
-import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 @Slf4j
 public class ThreadAndProcessFileLock {
 
     // The following static methods are used to associate a File with a ThreadAndProcessFileLock instance so that
     // we can keep our actual concurrency control objects (within ThreadAndProcessFileLock) specific to files
-    private final static Map<File, ThreadAndProcessFileLock> lockMap = new HashMap<>();
-    private final static Map<File, AtomicInteger> accessorCount = new HashMap<>();
+    private final static Map<File, ThreadAndProcessFileLock> FILE_LOCKS = new HashMap<>();
+    private final static Map<File, AtomicInteger> ACCESSOR_COUNT = new HashMap<>();
+
+    // Striped lock for protecting access to the static map of file locks
+    private final static int NUM_LOCKS = 128;
+    private final static Striped<Lock> STRIPED_MAP_LOCK = Striped.lock(NUM_LOCKS);
+
     public static final String LOCKFILE_PREFIX = ".~lock-";
 
-    public synchronized static ThreadAndProcessFileLock getThreadAndProcessFileLock(File file,
-                                                                                    boolean readOnly)
+    public static ThreadAndProcessFileLock getThreadAndProcessFileLock(File file,
+                                                                       boolean readOnly)
             throws IOException {
-        ThreadAndProcessFileLock lock;
-        if (lockMap.containsKey(file)) {
-            // Another thread is accessing this file, too. Use its ReadWriteLock
-            lock = new ThreadAndProcessFileLock(lockMap.get(file), file, readOnly);
-            accessorCount.get(file).incrementAndGet();
-        } else {
-            lock = new ThreadAndProcessFileLock(file, readOnly);
-            lockMap.put(file, lock);
-            accessorCount.put(file, new AtomicInteger(1));
+        Lock mapLock = STRIPED_MAP_LOCK.get(file);
+        mapLock.lock();
+        try {
+            ThreadAndProcessFileLock lock;
+            if (FILE_LOCKS.containsKey(file)) {
+                // Another thread is accessing this file, too. Use its ReadWriteLock
+                lock = new ThreadAndProcessFileLock(FILE_LOCKS.get(file), file, readOnly);
+                ACCESSOR_COUNT.get(file).incrementAndGet();
+            } else {
+                lock = new ThreadAndProcessFileLock(file, readOnly);
+                FILE_LOCKS.put(file, lock);
+                ACCESSOR_COUNT.put(file, new AtomicInteger(1));
+            }
+            return lock;
+        } finally {
+            mapLock.unlock();
         }
-        return lock;
     }
 
-    public synchronized static void removeThreadAndProcessFileLock(File file) {
-        if (!lockMap.containsKey(file)) {
-            return;
-        }
-        if (accessorCount.get(file).decrementAndGet() == 0) {
-            try {
-                Files.deleteIfExists(lockMap.get(file).dummyFile.toPath());
-            } catch (IOException e) {
-                log.error("Unable to delete dummy file", e);
+    public static void removeThreadAndProcessFileLock(File file) {
+        Lock mapLock = STRIPED_MAP_LOCK.get(file);
+        mapLock.lock();
+        try {
+            if (!FILE_LOCKS.containsKey(file)) {
+                return;
             }
-            lockMap.remove(file);
-            accessorCount.remove(file);
+            if (ACCESSOR_COUNT.get(file).decrementAndGet() == 0) {
+                try {
+                    Files.deleteIfExists(FILE_LOCKS.get(file).dummyFile.toPath());
+                } catch (IOException e) {
+                    log.error("Unable to delete dummy file", e);
+                }
+                FILE_LOCKS.remove(file);
+                ACCESSOR_COUNT.remove(file);
+            }
+        } finally {
+            mapLock.unlock();
         }
     }
 
@@ -247,5 +265,3 @@ public class ThreadAndProcessFileLock {
                 .toString();
     }
 }
-
-

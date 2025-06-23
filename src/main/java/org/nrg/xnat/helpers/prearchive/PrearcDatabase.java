@@ -12,6 +12,7 @@ package org.nrg.xnat.helpers.prearchive;
 import static org.nrg.xnat.helpers.prearchive.SessionException.Error.*;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Striped;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -55,6 +56,7 @@ import java.nio.file.Paths;
 import java.sql.*;
 import java.util.Date;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -96,6 +98,9 @@ public final class PrearcDatabase {
             "Split PET/MR script",
             "Default implementation of the split PET/MR session script.",
             "groovy", "", DEFAULT_SPLIT_PETMR_SESSION_FILTER);
+
+    private static final int LOCK_COUNT = 128;
+    private static final Striped<Lock> SESSION_LOCKS = Striped.lazyWeakLock(LOCK_COUNT);
 
     /**
      * The default initializer uses the file system as this cache's permanent store.
@@ -1981,155 +1986,167 @@ public final class PrearcDatabase {
      * @throws SessionException
      * @throws Exception
      */
-    public static synchronized Either<SessionData, SessionData> eitherGetOrCreateSession(final SessionData sessionData, final File tsFile, final PrearchiveCode autoArchive) throws SQLException, SessionException, Exception {
-        return new PredicatedOp<SessionData, SessionData>() {
-            SessionData _sessionData;
+    public static Either<SessionData, SessionData> eitherGetOrCreateSession(final SessionData sessionData, final File tsFile, final PrearchiveCode autoArchive) throws SQLException, SessionException, Exception {
+        final Lock sessionLock = SESSION_LOCKS.get(getSessionDataStringIdentifier(sessionData));
+        sessionLock.lock();
+        try {
+            return new PredicatedOp<SessionData, SessionData>() {
+                SessionData _sessionData;
 
-            /**
-             * Return the found session
-             * (non-Javadoc)
-             * @see PredicatedOp#trueOp()
-             */
-            Either<SessionData, SessionData> trueOp() throws SQLException, SessionException, Exception {
-                return new Either<SessionData, SessionData>() {
-                }.setRight(_sessionData);
-            }
+                /**
+                 * Return the found session
+                 * (non-Javadoc)
+                 *
+                 * @see PredicatedOp#trueOp()
+                 */
+                Either<SessionData, SessionData> trueOp() throws SQLException, SessionException, Exception {
+                    return new Either<SessionData, SessionData>() {
+                    }.setRight(_sessionData);
+                }
 
-            /**
-             * Create and return a new session
-             */
-            Either<SessionData, SessionData> falseOp() throws SQLException, SessionException, Exception {
-                Either<SessionData, SessionData> result = new Either<SessionData, SessionData>() {
-                };
+                /**
+                 * Create and return a new session
+                 */
+                Either<SessionData, SessionData> falseOp() throws SQLException, SessionException, Exception {
+                    Either<SessionData, SessionData> result = new Either<SessionData, SessionData>() {
+                    };
 
-                SessionData resultSession = new SessionOp<SessionData>() {
-                    public SessionData op() throws SQLException, SessionException, Exception {
-                        sessionData.setAutoArchive((Object) autoArchive);
-                        boolean duplicated;
-                        int suffix = 0;
-                        String suffixString = "";
-                        do {
-                            if (suffix > 0) {
-                                appendSuffix(suffixString);
-                            }
-                            if (sessionData.getProject() == null) {
-                                // We have to manually check for duplicates since nulls are considered distinct in postgres
-                                int dups;
-                                do {
-                                    if (suffix > 0) {
-                                        appendSuffix(suffixString);
-                                    }
-                                    dups = PrearcDatabase.countOf(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                    SessionData resultSession = new SessionOp<SessionData>() {
+                        public SessionData op() throws SQLException, SessionException, Exception {
+                            sessionData.setAutoArchive((Object) autoArchive);
+                            boolean duplicated;
+                            int suffix = 0;
+                            String suffixString = "";
+                            do {
+                                if (suffix > 0) {
+                                    appendSuffix(suffixString);
+                                }
+                                if (sessionData.getProject() == null) {
+                                    // We have to manually check for duplicates since nulls are considered distinct in postgres
+                                    int dups;
+                                    do {
+                                        if (suffix > 0) {
+                                            appendSuffix(suffixString);
+                                        }
+                                        dups = PrearcDatabase.countOf(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                                        suffix++;
+                                        suffixString = "_" + suffix;
+                                        if (suffix > 3) {
+                                            // this shouldn't happen, throw the exception
+                                            throw new SessionException(AlreadyExists, "Trying to add an existing session: " +
+                                                    sessionData);
+                                        }
+                                    } while (dups > 0);
+                                }
+
+                                PreparedStatement statement = this.pdb.getPreparedStatement(null, PrearcDatabase.insertSql());
+                                for (int i = 0; i < DatabaseSession.values().length; i++) {
+                                    DatabaseSession.values()[i].setInsertStatement(statement, sessionData);
+                                }
+                                try {
+                                    statement.executeUpdate();
+                                    duplicated = false;
+                                } catch (SQLIntegrityConstraintViolationException e) {
+                                    // If there's an integrity constraint violation, we're trying to insert a dupe
+                                    duplicated = true;
                                     suffix++;
                                     suffixString = "_" + suffix;
                                     if (suffix > 3) {
                                         // this shouldn't happen, throw the exception
-                                        throw new SessionException(AlreadyExists, "Trying to add an existing session: " +
-                                                sessionData);
+                                        throw e;
                                     }
-                                } while (dups > 0);
-                            }
-
-                            PreparedStatement statement = this.pdb.getPreparedStatement(null, PrearcDatabase.insertSql());
-                            for (int i = 0; i < DatabaseSession.values().length; i++) {
-                                DatabaseSession.values()[i].setInsertStatement(statement, sessionData);
-                            }
-                            try {
-                                statement.executeUpdate();
-                                duplicated = false;
-                            } catch (SQLIntegrityConstraintViolationException e) {
-                                // If there's an integrity constraint violation, we're trying to insert a dupe
-                                duplicated = true;
-                                suffix++;
-                                suffixString = "_" + suffix;
-                                if (suffix > 3) {
-                                    // this shouldn't happen, throw the exception
-                                    throw e;
                                 }
+                            } while (duplicated);
+                            return PrearcDatabase.getSession(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                        }
+
+                        private void appendSuffix(String suffixString) {
+                            sessionData.setFolderName(sessionData.getFolderName() + suffixString);
+                            sessionData.setName(sessionData.getName() + suffixString);
+                            sessionData.setUrl(new File(tsFile, sessionData.getFolderName()).getAbsolutePath());
+                        }
+                    }.run();
+                    result.setLeft(resultSession);
+                    return result;
+                }
+
+                /**
+                 * Test whether session exists. If it finds the session, the instance variable "SessionData _sessionData"
+                 * is initialized here.
+                 * <p>
+                 * Originally this function initialized a "ResultSet r" instance variable and the "trueOp()" above
+                 * read that into a SessionData, but I kept running into "ResultSet Is Closed" errors when "trueOp()"
+                 * was called, so I'm doing it here.
+                 */
+                boolean predicate() throws Exception {
+                    return new SessionOp<Boolean>() {
+                        public Boolean op() throws Exception {
+                            final List<String> constraints = new ArrayList<>();
+                            constraints.add(DatabaseSession.PROJECT.searchSql(sessionData.getProject()));
+                            constraints.add(DatabaseSession.TAG.searchSql(sessionData.getTag()));
+                            constraints.add(DatabaseSession.NAME.searchSql(sessionData.getName()));
+
+                            final ResultSet rs = pdb.executeQuery(null,
+                                    DatabaseSession.findSessionSql(constraints.toArray(new String[0])), null);
+                            if (!rs.next()) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Found no existing session for {}. A new session data object " +
+                                            "will be created for data reception.",
+                                            sessionData.getSessionDataTriple().toString());
+                                }
+                                return false;
                             }
-                        } while (duplicated);
-                        return PrearcDatabase.getSession(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
-                    }
 
-                    private void appendSuffix(String suffixString) {
-                        sessionData.setFolderName(sessionData.getFolderName() + suffixString);
-                        sessionData.setName(sessionData.getName() + suffixString);
-                        sessionData.setUrl(new File(tsFile, sessionData.getFolderName()).getAbsolutePath());
-                    }
-                }.run();
-                result.setLeft(resultSession);
-                return result;
-            }
+                            final SessionData sessionData = DatabaseSession.fillSession(rs);
 
-            /**
-             * Test whether session exists. If it find the session the instance variable "SessionData _sessionData"
-             * is initialized here.
-             *
-             * Originally this function initialized a "ResultSet r" instance variable and the "trueOp()" above
-             * read that into a SessionData, but I kept running into "ResultSet Is Closed" errors when "trueOp()"
-             * was called so I'm doing it here.
-             *
-             */
-            boolean predicate() throws Exception {
-                return new SessionOp<Boolean>() {
-                    public Boolean op() throws Exception {
-                        final List<String> constraints = new ArrayList<>();
-                        constraints.add(DatabaseSession.PROJECT.searchSql(sessionData.getProject()));
-                        constraints.add(DatabaseSession.TAG.searchSql(sessionData.getTag()));
-                        constraints.add(DatabaseSession.NAME.searchSql(sessionData.getName()));
-
-                        final ResultSet rs = pdb.executeQuery(null, DatabaseSession.findSessionSql(constraints.toArray(new String[constraints.size()])), null);
-                        if (!rs.next()) {
-                            if(log.isDebugEnabled()) {
-                                log.debug("Found no existing session for " + sessionData.getSessionDataTriple().toString() + ". A new session data object will be created for data reception.");
+                            final PrearcStatus status = sessionData.getStatus();
+                            if (PrearcStatus.RECEIVING.equals(status) || PrearcStatus.RECEIVING_INTERRUPT.equals(status)) {
+                                // Obviously, if we're receiving, we're fine.
+                                log.debug("Receiving incoming data for session {}, which is currently in {} state, " +
+                                        "which is totally fine.", sessionData.getSessionDataTriple(), status);
+                                _sessionData = sessionData;
+                                return true;
                             }
+                            if (status == PrearcStatus.BUILDING) {
+                                // If the session is currently building, then set this session to RECEIVING_INTERRUPT,
+                                // which will allow it to continue receiving but prevent autoarchiving or session
+                                // splitting afterward.
+                                log.warn("Receiving incoming data for session {} in BUILDING state, setting status to " +
+                                        "RECEIVING_INTERRUPT to block autoarchive and other operations and allow " +
+                                        "continuation of data reception.", sessionData.getSessionDataTriple());
+                                PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionStatusSQL(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcStatus.RECEIVING_INTERRUPT), null, null);
+                                _sessionData = sessionData;
+                                return true;
+                            }
+                            if (status.isInterruptable()) {
+                                // If the session is interruptable, which means it's not receiving but it's OK to set it to
+                                // receiving (ready, in error, or in conflict), that's OK. Set to RECEIVING and return the
+                                // session. Any other issues will be worked out (or re-occur) later.
+                                log.info("Receiving incoming data for session {}, which is currently in the " +
+                                        "interruptable {} state. Setting status to RECEIVING to allow continuation " +
+                                        "of data reception.", sessionData.getSessionDataTriple(), status);
+                                PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionStatusSQL(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcStatus.RECEIVING), null, null);
+                                _sessionData = sessionData;
+                                return true;
+                            }
+                            // If the status isn't interruptable, e.g. we're archiving or moving or deleting or whatever,
+                            // then return false: we'll create a new session to receive the incoming data. This may require
+                            // a merge later, but should prevent data loss.
+                            log.warn("Receiving incoming data for session {}, which is currently in the " +
+                                    "non-interruptable {} state. Creating a new RECEIVING session to allow " +
+                                    "continuation of data reception.", sessionData.getSessionDataTriple(), status);
                             return false;
                         }
+                    }.run();
+                }
+            }.run();
+        } finally {
+            sessionLock.unlock();
+        }
+    }
 
-                        final SessionData sessionData = DatabaseSession.fillSession(rs);
-
-                        final PrearcStatus status = sessionData.getStatus();
-                        if (PrearcStatus.RECEIVING.equals(status)|| PrearcStatus.RECEIVING_INTERRUPT.equals(status)) {
-                            // Obviously if we're receiving we're fine.
-                            if(log.isDebugEnabled()) {
-                                log.debug("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in " + status + " state, which is totally fine.");
-                            }
-                            _sessionData = sessionData;
-                            return true;
-                        }
-                        if (status == PrearcStatus.BUILDING) {
-                            // If the session is currently building, then set this session to RECEIVING_INTERRUPT,
-                            // which will allow it to continue receiving but prevent autoarchiving or session
-                            // splitting afterwards.
-                            if(log.isWarnEnabled()) {
-                                log.warn("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + " in BUILDING state, setting status to RECEIVING_INTERRUPT to block autoarchive and other operations and allow continuation of data reception.");
-                            }
-                            PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionStatusSQL(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcStatus.RECEIVING_INTERRUPT), null, null);
-                            _sessionData = sessionData;
-                            return true;
-                        }
-                        if (status.isInterruptable()) {
-                            // If the session is interruptable, which means it's not receiving but it's OK to set it to
-                            // receiving (ready, in error, or in conflict), that's OK. Set to RECEIVING and return the
-                            // session. Any other issues will be worked out (or re-occur) later.
-                            if (log.isInfoEnabled()) {
-                                log.info("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in the interruptable " + status + " state. Setting status to RECEIVING to allow continuation of data reception.");
-                            }
-                            PoolDBUtils.ExecuteNonSelectQuery(DatabaseSession.updateSessionStatusSQL(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), PrearcStatus.RECEIVING), null, null);
-                            _sessionData = sessionData;
-                            return true;
-                        }
-                        // If the status isn't interruptable, e.g. we're archiving or moving or deleting or whatever,
-                        // then return false: we'll create a new session to receive the incoming data. This may require
-                        // a merge later, but should prevent data loss.
-                        if (log.isWarnEnabled()) {
-                            log.warn("Receiving incoming data for session " + sessionData.getSessionDataTriple().toString() + ", which is currently in the non-interruptable " + status + " state. Creating a new RECEIVING session to allow continuation of data reception.");
-                        }
-                        return false;
-                    }
-                }.run();
-            }
-        }.run();
+    private static Object getSessionDataStringIdentifier(SessionData sessionData) {
+        return String.format("%s-%s-%s", sessionData.getProject(), sessionData.getTag(), sessionData.getName());
     }
 
     /**

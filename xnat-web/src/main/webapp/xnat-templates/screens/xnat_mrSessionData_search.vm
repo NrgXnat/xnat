@@ -124,13 +124,21 @@
         </h3>
 
         <select name="xnat:mrSessionData.COMBO0_FIELDS" required>
+            <option value="xnat:mrSessionData/ID_equals,xnat:mrSessionData/label_equals,xnat:mrSessionData/sharing/share/label_equals"
+                    #if($!search.getWebFormValue("xnat:mrSessionData.COMBO0_FIELDS")=="xnat:mrSessionData/ID_equals,xnat:mrSessionData/label_equals,xnat:mrSessionData/sharing/share/label_equals")SELECTED#end>
+                $displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID
+            </option>
+            <option value="xnat:subjectData/ID_equals,xnat:subjectData/label_equals,xnat:subjectData/sharing/share/label_equals"
+                    #if($!search.getWebFormValue("xnat:mrSessionData.COMBO0_FIELDS")=="xnat:subjectData/ID_equals,xnat:subjectData/label_equals,xnat:subjectData/sharing/share/label_equals")SELECTED#end>
+                $displayManager.getSingularDisplayNameForSubject().toUpperCase()
+            </option>
             <option value="xnat:mrSessionData/ID_in,xnat:mrSessionData/label_in,xnat:mrSessionData/sharing/share/label_in"
                 #if($!search.getWebFormValue("xnat:mrSessionData.COMBO0_FIELDS")=="xnat:mrSessionData/ID_in,xnat:mrSessionData/label_in,xnat:mrSessionData/sharing/share/label_in")SELECTED#end>
-                $displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID
+                $displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID (INCLUDE UNMATCHED)
             </option>
             <option value="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in"
                 #if($!search.getWebFormValue("xnat:mrSessionData.COMBO0_FIELDS")=="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in")SELECTED#end>
-                $displayManager.getSingularDisplayNameForSubject().toUpperCase()
+                $displayManager.getSingularDisplayNameForSubject().toUpperCase() (INCLUDE UNMATCHED)
             </option>
         </select>
 

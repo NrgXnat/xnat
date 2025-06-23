@@ -82,7 +82,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -677,16 +679,8 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 FileUtils.DeleteFile(this.prearcSession.getSessionDir());
                 File         timestampedDir      = new File(this.prearcSession.getSessionDir().getParent());
                 File         projectDir          = timestampedDir.getParentFile();
-                final File[] timestampedDirFiles = timestampedDir.listFiles();
-                if (timestampedDirFiles == null || timestampedDirFiles.length == 0) {
-                    FileUtils.DeleteFile(timestampedDir);
-                }
-                final File[] projectDirFiles = projectDir.listFiles();
-                if (projectDirFiles == null || projectDirFiles.length == 0) {
-                    // to keep things tidy, also direct the project-level dir if it's empty
-                    FileUtils.DeleteFile(projectDir);
-                }
-
+                deleteIfEmpty(timestampedDir);
+                deleteIfEmpty(projectDir);
                 try {
                     workflow.setStepDescription(PersistentWorkflowUtils.COMPLETE);
                     WorkflowUtils.complete(workflow, workflow.buildEvent());
@@ -719,6 +713,18 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
 
         completed("archiving operation complete");
         return url;
+    }
+
+    private void deleteIfEmpty(File directory) {
+        try {
+            Files.delete(directory.toPath());
+        } catch (DirectoryNotEmptyException ignored) {
+            // Directory not empty, that's fine
+        } catch (NoSuchFileException ignored) {
+            // Already doesn't exist, that's fine
+        } catch (IOException e) {
+            log.warn("Unable to delete directory {}", directory.getAbsolutePath(), e);
+        }
     }
 
     protected ApplyPluginValidationService getApplyPluginValidationService() {

@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.configuration;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.RedeliveryPolicy;
 import org.apache.activemq.broker.BrokerService;
@@ -22,6 +23,7 @@ import org.apache.activemq.usage.SystemUsage;
 import org.apache.activemq.usage.TempUsage;
 import org.apache.activemq.xbean.XBeanBrokerService;
 import org.apache.commons.math.util.MathUtils;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.entities.ResourceSurveyRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +34,7 @@ import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.util.ErrorHandler;
 
 import javax.jms.ConnectionFactory;
@@ -45,8 +48,12 @@ import static org.nrg.xdat.XDAT.DEFAULT_REQUEST_QUEUE;
 @ComponentScan({"org.nrg.framework.messaging", "org.nrg.xnat.services.messaging"})
 @Slf4j
 public class MqConfig {
-    private static final long TEMP_USAGE  = MathUtils.pow(2, 27);
-    private static final long MEM_USAGE   = MathUtils.pow(2, 29);
+
+    private static final int NUMBER_OF_IDLE_RECEIVES_PER_TASK_LIMIT = 300;
+    private static final int ONE_SECOND_IN_MS = 1000;
+
+    private static final long TEMP_USAGE = MathUtils.pow(2, 27);
+    private static final long MEM_USAGE = MathUtils.pow(2, 29);
     private static final long STORE_USAGE = MathUtils.pow(2, 30);
 
     @Value("${spring.activemq.broker-url:vm://localhost}")
@@ -174,11 +181,40 @@ public class MqConfig {
 
     @Bean
     @Primary
-    public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(final ErrorHandler errorHandler) {
-        final DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+    public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(final ErrorHandler errorHandler,
+                                                                          final SiteConfigPreferences siteConfig) {
+        return buildJmsListenerContainerFactory(errorHandler,
+                siteConfig.getDefaultJmsListenerMinConcurrency(),
+                siteConfig.getDefaultJmsListenerMaxConcurrency());
+    }
+
+    @Bean
+    public DefaultJmsListenerContainerFactory prearchiveOperationRequestJmsListenerContainerFactory(final ErrorHandler errorHandler,
+                                                                                                    final SiteConfigPreferences siteConfig) {
+        return buildJmsListenerContainerFactory(errorHandler,
+                siteConfig.getPrearchiveOperationJmsListenerMinConcurrency(),
+                siteConfig.getPrearchiveOperationJmsListenerMaxConcurrency());
+    }
+
+    private DefaultJmsListenerContainerFactory buildJmsListenerContainerFactory(final ErrorHandler errorHandler,
+                                                                                final int minConcurrency,
+                                                                                final int maxConcurrency) {
+        final DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory() {
+            @Override
+            @NonNull
+            protected DefaultMessageListenerContainer createContainerInstance() {
+                final DefaultMessageListenerContainer container = super.createContainerInstance();
+                // Allows container to scale down the number of consumers after 5 minutes of
+                // not receiving a message (300 * 1 second)
+                container.setIdleReceivesPerTaskLimit(NUMBER_OF_IDLE_RECEIVES_PER_TASK_LIMIT);
+                container.setReceiveTimeout(ONE_SECOND_IN_MS);
+                return container;
+            }
+        };
+
         factory.setConnectionFactory(connectionFactory());
         factory.setErrorHandler(errorHandler);
-        factory.setConcurrency("10-40");
+        factory.setConcurrency(minConcurrency + "-" + maxConcurrency);
         factory.setSessionAcknowledgeMode(Session.AUTO_ACKNOWLEDGE);
         return factory;
     }

@@ -323,6 +323,9 @@ public class UsersApi extends AbstractXapiRestController {
             if (user.getAuthorization() != null) {
                 try {
                     newUserAuth = (XdatUserAuth)user.getAuthorization();
+                    if (StringUtils.isBlank(newUserAuth.getXdatUsername())) {
+                        newUserAuth.setXdatUsername(user.getUsername()); //consistent with setupAuthorization method
+                    }
                 } catch(ClassCastException ignored) {}
             }
             getUserManagementService().save(user, getSessionUser(), false, new EventDetails(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE, Event.Added, "Requested by user " + getSessionUser().getUsername(), "Created new user " + user.getUsername() + " through XAPI user management API."), newUserAuth);
@@ -987,7 +990,7 @@ public class UsersApi extends AbstractXapiRestController {
             return;
         }
         final UserAuthI userAuth = user.getAuthorization();
-        if (userAuth != null && hasValidAuthorizationInformation(user)) {
+        if (userAuth != null && hasValidAuthorizationInformation(user) && !_service.hasUserByNameAndAuth(userAuth.getAuthUser(), userAuth.getAuthMethod(), userAuth.getAuthMethodId())) {
             final XdatUserAuth auth = new XdatUserAuth(userAuth.getAuthUser(), userAuth.getAuthMethod(), userAuth.getAuthMethodId());
             auth.setXdatUsername(username);
             try {

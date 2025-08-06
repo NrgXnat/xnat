@@ -67,7 +67,7 @@ console.log('loggingConfiguration.js');
                     const name = appender.name;
                     loggingConfiguration.appenders[name] = {};
                     loggingConfiguration.appenders[name].name = name.toLowerCase();
-                    loggingConfiguration.appenders[name].path = appender.path.replace(/^file:\/\//, '');
+                    loggingConfiguration.appenders[name].path = appender.path ? appender.path.replace(/^file:\/\//, '') : 'no path (console?)';
                     loggingConfiguration.appenders[name].loggers = appender.loggers;
                     Object.entries(appender.loggers).forEach(([logger, level]) => loggingConfiguration.loggers[logger] = level);
                 });

@@ -153,6 +153,13 @@
         </tr>
     #end
 
+    #foreach($contrast in $scan.getContrasts_contrastbolusv2())
+        <tr>
+            <th>Contrast</th>
+            <td align="left"><span class="truncate">#escapeCleanHTML($!contrast.getAgent())</span></td>
+        </tr>
+    #end
+
     #foreach($scanAssessor in $scanAssessors)
         #if($scanAssessor.canRead($user))
             #set($scanById=$!scanAssessor.getScanById($scanID))

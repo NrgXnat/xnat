@@ -95,7 +95,8 @@
                         id: '#escapeAll("$!scan.getProperty('ID')")',
                         series_description: '#escapeAll("$!scan.getProperty('series_description')")',
                         modality: '#escapeAll("$!scan.getProperty('modality')")',
-                        xsitype: '#escapeAll("$!scan.getXSIType()")'
+                        xsitype: '#escapeAll("$!scan.getXSIType()")',
+                        xnat_imageScanData_id: $scan.getXnatImagescandataId()
                     });
                     #end
                 </script>

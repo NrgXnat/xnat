@@ -2894,6 +2894,22 @@ public class CatalogUtils {
         return _jdbcTemplate.get();
     }
 
+    public static Optional<File> getFirstMatchingFile(final List<XnatAbstractresourceI> resources, final String resourceName, final String rootProject, final CatEntryFilterI filter) throws ServerException {
+        for(final XnatAbstractresourceI resource : resources) {
+            if (org.apache.commons.lang.StringUtils.equals(resourceName, resource.getLabel())) {
+                final Optional<CatalogUtils.CatalogData> catalogUtils = CatalogUtils.CatalogData.get((XnatResourcecatalog) resource, rootProject);
+                if (catalogUtils.isPresent()) {
+                    final Optional<CatEntryI> first = CatalogUtils.getEntriesByFilter(catalogUtils.get().catBean,filter).stream().findFirst();
+                    if(first.isPresent()){
+                        return Optional.ofNullable(CatalogUtils.getFile(first.get(), catalogUtils.get().catFile.getParent(), rootProject));
+                    }
+                }
+                break;
+            }
+        }
+        return Optional.empty();
+    }
+
     public static final String RELATIVE_PATH = "RELATIVE_PATH";
     public static final String SIZE          = "SIZE";
     public static final String PROJECT       = "PROJECT";

@@ -185,10 +185,18 @@ public final class XnatAuthenticationEventPublisher implements AuthenticationEve
                             if (userAuth.getFailedLoginAttempts().equals(_preferences.getMaxFailedLogins())) {
                                 final String expiration = TurbineUtils.getDateTimeFormatter().format(DateUtils.addMilliseconds(GregorianCalendar.getInstance().getTime(), 1000 * (int) convertPGIntervalToSeconds(_preferences.getMaxFailedLoginsLockoutDuration())));
                                 log.info("Locked out {} user account until {}", userAuth.getXdatUsername(), expiration);
-                                if (Roles.isSiteAdmin(new XDATUser(userAuth.getXdatUsername()))) {
-                                    AdminUtils.emailAllAdmins(userAuth.getXdatUsername() + " account temporarily disabled. This is an admin account.", "User " + userAuth.getXdatUsername() + " has been temporarily disabled due to excessive failed login attempts. The user's account will be automatically enabled at " + expiration + ".");
-                                } else {
-                                    AdminUtils.sendAdminEmail(userAuth.getXdatUsername() + " account temporarily disabled.", "User " + userAuth.getXdatUsername() + " has been temporarily disabled due to excessive failed login attempts. The user's account will be automatically enabled at " + expiration + ".");
+                                XDATUser user = new XDATUser(userAuth.getXdatUsername());
+                                if (user.isEnabled()) {
+                                    String username = userAuth.getXdatUsername();
+                                    String subjectSuffix = Roles.isSiteAdmin(user) ? " This is an admin account." : "";
+                                    String message = String.format("User %s has been temporarily disabled due to excessive failed login attempts. The user's account will be automatically enabled at %s.", username, expiration);
+                                    String subject = username + " account temporarily disabled." + subjectSuffix;
+
+                                    if (Roles.isSiteAdmin(user)) {
+                                        AdminUtils.emailAllAdmins(subject, message);
+                                    } else {
+                                        AdminUtils.sendAdminEmail(subject, message);
+                                    }
                                 }
                             }
                         } catch (Exception e) {

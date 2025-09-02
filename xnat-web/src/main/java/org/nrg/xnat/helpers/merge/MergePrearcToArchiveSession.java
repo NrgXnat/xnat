@@ -32,8 +32,11 @@ import org.nrg.xnat.utils.CatalogUtils;
 import org.restlet.data.Status;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
 import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
@@ -193,8 +196,16 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
 
         final Boolean sessionRebuildSuccess = new XNATSessionBuilder(srcDIR, sessionXml, true, params).call();
-        if (Boolean.TRUE.equals(!sessionRebuildSuccess || !sessionXml.exists()) || sessionXml.length() == 0) {
-            throw new ServerException("Something went wrong: I anonymized the data in " + srcDIR.getPath() + " but something failed during the session rebuild.");
+        if (!sessionRebuildSuccess || sessionXml.length() == 0) {
+            try (final Stream<Path> paths = Files.walk(srcDIR.toPath())) {
+                // Are there any non-log files? Then I'm not sure what's wrong.
+                if (paths.filter(path -> !path.toString().endsWith(".log"))
+                        .anyMatch(path -> path.toFile().isFile())) {
+                    throw new ServerException("Something went wrong: I anonymized the data in " + srcDIR.getPath() + " but something failed during the session rebuild.");
+                } else {
+                    throw new ServerException("No files were left in " + srcDIR.getName() + " after anonymization, leaving an empty session.");
+                }
+            }
         }
 
         final XnatImagesessiondata session = new XNATSessionPopulater(user, sessionXml, src.getProject(), false).populate();

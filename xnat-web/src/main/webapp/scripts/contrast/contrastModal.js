@@ -76,7 +76,7 @@
                 {
                     label: 'Save and Close',
                     isDefault: true,
-                    close: true,
+                    close: false,
                     action: function() {
                         if (document.getElementById('scan-contrast-add') != null) {
                             XNAT.ui.banner.top(2000, 'Contrast not created as no scan was selected.', 'error');
@@ -87,6 +87,7 @@
                             scanContrastManager.refreshTable();
                             XNAT.ui.dialog.closeAll();
                             XNAT.ui.banner.top(2000, "Contrast created successfully", 'success');
+                            XNAT.ui.dialog.closeAll();
                         }
                         else {
                             XNAT.ui.banner.top(2000, 'Failed to create contrast.', 'error');
@@ -115,10 +116,7 @@
                 {
                     label: 'Close',
                     isDefault: false,
-                    close: true,
-                    action: function() {
-                        XNAT.ui.dialog.closeAll();
-                    }
+                    close: true
                 }
             ],
             afterShow: function() {
@@ -155,13 +153,14 @@
                 {
                     label: 'Save and Close',
                     isDefault: true,
-                    close: true,
+                    close: false,
                     action: function() {
                         let responseErrorMessage = saveChangeToContrasts(false);
                         if (!responseErrorMessage) {
                             scanContrastManager.refreshTable();
                             XNAT.ui.dialog.closeAll();
                             XNAT.ui.banner.top(2000, "Contrast updated successfully", 'success');
+                            XNAT.ui.dialog.closeAll();
                         }
                         else {
                             XNAT.ui.banner.top(2000, 'Failed to create contrast.', 'error');
@@ -186,10 +185,7 @@
                 {
                     label: 'Close',
                     isDefault: false,
-                    close: true,
-                    action: function() {
-                        XNAT.ui.dialog.closeAll();
-                    }
+                    close: true
                 }
             ],
             afterShow: function () {
@@ -263,12 +259,7 @@
 
     scanContrastManager.addIngredientModal = function(addOrEdit, existingIngredient, position) {
         let tmpl =  spawn('div.element-wrapper', [
-            spawn('label.element-label|class=contrast', addOrEdit + ' Ingredient'),
-            spawn('input', {
-                type: 'text',
-                id: 'add_ingredient_input',
-                value: existingIngredient.name ?? ''
-            })
+            createInputElement('Name', 'ingredient', 'add_ingredient_input', existingIngredient.name, 'text', null, {width: '30%'})
         ]);
 
         this.dialog=XNAT.ui.dialog.open({
@@ -390,12 +381,14 @@
     }
 
     scanContrastManager.addAdministrationModal = function(addOrEdit, existingAdministration, position) {
+        let formattedStartTime = handleTimeElement(existingAdministration.startTime);
+        let formattedEndTime = handleTimeElement(existingAdministration.endTime);
         let tmpl =  spawn('div.element-wrapper', [
-            createInputElement('Volume', 'administration', 'admin_volume_input', existingAdministration.volume, 'text', null, {width: '30%'}),
-            createInputElement('Start Time', 'administration', 'admin_start_time_input', existingAdministration.startTime, 'time', null, {width: '20%'}),
-            createInputElement('End Time', 'administration', 'admin_end_time_input', existingAdministration.endTime, 'time', null, {width: '20%'}),
-            createInputElement('Duration', 'administration', 'admin_duration_input', existingAdministration.duration, 'text', null, {width: '30%'}),
-            createInputElement('Flow Rate', 'administration', 'admin_flow_rate_input', existingAdministration.flowRate, 'text', null, {width: '30%'})
+            createInputElement('Volume', 'administration', 'admin_volume_input', existingAdministration.volume, 'text', null, {width: '20%'}),
+            createInputElement('Start Time', 'administration', 'admin_start_time_input', formattedStartTime, 'time', null, {width: '20%'}),
+            createInputElement('End Time', 'administration', 'admin_end_time_input', formattedEndTime, 'time', null, {width: '20%'}),
+            createInputElement('Duration', 'administration', 'admin_duration_input', existingAdministration.duration, 'text', null, {width: '20%'}),
+            createInputElement('Flow Rate', 'administration', 'admin_flow_rate_input', existingAdministration.flowRate, 'text', null, {width: '20%'})
         ]);
 
         this.dialog=XNAT.ui.dialog.open({
@@ -487,9 +480,10 @@
                     }
                 },
                 apply: function (adminStartTime) {
+                    let formattedTime = handleTimeElement(adminStartTime)
                     return spawn('span.admin_start_time_span', {
-                        title: adminStartTime,
-                        html: adminStartTime
+                        title: formattedTime,
+                        html: formattedTime
                     });
                 }
             },
@@ -502,9 +496,10 @@
                     }
                 },
                 apply: function (adminEndTime) {
+                    let formattedTime = handleTimeElement(adminEndTime)
                     return spawn('span.admin_end_time_span', {
-                        title: adminEndTime,
-                        html: adminEndTime
+                        title: formattedTime,
+                        html: formattedTime
                     });
                 }
             },
@@ -702,6 +697,20 @@ function spacer(width) {
     })
 }
 
+function handleTimeElement(timeElement) {
+    if (!timeElement.includes(":")) {
+        if (timeElement < 4) {
+            return timeElement;
+        } else if (timeElement.length === 4) {
+            return timeElement.substring(0,2) + ":" + timeElement.substring(2,4);
+        } else if (timeElement.length > 4){
+            return timeElement.substring(0,2) + ":" + timeElement.substring(2,4) + ":" + timeElement.substring(4, 6);
+        }
+    } else {
+        return timeElement;
+    }
+}
+
  function renderAddContrastOptions(){
     // Populate the select box
     $.each(XNAT.app.context.scanContrastManager.scanIds, function(index, itemS) {
@@ -748,13 +757,16 @@ function renderContrastForm(item) {
 
     form.appendChild(spawn('h3', scanDesc))
     form.appendChild(spawn('div|class="warning"',{'style': {visibility: 'hidden'}, 'id': 'warning'}));
-    form.appendChild(createInputElement('Agent', 'agentName required', 'agent_input', item.agent, 'text', 'Contrast or bolus agent administered'));
+    form.appendChild(createInputElement('Agent', 'agent required', 'agent_input', item.agent, 'text', 'Contrast or bolus agent administered.'));
     form.appendChild(createInputElement('Agent Number', 'agent', 'agent_number_input', item.agentNumber, 'text', 'Identifying number of the agent administered. The number shall be 1 for the first Item and increase by 1 for each subsequent Item.'));
+    form.appendChild(createInputElement('Route', 'agent', 'route_input', item.route, 'text', 'The route of administration of contrast agent.'));
     form.appendChild(createInputElement('Ingredient Concentration', 'agent', 'concentration_input', item.concentration, 'text', 'Milligrams of active ingredient per milliliter of agent.'));
     form.appendChild(createInputElement('Percentage By Volume', 'agent', 'percentageByVolume_input', item.percentageByVolume, 'text', 'Percentage by volume of active ingredient in the total volume.'));
     form.appendChild(createInputElement('Ingredient Opaque', 'agent', 'ingredientOpaque_input', item.ingredientOpaque, 'text', 'Absorption of the ingredient greater than the absorption of water (tissue). Enumerated values: YES, NO'));
-    form.appendChild(createInputElement('T1 Relaxivity', 'agent', 't1Relaxivity_input', item.t1Relaxivity, 'text', 'T1 Relaxivity of the MR Contrast/Bolus used specified in s-1*mmol-1 specified at body temperature in blood plasma.'));
-    form.appendChild(createInputElement('T2 Relaxivity', 'agent', 't2Relaxivity_input', item.t2Relaxivity, 'text', 'T2 Relaxivity of the MR Contrast/Bolus used specified in s-1*mmol-1 specified at body temperature in blood plasma.', {marginBottom: '25px'}));
+    if (XNAT.app.context.scanContrastManager.sessionType === "xnat:ctSessionData") {
+        form.appendChild(createInputElement('T1 Relaxivity', 'agent', 't1Relaxivity_input', item.t1Relaxivity, 'text', 'T1 Relaxivity of the MR Contrast/Bolus used specified in s-1*mmol-1 specified at body temperature in blood plasma.'));
+        form.appendChild(createInputElement('T2 Relaxivity', 'agent', 't2Relaxivity_input', item.t2Relaxivity, 'text', 'T2 Relaxivity of the MR Contrast/Bolus used specified in s-1*mmol-1 specified at body temperature in blood plasma.', {marginBottom: '25px'}));
+    }
     form.appendChild(spawn('h3', "Ingredients"))
     let ingredientsTableDiv = spawn('div', {'id': 'ingredients_table'});
     ingredientsTableDiv.appendChild(XNAT.app.context.scanContrastManager.ingredientsTable(item.ingredients));
@@ -847,10 +859,16 @@ function initializeJSONFromContrastForm(){
     jsonData.agent = XNAT.app.context.validate($('#agent_input'),"Agent Name", "required text", 'input');
     jsonData.agentNumber = XNAT.app.context.validate($('#agent_number_input'),"Agent Number", "integer", 'input');
     jsonData.concentration = XNAT.app.context.validate($('#concentration_input'),"Concentration", "float", 'input');
+    jsonData.route = XNAT.app.context.validate($('#route_input'),"Route", "text", 'input');
     jsonData.percentageByVolume = XNAT.app.context.validate($('#percentageByVolume_input'),"Percentage By Volume", "float", 'input');
     jsonData.ingredientOpaque = XNAT.app.context.validate($('#ingredientOpaque_input'),"Opaque", "text", 'input');
-    jsonData.t1Relaxivity = XNAT.app.context.validate($('#t1Relaxivity_input'),"T1 Relaxivity", "float", 'input');
-    jsonData.t2Relaxivity = XNAT.app.context.validate($('#t2Relaxivity_input'),"T2 Relaxivity", "float", 'input');
+    if (XNAT.app.context.scanContrastManager.sessionType === "xnat:ctSessionData") {
+        jsonData.t1Relaxivity = XNAT.app.context.validate($('#t1Relaxivity_input'),"T1 Relaxivity", "float", 'input');
+        jsonData.t2Relaxivity = XNAT.app.context.validate($('#t2Relaxivity_input'),"T2 Relaxivity", "float", 'input');
+    } else {
+        jsonData.t1Relaxivity = "";
+        jsonData.t2Relaxivity = ""
+    }
 
     let ingredientNameValues = $(".ingredient_name_span");
     for (let i = 0; i < ingredientNameValues.length; i++) {

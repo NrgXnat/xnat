@@ -22,33 +22,14 @@
     hr.contrast{
         clear:both;
     }
-    input.agentName{
-        width:160px;
-        margin:2px;
-    }
     input.agent{
-        width:100px;
-        margin:2px;
-    }
-    input.administration{
-        width:60px;
-    }
-    input.ingredient{
         width:160px;
+        margin:2px;
     }
     #scan-contrast-details-body .required {
         border-color:grey;
     }
     #scan-contrast-details-body .float{
-        width:60px;
-    }
-    #scan-contrast-details-body .code{
-        width:60px;
-    }
-    #scan-contrast-details-body .designator{
-        width:60px;
-    }
-    #scan-contrast-details-body .time{
         width:60px;
     }
 </style>

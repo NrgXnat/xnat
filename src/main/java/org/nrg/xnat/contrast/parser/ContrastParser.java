@@ -96,14 +96,14 @@ public class ContrastParser implements Callable<List<ContrastBolus>> {
                     parsedAgents.add(agent);
                     contrast.setAgent(agent);
 
-                    final String embeddedRoute = parseSingularCodedMeaning(dcmObj, Tag.ContrastBolusAdministrationRouteSequence);
-                    contrast.setRoute((embeddedRoute != null)?embeddedRoute:dcmObj.getString(Tag.ContrastBolusRoute));
+                    final DicomObject adminRoute = seq.getNestedDicomObject(Tag.ContrastBolusAdministrationRouteSequence);
+                    contrast.setRoute(adminRoute.getString(Tag.CodeMeaning));
 
                     parseMultipleCodedMeaning(seq, Tag.ContrastBolusIngredientCodeSequence).forEach(s -> processIngredient(contrast,s));
 
-                    final DicomObject adminRoute = seq.getNestedDicomObject(Tag.ContrastAdministrationProfileSequence);
-                    if(adminRoute != null){
-                        processAdministrationProfile(contrast, adminRoute);
+                    final DicomObject adminSequence = seq.getNestedDicomObject(Tag.ContrastAdministrationProfileSequence);
+                    if(adminSequence != null){
+                        processAdministrationProfile(contrast, adminSequence);
                     }
 
                     contrast.setConcentration(seq.getString(Tag.ContrastBolusIngredientConcentration));
@@ -117,15 +117,6 @@ public class ContrastParser implements Callable<List<ContrastBolus>> {
         }
 
         return contrasts;
-    }
-
-    private String parseSingularCodedMeaning(final DicomObject parent, final int tag) {
-        final DicomObject codedSequence = parent.getNestedDicomObject(tag);
-        if (codedSequence == null) {
-            return null;
-        } else {
-            return parent.getString(Tag.CodeMeaning);
-        }
     }
 
     private List<String> parseMultipleCodedMeaning(final DicomObject parent, final int tag) {

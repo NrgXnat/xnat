@@ -29,7 +29,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * threads or processes do not first try to acquire the fileLock.
  *
  * <p>
- *
+ * <p>
  * The inter-process locking is done using Java NIO file locks on a dummy file (so we
  * don't have to open a channel prior to having the lock). Because "file
  * locks are held on behalf of the entire Java virtual machine. They are not
@@ -37,17 +37,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * virtual machine", we need another solution for intra-process (aka inter-thread) locking.
  *
  * <p>
- *
+ * <p>
  * The intra-process (aka inter-thread) locking is done with a Java ReadWriteLock,
  * shared between instances of this ThreadAndProcessFileLock class. In order to achieve
  * this sharing, a static mapping of files -> ThreadAndProcessFileLock instances has to
  * be maintained and synchronized on.
  *
  * <p>
- *
+ * <p>
  * See SunLabsAST's
  * <a href="https://github.com/SunLabsAST/Minion/blob/master/src/com/sun/labs/minion/util/FileLock.java">FileLock.java</a>
- *
  */
 @Slf4j
 public class ThreadAndProcessFileLock {
@@ -115,7 +114,8 @@ public class ThreadAndProcessFileLock {
     private boolean readOnly;
 
     // For managing inter-process reading & writing
-    @Nullable private FileLock fileLock;
+    @Nullable
+    private FileLock fileLock;
 
     // For managing inter-thread reading & writing, shared between instances
     private final ReadWriteLock mutex;
@@ -128,7 +128,7 @@ public class ThreadAndProcessFileLock {
      * (per readOnly parameter) java.nio.channels.FileLock on the channel. This <em><b>does not</b></em>
      * fileLock the file; use the <code>acquireLock</code> method for that.
      *
-     * @param file the file
+     * @param file     the file
      * @param readOnly Is this a readonly lock?
      */
     private ThreadAndProcessFileLock(File file, boolean readOnly) throws IOException {
@@ -138,8 +138,8 @@ public class ThreadAndProcessFileLock {
     /**
      * Creates a ThreadAndProcessFileLock that will share a ReadWriteLock with another ThreadAndProcessFileLock instance
      *
-     * @param file the file
-     * @param l the ThreadAndProcessFileLock whose ReadWriteLock we want to share
+     * @param file     the file
+     * @param l        the ThreadAndProcessFileLock whose ReadWriteLock we want to share
      * @param readOnly Is this a readonly lock?
      */
     private ThreadAndProcessFileLock(ThreadAndProcessFileLock l, File file, boolean readOnly) throws IOException {
@@ -185,12 +185,12 @@ public class ThreadAndProcessFileLock {
     /**
      * Acquires the fileLock on the file.  This code will try repeatedly to
      * acquire the fileLock.
-     * @param timeout the timeout to use when trying to acquire the fileLock
-     * @param units the units for the timeout.  This will be converted to milliseconds, so beware of truncation!
      *
+     * @param timeout the timeout to use when trying to acquire the fileLock
+     * @param units   the units for the timeout.  This will be converted to milliseconds, so beware of truncation!
      * @throws IOException when the fileLock cannot be acquired within
-     * the specified timeout or if there is an I/O error while obtaining
-     * the fileLock
+     *                     the specified timeout or if there is an I/O error while obtaining
+     *                     the fileLock
      */
     public void tryLock(long timeout, TimeUnit units) throws IOException {
         long timeoutTime = System.currentTimeMillis() + units.toMillis(timeout);
@@ -241,6 +241,7 @@ public class ThreadAndProcessFileLock {
 
     /**
      * Try to get the fileLock on the channel.
+     *
      * @return <code>true</code> if we got the fileLock, <code>false</code>
      * otherwise.
      */
@@ -251,6 +252,13 @@ public class ThreadAndProcessFileLock {
         } catch (OverlappingFileLockException ole) {
             // we already have the lock in this JVM
             return true;
+        } catch (Error err) {
+            // XNAT-8495 The java 8 version of sun.nio.ch.FileKey::create catches IOException and wraps it in an Error
+            // TODO We can remove this after updating from java 8
+            if (err.getCause() instanceof IOException) {
+                throw (IOException) err.getCause();
+            }
+            throw err;
         }
         return fileLock != null;
     }

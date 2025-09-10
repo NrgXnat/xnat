@@ -9,10 +9,6 @@
 
 package org.nrg.xnat.utils;
 
-import java.io.IOException;
-import java.util.Optional;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,7 +29,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.codec.Base64;
 
 import javax.annotation.Nonnull;
@@ -47,7 +42,7 @@ public class XnatHttpUtils {
     private static final String PARAM_LOGIN_METHOD      = "login_method";
     private static final String PARAM_USERNAME          = "username";
     private static final String PARAM_PASSWORD          = "password";
-    private static final String QUERY_UPGRADE_NEEDED    = "SELECT primary_password ~ '^[A-Fa-f0-9]{64}\\{[A-Za-z0-9]{64}}$' FROM xdat_user WHERE login = :" + PARAM_USERNAME;
+    private static final String QUERY_UPGRADE_NEEDED    = "SELECT primary_password IS NOT NULL AND primary_password ~ '^[A-Fa-f0-9]{64}\\{[A-Za-z0-9]{64}}$' FROM xdat_user WHERE login = :" + PARAM_USERNAME;
     private static final String QUERY_UPGRADE_PASSWORD  = "UPDATE xdat_user SET primary_password = :" + PARAM_PASSWORD + ", salt = null, primary_password_encrypt = 1 WHERE login = :" + PARAM_USERNAME;
     private static final String QUERY_CLEAR_CACHE_ENTRY = "DELETE FROM xs_item_cache WHERE contents LIKE 'Item:(0(xdat:user)((login:string)=(%s)%%'";
 
@@ -62,7 +57,7 @@ public class XnatHttpUtils {
      * <b>username</b> and <b>password</b> parameters from the request. If those aren't found, it tries to get the
      * <b>username</b> and <b>password</b> parameters. If those aren't found, it looks for the <b>Authorization</b>
      * header, which is used to pass encoded authentication credentials for basic authentication operations.
-     *
+     * <p>
      * Note that this method always returns a value, even though it may not have found any credentials in the request!
      *
      * @param request The servlet request from which credentials should be extracted.
@@ -93,11 +88,11 @@ public class XnatHttpUtils {
      * <b>username</b> and <b>password</b> parameters from the request. If those aren't found, it tries to get the
      * <b>username</b> and <b>password</b> parameters. If those aren't found, it looks for the <b>Authorization</b>
      * header, which is used to pass encoded authentication credentials for basic authentication operations.
-     *
+     * <p>
      * If the username and password are found in the basic authentication header and an instance of the {@link
      * AliasTokenService} is passed in, the username is tested to see if it matches the alias token format. If so, the
      * corresponding alias token is retrieved if it exists. If not, the {@link AliasTokenException} is thrown.
-     *
+     * <p>
      * Note that this method always returns a value, even though it may not have found any credentials in the request!
      *
      * @param request The servlet request from which credentials should be extracted.
@@ -140,6 +135,7 @@ public class XnatHttpUtils {
         if (StringUtils.startsWith(header, "Basic ")) {
             try {
                 final String encoding = StringUtils.defaultIfBlank(request.getCharacterEncoding(), "UTF-8");
+                //noinspection deprecation
                 final String token    = new String(Base64.decode(header.substring(6).getBytes(encoding)), encoding);
 
                 if (token.contains(":")) {
@@ -180,10 +176,8 @@ public class XnatHttpUtils {
     /**
      * Completes actions which happen after a user logs into the application.
      *
-     * @param request
-     * @param template
-     * @throws IOException
-     * @throws ServletException
+     * @param request Request for user authentication.
+     * @param template JDBC template for query executions
      */
     public static void onAuthenticationSuccess(final HttpServletRequest request, final NamedParameterJdbcTemplate template) {
         try {
@@ -223,9 +217,7 @@ public class XnatHttpUtils {
                     log.debug("Couldn't find password on the authentication request, checking for basic auth credentials instead.");
                     try {
                         final Pair<String, String> credentials = XnatHttpUtils.getCredentials(request);
-                        if (credentials == null) {
-                            log.warn("Couldn't find password for user {} on the authentication request or in basic auth credentials, so I can't upgrade that password", username);
-                        } else if (StringUtils.equals(username, credentials.getKey())) {
+                        if (StringUtils.equals(username, credentials.getKey())) {
                             return credentials.getValue();
                         } else {
                             log.warn("I found credentials for user {} in the basic auth credentials, but that doesn't match the login username {}", credentials.getKey(), username);
@@ -255,10 +247,9 @@ public class XnatHttpUtils {
         }
     }
 
-
     private static boolean shouldUpgradePassword(final String username,final NamedParameterJdbcTemplate template) {
         try {
-            return template.queryForObject(QUERY_UPGRADE_NEEDED, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class);
+            return Boolean.TRUE.equals(template.queryForObject(QUERY_UPGRADE_NEEDED, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class));
         } catch (EmptyResultDataAccessException e) {
             log.warn("Checked for password encoding upgrade required, but couldn't find the username {}", username);
             return false;

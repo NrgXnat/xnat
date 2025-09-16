@@ -51,8 +51,10 @@
         </h3>
 
         <select name="${dataType}.COMBO0_FIELDS" required>
-            <option value="${dataType}/ID_in,${dataType}/label_in,${dataType}/sharing/share/label_in" #if($!search.getWebFormValue("${dataType}.COMBO0_FIELDS")=="${dataType}/ID_in,${dataType}/label_in,${dataType}/sharing/share/label_in")SELECTED#end>$displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID</option>
-            <option value="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in" #if($!search.getWebFormValue("${dataType}.COMBO0_FIELDS")=="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in")SELECTED#end>$displayManager.getSingularDisplayNameForSubject().toUpperCase()</option>
+        <option value="${dataType}/ID_equals,${dataType}/label_equals,${dataType}/sharing/share/label_equals" #if($!search.getWebFormValue("${dataType}.COMBO0_FIELDS")=="${dataType}/ID_equals,${dataType}/label_equals,${dataType}/sharing/share/label_equals")SELECTED#end>$displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID</option>
+            <option value="xnat:subjectData/ID_equals,xnat:subjectData/label_equals,xnat:subjectData/sharing/share/label_equals" #if($!search.getWebFormValue("${dataType}.COMBO0_FIELDS")=="xnat:subjectData/ID_equals,xnat:subjectData/label_equals,xnat:subjectData/sharing/share/label_equals")SELECTED#end>$displayManager.getSingularDisplayNameForSubject().toUpperCase()</option>
+            <option value="${dataType}/ID_in,${dataType}/label_in,${dataType}/sharing/share/label_in" #if($!search.getWebFormValue("${dataType}.COMBO0_FIELDS")=="${dataType}/ID_in,${dataType}/label_in,${dataType}/sharing/share/label_in")SELECTED#end>$displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID (INCLUDE UNMATCHED)</option>
+            <option value="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in" #if($!search.getWebFormValue("${dataType}.COMBO0_FIELDS")=="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in")SELECTED#end>$displayManager.getSingularDisplayNameForSubject().toUpperCase() (INCLUDE UNMATCHED)</option>
         </select>
 
         <textarea class="exact-ids" name="${dataType}.COMBO0" cols="30" rows="6">$!search.getWebFormValue("${dataType}.COMBO0")</textarea>

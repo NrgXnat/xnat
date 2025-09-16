@@ -126,6 +126,7 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 					}
 					
 					((XnatImagescandata)newscan).setXnatImagescandataId(oldScan.getXnatImagescandataId());
+					((XnatImagescandata)newscan).setImageSessionId(oldScan.getImageSessionId());
 
 					//if allowDataDeletion=true, then new file tags will replace old ones (modifications to content, format, etc will not be preserved).
 					if(!allowDataDeletion){

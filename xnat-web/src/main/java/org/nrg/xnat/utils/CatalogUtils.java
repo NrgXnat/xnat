@@ -366,6 +366,9 @@ public class CatalogUtils {
      * @return The previous value for the cached checksum configuration setting.
      */
     public static Boolean setChecksumConfiguration(boolean checksumConfig) {
+        try {
+           getChecksumConfiguration();
+        } catch(ConfigServiceException ignore) {}
         return _checksumConfig.getAndSet(checksumConfig);
     }
 

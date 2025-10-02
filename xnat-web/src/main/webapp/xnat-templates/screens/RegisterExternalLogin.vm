@@ -137,8 +137,8 @@ $!template.setLayoutTemplate("Login.vm")
             newLoginVal = registerUserLogin.value;
 
         // find and replace punctuation allowed in email addresses
-        if (newLoginVal.match(/[.!#$%&'*\+-\/=?^_`{|}~\@]/g)) {
-            newLoginVal = newLoginVal.replace(/[.!#$%&'*\+-\/=?^_`{|}~\@]/g,'');
+        if (newLoginVal.match(/[.!#$%&'*+-\/=?^`{|}~@]/g)) {
+            newLoginVal = newLoginVal.replace(/[.!#$%&'*+-\/=?^`{|}~@]/g,'');
             console.log('replaced email punctuation');
         }
 

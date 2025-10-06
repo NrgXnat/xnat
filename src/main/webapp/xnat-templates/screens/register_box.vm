@@ -43,7 +43,7 @@
     #end
     <p>
         <label for="xdat:user.login" class="formLabelRequired">Username <b>*</b></label>
-        <input type="text" class="required alphaNumSP" id="xdat:user.login" name="xdat:user.login" value="$!username">
+        <input type="text" class="required username" id="xdat:user.login" name="xdat:user.login" value="$!username">
     </p>
     #if(!$hidePassword)
         <p>

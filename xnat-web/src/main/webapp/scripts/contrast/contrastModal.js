@@ -698,7 +698,7 @@ function spacer(width) {
 }
 
 function handleTimeElement(timeElement) {
-    if (!timeElement.includes(":")) {
+    if (timeElement && !timeElement.includes(":")) {
         if (timeElement < 4) {
             return timeElement;
         } else if (timeElement.length === 4) {

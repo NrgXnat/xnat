@@ -10,7 +10,7 @@
 #* @vtlvariable name="phone" type="java.lang.String" *#
 #* @vtlvariable name="siteConfig" type="org.nrg.xdat.preferences.SiteConfigPreferences" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
-#* @vtlvariable name="userInfo" type="org.nrg.xdat.exceptions.UsernameAuthMappingNotFoundException" *#
+#* @vtlvariable name="userInfo" type="org.nrg.xnat.turbine.modules.screens.RegisterExternalLogin.UserInfo" *#
 #* @vtlvariable name="username" type="java.lang.String" *#
 <!-- BEGIN xnat-templates/screens/register_box.vm -->
 #parse("/screens/userValidationJS.vm")
@@ -34,7 +34,7 @@
     #end
     #if($formAction == "RegisterExternalLogin")
         <input type="hidden" name="operation" value="register">
-        <input type="hidden" name="authUsername" value="$userInfo.username">
+        <input type="hidden" name="authUsername" value="$userInfo.authUsername">
         <input type="hidden" name="authMethod" value="$userInfo.authMethod">
         <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
         <input type="hidden" name="authEmail" value="$userInfo.email">

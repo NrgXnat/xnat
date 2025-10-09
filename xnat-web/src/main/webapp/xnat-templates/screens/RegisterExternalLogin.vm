@@ -3,7 +3,7 @@
 #* @vtlvariable name="parameter" type="java.lang.String" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
-#* @vtlvariable name="userInfo" type="org.nrg.xdat.exceptions.UsernameAuthMappingNotFoundException" *#
+#* @vtlvariable name="userInfo" type="org.nrg.xnat.turbine.modules.screens.RegisterExternalLogin.UserInfo" *#
 #set ($template = $data.getTemplateInfo())
 $!template.setLayoutTemplate("Login.vm")
 
@@ -59,7 +59,7 @@ $!template.setLayoutTemplate("Login.vm")
             #end
             <form method="post" action="$link.setAction("RegisterExternalLogin")" class="noHide friendlyForm validate" id="merge_form">
                 <input type="hidden" name="operation" value="merge">
-                <input type="hidden" name="authUsername" value="$userInfo.username">
+                <input type="hidden" name="authUsername" value="$userInfo.authUsername">
                 <input type="hidden" name="authMethod" value="$userInfo.authMethod">
                 <input type="hidden" name="authMethodId" value="$userInfo.authMethodId">
                 <input type="hidden" name="authEmail" value="$userInfo.email">
@@ -132,25 +132,15 @@ $!template.setLayoutTemplate("Login.vm")
     });
 
     jq(document).ready(function(){
-        // if a(n) ${authMethod} user is using an email address as their username, truncate the front part of the email and remove any other interior puncutation before attempting to register it as an XNAT username
-        var registerUserLogin = document.getElementById('xdat:user.login'),
-            newLoginVal = registerUserLogin.value;
-
-        // find and replace punctuation allowed in email addresses
-        if (newLoginVal.match(/[.!#$%&'*+-\/=?^`{|}~@]/g)) {
-            newLoginVal = newLoginVal.replace(/[.!#$%&'*+-\/=?^`{|}~@]/g,'');
-            console.log('replaced email punctuation');
-        }
-
-        jq(registerUserLogin)
-                .val(newLoginVal)
-                .parents('#register_box')
-                .prepend(
-                    spawn(
-                        'div.message',
-                        'XNAT usernames cannot contain punctuation. You will still be able to log in using your ${authMethod} credentials upon account creation and verification.'
-        ));
-    })
+            var registerUserLogin = document.getElementById('xdat:user.login');
+            jq(registerUserLogin)
+                    .parents('#register_box')
+                    .prepend(
+                        spawn(
+                            'div.message',
+                            'XNAT usernames cannot contain punctuation. You will still be able to log in using your ${authMethod} credentials upon account creation and verification.'
+                    ));
+    });
 
     #if ($message.startsWith("Authentication failed"))
         // toggle login box if user attempted and failed to login and server returned an error message.

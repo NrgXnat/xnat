@@ -42,12 +42,21 @@
     }
 
     scanContrastManager.getAddNewContrastButton = function() {
-        return spawn('button.btn.btn-sm.edit', {
-            onclick: function (e) {
-                scanContrastManager.addContrastModal();
-            },
-            title: "Add New Contrast"
-        }, 'Add Contrast');
+        return spawn('div',[
+            spawn('button.btn.btn-sm.edit', {
+                onclick: function (e) {
+                    scanContrastManager.addContrastModal();
+                },
+                title: "Add New Contrast"
+            }, '<i class="fa fa-plus" style="margin-right: 4px"></i> Add Contrast'),
+            spacer(10),
+            spawn('button.btn.btn-sm.refresh-contrast', {
+                onclick: function(e) {
+                    scanContrastManager.refreshContrastAction();
+                },
+                title: "Refresh Contrast Data"
+            }, '<i class="fa fa-refresh" style="margin-right: 4px"></i> Refresh Contrast Data')
+        ]);
     }
 
     scanContrastManager.addContrastModal = function(){
@@ -123,6 +132,36 @@
                 renderAddContrastOptions();
             }
         });
+    }
+
+    scanContrastManager.refreshContrastAction = function(){
+        XNAT.dialog.open({
+            title: 'Refresh DICOM Contrast Data',
+            content: 'If the contrast data shown here appears out of sync or incomplete, this function will reexamine the DICOM headers and repopulate contrast data for this experiment. Note that any contrast entries that were added manually will not be affected by this operation.',
+            buttons: [
+                {
+                    label: 'OK',
+                    isDefault: true,
+                    close: true,
+                    action: function(){
+                        XNAT.xhr.put({
+                            url: XNAT.url.csrfUrl('/data/experiments/'+XNAT.data.context.ID+'?pullDataFromHeaders=true'),
+                            success: function(){
+                                XNAT.ui.banner.top(2000,'Refreshed contrast data','success');
+                                scanContrastManager.init();
+                            },
+                            fail: function (e) {
+                                errorHandler(e, 'Could not refresh contrast data.');
+                            }
+                        });
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
+                }
+            ]
+        })
     }
 
     scanContrastManager.getViewButton = function(contrastItem) {
@@ -678,8 +717,8 @@
         if(XNAT.app.context.scanContrastManager.contrastFeatureFlag && acceptedDataTypes.includes(XNAT.app.context.scanContrastManager.sessionType)) {
             let $contrastHeader = $('div#session_contrast_header');
             let $contrastDiv = $('div#session_contrast_section');
-            $contrastHeader.append(spawn('h3', "Contrasts"));
-            $contrastDiv.append(scanContrastManager.table());
+            $contrastHeader.empty().append(spawn('h3', "Contrasts"));
+            $contrastDiv.empty().append(scanContrastManager.table());
             $contrastDiv.append(scanContrastManager.getAddNewContrastButton());
         } else {
             $('div#session_contrast_section').remove();

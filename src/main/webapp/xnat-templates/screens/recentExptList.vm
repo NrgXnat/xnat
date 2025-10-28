@@ -4,8 +4,10 @@
 var opts = {};
 opts.showExptDate = "$!siteConfig.getProperty('uiShowRecentExptListDate')" == "true"
 opts.showExptScannerName = "$!siteConfig.getProperty('uiShowRecentExptListScannerName')" == "true"
+opts.showPetTracerName = "$!siteConfig.getProperty('uiShowRecentExptListTracerName')" == "true"
 opts.recent = true;
 
 var exptList=new MinExptList("min_expt_list", opts);
+
 exptList.init();
 </script>

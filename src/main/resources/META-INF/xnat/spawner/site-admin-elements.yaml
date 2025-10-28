@@ -2682,6 +2682,12 @@ recentExptListSettings:
             description: Display the experiment date in the recent data activity table
             onText: Enabled
             offText: Disabled
+        uiShowRecentExptListTracerName:
+            kind: panel.input.switchbox
+            label: Display Tracer Name
+            description: Display the tracer name in the recent data activity table
+            onText: Enabled
+            offText: Disabled
 
 setPreventCrossModalityMerge:
     kind: panel.form

@@ -70,6 +70,7 @@ authenticated:
   - uiShowProjectManageFiles
   - uiShowRecentExptListDate
   - uiShowRecentExptListScannerName
+  - uiShowRecentExptListTracerName
   - uiShowScanTypeMapping
   - uiTimeFormat
   - zipExtensions

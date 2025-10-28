@@ -118,6 +118,22 @@ function MinExptList(_div, _options){
                 tr.appendChild(td);
             }
 
+            if(exptList.options.showPetTracerName){
+                tracerName = expt.pet_tracer_name ? expt.pet_tracer_name : '';
+                if (tracerName === '') {
+                  tracerName = expt.pet_mr_tracer_name ? expt.pet_mr_tracer_name : '';
+                }
+                if (tracerName.length > 10) {
+                    tracerName = tracerName.substring(0,5) + '&hellip;';
+                }
+                td = document.createElement("td");
+                td.title = "Tracer";
+                td.align = "left";
+                td.innerHTML = tracerName;
+                tr.appendChild(td);
+            }
+
+
             if(exptList.options.showExptDate){
                 td = document.createElement("td");
                 td.align = "left";

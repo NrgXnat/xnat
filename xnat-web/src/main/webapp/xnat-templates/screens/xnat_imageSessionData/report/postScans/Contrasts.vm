@@ -40,7 +40,9 @@
 
     async function setupDataForTable() {
         XNAT.app.context.scanContrastManager.contrastFeatureFlag=$user.checkRestrictedFeature("$!project","contrast_visible");
+        XNAT.app.context.scanContrastManager.subjectLabel="$!subject.getLabel()";
         XNAT.app.context.scanContrastManager.sessionId="$!om.getId()";
+        XNAT.app.context.scanContrastManager.sessionLabel="$!om.getLabel()";
         XNAT.app.context.scanContrastManager.sessionType="$!om.getXSIType()";
         XNAT.app.context.scanContrastManager.scanIdToId={};
         XNAT.app.context.scanContrastManager.scanIds=[];

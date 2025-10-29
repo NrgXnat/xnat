@@ -1758,6 +1758,10 @@ seriesImportFilter:
                 The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
                 <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are case-insensitive,
                 i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
+        sitewideSeriesImportFilterCleanupPanel:
+            tag: div#sifCleanup
+        sitewideSeriesImportFilterCleanupScript:
+            tag: script|src="~/scripts/xnat/admin/seriesImportCleanup.js"
 petTracers:
     kind: panel.form
     name: petTracers

@@ -147,8 +147,18 @@
                         XNAT.xhr.put({
                             url: XNAT.url.csrfUrl('/data/experiments/'+XNAT.data.context.ID+'?pullDataFromHeaders=true'),
                             success: function(){
-                                XNAT.ui.banner.top(2000,'Refreshed contrast data','success');
-                                scanContrastManager.init();
+                                // follow up a successful DICOM header data refresh with a catalog refresh to re-pull contrast metadata from the associated resource file
+                                XNAT.xhr.post({
+                                    url: XNAT.url.csrfUrl('/data/services/refresh/catalog?resource=/archive/projects/'+XNAT.data.context.projectID+'/subjects/'+XNAT.app.context.scanContrastManager.subjectLabel+'/experiments/'+XNAT.app.context.scanContrastManager.sessionLabel),
+                                    success: function(){
+                                        XNAT.ui.banner.top(2000,'Refreshed contrast data','success');
+                                        scanContrastManager.init();
+                                    },
+                                    fail: function(e){
+                                        XNAT.ui.banner.top(2000,'Could not refresh contrast metadata. Please try again.','warning');
+                                        scanContrastManager.init();
+                                    }
+                                });
                             },
                             fail: function (e) {
                                 errorHandler(e, 'Could not refresh contrast data.');
@@ -248,7 +258,7 @@
     scanContrastManager.deleteContrast = function(contrastItem) {
         xmodal.open({
             title: 'Confirm Contrast Deletion',
-            content: 'Are you sure you want to delete the contrast bolus element? This operation cannot be undone.',
+            content: 'Are you sure you want to delete the contrast bolus element? Warning, this may have unpredictable results for contrast elements that were imported from DICOM headers.',
             width: 400,
             height: 200,
             overflow: 'auto',
@@ -720,6 +730,7 @@
             $contrastHeader.empty().append(spawn('h3', "Contrasts"));
             $contrastDiv.empty().append(scanContrastManager.table());
             $contrastDiv.append(scanContrastManager.getAddNewContrastButton());
+            $contrastDiv.append('<br><br>');
         } else {
             $('div#session_contrast_section').remove();
         }

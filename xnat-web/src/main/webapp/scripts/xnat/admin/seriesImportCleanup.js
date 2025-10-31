@@ -76,14 +76,16 @@ $(function(){
             }
         });
         if (itemsToRemove.length) {
+            // update the full siteConfig object and post it back to the server, to account for empty project lists as an outcome
+            XNAT.data.siteConfig.enableProjectsSeriesImportFilter = cleanedSifList.join(',');
             XNAT.ui.dialog.confirm({
                 title: 'Project IDs to Remove',
                 width: 400,
                 content: '<p>The following project IDs do not match any active projects in your system and can be removed from this system warning dialog: </p><p>' + itemsToRemove.join(', ')+ '</p>',
                 okAction: function(){
                     XNAT.xhr.postJSON({
-                        url: XNAT.url.csrfUrl('/xapi/siteConfig/enableProjectsSeriesImportFilter'),
-                        data: cleanedSifList.join(','),
+                        url: XNAT.url.csrfUrl('/xapi/siteConfig'),
+                        data: JSON.stringify(XNAT.data.siteConfig),
                         success: function(){
                             element.value = cleanedSifList.join(',');
                             XNAT.ui.banner.top(3000,'Removed deleted project IDs from Series Import Filter warning list','success');

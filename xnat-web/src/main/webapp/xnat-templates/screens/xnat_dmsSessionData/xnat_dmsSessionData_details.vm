@@ -1,0 +1,1 @@
+#parse($turbineUtils.getTemplateName("_details","xnat:imageSessionData",$project))

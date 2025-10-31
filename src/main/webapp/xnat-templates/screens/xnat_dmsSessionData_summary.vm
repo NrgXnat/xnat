@@ -1,0 +1,21 @@
+<div class="edit_title">Dermoscopy Session Summary</div>
+	<!-- TODO: put in Dermoscopy-specific fields -->
+	<table>
+		<tr>
+			<td>Patient name</td>
+			<td>$!item.getStringProperty("xnat:dmsSessionData/dcmPatientName")</td>
+		</tr>
+		<tr>
+			<td>Patient ID</td>
+			<td>$!item.getStringProperty("xnat:dmsSessionData/dcmPatientId")</td>
+		</tr>
+		<tr>
+			<td>Date/time</td>
+			<td>$!item.getStringProperty("xnat:dmsSessionData/date") $!item.getStringProperty("xnat:dmsSessionData/time")</td>
+		</tr>
+		<tr>
+			<td>Accession number</td>
+			<td>$!item.getStringProperty("xnat:dmsSessionData/dcmAccessionNumber")</td>
+		</tr>
+	</table>
+</div>

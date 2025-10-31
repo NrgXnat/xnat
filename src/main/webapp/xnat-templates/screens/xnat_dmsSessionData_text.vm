@@ -1,0 +1,25 @@
+ACCESSION :   $!item.Id
+$displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID:   $!item.Label
+$displayManager.getSingularDisplayNameForSubject().toUpperCase() ID:   $!item.getSubjectData().getId() 
+AGE:          $!item.getSubjectAge()
+GENDER:       $!item.SubjectData.GenderText
+ACQ. DATE:    $!item.Date
+SCANNER:      $!item.Scanner
+INVESTIGATOR: $!item.Investigator.Firstname $!item.Investigator.Lastname
+OPERATOR:     $!item.Operator
+
+#foreach ($scan in $item.Scans_scan)
+$scan.Id   $!scan.Type   $!scan.Quality
+#end
+
+Additional notes
+$!item.Note
+
+#foreach ($scan in $item.Scans_scan)
+SCAN NUMBER: $!scan.Id
+TYPE:        $!scan.Type
+Quality:     $!scan.Quality
+Time:        $!scan.startTime
+Note:        $!scan.Note
+
+#end

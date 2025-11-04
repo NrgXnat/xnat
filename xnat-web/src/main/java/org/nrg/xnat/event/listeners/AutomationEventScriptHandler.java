@@ -16,7 +16,7 @@ import org.nrg.automation.event.entities.PersistentEvent;
 import org.nrg.automation.services.PersistentEventService;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptTriggerService;
-import org.nrg.automation.services.impl.AutomationService;
+import org.nrg.automation.services.AutomationService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.event.Filterable;

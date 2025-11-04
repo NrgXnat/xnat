@@ -17,7 +17,7 @@ import org.nrg.automation.services.AutomationFiltersService;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.ScriptTriggerService;
-import org.nrg.automation.services.impl.AutomationService;
+import org.nrg.automation.services.AutomationService;
 import org.nrg.automation.services.impl.AutomationServiceImpl;
 import org.nrg.automation.services.impl.DefaultScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
@@ -105,7 +105,6 @@ public class AutomationConfig {
         defaultEvents.put("Added PET Session", "Added PET Session");
         defaultEvents.put("Added PET/MR Session", "Added PET/MR Session");
         defaultEvents.put("Added Project", "Added Project");
-        defaultEvents.put("Added Subject", "Added Subject");
         defaultEvents.put("Added QC", "Added QC");
         defaultEvents.put("Added Radiology Read-new", "Added Radiology Read-new");
         defaultEvents.put("Added Subject", "Added Subject");
@@ -144,5 +143,4 @@ public class AutomationConfig {
         defaultEvents.put("xnat_tools/AutoRun.xml", "AutoRun");
         return defaultEvents;
     }
-
 }

@@ -9,6 +9,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
+/**
+ * @deprecated As of release 1.10. It will be removed in a future version.
+ */
+@Deprecated
 public class BulkLaunchEvent implements TrackableEvent {
     private final String id;
     private final Integer userId;

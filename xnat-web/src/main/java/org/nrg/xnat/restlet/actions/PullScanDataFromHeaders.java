@@ -12,7 +12,6 @@ package org.nrg.xnat.restlet.actions;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -22,9 +21,9 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatResource;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
@@ -57,6 +56,26 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
 		this.c=c;
 	}
 
+    // These fix* methods are adapted from BaseXnatImagesessiondata.
+    // Someday refactor to use common code.
+    private static void fixEmptyResourceFields(final XnatResource resource) {
+        if (null == resource.getContent() || resource.getContent().isEmpty()) {
+            resource.setContent("RAW");
+        }
+        if (null != resource.getLabel() && null == resource.getFormat()) {
+            resource.setFormat(resource.getLabel());
+        }
+    }
+
+    private static void fixScanType(final XnatImagescandata scan) {
+        scan.getScanTypeMapping(scan.getProject(), scan.getDBName()).setType(scan);
+        scan.getFile().stream()
+                .filter(XnatResource.class::isInstance)
+                .map(XnatResource.class::cast)
+                .findFirst()
+                .ifPresent(PullScanDataFromHeaders::fixEmptyResourceFields);
+    }
+
 	/**
 	 * This method will pull header values from DICOM (or ECAT) and update the scan xml accordingly.  It assumes the files are already in the archive and properly referenced from the session xml.  This would usually be run after you've added the files via the REST API.
 	 * WARNINGS: 
@@ -87,7 +106,7 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
 		final SAXReader reader = new SAXReader(user);
 		final XFTItem temp2 = reader.parse(xml.getAbsolutePath());
 		final XnatImagesessiondata newmr = (XnatImagesessiondata)BaseElement.GetGeneratedItem(temp2);
-		XnatImagescandata newscan;
+		final XnatImagescandata newscan;
         
     	if (newmr.getScans_scan().size() > 1) {
 			newscan = (XnatImagescandata) newmr.getScans_scan().stream()
@@ -124,6 +143,8 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
 			}
 			newscan.removeFile(0);
 		}
+
+        fixScanType(newscan);
 
         final ValidationResultsI vr = newscan.validate();        
         

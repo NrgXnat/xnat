@@ -127,7 +127,7 @@ function MinExptList(_div, _options){
                     tracerName = tracerName.substring(0,5) + '...';
                 }
                 td = document.createElement("td");
-                td.title = expt.pet_tracer_name;
+                td.title = (expt.pet_tracer_name ? expt.pet_tracer_name : expt.pet_mr_tracer_name ? expt.pet_mr_tracer_name : '');
                 td.align = "left";
                 td.textContent = tracerName;
                 tr.appendChild(td);

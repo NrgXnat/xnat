@@ -1,0 +1,3 @@
+<!-- BEGIN /xnat-templates/screens/xnat_paSessionData/edit/scans.vm -->
+#parse($turbineUtils.getTemplateName("scans.vm","xnat:imageSessionData",$project,"edit"))
+<!-- END /xnat-templates/screens/xnat_paSessionData/edit/scans.vm -->

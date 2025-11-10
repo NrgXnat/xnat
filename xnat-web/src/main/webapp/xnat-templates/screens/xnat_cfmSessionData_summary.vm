@@ -1,0 +1,20 @@
+<div class="edit_title">Confocal Microscopy Session Summary</div>
+	<table>
+		<tr>
+			<td>Patient name</td>
+			<td>$!item.getStringProperty("xnat:cfmSessionData/dcmPatientName")</td>
+		</tr>
+		<tr>
+			<td>Patient ID</td>
+			<td>$!item.getStringProperty("xnat:cfmSessionData/dcmPatientId")</td>
+		</tr>
+		<tr>
+			<td>Date/time</td>
+			<td>$!item.getStringProperty("xnat:cfmSessionData/date") $!item.getStringProperty("xnat:cfmSessionData/time")</td>
+		</tr>
+		<tr>
+			<td>Accession number</td>
+			<td>$!item.getStringProperty("xnat:cfmSessionData/dcmAccessionNumber")</td>
+		</tr>
+	</table>
+</div>

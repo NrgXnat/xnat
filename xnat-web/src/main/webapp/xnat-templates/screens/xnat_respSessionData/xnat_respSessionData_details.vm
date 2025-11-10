@@ -1,0 +1,3 @@
+<!-- BEGIN /xnat-templates/screens/xnat_respSessionData/xnat_respSessionData_details.vm -->
+#parse($turbineUtils.getTemplateName("_details","xnat:imageSessionData",$project))
+<!-- END /xnat-templates/screens/xnat_respSessionData/xnat_respSessionData_details.vm -->

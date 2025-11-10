@@ -1,0 +1,3 @@
+<!-- BEGIN xnat_posSessionData_scans.vm -->
+#parse('/screens/xnat_imageSessionData/upload/scans.vm')
+<!-- END xnat_posSessionData_scans.vm -->

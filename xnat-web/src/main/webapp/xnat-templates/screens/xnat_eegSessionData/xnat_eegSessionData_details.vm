@@ -1,0 +1,3 @@
+<!-- BEGIN /xnat-templates/screens/xnat_eegSessionData/xnat_eegSessionData_details.vm -->
+#parse($turbineUtils.getTemplateName("_details","xnat:imageSessionData",$project))
+<!-- END /xnat-templates/screens/xnat_eegSessionData/xnat_eegSessionData_details.vm -->

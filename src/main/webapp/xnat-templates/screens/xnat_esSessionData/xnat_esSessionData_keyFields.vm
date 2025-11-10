@@ -1,0 +1,3 @@
+			<!--BEGIN xnat_esSessionData_keyFields.vm -->
+#parse($turbineUtils.getTemplateName("_keyFields","xnat:imageSessionData",$project))
+			<!--END xnat_esSessionData_keyFields.vm -->

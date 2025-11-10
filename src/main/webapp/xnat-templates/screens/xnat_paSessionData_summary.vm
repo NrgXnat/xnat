@@ -1,0 +1,20 @@
+<div class="edit_title">Photoacoustic Session Summary</div>
+	<table>
+		<tr>
+			<td>Patient name</td>
+			<td>$!item.getStringProperty("xnat:paSessionData/dcmPatientName")</td>
+		</tr>
+		<tr>
+			<td>Patient ID</td>
+			<td>$!item.getStringProperty("xnat:paSessionData/dcmPatientId")</td>
+		</tr>
+		<tr>
+			<td>Date/time</td>
+			<td>$!item.getStringProperty("xnat:paSessionData/date") $!item.getStringProperty("xnat:paSessionData/time")</td>
+		</tr>
+		<tr>
+			<td>Accession number</td>
+			<td>$!item.getStringProperty("xnat:paSessionData/dcmAccessionNumber")</td>
+		</tr>
+	</table>
+</div>

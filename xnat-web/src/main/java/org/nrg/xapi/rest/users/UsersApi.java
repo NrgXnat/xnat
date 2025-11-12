@@ -26,6 +26,7 @@ import org.nrg.xapi.rest.AuthDelegate;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xapi.rest.UserGroup;
 import org.nrg.xapi.rest.Username;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.AccessLevel;
@@ -33,6 +34,7 @@ import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.security.provider.XnatAuthenticationProviderApiPojo;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -371,6 +373,7 @@ public class UsersApi extends AbstractXapiRestController {
         UserI user = getSessionUser();
         return updateUser(user.getUsername(), model, Roles.isSiteAdmin(user));
     }
+
 
     private User updateUser(String username, User model, boolean adminUpdate) throws XapiException, UserNotFoundException, UserInitException {
         final UserI user            = getUserManagementService().getUser(username);
@@ -963,6 +966,8 @@ public class UsersApi extends AbstractXapiRestController {
         }
         if (model.getAuthorization() != null && !hasValidAuthorizationInformation(model)) {
             throw new DataFormatException("Invalid authorization information");
+        } else if (model.getAuthorization() == null && siteHasSingletonNonLocalAuth()) {
+            throw new DataFormatException("Missing authorization information");
         }
     }
 
@@ -1004,6 +1009,11 @@ public class UsersApi extends AbstractXapiRestController {
 
     private boolean hasValidAuthorizationInformation(final UserI user) {
         return hasValidAuthorizationInformation(user.getAuthorization());
+    }
+
+    private boolean siteHasSingletonNonLocalAuth() {
+        Map<String, XnatAuthenticationProvider> providers = _manager.getVisibleEnabledProviders();
+        return providers.size() == 1 && !providers.entrySet().iterator().next().getKey().equals(XdatUserAuthService.LOCALDB);
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

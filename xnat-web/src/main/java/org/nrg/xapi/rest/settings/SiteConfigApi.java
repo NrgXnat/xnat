@@ -19,7 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.config.services.ConfigService;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.constants.Scope;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.authorization.SiteConfigPreferenceXapiAuthorization;
 import org.nrg.xapi.exceptions.DataFormatException;
@@ -44,6 +47,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -67,13 +71,22 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @RequestMapping(value = "/siteConfig")
 @Slf4j
 public class SiteConfigApi extends AbstractXapiRestController {
+
     @Autowired
-    public SiteConfigApi(final SiteConfigPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final XnatAppInfo appInfo, final SiteConfigAccess access, final NamedParameterJdbcTemplate template) {
+    public SiteConfigApi(
+            final SiteConfigPreferences preferences,
+            final UserManagementServiceI userManagementService,
+            final RoleHolder roleHolder,
+            final XnatAppInfo appInfo,
+            final SiteConfigAccess access,
+            final NamedParameterJdbcTemplate template,
+            final ConfigService configService) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
         _access = access;
         _template = template;
+        _configService = configService;
     }
 
     @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -233,6 +246,31 @@ public class SiteConfigApi extends AbstractXapiRestController {
         }
     }
 
+    @ApiOperation(value = "Disable orphaned series import filters for deleted projects.", notes = "Disable orphaned series import filters for deleted projects.")
+    @ApiResponses({@ApiResponse(code = 200, message = "Orphaned series import filters successfully disabled"),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to modify site configuration properties."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value="orphaned-projects/disable", produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
+    public void disableOrphanedSif(@ApiParam(value = "The deleted project IDs (comma-separated).", required = true) @RequestBody final String orphanedProjectIds) throws ConfigServiceException {
+        final UserI user = getSessionUser();
+        final String[] orphanedIds = Arrays.stream(orphanedProjectIds.split(","))
+                .map(String::trim)
+                .filter(StringUtils::isNotBlank)
+                .toArray(String[]::new);
+
+        for (final String projectId : orphanedIds) {
+            _configService.disable(user.getUsername(), "Deleted project", "seriesImportFilter", "config", Scope.Project, projectId);
+        }
+
+        final String currentEnabledProjects = _preferences.getEnableProjectsSeriesImportFilter();
+        final Set<String> enabledSifs = StringUtils.isBlank(currentEnabledProjects)
+                ? new HashSet<>()
+                : new HashSet<>(Arrays.asList(currentEnabledProjects.split(",")));
+        enabledSifs.removeAll(Arrays.asList(orphanedIds));
+        _preferences.setEnableProjectsSeriesImportFilter(String.join(",", enabledSifs));
+    }
+
     @ApiOperation(value = "Returns a map of application build properties.", notes = "This includes the implementation version, Git commit hash, and build number and number.", response = String.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Application build properties successfully retrieved."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -283,6 +321,8 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return _appInfo.getFormattedUptime();
     }
 
+
+
     private List<? extends Set<String>> findPrefsGroups(final Set<String> keySet) {
         final List<Set<String>> includedPrefsGroups = new ArrayList<>();
         for (final Set<String> group : PREFS_GROUPS) {
@@ -313,4 +353,5 @@ public class SiteConfigApi extends AbstractXapiRestController {
     private final XnatAppInfo                _appInfo;
     private final SiteConfigAccess           _access;
     private final NamedParameterJdbcTemplate _template;
+    private final ConfigService _configService;
 }

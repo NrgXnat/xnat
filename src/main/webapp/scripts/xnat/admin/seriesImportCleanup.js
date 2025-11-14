@@ -84,8 +84,8 @@ $(function(){
                 content: '<p>The following project IDs do not match any active projects in your system and can be removed from this system warning dialog: </p><p>' + itemsToRemove.join(', ')+ '</p>',
                 okAction: function(){
                     XNAT.xhr.postJSON({
-                        url: XNAT.url.csrfUrl('/xapi/siteConfig'),
-                        data: JSON.stringify(XNAT.data.siteConfig),
+                        url: XNAT.url.csrfUrl('/xapi/siteConfig/orphaned-projects/disable'),
+                        data: itemsToRemove.join(','),
                         success: function(){
                             element.value = cleanedSifList.join(',');
                             XNAT.ui.banner.top(3000,'Removed deleted project IDs from Series Import Filter warning list','success');

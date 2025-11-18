@@ -102,6 +102,20 @@ function scanInit(_options){
     	this.options.modalities.push({"value":"xnat:mrScanData","display":"MR"});
     	this.options.modalities.push({"value":"xnat:ctScanData","display":"CT"});
     	this.options.modalities.push({"value":"xnat:petScanData","display":"PET"});
+    	this.options.modalities.push({"value":"xnat:annScanData","display":"ANN"});
+    	this.options.modalities.push({"value":"xnat:cfmScanData","display":"CFM"});
+    	this.options.modalities.push({"value":"xnat:dmsScanData","display":"DMS"});
+    	this.options.modalities.push({"value":"xnat:ecgScanData","display":"ECG"});
+    	this.options.modalities.push({"value":"xnat:eegScanData","display":"EEG"});
+    	this.options.modalities.push({"value":"xnat:emgScanData","display":"EMG"});
+    	this.options.modalities.push({"value":"xnat:eogScanData","display":"EOG"});
+    	this.options.modalities.push({"value":"xnat:esScanData","display":"ES"});
+    	this.options.modalities.push({"value":"xnat:mtlScanData","display":"MTL"});
+    	this.options.modalities.push({"value":"xnat:objScanData","display":"OBJ"});
+    	this.options.modalities.push({"value":"xnat:paScanData","display":"PA"});
+    	this.options.modalities.push({"value":"xnat:posScanData","display":"POS"});
+    	this.options.modalities.push({"value":"xnat:respScanData","display":"RESP"});
+    	this.options.modalities.push({"value":"xnat:xcScanData","display":"XC"});
     }
 
 	this.render=function(){

@@ -52,7 +52,23 @@ public class ScanTypeListing  extends SecureResource {
 		if (scan_table == null) {
 			scan_table = "xnat_mrScanData";
 		}else{
-			if(!(scan_table.equalsIgnoreCase("xnat_mrScanData") || scan_table.equalsIgnoreCase("xnat_petScanData"))){
+			if(!(scan_table.equalsIgnoreCase("xnat_mrScanData")
+				|| scan_table.equalsIgnoreCase("xnat_petScanData")
+				|| scan_table.equalsIgnoreCase("xnat_ctScanData")
+				|| scan_table.equalsIgnoreCase("xnat_cfmScanData")
+				|| scan_table.equalsIgnoreCase("xnat_dmsScanData")
+				|| scan_table.equalsIgnoreCase("xnat_ecgScanData")
+				|| scan_table.equalsIgnoreCase("xnat_eegScanData")
+				|| scan_table.equalsIgnoreCase("xnat_emgScanData")
+				|| scan_table.equalsIgnoreCase("xnat_eogScanData")
+				|| scan_table.equalsIgnoreCase("xnat_esScanData")
+				|| scan_table.equalsIgnoreCase("xnat_objScanData")
+				|| scan_table.equalsIgnoreCase("xnat_paScanData")
+				|| scan_table.equalsIgnoreCase("xnat_posScanData")
+				|| scan_table.equalsIgnoreCase("xnat_respScanData")
+				|| scan_table.equalsIgnoreCase("xnat_xcScanData")
+				|| scan_table.equalsIgnoreCase("xnat_annScanData")
+				|| scan_table.equalsIgnoreCase("xnat_mtlScanData"))){
 				AdminUtils.sendAdminEmail(user,"Possible SQL Injection attempt.", "User passed "+ scan_table+" as a table name.");
 				this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
         		return null;

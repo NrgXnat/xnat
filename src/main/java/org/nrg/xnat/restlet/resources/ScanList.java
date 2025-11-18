@@ -142,6 +142,30 @@ public class ScanList extends QueryOrganizerResource {
 				dataType="xnat:petScanData";
 			}else if(this.session instanceof XnatCtsessiondata){
 				dataType="xnat:ctScanData";
+			}else if(this.session instanceof XnatCfmsessiondata){
+				dataType="xnat:cfmScanData";
+			}else if(this.session instanceof XnatDmssessiondata){
+				dataType="xnat:dmsScanData";
+			}else if(this.session instanceof XnatEcgsessiondata){
+				dataType="xnat:ecgScanData";
+			}else if(this.session instanceof XnatEegsessiondata){
+				dataType="xnat:eegScanData";
+			}else if(this.session instanceof XnatEmgsessiondata){
+				dataType="xnat:emgScanData";
+			}else if(this.session instanceof XnatEogsessiondata){
+				dataType="xnat:eogScanData";
+			}else if(this.session instanceof XnatEssessiondata){
+				dataType="xnat:esScanData";
+			}else if(this.session instanceof XnatObjsessiondata){
+				dataType="xnat:objScanData";
+			}else if(this.session instanceof XnatPasessiondata){
+				dataType="xnat:paScanData";
+			}else if(this.session instanceof XnatPossessiondata){
+				dataType="xnat:posScanData";
+			}else if(this.session instanceof XnatRespsessiondata){
+				dataType="xnat:respScanData";
+			}else if(this.session instanceof XnatXcsessiondata){
+				dataType="xnat:xcScanData";
 			}
 			item=this.loadItem(dataType,true);
 

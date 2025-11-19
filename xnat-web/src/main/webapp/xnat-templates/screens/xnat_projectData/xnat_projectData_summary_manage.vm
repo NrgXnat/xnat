@@ -309,7 +309,7 @@
                             </TD>
                         </TR>
                         <TR>
-                            <TD><textarea id="script_text_area" rows="20" cols="80" disabled="disabled"></textarea></TD>
+                            <TD><textarea id="script_text_area" class="code mono" rows="20" cols="80" disabled="disabled"></textarea></TD>
                         </TR>
                         <TR>
                             <TD><input type="button" id="anon_script_save" value="Save" disabled="disabled"/></TD>
@@ -411,7 +411,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <textarea id="series_import_filter_text_area" rows="20" cols="80" disabled="disabled"></textarea>
+                                <textarea id="series_import_filter_text_area" class="code mono" rows="20" cols="80" disabled="disabled"></textarea>
                             </td>
                         </tr>
                         <tr>

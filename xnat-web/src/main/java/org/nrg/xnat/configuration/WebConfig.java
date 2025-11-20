@@ -37,13 +37,19 @@ import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.bind.Marshaller;
 import java.util.HashMap;
 import java.util.List;
@@ -157,7 +163,35 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public MultipartResolver multipartResolver() {
-        return new StandardServletMultipartResolver();
+        final StandardServletMultipartResolver delegate = new StandardServletMultipartResolver();
+
+        // Wrap the resolver to exclude multipart/related (used by DICOMweb STOW-RS)
+        // This allows plugin code to handle multipart/related requests directly
+        return new MultipartResolver() {
+            @Override
+            public boolean isMultipart(HttpServletRequest request) {
+                String contentType = request.getContentType();
+                log.info("=== MultipartResolver.isMultipart() called: contentType= {}", contentType);
+                if (contentType != null && contentType.toLowerCase().contains("multipart/related")) {
+                    // Don't process multipart/related - let the endpoint handle it
+                    log.info("=== MultipartResolver: Skipping multipart/related request");
+                    return false;
+                }
+                boolean result = delegate.isMultipart(request);
+                log.info("=== MultipartResolver: isMultipart={}", result);
+                return result;
+            }
+
+            @Override
+            public MultipartHttpServletRequest resolveMultipart(HttpServletRequest request) {
+                return delegate.resolveMultipart(request);
+            }
+
+            @Override
+            public void cleanupMultipart(MultipartHttpServletRequest request) {
+                delegate.cleanupMultipart(request);
+            }
+        };
     }
 
     @Bean

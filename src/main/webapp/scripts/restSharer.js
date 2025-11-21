@@ -105,6 +105,7 @@ RestSharer = function(_array,_config) {
    		
    this.dt=new TextDataTable(t,[
    		{key:"check",label:"Share", formatter:function(el, oRecord, oColumn, oData) {
+            oRecord.setData("parentConflict", false);
             oRecords.push(oRecord);
 			var canRead=oRecord.getData("canRead");
 			if(canRead){return YAHOO.widget.DataTable.formatCheckbox(el,oRecord,oColumn,true);}
@@ -120,7 +121,9 @@ RestSharer = function(_array,_config) {
    			}else if(oRecord.getData("processed")==2){
    				el.innerHTML="<i class=\"fa fa-check\" style=\"color: green\" title=\""+oRecord.getData("xsiType")+" shared\"></i>";
    			}else if(oRecord.getData("processed")==3){
-   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: #c66\" title=\"" + (oRecord.getData("msg") ? oRecord.getData("msg") : "") + "\"></i>";
+   				el.innerHTML="<i class=\"fa fa-times-circle\" style=\"color: #c66\" title=\"" + (oRecord.getData("msg") ? oRecord.getData("msg") : "") + "\"></i>";
+   			}else if(oRecord.getData("processed")==4){
+   				el.innerHTML="<i class=\"fa fa-hourglass\" style=\"color: darkorange\" title=\"" + (oRecord.getData("msg") ? oRecord.getData("msg") : "") + "\"></i>";
    			}else{
    				el.innerHTML="";
    			}
@@ -134,16 +137,23 @@ RestSharer = function(_array,_config) {
              oRecord.setData("new_label",elTextbox.value);   
              
              if(oRecord.getData("new_label") != "" && oRecord.getData("processed") == 3 && oRecord.getData("msg") != undefined){
-                     oRecord.setData("msg",undefined);
                      this.dt.updateCell(oRecord,"processed",undefined);
                      this.leaveOpen = false;
+                     oRecord.setData("msg",undefined);
+                     if (oRecord.getData("checked")) {
+                         this.unMarkConflict();
+                     }
              }
        }.bind(this));
   	   this.dt.subscribe("checkboxClickEvent", function(oArgs){   
              var elCheckbox = oArgs.target;   
              var oRecord = this.getRecord(elCheckbox);   
-             oRecord.setData("checked",elCheckbox.checked);   
-       });   
+             oRecord.setData("checked",elCheckbox.checked);
+             if (oRecord.getData("checked") && oRecord.getData("new_label") != "" && oRecord.getData("processed") == undefined && oRecord.getData("msg") == undefined) {
+                 this.unMarkConflict();
+             }
+
+       });
   	   
 		
 	    var myButtons = [ { text:"Share", handler:this.handleShare, isDefault:true  },{ text:"Close", handler:this.handleCancel } ];
@@ -155,12 +165,42 @@ RestSharer = function(_array,_config) {
     }
     
     this.handleShare=function(){
+        if (this.manager.hasConflict()) {
+            this.manager.warnConflictExists();
+        }
     	this.manager.process();
     }
-    
-    this.process=function(){
+
+    this.warnConflictExists=function(label) {
+         if (label === undefined) {
+             xmodal.message('Conflict resolution',
+                            "There appears to be data conflict issue. You may not have assigned a new label or checked the row.", 'Ok',
+                            { action: function() {
+                                    xmodal.close();
+                                }
+                            }
+                            );
+         } else {
+             xmodal.message('Conflict resolution',
+                            "There appears to be data conflict issue. Destination project " + this.config.project.label + " already has " + label + ". Please modify the label and retry.", 'Ok',
+                            { action: function() {
+                                    xmodal.close();
+                                }
+                            }
+                            );
+         }
+    }
+
+    this.asyncRequestPromise=function(url, handler) {
+        return new Promise((resolve, reject) => {
+            YAHOO.util.Connect.asyncRequest('PUT', url, handler);
+        });
+    }
+
+
+
+    this.process = async function(){
     	var processing=false;
-    	
     	for(var rsDtC=0;rsDtC<this.dt.getRecordSet().getLength();rsDtC++){
     		var oRecord=this.dt.getRecord(rsDtC);
     		if(oRecord.getData("checked")){
@@ -170,8 +210,8 @@ RestSharer = function(_array,_config) {
     				this.leaveOpen=true;
     				continue;
     			}
-    			if(oRecord.getData("processed")==null|| oRecord.getData("processed")==undefined){
-    				this.dt.updateCell(oRecord,"processed",1);
+    			if(!oRecord.getData("parentConflict") && (oRecord.getData("processed")==null|| oRecord.getData("processed")==undefined)){
+    				this.dt.updateCell(oRecord,"processed",4);
     				shareCB={
     					success:function(o){
     						closeModalPanel("a_share");
@@ -181,11 +221,11 @@ RestSharer = function(_array,_config) {
     					},
     					failure:function(o){
     						closeModalPanel("a_share");
+    						this.leaveOpen=true;
     						if(o.status!=409){
     							this.stopped=true;
     							this.dt.updateCell(o.argument.oRecord,"processed",3);
     							xmodal.message('Error' + o.status, "ERROR : Failed to share " + oRecord.getData("label"));
-    							this.leaveOpen=true;
     						}else{
     							o.argument.oRecord.setData("msg","This item has either already been shared into this " + 
     																XNAT.app.displayNames.singular.project.toLowerCase() + 
@@ -193,8 +233,9 @@ RestSharer = function(_array,_config) {
     																XNAT.app.displayNames.singular.project.toLowerCase() + 
     																" with the requested label.");
     							this.dt.updateCell(o.argument.oRecord,"processed",3);
-    							this.leaveOpen=true;
-    							this.process();
+    							o.argument.oRecord.setData("parentConflict", true);
+                                this.markConflict( rsDtC + 1);
+    							this.warnConflictExists(oRecord.getData("label"));
     						}
     					},
     					cache:false, // Turn off caching for IE
@@ -209,8 +250,7 @@ RestSharer = function(_array,_config) {
     				if(oRecord.getData("redirect")!=null){
     					this.new_label=oRecord.getData("new_label");
     				}
-    				YAHOO.util.Connect.asyncRequest('PUT',serverRoot + oRecord.getData("ru") + "/projects/"+ this.config.project.id+ params,shareCB,null,this);
-    				break;
+                    await this.asyncRequestPromise(serverRoot + oRecord.getData("ru") + "/projects/"+ this.config.project.id+ params,shareCB);
     			}
     		}
     	}
@@ -221,7 +261,37 @@ RestSharer = function(_array,_config) {
     		}
     	}
     }
+
+    this.markConflict = function (index) {
+      for(var rsDtC=index;rsDtC<this.dt.getRecordSet().getLength();rsDtC++){
+        var oRecord=this.dt.getRecord(rsDtC);
+        oRecord.setData("parentConflict",true);
+      }
+    }
+
+    this.unMarkConflict = function () {
+      for(var rsDtC=0;rsDtC<this.dt.getRecordSet().getLength();rsDtC++){
+        var oRecord=this.dt.getRecord(rsDtC);
+        oRecord.setData("parentConflict",false);
+      }
+    }
+
+    this.hasConflict = function () {
+      let hasParentConflict = false;
+      for(var rsDtC=0;rsDtC<this.dt.getRecordSet().getLength();rsDtC++){
+        var oRecord=this.dt.getRecord(rsDtC);
+        if (oRecord.getData("parentConflict")) {
+          hasParentConflict = true;
+          break;
+        }
+      }
+      return hasParentConflict;
+    }
+
+
 };
+
+
 
 YAHOO.extend(RestSharer, BasePopup, {
 });

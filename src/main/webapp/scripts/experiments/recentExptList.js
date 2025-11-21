@@ -109,14 +109,30 @@ function MinExptList(_div, _options){
             if(exptList.options.showExptScannerName){
                 scannerName = expt.scanner ? expt.scanner : '';
                 if (scannerName.length > 10) {
-                    scannerName = scannerName.substring(0,9) + '&hellip;';
+                    scannerName = scannerName.substring(0,9) + '...';
                 }
                 td = document.createElement("td");
                 td.title = expt.scanner;
                 td.align = "left";
-                td.innerHTML = scannerName;
+                td.textContent = scannerName;
                 tr.appendChild(td);
             }
+
+            if(exptList.options.showPetTracerName){
+                tracerName = expt.pet_tracer_name ? expt.pet_tracer_name : '';
+                if (tracerName === '') {
+                  tracerName = expt.pet_mr_tracer_name ? expt.pet_mr_tracer_name : '';
+                }
+                if (tracerName.length > 10) {
+                    tracerName = tracerName.substring(0,5) + '...';
+                }
+                td = document.createElement("td");
+                td.title = (expt.pet_tracer_name ? expt.pet_tracer_name : expt.pet_mr_tracer_name ? expt.pet_mr_tracer_name : '');
+                td.align = "left";
+                td.textContent = tracerName;
+                tr.appendChild(td);
+            }
+
 
             if(exptList.options.showExptDate){
                 td = document.createElement("td");

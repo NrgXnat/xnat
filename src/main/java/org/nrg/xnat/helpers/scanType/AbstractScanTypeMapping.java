@@ -67,12 +67,18 @@ public abstract class AbstractScanTypeMapping<HistoryType> implements ScanTypeMa
         }
     }
 
+    private static boolean isUnknownType(final XnatImagescandataI scan) {
+        // "Unknown" is default scan type if scan is created through UI. Comes (probably?) from scan_tools.js
+        // "unknown" comes from running fixScanTypes on a scan with scan type "Unknown"
+        return Strings.isNullOrEmpty(scan.getType()) || "Unknown".equalsIgnoreCase(scan.getType());
+    }
+
     /*
      * (non-Javadoc)
      * @see org.nrg.xnat.helpers.scanType.ScanTypeMappingI#setType(org.nrg.xdat.model.XnatImagescandataI)
      */
     public void setType(final XnatImagescandataI scan) {
-        if (Strings.isNullOrEmpty(scan.getType())) {
+        if (isUnknownType(scan)) {
             String seriesDescription = scan.getSeriesDescription();
             if (Strings.isNullOrEmpty(seriesDescription)) {
                 scan.setType(defaultScanType);

@@ -12,6 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * @deprecated As of release 1.10. It will be removed in a future version.
+ */
+@Deprecated
 @JsonInclude
 public class BulkLaunchLog {
     private int total = -1;

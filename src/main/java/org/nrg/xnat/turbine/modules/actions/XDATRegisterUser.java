@@ -20,9 +20,16 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.security.XnatProviderManager;
+import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
@@ -96,8 +103,29 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
                 }
             }
         }
-
+        setUserAuth(data,context);
         super.doPerform(data, context);
+    }
+
+    private void setUserAuth(final RunData data, final Context context) throws UserInitException, UserFieldMappingException {
+        final XdatUserAuth userAuth = (XdatUserAuth) context.get("userAuth");
+        if (userAuth != null) {
+            return;
+        }
+        final UserI found = Users.createUser(TurbineUtils.GetDataParameterHash(data));
+        XnatProviderManager xnatProviderManager = XDAT.getContextService().getBeanSafely(XnatProviderManager.class);
+        if (xnatProviderManager != null) {
+            Map<String, XnatAuthenticationProvider> providers = xnatProviderManager.getVisibleEnabledProviders();
+            if (providers.size() == 1) {
+                Map.Entry<String, XnatAuthenticationProvider> firstEntry = providers.entrySet().iterator().next();
+                final XnatAuthenticationProvider provider = firstEntry.getValue();
+                if (provider != null) {
+                    final XdatUserAuth auth = new XdatUserAuth(found.getUsername(), provider.getAuthMethod(), provider.getProviderId());
+                    auth.setXdatUsername(found.getUsername());
+                    context.put("userAuth", auth);
+                }
+            }
+        }
     }
 
     public interface RegistrationValidatorI {

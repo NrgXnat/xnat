@@ -11,6 +11,7 @@ package org.nrg.dcm.scp;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.id.*;
@@ -22,12 +23,15 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.DicomObjectIdentifier;
+import org.nrg.xnat.event.EventListener;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.bus.Event;
+import reactor.fn.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,25 +46,28 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * DicomSCPManager
  */
 @Service
 @Transactional
+@EventListener
 @Slf4j
-public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
+public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod implements Consumer<Event<DicomSCPEvent>> {
     private final ApplicationContext                                  _context;
     private final Executor                                            _executor;
     private final DicomSCPStore                                       _dicomSCPStore;
     private final DicomSCPInstanceService                             _dicomSCPInstanceService;
     private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _dicomObjectIdentifierMap;
-    private final String      _primaryDicomObjectIdentifierBeanId;
-    private final Set<String> _dicomObjectIdentifierBeanIds;
-    private       boolean     _isEnableDicomReceiver;
+    private final String                                              _primaryDicomObjectIdentifierBeanId;
+    private final Set<String>                                         _dicomObjectIdentifierBeanIds;
+    private final AtomicBoolean                                       _isEnableDicomReceiver;
 
     private static final Pattern AE_TITLE_PATTERN                 = Pattern.compile("(?=[^\\\\]*[^\\s\\\\]+$)(?=^[^\\s\\\\]+[^\\\\]*)[ -~]{1,16}");
     private static final String  ENABLE_DICOM_RECEIVER_PREFERENCE = "enableDicomReceiver";
@@ -103,7 +110,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
 
         _dicomObjectIdentifierBeanIds = sortedDicomObjectIdentifierBeanIds.stream().filter(StringUtils::isNotBlank).collect(Collectors.toSet());
 
-        _isEnableDicomReceiver = siteConfigPreferences.isEnableDicomReceiver();
+        _isEnableDicomReceiver = new AtomicBoolean(siteConfigPreferences.isEnableDicomReceiver());
 
         _dicomSCPStore = new DicomSCPStore(this);
     }
@@ -117,6 +124,43 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
             log.error("A DICOM network error occurred while trying to shut down", e);
         } catch (UnknownDicomHelperInstanceException e) {
             log.error("An unknown DICOM helper error occurred while trying to shut down", e);
+        }
+    }
+
+    @Override
+    protected void handlePreferenceImpl(final String preference, final String value) {
+        final boolean enabled = Boolean.parseBoolean(value);
+        _isEnableDicomReceiver.set(enabled);
+        try {
+            if (enabled) {
+                start();
+            } else {
+                stop();
+            }
+        } catch (UnknownDicomHelperInstanceException | DicomNetworkException e) {
+            log.error("Error globally {} all Dicom SCP Receivers.", enabled ? "starting" : "stopping", e);
+        }
+    }
+
+    @Override
+    public void accept(final Event<DicomSCPEvent> event) {
+        final DicomSCPEvent data    = event.getData();
+        final long          id      = data.getId();
+        final String        action  = data.getAction();
+        final String        aeTitle = data.getAeTitle();
+        final int           port    = data.getPort();
+
+        log.info("Received DICOM SCP event: entity {} at {}:{} operation {}", id, aeTitle, port, action);
+        switch (action) {
+            case "INSERT":
+                handleInsert(id);
+                break;
+            case "UPDATE":
+                handleUpdate(id, aeTitle, port);
+                break;
+            case "DELETE":
+                handleDelete(aeTitle, port);
+                break;
         }
     }
 
@@ -146,7 +190,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     public DicomSCPInstance updateDicomSCPInstance(final DicomSCPInstance instance) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException {
         if (hasDicomSCPInstance(instance.getId())) {
             _dicomSCPInstanceService.update(instance);
-            cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
+            cycleDicomSCPPort(instance.getPort());
             return instance;
         }
         throw new NotFoundException("Could not find DICOM SCP instance with ID " + instance.getId());
@@ -155,7 +199,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     /**
      * Updates the submitted {@link DicomSCPInstance DICOM SCP instance} definition. If the {@link DicomSCPInstance#getId()
      * instance ID} matches an existing DICOM SCP instance, that instance will be updated. If not, the {@link NotFoundException}
-     *
+     * <p>
      * Enabled field is ignored while updating unlike the updateDicomSCPInstance method
      *
      * @param instance The instance to be set.
@@ -176,7 +220,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         }
         log.debug("Updating Dicom SCP Instance {}", instance.getId());
         _dicomSCPInstanceService.update(instance);
-        cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
+        cycleDicomSCPPort(instance.getPort());
         return instance;
     }
 
@@ -268,7 +312,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
             log.debug("Created new DicomSCPInstance {}, but it's not enabled, so I'm not cycling its port {}", instance.getId(), instance.getPort());
         } else {
             log.debug("{} DicomSCPInstance {}, cycling port {}", isNewInstance ? "Created" : "Modified", instance.getId(), instance.getPort());
-            cycleDicomSCPPorts(Collections.singleton(instance.getPort()));
+            cycleDicomSCPPort(instance.getPort());
         }
 
         return instance;
@@ -337,23 +381,25 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         }
         // TODO: Huh. entity returned by retrieve is a proxy object. Dunno why.
         // Do a useless read of a property so lazy loading happens in the context of this session.
-        log.debug("Got DICOM SCP instance with ID {}, AE title is {} and port is {}", id, entity.getAeTitle(), entity.getPort());
+        log.debug("Retrieved DICOM SCP instance with ID {}, AE title is {} and port is {}", id, entity.getAeTitle(), entity.getPort());
         return entity;
     }
 
     /**
-     * Finds a Dicom SCP Instance by Id
+     * Finds a Dicom SCP Instance by ID
+     *
      * @param id - id of the Dicom SCP Instance to be found
+     *
      * @return the DicomSCPInstance with the passed id or NotFoundException
-     * @throws NotFoundException
+     *
+     * @throws NotFoundException if no instance with the passed id exists
      */
-
     public DicomSCPInstance findById(final long id) throws NotFoundException {
         DicomSCPInstance entity = _dicomSCPInstanceService.findById(id);
         if (entity == null) {
             throw new NotFoundException("DicomSCPInstance(id: " + id + ")");
         }
-        log.debug("Got DICOM SCP instance with ID {}, AE title is {} and port is {}", id, entity.getAeTitle(), entity.getPort());
+        log.debug("Found DICOM SCP instance with ID {}, AE title is {} and port is {}", id, entity.getAeTitle(), entity.getPort());
         return entity;
     }
 
@@ -364,7 +410,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     }
 
     public List<DicomSCPInstance> getEnabledDicomSCPInstancesByPort(final int port) {
-        return _dicomSCPInstanceService.findByAllByPort(port);
+        return _dicomSCPInstanceService.findAllByPort(port);
     }
 
     public DicomSCPInstance enableDicomSCPInstance(final int id) throws NotFoundException {
@@ -382,7 +428,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
      * preference setting is set to true.
      */
     public List<Triple<String, Integer, Boolean>> start() throws UnknownDicomHelperInstanceException, DicomNetworkException {
-        return _isEnableDicomReceiver ? cycleDicomSCPPorts(_dicomSCPInstanceService.getPortsWithEnabledInstances()) : Collections.emptyList();
+        return _isEnableDicomReceiver.get() ? cycleDicomSCPPorts(_dicomSCPInstanceService.getPortsWithEnabledInstances()) : Collections.emptyList();
     }
 
     public List<Triple<String, Integer, Boolean>> stop() throws DicomNetworkException, UnknownDicomHelperInstanceException {
@@ -447,10 +493,10 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     @Nullable
     public DicomObjectIdentifier<XnatProjectdata> getDicomObjectIdentifier(final String beanId) {
         return StringUtils.isBlank(beanId)
-                ? getDefaultDicomObjectIdentifier()
-                : _dicomObjectIdentifierBeanIds.contains(beanId)
-                ? getDicomObjectIdentifiers().get(beanId)
-                : null;
+               ? getDefaultDicomObjectIdentifier()
+               : _dicomObjectIdentifierBeanIds.contains(beanId)
+                 ? getDicomObjectIdentifiers().get(beanId)
+                 : null;
     }
 
     public DicomObjectIdentifier<XnatProjectdata> getDefaultDicomObjectIdentifier() {
@@ -471,10 +517,9 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
                                                             .orElseThrow(() -> new IllegalArgumentException(String.format("Unknown DicomSCPInstances with aeTitle '%s' and port %d", aeTitle, port)));
         DicomObjectIdentifier<XnatProjectdata> doi = _dicomObjectIdentifierMap.get(instance.getIdentifier());
         return doi instanceof ReceiverAwareIdentifier ?
-                ((ReceiverAwareIdentifier<? extends DicomObjectIdentifier<XnatProjectdata>>) doi).forInstance(instance) :
-                doi;
+               ((ReceiverAwareIdentifier<? extends DicomObjectIdentifier<XnatProjectdata>>) doi).forInstance(instance) :
+               doi;
     }
-
 
     // for API
     public void resetDicomObjectIdentifier() {
@@ -508,24 +553,73 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
     protected DicomObjectIdentifier<XnatProjectdata> getIdentifier(final String identifier) throws UnknownDicomHelperInstanceException {
         //noinspection unchecked
         final DicomObjectIdentifier<XnatProjectdata> bean = StringUtils.isBlank(identifier) ? _context.getBean(DicomObjectIdentifier.class) : _context.getBean(identifier, DicomObjectIdentifier.class);
-        if (bean == null) {
-            throw new UnknownDicomHelperInstanceException(identifier, DicomObjectIdentifier.class);
-        }
         log.debug("Found bean of type {} for DICOM object identifier {}", bean.getClass().getName(), StringUtils.defaultIfBlank(identifier, "default"));
         return bean;
     }
 
-    protected DicomFileNamer getDicomFileNamer(final String identifier) throws UnknownDicomHelperInstanceException {
+    protected DicomFileNamer getDicomFileNamer(final String identifier) {
         final DicomFileNamer bean = StringUtils.isBlank(identifier) ? _context.getBean(DicomFileNamer.class) : _context.getBean(identifier, DicomFileNamer.class);
-        if (bean == null) {
-            throw new UnknownDicomHelperInstanceException(identifier, DicomFileNamer.class);
-        }
         log.debug("Found bean of type {} for DICOM file namer {}", bean.getClass().getName(), StringUtils.defaultIfBlank(identifier, "default"));
         return bean;
     }
 
     protected XnatUserProvider getUserProvider() {
         return super.getUserProvider();
+    }
+
+    private void handleInsert(final long id) {
+        final DicomSCPInstance instance = _dicomSCPInstanceService.findById(id);
+        if (instance == null) {
+            log.warn("Could not find DICOM SCP instance with ID {}, cannot handle INSERT event", id);
+        } else {
+            log.debug("Handling INSERT event for DICOM SCP instance {} with AE title {} and port {}", id, instance.getAeTitle(), instance.getPort());
+            try {
+                final Triple<String, Integer, Boolean> triple = cycleDicomSCPPort(instance.getPort());
+                log.debug("Cycled DICOM SCP instance {} with AE title {} and port {}, result was: {}", id, triple.getLeft(), triple.getMiddle(), triple.getRight());
+            } catch (DicomNetworkException e) {
+                log.error("A DICOM network error occurred while trying to cycle DICOM SCP port {}", instance.getPort(), e);
+            } catch (UnknownDicomHelperInstanceException e) {
+                log.error("An unknown DICOM helper error occurred while trying to cycle port {}", instance.getPort(), e);
+            }
+        }
+    }
+
+    private void handleUpdate(final long id, final String aeTitle, final int port) {
+        log.debug("Handling UPDATE event for DICOM SCP instance {} with AE title {} and port {}", id, aeTitle, port);
+        final DicomSCPInstance instance = _dicomSCPInstanceService.findById(id);
+        if (instance == null) {
+            log.warn("Could not find DICOM SCP instance with ID {}, cannot handle UPDATE event", id);
+        } else {
+            log.debug("Found DICOM SCP instance {} with AE title {} and port {}", id, instance.getAeTitle(), instance.getPort());
+            if (port > 0 && port != instance.getPort()) {
+                try {
+                    cycleDicomSCPPorts(Stream.of(port, instance.getPort()).collect(Collectors.toSet()));
+                } catch (DicomNetworkException e) {
+                    log.error("A DICOM network error occurred while trying to cycle DICOM SCP ports {} and {}", port, instance.getPort(), e);
+                } catch (UnknownDicomHelperInstanceException e) {
+                    log.error("An unknown DICOM helper error occurred while trying to cycle ports {} and {}", port, instance.getPort(), e);
+                }
+            } else {
+                try {
+                    cycleDicomSCPPort(instance.getPort());
+                } catch (DicomNetworkException e) {
+                    log.error("A DICOM network error occurred while trying to cycle DICOM SCP port {}", port, e);
+                } catch (UnknownDicomHelperInstanceException e) {
+                    log.error("An unknown DICOM helper error occurred while trying to cycle port {}", port, e);
+                }
+            }
+        }
+    }
+
+    private void handleDelete(final String aeTitle, final int port) {
+        log.debug("Handling DELETE event for DICOM SCP instance with AE title {} and port {}", aeTitle, port);
+        try {
+            cycleDicomSCPPort(port);
+        } catch (DicomNetworkException e) {
+            log.error("A DICOM network error occurred while trying to cycle DICOM SCP port {}", port, e);
+        } catch (UnknownDicomHelperInstanceException e) {
+            log.error("An unknown DICOM helper error occurred while trying to cycle port {}", port, e);
+        }
     }
 
     @Nonnull
@@ -549,22 +643,17 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod {
         }
     }
 
+    private Triple<String, Integer, Boolean> cycleDicomSCPPort(final int updated) throws DicomNetworkException, UnknownDicomHelperInstanceException {
+        final List<Triple<String, Integer, Boolean>> triples = cycleDicomSCPPorts(Collections.singleton(updated));
+        if (triples.isEmpty()) {
+            log.warn("No cycle dicom SCP ports found for port {}", updated);
+            return ImmutableTriple.nullTriple();
+        }
+        return triples.get(0);
+    }
+
     private List<Triple<String, Integer, Boolean>> cycleDicomSCPPorts(final Set<Integer> updated) throws DicomNetworkException, UnknownDicomHelperInstanceException {
         log.debug("I'm going to cycle {} ports that have been added or updated: {}", updated.size(), updated);
         return _dicomSCPStore.cycle(updated);
-    }
-
-    @Override
-    protected void handlePreferenceImpl(final String preference, final String value) {
-        _isEnableDicomReceiver = Boolean.parseBoolean(value);
-        try {
-            if (_isEnableDicomReceiver) {
-                start();
-            } else {
-                stop();
-            }
-        } catch (UnknownDicomHelperInstanceException | DicomNetworkException e) {
-            log.error("Error globally {} all Dicom SCP Receivers.", _isEnableDicomReceiver ? "starting" : "stopping", e);
-        }
     }
 }

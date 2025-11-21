@@ -6,6 +6,7 @@ import com.google.common.collect.Multimaps;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.net.*;
 import org.dcm4che2.net.service.DicomService;
@@ -47,9 +48,10 @@ public class DicomSCP {
         return create(manager, Collections.singletonList(port)).get(port);
     }
 
+    @Nonnull
     public static Map<Integer, DicomSCP> create(final DicomSCPManager manager, final List<Integer> ports) {
-        if (ports == null || ports.size() == 0) {
-            return null;
+        if (CollectionUtils.isEmpty(ports)) {
+            throw new IllegalArgumentException("You must provide at least one port to create a DICOM SCP receiver.");
         }
 
         final Map<Integer, DicomSCP> dicomSCPs = new HashMap<>();
@@ -70,10 +72,6 @@ public class DicomSCP {
 
     public List<String> getAeTitles() {
         return new ArrayList<>(getApplicationEntities().keySet());
-    }
-
-    public int getPort() {
-        return getDevice().getNetworkConnection()[0].getPort();
     }
 
     public boolean isStarted() {
@@ -97,17 +95,17 @@ public class DicomSCP {
 
         final List<DicomSCPInstance> instances = getManager().getEnabledDicomSCPInstancesByPort(getPort());
 
-        if (instances.size() == 0) {
+        if (CollectionUtils.isEmpty(instances)) {
             log.warn("No enabled DICOM SCP instances found for port {}, nothing to start", getPort());
             return Collections.emptyList();
         }
-
-        log.debug("Trying to start DICOM SCP receiver(s) on port {}", getPort());
 
         if (!NetUtils.isPortAvailable(getPort(), 3, 2)) {
             log.error("Unable to access DICOM SCP port {}. The port may be already in use, but I can't tell from the information I have now. Starting with the DICOM receiver disabled. The following AEs will be unavailable on this port: {}", getPort(), StringUtils.join(extractAeTitles(), ", "));
             return Collections.emptyList();
         }
+
+        log.debug("Trying to start {} DICOM SCP receiver(s) on port {}", instances.size(), getPort());
 
         try {
             final InetAddress localHost = InetAddress.getLocalHost();
@@ -132,13 +130,13 @@ public class DicomSCP {
             final List<TransferCapability> transferCapabilities = new ArrayList<>();
             transferCapabilities.add(new TransferCapability(VerificationSOPClass, VERIFICATION_SOP_TS, TransferCapability.SCP));
 
-            for (final DicomService service : getDicomServicesByApplicationEntity().get(applicationEntity)) {
+            getDicomServicesByApplicationEntity().get(applicationEntity).stream().filter(Objects::nonNull).forEach(service -> {
                 log.trace("Adding service {}", service);
                 applicationEntity.register(service);
                 for (final String sopClass : service.getSopClasses()) {
                     transferCapabilities.add(new TransferCapability(sopClass, TSUIDS, TransferCapability.SCP));
                 }
-            }
+            });
 
             applicationEntity.setTransferCapability(transferCapabilities.toArray(new TransferCapability[0]));
         }
@@ -167,17 +165,17 @@ public class DicomSCP {
         log.info("Stopping DICOM SCP on port {}", getPort());
         getDevice().stopListening();
 
-        final List<String> aeTitles = new ArrayList<>();
-        for (final NetworkApplicationEntity applicationEntity : getDicomServicesByApplicationEntity().keySet()) {
+        final List<String> aeTitles = getDicomServicesByApplicationEntity().keySet().stream().filter(Objects::nonNull).map(applicationEntity -> {
             final String aeTitle = applicationEntity.getAETitle();
             log.debug("Removing application entity {} on port {}", aeTitle, getPort());
-            aeTitles.add(aeTitle);
             for (final DicomService service : getDicomServicesByApplicationEntity().get(applicationEntity)) {
                 applicationEntity.unregister(service);
             }
             applicationEntity.setTransferCapability(new TransferCapability[0]);
             getApplicationEntities().remove(aeTitle);
-        }
+            return aeTitle;
+        }).collect(Collectors.toList());
+
         getDicomServicesByApplicationEntity().clear();
 
         setStarted(false);
@@ -192,14 +190,14 @@ public class DicomSCP {
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder("DicomSCP{[").append("]: ");
-        for (final NetworkApplicationEntity applicationEntity : getDicomServicesByApplicationEntity().keySet()) {
+        getDicomServicesByApplicationEntity().keySet().stream().filter(Objects::nonNull).forEach(applicationEntity -> {
             builder.append(applicationEntity.getAETitle());
             final String hostname = applicationEntity.getNetworkConnection()[0].getHostname();
             if (StringUtils.isNotBlank(hostname)) {
                 builder.append("@").append(hostname);
             }
             builder.append(":").append(getPort());
-        }
+        });
         return builder.append("}").toString();
     }
 
@@ -215,7 +213,7 @@ public class DicomSCP {
         return _device.getNetworkConnection()[0].getServer() != null;
     }
 
-    private void addApplicationEntity(final DicomSCPInstance instance) throws UnknownDicomHelperInstanceException {
+    private void addApplicationEntity(final DicomSCPInstance instance) {
         if (instance.getPort() != getPort()) {
             throw new RuntimeException("Port for instance " + instance.getLabel() + " doesn't match port for DicomSCP instance: " + getPort());
         }

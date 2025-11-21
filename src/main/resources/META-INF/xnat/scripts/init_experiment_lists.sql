@@ -199,7 +199,9 @@ CREATE OR REPLACE FUNCTION public.get_experiment_list(username VARCHAR(255), num
                 workflow_date   TIMESTAMP,
                 pipeline_name   TEXT,
                 action_date     TIMESTAMP,
-                scanner         VARCHAR(255)
+                scanner         VARCHAR(255),
+                pet_tracer_name VARCHAR(255),
+                pet_mr_tracer_name VARCHAR(255)
             )
 AS
 $$
@@ -226,7 +228,9 @@ BEGIN
                  W.workflow_date,
                  W.pipeline_name,
                  COALESCE(W.workflow_date, emd.last_modified, emd.insert_date) AS action_date,
-                 isd.scanner
+                 isd.scanner,
+                 psd.tracer_name as pet_tracer_name,
+                 pmsd.tracer_name as pet_mr_tracer_name
              FROM
                  xnat_experimentData expt
                      LEFT JOIN  xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id
@@ -235,6 +239,8 @@ BEGIN
                      LEFT JOIN  (SELECT W.workflow_id, W.workflow_date, W.pipeline_name, W.workflow_status FROM get_open_workflows(numDays) W) W ON expt.id = W.workflow_id
                      RIGHT JOIN (SELECT S.id, S.label, S.project FROM get_accessible_image_sessions(username) S) perm ON expt.id = perm.id
                      RIGHT JOIN xnat_imageSessionData isd ON perm.id = isd.id
+                     LEFT JOIN xnat_petSessionData psd ON isd.id = psd.id
+                     LEFT JOIN xnat_petMrsessionData pmsd ON isd.id = pmsd.id
              WHERE
                  emd.status != 'obsolete' AND
                  (emd.insert_date > idleInterval OR emd.activation_date > idleInterval OR emd.last_modified > idleInterval OR W.workflow_date > idleInterval)) SEARCH

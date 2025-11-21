@@ -1,0 +1,57 @@
+<div id="session_contrast_header"></div>
+<div id="session_contrast_section"></div>
+
+<style>
+    input:read-only {
+      border: 0;
+      box-shadow: none;
+      background-color: #ddd;
+    }
+    label.contrast{
+        width:160px;
+        display:inline-block;
+    }
+    button.contrast{
+        float:right;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+    h3.contrast{
+        margin-bottom: 10px;
+    }
+    hr.contrast{
+        clear:both;
+    }
+    input.agent{
+        width:160px;
+        margin:2px;
+    }
+    #scan-contrast-details-body .required {
+        border-color:grey;
+    }
+    #scan-contrast-details-body .float{
+        width:60px;
+    }
+</style>
+
+
+<script>
+    $('div[name="custom-post-scans"]').removeClass("hidden");
+
+    async function setupDataForTable() {
+        XNAT.app.context.scanContrastManager.contrastFeatureFlag=$user.checkRestrictedFeature("$!project","contrast_visible");
+        XNAT.app.context.scanContrastManager.subjectLabel="$!subject.getLabel()";
+        XNAT.app.context.scanContrastManager.sessionId="$!om.getId()";
+        XNAT.app.context.scanContrastManager.sessionLabel="$!om.getLabel()";
+        XNAT.app.context.scanContrastManager.sessionType="$!om.getXSIType()";
+        XNAT.app.context.scanContrastManager.scanIdToId={};
+        XNAT.app.context.scanContrastManager.scanIds=[];
+        XNAT.app.context.scanContrastManager.scanDescs=[];
+        #foreach($scan in $om.getSortedScans())
+        XNAT.app.context.scanContrastManager.scanIdToId["$scan.getXnatImagescandataId()"] = "$scan.getId()";
+        XNAT.app.context.scanContrastManager.scanIds.push("$scan.getXnatImagescandataId()");
+        XNAT.app.context.scanContrastManager.scanDescs.push("Scan $!scan.getId() ($!scan.getModality():$!scan.getType())");
+        #end
+    }
+</script>
+<script type="text/javascript" src="$content.getURI("scripts/contrast/contrastModal.js")"></script>

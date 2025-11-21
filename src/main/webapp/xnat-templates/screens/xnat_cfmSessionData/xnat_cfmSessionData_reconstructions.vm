@@ -1,0 +1,3 @@
+<!--BEGIN /xnat-templates/screens/xnat_cfmSessionData/xnat_cfmSessionData_reconstructions.vm -->
+<!-- Reconstructions not applicable to confocal microscopy (2D surface imaging) -->
+<!--END /xnat-templates/screens/xnat_cfmSessionData/xnat_cfmSessionData_reconstructions.vm -->

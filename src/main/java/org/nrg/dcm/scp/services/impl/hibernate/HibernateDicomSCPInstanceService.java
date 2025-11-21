@@ -8,6 +8,7 @@ import org.nrg.dcm.scp.DicomSCPInstance;
 import org.nrg.dcm.scp.daos.DicomSCPInstanceDAO;
 import org.nrg.dcm.scp.services.DicomSCPInstanceService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -19,15 +20,13 @@ import java.util.stream.Collectors;
 @Transactional
 @Slf4j
 public class HibernateDicomSCPInstanceService extends AbstractHibernateEntityService<DicomSCPInstance, DicomSCPInstanceDAO> implements DicomSCPInstanceService {
-
     /**
      * {@inheritDoc}
      */
     @Override
-    public List<DicomSCPInstance> findByAllByPort(final int port) {
+    public List<DicomSCPInstance> findAllByPort(final int port) {
         return getDao().findByProperty("port", port);
     }
-
 
     /**
      * findByAETitleAndPort

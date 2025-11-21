@@ -29,7 +29,6 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -132,11 +131,11 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
             logFailedAttempt(username, request, e);
             throw e;
         } catch (UserNotFoundException e) {
-            log.error("Couldn't find a user with the name '" + username + "'", e);
+            log.error("Couldn't find a user with the name '{}'", username, e);
         } catch (UserInitException e) {
-            log.error("An error occurred trying to initialize the user with the name '" + username + "'", e);
+            log.error("An error occurred trying to initialize the user with the name '{}'", username, e);
         } catch (Exception e) {
-            log.error("An unknown error occurred while trying to authenticate the user with the name '" + username + "'", e);
+            log.error("An unknown error occurred while trying to authenticate the user with the name '{}'", username, e);
         }
         return null;
     }

@@ -1752,6 +1752,16 @@ var XNAT = getObject(XNAT);
                                 if (role === 'SiteUser' || role === 'DataManager') return false; // ignore this bit of XNAT cruft
                                 if (XNAT.data['/xapi/users/rolemap'][role].indexOf(username) >= 0) userRoles.push(role);
                             });
+
+                            // add a check for All Data Access. Sadly, this is not tracked as a role, and must be queried on a user-by-user basis
+                            XNAT.xhr.getJSON({
+                                url: XNAT.url.restUrl('/xapi/users/'+this.username+'/groups'),
+                                async: false,
+                                success: function(data){
+                                    if (data.includes('ALL_DATA_ADMIN')) userRoles.push('ALL_DATA_ADMIN');
+                                },
+                            });
+
                             var userRoleTxt = userRoles.length ? userRoles.join('<br>') : '';
                             return spawn('span.truncate',{
                                 style: { 'font-size':'82.5%', 'text-transform':'uppercase' },

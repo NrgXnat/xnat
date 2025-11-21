@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface DicomSCPInstanceService extends BaseHibernateService<DicomSCPInstance> {
-    List<DicomSCPInstance> findByAllByPort(int port);
+    List<DicomSCPInstance> findAllByPort(int port);
 
     Optional<DicomSCPInstance> findByAETitleAndPort(String ae, int port);
 

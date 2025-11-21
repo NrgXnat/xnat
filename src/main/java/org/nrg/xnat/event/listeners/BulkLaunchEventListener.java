@@ -7,6 +7,10 @@ import org.nrg.xnat.tracking.TrackEvent;
 import reactor.bus.Event;
 import reactor.fn.Consumer;
 
+/**
+ * @deprecated As of release 1.10. It will be removed in a future version.
+ */
+@Deprecated
 @Slf4j
 @EventListener
 public class BulkLaunchEventListener implements Consumer<Event<BulkLaunchEvent>> {

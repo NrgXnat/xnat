@@ -1,0 +1,28 @@
+<div class="edit_title">Object Session Summary</div>
+	<table>
+		<tr>
+			<td>Session ID</td>
+			<td>$!item.Label</td>
+		</tr>
+		<tr>
+			<td>Subject ID</td>
+			<td>$!item.getSubjectData().getId()</td>
+		</tr>
+		<tr>
+			<td>Acquisition Date</td>
+			<td>$!item.Date</td>
+		</tr>
+		<tr>
+			<td>Investigator</td>
+			<td>$!item.Investigator.Firstname $!item.Investigator.Lastname</td>
+		</tr>
+		<tr>
+			<td>Operator</td>
+			<td>$!item.Operator</td>
+		</tr>
+		<tr>
+			<td>Number of Scans</td>
+			<td>$item.Scans_scan.size()</td>
+		</tr>
+	</table>
+</div>

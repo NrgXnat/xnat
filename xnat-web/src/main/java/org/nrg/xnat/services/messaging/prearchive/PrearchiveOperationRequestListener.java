@@ -20,7 +20,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class PrearchiveOperationRequestListener implements JmsRequestListener<PrearchiveOperationRequest> {
-    @Autowired
     public PrearchiveOperationRequestListener(final PrearchiveOperationHandlerResolver resolver) {
         _resolver = resolver;
     }
@@ -29,7 +28,10 @@ public class PrearchiveOperationRequestListener implements JmsRequestListener<Pr
      * {@inheritDoc}
      */
     @Override
-    @JmsListener(id = "prearchiveOperationRequest", destination = "prearchiveOperationRequest")
+    @JmsListener(
+            id = "prearchiveOperationRequest",
+            destination = "prearchiveOperationRequest",
+            containerFactory = "prearchiveOperationRequestJmsListenerContainerFactory")
     public void onRequest(final PrearchiveOperationRequest request) {
         log.info("Now handling request: {}", request);
         final PrearchiveOperationHandler handler = _resolver.getHandler(request);

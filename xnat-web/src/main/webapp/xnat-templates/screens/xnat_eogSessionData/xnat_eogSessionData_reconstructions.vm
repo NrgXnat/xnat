@@ -1,0 +1,3 @@
+<!--BEGIN /xnat-templates/screens/xnat_eogSessionData/xnat_eogSessionData_reconstructions.vm -->
+<!-- Reconstructions not applicable to electrooculography (waveform data - raw signal is the complete information) -->
+<!--END /xnat-templates/screens/xnat_eogSessionData/xnat_eogSessionData_reconstructions.vm -->

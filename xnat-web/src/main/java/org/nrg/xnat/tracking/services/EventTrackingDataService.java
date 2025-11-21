@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.tracking.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.preferences.AsyncOperationsPreferences;
@@ -26,7 +27,7 @@ public interface EventTrackingDataService {
      * @return the payload
      * @throws NotFoundException if no event listener data exists for this key or user cannot access it
      */
-    String getPayloadByKey(final String key, UserI user) throws NotFoundException;
+    String getPayloadByKey(final String key, UserI user) throws NotFoundException, JsonProcessingException;
 
     /**
      * Get EventListenerData entity by key
@@ -35,7 +36,7 @@ public interface EventTrackingDataService {
      * @return the pojo
      * @throws NotFoundException if no event listener data exists for this key or user cannot access it
      */
-    EventTrackingDataPojo getPojoByKey(final String key, UserI user) throws NotFoundException;
+    EventTrackingDataPojo getPojoByKey(final String key, UserI user) throws NotFoundException, JsonProcessingException;
 
     /**
      * Create new EventListenerData entity with key, if entity already exists with key, restart its tracking

@@ -1,0 +1,3 @@
+<!-- BEGIN xnat_cfmSessionData_scans.vm -->
+#parse('/screens/xnat_imageSessionData/upload/scans.vm')
+<!-- END xnat_cfmSessionData_scans.vm -->

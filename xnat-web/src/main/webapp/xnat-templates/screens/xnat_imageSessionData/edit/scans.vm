@@ -114,6 +114,13 @@ XNAT.app.scans={};
           tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
           tempScan.setProperty("xnat_imageScanData_id", '#escapeAll($!turbineUtils.unescapeParam("$!scan.getProperty('xnat_imagescandata_id')"))');
 
+          tempScan.contrasts=[];
+          #foreach($contrast in $scan.getContrasts_contrastbolusv2())
+            contrast = {};
+            contrast.agent="$contrast.getAgent()";
+            tempScan.contrasts.push(contrast);
+          #end
+
           window.scanSet.scans.push(tempScan);
 
           if (!options.types[getDefaultScanXSIType()].containsValue('#escapeAll($!turbineUtils.unescapeParam("$!scan.getType()"))')) {
@@ -143,4 +150,6 @@ XNAT.app.scans={};
 
   window.scanSet.onLoad.fire();
 </script>
+
+
 <!-- END /xnat-templates/screens/xnat_imageSessionData/edit/scans.vm -->

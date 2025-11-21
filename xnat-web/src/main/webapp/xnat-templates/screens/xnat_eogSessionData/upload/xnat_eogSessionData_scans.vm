@@ -1,0 +1,3 @@
+<!-- BEGIN xnat_eogSessionData_scans.vm -->
+#parse('/screens/xnat_imageSessionData/upload/scans.vm')
+<!-- END xnat_eogSessionData_scans.vm -->

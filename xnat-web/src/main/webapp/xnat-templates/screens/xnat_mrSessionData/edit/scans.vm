@@ -106,6 +106,14 @@
                 #end
             tempScan.setProperty("xnat_imageScanData_id", "$!turbineUtils.unescapeParam($!scan.getProperty('xnat_imagescandata_id'))");
             tempScan.setProperty("project", '#escapeAll($!turbineUtils.unescapeParam("$!om.getProject()"))');
+
+            tempScan.contrasts=[];
+                #foreach($contrast in $scan.getContrasts_contrastbolusv2())
+                contrast = {};
+                contrast.agent="$contrast.getAgent()";
+                tempScan.contrasts.push(contrast);
+                #end
+
             window.scanSet.scans.push(tempScan);
 
             if (!options.types["xnat:mrScanData"].containsValue("#escapeAllUnescapeParam($!scan.getType())")) {

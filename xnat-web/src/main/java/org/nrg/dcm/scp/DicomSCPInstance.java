@@ -17,20 +17,22 @@ import java.util.*;
 @Entity
 @NamedQueries({@NamedQuery(name = "getPortsWithEnabledInstances", query = "SELECT DISTINCT i.port FROM DicomSCPInstance i WHERE i.enabled = true")})
 public class DicomSCPInstance extends AbstractHibernateEntity {
-    private String  _aeTitle;
-    private int     _port;
-    private String  _identifier;
-    private String  _fileNamer;
-    private boolean _enabled          = true;
-    private boolean _customProcessing = false;
-    private boolean _directArchive    = false;
-    private boolean _anonymizationEnabled  = true;
-    private boolean _whitelistEnabled = false;
-    private List<String> _whitelist = new ArrayList<>();
-    private boolean _routingExpressionsEnabled = false;
-    private String _projectRoutingExpression;
-    private String _subjectRoutingExpression;
-    private String _sessionRoutingExpression;
+    private static final long serialVersionUID = 6432723646475365970L;
+
+    private String       _aeTitle;
+    private int          _port;
+    private String       _identifier;
+    private String       _fileNamer;
+    private boolean      _enabled                   = true;
+    private boolean      _customProcessing          = false;
+    private boolean      _directArchive             = false;
+    private boolean      _anonymizationEnabled      = true;
+    private boolean      _whitelistEnabled          = false;
+    private List<String> _whitelist                 = new ArrayList<>();
+    private boolean      _routingExpressionsEnabled = false;
+    private String       _projectRoutingExpression;
+    private String       _subjectRoutingExpression;
+    private String       _sessionRoutingExpression;
 
     public String getAeTitle() { return _aeTitle; }
     public void setAeTitle(String aeTitle) { this._aeTitle = aeTitle; }

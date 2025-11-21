@@ -123,10 +123,25 @@ public class CustomFormHelper {
                 String label = compNode.get(LABEL_KEY).asText();
                 String type = compNode.get(COMPONENTS_TYPE_FIELD).asText();
                 formIOJsonToXnatCustomField = new FormIOJsonToXnatCustomField(formUUID, label, key, key, type, parentPaths);
+                formIOJsonToXnatCustomField.setTypeCustomizations(extractComponentFields(compNode));
         }
         return formIOJsonToXnatCustomField;
     }
 
+    private static Map<String, Object> extractComponentFields(JsonNode component)  {
+        Set<String> excludedFields = new HashSet<>(Arrays.asList(COMPONENTS_KEY_FIELD, LABEL_KEY, COMPONENTS_TYPE_FIELD));
+        Map<String, Object> fieldsMap = new HashMap<>();
+        if (component != null) {
+                // Iterate through all fields in the component
+                component.fields().forEachRemaining(entry -> {
+                    String fieldName = entry.getKey();
+                    if (!excludedFields.contains(fieldName)) {
+                        fieldsMap.put(fieldName, entry.getValue());
+                    }
+                });
+        }
+        return fieldsMap;
+    }
 
 
 }

@@ -3,6 +3,8 @@ package org.nrg.xnat.utils;
 import com.google.common.base.MoreObjects;
 import com.google.common.util.concurrent.Striped;
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -14,6 +16,8 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +64,8 @@ public class ThreadAndProcessFileLock {
     private final static int NUM_LOCKS = 128;
     private final static Striped<Lock> STRIPED_MAP_LOCK = Striped.lock(NUM_LOCKS);
 
+    private static SiteConfigPreferences PREFERENCES;
+
     public static final String LOCKFILE_PREFIX = ".~lock-";
 
     public static ThreadAndProcessFileLock getThreadAndProcessFileLock(File file,
@@ -93,7 +99,9 @@ public class ThreadAndProcessFileLock {
             }
             if (ACCESSOR_COUNT.get(file).decrementAndGet() == 0) {
                 try {
-                    Files.deleteIfExists(FILE_LOCKS.get(file).dummyFile.toPath());
+                    Path dummyFilePath = FILE_LOCKS.get(file).dummyFile.toPath();
+                    Files.deleteIfExists(dummyFilePath);
+                    deleteEmptyParentDirectories(dummyFilePath.getParent(), FILE_LOCKS.get(file).getCachePath());
                 } catch (IOException e) {
                     log.error("Unable to delete dummy file", e);
                 }
@@ -102,6 +110,36 @@ public class ThreadAndProcessFileLock {
             }
         } finally {
             mapLock.unlock();
+        }
+    }
+
+    /**
+     * Recursively deletes empty parent directories up to (but not including) the top-level directory.
+     *
+     * @param directory the directory to check and potentially delete
+     * @param topLevelPath the top-level path to stop at (e.g., the cache path)
+     */
+    private static void deleteEmptyParentDirectories(Path directory, String topLevelPath) {
+        if (directory == null) {
+            return;
+        }
+
+        Path topLevel = Paths.get(topLevelPath, "file-locks");
+
+        // Stop if we've reached or gone above the top-level directory
+        if (!directory.startsWith(topLevel) || directory.equals(topLevel)) {
+            return;
+        }
+
+        try {
+            // Try to delete the directory - this will only succeed if it's empty
+            if (Files.isDirectory(directory) && Files.deleteIfExists(directory)) {
+                // If successful, recursively try to delete the parent
+                deleteEmptyParentDirectories(directory.getParent(), topLevelPath);
+            }
+        } catch (IOException e) {
+            // Directory is not empty or cannot be deleted, stop here
+            log.debug("Could not delete directory {}: {}", directory, e.getMessage());
         }
     }
 
@@ -149,12 +187,24 @@ public class ThreadAndProcessFileLock {
         this.readOnly = readOnly;
 
         // Open channel on the dummy file to synchronize across processes
-        this.dummyFile = new File(file.getParent(), LOCKFILE_PREFIX + file.getName());
+        this.dummyFile = Paths.get(getCachePath(), "file-locks", file.getParent(), LOCKFILE_PREFIX + file.getName()).toFile();
         openDummyRAF(true);
         this.channel = dummyRAF.getChannel();
 
         // Store the inter-process file channel file lock so we can unlock it
         this.fileLock = null;
+    }
+
+    private String getCachePath() {
+        final SiteConfigPreferences preferences = getSiteConfigPreferences();
+        return preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+    }
+
+    private SiteConfigPreferences getSiteConfigPreferences() {
+        if (PREFERENCES == null) {
+            PREFERENCES = XDAT.getSiteConfigPreferences();
+        }
+        return PREFERENCES;
     }
 
     /**
@@ -167,6 +217,10 @@ public class ThreadAndProcessFileLock {
      */
     private void openDummyRAF(boolean retry) throws FileNotFoundException {
         try {
+            final Path parentPath = dummyFile.toPath().getParent();
+            if (parentPath != null && !Files.exists(parentPath)) {
+                Files.createDirectories(parentPath);
+            }
             dummyRAF = new RandomAccessFile(dummyFile, "rw");
         } catch (FileNotFoundException e) {
             if (retry) {
@@ -178,6 +232,17 @@ public class ThreadAndProcessFileLock {
                 openDummyRAF(false);
             } else {
                 throw e;
+            }
+        } catch (IOException e) {
+            if (retry) {
+                try {
+                    Thread.sleep(100L);
+                } catch (InterruptedException e2) {
+                    // ignore
+                }
+                openDummyRAF(false);
+            } else {
+                throw new RuntimeException("An error occurred trying to create a lock file", e);
             }
         }
     }

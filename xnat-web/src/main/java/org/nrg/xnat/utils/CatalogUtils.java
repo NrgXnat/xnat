@@ -2645,7 +2645,7 @@ public class CatalogUtils {
         }
 
         for (String key : catalogMapByRelPath.keySet()) {
-            if (key.equals(path) || key.startsWith(path) || (regex != null && key.matches(regex))) {
+            if (key.equals(path) || (regex != null && key.matches(regex))) {
                 entries.add(catalogMapByRelPath.get(key).entry);
             }
         }

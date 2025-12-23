@@ -71,15 +71,13 @@ public class PrearchiveBatchMove extends BatchPrearchiveActionsA {
         final UserI user = getUser();
         for (final SessionDataTriple triple : triples) {
             try {
-                if (PrearcDatabase.setStatus(triple.getFolderName(), triple.getTimestamp(), triple.getProject(), PrearcUtils.PrearcStatus.QUEUED_MOVING)) {
-                    final SessionData session = PrearcDatabase.getSession(triple.getFolderName(), triple.getTimestamp(), triple.getProject());
-                    final File sessionDir = PrearcUtils.getPrearcSessionDir(user, triple.getProject(), triple.getTimestamp(), triple.getFolderName(), false);
+                final SessionData session = PrearcDatabase.getSession(triple.getFolderName(), triple.getTimestamp(), triple.getProject());
+                final File sessionDir = PrearcUtils.getPrearcSessionDir(user, triple.getProject(), triple.getTimestamp(), triple.getFolderName(), false);
 
-                    final Map<String, Object> parameters = new HashMap<>();
-                    parameters.put(PrearchiveOperationRequest.PARAM_DESTINATION, newProject);
+                final Map<String, Object> parameters = new HashMap<>();
+                parameters.put(PrearchiveOperationRequest.PARAM_DESTINATION, newProject);
 
-                    PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(user, Move, session, sessionDir, parameters));
-                }
+                PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(user, Move, session, sessionDir, parameters));
             } catch (SessionException e) {
                 switch (e.getError()) {
                     case AlreadyExists:

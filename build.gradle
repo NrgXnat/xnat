@@ -9,7 +9,7 @@
 
 buildscript {
     ext {
-        vXnat = "1.9.3"
+        vXnat = "1.9.3.1"
     }
 }
 

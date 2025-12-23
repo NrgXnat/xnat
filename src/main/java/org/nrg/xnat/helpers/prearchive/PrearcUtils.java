@@ -1158,6 +1158,12 @@ public class PrearcUtils {
         final Operation operation = request.getOperation();
         final PrearcStatus originalStatus = sessionData.getStatus();
 
+        if (originalStatus != null && originalStatus.toString().startsWith(PREFIX_QUEUED)) {
+            log.warn("Session {} is already queued with status {}, cannot queue another operation",
+                    sessionData.getSessionDataTriple(), originalStatus);
+            return false;
+        }
+
         if (!PrearcDatabase.setStatus(sessionData, operation.getQueuedStatus())) {
             log.warn("Unable to set prearchive status to {} for {} due to another active operation on the prearchive row",
                     operation.getQueuedStatus(), sessionData.getSessionDataTriple());

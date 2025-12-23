@@ -2645,12 +2645,26 @@ public class CatalogUtils {
         }
 
         for (String key : catalogMapByRelPath.keySet()) {
-            if (key.equals(path) || key.startsWith(path) || (regex != null && key.matches(regex))) {
-                entries.add(catalogMapByRelPath.get(key).entry);
+            CatEntryI entry = catalogMapByRelPath.get(key).entry;
+            if (key.equals(path) || isFolder(path, entry ) || (regex != null && key.matches(regex))) {
+                entries.add(entry);
             }
         }
 
         return entries;
+    }
+
+    private static boolean isFolder(final String path, final CatEntryI catEntry) {
+        final String uri = catEntry.getUri();
+        if (FileUtils.IsUrl(uri, true) ) {
+            return false;
+        }
+        File fileAtUri = new File(uri);
+        String parentOfUri = fileAtUri.getParent();
+        if (parentOfUri != null && parentOfUri.equals(path)) {
+            return true;
+        }
+        return false;
     }
 
     private static String convertAuditToString(Map<String, Map<String, Integer>> summary) {

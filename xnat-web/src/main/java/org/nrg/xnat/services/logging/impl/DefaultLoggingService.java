@@ -497,6 +497,7 @@ public class DefaultLoggingService implements LoggingService {
             log.warn("The logger '{}' doesn't seem to be properly formed. Should include a logging level and at least one appender, but was set to \"{}\". Ignoring.", logger, property);
             return null;
         }
+
         final Element loggerElement = document.createElement(LOGGER);
         loggerElement.setAttribute(NAME, logger);
         loggerElement.setAttribute(ADDITIVITY, additivity);

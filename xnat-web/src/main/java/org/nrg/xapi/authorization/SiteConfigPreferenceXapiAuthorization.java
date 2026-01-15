@@ -42,9 +42,9 @@ public class SiteConfigPreferenceXapiAuthorization extends AbstractXapiAuthoriza
             return false;
         }
 
-        return parameters[0] instanceof List
-               ? GenericUtils.convertToTypedList((List<?>) parameters[0], String.class).stream().allMatch(preference -> _access.canRead(user, preference))
-               : _access.canRead(user, parameters[0] instanceof String ? (String) parameters[0] : parameters[0].toString());
+        return parameters[0] instanceof List<?> l
+               ? GenericUtils.convertToTypedList(l, String.class).stream().allMatch(preference -> _access.canRead(user, preference))
+               : _access.canRead(user, parameters[0] instanceof String s ? s : parameters[0].toString());
     }
 
     @Override

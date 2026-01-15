@@ -12,11 +12,14 @@ package org.nrg.dcm.scp;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.*;
+
+import java.io.Serial;
 import java.util.*;
 
 @Entity
 @NamedQueries({@NamedQuery(name = "getPortsWithEnabledInstances", query = "SELECT DISTINCT i.port FROM DicomSCPInstance i WHERE i.enabled = true")})
 public class DicomSCPInstance extends AbstractHibernateEntity {
+    @Serial
     private static final long serialVersionUID = 6432723646475365970L;
 
     private String       _aeTitle;

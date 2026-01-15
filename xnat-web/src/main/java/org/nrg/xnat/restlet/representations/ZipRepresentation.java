@@ -27,7 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -73,8 +73,8 @@ public class ZipRepresentation extends OutputRepresentation {
         final MediaType mediaType = getMediaType();
         try (final ZipI zip = initializeZip(output, mediaType)) {
             for (final ZipEntry zipEntry : _entries) {
-                if (zipEntry instanceof ZipFileEntry) {
-                    final File file = ((ZipFileEntry) zipEntry).getFile();
+                if (zipEntry instanceof ZipFileEntry entry) {
+                    final File file = entry.getFile();
                     if (!file.isDirectory()) {
                         zip.write(zipEntry.getPath(), file);
                     }
@@ -106,14 +106,14 @@ public class ZipRepresentation extends OutputRepresentation {
             if (files != null) {
                 for (final File file : files) {
                     if (file.isDirectory()) {
-                        addFolder(Paths.get(path, file.getName()).toString(), file);
+                        addFolder(Path.of(path, file.getName()).toString(), file);
                     } else {
-                        addEntry(Paths.get(path, file.getName()).toString(), file);
+                        addEntry(Path.of(path, file.getName()).toString(), file);
                     }
                 }
             }
         } else {
-            addEntry(Paths.get(path, folder.getName()).toString(), folder);
+            addEntry(Path.of(path, folder.getName()).toString(), folder);
         }
     }
 
@@ -220,7 +220,7 @@ public class ZipRepresentation extends OutputRepresentation {
     }
 
     private String getTokenName() {
-        return _tokens.size() > 1 ? "various" : _tokens.get(0);
+        return _tokens.size() > 1 ? "various" : _tokens.getFirst();
     }
 
     @NotNull

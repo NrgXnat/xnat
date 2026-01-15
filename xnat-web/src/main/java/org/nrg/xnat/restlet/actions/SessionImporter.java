@@ -255,7 +255,7 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 throw new ClientException("Upload included files for multiple imaging sessions.");
             }
 
-            final PrearcSession session = sessions.get(0);
+            final PrearcSession session = sessions.getFirst();
             session.getAdditionalValues().putAll(params);
 
             try {
@@ -294,7 +294,7 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 }
             } catch (Exception e) {
                 resetStatus(sessions);
-                if (e instanceof ClientException && Status.CLIENT_ERROR_CONFLICT.equals(((ClientException) e).getStatus())) {
+                if (e instanceof ClientException exception && Status.CLIENT_ERROR_CONFLICT.equals(exception.getStatus())) {
                     //if this failed due to a conflict
                     PrearcDatabase.setStatus(session.getSessionDir().getName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.CONFLICT);
                 } else {

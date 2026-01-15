@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Collections;
@@ -98,7 +97,7 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
         final CatalogUtils.CatalogData                  catalogData     = getCatalogData(catalogResource);
         final Map<String, CatalogUtils.CatalogMapEntry> catalogMap      = CatalogUtils.buildCatalogMap(catalogData);
 
-        final Path                                    sourcePath      = Paths.get(catalogData.catPath);
+        final Path                                    sourcePath      = Path.of(catalogData.catPath);
         final Function<File, Path>                    backupMapper    = file -> _cachePath.resolve(sourcePath.relativize(file.toPath()));
         final Function<Map.Entry<File, String>, Path> renameMapper    = entry -> sourcePath.resolve(entry.getValue());
         final boolean                                 isFileHistoryOn = CatalogUtils.maintainFileHistory();
@@ -280,10 +279,10 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
                 CatalogUtils.writeCatalogToFile(catalogData);
             } catch (Exception e) {
                 log.error("Error processing resource survey request {} for resource {}: unable to save catalog after resource mitigation on {}", requestId, resourceId, catalogResource.getUri(), e);
-                builder.catalogWriteError(String.format("Unable to write catalog %s: %s %s. To access this data, " +
-                                                        "you will need to perform a catalog refresh. It would be ideal to then download and " +
-                                                        "re-import the data or pull scan data from headers so it is properly understood as DICOM.",
-                                                        catalogResource.getUri(), e.getClass().getSimpleName(), e.getMessage()));
+                builder.catalogWriteError(("Unable to write catalog %s: %s %s. To access this data, " +
+                        "you will need to perform a catalog refresh. It would be ideal to then download and " +
+                        "re-import the data or pull scan data from headers so it is properly understood as DICOM.").formatted(
+                        catalogResource.getUri(), e.getClass().getSimpleName(), e.getMessage()));
             }
 
             // Populate resource statistics
@@ -304,9 +303,9 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
                 log.info("Updated and completed workflow {} after mitigation for resource survey request {} on resource {}", _workflow.getWorkflowId(), requestId, resourceId);
             } catch (Exception e) {
                 log.error("Error processing resource survey request {} for resource {}: unable to update resource statistics for {}", requestId, resourceId, catalogResource.getXnatAbstractresourceId(), e);
-                builder.resourceSaveError(String.format("Unable to update resource statistics on %s: %s %s. Running " +
-                                                        "a catalog refresh requesting the populateStats operation will hopefully fix the issue",
-                                                        catalogResource.getXnatAbstractresourceId(), e.getClass().getSimpleName(), e.getMessage()));
+                builder.resourceSaveError(("Unable to update resource statistics on %s: %s %s. Running " +
+                        "a catalog refresh requesting the populateStats operation will hopefully fix the issue").formatted(
+                        catalogResource.getXnatAbstractresourceId(), e.getClass().getSimpleName(), e.getMessage()));
                 try {
                     _workflow.setStepDescription("Failed");
                     _workflow.setPercentagecomplete("100%");
@@ -335,7 +334,7 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
      * @return The requested cache path.
      */
     private Path getCachePath(final String rootCachePath) throws InitializationException {
-        final Path cachePath = Paths.get(rootCachePath)
+        final Path cachePath = Path.of(rootCachePath)
                                     .resolve(_request.getProjectId())
                                     .resolve(_request.getExperimentId())
                                     .resolve(_request.getRequestTime())
@@ -389,8 +388,8 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
                                                   .orElseThrow(() -> new RuntimeException("Catalog file does not exist for resource " +
                                                                                           catalogResource.getXnatAbstractresourceId()));
         } catch (ServerException e) {
-            throw new RuntimeException(String.format("%s (%s)", e.getMessage(),
-                                                     catalogResource.getXnatAbstractresourceId()));
+            throw new RuntimeException("%s (%s)".formatted(e.getMessage(),
+                    catalogResource.getXnatAbstractresourceId()));
         }
         return catalogData;
     }
@@ -413,9 +412,9 @@ public class ResourceMitigationHelper implements Callable<ResourceMitigationRepo
 
         final CatalogUtils.CatalogMapEntry mapEntry = catalogMap.get(sourcePath.relativize(path).toString());
         try {
-            if (file.exists() && mapEntry != null && mapEntry.entry instanceof CatEntryBean) {
+            if (file.exists() && mapEntry != null && mapEntry.entry instanceof CatEntryBean bean) {
                 try {
-                    return CatalogUtils.moveToHistory(catalogData.catFile, catalogData.project, path.toFile(), (CatEntryBean) mapEntry.entry, event);
+                    return CatalogUtils.moveToHistory(catalogData.catFile, catalogData.project, path.toFile(), bean, event);
                 } catch (Exception e) {
                     throw new InitializationException("An error occurred trying to delete or move the file " + path, e);
                 }

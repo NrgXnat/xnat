@@ -152,8 +152,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             "  tag IS NOT NULL AND " +
             "  id LIKE '%%_%s' " +
             "ORDER BY project_id, group_id";
-    private static final String       QUERY_GET_ALL_MEMBER_GROUPS          = String.format(QUERY_GET_ALL_ROLE_GROUPS, "member");
-    private static final String       QUERY_GET_ALL_COLLAB_GROUPS          = String.format(QUERY_GET_ALL_ROLE_GROUPS, "collaborator");
+    private static final String       QUERY_GET_ALL_MEMBER_GROUPS          = QUERY_GET_ALL_ROLE_GROUPS.formatted("member");
+    private static final String       QUERY_GET_ALL_COLLAB_GROUPS          = QUERY_GET_ALL_ROLE_GROUPS.formatted("collaborator");
     private static final String       QUERY_ORPHANED_EXPERIMENTS           = "SELECT " +
             "    experiment_id, " +
             "    data_type, " +
@@ -181,9 +181,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             "     a.element_name = '" + XnatSubjectdata.SCHEMA_ELEMENT_NAME + "' AND  " +
             "     f.%s = 1 AND  " +
             "     u.login IN ('guest', :" + PARAM_USERNAME + ")) projects";
-    private static final String       QUERY_READABLE_PROJECTS              = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "read_element");
-    private static final String       QUERY_EDITABLE_PROJECTS              = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "edit_element");
-    private static final String       QUERY_OWNED_PROJECTS                 = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "delete_element");
+    private static final String       QUERY_READABLE_PROJECTS              = QUERY_ACCESSIBLE_DATA_PROJECTS.formatted("read_element");
+    private static final String       QUERY_EDITABLE_PROJECTS              = QUERY_ACCESSIBLE_DATA_PROJECTS.formatted("edit_element");
+    private static final String       QUERY_OWNED_PROJECTS                 = QUERY_ACCESSIBLE_DATA_PROJECTS.formatted("delete_element");
     private static final String       QUERY_HAS_ALL_DATA_PRIVILEGES        = "SELECT  " +
             "  EXISTS(SELECT TRUE  " +
             "         FROM  " +
@@ -198,8 +198,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             "           ea.element_name = '" + XnatProjectdata.SCHEMA_ELEMENT_NAME + "' AND  " +
             "           fm.%s = 1 AND  " +
             "           u.login = :" + PARAM_USERNAME + ")";
-    private static final String       QUERY_HAS_ALL_DATA_ACCESS            = String.format(QUERY_HAS_ALL_DATA_PRIVILEGES, "read_element");
-    private static final String       QUERY_HAS_ALL_DATA_ADMIN             = String.format(QUERY_HAS_ALL_DATA_PRIVILEGES, "edit_element");
+    private static final String       QUERY_HAS_ALL_DATA_ACCESS            = QUERY_HAS_ALL_DATA_PRIVILEGES.formatted("read_element");
+    private static final String       QUERY_HAS_ALL_DATA_ADMIN             = QUERY_HAS_ALL_DATA_PRIVILEGES.formatted("edit_element");
     private static final String       QUERY_ALL_DATA_ACCESS_PROJECTS       = "SELECT id AS project FROM xnat_projectdata ORDER BY project";
     private static final String       QUERY_GET_GROUP_FOR_USER_AND_PROJECT = "SELECT id " +
             "FROM xdat_usergroup xug " +
@@ -1305,7 +1305,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             if(Groups.isDataAdmin(user)){
                 t= XFTTable.Execute("SELECT ID,secondary_ID FROM xnat_projectData ",null,null);
             }else{
-                t= XFTTable.ExecutePS(String.format(PERMS_SQL, action),dataTypeParam,userId,guestId);
+                t= XFTTable.ExecutePS(PERMS_SQL.formatted(action),dataTypeParam,userId,guestId);
             }
             t.sort("secondary_id", "ASC");
             return t;
@@ -1344,8 +1344,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             log.debug("No guest user initialized, trying to retrieve now.");
             try {
                 final UserI guest = Users.getGuest();
-                if (guest instanceof XDATUser) {
-                    _guest = (XDATUser) guest;
+                if (guest instanceof XDATUser user) {
+                    _guest = user;
                 } else {
                     _guest = new XDATUser(guest.getUsername());
                 }

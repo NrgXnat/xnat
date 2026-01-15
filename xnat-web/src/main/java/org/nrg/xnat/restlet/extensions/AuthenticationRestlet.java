@@ -87,7 +87,7 @@ public class AuthenticationRestlet extends Resource {
                 if (!visibleProviders.containsKey(authenticatorId)) {
                     visibleProviders = manager.getLinkedEnabledProviders(); //openId is a linked provider
                     if (!visibleProviders.containsKey(authenticatorId)) {
-                        fail(Status.CLIENT_ERROR_BAD_REQUEST, String.format("No authentication provider identified by id %s found.", authenticatorId));
+                        fail(Status.CLIENT_ERROR_BAD_REQUEST, "No authentication provider identified by id %s found.".formatted(authenticatorId));
                         return;
                     }
                 }

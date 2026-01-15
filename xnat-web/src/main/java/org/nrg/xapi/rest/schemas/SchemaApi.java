@@ -81,7 +81,7 @@ public class SchemaApi extends AbstractXapiRestController {
 
                         _elements.put(formattedName, element);
                         _elementNames.putAll(formattedName, dataTypeNames);
-                        _elementTypes.add(dataTypeNames.get(0));
+                        _elementTypes.add(dataTypeNames.getFirst());
                         _elementNameMappings.put(formattedName, formattedName);
                         for (final String dataTypeName : dataTypeNames) {
                             _elementNameMappings.put(dataTypeName, formattedName);

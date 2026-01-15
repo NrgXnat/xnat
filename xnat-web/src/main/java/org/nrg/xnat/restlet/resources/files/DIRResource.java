@@ -35,7 +35,7 @@ import org.restlet.resource.Variant;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.*;
 
 @Slf4j
@@ -114,8 +114,8 @@ public class DIRResource extends SecureResource {
 					this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,
 					"Specified request didn't match any stored files.");
 					return null;
-				}else if (src.size()==1 && !src.get(0).isDirectory()){
-					final File f=src.get(0);
+				}else if (src.size()==1 && !src.getFirst().isDirectory()){
+					final File f=src.getFirst();
 					// TODO:  Need to add XAR output here?  (Probably not for single-file zipping)
 					if(isZIPRequest(mediaType)){
 						final ZipRepresentation rep;
@@ -127,7 +127,7 @@ public class DIRResource extends SecureResource {
 							return null;
 						}
 						rep.addEntry(f);
-						this.setContentDisposition(String.format("%s.zip", f.getName()));
+						this.setContentDisposition("%s.zip".formatted(f.getName()));
 						return rep;
 					}else{
 						return this.representFile(f, mediaType);
@@ -162,7 +162,7 @@ public class DIRResource extends SecureResource {
 							return null;
 						}
 						if (mediaType.equals(APPLICATION_XAR)) {
-							final File output = getUserDataCache().getUserDataCacheFile(user, Paths.get("expt_" + new Date().getTime()), UserDataCache.Options.DeleteOnExit, UserDataCache.Options.Overwrite);
+							final File output = getUserDataCache().getUserDataCacheFile(user, Path.of("expt_" + new Date().getTime()), UserDataCache.Options.DeleteOnExit, UserDataCache.Options.Overwrite);
 							log.info("Getting ready to write item XML to the file {}", output.getAbsolutePath());
 
 							try (final OutputStream outputStream = new FileOutputStream(output)) {
@@ -209,7 +209,7 @@ public class DIRResource extends SecureResource {
 								row[2]=(f.length());
 					           
 					            final String rel=(session_dir.toURI().relativize(f.toURI())).getPath();
-								row[3] = String.format("/data/experiments/%1$s/DIR/%2$s%3$s", expt.getId(), rel, f.isDirectory() ? qsParams.toString() : "");
+								row[3] = "/data/experiments/%1$s/DIR/%2$s%3$s".formatted(expt.getId(), rel, f.isDirectory() ? qsParams.toString() : "");
 					       				            
 					            table.rows().add(row);
 							}
@@ -235,7 +235,7 @@ public class DIRResource extends SecureResource {
 				
 			} catch (InvalidFileCharacters e) {
 				this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,
-				String.format("'%s' is not allowed in this resource URI.",e.characters));
+                        "'%s' is not allowed in this resource URI.".formatted(e.characters));
 				return null;
 			}
 		}else{

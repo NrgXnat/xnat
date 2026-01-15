@@ -22,6 +22,8 @@ import org.nrg.xnat.helpers.resource.direct.ResourceModifierA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,7 @@ public class MoveStoredFileRequest implements Serializable {
         return "Move stored file request on file " + _filePath + " in project " + _project + " requested by " + _user.getUsername();
     }
 
+    @Serial
     private static final long serialVersionUID = 42L;
 
     private final ResourceModifierA _resourceModifier;

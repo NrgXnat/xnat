@@ -354,8 +354,8 @@ public class ExperimentResource extends ItemResource {
                             _experiment.quarantine(user);
                         }
 
-                        if (_experiment instanceof XnatImagesessiondata && previous != null) {
-                            anonymize((XnatImagesessiondata) _experiment, (XnatImagesessiondata) previous);
+                        if (_experiment instanceof XnatImagesessiondata imagesessiondata && previous != null) {
+                            anonymize(imagesessiondata, (XnatImagesessiondata) previous);
                         }
                     }
                 } catch (Exception e1) {
@@ -366,13 +366,13 @@ public class ExperimentResource extends ItemResource {
                 postSaveManageStatus(_experiment);
 
                 if (Permissions.canEdit(user, _experiment.getItem())) {
-                    if ((isQueryVariableTrue(XNATRestConstants.PULL_DATA_FROM_HEADERS) || containsAction(XNATRestConstants.PULL_DATA_FROM_HEADERS)) && _experiment instanceof XnatImagesessiondata) {
+                    if ((isQueryVariableTrue(XNATRestConstants.PULL_DATA_FROM_HEADERS) || containsAction(XNATRestConstants.PULL_DATA_FROM_HEADERS)) && _experiment instanceof XnatImagesessiondata imagesessiondata) {
                         try {
                             wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, _experiment.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.DICOM_PULL));
                             assert wrk != null;
                             c = wrk.buildEvent();
                             try {
-                                PullSessionDataFromHeaders pull = new PullSessionDataFromHeaders((XnatImagesessiondata) _experiment, user, allowDataDeletion(), isQueryVariableTrue("overwrite"), false, c);
+                                PullSessionDataFromHeaders pull = new PullSessionDataFromHeaders(imagesessiondata, user, allowDataDeletion(), isQueryVariableTrue("overwrite"), false, c);
                                 pull.call();
                                 WorkflowUtils.complete(wrk, c);
                             } catch (Exception e) {

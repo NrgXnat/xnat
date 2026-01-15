@@ -174,7 +174,7 @@ public final class Prearchive {
 		final Map<String,File> prearcs = new LinkedHashMap<>();
 		final List<List> projects = UserHelper.getUserHelperService(user).getQueryResults("xnat:projectData/ID", "xnat:projectData");
 		for (final List<String> row : projects) {
-			final String id = row.get(0);
+			final String id = row.getFirst();
 			if (prearcs.containsKey(id))
 				continue;
 			try {

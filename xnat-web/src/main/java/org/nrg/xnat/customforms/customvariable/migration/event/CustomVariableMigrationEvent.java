@@ -12,12 +12,15 @@ import javax.annotation.Nullable;
 
 
 import java.io.IOException;
+import java.io.Serial;
 
 @Data
 @AllArgsConstructor
 @Builder
 @Slf4j
 public class CustomVariableMigrationEvent implements TrackableEvent {
+    @Serial
+    private static final long serialVersionUID = 1;
     public enum Status { Waiting, InProgress, Warning, Completed, Failed; }
 
     @NotNull

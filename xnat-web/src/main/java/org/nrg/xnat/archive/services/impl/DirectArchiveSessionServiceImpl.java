@@ -57,7 +57,6 @@ import org.xml.sax.SAXException;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -128,7 +127,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             synchronized (createLock) {
                 session = directArchiveSessionHibernateService.findBySessionData(incoming);
                 if (session == null) {
-                    if (Files.exists(Paths.get(incoming.getUrl()))) {
+                    if (Files.exists(Path.of(incoming.getUrl()))) {
                         throw new ArchivingException("Cannot direct archive session " + incoming.getSessionDataTriple() +
                             " because data already exists in " + incoming.getUrl());
                     }
@@ -213,7 +212,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             setupScans(session, location);
             saveSession(session, workflow.buildEvent());
             PrearcSessionArchiver.postArchive(user, session, EMPTY_MAP);
-            Files.delete(Paths.get(location + ".xml"));
+            Files.delete(Path.of(location + ".xml"));
         } catch (Exception e) {
             log.error("Unable to archive DirectArchiveSession id={}, attempting to move to prearchive", id, e);
             if (workflow != null) {
@@ -434,8 +433,8 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             FileUtils.moveDirectory(new File(archivePath), prearchivePath);
             String xml = archivePath.replaceAll(Matcher.quoteReplacement(File.separator) + "$", "")
                          + ".xml";
-            Path xmlSource = Paths.get(xml);
-            Path xmlDest   = Paths.get(prearchivePath.getParent(), prearchivePath.getName() + ".xml");
+            Path xmlSource = Path.of(xml);
+            Path xmlDest   = Path.of(prearchivePath.getParent(), prearchivePath.getName() + ".xml");
             if(Files.exists(xmlSource)) {
                 // Adjust prearchive path in xml to point to prearchive rather than archive and save
                 XnatImagesessiondataBean session = PrearcTableBuilder.parseSession(xmlSource.toFile());
@@ -449,7 +448,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             if(origException != null) {
                 // add exception info to prearchive log for Details view
                 File logFile = prearchivePath.toPath()
-                                             .resolve(Paths.get("logs", "directArchive" + id + ".log")).toFile();
+                                             .resolve(Path.of("logs", "directArchive" + id + ".log")).toFile();
                 Files.createDirectories(logFile.getParentFile().toPath());
                 try (FileWriter fileWriter = new FileWriter(logFile);
                      PrintWriter printWriter = new PrintWriter(fileWriter)) {

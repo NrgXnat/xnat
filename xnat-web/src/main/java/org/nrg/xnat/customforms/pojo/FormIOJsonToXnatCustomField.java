@@ -40,7 +40,7 @@ public class FormIOJsonToXnatCustomField extends FormFieldPojo {
     }
 
     public String getJsonRootName() {
-       return getJsonPaths().isEmpty() ? getFieldName() : getJsonPaths().get(0);
+       return getJsonPaths().isEmpty() ? getFieldName() : getJsonPaths().getFirst();
     }
 
 

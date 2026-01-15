@@ -1,17 +1,17 @@
 package org.nrg.xnat.dicom.mizer.service;
 
 import org.apache.commons.io.FileUtils;
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.SequenceDicomElement;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.dicom.mizer.exceptions.MizerException;
-import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.DicomElementI;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
-import org.nrg.dicom.mizer.service.*;
+import org.nrg.dicom.mizer.service.Mizer;
+import org.nrg.dicom.mizer.service.MizerContext;
+import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.test.utils.TestFileUtils;
 import org.nrg.xnat.dicom.mizer.config.MizerServiceTestConfig;
@@ -27,7 +27,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @SuppressWarnings("Duplicates")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -113,14 +117,13 @@ public class BaseMizerServiceTest extends BaseMizerTest {
             assertEquals(SUBJECT, dicomObject.getString(TAG_SUBJECT));
             assertEquals(SESSION, dicomObject.getString(TAG_SESSION));
 
-            final org.dcm4che2.data.DicomObject dcm4cheObject = dicomObject.getDcm4che2Object();
-            final DicomElement element = dcm4cheObject.get(Tag.DeidentificationMethodCodeSequence);
+            final DicomElementI element = dicomObject.get(Tag.DeidentificationMethodCodeSequence);
 
             assertNotNull(element);
-            assertTrue(element instanceof SequenceDicomElement);
+            assertTrue(element.hasItems());
             assertEquals(1, element.countItems());
 
-            final org.dcm4che2.data.DicomObject sequence = element.getDicomObject();
+            final DicomObjectI sequence = element.getDicomObject(0);
             assertNotNull(sequence);
             assertEquals("1", sequence.getString(Tag.CodeValue));
             assertEquals("XNAT DicomEdit 6 Script", sequence.getString(Tag.CodeMeaning));
@@ -142,14 +145,6 @@ public class BaseMizerServiceTest extends BaseMizerTest {
             final MizerContextWithScript context = new MizerContextWithScript();
             context.setElement("project", "project");
             context.setScript("version \"6.1\"\nstudyDescription := project\n(0008,103e) := studyDescription\n");
-
-//            service.anonymize(dicomObject, );
-//            final DicomObjectI                  result        = mizer.anonymize(dicomObject, context, 1L);
-//            final org.dcm4che2.data.DicomObject dcm4cheObject = result.getDcm4che2Object();
-//            final DicomElement                  sequence      = dcm4cheObject.get(Tag.DeidentificationMethodCodeSequence);
-//
-//            assertEquals("project", dicomObject.getString(0x0008103e));
-
         } catch (IOException e) {
             fail("Test setup failed: " + e);
         } catch (MizerException ae) {
@@ -169,14 +164,13 @@ public class BaseMizerServiceTest extends BaseMizerTest {
             assertEquals(SUBJECT, dicomObject.getString(TAG_SUBJECT));
             assertEquals(SESSION, dicomObject.getString(TAG_SESSION));
 
-            final org.dcm4che2.data.DicomObject dcm4cheObject = dicomObject.getDcm4che2Object();
-            final DicomElement element = dcm4cheObject.get(Tag.DeidentificationMethodCodeSequence);
+            final DicomElementI element = dicomObject.get(Tag.DeidentificationMethodCodeSequence);
 
             assertNotNull(element);
-            assertTrue(element instanceof SequenceDicomElement);
+            assertTrue(element.hasItems());
             assertEquals(1, element.countItems());
 
-            final org.dcm4che2.data.DicomObject sequence = element.getDicomObject();
+            final DicomObjectI sequence = element.getDicomObject(0);
             assertNotNull(sequence);
             assertEquals("1", sequence.getString(Tag.CodeValue));
             assertEquals("XNAT DicomEdit 4 Script", sequence.getString(Tag.CodeMeaning));
@@ -193,7 +187,6 @@ public class BaseMizerServiceTest extends BaseMizerTest {
     @Test
     public void mizerServiceDE4UpdatesDicomObjectDeidentificationMethodCodeSequence() {
         try {
-            final DicomObjectI dicomObject = DicomObjectFactory.newInstance(TEST_FILE);
             final MizerContextWithScript context = new MizerContextWithScript();
 
             context.setElement("project", "project");

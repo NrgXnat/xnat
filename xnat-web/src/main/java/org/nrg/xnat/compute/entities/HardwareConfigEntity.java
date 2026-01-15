@@ -7,6 +7,8 @@ import org.nrg.xnat.compute.models.HardwareConfig;
 import org.nrg.xnat.compute.models.HardwareScope;
 
 import javax.persistence.*;
+
+import java.io.Serial;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,6 +21,9 @@ import java.util.stream.Collectors;
 @ToString
 @EqualsAndHashCode(callSuper = true)
 public class HardwareConfigEntity extends AbstractHibernateEntity {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     private HardwareEntity hardware;
     private Map<Scope, HardwareScopeEntity> scopes;

@@ -38,7 +38,7 @@ public class EventWiringServiceImpl implements EventWiringService {
                 continue;
             }
             Type rt = ((ParameterizedType) t).getRawType();
-            if (rt instanceof Class<?> && Consumer.class.isAssignableFrom((Class<?>) rt)) {
+            if (rt instanceof Class<?> class1 && Consumer.class.isAssignableFrom(class1)) {
                 consumer = (ParameterizedType) t;
                 break;
             }

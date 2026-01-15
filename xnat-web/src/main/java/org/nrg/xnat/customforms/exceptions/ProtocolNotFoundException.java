@@ -10,7 +10,10 @@
  */
 package org.nrg.xnat.customforms.exceptions;
 
+import java.io.Serial;
+
 public class ProtocolNotFoundException extends Exception {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public ProtocolNotFoundException(String string, IllegalArgumentException illegalArgumentException) {

@@ -21,6 +21,7 @@ import org.nrg.xnat.helpers.prearchive.*;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +33,8 @@ import static org.nrg.xnat.helpers.prearchive.handlers.PrearchiveRebuildHandler.
 @Accessors(prefix = "_")
 @Slf4j
 public class PrearchiveOperationRequest implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1;
     /**
      * Used to store the project ID of the destination project for move operations.
      */

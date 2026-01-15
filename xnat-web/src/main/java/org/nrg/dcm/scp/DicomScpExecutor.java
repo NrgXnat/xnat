@@ -2,7 +2,7 @@ package org.nrg.dcm.scp;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.dcm4che2.net.Association;
+import org.dcm4che3.net.Association;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;

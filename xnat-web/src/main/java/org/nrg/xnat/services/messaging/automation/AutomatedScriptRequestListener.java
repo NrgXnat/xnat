@@ -82,8 +82,7 @@ public class AutomatedScriptRequestListener implements JmsRequestListener<Automa
         final String srcEventClass = request.getSrcEventClass();
         parameters.put("srcEventClass", srcEventClass);
         // For backwards compatibility
-        if (srcEventClass.contains("WorkflowStatusEvent") && automationEvent instanceof WorkflowStatusEvent) {
-            final WorkflowStatusEvent workflowStatusEvent = (WorkflowStatusEvent) automationEvent;
+        if (srcEventClass.contains("WorkflowStatusEvent") && automationEvent instanceof WorkflowStatusEvent workflowStatusEvent) {
             if (workflowStatusEvent.getWorkflow() != null) {
                 parameters.put("srcWorkflowId", workflowStatusEvent.getWorkflow().getWorkflowId());
             }

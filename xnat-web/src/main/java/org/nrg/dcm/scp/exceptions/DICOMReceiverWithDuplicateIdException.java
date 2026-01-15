@@ -54,7 +54,7 @@ public class DICOMReceiverWithDuplicateIdException extends DICOMReceiverWithDupl
     }
 
     protected int getId() {
-        return _duplicates.get(0);
+        return _duplicates.getFirst();
     }
 
     @Override

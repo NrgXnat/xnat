@@ -84,7 +84,7 @@ public class ArcPut extends RawScreen {
             if(tempMR==null){
             	ArrayList<XnatMrsessiondata> al=XnatMrsessiondata.getXnatMrsessiondatasByField("xnat:mrSessionData/label",mr_session_id, user, false);
             	if(al.size()>0){
-            		tempMR=al.get(0);
+            		tempMR=al.getFirst();
             	}
             }
             
@@ -172,8 +172,7 @@ public class ArcPut extends RawScreen {
                                 XDATXMLReader reader = new XDATXMLReader();
                                 try {
                                     BaseElement base = reader.parse(fis);
-                                    if (base instanceof CatCatalogBean) {
-                                        CatCatalogI cBean = (CatCatalogBean) base;
+                                    if (base instanceof CatCatalogBean cBean) {
                                         XnatResourcecatalog cat = new XnatResourcecatalog((UserI) TurbineUtils.getUser(data));
                                         if (cBean.getId() != null) {
                                             cat.setLabel(cBean.getId());
@@ -204,8 +203,7 @@ public class ArcPut extends RawScreen {
                                         XDATXMLReader reader = new XDATXMLReader();
                                         try {
                                             BaseElement base = reader.parse(fis);
-                                            if (base instanceof CatCatalogBean) {
-                                                CatCatalogI cBean = (CatCatalogBean) base;
+                                            if (base instanceof CatCatalogBean cBean) {
                                                 XnatResourcecatalog cat = new XnatResourcecatalog((UserI) TurbineUtils.getUser(data));
                                                 if (cBean.getId() != null) {
                                                     cat.setLabel(cBean.getId());

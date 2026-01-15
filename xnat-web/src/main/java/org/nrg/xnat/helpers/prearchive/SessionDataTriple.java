@@ -12,6 +12,7 @@ package org.nrg.xnat.helpers.prearchive;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.restlet.XNATApplication;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.Map;
@@ -135,6 +136,7 @@ public class SessionDataTriple implements Serializable {
         return result;
     }
 
+    @Serial
     private static final long serialVersionUID = 7764386535994779313L;
 
     private String _folderName;

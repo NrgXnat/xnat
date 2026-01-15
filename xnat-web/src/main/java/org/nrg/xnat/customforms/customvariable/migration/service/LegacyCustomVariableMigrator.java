@@ -275,13 +275,13 @@ public class LegacyCustomVariableMigrator {
         if (!customFormsFeatureFlags.isCustomVariableMigrationEnabled()) {
             throw new CustomVariableMigrationException("Migration not enabled");
         }
-        String queryStr = String.format(QUERY, field_definition_id, field_definition_id);
+        String queryStr = QUERY.formatted(field_definition_id, field_definition_id);
         CustomVariableMigrationHelper helper = new CustomVariableMigrationHelper(template);
         log.info("Request for custom variable migration received " + field_definition_id + " from user " + user.getUsername());
         List<LegacyCustomVariable> legacyCustomVariables = helper.doQuery(queryStr);
         String tId = tracking_id;
         if (null == tracking_id) {
-            tId = String.format("LegacyCustom_(%s)_(%s)", field_definition_id,System.currentTimeMillis());
+            tId = "LegacyCustom_(%s)_(%s)".formatted(field_definition_id, System.currentTimeMillis());
         }
         final String trackingId = tId;
         if ( legacyCustomVariables == null || legacyCustomVariables.isEmpty()) {
@@ -290,7 +290,7 @@ public class LegacyCustomVariableMigrator {
         }
 
         List<CollatedLegacyCustomVariable> collatedCustomVariables = helper.collate(legacyCustomVariables);
-        final CollatedLegacyCustomVariable matched = collatedCustomVariables.get(0);
+        final CollatedLegacyCustomVariable matched = collatedCustomVariables.getFirst();
         final String queuedMsg = "Custom Variable Migration Queued ";
         eventService.triggerEvent(CustomVariableMigrationEvent.waiting(user.getID(), trackingId, queuedMsg));
         executorService.submit(() -> {
@@ -322,7 +322,7 @@ public class LegacyCustomVariableMigrator {
             log.info("No projects were associated with the field definition. Marking task complete");
             return;
         }
-        XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectIds.get(0), privilegeUser, false);
+        XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectIds.getFirst(), privilegeUser, false);
         XnatFielddefinitiongroupI fieldDefinitionGroup = getStudyProtocolByDefinitionId(project, fieldDefinitionId);
         Hashtable<String, DataIntegrityFailureReport> migrationReviewDetails = new Hashtable<String, DataIntegrityFailureReport>();
         Hashtable<String, Integer> migrationDetails = new Hashtable<String, Integer>();
@@ -330,7 +330,7 @@ public class LegacyCustomVariableMigrator {
         List<MigrationDataReviewer> projectsClearedToMigrate = new ArrayList<MigrationDataReviewer>();
 
         for (String projectId : projectIds) {
-            eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(), trackingId, String.format("Reviewing custom variable set %s for %s in %s ", fieldDefinitionId, dataTypePluralName, projectId)));
+            eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(), trackingId, "Reviewing custom variable set %s for %s in %s ".formatted(fieldDefinitionId, dataTypePluralName, projectId)));
             try {
                 MigrationDataReviewer migrationDataReviewer = new MigrationDataReviewer(template, dataType, projectId, fieldDefinitionGroup);
 
@@ -344,29 +344,29 @@ public class LegacyCustomVariableMigrator {
                     projectsClearedToMigrate.add(migrationDataReviewer);
                 }
             }catch(DataAccessException de) {
-                eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(),  trackingId, String.format("Data access failed for %s. Cause: %s",fieldDefinitionId, de.getMessage())));
+                eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(),  trackingId, "Data access failed for %s. Cause: %s".formatted(fieldDefinitionId, de.getMessage())));
                 log.error("Data Access Exception", de);
-                throw new CustomVariableMigrationException(String.format("Could not access data %s. Cause: ", de.getMessage()));
+                throw new CustomVariableMigrationException("Could not access data %s. Cause: ".formatted(de.getMessage()));
             }
         }
         if (!projectsFailedDataIntegrity.isEmpty()) {
-            eventService.triggerEvent(CustomVariableMigrationEvent.warn(user.getID(), trackingId, String.format("Skipping migration. Please resolve data integrity issues in all " + projectSingularName + " using this custom variable definition first, details being sent via email", fieldDefinitionId)));
+            eventService.triggerEvent(CustomVariableMigrationEvent.warn(user.getID(), trackingId, ("Skipping migration. Please resolve data integrity issues in all " + projectSingularName + " using this custom variable definition first, details being sent via email").formatted(fieldDefinitionId)));
             notifyProjectMigrationAborted(user, dataTypeSingularName, projectsFailedDataIntegrity);
-            eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(), trackingId, String.format("Details sent via email", fieldDefinitionId)));
+            eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(), trackingId, "Details sent via email".formatted(fieldDefinitionId)));
             return;
         }
         if (projectsClearedToMigrate.isEmpty()) {
-            eventService.triggerEvent(CustomVariableMigrationEvent.complete(user.getID(),  trackingId, String.format("Migration process complete for %s",fieldDefinitionId)));
+            eventService.triggerEvent(CustomVariableMigrationEvent.complete(user.getID(),  trackingId, "Migration process complete for %s".formatted(fieldDefinitionId)));
             return;
         }
-        eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, String.format("Data review complete for %s",fieldDefinitionId)));
-        eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, String.format("Generating Custom Form from the Custom Variable Definition for %s",dataTypeSingularName)));
+        eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "Data review complete for %s".formatted(fieldDefinitionId)));
+        eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "Generating Custom Form from the Custom Variable Definition for %s".formatted(dataTypeSingularName)));
         final String formUUIDStr = associateFormIOForms(user, dataType, projectsClearedToMigrate, fieldDefinitionGroup);
         eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "Completed associating Custom Form to " + projectSingularName));
 
             for (MigrationDataReviewer projectReviewer : projectsClearedToMigrate) {
                 final String projectId = projectReviewer.getProjectId();
-                eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, String.format("Migrating data for  %s in %s ", dataTypePluralName, projectId)));
+                eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "Migrating data for  %s in %s ".formatted(dataTypePluralName, projectId)));
                 int migratedCount = -1;
                 try {
                     migratedCount = moveColumns(user, dataType, projectReviewer, fieldDefinitionGroup, trackingId, formUUIDStr);
@@ -376,22 +376,22 @@ public class LegacyCustomVariableMigrator {
                 migrationDetails.put(projectId, migratedCount);
                 if (migratedCount < 0) {
                     log.error("Could not move columns for " + projectId);
-                    eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(),  trackingId, String.format("Failed to  move %s data for %s ",dataTypeSingularName,  projectId)));
+                    eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(),  trackingId, "Failed to  move %s data for %s ".formatted(dataTypeSingularName, projectId)));
                     throw new CustomVariableMigrationException("Failed to migrate data for " + projectId);
                 }else if (migratedCount > 0) {
-                    eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, String.format("Completed migrating data for %s %s in %s %s ", migratedCount, dataTypeSingularName,projectSingularName, projectId)));
+                    eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "Completed migrating data for %s %s in %s %s ".formatted(migratedCount, dataTypeSingularName, projectSingularName, projectId)));
                 }
                 try {
-                    eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, String.format("Detaching custom variable definition  for %s ", projectId)));
+                    eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "Detaching custom variable definition  for %s ".formatted(projectId)));
                     detachFieldDefinitionFromProject(privilegeUser, dataType, projectId, fieldDefinitionGroup);
-                    eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, String.format("Completed detaching custom variable definition  for %s ", projectId)));
+                    eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "Completed detaching custom variable definition  for %s ".formatted(projectId)));
                 }catch(Exception e) {
                     log.error("Could not detach field definition from  " + projectId);
-                    eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(),  trackingId, String.format("Could not detach field definition from %s ", projectId)));
+                    eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(),  trackingId, "Could not detach field definition from %s ".formatted(projectId)));
                     throw new CustomVariableMigrationException("Failed to migrate data for " + projectId);
                 }
         }
-        if (!migrationDetails.contains(new Integer(-1))) {
+        if (!migrationDetails.contains(Integer.valueOf(-1))) {
             try {
                 log.info("Updating stored searches to refer to custom fields");
                 eventService.triggerEvent(CustomVariableMigrationEvent.complete(user.getID(),  trackingId, "Investigating available stored search referring the custom variable"));
@@ -399,7 +399,7 @@ public class LegacyCustomVariableMigrator {
                 List<SearchNotMigrated> searchesNotMigrated = migrateStoredSearcheRefreencesFromCustomVariableToCustomForm(privilegeUser,  dataType, duplicateFieldNames, formUUIDStr);
                 if (!searchesNotMigrated.isEmpty()) {
                     notifyWarning(user, searchesNotMigrated);
-                    eventService.triggerEvent(CustomVariableMigrationEvent.warn(user.getID(),  trackingId, String.format("%s associated stored searches could not be migrated. Manual edit of these stored searches is required. Email with details has been sent", searchesNotMigrated.size())));
+                    eventService.triggerEvent(CustomVariableMigrationEvent.warn(user.getID(),  trackingId, "%s associated stored searches could not be migrated. Manual edit of these stored searches is required. Email with details has been sent".formatted(searchesNotMigrated.size())));
                 }else {
                     log.info("Email being sent");
                     notify(privilegeUser, user, dataTypePluralName, projectSingularName, migrationDetails, formUUIDStr, fieldDefinitionId);
@@ -407,7 +407,7 @@ public class LegacyCustomVariableMigrator {
                 }
                 eventService.triggerEvent(CustomVariableMigrationEvent.complete(user.getID(),  trackingId, "Migration complete"));
             }catch(Exception e) {
-                eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(),  trackingId, String.format("Failed to replace stored search references. Cause: %s  ", e.getMessage())));
+                eventService.triggerEvent(CustomVariableMigrationEvent.fail(user.getID(),  trackingId, "Failed to replace stored search references. Cause: %s  ".formatted(e.getMessage())));
                 log.error("Could not migrate stored searches",e);
             }
         }
@@ -485,8 +485,7 @@ public class LegacyCustomVariableMigrator {
         XnatFielddefinitiongroupI matchedFieldDefinition = null;
         List<XnatAbstractprotocol> abstractProtocols  = project.getStudyprotocol();
         for (XnatAbstractprotocol studyProtocol : abstractProtocols) {
-            if (studyProtocol instanceof XnatDatatypeprotocolI) {
-                XnatDatatypeprotocolI datatypeProtocol = (XnatDatatypeprotocolI) studyProtocol;
+            if (studyProtocol instanceof XnatDatatypeprotocolI datatypeProtocol) {
                 List<XnatFielddefinitiongroupI> definitions = datatypeProtocol.getDefinitions_definition();
                 for (XnatFielddefinitiongroupI def: definitions) {
                     if (def.getId().equals(fieldDefinitionId)) {
@@ -521,22 +520,22 @@ public class LegacyCustomVariableMigrator {
 
         if (distinctEntityIds.isEmpty() || fieldNames.isEmpty()) {
             log.info("No data captured. Nothing to move");
-            eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, String.format("No  data captured for %s using the custom variable definition  in %s %s ",dataTypeSingularName, projectSingularName,  projectId)));
+            eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "No  data captured for %s using the custom variable definition  in %s %s ".formatted(dataTypeSingularName, projectSingularName, projectId)));
             return 0;
         }
-        eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, String.format("Data to be migrated for  %s %s", distinctEntityIds.size(), dataTypePluralName)));
+        eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "Data to be migrated for  %s %s".formatted(distinctEntityIds.size(), dataTypePluralName)));
         for (String entityId : entityCustomVariable.keySet()) {
             final List<CustomVariable> customVariables = entityCustomVariable.get(entityId);
             int saved = saveAsCustomField(dataType, entityId, customVariables,  fieldDefinitions, formUUIDStr);
             String workflowMessage = null;
             if (saved == NO_DATA_AVAILABLE_FOR_CUSTOM_VARIABLE) {
-                eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(), trackingId, String.format("No data found to move for %s ", entityId)));
-                workflowMessage = String.format("Migrated custom variable (no data found) to custom fields with FormIO for %s",  entityId);
+                eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(), trackingId, "No data found to move for %s ".formatted(entityId)));
+                workflowMessage = "Migrated custom variable (no data found) to custom fields with FormIO for %s".formatted(entityId);
             } else if ((saved == EMPTY_FORM_DATA_FOR_CUSTOM_VARIABLE) || saved > 0) {
-                String deleteQuery = String.format("delete from %s f  where f.name in (%s)   and f.%s = '%s'",tableName, inSql, entityColumnName, entityId);
+                String deleteQuery = "delete from %s f  where f.name in (%s)   and f.%s = '%s'".formatted(tableName, inSql, entityColumnName, entityId);
                 deleteCustomVariableFields(deleteQuery, fieldNames);
-                eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(), trackingId, String.format("Data moved for %s ", entityId)));
-                workflowMessage = String.format("Migrated custom variable to custom fields with FormIO for %s",  entityId);
+                eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(), trackingId, "Data moved for %s ".formatted(entityId)));
+                workflowMessage = "Migrated custom variable to custom fields with FormIO for %s".formatted(entityId);
             }
             if (workflowMessage != null ) {
                 try {
@@ -544,7 +543,7 @@ public class LegacyCustomVariableMigrator {
                     final PersistentWorkflowI workflow = PersistentWorkflowUtils.buildAdminWorkflow(user, dataType, entityId, eventDetails);
                     final EventMetaI eventInfo = workflow.buildEvent();
                     WorkflowUtils.complete(workflow, eventInfo);
-                    eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, String.format("Created migration workflow entry for %s ", entityId)));
+                    eventService.triggerEvent(CustomVariableMigrationEvent.progress(user.getID(),  trackingId, "Created migration workflow entry for %s ".formatted(entityId)));
                 }catch(Exception e) {
                     log.error("Could not save workflow for " + entityId, e);
                     throw e;
@@ -641,8 +640,7 @@ public class LegacyCustomVariableMigrator {
             if (project.getStudyprotocol() !=null && !project.getStudyprotocol().isEmpty()) {
                 List<XnatAbstractprotocol> studyProtocols = project.getStudyprotocol();
                 for (XnatAbstractprotocol protocol : studyProtocols) {
-                    if (protocol instanceof XnatDatatypeprotocol) {
-                        XnatDatatypeprotocol datatypeprotocol = (XnatDatatypeprotocol)protocol;
+                    if (protocol instanceof XnatDatatypeprotocol datatypeprotocol) {
                         if (datatypeprotocol.getDataType().equals(dataType)) {
                             List<XnatFielddefinitiongroup> fielddefinitiongroups =  datatypeprotocol.getDefinitions_definition();
                             int matchingIndex = -1;
@@ -764,7 +762,7 @@ public class LegacyCustomVariableMigrator {
            msgCollector.add(" ");
            for (DataIntegrityFailureReportItem dIfr: dataIntegrityFailureReport.getDataIntegrityReportItems()) {
                if (!dIfr.getDataIntegrityItems().isEmpty()) {
-                   msgCollector.add(String.format(" %s ID: %s", dataTypeSingularName, dIfr.getEntityId()));
+                   msgCollector.add(" %s ID: %s".formatted(dataTypeSingularName, dIfr.getEntityId()));
                    for (DataIntegrityItem dI: dIfr.getDataIntegrityItems()) {
                        msgCollector.add(String.format(" Field: %s Type: %s Value: %s", dI.getFieldName(), dI.getExpectedFormat(), dI.getDataFound()));
                    }
@@ -806,13 +804,13 @@ public class LegacyCustomVariableMigrator {
     }
 
     private void notify(final UserI privilegedUser, final UserI user, final String dataType, final String projectStr, final Hashtable<String, Integer> migrationDetails, final String formUUIDStr, final String fieldDefinitionId) {
-        StringBuilder msgBuilder = new StringBuilder(String.format("Custom Variable definition %s  for the %s in following %s was migrated to Custom Form %s", fieldDefinitionId, dataType, projectStr, formUUIDStr));
+        StringBuilder msgBuilder = new StringBuilder("Custom Variable definition %s  for the %s in following %s was migrated to Custom Form %s".formatted(fieldDefinitionId, dataType, projectStr, formUUIDStr));
         msgBuilder.append("<br>");
 
         Set<String> projectIds = migrationDetails.keySet();
         List<String> projectOwnerEmailIds = getProjectOwnerEmails(privilegedUser, projectIds);
         for (String p: projectIds) {
-            msgBuilder.append(String.format("<br>  ID: %s Total %s migrated %s", p, dataType, migrationDetails.get(p)));
+            msgBuilder.append("<br>  ID: %s Total %s migrated %s".formatted(p, dataType, migrationDetails.get(p)));
         }
         msgBuilder.append("<br><br>").append("All the field names generated in the custom form are identical to the field names in the migrated custom variable definition");
         msgBuilder.append("<br>");

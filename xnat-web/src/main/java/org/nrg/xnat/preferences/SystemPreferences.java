@@ -18,11 +18,15 @@ import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.Serial;
+
 @NrgPreferenceBean(toolId = SystemPreferences.AUTOMATION_TOOL_ID,
                    toolName = "XNAT System Preferences",
                    description = "Manages preferences that should not be surfaced to users.")
 @Slf4j
 public class SystemPreferences extends AbstractPreferenceBean {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String AUTOMATION_TOOL_ID = "system";
 
     @Autowired

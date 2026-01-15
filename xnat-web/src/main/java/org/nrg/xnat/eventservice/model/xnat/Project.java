@@ -20,6 +20,8 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ProjectURII;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -29,6 +31,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Project extends XnatModelObject {
+    @Serial
+    private static final long serialVersionUID = 1;
     @JsonIgnore private XnatProjectdata xnatProjectdata;
     private List<Resource> resources;
     private List<Subject> subjects;

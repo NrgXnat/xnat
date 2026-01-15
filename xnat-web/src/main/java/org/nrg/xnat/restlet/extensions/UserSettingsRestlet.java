@@ -58,7 +58,7 @@ public class UserSettingsRestlet extends SecureResource {
                     _builder = XDAT.getSerializerService().getDocumentBuilder();
                     _propertyMappings = new HashMap<>();
                     for (UserProperty property : UserProperty.values()) {
-                        _propertyMappings.put(property, xpath.compile(XPATH_EXPRESSIONS.containsKey(property) ? XPATH_EXPRESSIONS.get(property) : String.format("/user/%s", property.toString())));
+                        _propertyMappings.put(property, xpath.compile(XPATH_EXPRESSIONS.containsKey(property) ? XPATH_EXPRESSIONS.get(property) : "/user/%s".formatted(property.toString())));
                     }
                 } catch (XPathExpressionException | ParserConfigurationException exception) {
                     throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "Error in initialization", exception);

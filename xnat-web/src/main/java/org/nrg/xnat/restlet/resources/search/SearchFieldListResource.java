@@ -97,7 +97,7 @@ public class SearchFieldListResource extends SecureResource{
 		try {
 			found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".element_action_name",action_name);
 			found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".display_name",display_name);
-			found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".sequence",new Integer(count));
+			found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".sequence",Integer.valueOf(count));
 			if(img!=null)
 				found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".image",img);
 			if(secureAccess!=null)
@@ -253,7 +253,7 @@ public class SearchFieldListResource extends SecureResource{
 								    sub[7]=2;
 								    label_fields.add(sub);
 									for(List cf:legacy_custom_fields){
-										if(cf.get(0).equals(o)){
+										if(cf.getFirst().equals(o)){
 											sub = new Object[8];
 											sub[0]=se.getSQLName().toUpperCase() + "_FIELD_MAP=" + cf.get(1).toString().toLowerCase();
 											sub[1]=cf.get(1);

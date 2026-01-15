@@ -29,18 +29,18 @@ public interface SnapshotResourceGenerator {
     }
 
     static String getSnapshotContentName(final int rows, final int cols) {
-        return (rows == 1 && cols == 1) ? ORIGINAL : String.format(SNAPSHOT_CONTENT_TEMPLATE, cols, rows);
+        return (rows == 1 && cols == 1) ? ORIGINAL : SNAPSHOT_CONTENT_TEMPLATE.formatted(cols, rows);
     }
 
     static String getThumbnailContentName(final int rows, final int cols) {
-        return (rows == 1 && cols == 1) ? THUMBNAIL : String.format(THUMBNAIL_CONTENT_TEMPLATE, cols, rows);
+        return (rows == 1 && cols == 1) ? THUMBNAIL : THUMBNAIL_CONTENT_TEMPLATE.formatted(cols, rows);
     }
 
     static String getSnapshotResourceName(final String sessionId, final String scanId, final int rows, int cols, String format) {
-        return String.format(SNAPSHOT_NAME_TEMPLATE, sessionId, scanId, rows == 1 && cols == 1 ? "" : String.format(DIMENSION_TEMPLATE, cols, rows), format.toLowerCase());
+        return SNAPSHOT_NAME_TEMPLATE.formatted(sessionId, scanId, rows == 1 && cols == 1 ? "" : DIMENSION_TEMPLATE.formatted(cols, rows), format.toLowerCase());
     }
 
     static String getThumbnailResourceName(final String sessionId, final String scanId, final int rows, int cols, String format) {
-        return String.format(THUMBNAIL_NAME_TEMPLATE, sessionId, scanId, rows == 1 && cols == 1 ? "" : String.format(DIMENSION_TEMPLATE, cols, rows), format.toLowerCase());
+        return THUMBNAIL_NAME_TEMPLATE.formatted(sessionId, scanId, rows == 1 && cols == 1 ? "" : DIMENSION_TEMPLATE.formatted(cols, rows), format.toLowerCase());
     }
 }

@@ -144,7 +144,7 @@ public class Archiver extends BatchPrearchiveActionsA {
     }
 
     protected void finishNonSingleSessionUpload(final List<PrearcSession> sessions) throws Exception {
-        if (!PrearcUtils.canModify(getUser(), sessions.get(0).getProject())) {
+        if (!PrearcUtils.canModify(getUser(), sessions.getFirst().getProject())) {
             getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Invalid permissions for new project.");
             return;
         }

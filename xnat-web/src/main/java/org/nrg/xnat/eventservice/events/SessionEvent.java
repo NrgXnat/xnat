@@ -7,6 +7,7 @@ import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,6 +15,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @XnatEventServiceEvent(name = "SessionEvent")
 public class SessionEvent extends AbstractEventServiceEvent<XnatImagesessiondataI> {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public enum Status {CREATED, MERGED, DELETED}
 

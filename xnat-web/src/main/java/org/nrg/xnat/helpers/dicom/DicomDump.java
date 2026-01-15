@@ -12,12 +12,18 @@ package org.nrg.xnat.helpers.dicom;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.dcm4che2.data.ElementDictionary;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.model.*;
+import org.nrg.xdat.model.CatCatalogI;
+import org.nrg.xdat.model.CatEntryI;
+import org.nrg.xdat.model.XnatImageassessordataI;
+import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.model.XnatReconstructedimagedataI;
+import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.XFTTable;
@@ -43,7 +49,15 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 public final class DicomDump extends SecureResource {
@@ -58,7 +72,6 @@ public final class DicomDump extends SecureResource {
     private static final List<String> imageTypes = new ArrayList<>();
 
     private static final int MAXFILENUMBER=10000;
-    private static final ElementDictionary TAG_DICTIONARY = ElementDictionary.getDictionary();
 
     // The global environment
     private final Env env;
@@ -528,7 +541,7 @@ public final class DicomDump extends SecureResource {
 
             int tag;
             try {
-                tag = TAG_DICTIONARY.tagForName(tag_s);
+                tag = TagUtils.forName(tag_s);
             } catch (IllegalArgumentException e) {
                 try {
                     tag = Integer.parseInt(tag_s, 16);

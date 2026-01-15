@@ -11,8 +11,11 @@
 
 package org.nrg.xnat.customforms.exceptions;
 
+import java.io.Serial;
+
 
 public class AdhocExperimentException extends Exception {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public AdhocExperimentException(String string, IllegalArgumentException illegalArgumentException) {

@@ -55,7 +55,7 @@ public class SessionOverwriteCheck implements Callable<Boolean> {
 					final XnatAbstractresourceI destRes=MergeUtils.getMatchingResource(srcRes,destRess);
 					if(destRes==null){
 					}else{
-						if(destRes instanceof XnatResourcecatalogI){
+						if(destRes instanceof XnatResourcecatalogI resourcecatalogI){
 							try {
 								final CatalogUtils.CatalogData srcCatalogData =
 										CatalogUtils.CatalogData.getOrCreateAndClean(srcRootPath, (XnatResourcecatalogI) srcRes, false, srcProject,
@@ -63,7 +63,7 @@ public class SessionOverwriteCheck implements Callable<Boolean> {
 
 								final CatCatalogBean srcCat = srcCatalogData.catBean;
 								final CatalogUtils.CatalogData destCatalogData =
-										CatalogUtils.CatalogData.getOrCreateAndClean(destRootPath, (XnatResourcecatalogI) destRes, false, destProject,
+										CatalogUtils.CatalogData.getOrCreateAndClean(destRootPath, resourcecatalogI, false, destProject,
                                                 u, c);
 								final CatCatalogBean destCat = destCatalogData.catBean;
 								if (detectOverwrite(srcCat,destCat)) {
@@ -95,8 +95,8 @@ public class SessionOverwriteCheck implements Callable<Boolean> {
 		}
 		
 		for(final CatEntryI entry: src.getEntries_entry()){
-			if(entry instanceof CatDcmentryI && !StringUtils.isEmpty(((CatDcmentryI)entry).getUid())){
-				final CatDcmentryI destEntry=CatalogUtils.getDCMEntryByUID(dest, ((CatDcmentryI)entry).getUid());
+			if(entry instanceof CatDcmentryI dcmentryI && !StringUtils.isEmpty(dcmentryI.getUid())){
+				final CatDcmentryI destEntry=CatalogUtils.getDCMEntryByUID(dest, dcmentryI.getUid());
 				if(destEntry!=null){
 					return true;
 				}

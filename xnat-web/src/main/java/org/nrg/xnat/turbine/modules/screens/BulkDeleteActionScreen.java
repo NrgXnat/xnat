@@ -155,7 +155,7 @@ public class BulkDeleteActionScreen extends SecureScreen {
     private final String buildWhereClause(ArrayList<String> ids){
         StringBuilder whereClause = new StringBuilder();
         for(Object id : ids){
-            if(id.equals(ids.get(ids.size()-1))){
+            if(id.equals(ids.getLast())){
                 whereClause.append(id.toString());
             }else{
                 whereClause.append(id.toString()).append("','");

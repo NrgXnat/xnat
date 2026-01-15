@@ -121,7 +121,7 @@ public class WorkflowUtils extends PersistentWorkflowBuilderAbst {
 		if (workflows.size() > 1) {
 			log.warn("User {} requested a workflow with pipeline name {}, launch time {}, ID {}, and scan ID {} and got {} results. Ignoring all but the first.", user.getUsername(), pipelineName, launchTime, id, StringUtils.defaultIfBlank(scanId, "not specified"), workflows.size());
 		}
-		return workflows.get(0);
+		return workflows.getFirst();
 	}
 	
 	public static PersistentWorkflowI getUniqueWorkflow(final UserI user, final String workflowId){
@@ -136,7 +136,7 @@ public class WorkflowUtils extends PersistentWorkflowBuilderAbst {
 		if (workflows.size() > 1) {
 			log.warn("User {} requested a workflow with workflow ID {} and got {} results. Ignoring all but the first.", user.getUsername(), workflowId, workflows.size());
 		}
-		return workflows.get(0);
+		return workflows.getFirst();
 	}
 	
 	public static PersistentWorkflowI buildOpenWorkflow(final UserI user, final String xsiType,final String ID,final String project_id, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent{

@@ -1,7 +1,6 @@
 package org.nrg.xnat.snapshot.generator.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.dcm4che2.imageioimpl.plugins.dcm.DicomImageReader;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.xapi.exceptions.InitializationException;
 
@@ -82,7 +81,7 @@ public class MontageGenerator extends DicomImageRenderer {
             BufferedImage montageBufferedImage;
             // The montage is just the selected image if only one panel is requested.
             if (nPanels == 1) {
-                montageBufferedImage = bis.get(0);
+                montageBufferedImage = bis.getFirst();
             } else {
                 // The panels will be equal in size to the largest image in the set.
                 Dimensions srcDimensions = getMaxDimensions(bis);
@@ -90,14 +89,14 @@ public class MontageGenerator extends DicomImageRenderer {
                 Dimensions montageDimensions = new Dimensions(rows * srcDimensions.rows, cols * srcDimensions.cols);
                 // All of the images are assumed to be of the same type.
                 // TODO: Pick a lowest-common image type and convert image types if needed.
-                if(bis.get(0).getType() == BufferedImage.TYPE_CUSTOM) {
+                if(bis.getFirst().getType() == BufferedImage.TYPE_CUSTOM) {
                     // This was added to help with RGB Ultrasound data. This is likely to cause other problems in the future
                     // if/when we encounter non RGB data
                     // TODO: Redesign this entire process to account for different color models within one DICOM series.
                     //       This will not happen very often (if ever), but it is worth a rewrite when time permits.
-                    montageBufferedImage = DicomImageReader.createRGBBufferedImage(montageDimensions.cols, montageDimensions.rows);
+                    montageBufferedImage = new BufferedImage(montageDimensions.cols, montageDimensions.rows, BufferedImage.TYPE_INT_RGB);
                 } else {
-                    montageBufferedImage = new BufferedImage(montageDimensions.cols, montageDimensions.rows, bis.get(0).getType());
+                    montageBufferedImage = new BufferedImage(montageDimensions.cols, montageDimensions.rows, bis.getFirst().getType());
                 }
 
                 // Write the individual images into the panels.

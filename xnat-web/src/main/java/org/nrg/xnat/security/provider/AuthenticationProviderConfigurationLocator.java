@@ -223,7 +223,7 @@ public class AuthenticationProviderConfigurationLocator {
                 return name;
             }
         }
-        return messageSource.getMessage(String.format(MESSAGE_KEY_PATTERN, id), new Object[0], emptyName, Locale.getDefault());
+        return messageSource.getMessage(MESSAGE_KEY_PATTERN.formatted(id), new Object[0], emptyName, Locale.getDefault());
     }
 
     private static Collection<Properties> collate(final Properties properties) {

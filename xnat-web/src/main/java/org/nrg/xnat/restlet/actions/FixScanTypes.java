@@ -32,8 +32,8 @@ import org.nrg.xft.utils.SaveItemHelper;
 @Builder
 public class FixScanTypes {
     public Boolean call() throws Exception {
-        if (_experiment instanceof XnatImagesessiondata) {
-            ((XnatImagesessiondata) _experiment).fixScanTypes();
+        if (_experiment instanceof XnatImagesessiondata imagesessiondata) {
+            imagesessiondata.fixScanTypes();
         }
         if (isAllowSave()) {
             if (!SaveItemHelper.authorizedSave(getExperiment(), getUser(), false, false, getEventMeta())) {

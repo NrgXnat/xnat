@@ -120,9 +120,9 @@ public class MigrationDataReviewer {
         for (String entityId : distinctEntityIds) {
             String inSql = String.join(",", Collections.nCopies(fieldDefinitions.size(), "?"));
             List<CustomVariable> customVariables = template.query(
-                    String.format("select f.field, f.name  from " + tableName +" f where " +
-                            "f."+ entityColumnName + "='" + entityId+ "'" +
-                            " and f.name in (%s)", inSql),
+                    ("select f.field, f.name  from " + tableName + " f where " +
+                            "f." + entityColumnName + "='" + entityId + "'" +
+                            " and f.name in (%s)").formatted(inSql),
                     fieldNames.toArray(),
                     (rs, rowNum) -> new CustomVariable(rs.getString("name"),
                             rs.getString("field")));

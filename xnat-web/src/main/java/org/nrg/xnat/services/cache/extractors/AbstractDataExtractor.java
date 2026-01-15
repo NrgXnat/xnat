@@ -23,7 +23,7 @@ import java.util.function.Function;
 @Accessors(prefix = "_")
 @Slf4j
 public abstract class AbstractDataExtractor<C extends XnatCache, K, V> implements DataExtractor<K, V> {
-    private static final Function<Type, Class<?>> TYPE_TO_CLASS = type -> (Class<?>) (type instanceof ParameterizedType ? ((ParameterizedType) type).getRawType() : type);
+    private static final Function<Type, Class<?>> TYPE_TO_CLASS = type -> (Class<?>) (type instanceof ParameterizedType pt ? pt.getRawType() : type);
 
     private static final String QUERY_ALL_PROJECTS             = "SELECT id FROM xnat_projectdata";
     private static final String QUERY_ALL_USERNAMES            = "SELECT login FROM xdat_user WHERE enabled = 1";
@@ -43,9 +43,9 @@ public abstract class AbstractDataExtractor<C extends XnatCache, K, V> implement
                                                                  "     a.element_name = 'xnat:subjectData' AND  " +
                                                                  "     f.%s = 1 AND  " +
                                                                  "     u.login IN ('guest', :" + PARAM_USERNAME + ")) projects";
-    private static final String QUERY_OWNED_PROJECTS           = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "delete_element");
-    private static final String QUERY_EDITABLE_PROJECTS        = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "edit_element");
-    private static final String QUERY_READABLE_PROJECTS        = String.format(QUERY_ACCESSIBLE_DATA_PROJECTS, "read_element");
+    private static final String QUERY_OWNED_PROJECTS           = QUERY_ACCESSIBLE_DATA_PROJECTS.formatted("delete_element");
+    private static final String QUERY_EDITABLE_PROJECTS        = QUERY_ACCESSIBLE_DATA_PROJECTS.formatted("edit_element");
+    private static final String QUERY_READABLE_PROJECTS        = QUERY_ACCESSIBLE_DATA_PROJECTS.formatted("read_element");
     private static final String QUERY_HAS_ALL_DATA_PRIVILEGES  = "SELECT  " +
                                                                  "  EXISTS(SELECT TRUE  " +
                                                                  "         FROM  " +
@@ -60,8 +60,8 @@ public abstract class AbstractDataExtractor<C extends XnatCache, K, V> implement
                                                                  "           ea.element_name = 'xnat:projectData' AND  " +
                                                                  "           fm.%s = 1 AND  " +
                                                                  "           u.login = :" + PARAM_USERNAME + ")";
-    private static final String QUERY_HAS_ALL_DATA_ACCESS      = String.format(QUERY_HAS_ALL_DATA_PRIVILEGES, "read_element");
-    private static final String QUERY_HAS_ALL_DATA_ADMIN       = String.format(QUERY_HAS_ALL_DATA_PRIVILEGES, "edit_element");
+    private static final String QUERY_HAS_ALL_DATA_ACCESS      = QUERY_HAS_ALL_DATA_PRIVILEGES.formatted("read_element");
+    private static final String QUERY_HAS_ALL_DATA_ADMIN       = QUERY_HAS_ALL_DATA_PRIVILEGES.formatted("edit_element");
     private static final String QUERY_ALL_DATA_ACCESS_PROJECTS = "SELECT id AS project FROM xnat_projectdata ORDER BY project";
 
     @Getter(AccessLevel.PROTECTED)

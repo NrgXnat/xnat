@@ -56,7 +56,7 @@ public class HibernateFileStoreService extends AbstractHibernateEntityService<Fi
             throw new ResourceAlreadyExistsException("fileStore", joined);
         }
         final Path fileStorePath = getFileStorePath(joined);
-        final Path fullPath      = Paths.get(_preferences.getFileStorePath()).resolve(fileStorePath);
+        final Path fullPath      = Path.of(_preferences.getFileStorePath()).resolve(fileStorePath);
         try {
             final Pair<String, Long> write = writeFile(inputStream, fullPath);
             return create(FileStoreInfo.builder()
@@ -72,19 +72,19 @@ public class HibernateFileStoreService extends AbstractHibernateEntityService<Fi
 
     @Override
     public InputStream open(final long storeId) throws NotFoundException, IOException {
-        return Files.newInputStream(Paths.get(getFileStoreInfo(storeId).getStoreUri()));
+        return Files.newInputStream(Path.of(getFileStoreInfo(storeId).getStoreUri()));
     }
 
     @Override
     public InputStream open(final String... coordinates) throws NotFoundException, IOException {
-        return Files.newInputStream(Paths.get(getFileStoreInfo(coordinates).getStoreUri()));
+        return Files.newInputStream(Path.of(getFileStoreInfo(coordinates).getStoreUri()));
     }
 
     @Override
     public FileStoreInfo update(final InputStream inputStream, final long storeId) throws NotFoundException {
         final FileStoreInfo info          = getFileStoreInfo(storeId);
         final Path          fileStorePath = getFileStorePath(info.getCoordinates());
-        final Path          fullPath      = Paths.get(_preferences.getFileStorePath()).resolve(fileStorePath);
+        final Path          fullPath      = Path.of(_preferences.getFileStorePath()).resolve(fileStorePath);
         try {
             final Pair<String, Long> write = writeFile(inputStream, fullPath);
             info.setChecksum(write.getKey());
@@ -122,7 +122,7 @@ public class HibernateFileStoreService extends AbstractHibernateEntityService<Fi
     @Override
     public void delete(final FileStoreInfo info) {
         try {
-            Files.delete(Paths.get(info.getStoreUri()));
+            Files.delete(Path.of(info.getStoreUri()));
             super.delete(info);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -180,7 +180,7 @@ public class HibernateFileStoreService extends AbstractHibernateEntityService<Fi
     }
 
     static Path getFileStorePath(final String[] split) {
-        return Arrays.asList(split).subList(1, split.length).stream().map(Paths::get).reduce(Paths.get(split[0]), Path::resolve);
+        return Arrays.asList(split).subList(1, split.length).stream().map(Paths::get).reduce(Path.of(split[0]), Path::resolve);
     }
 
     static String getHashedPath(final String joined) {

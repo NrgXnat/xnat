@@ -130,7 +130,7 @@ public class MergeCatCatalog implements Callable<MergeSessionsA.Results<Boolean>
                             // (or throwing an exception if overwrite not permitted)
 
             final Optional<CatEntryI> existingEntryOptional = locateExistingEntry(incomingEntry, existingCatalog);
-            if (!existingEntryOptional.isPresent()) {
+            if (existingEntryOptional.isEmpty()) {
                 existingCatalog.addEntries_entry(incomingEntry);
                 continue; // Additive change, moving along
             }
@@ -158,8 +158,8 @@ public class MergeCatCatalog implements Callable<MergeSessionsA.Results<Boolean>
                                                            final CatCatalogI existingCatalog) {
         // Locate entry in the existing catalog that corresponds to the incoming entry
         CatEntryI existingEntry = null;
-        if (incomingEntry instanceof CatDcmentryI) {
-            final String uid = ((CatDcmentryI) incomingEntry).getUid();
+        if (incomingEntry instanceof CatDcmentryI dcmentryI) {
+            final String uid = dcmentryI.getUid();
             // If we should identify by UID, try to do that
             if (XDAT.getSiteConfigPreferences().getUseSopInstanceUidToUniquelyIdentifyDicom()
                     && StringUtils.isNotBlank(uid)) {

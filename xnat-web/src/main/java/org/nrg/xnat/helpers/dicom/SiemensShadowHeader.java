@@ -11,9 +11,9 @@ package org.nrg.xnat.helpers.dicom;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.util.TagUtils;
+import org.nrg.dicom.mizer.objects.DicomElementI;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.xft.XFTTable;
 
 import java.nio.ByteBuffer;
@@ -42,7 +42,7 @@ public class SiemensShadowHeader {
         return Integer.reverseBytes(bb.getInt(offset));
     }
 
-    public static boolean isShadowHeader(final DicomObject o, final DicomElement e) {
+    public static boolean isShadowHeader(final DicomObjectI o, final DicomElementI e) {
         final int tag = e.tag();
         if (0x00290000 != (tag & 0xffff0000)) {
             return false;
@@ -62,17 +62,17 @@ public class SiemensShadowHeader {
         }
     }
 
-    public static XFTTable addRows(final XFTTable table, final DicomObject o,
-            final DicomElement elem, Set<String> only) {
-        final byte[] bytes = elem.getBytes();
+    public static XFTTable addRows(final XFTTable table, final DicomObjectI dicomObject,
+            final DicomElementI elem, Set<String> only) {
+        final int tag = elem.tag();
+        final byte[] bytes = dicomObject.getBytes(tag);
         final ByteBuffer bb = ByteBuffer.wrap(bytes);
         if (!SV10_MAGIC.equals(new String(bytes, 0, 4))) {
             throw new IllegalArgumentException("not a Siemens shadow header: wrong magic");
         }
-        final int tag = elem.tag();
         final String tagName = TagUtils.toString(tag);
-        final String version = o.getString(0x00291008);
-        final String csa = o.getString(0x00290010);
+        final String version = dicomObject.getString(0x00291008);
+        final String csa = dicomObject.getString(0x00290010);
         final String desc;
         if (IMAGE_NUM_4.equals(version)) {
             if (SIEMENS_CSA_HEADER.equals(csa)) {

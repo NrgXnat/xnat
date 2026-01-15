@@ -72,7 +72,7 @@ public class ActionManagerImpl implements ActionManager {
                                          .split(actionKey);
         ImmutableList<String> keyList = ImmutableList.copyOf(key);
         if(!keyList.isEmpty()) {
-            actionProvider = actionId = keyList.get(0);
+            actionProvider = actionId = keyList.getFirst();
             if(keyList.size()>1){
                 actionId = keyList.get(1);
             }
@@ -208,8 +208,8 @@ public class ActionManagerImpl implements ActionManager {
         try {
             Object eventObject = esEvent.getObject(user);
 
-            if(eventObject instanceof BaseElement && ((BaseElement)eventObject).getItem() instanceof XFTItem) {
-                XFTItem eventXftItem = getRootWorkflowObject(((BaseElement)eventObject).getItem(), user);
+            if(eventObject instanceof BaseElement element && ((BaseElement)eventObject).getItem() instanceof XFTItem) {
+                XFTItem eventXftItem = getRootWorkflowObject(element.getItem(), user);
                 String workflowActionLabel =
                         subscription.name().replaceAll("[^a-zA-Z0-9_ -]", "_");
                 String workflowReasonLabel = "Event Service triggered.";
@@ -259,14 +259,14 @@ public class ActionManagerImpl implements ActionManager {
     }
 
     private XFTItem getRootWorkflowObject(XFTItem eventObject, UserI user){
-        if(eventObject != null && (eventObject instanceof XnatImagescandataI)){
+        if(eventObject != null && (eventObject instanceof XnatImagescandataI imagescandataI)){
             // If the event object is a scan, the workflow will not show up anywhere.
             // If possible, we use its parent session as the root object instead.
             // Note that if we simply use  eventXftItem.getParent() as the parent session, xsiType is not retained
             if (eventObject.getParent() != null){
                 try {
                      return XnatExperimentdata.getXnatExperimentdatasById(
-                             ((XnatImagescandataI)eventObject).getImageSessionId(),
+                             imagescandataI.getImageSessionId(),
                              user,
                              false)
                                               .getItem();
@@ -287,7 +287,7 @@ public class ActionManagerImpl implements ActionManager {
                                        .split(actionKey);
         ImmutableList<String> keyList = ImmutableList.copyOf(key);
         if(!keyList.isEmpty()) {
-            providerId = keyList.get(0);
+            providerId = keyList.getFirst();
             return getActionProvider(providerId);
         }
         return null;

@@ -21,6 +21,8 @@ import org.springframework.jdbc.core.RowMapper;
 import javax.persistence.*;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -44,6 +46,7 @@ import static org.nrg.xnat.entities.ResourceSurveyRequest.Status.DIVERGENT;
                @NamedQuery(name = "findRequestAndResourceId", query = "SELECT r.id, r.resourceId FROM ResourceSurveyRequest r WHERE r.resourceId IN (:resourceIds) AND r.closingDate IS NULL"),
                @NamedQuery(name = "findRequestsForProject", query = "SELECT r.id FROM ResourceSurveyRequest r WHERE r.projectId = :projectId AND r.closingDate IS NULL")})
 public class ResourceSurveyRequest extends AbstractHibernateEntity {
+    @Serial
     private static final long   serialVersionUID       = -2595929129619207093L;
     private static final String TEMPLATE_MITIGATION_ID = "mitigation-%s-%d-%s";
 

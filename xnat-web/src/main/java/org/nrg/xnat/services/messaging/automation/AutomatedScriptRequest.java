@@ -20,6 +20,7 @@ import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +33,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class AutomatedScriptRequest implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1;
     /**
      * Instantiates a new automated script request.
      *

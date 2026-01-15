@@ -3,8 +3,11 @@ package org.nrg.xnat.entities;
 import javax.persistence.Embeddable;
 import javax.persistence.ManyToOne;
 
+import java.io.Serial;
+
 public class CustomVariableFormAppliesToId implements java.io.Serializable {
 
+    @Serial
     private static final long serialVersionUID = -1264374836830855705L;
 
     private CustomVariableAppliesTo customVariableAppliesTo;

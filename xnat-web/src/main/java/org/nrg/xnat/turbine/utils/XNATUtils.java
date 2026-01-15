@@ -13,7 +13,6 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import org.apache.commons.collections.MultiMap;
@@ -215,7 +214,7 @@ public class XNATUtils {
 
     public static void removeScanDir(XnatImagesessiondata session, XnatImagescandata scan) throws InvalidArchiveStructure, BaseXnatExperimentdata.UnknownPrimaryProjectException {
         // Above "delete" removes resources, but leaves dangling scan directory
-        final Path scanDirPath = Paths.get(session.getCurrentSessionFolder(true), "SCANS", scan.getId());
+        final Path scanDirPath = Path.of(session.getCurrentSessionFolder(true), "SCANS", scan.getId());
         final File scanDir = scanDirPath == null ? null : scanDirPath.toFile();
         if (scanDir != null && scanDir.isDirectory() && scanDir.exists()) {
             scanDir.delete();
@@ -260,8 +259,7 @@ public class XNATUtils {
             String project = parent.getProject();
             for (XFTItem resource : hash) {
                 ItemI om = BaseElement.GetGeneratedItem(resource);
-                if (om instanceof XnatAbstractresource) {
-                    XnatAbstractresource resourceA = (XnatAbstractresource) om;
+                if (om instanceof XnatAbstractresource resourceA) {
                     resourceA.deleteWithBackup(archivePath, project, user, ci);
                 }
             }
@@ -331,12 +329,12 @@ public class XNATUtils {
     public static void setArcProjectPaths(final ArcProjectI arcProject, final SiteConfigPreferences preferences) throws Exception {
         final String arcProjectId = arcProject.getId();
         final ArcPathinfoI paths = arcProject.getPaths();
-        paths.setPipelinepath(Paths.get(preferences.getPipelinePath(), arcProjectId).toString());
-        paths.setArchivepath(Paths.get(preferences.getArchivePath(), arcProjectId).toString());
-        paths.setPrearchivepath(Paths.get(preferences.getPrearchivePath(), arcProjectId).toString());
-        paths.setCachepath(Paths.get(preferences.getCachePath(), arcProjectId).toString());
-        paths.setFtppath(Paths.get(preferences.getFtpPath(), arcProjectId).toString());
-        paths.setBuildpath(Paths.get(preferences.getBuildPath(), arcProjectId).toString());
+        paths.setPipelinepath(Path.of(preferences.getPipelinePath(), arcProjectId).toString());
+        paths.setArchivepath(Path.of(preferences.getArchivePath(), arcProjectId).toString());
+        paths.setPrearchivepath(Path.of(preferences.getPrearchivePath(), arcProjectId).toString());
+        paths.setCachepath(Path.of(preferences.getCachePath(), arcProjectId).toString());
+        paths.setFtppath(Path.of(preferences.getFtpPath(), arcProjectId).toString());
+        paths.setBuildpath(Path.of(preferences.getBuildPath(), arcProjectId).toString());
         arcProject.setPaths(paths);
     }
     
@@ -358,9 +356,9 @@ public class XNATUtils {
         ItemI thisOM=null;
         XFTItem item=null;
 
-        if (input instanceof XFTItem){
+        if (input instanceof XFTItem tItem){
             thisOM = BaseElement.GetGeneratedItem(input);
-            item = (XFTItem)input;
+            item = tItem;
         }else{
             thisOM = input;
             item = input.getItem();
@@ -393,12 +391,12 @@ public class XNATUtils {
             return catalog_set;
         }
 
-        if (thisOM instanceof XnatExperimentdata){
-            project = ((XnatExperimentdata)thisOM).getPrimaryProject(false);
-        }else if(thisOM instanceof XnatSubjectdata){
-            project = ((XnatSubjectdata)thisOM).getPrimaryProject(false);
-        }else if(thisOM instanceof XnatProjectdata){
-            project = ((XnatProjectdata)thisOM);
+        if (thisOM instanceof XnatExperimentdata experimentdata){
+            project = experimentdata.getPrimaryProject(false);
+        }else if(thisOM instanceof XnatSubjectdata subjectdata){
+            project = subjectdata.getPrimaryProject(false);
+        }else if(thisOM instanceof XnatProjectdata projectdata){
+            project = projectdata;
         }
         List<XFTItem> hash = (item).getChildrenOfType("xnat:abstractResource");
 
@@ -411,8 +409,7 @@ public class XNATUtils {
         if (project!=null){
             for (XFTItem resource : hash){
                 ItemI om = BaseElement.GetGeneratedItem(resource);
-                if (om instanceof XnatAbstractresource){
-                    XnatAbstractresource resourceA = (XnatAbstractresource)om;
+                if (om instanceof XnatAbstractresource resourceA){
                     ArrayList<File> files = resourceA.getCorrespondingFiles(project.getRootArchivePath());
                     for (int i=0;i<files.size();i++){
                         File f = files.get(i);
@@ -439,8 +436,8 @@ public class XNATUtils {
                         catalog.addEntries_entry(entry);
 
                     }
-                    if (om instanceof XnatResourcecatalog){
-                        File f = ((XnatResourcecatalog)om).getCatalogFile(project.getRootArchivePath());
+                    if (om instanceof XnatResourcecatalog resourcecatalog){
+                        File f = resourcecatalog.getCatalogFile(project.getRootArchivePath());
                         CatEntryBean entry = new CatEntryBean();
 
                         entry.setUri(url + "/file/" + counter);

@@ -25,12 +25,16 @@ import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import java.io.Serial;
+
 @SuppressWarnings("WeakerAccess")
 @NrgPreferenceBean(toolId = PipelinePreferences.TOOL_ID,
                    toolName = "XNAT Traditional Pipeline Preferences",
                    description = "Manages preferences and settings for the XNAT traditional pipeline engine integration.")
 @Slf4j
 public class PipelinePreferences extends EventTriggeringAbstractPreferenceBean {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String TOOL_ID                         = "pipelines";
     public static final String AUTO_RUN_ENABLED                = "autoRunEnabled";
     public static final String ALLOW_AUTO_RUN_PROJECT_OVERRIDE = "allowAutoRunProjectOverride";

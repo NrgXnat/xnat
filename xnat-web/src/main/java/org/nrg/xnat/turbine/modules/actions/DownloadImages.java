@@ -147,9 +147,7 @@ public class DownloadImages extends SecureAction {
                         int counter=0;
                         for(Iterator iter=groupFiles.iterator();iter.hasNext();){
                             Object o = iter.next();
-                            if (o instanceof String){
-
-                                String id = (String)o;
+                            if (o instanceof String id){
                                 
                                 int index = mr.getFileTracker().getIDIndex(id);
                                 String relativePath = mr.getFileTracker().getRelativePath(index);

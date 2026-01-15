@@ -16,6 +16,8 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import java.io.Serial;
+
 /**
  * The Class HostInfo.
  */
@@ -24,8 +26,9 @@ import javax.persistence.UniqueConstraint;
 @Cacheable
 public class HostInfo extends AbstractHibernateEntity {
 
-	/** The Constant serialVersionUID. */
-	private static final long serialVersionUID = -1264374836830855705L;
+    /** The Constant serialVersionUID. */
+    @Serial
+    private static final long serialVersionUID = -1264374836830855705L;
 	
 	/** The host name. */
 	private String hostName;

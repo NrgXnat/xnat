@@ -53,7 +53,7 @@ public class ConfirmRegister extends SecureAction {
             	{
             		List<? extends UserI> match=Users.getUsersByEmail(newUser.getEmail());
             		if(match.size()>0){
-            			current=match.get(0);
+            			current=match.getFirst();
             		}
             	}
             	

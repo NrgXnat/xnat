@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_CLASS_ARRAY;
@@ -112,11 +111,11 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         final String prefix = "xnat_" + System.nanoTime();
         try {
             log.debug("Found root folder {} with subfolder {}, will try to create a temporary folder with prefix {}", root, subfolder, prefix);
-            final Path workPath = Paths.get(root, subfolder);
+            final Path workPath = Path.of(root, subfolder);
             workPath.toFile().mkdirs();
             final Path tmpDir = Files.createTempDirectory(workPath, prefix);
             tmpDir.toFile().deleteOnExit();
-            final File config = Paths.get(root, "config/xnat-conf.properties").toFile();
+            final File config = Path.of(root, "config/xnat-conf.properties").toFile();
             final long maxFileSize, maxRequestSize;
             final int  fileSizeThreshold;
             if (config.exists() && config.isFile() && config.canRead()) {

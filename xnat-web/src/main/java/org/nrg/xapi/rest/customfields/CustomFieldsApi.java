@@ -213,14 +213,14 @@ public class CustomFieldsApi extends AbstractXapiRestController {
         if (!StringUtils.isEmpty(experiment)) {
             final XnatExperimentdata experimentData = getExperiment(user, project, subject, experiment);
             if (!StringUtils.isEmpty(assessor)) {
-                if (experimentData instanceof XnatImagesessiondata) {
-                    return getAssessor((XnatImagesessiondata) experimentData, assessor);
+                if (experimentData instanceof XnatImagesessiondata imagesessiondata) {
+                    return getAssessor(imagesessiondata, assessor);
                 }
                 throw new NotFoundException("Unable to identify assessor: " + assessor);
             }
             if (!StringUtils.isEmpty(scan)) {
-                if (experimentData instanceof XnatImagesessiondata) {
-                    return getScan((XnatImagesessiondata) experimentData, scan);
+                if (experimentData instanceof XnatImagesessiondata imagesessiondata) {
+                    return getScan(imagesessiondata, scan);
                 }
                 throw new NotFoundException("Unable to identify scan: " + scan + " for experiment: " + experiment);
             }
@@ -317,7 +317,7 @@ public class CustomFieldsApi extends AbstractXapiRestController {
         } else {
             final List<XnatProjectdata> matches = AutoXnatProjectdata.getXnatProjectdatasByField("xnat:projectData/aliases/alias/alias", projectId, user, false);
             if (matches != null && !matches.isEmpty()) {
-                return matches.get(0);
+                return matches.getFirst();
             }
         }
         throw new NotFoundException("Unable to identify project: " + project);

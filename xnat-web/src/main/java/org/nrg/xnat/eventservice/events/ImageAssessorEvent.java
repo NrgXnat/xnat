@@ -5,12 +5,16 @@ import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @XnatEventServiceEvent(name="ImageAssessorEvent")
 public class ImageAssessorEvent extends AbstractEventServiceEvent<XnatImageassessordataI> {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public enum Status {CREATED, UPDATED};
 

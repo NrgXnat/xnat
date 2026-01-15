@@ -100,7 +100,7 @@ public class FileResource extends ItemResource {
 			cc.addClause("xnat:imageScanData/image_session_ID", assessed.getId());
 			ArrayList<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(cc, user, completeDocument);
 			if (scans.size() > 0) {
-				scan = scans.get(0);
+				scan = scans.getFirst();
 			}
 		}
 
@@ -113,7 +113,7 @@ public class FileResource extends ItemResource {
 			cc.addClause("xnat:reconstructedImageData/image_session_ID", assessed.getId());
 			ArrayList<XnatReconstructedimagedata> scans = XnatReconstructedimagedata.getXnatReconstructedimagedatasByField(cc, user, completeDocument);
 			if (scans.size() > 0) {
-				recon = scans.get(0);
+				recon = scans.getFirst();
 			}
 		}
 

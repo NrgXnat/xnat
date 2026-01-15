@@ -22,11 +22,12 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+
 public class LoadImageData extends SecureAction {
     private final static String PREARC_PAGE = "XDATScreen_prearchives.vm";
     
@@ -81,7 +82,7 @@ public class LoadImageData extends SecureAction {
 
         String prearchive_path= PrearcDatabase.projectPath(project);
         //LOAD FOLDER
-        final File dir = new File("NONE".equals(root) ? prearchive_path : (Paths.get(prearchive_path, root).toString()));
+        final File dir = new File("NONE".equals(root) ? prearchive_path : (Path.of(prearchive_path, root).toString()));
 
         final Collection<String> folders;
         if (dir.exists()) {

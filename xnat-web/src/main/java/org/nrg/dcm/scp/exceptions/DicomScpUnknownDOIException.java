@@ -11,7 +11,7 @@ public class DicomScpUnknownDOIException extends NrgServiceException {
 
     public DicomScpUnknownDOIException(DicomSCPInstance instance) {
         super(NrgServiceError.ConfigurationError,
-                String.format("Tried to provision DICOM SCP receiver '%s' but that instance specifies an unknown DICOM Object Identifier '%s'.", instance.getLabel(), instance.getIdentifier()));
+                "Tried to provision DICOM SCP receiver '%s' but that instance specifies an unknown DICOM Object Identifier '%s'.".formatted(instance.getLabel(), instance.getIdentifier()));
     }
 
 }

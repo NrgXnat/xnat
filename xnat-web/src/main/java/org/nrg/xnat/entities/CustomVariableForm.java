@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import javax.persistence.*;
+
+import java.io.Serial;
 import java.util.*;
 
 import org.hibernate.annotations.Type;
@@ -16,6 +18,7 @@ import org.nrg.xnat.customforms.utils.CustomFormsConstants;
 @AllArgsConstructor
 public class CustomVariableForm extends AbstractHibernateEntity{
 
+    @Serial
     private static final long serialVersionUID = -1264374836830855705L;
 
     private JsonNode formIOJsonDefinition;

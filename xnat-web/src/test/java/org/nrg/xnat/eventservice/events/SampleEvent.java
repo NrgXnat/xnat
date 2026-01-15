@@ -3,6 +3,7 @@ package org.nrg.xnat.eventservice.events;
 import org.nrg.framework.event.XnatEventServiceEvent;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -11,6 +12,9 @@ import java.util.stream.Collectors;
 
 @XnatEventServiceEvent(name = "SomethingHappenedEvent")
 public class SampleEvent implements EventServiceEvent {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     private Status status;
     private Class object;

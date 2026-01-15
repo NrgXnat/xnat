@@ -105,15 +105,14 @@ public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHan
     public Object postProcessAfterInitialization(final Object bean, final String name) {
         log.debug("Post-processing bean: {}", name);
 
-        if (bean instanceof FilterSecurityInterceptor) {
-            _interceptor = (FilterSecurityInterceptor) bean;
+        if (bean instanceof FilterSecurityInterceptor interceptor) {
+            _interceptor = interceptor;
             updateSecurityFilter();
-        } else if (bean instanceof XapiRequestMappingAspect) {
-            final XapiRequestMappingAspect aspect = (XapiRequestMappingAspect) bean;
+        } else if (bean instanceof XapiRequestMappingAspect aspect) {
             aspect.setOpenUrls(_openUrls);
             aspect.setAdminUrls(_adminUrls);
-        } else if (bean instanceof ChannelProcessingFilter) {
-            _channelProcessingFilter = (ChannelProcessingFilter) bean;
+        } else if (bean instanceof ChannelProcessingFilter filter) {
+            _channelProcessingFilter = filter;
 
         }
 

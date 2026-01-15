@@ -86,18 +86,18 @@ public class PrearcSessionResourcesList extends PrearcSessionResourceA {
 
 	private void addRow(XnatAbstractresourceI res, XFTTable table, String category, Object categoryId,
 						String prearchivePath, String project) {
-		if (res instanceof XnatResourcecatalogI) {
+		if (res instanceof XnatResourcecatalogI resourcecatalogI) {
 			try {
 				final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(prearchivePath,
-						(XnatResourcecatalogI) res, false, project);
+						resourcecatalogI, false, project);
 				CatalogUtils.Stats stats = CatalogUtils.getFileStats(catalogData.catBean, catalogData.catPath,
 						catalogData.project);
 				table.insertRow(new Object[]{category, categoryId, res.getLabel(), stats.count, stats.size});
 			} catch (ServerException e) {
 				log.error("Unable to read catalog for resource {}", res.getXnatAbstractresourceId(), e);
 			}
-		} else if (res instanceof XnatResourceI) {
-			File f = new File(prearchivePath, ((XnatResourceI) res).getUri());
+		} else if (res instanceof XnatResourceI resourceI) {
+			File f = new File(prearchivePath, resourceI.getUri());
 			if (f.exists()) {
 				Object[] oarray = new Object[]{category, categoryId, res.getLabel(), 1, f.length()};
 				table.insertRow(oarray);

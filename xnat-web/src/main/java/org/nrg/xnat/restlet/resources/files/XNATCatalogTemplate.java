@@ -140,17 +140,17 @@ public class XNATCatalogTemplate extends XNATTemplate {
     }
 
     protected ResourceModifierA buildResourceModifier(final boolean overwrite, final EventMetaI ci) throws Exception {
-        final XnatImagesessiondata assessed = assesseds.size() == 1 ? (XnatImagesessiondata) assesseds.get(0) : null;
+        final XnatImagesessiondata assessed = assesseds.size() == 1 ? (XnatImagesessiondata) assesseds.getFirst() : null;
 
         //this should allow dependency injection - TO
         final ResourceModifierBuilderI builder = new DirectResourceModifierBuilder();
 
         if (!recons.isEmpty()) {
-            builder.setRecon(assessed, recons.get(0), type);
+            builder.setRecon(assessed, recons.getFirst(), type);
         } else if (!scans.isEmpty()) {
-            builder.setScan(assessed, scans.get(0));
+            builder.setScan(assessed, scans.getFirst());
         } else if (!expts.isEmpty()) {
-            final XnatExperimentdata expt = expts.get(0);
+            final XnatExperimentdata expt = expts.getFirst();
             if (expt.getItem().instanceOf("xnat:imageAssessorData")) {
                 builder.setAssess(ObjectUtils.defaultIfNull(assessed, ((XnatImageassessordata) expt).getImageSessionData()), (XnatImageassessordata) expt, type);
             } else {

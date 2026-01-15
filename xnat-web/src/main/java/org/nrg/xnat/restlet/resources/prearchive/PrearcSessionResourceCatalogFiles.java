@@ -38,7 +38,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -90,7 +89,7 @@ public class PrearcSessionResourceCatalogFiles extends PrearcSessionResourceCata
 				// create resource
 				res = new XnatResourcecatalogBean();
 				res.setLabel(resourceId);
-				res.setUri(Paths.get("RESOURCES", resourceId, resourceId + "_catalog.xml")
+				res.setUri(Path.of("RESOURCES", resourceId, resourceId + "_catalog.xml")
 						.toString());
 				info.session.addResources_resource(res);
 			}
@@ -100,7 +99,7 @@ public class PrearcSessionResourceCatalogFiles extends PrearcSessionResourceCata
 			final Map<String, CatalogUtils.CatalogMapEntry> catalogMap = CatalogUtils.buildCatalogMap(catalogData);
 
 			// copy file(s) to location
-			Path catalogUri = Paths.get(info.session.getPrearchivepath(), res.getUri());
+			Path catalogUri = Path.of(info.session.getPrearchivepath(), res.getUri());
 			Path catalogPath = catalogUri.getParent();
 			Files.createDirectories(catalogPath);
 			boolean rewriteCatalog = false;
@@ -209,8 +208,8 @@ public class PrearcSessionResourceCatalogFiles extends PrearcSessionResourceCata
 			List<XnatAbstractresourceI> resources = info.session.getResources_resource();
 			XnatResourcecatalogI resource = null;
 			for (XnatAbstractresourceI r : resources){
-				if (StringUtils.equals(r.getLabel(), resourceId) && r instanceof XnatResourcecatalogI){
-					resource = (XnatResourcecatalogI) r;
+				if (StringUtils.equals(r.getLabel(), resourceId) && r instanceof XnatResourcecatalogI resourcecatalogI){
+					resource = resourcecatalogI;
 					break;
 				}
 			}

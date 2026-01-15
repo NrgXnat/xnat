@@ -37,7 +37,7 @@ public class PARList extends SecureResource {
 		final UserI                     user   = getUser();
 		final Hashtable<String, Object> params = new Hashtable<>();
 		try {
-			final XFTTable table = XFTTable.Execute(String.format(PAR_QUERY, user.getEmail().toLowerCase()), user.getDBName(), user.getLogin());
+			final XFTTable table = XFTTable.Execute(PAR_QUERY.formatted(user.getEmail().toLowerCase()), user.getDBName(), user.getLogin());
 
 			if (table != null) {
 				params.put("totalRecords", table.size());

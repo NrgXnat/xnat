@@ -9,7 +9,10 @@
 
 package org.nrg.xnat.event.archive;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NonNull;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +25,7 @@ import org.nrg.xnat.utils.XnatHttpUtils;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * The Class XftItemEvent.
@@ -32,6 +36,8 @@ import java.io.IOException;
 @Builder
 @Slf4j
 public class ArchiveEvent implements ArchiveEventI {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static ArchiveEvent completed(final Integer userId, final Operation operation, final String session, final String listenerId) {
         return completed(userId, operation, null, null, session, listenerId, null);
     }

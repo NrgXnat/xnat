@@ -22,12 +22,17 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
 
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Subject extends XnatModelObject {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     @JsonIgnore private XnatSubjectdataI xnatSubjectdataI;
     private List<Session> sessions;
@@ -78,15 +83,15 @@ public class Subject extends XnatModelObject {
 
         this.sessions = Lists.newArrayList();
         for (final XnatExperimentdataI xnatExperimentdataI : xnatSubjectdataI.getExperiments_experiment()) {
-            if (xnatExperimentdataI instanceof XnatImagesessiondataI) {
-                sessions.add(new Session((XnatImagesessiondataI) xnatExperimentdataI, this.uri, rootArchivePath));
+            if (xnatExperimentdataI instanceof XnatImagesessiondataI imagesessiondataI) {
+                sessions.add(new Session(imagesessiondataI, this.uri, rootArchivePath));
             }
         }
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatSubjectdataI.getResources_resource()) {
-            if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, rootArchivePath));
+            if (xnatAbstractresourceI instanceof XnatResourcecatalog resourcecatalog) {
+                resources.add(new Resource(resourcecatalog, this.uri, rootArchivePath));
             }
         }
     }

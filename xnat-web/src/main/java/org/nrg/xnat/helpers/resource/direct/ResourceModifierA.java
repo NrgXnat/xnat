@@ -25,6 +25,7 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.utils.CatalogUtils;
 
 import java.io.File;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 
@@ -32,6 +33,7 @@ import java.util.*;
  * @author timo
  */
 public abstract class ResourceModifierA implements Serializable {
+    @Serial
     private static final long serialVersionUID = 42L;
     final boolean overwrite;
     final UserI user;
@@ -44,6 +46,7 @@ public abstract class ResourceModifierA implements Serializable {
     }
 
     public static class UpdateMeta implements EventMetaI, Serializable {
+        @Serial
         private static final long serialVersionUID = 42L;
         final EventMetaI i;
         final boolean update;
@@ -141,8 +144,8 @@ public abstract class ResourceModifierA implements Serializable {
 
         XnatAbstractresourceI resource = null;
 
-        if (resourceIdentifier instanceof Integer) {
-            resource = getResourceById((Integer) resourceIdentifier, type);
+        if (resourceIdentifier instanceof Integer integer) {
+            resource = getResourceById(integer, type);
         }
 
         if (resource != null) {

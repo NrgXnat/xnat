@@ -7,6 +7,7 @@ import org.springframework.core.io.InputStreamSource;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.Serial;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class XnatResourceInfoMap extends HashMap<String, XnatResourceInfo> {
+    @Serial
+    private static final long serialVersionUID = 1;
     /**
      * Builds for the {@link XnatResourceInfoMap} class. Provides fluent convenience methods for building and
      * aggregating multiple {@link XnatResourceInfo} instances.

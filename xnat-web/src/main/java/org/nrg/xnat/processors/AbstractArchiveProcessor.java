@@ -2,8 +2,8 @@ package org.nrg.xnat.processors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.dcm4che2.data.DicomObject;
 import org.nrg.action.ServerException;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
@@ -24,10 +24,10 @@ public abstract class AbstractArchiveProcessor implements ArchiveProcessor {
     // data being processed will not be written. If a ServerException is thrown, the data being processed will not be
     // written and the exception also may be passed to the calling class.
     @Override
-    public abstract boolean process(final DicomObject dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException;
+    public abstract boolean process(final DicomObjectI dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException;
 
     @Override
-    public boolean accept(final DicomObject dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException {
+    public boolean accept(final DicomObjectI dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException {
         return processorConfiguredForDataComingInToThisScpReceiverAndProject(sessionData, instance, aeParameters);
     }
 

@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.io.StopTagInputHandler;
 import org.dcm4che3.data.Tag;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dicomtools.utilities.DicomUtils;
@@ -47,15 +45,15 @@ public class ResourceSurveyHelper implements Callable<ResourceSurveyReport> {
     private final ResourceSurveyRequest              _request;
     private final SerializerService                  _serializer;
     private final DicomFileNamer                     _dicomFileNamer;
-    private final StopTagInputHandler                _stopTagInputHandler;
+    private int stopTag;
 
-    public ResourceSurveyHelper(final ResourceSurveyRequestEntityService service, final ResourceSurveyRequest request, final SerializerService serializer, final DicomFileNamer dicomFileNamer, final StopTagInputHandler stopTagInputHandler) {
+    public ResourceSurveyHelper(final ResourceSurveyRequestEntityService service, final ResourceSurveyRequest request, final SerializerService serializer, final DicomFileNamer dicomFileNamer, final int stopTag) {
         log.debug("Creating a new resource survey helper for resource survey request {} for resource {} for user {}", request.getId(), request.getResourceId(), request.getRequester());
         _service             = service;
         _request             = request;
         _serializer          = serializer;
         _dicomFileNamer      = dicomFileNamer;
-        _stopTagInputHandler = stopTagInputHandler;
+        this.stopTag = stopTag;
     }
 
     @Override
@@ -65,7 +63,7 @@ public class ResourceSurveyHelper implements Callable<ResourceSurveyReport> {
 
         final Path resourceUri = Paths.get(_request.getResourceUri());
         try (final InputStream input = Files.newInputStream(resourceUri)) {
-            final DcmCatEntries handler = new DcmCatEntries(_dicomFileNamer, _stopTagInputHandler, resourceUri);
+            final DcmCatEntries handler = new DcmCatEntries(_dicomFileNamer, stopTag, resourceUri);
             _serializer.parse(input, handler);
 
             final List<DcmCatEntry> entries = handler.getEntries();
@@ -83,7 +81,7 @@ public class ResourceSurveyHelper implements Callable<ResourceSurveyReport> {
             final Map<Boolean, Map<Pair<String, String>, List<DcmCatEntry>>> splitOnListSize = groupedByClassAndInstanceUid.entrySet().stream()
                                                                                                                            .collect(Collectors.partitioningBy(entry -> entry.getValue().size() > 1,
                                                                                                                                                               Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-            builder.mismatchedFiles(splitOnListSize.get(false).values().stream().map(list -> list.get(0)).filter(MISMATCHED_ENTRY).collect(Collectors.toMap(DcmCatEntry::getFile, DcmCatEntry::getCalculatedFileName)));
+            builder.mismatchedFiles(splitOnListSize.get(false).values().stream().map(list -> list.getFirst()).filter(MISMATCHED_ENTRY).collect(Collectors.toMap(DcmCatEntry::getFile, DcmCatEntry::getCalculatedFileName)));
 
             final Map<Pair<String, String>, Map<File, String>> duplicates = splitOnListSize.get(true).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream().collect(Collectors.toMap(DcmCatEntry::getFile, DcmCatEntry::getCalculatedFileName))));
 
@@ -127,17 +125,17 @@ public class ResourceSurveyHelper implements Callable<ResourceSurveyReport> {
         String  calculatedFileName;
         boolean isValidDicomFile;
 
-        public static DcmCatEntryBuilder builder(final DicomFileNamer dicomFileNamer, final StopTagInputHandler stopTagInputHandler) {
-            return new ExtendedDcmCatEntryBuilder(dicomFileNamer, stopTagInputHandler);
+        public static DcmCatEntryBuilder builder(final DicomFileNamer dicomFileNamer, int stopTag) {
+            return new ExtendedDcmCatEntryBuilder(dicomFileNamer, stopTag);
         }
 
         private static class ExtendedDcmCatEntryBuilder extends DcmCatEntryBuilder {
             private final DicomFileNamer      _dicomFileNamer;
-            private final StopTagInputHandler _stopTagInputHandler;
+            private final int stopTag;
 
-            ExtendedDcmCatEntryBuilder(final DicomFileNamer dicomFileNamer, final StopTagInputHandler stopTagInputHandler) {
+            ExtendedDcmCatEntryBuilder(final DicomFileNamer dicomFileNamer, int stopTag) {
                 _dicomFileNamer      = dicomFileNamer;
-                _stopTagInputHandler = stopTagInputHandler;
+                this.stopTag = stopTag;
             }
 
             @Override
@@ -148,38 +146,29 @@ public class ResourceSurveyHelper implements Callable<ResourceSurveyReport> {
                 Validate.notNull(super.file, "File cannot be null or empty");
                 Validate.isTrue(super.file.exists() && super.file.isFile(), "File must exist and be a file");
 
-                final DicomObject dicomObject = getDicomObject();
-
-                if (dicomObject != null) {
-                    final String instanceUid = dicomObject.getString(Tag.SOPInstanceUID);
+                try {
+                    final org.dcm4che3.data.Attributes attributes = DicomUtils.read(super.file, stopTag+1);
+                    final String instanceUid = attributes.getString(Tag.SOPInstanceUID);
                     Validate.isTrue(StringUtils.equals(super.instanceUid, instanceUid), "The specified SOP instance UID (%s) does not equal the extracted SOP instance UID: %s", super.instanceUid, instanceUid);
-                    super.classUid(dicomObject.getString(Tag.SOPClassUID));
-                    super.calculatedFileName(getCalculatedFileName(dicomObject));
+                    super.classUid(attributes.getString(Tag.SOPClassUID));
+                    super.calculatedFileName(getCalculatedFileName(attributes));
 
                     final boolean hasFileName = StringUtils.isNotBlank(super.calculatedFileName);
                     log.debug("The DICOM file {} has SOP class UID {} and SOP instance UID {}, calculated file name is {}", super.file, super.classUid, instanceUid, hasFileName ? super.calculatedFileName : "blank (indicates invalid DICOM file)");
                     super.isValidDicomFile(hasFileName);
-                } else {
+                } catch (IOException e) {
+                    log.error("An error occurred trying to read the DICOM file {}: {}", super.file.getAbsolutePath(), e.getMessage());
                     super.isValidDicomFile(false);
                 }
 
                 return super.build();
             }
 
-            private String getCalculatedFileName(final DicomObject dicomObject) {
+            private String getCalculatedFileName(final org.dcm4che3.data.Attributes dicomObject) {
                 if (dicomObject != null) {
                     return _dicomFileNamer.makeFileName(dicomObject);
                 }
                 return null;
-            }
-
-            private DicomObject getDicomObject() {
-                try {
-                    return DicomUtils.read(super.file, _stopTagInputHandler);
-                } catch (IOException e) {
-                    log.error("An error occurred trying to read the DICOM file {}: {}", super.file.getAbsolutePath(), e.getMessage());
-                    return null;
-                }
             }
         }
     }
@@ -195,14 +184,14 @@ public class ResourceSurveyHelper implements Callable<ResourceSurveyReport> {
         public static final  String CAT_DCM_ENTRY  = "cat:dcmEntry";
 
         private final DicomFileNamer      _dicomFileNamer;
-        private final StopTagInputHandler _stopTagInputHandler;
+        private final int                 _stopTag;
         private final Path                _rootPath;
         private final List<DcmCatEntry>   _entries;
         private final List<File>          _badFiles;
 
-        public DcmCatEntries(final DicomFileNamer dicomFileNamer, final StopTagInputHandler stopTagInputHandler, final Path resourceUri) {
-            _dicomFileNamer      = dicomFileNamer;
-            _stopTagInputHandler = stopTagInputHandler;
+        public DcmCatEntries(final DicomFileNamer dicomFileNamer, int stopTag, final Path resourceUri) {
+            _dicomFileNamer = dicomFileNamer;
+            _stopTag        = stopTag;
 
             // Make the root path the folder containing the resource URI if the URI indicates a file, otherwise use as is
             _rootPath = resourceUri.toFile().isFile() ? resourceUri.getParent() : resourceUri;
@@ -217,7 +206,7 @@ public class ResourceSurveyHelper implements Callable<ResourceSurveyReport> {
                 final String path = attributes.getValue(QNAME_URI);
                 final File   file = _rootPath.resolve(path).toFile();
                 try {
-                    _entries.add(DcmCatEntry.builder(_dicomFileNamer, _stopTagInputHandler).id(attributes.getValue(QNAME_ID)).uri(path).instanceUid(attributes.getValue(QNAME_UID)).file(file).build());
+                    _entries.add(DcmCatEntry.builder(_dicomFileNamer, _stopTag).id(attributes.getValue(QNAME_ID)).uri(path).instanceUid(attributes.getValue(QNAME_UID)).file(file).build());
                 } catch (IllegalArgumentException e) {
                     _badFiles.add(file);
                 }

@@ -47,7 +47,7 @@ public class XDATScreen_data_management extends SecureScreen {
             context.put("prearchive_path", prearchive_path);
             
             UserI user =TurbineUtils.getUser(data);
-            Long count =new Long(0);
+            Long count =Long.valueOf(0);
             Map sm = new Hashtable();
             File dir = new File(prearchive_path);
             if (dir.exists())

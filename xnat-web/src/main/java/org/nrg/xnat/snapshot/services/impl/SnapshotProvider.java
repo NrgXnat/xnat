@@ -25,7 +25,6 @@ import org.restlet.data.Status;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -113,7 +112,7 @@ public class SnapshotProvider implements AutoCloseable {
 
     private Optional<FileResource> getResourceFile(final XnatResourcecatalog snapshotCatalog, final String content) throws NotFoundException, InitializationException {
         try {
-            final Path                     rootPath    = Paths.get(snapshotCatalog.getUri()).getParent();
+            final Path                     rootPath    = Path.of(snapshotCatalog.getUri()).getParent();
             final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(rootPath.toString(), snapshotCatalog, null);
             final CatCatalogBean           catalogBean = catalogData.catBean;
             final List<CatEntryI>          entries     = catalogBean.getEntries_entry();

@@ -106,8 +106,8 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 
 			for (XnatImagescandataI scan : tempMR.getSortedScans()) {
 				for (XnatAbstractresourceI res : scan.getFile()) {
-					if (res instanceof XnatResourcecatalog) {
-						filesToRemove.add(((XnatResourcecatalog) res).getUri());
+					if (res instanceof XnatResourcecatalog resourcecatalog) {
+						filesToRemove.add(resourcecatalog.getUri());
 					}
 				}
 			}
@@ -122,7 +122,7 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 				//if oldScan is null, then a new scan has been discovered and old values are not present to maintain.
 				if(oldScan!=null){
 					if(!oldScan.getXSIType().equals(newscan.getXSIType())){
-						throw new Exception(String.format("Modification of scan modality (%s to %s) not supported.",oldScan.getXSIType(),newscan.getXSIType()));
+						throw new Exception("Modification of scan modality (%s to %s) not supported.".formatted(oldScan.getXSIType(), newscan.getXSIType()));
 					}
 					
 					((XnatImagescandata)newscan).setXnatImagescandataId(oldScan.getXnatImagescandataId());
@@ -133,23 +133,23 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 						//in the current code, the new file entries should not be maintained. The old ones are assumed to be correct and not needing updates.
 						//the content, format, and description of the new file entries will be preserved if the old ones were null.
 						if(newscan.getFile().size()>0) {
-							final XnatResource newcat = (XnatResource) newscan.getFile().get(0);
+							final XnatResource newcat = (XnatResource) newscan.getFile().getFirst();
 
-							final XnatAbstractresourceI oldCat = oldScan.getFile().get(0);
-							if (oldCat instanceof XnatResource) {
-								if (StringUtils.isBlank(((XnatResource) oldCat).getContent()) && StringUtils.isNotBlank(newcat.getContent()))
-									((XnatResource) oldCat).setContent(newcat.getContent());
-								if (StringUtils.isBlank(((XnatResource) oldCat).getFormat()) && StringUtils.isNotBlank(newcat.getFormat()))
-									((XnatResource) oldCat).setFormat(newcat.getFormat());
-								if (StringUtils.isBlank(((XnatResource) oldCat).getDescription()) && StringUtils.isNotBlank(newcat.getDescription()))
-									((XnatResource) oldCat).setDescription(newcat.getDescription());
+							final XnatAbstractresourceI oldCat = oldScan.getFile().getFirst();
+							if (oldCat instanceof XnatResource resource) {
+								if (StringUtils.isBlank(resource.getContent()) && StringUtils.isNotBlank(newcat.getContent()))
+									resource.setContent(newcat.getContent());
+								if (StringUtils.isBlank(resource.getFormat()) && StringUtils.isNotBlank(newcat.getFormat()))
+									resource.setFormat(newcat.getFormat());
+								if (StringUtils.isBlank(resource.getDescription()) && StringUtils.isNotBlank(newcat.getDescription()))
+									resource.setDescription(newcat.getDescription());
 							}
 
 							while (newscan.getFile().size() > 0) {
 								XnatImagescandata s = (XnatImagescandata) newscan;
-								XnatAbstractresourceI res = s.getFile().get(0);
-								if (res instanceof XnatResourcecatalog) {
-									filesToRemove.add(((XnatResourcecatalog) res).getUri());
+								XnatAbstractresourceI res = s.getFile().getFirst();
+								if (res instanceof XnatResourcecatalog resourcecatalog) {
+									filesToRemove.add(resourcecatalog.getUri());
 								}
 								s.removeFile(0);
 							}
@@ -159,8 +159,8 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 						}
 					} else {
 						for (XnatAbstractresourceI cat : oldScan.getFile()) {
-							if (cat instanceof XnatResourcecatalog) {
-								filesToRemove.add(((XnatResourcecatalog) cat).getUri());
+							if (cat instanceof XnatResourcecatalog resourcecatalog) {
+								filesToRemove.add(resourcecatalog.getUri());
 							}
 						}
 					}

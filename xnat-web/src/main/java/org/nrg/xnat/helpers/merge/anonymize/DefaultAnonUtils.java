@@ -63,7 +63,7 @@ public class DefaultAnonUtils implements AnonUtils {
         if (resources.size() > 1) {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Found more than one \"default\" anonymization script: " + resources.stream().map(DefaultAnonUtils::getURI).collect(Collectors.joining(", ")));
         }
-        try (final InputStream input = resources.get(0).getInputStream()) {
+        try (final InputStream input = resources.getFirst().getInputStream()) {
             return StringUtils.join(IOUtils.readLines(input, "UTF-8"), "\n");
         }
     }

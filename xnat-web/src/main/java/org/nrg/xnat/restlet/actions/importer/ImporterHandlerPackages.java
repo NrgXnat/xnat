@@ -11,12 +11,15 @@ package org.nrg.xnat.restlet.actions.importer;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 
 @Slf4j
 public class ImporterHandlerPackages extends HashSet<String> {
+    @Serial
+    private static final long serialVersionUID = 1;
     public ImporterHandlerPackages(final Collection<String> packages) {
         super();
         setPackages(packages);

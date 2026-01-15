@@ -156,7 +156,7 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
     public boolean isAvailable(Long id, Map<Scope, String> executionScope) {
         final Optional<HardwareConfig> hardwareConfig = retrieve(id);
 
-        if (!hardwareConfig.isPresent()) {
+        if (hardwareConfig.isEmpty()) {
             log.error("No hardware config found with id " + id);
             return false;
         }

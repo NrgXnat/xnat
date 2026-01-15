@@ -11,6 +11,7 @@ package org.nrg.xnat.helpers.prearchive;
 
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import org.nrg.framework.constants.PrearchiveCode;
@@ -19,6 +20,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import javax.annotation.Nullable;
 
 public final class SessionData implements Serializable {
+    @Serial
     private static final long   serialVersionUID = 7915299491932778685L;
     public static final  String UPLOADER         = "uploader";
 
@@ -88,12 +90,12 @@ public final class SessionData implements Serializable {
     public SessionData setAutoArchive(Object object) {
         if (null != object) {
             PrearchiveCode code;
-            if (object instanceof String) {
-                code = PrearchiveCode.valueOf((String) object);
-            } else if (object instanceof PrearchiveCode) {
-                code = (PrearchiveCode) object;
-            } else if (object instanceof Integer) {
-                code = PrearchiveCode.code((Integer) object);
+            if (object instanceof String string) {
+                code = PrearchiveCode.valueOf(string);
+            } else if (object instanceof PrearchiveCode prearchiveCode) {
+                code = prearchiveCode;
+            } else if (object instanceof Integer integer) {
+                code = PrearchiveCode.code(integer);
             } else {
                 throw new ClassCastException("The object submitted for auto-archive must be a String, Integer, or PrearchiveCode; the submitted class is invalid for casting to PrearchiveCode: " + object.getClass());
             }
@@ -303,7 +305,7 @@ public final class SessionData implements Serializable {
     }
 
     public String getExternalUrl() {
-        return String.format("/prearchive/projects/%s/%s/%s", getProject(), getTimestamp(), getFolderName());
+        return "/prearchive/projects/%s/%s/%s".formatted(getProject(), getTimestamp(), getFolderName());
     }
 
     public String getUrl() {

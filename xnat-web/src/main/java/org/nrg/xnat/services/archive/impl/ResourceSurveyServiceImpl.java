@@ -7,11 +7,9 @@ import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.dcm4che2.io.StopTagInputHandler;
-import javax.validation.constraints.NotNull;
+import org.dcm4che3.data.Tag;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
-import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xapi.exceptions.ConflictedStateException;
@@ -52,6 +50,7 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.constraints.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -108,7 +107,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
     private final ResourceSurveyRequestEntityService _entityService;
     private final SerializerService                  _serializer;
     private final DicomFileNamer                     _dicomFileNamer;
-    private final StopTagInputHandler                _stopTagInputHandler;
+    private final int stopTag;
     private final SiteConfigPreferences              _preferences;
     private final NamedParameterJdbcTemplate         _jdbcTemplate;
     private final JmsTemplate                        _jmsTemplate;
@@ -119,7 +118,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         _entityService       = entityService;
         _serializer          = serializer;
         _dicomFileNamer      = dicomFileNamer;
-        _stopTagInputHandler = DicomUtils.getMaxStopTagInputHandler();
+        stopTag = Tag.PixelData;
         _preferences         = preferences;
         _jdbcTemplate        = jdbcTemplate;
         _jmsTemplate         = jmsTemplate;
@@ -630,7 +629,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         if (results.isEmpty()) {
             throw new NotFoundException("The specified ID does not exist or the request can not be canceled.");
         }
-        return results.get(0);
+        return results.getFirst();
     }
 
     /**
@@ -827,7 +826,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
         request.setRsnStatus(ResourceSurveyRequest.Status.SURVEYING);
         _entityService.update(request);
 
-        final ResourceSurveyHelper helper = new ResourceSurveyHelper(_entityService, request, _serializer, _dicomFileNamer, _stopTagInputHandler);
+        final ResourceSurveyHelper helper = new ResourceSurveyHelper(_entityService, request, _serializer, _dicomFileNamer, stopTag);
         log.debug("Created a resource survey helper for resource survey request {} on resource {}, getting ready to start mitigation", request.getId(), request.getResourceId());
         final ResourceSurveyReport report = helper.call();
         log.info("Finished running resource survey helper mitigation for resource survey request {} on resource {}, report says operation handled {} duplicates, {} mismatched files, and {} bad files", request.getId(), request.getResourceId(), report.getTotalDuplicates(), report.getTotalMismatchedFiles(), report.getTotalBadFiles());
@@ -906,7 +905,7 @@ public class ResourceSurveyServiceImpl implements ResourceSurveyService {
 
     private boolean movedResource(final ResourceSurveyRequest request) {
         List<String> projects = _jdbcTemplate.queryForList(QUERY_GET_RESOURCE_PROJECTS, new MapSqlParameterSource(PARAM_RESOURCE_IDS, Collections.singletonList(request.getResourceId())), String.class);
-        return !(CollectionUtils.isEmpty(projects) || StringUtils.equals(request.getProjectId(), projects.get(0)));
+        return !(CollectionUtils.isEmpty(projects) || StringUtils.equals(request.getProjectId(), projects.getFirst()));
     }
 
     private long queueRequest(final ResourceSurveyRequest request) {

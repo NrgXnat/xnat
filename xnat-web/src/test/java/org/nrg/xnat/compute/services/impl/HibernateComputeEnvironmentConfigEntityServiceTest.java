@@ -213,7 +213,7 @@ public class HibernateComputeEnvironmentConfigEntityServiceTest {
         // Verify
         assertNotNull(retrievedComputeEnvironmentConfigEntities);
         assertEquals(2, retrievedComputeEnvironmentConfigEntities.size());
-        assertEquals(createdComputeEnvironmentConfigEntity1.getId(), retrievedComputeEnvironmentConfigEntities.get(0).getId());
+        assertEquals(createdComputeEnvironmentConfigEntity1.getId(), retrievedComputeEnvironmentConfigEntities.getFirst().getId());
         assertEquals(createdComputeEnvironmentConfigEntity3.getId(), retrievedComputeEnvironmentConfigEntities.get(1).getId());
 
         // Execute
@@ -222,7 +222,7 @@ public class HibernateComputeEnvironmentConfigEntityServiceTest {
         // Verify
         assertNotNull(retrievedComputeEnvironmentConfigEntities);
         assertEquals(2, retrievedComputeEnvironmentConfigEntities.size());
-        assertEquals(createdComputeEnvironmentConfigEntity2.getId(), retrievedComputeEnvironmentConfigEntities.get(0).getId());
+        assertEquals(createdComputeEnvironmentConfigEntity2.getId(), retrievedComputeEnvironmentConfigEntities.getFirst().getId());
         assertEquals(createdComputeEnvironmentConfigEntity3.getId(), retrievedComputeEnvironmentConfigEntities.get(1).getId());
     }
 

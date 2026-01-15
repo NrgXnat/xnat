@@ -409,7 +409,7 @@ public class ScanResource extends ItemResource {
         cc.addClause("xnat:imageScanData/ID", scanId);
         cc.addClause("xnat:imageScanData/image_session_ID", sessionId);
         final List<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(cc, user, completeDocument);
-        return scans.isEmpty() ? null : scans.get(0);
+        return scans.isEmpty() ? null : scans.getFirst();
     }
 
     protected XnatImagescandata getScan() {

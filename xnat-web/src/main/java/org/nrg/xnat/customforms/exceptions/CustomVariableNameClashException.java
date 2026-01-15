@@ -1,8 +1,10 @@
 package org.nrg.xnat.customforms.exceptions;
 
+import java.io.Serial;
 import java.util.List;
 
 public class CustomVariableNameClashException extends Exception {
+    @Serial
     private static final long serialVersionUID = 1L;
     private List<String> clashes;
 

@@ -87,13 +87,13 @@ public class QuickSearchAction extends SecureAction {
                 secureTable(user, table, new String[]{"id"}, "xnat:projectData/ID");
             	if(table.size()>0){
             		if(table.size()==1){
-                		Hashtable row = table.rowHashs().get(0);
+                		Hashtable row = table.rowHashs().getFirst();
                         String projectId = (String) row.get("id");
                         data.getParameters().setString("search_value", projectId);
                         data.getParameters().setString("search_element", "xnat:projectData");
                         data.getParameters().setString("search_field", "xnat:projectData.ID");
                         // Here we're just bouncing the user straight to the subjectData page for this one result
-                        String rdirurl = String.format("%s/app/action/DisplayItemAction/search_value/%s/search_element/xnat:projectData/search_field/xnat:projectData.ID", data.getContextPath(), projectId);
+                        String rdirurl = "%s/app/action/DisplayItemAction/search_value/%s/search_element/xnat:projectData/search_field/xnat:projectData.ID".formatted(data.getContextPath(), projectId);
                         data.setRedirectURI(rdirurl);
                         return;
             		}else{
@@ -129,14 +129,14 @@ public class QuickSearchAction extends SecureAction {
                 {
                     if (table.size()==1)
                     {
-                        Hashtable row = table.rowHashs().get(0);
+                        Hashtable row = table.rowHashs().getFirst();
                         String elementId = (String) row.get("id");
                         String elementName = (String) row.get("element_name");
                         data.getParameters().setString("search_value", elementId);
                         data.getParameters().setString("search_element", elementName);
                         data.getParameters().setString("search_field", elementName + ".ID");
                         // Here we're just bouncing the user straight to the subjectData page for this one result
-                        String rdirurl = String.format("%s/app/action/DisplayItemAction/search_value/%s/search_element/%s/search_field/%s.ID", data.getContextPath(), elementId, elementName, elementName);
+                        String rdirurl = "%s/app/action/DisplayItemAction/search_value/%s/search_element/%s/search_field/%s.ID".formatted(data.getContextPath(), elementId, elementName, elementName);
                         data.getResponse().sendRedirect(rdirurl);
                         return;
                     }
@@ -154,14 +154,14 @@ public class QuickSearchAction extends SecureAction {
                 {
                     if (table.size()==1)
                     {
-                        Hashtable row = table.rowHashs().get(0);
+                        Hashtable row = table.rowHashs().getFirst();
                         String elementId = (String) row.get("id");
                         String elementName = (String) row.get("element_name");
                         data.getParameters().setString("search_value", elementId);
                         data.getParameters().setString("search_element", elementName);
                         data.getParameters().setString("search_field", elementName + ".ID");
                         // Here we're just bouncing the user straight to the subjectData page for this one result
-                        String rdirurl = String.format("%s/app/action/DisplayItemAction/search_value/%s/search_element/%s/search_field/%s.ID", data.getContextPath(), elementId, elementName, elementName);
+                        String rdirurl = "%s/app/action/DisplayItemAction/search_value/%s/search_element/%s/search_field/%s.ID".formatted(data.getContextPath(), elementId, elementName, elementName);
                         data.setRedirectURI(rdirurl);
                     }else{
                         Hashtable<String,Hashtable<String,ArrayList<ItemI>>> hash = new Hashtable<>();

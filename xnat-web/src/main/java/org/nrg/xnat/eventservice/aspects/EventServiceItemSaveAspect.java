@@ -78,12 +78,12 @@ public class EventServiceItemSaveAspect {
 
             } else if (isItemA(item, XnatType.PROJECT) || isItemA(item, XnatType.ARC_PROJECT)) {
                 log.debug("Project Data Save" + " : xsiType:" + item.getXSIType());
-                boolean alreadyStored = item instanceof ArcProjectI ? xnatObjectIntrospectionService.storedInDatabase((ArcProjectI) item) :
+                boolean alreadyStored = item instanceof ArcProjectI api ? xnatObjectIntrospectionService.storedInDatabase(api) :
                         xnatObjectIntrospectionService.storedInDatabase(new ArcProject(item));
                 if (!alreadyStored){
                     log.debug("New Project Data Save" + " : xsiType:" + item.getXSIType());
                     proceedingReturn = joinPoint.proceed();
-                    triggerProjectCreate(item instanceof XnatProjectdataI ? (XnatProjectdataI) item : new XnatProjectdata(item), user);
+                    triggerProjectCreate(item instanceof XnatProjectdataI xpi ? xpi : new XnatProjectdata(item), user);
                 } else {
                     log.debug("Existing Project Data Save" + " : xsiType:" + item.getXSIType());
                     log.debug("ProjectEvent.Status.UPDATED detected - no-op");
@@ -94,8 +94,8 @@ public class EventServiceItemSaveAspect {
                 }
             } else if (isItemA(item, XnatType.PROJECT_ASSET)) {
                 log.debug("Project Asset Data Save" + " : xsiType:" + item.getXSIType());
-                XnatAbstractprojectassetI projectAsset = item instanceof XnatAbstractprojectassetI ?
-                        (XnatAbstractprojectassetI) item : new XnatAbstractprojectasset(item) {};
+                XnatAbstractprojectassetI projectAsset = item instanceof XnatAbstractprojectassetI xai ?
+                        xai : new XnatAbstractprojectasset(item) {};
                 proceedingReturn = joinPoint.proceed();
                 triggerProjectAssetCreate(projectAsset, user);
                 if (log.isDebugEnabled() && sw.isRunning()) {
@@ -103,7 +103,7 @@ public class EventServiceItemSaveAspect {
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
                 }
             } else if (isItemA(item, XnatType.SUBJECT)) {
-                XnatSubjectdataI subject = item instanceof XnatSubjectdataI ? (XnatSubjectdataI) item : new XnatSubjectdata(item);
+                XnatSubjectdataI subject = item instanceof XnatSubjectdataI xsi ? xsi : new XnatSubjectdata(item);
                 Boolean alreadyStored = xnatObjectIntrospectionService.storedInDatabase(subject);
                 if (!alreadyStored) {
                     // New subject save
@@ -182,11 +182,11 @@ public class EventServiceItemSaveAspect {
                     log.debug("Event detection took " + sw.getTotalTimeMillis() + " milliseconds.");
                 }
             } else if (isItemA(item, XnatType.SUBJECT_ASSESSOR)) {
-                XnatSubjectassessordataI subjectAssessor = item instanceof XnatSubjectassessordataI ? (XnatSubjectassessordataI) item : new XnatSubjectassessordata(item);
+                XnatSubjectassessordataI subjectAssessor = item instanceof XnatSubjectassessordataI xsi ? xsi : new XnatSubjectassessordata(item);
                 boolean subAssessorAlreadyStored = xnatObjectIntrospectionService.storedInDatabase(subjectAssessor);
 
                 if (isItemA(item, XnatType.SESSION)) {
-                    XnatImagesessiondataI session = item instanceof XnatImagesessiondataI ? (XnatImagesessiondataI) item : new XnatImagesessiondata(item);
+                    XnatImagesessiondataI session = item instanceof XnatImagesessiondataI xii ? xii : new XnatImagesessiondata(item);
                     if (!subAssessorAlreadyStored) {
                         log.debug("New Session Data Save : xsiType: {}", item.getXSIType());
 
@@ -230,7 +230,7 @@ public class EventServiceItemSaveAspect {
                 }
             } else if (item instanceof XnatResource || StringUtils.equals(item.getXSIType(), "xnat:resourceCatalog")) {
                 log.debug("Resource Data Save" + " : xsiType:" + item.getXSIType());
-                XnatResourceI resource = item instanceof XnatResourceI ? (XnatResourceI) item : new XnatResource(item);
+                XnatResourceI resource = item instanceof XnatResourceI xri ? xri : new XnatResource(item);
                 String project = (String) (item.getProperty("project"));
                 if ((project == null || project.isEmpty()) && item.getParent() != null) {
                     project = (String) (item.getParent().getProperty("project"));

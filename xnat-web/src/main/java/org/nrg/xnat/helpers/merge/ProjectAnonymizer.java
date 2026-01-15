@@ -113,8 +113,7 @@ public class ProjectAnonymizer extends AnonymizerA {
         // anonymize everything in srcRootPath
         for (final XnatImagescandataI scan : s.getScans_scan()) {
             for (final XnatAbstractresourceI abstractResource : scan.getFile()) {
-                if (abstractResource instanceof XnatResource) {
-                    final XnatResource resource = (XnatResource) abstractResource;
+                if (abstractResource instanceof XnatResource resource) {
                     if ("DICOM".equals(resource.getFormat())) {
                         for (final File file : resource.getCorrespondingFiles(this.sessionPath)) {
                             ret.add(file);

@@ -24,6 +24,7 @@ import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -36,6 +37,8 @@ import java.util.stream.Stream;
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Assessor extends XnatModelObject {
+    @Serial
+    private static final long serialVersionUID = 1;
     @JsonIgnore private XnatImageassessordataI xnatImageassessordataI;
     @JsonIgnore private XnatImagesessiondata parent;
     private List<Resource> resources;

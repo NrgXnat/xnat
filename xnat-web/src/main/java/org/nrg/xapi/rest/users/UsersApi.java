@@ -224,10 +224,10 @@ public class UsersApi extends AbstractXapiRestController {
         final Map<String, Map<String, Object>> activeUsers = new HashMap<>();
         for (final Object principal : _sessionRegistry.getAllPrincipals()) {
             final String username;
-            if (principal instanceof String) {
-                username = (String) principal;
-            } else if (principal instanceof UserDetails) {
-                username = ((UserDetails) principal).getUsername();
+            if (principal instanceof String string) {
+                username = string;
+            } else if (principal instanceof UserDetails details) {
+                username = details.getUsername();
             } else {
                 username = principal.toString();
             }
@@ -943,7 +943,7 @@ public class UsersApi extends AbstractXapiRestController {
     @Nullable
     private Object locatePrincipalByUsername(final String username) {
         return _sessionRegistry.getAllPrincipals().stream().filter((principal) -> principal instanceof String && username.equals(principal) ||
-                                                                                  principal instanceof UserDetails && username.equals(((UserDetails) principal).getUsername()) ||
+                                                                                  principal instanceof UserDetails ud && username.equals(ud.getUsername()) ||
                                                                                   username.equals(principal.toString())).findFirst().orElse(null);
     }
 

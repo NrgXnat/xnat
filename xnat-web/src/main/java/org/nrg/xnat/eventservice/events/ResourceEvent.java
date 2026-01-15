@@ -6,12 +6,16 @@ import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @XnatEventServiceEvent(name="ResourceEvent")
 public class ResourceEvent extends AbstractEventServiceEvent<XnatResourcecatalogI> {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public enum Status {CREATED, UPDATED};
 

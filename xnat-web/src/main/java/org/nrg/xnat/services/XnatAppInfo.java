@@ -663,7 +663,7 @@ public class XnatAppInfo {
             return null;
         }
         try {
-            return new URL(siteUrl).getHost();
+            return URI.create(siteUrl).toURL().getHost();
         } catch (MalformedURLException e) {
             log.info("The site URL \"{}\" is invalid, returning null for site address", siteUrl);
             return null;
@@ -695,7 +695,7 @@ public class XnatAppInfo {
         if (hostNames.isEmpty()) {
             return "localhost";
         }
-        return hostNames.contains(_siteAddress) ? _siteAddress : hostNames.iterator().next();
+        return hostNames.contains(_siteAddress) ? _siteAddress : hostNames.getFirst();
     }
 
     /**
@@ -762,22 +762,22 @@ public class XnatAppInfo {
             if (StringUtils.equals(refererHost, requestHost) && refererPort == requestPort) {
                 final boolean protocolMismatch = _preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererScheme, requestScheme);
                 if (protocolMismatch) {
-                    final String message = String.format("The referer URI matched request URI host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d",
-                                                         refererScheme, refererHost, refererPort, requestScheme, requestHost, requestPort);
+                    final String message = "The referer URI matched request URI host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d".formatted(
+                            refererScheme, refererHost, refererPort, requestScheme, requestHost, requestPort);
                     throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
                 }
                 log.info("Referer host and port matched request host and port, valid referer.");
             } else if (StringUtils.isNotBlank(siteUrl.toString()) && StringUtils.equals(refererHost, siteUrl.getHost()) && refererPort == siteUrl.getPort()) {
                 final boolean protocolMismatch = _preferences.getMatchSecurityProtocol() && !StringUtils.equals(refererScheme, siteUrl.getScheme());
                 if (protocolMismatch) {
-                    final String message = String.format("The referer URI matched the configured site URL host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d",
-                                                         refererScheme, refererHost, refererPort, siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
+                    final String message = "The referer URI matched the configured site URL host and port, but did not match the security protocol. This is not permitted with the match security protocol setting set to true:\n * Referer: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d".formatted(
+                            refererScheme, refererHost, refererPort, siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
                     throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
                 }
                 log.info("Referer host and port matched site URL host and port, valid referer.");
             } else {
-                final String message = String.format("The referer URI did not match either the request URI or the configured site URL:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d",
-                                                     refererScheme, refererHost, refererPort, requestScheme, requestHost, requestPort, siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
+                final String message = "The referer URI did not match either the request URI or the configured site URL:\n * Referer: scheme %s, host %s, port %d\n * Request: scheme %s, host %s, port %d\n * Site URL: scheme %s, host %s, port %d".formatted(
+                        refererScheme, refererHost, refererPort, requestScheme, requestHost, requestPort, siteUrl.getScheme(), siteUrl.getHost(), siteUrl.getPort());
                 throw new NrgServiceRuntimeException(NrgServiceError.SecurityViolation, message);
             }
 

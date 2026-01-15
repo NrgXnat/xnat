@@ -131,7 +131,7 @@ created in buildPDF.
                             }
                         }
                         
-                        XnatImagesessiondata mr = (XnatImagesessiondata)al.get(0);
+                        XnatImagesessiondata mr = (XnatImagesessiondata)al.getFirst();
                        
                 		fw.write(mr.getId() +" Archive Download Summary \n");
                 		int successful = 0;

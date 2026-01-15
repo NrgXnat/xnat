@@ -14,13 +14,15 @@ import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 import org.nrg.xdat.XDAT;
 
+import java.security.GeneralSecurityException;
+
 @SuppressWarnings("unused")
 public class DicomSCPSiteConfigurationListener implements SiteConfigurationPropertyChangedListener {
 	@Override
 	public void siteConfigurationPropertyChanged(String propertyName, String newPropertyValue) {
 		try {
 			XDAT.getContextService().getBean(DicomSCPManager.class).start();
-		} catch (UnknownDicomHelperInstanceException | DicomNetworkException e) {
+		} catch (UnknownDicomHelperInstanceException | DicomNetworkException | GeneralSecurityException e) {
 			throw new RuntimeException(e);
 		}
 	}

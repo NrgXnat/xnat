@@ -113,6 +113,7 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -579,7 +580,7 @@ public abstract class SecureResource extends Resource {
     }
 
     public void returnDefaultRepresentation() {
-        returnRepresentation(getRepresentation(getVariants().get(0)));
+        returnRepresentation(getRepresentation(getVariants().getFirst()));
     }
 
     public Representation representItem(XFTItem item, MediaType mt, Hashtable<String, Object> metaFields, boolean allowDBAccess, boolean allowSchemaLocation) {
@@ -761,7 +762,7 @@ public abstract class SecureResource extends Resource {
                                 item = reader.parse(fi.getInputStream());
 
                                 if (!reader.assertValid()) {
-                                    throw reader.getErrors().get(0);
+                                    throw reader.getErrors().getFirst();
                                 }
                                 if (XFT.VERBOSE) {
                                     System.out.println("Loaded XML Item:" + item.getProperName());
@@ -806,7 +807,7 @@ public abstract class SecureResource extends Resource {
                     item = reader.parse(sax);
 
                     if (!reader.assertValid()) {
-                        throw reader.getErrors().get(0);
+                        throw reader.getErrors().getFirst();
                     }
                     if (XFT.VERBOSE) {
                         System.out.println("Loaded XML Item:" + item.getProperName());
@@ -991,7 +992,7 @@ public abstract class SecureResource extends Resource {
             	final String path = reference.getPath();
             	final String remainingPart = reference.getRemainingPart(false,false);
             	final String basePath = (remainingPart.length()> 0 && path.contains(remainingPart)) ? path.substring(0,path.lastIndexOf(remainingPart)) : path;
-                final URL siteUrl = new URL(siteUrlProperty);
+                final URL siteUrl = URI.create(siteUrlProperty).toURL();
                 reference.setProtocol(new Protocol(siteUrl.getProtocol()));
                 reference.setAuthority(siteUrl.getAuthority());
                 reference.setBaseRef(reference.getScheme() + "://" + reference.getAuthority() + basePath);
@@ -1045,8 +1046,8 @@ public abstract class SecureResource extends Resource {
         if (queryVariableObj == null) {
             return false;
         }
-        if (queryVariableObj instanceof String) {
-            return !(StringUtils.equalsAnyIgnoreCase((String) queryVariableObj, "false", "0"));
+        if (queryVariableObj instanceof String string) {
+            return !(StringUtils.equalsAnyIgnoreCase(string, "false", "0"));
         } else {
             return false;
         }
@@ -1400,8 +1401,7 @@ public abstract class SecureResource extends Resource {
 
                 for (XFTItem resource : hash) {
                     ItemI om = BaseElement.GetGeneratedItem(resource);
-                    if (om instanceof XnatAbstractresource) {
-                        XnatAbstractresource resourceA = (XnatAbstractresource) om;
+                    if (om instanceof XnatAbstractresource resourceA) {
                         resourceA.deleteWithBackup(item.getArchiveRootPath(), item.getProject(), user, ci);
                         builder.item(resource);
                     }
@@ -1654,8 +1654,8 @@ public abstract class SecureResource extends Resource {
             shared.setLabel(newLabel);
         }
         if (shareAllScans) {
-            if (experiment instanceof XnatImagesessiondata) {
-                for (XnatImagescandataI scan : ((XnatImagesessiondata) experiment).getScans_scan()) {
+            if (experiment instanceof XnatImagesessiondata imagesessiondata) {
+                for (XnatImagescandataI scan : imagesessiondata.getScans_scan()) {
                     shareScanToProject(user, newProject, (XnatImagescandata) scan);
                 }
             }

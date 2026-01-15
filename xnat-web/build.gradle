@@ -9,7 +9,7 @@
 
 buildscript {
     ext {
-        vXnat = "1.9.4-SNAPSHOT"
+        vXnat = "1.10.0-RC-SNAPSHOT"
     }
 }
 
@@ -21,34 +21,41 @@ plugins {
     id "java-library"
     id "maven-publish"
     id "war"
-    id "com.bmuschko.cargo" version "2.8.0"
-    id "com.bmuschko.tomcat" version "2.5"
-    id "com.dorongold.task-tree" version "1.5"
-    id "com.palantir.git-version" version "0.12.1"
-    id "io.franzbecker.gradle-lombok" version "4.0.0"
-    id "io.spring.dependency-management" version "1.0.11.RELEASE"
+    id "com.dorongold.task-tree" version "4.0.1"
+    id "com.palantir.git-version" version "4.2.0"
+    id "io.freefair.lombok" version "9.1.0"
+    id "io.spring.dependency-management" version "1.1.7"
 }
 
-group "org.nrg.xnat"
-version vXnat
-description "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve."
+group = "org.nrg.xnat"
+version = vXnat
+description = "XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve."
 
 repositories {
     mavenLocal()
-    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
-    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
+    maven { url = "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
+    maven { url = "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
     mavenCentral()
-}
+    maven { url = "https://maven.dcm4che.org" }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+    //adding this temporarily due to failure to pull a dicom4che dependency reliably
+    maven {
+        url = "https://raw.githubusercontent.com/nroduit/mvn-repo/master"
+        metadataSources {
+            mavenPom()
+            artifact()
+        }
+    }
+}
 
 war.archiveBaseName.set hasProperty("archiveName") ? (archiveName.endsWith(".war") ? archiveName : "${archiveName}.war") : "xnat-web"
 
 configurations {
-    javadocCoverage
+    configureEach {
+        resolutionStrategy {
+            force "org.mockito:mockito-core:${dependencyManagement.importedProperties["mockito.version"] as String}"
+        }
 
-    all {
         exclude group: "ant", module: "ant"
         exclude group: "avalon-logkit"
         exclude group: "berkeleydb"
@@ -125,10 +132,6 @@ dependencyManagement {
     }
 }
 
-configurations.all {
-    resolutionStrategy.force "org.mockito:mockito-core:${dependencyManagement.importedProperties["mockito.version"] as String}"
-}
-
 dependencies {
     annotationProcessor "org.nrg:framework"
     annotationProcessor "com.google.auto.value:auto-value"
@@ -180,6 +183,7 @@ dependencies {
     implementation "dcm4che:dcm4che-net"
     implementation "net.imagej:ij"
     implementation "org.dcm4che:dcm4che-core"
+    implementation "org.dcm4che:dcm4che-net"
     implementation "org.dcm4che:dcm4che-image"
     implementation "org.dcm4che:dcm4che-imageio"
 
@@ -289,17 +293,6 @@ dependencies {
     runtimeOnly "org.python:jython-standalone"
     runtimeOnly "org.bouncycastle:bcpkix-jdk18on"
 
-    tomcat "org.apache.tomcat.embed:tomcat-embed-core",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli:9.0.0.M6",
-            "org.apache.tomcat.embed:tomcat-embed-jasper"
-
-    cargo "org.codehaus.cargo:cargo-core-uberjar",
-            "org.codehaus.cargo:cargo-ant",
-            "org.slf4j:jcl-over-slf4j",
-            "org.slf4j:slf4j-api",
-            "ch.qos.logback:logback-classic",
-            "ch.qos.logback:logback-core"
-
     testImplementation "org.nrg:test"
     testImplementation "junit:junit"
     testImplementation "org.springframework:spring-test"
@@ -308,30 +301,17 @@ dependencies {
     testImplementation "org.springframework.security:spring-security-config"
     testImplementation "org.hamcrest:hamcrest"
     testImplementation "org.mockito:mockito-core"
-    testImplementation "org.powermock:powermock-api-mockito2"
-    testImplementation "org.powermock:powermock-module-junit4"
-
-    javadocCoverage "com.manoelcampos:javadoc-coverage"
+    testImplementation "org.testcontainers:testcontainers"
+    testImplementation "org.testcontainers:junit-jupiter"
+    testImplementation "org.testcontainers:postgresql"
 }
 
 idea {
     module {
         inheritOutputDirs = false
-        outputDir = compileJava.destinationDir
-        testOutputDir = compileTestJava.destinationDir
+        outputDir = compileJava.destinationDirectory.get().asFile
+        testOutputDir = compileTestJava.destinationDirectory.get().asFile
     }
-}
-
-lombok {
-    version = dependencyManagement.importedProperties["lombok.version"] as String
-    sha256 = dependencyManagement.importedProperties["lombok.checksum"] as String
-}
-
-tomcatRun.contextPath = "/"
-tomcatRunWar.contextPath = "/"
-
-[tomcatRun, tomcatRunWar].each { task ->
-    task.additionalRuntimeResources << file("${System.getenv().XNAT_HOME ?: System.getenv().HOME}/config/plugins")
 }
 
 ["Java", "War"].each { type ->
@@ -348,26 +328,10 @@ tomcatRunWar.contextPath = "/"
     }
 }
 
-task deployToTomcat(type: Copy, dependsOn: war) {
+tasks.register("deployToTomcat", Copy) {
+    dependsOn war
     from war.archiveFile
     into "${propertyWithDefault("tomcatHome", ".")}/webapps"
-}
-
-cargo {
-    // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command line in
-    // the form -PdeployPort=8080 -PdeployContext=/ -PdeployHost=localhost -PdeployUser=deploy -PdeployPassword=deploy
-    containerId = "tomcat8x"
-    port = propertyWithDefault("deployPort", 8080) as int
-
-    deployable {
-        context = propertyWithDefault("deployContext", "/")
-    }
-
-    remote {
-        hostname = propertyWithDefault("deployHost", "localhost")
-        username = propertyWithDefault("deployUser", "deploy")
-        password = propertyWithDefault("deployPassword", "deploy")
-    }
 }
 
 // Pulls in the Jenkins BUILD_NUMBER environment variable if available.
@@ -406,35 +370,25 @@ logger.info "Implementation-Branch:   ${branchName}"
 logger.info "Implementation-CleanTag: ${isCleanTag}"
 logger.info "Implementation-Dirty:    ${isDirty}"
 
-ext.gitManifest = manifest {
-    attributes "Application-Name": "XNAT",
-            "Build-Date": buildDate,
-            "Build-Number": buildNumber,
-            "Implementation-Version": project.version,
-            "Implementation-Sha": gitHash,
-            "Implementation-Sha-Full": gitHashFull,
-            "Implementation-Commit": commitDistance,
-            "Implementation-LastTag": lastTag,
-            "Implementation-Branch": branchName,
-            "Implementation-CleanTag": isCleanTag,
-            "Implementation-Dirty": isDirty
-}
-
-jar {
-    manifest {
-        from gitManifest
-    }
-}
-
-war {
+tasks.withType(Jar).configureEach {
     duplicatesStrategy = DuplicatesStrategy.WARN
     manifest {
-        from gitManifest
+        attributes "Application-Name": project.description,
+                "Build-Date": buildDate,
+                "Build-Number": buildNumber,
+                "Implementation-Version": project.version,
+                "Implementation-Sha": gitHash,
+                "Implementation-Sha-Full": gitHashFull,
+                "Implementation-Commit": commitDistance,
+                "Implementation-LastTag": lastTag,
+                "Implementation-Branch": branchName,
+                "Implementation-CleanTag": isCleanTag,
+                "Implementation-Dirty": isDirty
     }
 }
 
 test {
-    systemProperties["xnat.home"] = "${buildDir}/tmp/test"
+    systemProperties["xnat.home"] = compileJava.destinationDirectory.get().dir("/tmp/test").asFile.absolutePath
 }
 
 jacoco {
@@ -450,39 +404,16 @@ jacocoTestReport {
     }
 }
 
-task javadocCoverageReport(type: Javadoc, dependsOn: javadoc) {
-    source = sourceSets.main.allJava
-    destinationDir = reporting.file("javadoc")
-    classpath = configurations.compileClasspath
-    options.docletpath = configurations.javadocCoverage.files.asType(List)
-    options.doclet = "com.manoelcampos.javadoc.coverage.CoverageDoclet"
-}
-
-task sourceJar(type: Jar, dependsOn: classes) {
-    classifier "sources"
-    manifest {
-        from gitManifest
-    }
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar) {
-    classifier "javadoc"
-    manifest {
-        from gitManifest
-    }
-    from javadoc.destinationDir
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
 }
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-
-            artifacts {
-                artifact sourceJar
-                artifact javadocJar
-            }
 
             pom.withXml {
                 def root = asNode()
@@ -503,9 +434,9 @@ publishing {
     }
     repositories {
         maven {
-            url project.version.endsWith("-SNAPSHOT") ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
             // The value for name must match <id> in ~/.m2/settings.xml
             name = "XNAT_Artifactory"
+            url = project.version.endsWith("-SNAPSHOT") ? "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local" : "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
         }
     }
 }

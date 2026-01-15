@@ -27,6 +27,8 @@ import org.nrg.xnat.helpers.uri.archive.AssessedURII;
 import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -35,6 +37,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Session extends XnatModelObject {
+    @Serial
+    private static final long serialVersionUID = 1;
     @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
     private List<Scan> scans;
     private List<Assessor> assessors;
@@ -104,8 +108,8 @@ public class Session extends XnatModelObject {
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagesessiondataI.getResources_resource()) {
-            if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, rootArchivePath));
+            if (xnatAbstractresourceI instanceof XnatResourcecatalog resourcecatalog) {
+                resources.add(new Resource(resourcecatalog, this.uri, rootArchivePath));
             }
         }
 

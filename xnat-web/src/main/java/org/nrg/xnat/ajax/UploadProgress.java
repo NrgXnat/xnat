@@ -29,8 +29,8 @@ public class UploadProgress {
                 StringBuffer sb = new StringBuffer();
                 sb.append("<uploadStatus upload=\"0\" extract=\"0\"/>");
                 
-                req.getSession().setAttribute(uploadID + "Upload",new Integer(0));
-                req.getSession().setAttribute(uploadID + "Extract",new Integer(0));
+                req.getSession().setAttribute(uploadID + "Upload",Integer.valueOf(0));
+                req.getSession().setAttribute(uploadID + "Extract",Integer.valueOf(0));
                 response.setContentType("text/xml");
                 response.setHeader("Cache-Control", "no-cache");
                 response.getWriter().write(sb.toString());
@@ -66,8 +66,8 @@ public class UploadProgress {
                 StringBuffer sb = new StringBuffer();
                 sb.append("<uploadStatus upload=\"0\" extract=\"0\"/>");   
                 
-                req.getSession().setAttribute(uploadID + "Upload",new Integer(0));
-                req.getSession().setAttribute(uploadID + "Extract",new Integer(0));
+                req.getSession().setAttribute(uploadID + "Upload",Integer.valueOf(0));
+                req.getSession().setAttribute(uploadID + "Extract",Integer.valueOf(0));
                 req.getSession().setAttribute(uploadID + "status",new ArrayList());
                 response.setContentType("text/xml");
                 response.setHeader("Cache-Control", "no-cache");

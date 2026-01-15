@@ -61,9 +61,9 @@ public class MergePrearchiveSessions extends MergeSessionsA<XnatImagesessiondata
 						if(destRes==null){
 							destScan.addFile(srcRes);
 						}else{
-							if(destRes instanceof XnatResourcecatalogI){
+							if(destRes instanceof XnatResourcecatalogI resourcecatalogI){
 								MergeSessionsA.Results<File> r=mergeCatalogs(srcProject, srcRootPath, (XnatResourcecatalogI) srcRes,
-										destProject, destRootPath, (XnatResourcecatalogI) destRes);
+										destProject, destRootPath, resourcecatalogI);
 								if(r!=null){
 									toDelete.add(r.result);
 									result.addAll(r);

@@ -108,7 +108,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
 
                 final ArrayListMultimap<String, String> invertedProjectSessionMap = Multimaps.invertFrom(projectSessionMap, ArrayListMultimap.create());
                 final Collection<String> sessionsUserCanDownload = sessionsUserCanAccess.stream()
-                        .filter(s -> Features.checkRestrictedFeature(user, hasProjectId ? getPrimaryProject(user, s) : invertedProjectSessionMap.get(s).get(0),"data_download"))
+                        .filter(s -> Features.checkRestrictedFeature(user, hasProjectId ? getPrimaryProject(user, s) : invertedProjectSessionMap.get(s).getFirst(),"data_download"))
                         .collect(Collectors.toList());
 
                 if (sessionsUserCanDownload.isEmpty()) {
@@ -166,7 +166,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
     }
 
     private Map<String, Integer> mergeMap(Map<String, Integer> source, List<List<String>> newResults) {
-        Map<String, Integer> newResultsMap = newResults.stream().collect(Collectors.toMap(value -> value.get(0), value -> Integer.valueOf(value.get(1))));
+        Map<String, Integer> newResultsMap = newResults.stream().collect(Collectors.toMap(value -> value.getFirst(), value -> Integer.valueOf(value.get(1))));
         newResultsMap.forEach((k, v) -> source.merge(k, v, Integer::sum));
         return source;
     }
@@ -345,7 +345,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
             final List<String> item = new ArrayList<>();
             item.add(result.getString(_attribute));
             item.add(Integer.toString(result.getInt("count")));
-            log.debug("Processed row {} with {}: {} and count {}", index, _attribute, item.get(0), item.get(1));
+            log.debug("Processed row {} with {}: {} and count {}", index, _attribute, item.getFirst(), item.get(1));
             return item;
         }
 
@@ -375,7 +375,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
             if (assessor == null) {
                 return null;
             }
-            assessor.add(ElementSecurity.GetPluralDescription(assessor.get(0)));
+            assessor.add(ElementSecurity.GetPluralDescription(assessor.getFirst()));
             return assessor;
         }
     };

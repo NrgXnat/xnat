@@ -6,10 +6,14 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import javax.annotation.Nullable;
 import javax.persistence.*;
 
+import java.io.Serial;
+
 @Slf4j
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"key", "userId"}))
 public class EventTrackingData extends AbstractHibernateEntity {
+    @Serial
+    private static final long serialVersionUID = 1;
     private String key;
     @Nullable private String payload;
     @Nullable private Boolean succeeded;

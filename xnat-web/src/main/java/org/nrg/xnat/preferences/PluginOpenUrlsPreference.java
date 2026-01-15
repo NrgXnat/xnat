@@ -1,6 +1,7 @@
 package org.nrg.xnat.preferences;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -27,6 +28,9 @@ import com.google.common.collect.Lists;
 @NrgPreferenceBean(toolId = "pluginOpenUrls", toolName = "Plugin Open URL Preferences", 
 					description = "Manages plugin open URL authorization", strict = true)
 public class PluginOpenUrlsPreference extends AbstractPreferenceBean {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 	
 	static {
 		

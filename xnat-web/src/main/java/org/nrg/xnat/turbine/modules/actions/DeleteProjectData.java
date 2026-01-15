@@ -89,8 +89,7 @@ public class DeleteProjectData extends SecureAction {
                                             String archivePath = project.getRootArchivePath();
                                             for (XFTItem resource : hash) {
                                                 ItemI om = BaseElement.GetGeneratedItem(resource);
-                                                if (om instanceof XnatAbstractresource) {
-                                                    XnatAbstractresource resourceA = (XnatAbstractresource) om;
+                                                if (om instanceof XnatAbstractresource resourceA) {
                                                     resourceA.deleteWithBackup(archivePath, projectId, user, ci);
                                                     if (!deleteProject) {
                                                         builder.element(resourceA);
@@ -112,8 +111,8 @@ public class DeleteProjectData extends SecureAction {
                                     }
                                 }
                             } else {
-                                if (exptI instanceof XnatImagesessiondata) {
-                                    for (XnatImageassessordataI expt : ((XnatImagesessiondata) exptI).getAssessors_assessor()) {
+                                if (exptI instanceof XnatImagesessiondata imagesessiondata) {
+                                    for (XnatImageassessordataI expt : imagesessiondata.getAssessors_assessor()) {
                                         if (TurbineUtils.HasPassedParameter("expt_" + expt.getId().toLowerCase(), data)) {
 
                                             if (expt.getProject().equals(project.getId())) {
@@ -124,8 +123,7 @@ public class DeleteProjectData extends SecureAction {
                                                         String archivePath = project.getRootArchivePath();
                                                         for (XFTItem resource : hash) {
                                                             ItemI om = BaseElement.GetGeneratedItem(resource);
-                                                            if (om instanceof XnatAbstractresource) {
-                                                                XnatAbstractresource resourceA = (XnatAbstractresource) om;
+                                                            if (om instanceof XnatAbstractresource resourceA) {
                                                                 resourceA.deleteWithBackup(archivePath, projectId, user, ci);
                                                                 if (!deleteProject) {
                                                                     builder.element(resourceA);

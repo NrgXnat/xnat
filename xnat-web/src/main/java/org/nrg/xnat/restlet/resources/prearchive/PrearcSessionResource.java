@@ -162,7 +162,7 @@ public final class PrearcSessionResource extends SecureResource {
                     getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, "Projects in the unassigned folder cannot be archived.");
                     return null;
                 }
-                getResponse().redirectSeeOther(getContextPath() + String.format("/app/action/LoadImageData/project/%s/timestamp/%s/folder/%s/popup/%s", project, timestamp, session, StringUtils.equalsIgnoreCase(getQueryVariable("popup"), "true") ? "true" : "false"));
+                getResponse().redirectSeeOther(getContextPath() + "/app/action/LoadImageData/project/%s/timestamp/%s/folder/%s/popup/%s".formatted(project, timestamp, session, StringUtils.equalsIgnoreCase(getQueryVariable("popup"), "true") ? "true" : "false"));
                 return null;
             }
 

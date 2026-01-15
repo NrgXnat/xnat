@@ -24,11 +24,15 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 
+import java.io.Serial;
+
 /**
  * @author timo
  *
  */
 public class DirectProjResourceImpl extends ResourceModifierA {
+    @Serial
+    private static final long serialVersionUID = 1;
 	private final XnatProjectdata proj;
 	
 	public DirectProjResourceImpl(final XnatProjectdata proj,final boolean overwrite, final UserI user, final EventMetaI ci){

@@ -187,8 +187,7 @@ public final class UriParserUtils {
                 log.debug("Found an XnatImagescandata object (actually {}) with ID '{}'", objectClass.getName(), id);
                 parameters.put(XnatImagescandata.SCHEMA_ELEMENT_NAME, id);
                 parameters.put(XnatExperimentdata.SCHEMA_ELEMENT_NAME, scan.getImageSessionId());
-            } else if (object instanceof String) {
-                final String value = (String) object;
+            } else if (object instanceof String value) {
                 final String name  = StringUtils.equalsAny(value, "in", "out") ? "type" : "xname";
                 log.debug("Found a string '{}' with value '{}'", name, value);
                 parameters.put(name, value);

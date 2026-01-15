@@ -86,7 +86,7 @@ public class RequestProjectBundle {
                     XnatAbstractprotocol protocolOM = null;
                     if (al.size()>0)
                     {
-                        protocolOM =(XnatAbstractprotocol) al.get(0);
+                        protocolOM =(XnatAbstractprotocol) al.getFirst();
                         
                         ds =UserHelper.getSearchHelperService().getSearchForUser(user,protocolOM.getDataType(), "listing");
                         CriteriaCollection cc = new CriteriaCollection("OR");

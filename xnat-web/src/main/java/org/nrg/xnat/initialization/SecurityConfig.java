@@ -333,7 +333,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     private boolean containsDbAuthProvider(final List<AuthenticationProvider> providers) {
-        return providers.stream().anyMatch(provider -> provider instanceof XnatAuthenticationProvider && StringUtils.equals(_dbAuthProviderName, ((XnatAuthenticationProvider) provider).getName()));
+        return providers.stream().anyMatch(provider -> provider instanceof XnatAuthenticationProvider xap && StringUtils.equals(_dbAuthProviderName, xap.getName()));
     }
 
     private static List<AuthenticationProvider> expand(final List<AuthenticationProvider> providers) {

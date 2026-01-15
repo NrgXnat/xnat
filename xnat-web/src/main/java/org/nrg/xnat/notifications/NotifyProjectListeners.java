@@ -124,8 +124,8 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 
 			XnatResourcecatalog res=null;
 			for(XnatAbstractresourceI r: project.getResources_resource()){
-				if(r instanceof XnatResourcecatalog && NOTIFICATIONS.equals(r.getLabel())){
-					res=(XnatResourcecatalog)r;
+				if(r instanceof XnatResourcecatalog resourcecatalog && NOTIFICATIONS.equals(r.getLabel())){
+					res=resourcecatalog;
 				}
 			}
 

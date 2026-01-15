@@ -104,7 +104,7 @@ public class SearchResource extends SecureResource {
                                 item = reader.parse(fi.getInputStream());
 
                                 if (!reader.assertValid()) {
-                                    throw reader.getErrors().get(0);
+                                    throw reader.getErrors().getFirst();
                                 }
                                 if (XFT.VERBOSE) {
                                     System.out.println("Loaded XML Item:" + item.getProperName());
@@ -135,7 +135,7 @@ public class SearchResource extends SecureResource {
                         item = reader.parse(sax);
 
                         if (!reader.assertValid()) {
-                            throw reader.getErrors().get(0);
+                            throw reader.getErrors().getFirst();
                         }
                         if (XFT.VERBOSE) {
                             System.out.println("Loaded XML Item:" + item.getProperName());

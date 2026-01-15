@@ -56,7 +56,10 @@ import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -216,8 +219,8 @@ public class CatalogUtils {
                             throw exception;
                         }
                     }
-                    if (base instanceof CatCatalogBean) {
-                        cat = (CatCatalogBean) base;
+                    if (base instanceof CatCatalogBean bean) {
+                        cat = bean;
                         catFileChecksum = getHash(catFile, false);
                         if (StringUtils.isBlank(catFileChecksum)) {
                             throw new ServerException("Unable to compute checksum for " + catFile + ". This will be needed to safely write the catalog");
@@ -268,7 +271,7 @@ public class CatalogUtils {
             } else if (projects.size() > 1) {
                 log.warn("Multiple projects associated with resource id={}: {}. Using the first...", id, projects);
             }
-            return projects.get(0);
+            return projects.getFirst();
         }
 
         public static Optional<CatalogData> get(final XnatResourcecatalog catalogResource, @Nullable final String projectId)
@@ -298,8 +301,8 @@ public class CatalogUtils {
                                               @Nullable final String project)
                 throws ServerException {
             File f = getOrCreateCatalogFile(rootPath, resource, project);
-            XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog) ?
-                    (XnatResourcecatalog) resource : null;
+            XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog xr) ?
+                    xr : null;
             return new CatalogData(f, catRes, project);
         }
 
@@ -510,7 +513,7 @@ public class CatalogUtils {
             relPath = StringUtils.defaultIfBlank(entry.getCachepath(), entry.getId());
             if (StringUtils.isBlank(relPath) && catalogPath != null) {
                 // Try to relativize against parent
-                relPath = Paths.get(catalogPath).relativize(Paths.get(uri)).toString();
+                relPath = Path.of(catalogPath).relativize(Path.of(uri)).toString();
             }
         }
         return StringUtils.defaultIfBlank(relPath, uri);
@@ -546,7 +549,7 @@ public class CatalogUtils {
 
         final String projectId;
         if (proj == null) {
-            projectId = cat instanceof CatCatalogBean ? getCatalogProject((CatCatalogBean) cat) : null;
+            projectId = cat instanceof CatCatalogBean ccb ? getCatalogProject(ccb) : null;
         } else {
             projectId = proj.getId();
         }
@@ -583,7 +586,7 @@ public class CatalogUtils {
                     String projectPath;
                     try {
                         assert proj != null;
-                        projectPath = Paths.get(proj.getRootArchivePath()).relativize(Paths.get(entryPath)).toString();
+                        projectPath = Path.of(proj.getRootArchivePath()).relativize(Path.of(entryPath)).toString();
                     } catch (IllegalArgumentException e) {
                         // Not relative to project, likely a full path
                         projectPath = entryPath;
@@ -656,7 +659,7 @@ public class CatalogUtils {
             return size + " B";
         }
         int exp = (int) (Math.log(size) / Math.log(1024));
-        return String.format("%.1f %sB", size / Math.pow(1024, exp), "KMGTPE".charAt(exp - 1));
+        return "%.1f %sB".formatted(size / Math.pow(1024, exp), "KMGTPE".charAt(exp - 1));
     }
 
     /**
@@ -671,16 +674,16 @@ public class CatalogUtils {
     public static String formatFileStats(final String label, final long fileCount, final Object rawSize) {
         long size = 0;
         if (rawSize != null) {
-            if (rawSize instanceof Integer) {
-                size = (Integer) rawSize;
-            } else if (rawSize instanceof Long) {
-                size = (Long) rawSize;
+            if (rawSize instanceof Integer integer) {
+                size = integer;
+            } else if (rawSize instanceof Long long1) {
+                size = long1;
             }
         }
         if (label == null || label.equals("") || label.equalsIgnoreCase("total")) {
-            return String.format("%s in %s files", formatSize(size), fileCount);
+            return "%s in %s files".formatted(formatSize(size), fileCount);
         }
-        return String.format("%s: %s in %s files", label, formatSize(size), fileCount);
+        return "%s: %s in %s files".formatted(label, formatSize(size), fileCount);
     }
 
     @SuppressWarnings("unused")
@@ -936,7 +939,7 @@ public class CatalogUtils {
         //comparing URI to our relative path, we can just do an O(1) lookup in our hashmap
         final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
 
-        final Path catalogPath = Paths.get(catalogData.catPath);
+        final Path catalogPath = Path.of(catalogData.catPath);
         try {
             Files.walkFileTree(catalogPath, new SimpleFileVisitor<Path>() {
                 @Override
@@ -1505,8 +1508,8 @@ public class CatalogUtils {
         }
 
         for (CatEntryI entry : cat.getEntries_entry()) {
-            if (entry instanceof CatDcmentryI && ((CatDcmentryI) entry).getUid().equals(uid)) {
-                return (CatDcmentryI) entry;
+            if (entry instanceof CatDcmentryI dcmentryI && dcmentryI.getUid().equals(uid)) {
+                return dcmentryI;
             }
         }
 
@@ -1522,8 +1525,8 @@ public class CatalogUtils {
         }
 
         for (CatEntryI entry : cat.getEntries_entry()) {
-            if (entry instanceof CatDcmentryI && ((CatDcmentryI) entry).getInstancenumber().equals(num)) {
-                return (CatDcmentryI) entry;
+            if (entry instanceof CatDcmentryI dcmentryI && dcmentryI.getInstancenumber().equals(num)) {
+                return dcmentryI;
             }
         }
 
@@ -1722,7 +1725,7 @@ public class CatalogUtils {
         List<String> duplicates = new ArrayList<>();
 
         for (final FileWriterWrapperI fileWriter : fileWriters) {
-            final String filename = Paths.get(StringUtils.replace(fileWriter.getName(), "\\", "/")).getFileName().toString();
+            final String filename = Path.of(StringUtils.replace(fileWriter.getName(), "\\", "/")).getFileName().toString();
             if (extract && ZipUtils.isCompressedFile(filename)) {
                 log.debug("Found archive file {}", filename);
                 final FileExtractor extractor = new FileExtractor();
@@ -1763,9 +1766,9 @@ public class CatalogUtils {
                 } else {
                     final CatalogMapEntry mapEntry;
                     if (saveTo.exists() && (mapEntry = catalogMap.get(instance)) != null) {
-                        if (mapEntry.entry instanceof CatEntryBean) {
+                        if (mapEntry.entry instanceof CatEntryBean bean) {
                             CatalogUtils.moveToHistory(catalogData.catFile, catalogData.project, saveTo,
-                                    (CatEntryBean) mapEntry.entry, ci);
+                                    bean, ci);
                         }
                     }
 
@@ -2051,8 +2054,8 @@ public class CatalogUtils {
 
         f = new File(fullPath);
         try {
-            XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog) ?
-                    (XnatResourcecatalog) resource : null;
+            XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog xr) ?
+                    xr : null;
             String catId = resource.getLabel() != null ? resource.getLabel() :
                     Long.toString(Calendar.getInstance().getTimeInMillis());
             CatalogData catalogData = new CatalogData(f, catRes, project, catId);
@@ -2538,9 +2541,9 @@ public class CatalogUtils {
             mod = true;
         }
         if (entry.getCreatedtime() == null) {
-            if (entry instanceof CatEntryBean) {
+            if (entry instanceof CatEntryBean bean) {
                 // This method throws illegal arg exception on CatEntryBean objects
-                ((CatEntryBean) entry).setCreatedtime(now);
+                bean.setCreatedtime(now);
             } else {
                 entry.setCreatedtime(now);
             }
@@ -2597,8 +2600,8 @@ public class CatalogUtils {
             mod = true;
         }
 
-        if (info != null && entry instanceof CatEntryBean) {
-            mod |= configureEntry((CatEntryBean) entry, info, false);
+        if (info != null && entry instanceof CatEntryBean bean) {
+            mod |= configureEntry(bean, info, false);
         }
 
         if (mod) {
@@ -2624,9 +2627,9 @@ public class CatalogUtils {
         if (user != null) {
             entry.setModifiedby(user.getUsername());
         }
-        if (entry instanceof CatEntryBean) {
+        if (entry instanceof CatEntryBean bean) {
             // Generic method throws illegal arg exception on CatEntryBean objects
-            ((CatEntryBean) entry).setModifiedtime(now);
+            bean.setModifiedtime(now);
         } else {
             entry.setModifiedtime(now);
         }

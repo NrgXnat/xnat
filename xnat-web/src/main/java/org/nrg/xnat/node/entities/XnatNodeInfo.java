@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.node.entities;
 
+import java.io.Serial;
 import java.util.Date;
 import java.util.List;
 
@@ -28,9 +29,10 @@ import org.nrg.xnat.task.entities.XnatTaskInfo;
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"nodeId","hostName"}))
 @Cacheable
 public class XnatNodeInfo extends AbstractHibernateEntity {
-	
-	/** The Constant serialVersionUID. */
-	private static final long serialVersionUID = 1629813101201706014L;
+
+    /** The Constant serialVersionUID. */
+    @Serial
+    private static final long serialVersionUID = 1629813101201706014L;
 	
 	/** The node id. */
 	private String nodeId;

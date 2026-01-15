@@ -7,6 +7,8 @@ import org.nrg.xnat.compute.models.ComputeEnvironmentConfig;
 import org.nrg.xnat.compute.models.ComputeEnvironmentScope;
 
 import javax.persistence.*;
+
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -19,6 +21,9 @@ import java.util.stream.Collectors;
 @ToString
 @EqualsAndHashCode(callSuper = true)
 public class ComputeEnvironmentConfigEntity extends AbstractHibernateEntity {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     private Set<String> configTypes;
 

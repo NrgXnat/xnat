@@ -21,11 +21,15 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 
+import java.io.Serial;
+
 /**
  * @author timo
  *
  */
 public class DirectExptResourceImpl extends ResourceModifierA {
+    @Serial
+    private static final long serialVersionUID = 1;
 	private final XnatProjectdata proj;
 	private final XnatExperimentdata expt;
 	
@@ -59,10 +63,10 @@ public class DirectExptResourceImpl extends ResourceModifierA {
        new_expt.setId(expt.getId());
        new_expt.setLabel(expt.getLabel());
        new_expt.setProject(expt.getProject());
-       if (expt instanceof XnatSubjectassessordata) {
-           ((XnatSubjectassessordata) new_expt).setSubjectId(((XnatSubjectassessordata) expt).getSubjectId());
-       } else if (expt instanceof XnatImageassessordata) {
-           ((XnatImageassessordata) new_expt).setImagesessionId(((XnatImageassessordata) expt).getImagesessionId());            
+       if (expt instanceof XnatSubjectassessordata subjectassessordata) {
+           ((XnatSubjectassessordata) new_expt).setSubjectId(subjectassessordata.getSubjectId());
+       } else if (expt instanceof XnatImageassessordata imageassessordata) {
+           ((XnatImageassessordata) new_expt).setImagesessionId(imageassessordata.getImagesessionId());            
        }
        new_expt.setResources_resource(resource);
 

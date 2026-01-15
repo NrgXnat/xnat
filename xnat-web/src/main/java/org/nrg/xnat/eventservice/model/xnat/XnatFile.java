@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -13,6 +14,8 @@ import java.util.Objects;
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class XnatFile extends XnatModelObject {
+    @Serial
+    private static final long serialVersionUID = 1;
     private String name;
     private String path;
     private List<String> tags;

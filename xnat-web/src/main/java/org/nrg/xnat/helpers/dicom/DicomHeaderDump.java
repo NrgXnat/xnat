@@ -11,13 +11,13 @@ package org.nrg.xnat.helpers.dicom;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.text.StringEscapeUtils;
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.DicomObjectToStringParam;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.io.DicomInputStream;
-import org.dcm4che2.io.StopTagInputHandler;
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.data.ElementDictionary;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.util.TagUtils;
+import org.nrg.dicom.mizer.exceptions.MizerException;
+import org.nrg.dicom.mizer.objects.DicomElementI;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.xft.XFTTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,13 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class DicomHeaderDump {
     // columns of the XFTTable
@@ -61,46 +67,26 @@ public final class DicomHeaderDump {
      * @throws IOException When an error occurs reading the file.
      * @throws FileNotFoundException When the specified file isn't found.
      */
-    DicomObject getHeader(File file) throws IOException, FileNotFoundException {
+    DicomObjectI getHeader(File file) throws MizerException {
         final int stopTag;
         if (fields.isEmpty()) {
             stopTag = Tag.PixelData;
         } else {
             stopTag = 1 + Collections.max(fields.keySet());
         }
-        final StopTagInputHandler stopHandler = new StopTagInputHandler(stopTag);
-
-        IOException ioexception = null;
-        final DicomInputStream dis = new DicomInputStream(file);
-        try {
-            dis.setHandler(stopHandler);
-            return dis.readDicomObject();
-        } catch (IOException e) {
-            throw ioexception = e;
-        } finally {
-            try {
-                dis.close();
-            } catch (IOException e) {
-                if (null != ioexception) {
-                    logger.error("unable to close DicomInputStream", e);
-                    throw ioexception;
-                } else {
-                    throw e;
-                }
-            }
-        }
+        return DicomObjectFactory.newInstance(file, stopTag);
     }
     
     /**
      *  If this element has nested tags it doesn't have a value and trying to 
         extract one using dcm4che will result in an UnsupportedOperationException 
-     * @param e 
-     * @param length 
+     * @param element
+     * @param length
      * @return
      */
-    private String getValueAsString(final DicomElement e, final int length) {
+    private String getValueAsString(final DicomElementI element, final int length) {
         try {
-            return !e.hasDicomObjects() ? escapeHTML(e.getValueAsString(null, length)) : "";
+            return !element.hasItems() ? escapeHTML(element.getValueAsString()) : "";
         }catch(UnsupportedOperationException usex) {
             return "UnsupportedBinarySequence";
         }
@@ -114,15 +100,15 @@ public final class DicomHeaderDump {
      * @param maxLen The maximum number of characters to read from the description and value 
      * @return The strings that comprise the row for the DICOM tag.
      */
-    String[] makeRow(final DicomObject object, final DicomElement element, final String parentTag, final int maxLen) {
+    String[] makeRow(final DicomObjectI object, final DicomElementI element, final String parentTag, final int maxLen) {
         final String tag = TagUtils.toString(element.tag());
 
         final String value = this.getValueAsString(element,maxLen);
        
-        final String vr = element.vr().toString();
+        final String vr = element.getVRAsString();
 
         // This fixes the unfortunate tendency of DICOM tags to use good typographical but poor programming practices.
-        final String desc = escapeHTML(object.nameOf(element.tag()));
+        final String desc = escapeHTML(ElementDictionary.keywordOf(element.tag(), null));
 
         final List<String> strings = new ArrayList<>(parentTag == null ? Arrays.asList(tag, "", vr, value, desc) : Arrays.asList(parentTag, tag, vr, value, desc));
         return strings.toArray(new String[0]);
@@ -140,50 +126,43 @@ public final class DicomHeaderDump {
      * @throws IOException When an error occurs reading the file.
      * @throws FileNotFoundException When the specified file isn't found.
      */
-    public XFTTable render() throws IOException,FileNotFoundException {
+    public XFTTable render() throws IOException, FileNotFoundException, MizerException {
         XFTTable t = new XFTTable();
         t.initTable(columns);
         if (this.file == null) {
             return t;
         }
 
-        DicomObject header = this.getHeader(new File(this.file));
-        //DicomObjectToStringParam formatParams = DicomObjectToStringParam.getDefaultParam();
-        DicomObjectToStringParam DEFAULT_PARAM = DicomObjectToStringParam.getDefaultParam();
-        DicomObjectToStringParam formatParams = new DicomObjectToStringParam(
-        		DEFAULT_PARAM.name, 			// name
-        		255,							// valueLength;
-        		DEFAULT_PARAM.numItems,			// numItems;
-        		DEFAULT_PARAM.lineLength,		// lineLength;
-        		DEFAULT_PARAM.numLines, 		// numLines;
-        		DEFAULT_PARAM.indent,			// indent
-        		DEFAULT_PARAM.lineSeparator);	// line separator
+        DicomObjectI header = this.getHeader(new File(this.file));
+        int maxLen = 255;
 
-        for (Iterator<DicomElement> it = header.iterator(); it.hasNext();) {
-            DicomElement e = it.next();
+        for (Iterator<DicomElementI> it = header.iterator(); it.hasNext();) {
+            DicomElementI e = it.next();
             try{
-                write( t, header, formatParams, e);
+                write( t, header, maxLen, e);
             }catch(Exception ex){
                 logger.error("Error reading dicom tag,"+ e.tag(),ex);
             }
         }
         return t;
     }
-    public void write(XFTTable t,DicomObject header,DicomObjectToStringParam formatParams,DicomElement e){
+    public void write(XFTTable t,DicomObjectI header,int maxLen,DicomElementI e){
+        // dcm4che3 - header is already DicomObjectI, no need to wrap
+        DicomElementI dei = header.getElement(e.tag());
         if (fields.isEmpty() || fields.containsKey(e.tag())) {
-            if (e.hasDicomObjects()) {
+            if (e.hasItems()) {
                 for (int i = 0; i < e.countItems(); i++) {
-                    DicomObject o = e.getDicomObject(i);
-                    t.insertRow(makeRow(header, e, TagUtils.toString(e.tag()), formatParams.valueLength));
-                    for (Iterator<DicomElement> it1 = o.iterator(); it1.hasNext();) {
-                        DicomElement e1 = it1.next();
-                        t.insertRow(makeRow(header, e1, TagUtils.toString(e.tag()), formatParams.valueLength));
+                    DicomObjectI o = e.getDicomObject(i);
+                    t.insertRow(makeRow(header, e, TagUtils.toString(e.tag()), maxLen));
+                    for (Iterator<DicomElementI> it1 = o.iterator(); it1.hasNext();) {
+                        DicomElementI e1 = it1.next();
+                        t.insertRow(makeRow(header, e1, TagUtils.toString(e.tag()), maxLen));
                     }
                 }
-            } else if (SiemensShadowHeader.isShadowHeader(header, e)) {
-                SiemensShadowHeader.addRows(t, header, e, fields.get(e.tag()));
+            } else if (SiemensShadowHeader.isShadowHeader(header, dei)) {
+                SiemensShadowHeader.addRows(t, header, dei, fields.get(e.tag()));
             } else {
-                t.insertRow(makeRow(header, e, null, formatParams.valueLength));		
+                t.insertRow(makeRow(header, e, null, maxLen));		
             }
         }
     }

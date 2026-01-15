@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -155,7 +154,7 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
         log.debug("DICOM resource catalog found at {}", catalog.getUri());
         try {
             // project can be null.  CatalogUtils will sort it out.
-            final Path                     dicomRootPath = Paths.get(catalog.getUri()).getParent();
+            final Path                     dicomRootPath = Path.of(catalog.getUri()).getParent();
             final CatalogUtils.CatalogData catalogData   = CatalogUtils.CatalogData.getOrCreate(dicomRootPath.toString(), catalog, null);
             return init(sessionId, scanId, dicomRootPath, catalogData.catBean);
         } catch (ServerException e) {

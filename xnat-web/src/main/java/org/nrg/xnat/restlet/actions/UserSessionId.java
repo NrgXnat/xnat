@@ -63,8 +63,8 @@ public class UserSessionId extends SecureResource {
 		List<Object> allPrincipals = sessionRegistry.getAllPrincipals();
 		List<SessionInformation> l = null;
 		for (Object p : allPrincipals) {
-			if (p instanceof UserI) {
-				if (((UserI) p).getLogin().equalsIgnoreCase(_userId)) {
+			if (p instanceof UserI userI) {
+				if (userI.getLogin().equalsIgnoreCase(_userId)) {
 					l = sessionRegistry.getAllSessions(p, false);
 				}
 			}
@@ -92,13 +92,13 @@ public class UserSessionId extends SecureResource {
         final SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
         Object principal = null;
         for (final Object candidate : sessionRegistry.getAllPrincipals()) {
-            if (candidate instanceof UserI) {
-                if (StringUtils.equals(_userId, ((UserI) candidate).getUsername())) {
+            if (candidate instanceof UserI userI) {
+                if (StringUtils.equals(_userId, userI.getUsername())) {
                     principal = candidate;
                     break;
                 }
-            } else if (candidate instanceof String) {
-                if (StringUtils.equals(_userId, (String) candidate)) {
+            } else if (candidate instanceof String string) {
+                if (StringUtils.equals(_userId, string)) {
                     principal = candidate;
                     break;
                 }

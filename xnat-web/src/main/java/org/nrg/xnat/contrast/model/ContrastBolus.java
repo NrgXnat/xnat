@@ -16,6 +16,10 @@ import java.util.List;
 @Accessors(prefix = "_")
 public class ContrastBolus {
 
+    public ContrastBolus(final String agent) {
+        _agent = agent;
+    }
+
     public void addIngredient(Ingredient ingredient) {
         if(_ingredients == null) {
             _ingredients = new ArrayList<>();

@@ -221,9 +221,9 @@ public class DefaultComputeEnvironmentConfigServiceTest {
 
         // Verify
         assertThat(computeEnvironmentConfigs.size(), is(2));
-        assertThat(computeEnvironmentConfigs.get(0).getHardwareOptions().getHardwareConfigs().size(), is(2));
-        assertThat(computeEnvironmentConfigs.get(0).getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig1, hardwareConfig2));
-        assertThat(computeEnvironmentConfigs.get(0).getHardwareOptions().getHardwareConfigs(), not(hasItems(hardwareConfig3)));
+        assertThat(computeEnvironmentConfigs.getFirst().getHardwareOptions().getHardwareConfigs().size(), is(2));
+        assertThat(computeEnvironmentConfigs.getFirst().getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig1, hardwareConfig2));
+        assertThat(computeEnvironmentConfigs.getFirst().getHardwareOptions().getHardwareConfigs(), not(hasItems(hardwareConfig3)));
         assertThat(computeEnvironmentConfigs.get(1).getHardwareOptions().getHardwareConfigs().size(), is(1));
         assertThat(computeEnvironmentConfigs.get(1).getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig2));
     }

@@ -159,13 +159,13 @@ public class EventHandlerApi extends AbstractXapiRestController {
                         final Annotation anno   = AnnotationUtils.findAnnotation(method, Filterable.class);
 
                         final Object   annoInitialValuesObj = AnnotationUtils.getValue(anno, "initialValues");
-                        final String[] annoInitialValues    = (annoInitialValuesObj instanceof String[]) ? (String[]) annoInitialValuesObj : new String[]{};
+                        final String[] annoInitialValues    = (annoInitialValuesObj instanceof String[] ss) ? ss : new String[]{};
 
                         final Object annoDefaultValueObj = AnnotationUtils.getValue(anno, "defaultValue");
                         final String annoDefaultValue    = (annoDefaultValueObj != null) ? annoDefaultValueObj.toString() : "";
 
                         final Object annoFilterRequired = AnnotationUtils.getValue(anno, "filterRequired");
-                        boolean      filterRequired     = annoFilterRequired instanceof Boolean && (boolean) annoFilterRequired;
+                        boolean      filterRequired     = annoFilterRequired instanceof Boolean b && b;
 
                         final Object annoIncludeValuesFromDatabase = AnnotationUtils.getValue(anno, "includeValuesFromDatabase");
                         boolean      includeValuesFromDatabase     = (!(annoIncludeValuesFromDatabase instanceof Boolean)) || (boolean) annoIncludeValuesFromDatabase;
@@ -194,7 +194,7 @@ public class EventHandlerApi extends AbstractXapiRestController {
                             // TODO:  Should probably add an EventFilterInfo class and keep the list of filter values there, along with a
                             // a boolean required value and a default value.  
                             // NOTE:  This is handled in JavaScript as non-required filter
-                            valueList.add(0, "_FILTER_NOT_REQUIRED_");
+                            valueList.addFirst("_FILTER_NOT_REQUIRED_");
                         }
                     }
                 }

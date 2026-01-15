@@ -162,12 +162,12 @@ public class SiteConfigApi extends AbstractXapiRestController {
                         _template.update(EMAIL_UPDATE, properties);
                     }
                     final Object value = properties.get(name);
-                    if (value instanceof List) {
+                    if (value instanceof List<?> list) {
                         //noinspection unchecked,rawtypes
-                        _preferences.setListValue(name, (List) value);
-                    } else if (value instanceof Map) {
+                        _preferences.setListValue(name, list);
+                    } else if (value instanceof Map<?,?> map) {
                         //noinspection unchecked,rawtypes
-                        _preferences.setMapValue(name, (Map) value);
+                        _preferences.setMapValue(name, (Map) map);
                     } else if (value.getClass().isArray()) {
                         _preferences.setArrayValue(name, (Object[]) value);
                     } else {
@@ -337,11 +337,11 @@ public class SiteConfigApi extends AbstractXapiRestController {
         if (initialized == null) {
             return false;
         }
-        if (initialized instanceof Boolean) {
-            return (Boolean) initialized;
+        if (initialized instanceof Boolean boolean1) {
+            return boolean1;
         }
-        if (initialized instanceof String) {
-            return BooleanUtils.toBoolean((String) initialized);
+        if (initialized instanceof String string) {
+            return BooleanUtils.toBoolean(string);
         }
         return BooleanUtils.toBoolean(initialized.toString());
     }

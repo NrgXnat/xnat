@@ -492,12 +492,12 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
                         final String subjectId = expt.getSubjectId();
 
-                        if (XDAT.getBoolSiteConfigurationProperty("rerunProjectAnonOnRename", false) && previous != null && expt instanceof XnatImagesessiondata && subjectId != null && !subjectId.equals(previous.getSubjectId())) {
+                        if (XDAT.getBoolSiteConfigurationProperty("rerunProjectAnonOnRename", false) && previous != null && expt instanceof XnatImagesessiondata imagesessiondata && subjectId != null && !subjectId.equals(previous.getSubjectId())) {
                             PersistentWorkflowI anonWrk = WorkflowUtils.buildOpenWorkflow(user, expt.getItem(), newEventInstance(CATEGORY.DATA, Rename.ANONYMIZATION_POST_SUBJECT_CHANGE));
                             anonWrk.setPipelineName(Rename.ANONYMIZATION_POST_SUBJECT_CHANGE);
                             try {
                                 // re-apply this project's edit script
-                                expt.applyAnonymizationScript(new ProjectAnonymizer((XnatImagesessiondata) expt, currentProjectId, expt.getArchiveRootPath(), true));
+                                expt.applyAnonymizationScript(new ProjectAnonymizer(imagesessiondata, currentProjectId, expt.getArchiveRootPath(), true));
                                 WorkflowUtils.complete(anonWrk, anonWrk.buildEvent());
                             } catch (TransactionException e) {
                                 this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);
@@ -509,12 +509,12 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                     postSaveManageStatus(expt);
 
                     if (Permissions.canEdit(user, expt.getItem())) {
-                        if ((this.isQueryVariableTrue(XNATRestConstants.PULL_DATA_FROM_HEADERS) || this.containsAction(XNATRestConstants.PULL_DATA_FROM_HEADERS)) && expt instanceof XnatImagesessiondata) {
+                        if ((this.isQueryVariableTrue(XNATRestConstants.PULL_DATA_FROM_HEADERS) || this.containsAction(XNATRestConstants.PULL_DATA_FROM_HEADERS)) && expt instanceof XnatImagesessiondata imagesessiondata) {
                             try {
                                 final PersistentWorkflowI dicomPullWorkflow = PersistentWorkflowUtils.buildOpenWorkflow(user, expt.getItem(), newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.DICOM_PULL));
                                 final EventMetaI dicomPullMeta = dicomPullWorkflow.buildEvent();
                                 try {
-                                    new PullSessionDataFromHeaders((XnatImagesessiondata) expt, user, this.allowDataDeletion(), this.isQueryVariableTrue("overwrite"), false, meta).call();
+                                    new PullSessionDataFromHeaders(imagesessiondata, user, this.allowDataDeletion(), this.isQueryVariableTrue("overwrite"), false, meta).call();
                                     WorkflowUtils.complete(dicomPullWorkflow, dicomPullMeta);
                                 } catch (Exception e) {
                                     WorkflowUtils.fail(dicomPullWorkflow, dicomPullMeta);

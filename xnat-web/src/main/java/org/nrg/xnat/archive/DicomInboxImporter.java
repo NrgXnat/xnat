@@ -32,8 +32,9 @@ import org.nrg.xnat.restlet.actions.SessionImporter;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -135,7 +136,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 		String inboxPath = XDAT.getSiteConfigPreferences().getInboxPath();
 		final String parameter = String.valueOf(_parameters.get("path"));
 		String normalizedPath = parameter==null? "": parameter;
-		normalizedPath = Paths.get(normalizedPath).normalize().toString();
+		normalizedPath = Path.of(normalizedPath).normalize().toString();
 		if(!normalizedPath.startsWith(inboxPath)){
 			//Specified directory is not within inbox directory.
 			throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a valid path to a file or directory. It must be under the main inbox directory within a subdirectory whose name matches the ID of a project you have edit access to.");
@@ -154,7 +155,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 		}
 
 		try {
-			_sessionPath = (Paths.get(normalizedPath)).toFile();
+			_sessionPath = (Path.of(normalizedPath)).toFile();
 		}
 		catch(Exception ignored){
 
@@ -214,7 +215,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 
         log.info("Created and queued import request {} for the inbox session located at {}.", request.getId(), _sessionPath.getAbsolutePath());
         try {
-            return Collections.singletonList(new URL(XDAT.getSiteConfigurationProperty("siteUrl") + "/xapi/dicom/" + request.getId()).getPath());
+            return Collections.singletonList(URI.create(XDAT.getSiteConfigurationProperty("siteUrl") + "/xapi/dicom/" + request.getId()).toURL().getPath());
         } catch (MalformedURLException | ConfigServiceException e) {
             log.error("An error occurred trying to retrieve the site URL when composing DICOM inbox import request response, panicking.", e);
             return Collections.singletonList("/xapi/dicom/" + request.getId());

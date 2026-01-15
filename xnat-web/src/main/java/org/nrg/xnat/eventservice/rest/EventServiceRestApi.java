@@ -487,7 +487,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
         Boolean editable = false;
         List<String> projectIds = subscription.eventFilter().projectIds();
         if(projectIds != null && projectIds.size() == 1)  {
-            editable = projectIds.get(0).contentEquals(projectIdAccess);
+            editable = projectIds.getFirst().contentEquals(projectIdAccess);
         }
         return SubscriptionDisplay.create(subscription, editable);
     }

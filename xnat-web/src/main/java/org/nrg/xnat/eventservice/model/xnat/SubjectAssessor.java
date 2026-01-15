@@ -25,11 +25,15 @@ import org.nrg.xnat.helpers.uri.archive.AssessedURII;
 import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
 import java.util.List;
 
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class SubjectAssessor extends XnatModelObject {
+    @Serial
+    private static final long serialVersionUID = 1;
     @JsonIgnore
     private XnatSubjectassessordataI xnatSubjectassessordataI;
     private List<Resource> resources;
@@ -91,8 +95,8 @@ public class SubjectAssessor extends XnatModelObject {
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatSubjectassessordataI.getResources_resource()) {
-            if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, rootArchivePath));
+            if (xnatAbstractresourceI instanceof XnatResourcecatalog resourcecatalog) {
+                resources.add(new Resource(resourcecatalog, this.uri, rootArchivePath));
             }
         }
 

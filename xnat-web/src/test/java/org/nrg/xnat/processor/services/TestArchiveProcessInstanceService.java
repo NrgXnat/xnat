@@ -8,9 +8,6 @@ import org.nrg.xnat.config.TestArchiveProcessorInstanceServiceConfig;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.processors.MizerArchiveProcessor;
 import org.nrg.xnat.processors.StudyRemappingArchiveProcessor;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -22,10 +19,7 @@ import java.util.List;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @Slf4j
-// @RunWith(SpringJUnit4ClassRunner.class)
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
-@PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*", "org.xml.sax.*"})
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestArchiveProcessorInstanceServiceConfig.class)
 public class TestArchiveProcessInstanceService {
     @Test

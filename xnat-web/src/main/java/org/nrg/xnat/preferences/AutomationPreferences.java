@@ -20,6 +20,8 @@ import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.Serial;
+
 @SuppressWarnings("WeakerAccess")
 @NrgPreferenceBean(toolId = AutomationPreferences.AUTOMATION_TOOL_ID,
                    toolName = "XNAT Automation Preferences",
@@ -28,6 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
                    strict = false)
 @Slf4j
 public class AutomationPreferences extends EventTriggeringAbstractPreferenceBean {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String AUTOMATION_TOOL_ID = "automation";
 
     @Autowired

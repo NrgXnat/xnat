@@ -76,7 +76,7 @@ public class JSONWriter implements ResponseWriterI{
 	private String flattenValue(ArrayList<String> values) {
 		if (values == null) return "\"\"";
 		if (values.size() == 1) {
-			String rtn = "\"" + values.get(0) + "\"";
+			String rtn = "\"" + values.getFirst() + "\"";
 			return rtn;
 		}
 		int lastIndex = values.size() - 1 ; 

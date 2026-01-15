@@ -11,7 +11,11 @@ package org.nrg.xnat.security.tokens;
 
 import org.nrg.xdat.services.XdatUserAuthService;
 
+import java.io.Serial;
+
 public class XnatDatabaseUsernamePasswordAuthenticationToken extends AbstractXnatAuthenticationToken {
+    @Serial
+    private static final long serialVersionUID = 1;
     public XnatDatabaseUsernamePasswordAuthenticationToken(final Object principal, final Object credentials) {
         super(XdatUserAuthService.LOCALDB, principal, credentials);
     }

@@ -9,12 +9,15 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import java.io.Serial;
+
 @Slf4j
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"taskName"}))
 public class ConditionalInitializationTaskStatus extends AbstractHibernateEntity {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private String taskName;

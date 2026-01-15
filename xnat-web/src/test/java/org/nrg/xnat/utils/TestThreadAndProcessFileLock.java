@@ -3,11 +3,7 @@ package org.nrg.xnat.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.Matchers;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -18,15 +14,13 @@ import org.nrg.xdat.bean.ClassMappingFactory;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.junit.ConcurrentJunitRunner;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
-import org.powermock.reflect.Whitebox;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,9 +29,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(ConcurrentJunitRunner.class)
-@PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*", "org.xml.sax.*"})
+@RunWith(ConcurrentJunitRunner.class)
 @Slf4j
 public class TestThreadAndProcessFileLock {
 
@@ -57,13 +49,13 @@ public class TestThreadAndProcessFileLock {
         final String subdir = "catalogs";
 
         File permFile = ResourceManager.getInstance().getTestResourceFile(
-                Paths.get(subdir, catFilename).toString());
+                Path.of(subdir, catFilename).toString());
         TEST_CATALOG_FILE = new File(TMPDIR, catFilename);
         rewriteFileWithCatalogUtils(permFile);
         copyCatalog(TEST_CATALOG_FILE, permFile);
 
         TEST_DCMCATALOG_PERM = ResourceManager.getInstance().getTestResourceFile(
-                Paths.get(subdir, dcmFilename).toString());
+                Path.of(subdir, dcmFilename).toString());
         TEST_DCMCATALOG = new File(TMPDIR, dcmFilename);
 
         rewriteFileWithCatalogUtils(TEST_DCMCATALOG_PERM);
@@ -73,9 +65,10 @@ public class TestThreadAndProcessFileLock {
         ClassMappingFactory.getInstance().getElements();
 
         // Stub getChecksumConfiguration check
-        PowerMockito.spy(CatalogUtils.class);
-        //doReturn(false).when(CatalogUtils.class, "getChecksumConfiguration"); // doesn't work, not sure why
-        Whitebox.setInternalState(CatalogUtils.class, "_checksumConfig", new AtomicBoolean(false));
+        Field privateField = CatalogUtils.class.getDeclaredField("_checksumConfig");
+        privateField.setAccessible(true);
+        privateField.set(null, new AtomicBoolean(false));
+        assertEquals(false, CatalogUtils.getChecksumConfiguration());
     }
 
     private static void rewriteFileWithCatalogUtils(File catFile) throws Exception {

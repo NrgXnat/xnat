@@ -7,12 +7,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.Serial;
 import java.util.*;
 
 @Getter
 @Accessors(prefix = "_")
 @Slf4j
 public class CustomFormEvent implements  CustomFormEventI {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public static CustomFormEvent.Builder builder() {
         return new CustomFormEvent.Builder();

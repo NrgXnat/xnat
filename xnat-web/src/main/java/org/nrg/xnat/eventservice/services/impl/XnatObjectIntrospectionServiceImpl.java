@@ -28,7 +28,7 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
     @Override
     public Boolean isModified(XnatExperimentdataI experiment) {
         List<Map<String, Object>> result = simpleQuery(QUERY_IS_EXPERIMENT_MODIFIED,"experimentId", experiment.getId());
-        if (!result.isEmpty() && result.get(0).containsKey("modified") && result.get(0).get("modified").equals(1)) return true;
+        if (!result.isEmpty() && result.getFirst().containsKey("modified") && result.getFirst().get("modified").equals(1)) return true;
         else return false;
     }
 

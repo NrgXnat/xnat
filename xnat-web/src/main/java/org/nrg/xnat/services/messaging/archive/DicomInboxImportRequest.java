@@ -5,6 +5,8 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 
 import javax.persistence.*;
+
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,6 +17,8 @@ import static org.nrg.xnat.services.messaging.archive.DicomInboxImportRequest.St
 @Table
 @Cacheable
 public class DicomInboxImportRequest extends AbstractHibernateEntity {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String IMPORT_REQUEST_ID = "importRequestId";
 
     public enum Status {

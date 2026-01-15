@@ -11,16 +11,15 @@ package org.nrg.dcm.scp;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.data.UID;
-import org.dcm4che2.data.VR;
-import org.dcm4che2.net.Association;
-import org.dcm4che2.net.CommandUtils;
-import org.dcm4che2.net.DicomServiceException;
-import org.dcm4che2.net.PDVInputStream;
-import org.dcm4che2.net.service.CStoreSCP;
-import org.dcm4che2.net.service.DicomService;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.net.Association;
+import org.dcm4che3.net.PDVInputStream;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.pdu.PresentationContext;
+import org.dcm4che3.net.service.BasicCStoreSCP;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
@@ -33,12 +32,10 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
 import javax.inject.Provider;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 
 @Slf4j
-public class CStoreService extends DicomService implements CStoreSCP {
+public class CStoreService extends BasicCStoreSCP {
     private static final String PhilipsPrivateCXImageStorage = "1.3.46.670589.2.4.1.1";
     private static final String PhilipsPrivateVolumeStorage = "1.3.46.670589.5.0.1";
     private static final String PhilipsPrivate3DObjectStorage = "1.3.46.670589.5.0.2";
@@ -81,10 +78,10 @@ public class CStoreService extends DicomService implements CStoreSCP {
         UID.HemodynamicWaveformStorage,
         UID.CardiacElectrophysiologyWaveformStorage,
         UID.BasicVoiceAudioWaveformStorage,
-        UID.GrayscaleSoftcopyPresentationStateStorageSOPClass,
-        UID.ColorSoftcopyPresentationStateStorageSOPClass,
-        UID.PseudoColorSoftcopyPresentationStateStorageSOPClass,
-        UID.BlendingSoftcopyPresentationStateStorageSOPClass,
+        UID.GrayscaleSoftcopyPresentationStateStorage,
+        UID.ColorSoftcopyPresentationStateStorage,
+        UID.PseudoColorSoftcopyPresentationStateStorage,
+        UID.BlendingSoftcopyPresentationStateStorage,
         UID.XRayAngiographicImageStorage,
         UID.EnhancedXAImageStorage,
         UID.XRayRadiofluoroscopicImageStorage,
@@ -129,7 +126,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
         UID.RTIonPlanStorage,
         UID.RTIonBeamsTreatmentRecordStorage,
         UID.EnhancedMRColorImageStorage, // Support for enhanced DICOM color images
-        UID.SiemensCSANonImageStorage, // Siemens proprietary; we get this sometimes
+        UID.PrivateSiemensCSANonImageStorage, // Siemens proprietary; we get this sometimes
         PhilipsPrivateCXImageStorage, // Philips proprietary. Thanks, Philips.
         PhilipsPrivateVolumeStorage, PhilipsPrivate3DObjectStorage,
         PhilipsPrivate3DObject2Storage, PhilipsPrivateSurfaceStorage,
@@ -232,14 +229,6 @@ public class CStoreService extends DicomService implements CStoreSCP {
         this(identifier, () -> user, manager);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.dcm4che2.net.service.CStoreSCP#cstore(org.dcm4che2.net.Association,
-     * int, org.dcm4che2.data.DicomObject, org.dcm4che2.net.PDVInputStream,
-     * java.lang.String)
-     */
     /**
      * Adapted from StorageService, with a few tweaks for better compliance with
      * the standard: (see PS 3.7, section 9.3.1.2) + standard requires UID
@@ -247,16 +236,14 @@ public class CStoreService extends DicomService implements CStoreSCP {
      * response
      */
     @Override
-    public void cstore(final Association as, final int pcid,
-            final DicomObject rq, final PDVInputStream dataStream,
-            final String tsuid) throws DicomServiceException,IOException {
-        final boolean includeUIDs = CommandUtils.isIncludeUIDinRSP();
-        CommandUtils.setIncludeUIDinRSP(true);
-        final DicomObject rsp = CommandUtils.mkRSP(rq, CommandUtils.SUCCESS);
-        rsp.putInt(Tag.DataSetType, VR.US, 0x0101);
-        doCStore(as, pcid, rq, dataStream, tsuid, rsp);
-        as.writeDimseRSP(pcid, rsp);
-        CommandUtils.setIncludeUIDinRSP(includeUIDs);
+    protected void store(Association as, PresentationContext pc, Attributes rq, 
+                        PDVInputStream data, Attributes rsp) throws IOException {
+        try {
+            doCStore(as, pc, rq, data, pc.getTransferSyntax(), rsp);
+        } catch (Exception e) {
+            rsp.setInt(Tag.Status, VR.US, Status.ProcessingFailure);
+            throw new IOException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -275,10 +262,10 @@ public class CStoreService extends DicomService implements CStoreSCP {
         .append(association.getSocket().getRemoteSocketAddress());
     }
 
-    private void doCStore(final Association as, final int pcid,
-            final DicomObject rq, final PDVInputStream dataStream,
-            final String tsuid, final DicomObject rsp)
-    throws DicomServiceException {
+    private void doCStore(final Association as, final PresentationContext pc,
+            final Attributes rq, final PDVInputStream dataStream,
+            final String tsuid, final Attributes rsp)
+            throws IOException {
         final FileWriterWrapperI fw = new StreamWrapper(dataStream);
         try {
             try {
@@ -287,7 +274,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
                 boolean anonymizationEnabled = true;
 
                 String aeTitle = as.getLocalAET();
-                int port = as.getConnector().getPort();
+                int port = as.getConnection().getPort();
                 doCustomProcessing   = _manager.isCustomProcessing( aeTitle, port);
                 directArchive        = _manager.isDirectArchive( aeTitle, port);
                 anonymizationEnabled = _manager.isAnonymizationEnabled( aeTitle, port);
@@ -297,7 +284,7 @@ public class CStoreService extends DicomService implements CStoreSCP {
                         .put(GradualDicomImporter.TSUID_PARAM, tsuid)
                         .put(GradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET())
                         .put(GradualDicomImporter.RECEIVER_AE_TITLE_PARAM, as.getLocalAET())
-                        .put(GradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnector().getPort())
+                        .put(GradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnection().getPort())
                         .put(GradualDicomImporter.CUSTOM_PROC_PARAM, doCustomProcessing)
                         .put(GradualDicomImporter.DIRECT_ARCHIVE_PARAM, directArchive)
                         .put(URIManager.PREVENT_ANON, String.valueOf(!anonymizationEnabled))
@@ -309,22 +296,18 @@ public class CStoreService extends DicomService implements CStoreSCP {
                     importer.setNamer(namer);
                 }
                 importer.call();
+                rsp.setInt(Tag.Status, VR.US, Status.Success); // Status.SUCCESS = 0x0000
             } catch (final ClientException e) {
                 log.error("C-STORE operation failed", e);
-                throw new DicomServiceException(rq, ERROR_CANNOT_UNDERSTAND,
-                        e.getMessage());
+                throw new IOException(e.getMessage());
             } catch (final ServerException e) {
                 log.error("C-STORE operation failed", e);
-                throw new DicomServiceException(rq, REFUSED_OUT_OF_RESOURCES,
-                        e.getMessage());
+                throw new IOException(e.getMessage());
             }
-        } catch (DicomServiceException e) {
-            throw e;
         } catch (final Throwable e) {
             // Don't let mysterious unchecked exceptions and errors through.
             log.error("C-STORE operation failed", e);
-            throw new DicomServiceException(rq, REFUSED_OUT_OF_RESOURCES,
-                    e.getMessage());
+            throw new IOException(e.getMessage());
         }
     }
 

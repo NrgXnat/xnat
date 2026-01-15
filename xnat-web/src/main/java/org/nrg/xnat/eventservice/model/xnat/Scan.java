@@ -19,6 +19,8 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ScanURII;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +28,8 @@ import java.util.Objects;
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Scan extends XnatModelObject {
+    @Serial
+    private static final long serialVersionUID = 1;
     @JsonIgnore private XnatImagescandataI xnatImagescandataI;
     @JsonProperty("integer-id") private Integer integerId;
     @JsonProperty("scan-type") private String scanType;
@@ -70,7 +74,7 @@ public class Scan extends XnatModelObject {
         this.xsiType = "xnat:imageScanData";
         try { this.xsiType = xnatImagescandataI.getXSIType();} catch(NullPointerException e){log.error("Scan failed to detect xsiType");}
         this.scanType = xnatImagescandataI.getType();
-        this.label = String.format("%s - %s", this.id, this.scanType);
+        this.label = "%s - %s".formatted(this.id, this.scanType);
 
         this.frames = xnatImagescandataI.getFrames();
         this.note = xnatImagescandataI.getNote();
@@ -90,8 +94,8 @@ public class Scan extends XnatModelObject {
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : this.xnatImagescandataI.getFile()) {
-            if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, rootArchivePath));
+            if (xnatAbstractresourceI instanceof XnatResourcecatalog resourcecatalog) {
+                resources.add(new Resource(resourcecatalog, this.uri, rootArchivePath));
             }
         }
 

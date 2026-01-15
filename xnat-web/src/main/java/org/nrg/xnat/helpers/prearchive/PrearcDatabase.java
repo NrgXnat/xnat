@@ -52,7 +52,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.sql.*;
 import java.util.Date;
 import java.util.*;
@@ -86,13 +86,15 @@ public final class PrearcDatabase {
 
     public static final String SPLIT_PETMR_SESSION_ID = "SplitPetMrSessions";
 
-    public static final String DEFAULT_SPLIT_PETMR_SESSION_FILTER = "{\n" +
-            "    \"mode\": \"modalityMap\",\n" +
-            "    \"exclude\": \"/^yes$/i.test('#BurnedInAnnotation#')\",\n" +
-            "    \"PT\": \"'#Modality#' == 'PT' || ('#Modality#' == 'MR' && /^.*MRAC.*$/.test('#SeriesDescription#'))\",\n" +
-            "    \"MR\": \"'#Modality#' != 'PT' && !('#Modality#' == 'MR' && /^.*MRAC.*$/.test('#SeriesDescription#'))\",\n" +
-            "    \"default\": \"MR\"\n" +
-            "}\n";
+    public static final String DEFAULT_SPLIT_PETMR_SESSION_FILTER = """
+            {
+                "mode": "modalityMap",
+                "exclude": "/^yes$/i.test('#BurnedInAnnotation#')",
+                "PT": "'#Modality#' == 'PT' || ('#Modality#' == 'MR' && /^.*MRAC.*$/.test('#SeriesDescription#'))",
+                "MR": "'#Modality#' != 'PT' && !('#Modality#' == 'MR' && /^.*MRAC.*$/.test('#SeriesDescription#'))",
+                "default": "MR"
+            }
+            """;
 
     public static final Script DEFAULT_SPLIT_PETMR_SESSION_SCRIPT = new Script(SPLIT_PETMR_SESSION_ID,
             "Split PET/MR script",
@@ -293,7 +295,7 @@ public final class PrearcDatabase {
 
                     // Clear the query and create an insert that will select all of the in-common columns from the
                     // holding table and put them into the new prearchive table.
-                    PoolDBUtils.ExecuteNonSelectQuery(String.format(QUERY_MIGRATE_PREARC_TABLE, columns), null, null);
+                    PoolDBUtils.ExecuteNonSelectQuery(QUERY_MIGRATE_PREARC_TABLE.formatted(columns), null, null);
 
                     // OK, data's migrated! Great! Nuke the old table.
                     PoolDBUtils.ExecuteNonSelectQuery(QUERY_DROP_DEPRECATED_PREARC_TABLE, null, null);
@@ -458,7 +460,7 @@ public final class PrearcDatabase {
             return PrearcDatabase.prearcPath;
         }
         else {
-            return Paths.get(PrearcDatabase.prearcPath, project).toString();
+            return Path.of(PrearcDatabase.prearcPath, project).toString();
         }
     }
 
@@ -557,7 +559,7 @@ public final class PrearcDatabase {
 
                             PrearcDatabase.addSession(sessionData);
 
-                            PrearcUtils.log(sessionData, new Exception(String.format("Moved from %1$s to %2$s", proj, destination)));
+                            PrearcUtils.log(sessionData, new Exception("Moved from %1$s to %2$s".formatted(proj, destination)));
                         } catch (SyncFailedException e) {
                             log.error("Session sync operation failed", e);
                             throw new IllegalStateException(e.getMessage());
@@ -653,14 +655,14 @@ public final class PrearcDatabase {
                             PrearcDatabase.setStatus(mrSessionDir.getName(), _mrSessionTimestamp, project, PrearcUtils.PrearcStatus.BUILDING);
                             PrearcDatabase.buildSession(mrSessionDir, mrSessionDir.getName(), _mrSessionTimestamp, project, sessionData.getVisit(), sessionData.getProtocol(), sessionData.getTimeZone(), sessionData.getSource());
                             PrearcUtils.resetStatus(importer, project, _mrSessionTimestamp, mrSessionDir.getName(), true);
-                            PrearcUtils.log(mrSessionData, String.format("Moved %d scans from %s to %s", _mrScanIds.size(), sessionData.getName(), _mrSession));
+                            PrearcUtils.log(mrSessionData, "Moved %d scans from %s to %s".formatted(_mrScanIds.size(), sessionData.getName(), _mrSession));
 
                             PrearcDatabase.addSession(petSessionData);
                             final File petSessionDir = new File(_petSessionFolder);
                             PrearcDatabase.setStatus(petSessionDir.getName(), _petSessionTimestamp, project, PrearcUtils.PrearcStatus.BUILDING);
                             PrearcDatabase.buildSession(petSessionDir, petSessionDir.getName(), _petSessionTimestamp, project, sessionData.getVisit(), sessionData.getProtocol(), sessionData.getTimeZone(), sessionData.getSource());
                             PrearcUtils.resetStatus(importer, project, _petSessionTimestamp, petSessionDir.getName(), true);
-                            PrearcUtils.log(petSessionData, String.format("Moved %d scans from %s to %s", _petScanIds.size(), sessionData.getName(), _petSession));
+                            PrearcUtils.log(petSessionData, "Moved %d scans from %s to %s".formatted(_petScanIds.size(), sessionData.getName(), _petSession));
                         } catch (SyncFailedException e) {
                             log.error("Session sync failed", e);
                             throw new IllegalStateException(e.getMessage());
@@ -680,7 +682,7 @@ public final class PrearcDatabase {
             }
 
             private SessionData getSessionData(final String folder) {
-                final File path = Paths.get(folder).toFile();
+                final File path = Path.of(folder).toFile();
                 final SessionData newSessionData = new SessionData();
                 newSessionData.setName(path.getName());
                 newSessionData.setFolderName(path.getName());
@@ -1659,7 +1661,7 @@ public final class PrearcDatabase {
                 log.error("", e);
 
                 PrearcDatabase.unLockSession(this.sess, this.timestamp, this.proj);
-                if ((e.cause != null && (e.cause instanceof ClientException) && Status.CLIENT_ERROR_CONFLICT.equals(((ClientException) e.cause).getStatus()))) {
+                if ((e.cause != null && (e.cause instanceof ClientException exception) && Status.CLIENT_ERROR_CONFLICT.equals(exception.getStatus()))) {
                     //if this failed due to a conflict
                     PrearcDatabase.setStatus(sess, timestamp, proj, PrearcUtils.PrearcStatus.CONFLICT);
                     PrearcUtils.log(proj, timestamp, sess, e.cause);
@@ -2341,7 +2343,7 @@ public final class PrearcDatabase {
                     final String project = DatabaseSession.PROJECT.getFromResult(rs);
                     final String timestamp = DatabaseSession.TIMESTAMP.getFromResult(rs);
                     final String session = DatabaseSession.FOLDER_NAME.getFromResult(rs);
-                    al.add(String.format("/prearchive/projects/%s/%s/%s", project, timestamp, session));
+                    al.add("/prearchive/projects/%s/%s/%s".formatted(project, timestamp, session));
                 } else {
                     al.add(d.getFromResult(rs));
                 }

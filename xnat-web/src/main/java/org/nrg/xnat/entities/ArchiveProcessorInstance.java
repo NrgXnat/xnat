@@ -22,6 +22,8 @@ import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xnat.archive.GradualDicomImporter;
 
 import javax.persistence.*;
+
+import java.io.Serial;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -36,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ArchiveProcessorInstance extends AbstractHibernateEntity {
+    @Serial
     private static final long serialVersionUID = 6376648522174162478L;
 
     public ArchiveProcessorInstance(final String label, final String scope, final Set<String> scpWhitelist, final Set<String> scpBlacklist, final int priority, final String location, final Map<String, String> parameters, final String processorClass) {

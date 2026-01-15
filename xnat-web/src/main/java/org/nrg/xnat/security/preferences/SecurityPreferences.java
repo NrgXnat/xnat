@@ -13,6 +13,8 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.Serial;
+
 @SuppressWarnings("unused")
 @NrgPreferenceBean(toolId = SecurityPreferences.SECURITY_TOOL_ID,
                    toolName = "XNAT Security Preferences",
@@ -20,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @XnatMixIn(ProxiedBeanMixIn.class)
 @Slf4j
 public class SecurityPreferences extends EventTriggeringAbstractPreferenceBean {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String SECURITY_TOOL_ID = "security";
 
     @Autowired

@@ -33,7 +33,7 @@ public class DeleteXdatElementSecurity extends DeleteAction {
         for (String query : queries) {
         try {
                 if (query.contains("%")) {
-                    query = String.format(query, dataType);
+                    query = query.formatted(dataType);
                 }
                 PoolDBUtils.ExecuteNonSelectQuery(query, user.getDBName(), login);
         } catch (SQLException exception) {

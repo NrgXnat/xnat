@@ -94,8 +94,8 @@ public class ExptUploadConfirm extends SecureReport {
                                         BaseElement base = reader.parse(fis);
 
                                         
-                                        if (base instanceof CatCatalogBean){
-                                        	cat = (CatCatalogBean)base;
+                                        if (base instanceof CatCatalogBean bean){
+                                        	cat = bean;
                                             counter++;
                                         }
                                     } catch (FileNotFoundException e) {

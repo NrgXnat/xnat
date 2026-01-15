@@ -344,7 +344,7 @@ public class XNATTemplate extends SecureResource {
 
         XnatExperimentdata assessed = null;
         if (this.assesseds.size() == 1) {
-            assessed = assesseds.get(0);
+            assessed = assesseds.getFirst();
         }
 
         if (recons.size() > 0) {
@@ -353,7 +353,7 @@ public class XNATTemplate extends SecureResource {
             return assessed;
         } else if (expts.size() > 0) {
 //			experiment
-            return expts.get(0);
+            return expts.getFirst();
         } else if (sub != null) {
             return sub;
         } else if (proj != null) {
@@ -389,7 +389,7 @@ public class XNATTemplate extends SecureResource {
     }
 
     public boolean insertCatalog(XnatResourcecatalog catResource, Integer eventId) throws Exception {
-        final XnatExperimentdata assessed = assesseds.size() == 1 ? assesseds.get(0) : null;
+        final XnatExperimentdata assessed = assesseds.size() == 1 ? assesseds.getFirst() : null;
 
         final UserI user = getUser();
         if (recons.size() > 0) {
@@ -398,17 +398,17 @@ public class XNATTemplate extends SecureResource {
                 return false;
             }
 
-            final XnatReconstructedimagedata reconstruction = recons.get(0);
+            final XnatReconstructedimagedata reconstruction = recons.getFirst();
             return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, reconstruction), catResource,eventId) != null;
         } else if (scans.size() > 0) {
             if (assessed == null) {
                 getResponse().setStatus(Status.CLIENT_ERROR_GONE, "Invalid session id.");
                 return false;
             }
-            final XnatImagescandata scan = scans.get(0);
+            final XnatImagescandata scan = scans.getFirst();
             return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(assessed, scan), catResource, eventId) != null;
         } else if (expts.size() > 0) {
-            final XnatExperimentdata experiment = expts.get(0);
+            final XnatExperimentdata experiment = expts.getFirst();
             return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(experiment), catResource, eventId) != null;
         } else if (sub != null) {
             return _catalogService.insertResourceCatalog(user, UriParserUtils.getArchiveUri(sub), catResource, eventId) != null;
@@ -439,8 +439,8 @@ public class XNATTemplate extends SecureResource {
 
         final UserI user = getUser();
         if (!recons.isEmpty()) {
-            security = assesseds.get(0);
-            parent = recons.get(0);
+            security = assesseds.getFirst();
+            parent = recons.getFirst();
             final List<Integer> reconIds = Lists.transform(recons, new Function<XnatReconstructedimagedata, Integer>() {
                 @Override
                 public Integer apply(final XnatReconstructedimagedata recon) {
@@ -475,8 +475,8 @@ public class XNATTemplate extends SecureResource {
                 }
             }
         } else if (!scans.isEmpty()) {
-            security = assesseds.get(0);
-            parent = scans.get(0);
+            security = assesseds.getFirst();
+            parent = scans.getFirst();
             final List<Integer> scanIds = Lists.transform(scans, new Function<XnatImagescandata, Integer>() {
                 @Override
                 public Integer apply(final XnatImagescandata scan) {
@@ -496,8 +496,8 @@ public class XNATTemplate extends SecureResource {
                 query.append(" AND (").append(getResourceIdsWhereClause(resourceIds, "abst.xnat_abstractresource_id")).append(")");
             }
         } else if (!expts.isEmpty()) {
-            security = expts.get(0);
-            parent = expts.get(0);
+            security = expts.getFirst();
+            parent = expts.getFirst();
             final List<String> experimentIds = Lists.transform(expts, new Function<XnatExperimentdata, String>() {
                 @Override
                 public String apply(final XnatExperimentdata experiment) {
@@ -506,7 +506,7 @@ public class XNATTemplate extends SecureResource {
             });
             if (!assesseds.isEmpty() || security instanceof XnatImageassessordata) {
                 if (!assesseds.isEmpty()) {
-                    security = assesseds.get(0);
+                    security = assesseds.getFirst();
                 }
                 if (isInResource) {
                     xmlPath = "xnat:imageAssessorData/in/file";

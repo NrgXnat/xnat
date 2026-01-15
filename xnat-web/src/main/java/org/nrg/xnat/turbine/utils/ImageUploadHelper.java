@@ -100,7 +100,7 @@ public class ImageUploadHelper extends ArchiveStatusProducer implements Callable
 										}
 									}
 									
-									value=String.format(format, formatValues);
+									value=format.formatted(formatValues);
 								}
 
 								try {

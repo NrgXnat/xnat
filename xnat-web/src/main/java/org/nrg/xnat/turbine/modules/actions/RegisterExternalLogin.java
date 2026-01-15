@@ -145,8 +145,8 @@ public class RegisterExternalLogin extends XDATRegisterUser {
             return _service.create(auth);
         } catch (ConstraintViolationException e) {
             final Throwable cause = e.getCause();
-            if (cause instanceof PSQLException) {
-                final ServerErrorMessage message = ((PSQLException) cause).getServerErrorMessage();
+            if (cause instanceof PSQLException exception) {
+                final ServerErrorMessage message = exception.getServerErrorMessage();
                 if (message != null && PATTERN_DUPLICATE_KEY.matcher(message.toString()).matches() && StringUtils.isBlank(_service.getXdatUsernameByAuthNameAndProvider(authUsername, authMethod, authMethodId))) {
                     log.info("Found duplicate user auth record for username '{}' and auth method '{}' ('{}'), but no corresponding XNAT user. Allowing account creation to proceed.", authUsername, authMethodId, authMethod);
                     return _service.getUserByNameAndAuth(authUsername, authMethod, authMethodId);

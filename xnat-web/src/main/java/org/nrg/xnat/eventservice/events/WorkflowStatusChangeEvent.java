@@ -7,6 +7,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,6 +15,9 @@ import java.util.stream.Collectors;
 @Slf4j
 //@XnatEventServiceEvent(name="WorkflowStatusChangeEvent")
 public class WorkflowStatusChangeEvent extends AbstractEventServiceEvent<PersistentWorkflowI> {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public enum Status {CHANGED}
 

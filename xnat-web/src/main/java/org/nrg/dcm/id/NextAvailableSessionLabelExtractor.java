@@ -1,7 +1,7 @@
 package org.nrg.dcm.id;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import org.nrg.dcm.Extractor;
 import org.nrg.framework.utilities.SortedSets;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -37,10 +37,15 @@ public class NextAvailableSessionLabelExtractor implements IdentifierReferencing
     }
 
     @Override
-    public String extract(final DicomObject object) {
-        final XnatProjectdata project  = _identifier.getProject(object);
-        final String          subject  = _subjectExtractor.extract(object);
-        final String          modality = object.getString(Tag.Modality);
+    public String extract(final Attributes attributes) {
+        final XnatProjectdata project;
+        try {
+            project = _identifier.getProject(attributes);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        final String          subject  = _subjectExtractor.extract(attributes);
+        final String          modality = attributes.getString(Tag.Modality);
         final String          stem     = subject + "_" + modality;
 
         final List<String> labels = _template.queryForList(EXPT_QUERY, new MapSqlParameterSource("projectId", project.getId()).addValue("label", stem + '%'), String.class);

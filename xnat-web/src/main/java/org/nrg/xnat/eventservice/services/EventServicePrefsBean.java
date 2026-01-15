@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 
+import java.io.Serial;
+
 /**
  * Event Service preferences, stored as a prefs bean.
  */
@@ -21,6 +23,8 @@ import org.springframework.context.annotation.Lazy;
     toolName = "Event Service Prefs",
     description = "Preferences to enable/disable Event Service functionality")
 public class EventServicePrefsBean extends AbstractPreferenceBean {
+    @Serial
+    private static final long serialVersionUID = 1;
     private static final Logger _log = LoggerFactory.getLogger(EventServicePrefsBean.class);
     private final EventService eventService;
 

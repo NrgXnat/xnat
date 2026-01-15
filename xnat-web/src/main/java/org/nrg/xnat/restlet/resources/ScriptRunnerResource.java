@@ -63,7 +63,7 @@ public class ScriptRunnerResource extends AutomationResource {
         try {
             if (StringUtils.isNotBlank(_language)) {
                 if (!_runnerService.hasRunner(_language)) {
-                    throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, String.format("No script runner found for %s", _language));
+                    throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "No script runner found for %s".formatted(_language));
                 }
                 final String json = toJson(_runnerService.getRunner(_language));
                 return new StringRepresentation(json, mediaType);

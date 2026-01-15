@@ -11,8 +11,11 @@ package org.nrg.xnat.archive;
 
 import org.restlet.data.Status;
 
+import java.io.Serial;
+
 public class ArchivingException extends Exception {
-	private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 	private static final Status DEFAULT_STATUS = Status.SERVER_ERROR_INTERNAL;
 	private final Status status;
 	

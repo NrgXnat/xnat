@@ -20,7 +20,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +84,7 @@ public class ResourceSurveyXftItemEventHandlerMethod extends AbstractXftItemEven
 
             requests.forEach(request -> {
                 request.setExperimentLabel(newName);
-                request.setResourceUri(makeChildOfNewPath.apply(Paths.get(request.getResourceUri()).toFile()).getAbsolutePath());
+                request.setResourceUri(makeChildOfNewPath.apply(Path.of(request.getResourceUri()).toFile()).getAbsolutePath());
 
                 final ResourceSurveyReport existing = request.getSurveyReport();
                 if (existing != null) {

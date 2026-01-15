@@ -68,6 +68,7 @@ div.content-wrapper {
         </tr>
         <tr>
             <th>Tag</th>
+            <th class="left">VR</th>
             <th class="left">Description</th>
             <th class="left">Value</th>
         </tr>
@@ -76,6 +77,7 @@ div.content-wrapper {
             #foreach($row in $table.toArrayListOfLists())
             <tr>
                 <td class="tag">$!row.get(0)</td>
+                <td class="tag">$!row.get(2)</td>
                 <td class="desc">$!row.get(4)</td>
                 <td class="value">$!row.get(3)</td>
             </tr>

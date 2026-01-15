@@ -55,10 +55,10 @@ public class ProjectAccessRequest {
     public static final String PAR_BY_EMAIL = " xs_par_table.email='%s' AND approval_date IS NULL";
 
     public static final Map<String, Pattern> PAR_PATTERNS = new HashMap<String, Pattern>() {{
-        put("ID %s", Pattern.compile(String.format(PAR_BY_ID, "(.*?)")));
-        put("GUID %s", Pattern.compile(String.format(PAR_BY_GUID, "(.*?)")));
-        put("ID %s for project %s", Pattern.compile(String.format(PAR_BY_USER_AND_PROJ_ID, "(.*?)", "(.*?)")));
-        put("Email %s", Pattern.compile(String.format(PAR_BY_EMAIL, "(.*?)")));
+        put("ID %s", Pattern.compile(PAR_BY_ID.formatted("(.*?)")));
+        put("GUID %s", Pattern.compile(PAR_BY_GUID.formatted("(.*?)")));
+        put("ID %s for project %s", Pattern.compile(PAR_BY_USER_AND_PROJ_ID.formatted("(.*?)", "(.*?)")));
+        put("Email %s", Pattern.compile(PAR_BY_EMAIL.formatted("(.*?)")));
     }};
 
     public ProjectAccessRequest(final String query, final UserI user) throws XNATException, SQLException, DBPoolException {
@@ -320,19 +320,19 @@ public class ProjectAccessRequest {
     }
 
     public static ProjectAccessRequest RequestPARById(Integer id, UserI user) {
-        return RequestPAR(String.format(PAR_BY_ID, id.toString()), user);
+        return RequestPAR(PAR_BY_ID.formatted(id.toString()), user);
     }
 
     public static ProjectAccessRequest RequestPARByGUID(String guid, UserI user) {
-        return RequestPAR(String.format(PAR_BY_GUID, guid), user);
+        return RequestPAR(PAR_BY_GUID.formatted(guid), user);
     }
 
     public static ProjectAccessRequest RequestPARByUserProject(Integer userId, String projectId, UserI user) {
-        return RequestPAR(String.format(PAR_BY_USER_AND_PROJ_ID, userId.toString(), projectId), user);
+        return RequestPAR(PAR_BY_USER_AND_PROJ_ID.formatted(userId.toString(), projectId), user);
     }
 
     public static List<ProjectAccessRequest> RequestPARsByUserEmail(String email, UserI user) {
-        return RequestPARs(String.format(PAR_BY_EMAIL, email), user);
+        return RequestPARs(PAR_BY_EMAIL.formatted(email), user);
     }
 
     public static ProjectAccessRequest RequestPAR(String where, UserI user) {
@@ -376,9 +376,9 @@ public class ProjectAccessRequest {
             Matcher matcher = pattern.matcher(where);
             if (matcher.matches()) {
                 if (matcher.groupCount() == 2) {
-                    return String.format(entry.getKey(), matcher.group(1), matcher.group(2));
+                    return entry.getKey().formatted(matcher.group(1), matcher.group(2));
                 } else {
-                    return String.format(entry.getKey(), matcher.group(1));
+                    return entry.getKey().formatted(matcher.group(1));
                 }
             }
         }
@@ -391,7 +391,7 @@ public class ProjectAccessRequest {
                 CreatePARTable();
             }
 
-            String query = String.format("INSERT INTO xs_par_table (proj_id,user_id,level) VALUES ('%s', %d, '%s');", pID, user.getID(), StringUtils.remove(level, '\''));
+            String query = "INSERT INTO xs_par_table (proj_id,user_id,level) VALUES ('%s', %d, '%s');".formatted(pID, user.getID(), StringUtils.remove(level, '\''));
             PoolDBUtils.ExecuteNonSelectQuery(query, user.getDBName(), user.getLogin());
         } catch (Exception e) {
             _logger.error("", e);
@@ -435,21 +435,22 @@ public class ProjectAccessRequest {
                         PoolDBUtils.ExecuteNonSelectQuery(query, PoolDBUtils.getDefaultDBName(), null);
                     }
                 } else {
-                    query = "CREATE TABLE xs_par_table"+
-                    "\n("+
-                    "\n  par_id SERIAL,"+
-                    "\n  proj_id VARCHAR(255),"+
-                    "\n  level VARCHAR(255),"+
-                    "\n  create_date timestamp DEFAULT now(),"+
-                    "\n  user_id integer,"+
-                    "\n  approval_date timestamp ,"+
-                    "\n  approved boolean,"+
-                    "\n  approver_id integer," +
-                    "\n  email VARCHAR(255)," +
-                            "\n  guid VARCHAR(64)," +
-                            "\n  CONSTRAINT xs_par_table_pkey PRIMARY KEY (par_id),"+
-                            "\n  CONSTRAINT xs_par_table_guid_key UNIQUE (guid)"+
-                    "\n)";
+                    query = """
+                    CREATE TABLE xs_par_table
+                    (
+                      par_id SERIAL,
+                      proj_id VARCHAR(255),
+                      level VARCHAR(255),
+                      create_date timestamp DEFAULT now(),
+                      user_id integer,
+                      approval_date timestamp ,
+                      approved boolean,
+                      approver_id integer,
+                      email VARCHAR(255),
+                      guid VARCHAR(64),
+                      CONSTRAINT xs_par_table_pkey PRIMARY KEY (par_id),
+                      CONSTRAINT xs_par_table_guid_key UNIQUE (guid)
+                    )""";
 
                     PoolDBUtils.ExecuteNonSelectQuery(query, PoolDBUtils.getDefaultDBName(), null);
                 }
@@ -640,7 +641,7 @@ public class ProjectAccessRequest {
     }
 
     private static String getPARQuery(String where) {
-        return String.format(QUERY_GET_PAR, where);
+        return QUERY_GET_PAR.formatted(where);
     }
 
     private static final Logger _logger = Logger.getLogger(ProjectAccessRequest.class);

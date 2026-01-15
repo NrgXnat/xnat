@@ -26,7 +26,6 @@ import org.springframework.core.env.Environment;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -59,8 +58,8 @@ public class PropertiesConfig {
     public static final String NODE_CONFIG_URL       = "file:${" + JAVA_XNAT_CONFIG + "}";
 
     public static final List<String> CONFIG_LOCATIONS  = Collections.unmodifiableList(Arrays.asList(JAVA_XNAT_CONFIG, JAVA_XNAT_CONFIG_HOME, JAVA_XNAT_HOME, ENV_XNAT_HOME, ENV_HOME, ENV_HOME));
-    public static final List<String> CONFIG_PATHS      = Collections.unmodifiableList(Arrays.asList("", XNAT_CONF_FILE, Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(EXT_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString()));
-    public static final List<String> NODE_CONFIG_PATHS = Collections.unmodifiableList(Arrays.asList("", NODE_CONF_FILE, Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(EXT_CONF_FOLDER, NODE_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, NODE_CONF_FILE).toString()));
+    public static final List<String> CONFIG_PATHS      = Collections.unmodifiableList(Arrays.asList("", XNAT_CONF_FILE, Path.of(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Path.of(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Path.of(EXT_CONF_FOLDER, XNAT_CONF_FILE).toString(), Path.of(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString()));
+    public static final List<String> NODE_CONFIG_PATHS = Collections.unmodifiableList(Arrays.asList("", NODE_CONF_FILE, Path.of(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Path.of(BASE_CONF_FOLDER, NODE_CONF_FILE).toString(), Path.of(EXT_CONF_FOLDER, NODE_CONF_FILE).toString(), Path.of(BASE_CONF_FOLDER, NODE_CONF_FILE).toString()));
 
     public PropertiesConfig() {
         log.info("Creating PropertiesConfig");
@@ -93,7 +92,7 @@ public class PropertiesConfig {
             // We just get the parent of the first folder in the list of configuration folders XNAT_HOME. This won't be
             // null because, if there are no valid configuration folders, the config folders method will have already
             // thrown an exception.
-            _xnatHome = configPaths().get(0).getParent();
+            _xnatHome = configPaths().getFirst().getParent();
             log.info("Set path {} as the XNAT home folder.", _xnatHome);
         }
         return _xnatHome;
@@ -232,7 +231,7 @@ public class PropertiesConfig {
             log.debug("Found value of '{}' for environment variable {}", value, variable);
         }
 
-        final Path candidate = Paths.get(value, relative);
+        final Path candidate = Path.of(value, relative);
         final File file      = candidate.toFile();
         if (file.exists()) {
             // If it's a directory...

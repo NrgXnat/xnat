@@ -35,7 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.ZipOutputStream;
 
@@ -52,7 +51,7 @@ public class UserCacheResource extends SecureResource {
 	public UserCacheResource(Context context, Request request, Response response) {
 		super(context, request, response);
 		getVariants().add(new Variant(MediaType.TEXT_HTML));
-		_globalCachePath = Paths.get(XDAT.getSiteConfigPreferences().getCachePath());
+		_globalCachePath = Path.of(XDAT.getSiteConfigPreferences().getCachePath());
 		_userDataCache = XDAT.getContextService().getBean(UserDataCache.class);
 		_userPath = _userDataCache.getUserDataCache(getUser()).toAbsolutePath().toString();
 		_pXname = (String)getParameter(getRequest(),"XNAME");
@@ -635,13 +634,13 @@ public class UserCacheResource extends SecureResource {
 		ZipRepresentation zRep;
 		if(getRequestedMediaType()!=null && getRequestedMediaType().equals(MediaType.APPLICATION_GNU_TAR)){
 			zRep = new ZipRepresentation(MediaType.APPLICATION_GNU_TAR,userPath,ZipOutputStream.DEFLATED);
-			this.setContentDisposition(String.format("%s.tar.gz", fileName));
+			this.setContentDisposition("%s.tar.gz".formatted(fileName));
 		}else if(getRequestedMediaType()!=null && getRequestedMediaType().equals(MediaType.APPLICATION_TAR)){
 			zRep = new ZipRepresentation(MediaType.APPLICATION_TAR,userPath,ZipOutputStream.STORED);
-			this.setContentDisposition(String.format("%s.tar.gz", fileName));
+			this.setContentDisposition("%s.tar.gz".formatted(fileName));
 		}else{
 			zRep = new ZipRepresentation(MediaType.APPLICATION_ZIP,userPath,identifyCompression(null));
-			this.setContentDisposition(String.format("%s.zip", fileName));
+			this.setContentDisposition("%s.zip".formatted(fileName));
 		}
 		zRep.addAllAtRelativeDirectory(userPath + File.separator + pXNAME,fileList);
 		this.getResponse().setEntity(zRep);

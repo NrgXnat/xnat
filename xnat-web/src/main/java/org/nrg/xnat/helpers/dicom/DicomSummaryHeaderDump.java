@@ -11,6 +11,22 @@
  */
 package org.nrg.xnat.helpers.dicom;
 
+import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimaps;
+import org.apache.commons.lang.StringUtils;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.util.TagUtils;
+import org.nrg.dicom.mizer.exceptions.MizerException;
+import org.nrg.dicom.mizer.objects.DicomElementI;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
+import org.nrg.xft.XFTTable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -23,24 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
-import org.apache.commons.lang.StringUtils;
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.DicomObjectToStringParam;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.io.DicomInputStream;
-import org.dcm4che2.io.StopTagInputHandler;
-import org.dcm4che2.util.TagUtils;
-import org.nrg.xft.XFTTable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Supplier;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimaps;
 
 /**
  * The Class DicomSummaryHeaderDump.
@@ -100,60 +98,38 @@ public final class DicomSummaryHeaderDump {
 	/**
 	 * Read the header of the DICOM file ignoring the pixel data.
 	 *
-	 * @param f the f
+	 * @param file the file
 	 * @return the header
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws FileNotFoundException the file not found exception
 	 */
-    DicomObject getHeader(File f) throws IOException, FileNotFoundException {
+    DicomObjectI getHeader(File file) throws IOException, FileNotFoundException, MizerException {
         final int stopTag;
         if (fields.isEmpty()) {
             stopTag = Tag.PixelData;
         } else {
             stopTag = 1 + Collections.max(fields.keySet());
         }
-        final StopTagInputHandler stopHandler = new StopTagInputHandler(stopTag);
-
-        IOException ioexception = null;
-        final DicomInputStream dis = new DicomInputStream(f);
-        try {
-            dis.setHandler(stopHandler);
-            return dis.readDicomObject();
-        } catch (IOException e) {
-            throw ioexception = e;
-        } finally {
-            try {
-                dis.close();
-            } catch (IOException e) {
-                if (null != ioexception) {
-                    logger.error("unable to close DicomInputStream", e);
-                    throw ioexception;
-                } else {
-                    throw e;
-                }
-            }
-        }
+        return DicomObjectFactory.newInstance(file, stopTag);
     }
 
     /**
      * Convert a tag into a row of the XFTTable.
      *
-     * @param o Necessary so we can get to the description of the tag
-     * @param e The current DICOM element
+     * @param dicomElement The current DICOM element
      * @param parentTag If non null, this is a nested DICOM tag.
-     * @param maxLen The maximum number of characters to read from the description and value
      * @return the string[]
      */
-    String[] makeRow(DicomObject o, DicomElement e, String parentTag , int maxLen) {
-        String tag = TagUtils.toString(e.tag());
+    String[] makeRow(DicomElementI dicomElement, String parentTag) {
+        String tag = TagUtils.toString(dicomElement.tag());
         String value = "";
 
         // If this element has nested tags it doesn't have a value and trying to 
         // extract one using dcm4che will result in an UnsupportedOperationException 
         // so check first.
         try {
-            if (!e.hasDicomObjects()) {
-                value = e.getValueAsString(null, maxLen);	
+            if (!dicomElement.hasItems()) {
+                value = dicomElement.getValueAsString();
             }
             else {
                 value = "";
@@ -162,8 +138,8 @@ public final class DicomSummaryHeaderDump {
             value = "UnsupportedBinarySequence";
         }
 
-        String vr = e.vr().toString();
-        String desc = o.nameOf(e.tag());
+        String vr = dicomElement.getVRAsString();
+        String desc = TagUtils.toString(dicomElement.tag());
         List<String> l = new ArrayList<String>();
         if (parentTag == null) {
             String[] _s = {tag,"",vr,value,desc};
@@ -251,20 +227,21 @@ public final class DicomSummaryHeaderDump {
      * @throws IOException Signals that an I/O exception has occurred.
      * @throws FileNotFoundException the file not found exception
      */
-    public XFTTable render() throws IOException,FileNotFoundException {
+    public XFTTable render() throws IOException, FileNotFoundException, MizerException {
         XFTTable t = new XFTTable();
         t.initTable(columns);
       
 	
         
         for (File file : this.files) {
-			DicomObject header = this.getHeader(file);
-	        DicomObjectToStringParam formatParams = DicomObjectToStringParam.getDefaultParam();
+			DicomObjectI header = this.getHeader(file);
+	        // dcm4che3 - DicomObjectToStringParam removed, using maxLen directly
+	        int maxLen = 255;
 	
-	        for (Iterator<DicomElement> it = header.iterator(); it.hasNext();) {
-	            DicomElement e = it.next();
+	        for (Iterator<DicomElementI> it = header.iterator(); it.hasNext();) {
+	            DicomElementI e = it.next();
 	            try {
-		            write( t, header, formatParams, e);
+		            write( t, header,e);
 	            }catch(Exception ex){
 	                logger.error("Error reading dicom tag,"+ e.tag(),ex);
 	            }
@@ -279,24 +256,25 @@ public final class DicomSummaryHeaderDump {
      *
      * @param t the t
      * @param header the header
-     * @param formatParams the format params
-     * @param e the e
+     * @param element the dicomElement
      */
-    public void write(XFTTable t,DicomObject header,DicomObjectToStringParam formatParams,DicomElement e){
-    	if (fields.isEmpty() || fields.containsKey(e.tag())) {
-            if (e.hasDicomObjects()) {
-                for (int i = 0; i < e.countItems(); i++) {
-                    DicomObject o = e.getDicomObject(i);
-                    t.insertRow(makeRow(header, e, TagUtils.toString(e.tag()), formatParams.valueLength));
-                    for (Iterator<DicomElement> it1 = o.iterator(); it1.hasNext();) {
-                        DicomElement e1 = it1.next();
-                        write( t, header, formatParams, e1);
+    public void write(XFTTable t,DicomObjectI header,DicomElementI element){
+        // dcm4che3 - header is already DicomObjectI, no need to wrap
+        DicomElementI dei = header.getElement(element.tag());
+    	if (fields.isEmpty() || fields.containsKey(element.tag())) {
+            if (element.hasItems()) {
+                for (int i = 0; i < element.countItems(); i++) {
+                    DicomObjectI o = element.getDicomObject(i);
+                    t.insertRow(makeRow(element, TagUtils.toString(element.tag())));
+                    for (Iterator<DicomElementI> it1 = o.iterator(); it1.hasNext();) {
+                        DicomElementI e1 = it1.next();
+                        write( t, header, e1);
                     }
                 }
-            } else if (SiemensShadowHeader.isShadowHeader(header, e)) {
-                SiemensShadowHeader.addRows(t, header, e, fields.get(e.tag()));
+            } else if (SiemensShadowHeader.isShadowHeader(header, dei)) {
+                SiemensShadowHeader.addRows(t, header, dei, fields.get(element.tag()));
             } else {
-                t.insertRow(makeRow(header, e, null, formatParams.valueLength));		
+                t.insertRow(makeRow(element, null));
             }
     	}
     }

@@ -65,28 +65,29 @@ public class AutomationConfig {
 
     @Bean
     public String populateEventsQuery() {
-        return "SELECT event_id, event_label, total\n" +
-                "FROM (SELECT DISTINCT\n" +
-                "    CASE pipeline_name\n" +
-                "        WHEN 'Transfer'::text\n" +
-                "        THEN 'Archive'::text\n" +
-                "        ELSE\n" +
-                "            CASE xs_lastposition('/'::text, pipeline_name::text)\n" +
-                "                WHEN 0\n" +
-                "                THEN pipeline_name\n" +
-                "                ELSE substring(substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1), 1, xs_lastposition('.'::text, substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1)) - 1)\n" +
-                "            END\n" +
-                "    END AS event_label,\n" +
-                "    pipeline_name AS event_id,\n" +
-                "    count(*) AS total\n" +
-                "    FROM (SELECT *\n" +
-                "        FROM wrk_workflowData\n" +
-                "        WHERE externalid !='ADMIN' AND\n" +
-                "              externalid !='' AND\n" +
-                "              externalid IS NOT NULL AND\n" +
-                "              launch_time > now() - '1 year'::interval) AS current\n" +
-                "    GROUP BY event_id, event_label) AS events\n" +
-                "WHERE total > 1";
+        return """
+                SELECT event_id, event_label, total
+                FROM (SELECT DISTINCT
+                    CASE pipeline_name
+                        WHEN 'Transfer'::text
+                        THEN 'Archive'::text
+                        ELSE
+                            CASE xs_lastposition('/'::text, pipeline_name::text)
+                                WHEN 0
+                                THEN pipeline_name
+                                ELSE substring(substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1), 1, xs_lastposition('.'::text, substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1)) - 1)
+                            END
+                    END AS event_label,
+                    pipeline_name AS event_id,
+                    count(*) AS total
+                    FROM (SELECT *
+                        FROM wrk_workflowData
+                        WHERE externalid !='ADMIN' AND
+                              externalid !='' AND
+                              externalid IS NOT NULL AND
+                              launch_time > now() - '1 year'::interval) AS current
+                    GROUP BY event_id, event_label) AS events
+                WHERE total > 1""";
     }
 
     @Bean

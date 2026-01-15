@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
 import java.io.Serializable;
 
 @Getter
@@ -13,6 +15,9 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Slf4j
 public class RowIdentifier implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public final static String DELIMITER = "_";
     long formId;

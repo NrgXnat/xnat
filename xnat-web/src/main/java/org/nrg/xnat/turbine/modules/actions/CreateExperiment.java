@@ -90,7 +90,7 @@ public class CreateExperiment extends SecureAction {
 
         String dataType = (String)TurbineUtils.GetPassedParameter("data_type", data);
         if (StringUtils.isBlank(dataType)) {
-            final String page = String.format("%s/app/template/XDATScreen_add_experiment.vm", data.getContextPath());
+            final String page = "%s/app/template/XDATScreen_add_experiment.vm".formatted(data.getContextPath());
             data.getResponse().sendRedirect(page);
         } else {
             SchemaElement se = SchemaElement.GetElement(dataType);

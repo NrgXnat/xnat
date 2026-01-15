@@ -41,7 +41,7 @@ public class UserAuth extends SecureResource {
             response.setChallengeRequests(Collections.singletonList(new ChallengeRequest(ChallengeScheme.HTTP_BASIC, XDAT.getSiteId())));
             throw new ResourceException(Status.CLIENT_ERROR_UNAUTHORIZED);
         }
-        final String message = String.format(LOGGED_IN, user.getUsername()) + (_includeXnatCsrfToken ? "; XNAT_CSRF=" + getHttpSession().getAttribute("XNAT_CSRF") : "");
+        final String message = LOGGED_IN.formatted(user.getUsername()) + (_includeXnatCsrfToken ? "; XNAT_CSRF=" + getHttpSession().getAttribute("XNAT_CSRF") : "");
         return new StringRepresentation(message, MediaType.TEXT_PLAIN);
     }
 

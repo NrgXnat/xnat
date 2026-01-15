@@ -15,6 +15,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Transient;
+
+import java.io.Serial;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -22,6 +24,9 @@ import java.util.UUID;
 
 @Entity
 public class SubscriptionDeliveryEntity extends AbstractHibernateEntity {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public SubscriptionDeliveryEntity() {}
 

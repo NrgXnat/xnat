@@ -52,7 +52,7 @@ public class ArcSpecManager {
     public synchronized static ArcArchivespecification GetFreshInstance() {
         log.info("Getting fresh ArcSpec...");
 		final List<ArcArchivespecification> allSpecs = ArcArchivespecification.getAllArcArchivespecifications(null, false);
-	    return allSpecs.isEmpty() ? null : allSpecs.get(0);
+	    return allSpecs.isEmpty() ? null : allSpecs.getFirst();
 	}
     
     public synchronized static ArcArchivespecification GetInstance() {

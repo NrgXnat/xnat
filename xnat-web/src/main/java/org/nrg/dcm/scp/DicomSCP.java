@@ -294,7 +294,7 @@ public class DicomSCP {
             UID.JPEGBaseline8Bit,
             UID.JPEGExtended12Bit,
             UID.JPEGLossless,
-            UID.JPEGLossless,
+            UID.JPEGLosslessSV1,
             UID.JPEGLSLossless,
             UID.JPEGLSNearLossless,
             UID.JPEG2000Lossless,

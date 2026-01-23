@@ -133,14 +133,14 @@ public class ExperimentResource extends ItemResource {
 
             if (item == null) {
                 if (_project != null) {
-                    XnatSubjectassessordata om = (XnatSubjectassessordata) XnatSubjectassessordata.GetExptByProjectIdentifier(_project.getId(), _experimentId, user, false);
+                    XnatExperimentdata om = (XnatExperimentdata) XnatExperimentdata.GetExptByProjectIdentifier(_project.getId(), _experimentId, user, false);
                     if (om != null) {
                         item = om.getItem();
                     }
                 }
 
                 if (item == null) {
-                    XnatSubjectassessordata om = (XnatSubjectassessordata) XnatSubjectassessordata.getXnatExperimentdatasById(_experimentId, null, false);
+                    XnatExperimentdata om = (XnatExperimentdata) XnatExperimentdata.getXnatExperimentdatasById(_experimentId, null, false);
                     if (om != null) {
                         item = om.getItem();
                     }

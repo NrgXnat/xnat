@@ -27,11 +27,19 @@
                     #foreach($dataType in $exptCounts.keySet())
                         #set($ed=$!userHelper.getBrowseableElementDisplay($dataType))
                         #if ($ed.getSQLName())
-                            <li class="yuimenuitem">
-                                <a class="yuimenuitemlabel"
-                                    href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
-                                    'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
-                            </li>
+                            #if($ed.getSchemaElement().isDynamicDatatype())
+                                <li class="yuimenuitem">
+                                    <a class="yuimenuitemlabel"
+                                       href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","${ed.getSchemaElement().getFullXMLName()}").addPathInfo(
+                                           'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
+                                </li>
+                            #else
+                                <li class="yuimenuitem">
+                                    <a class="yuimenuitemlabel"
+                                       href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
+                                           'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
+                                </li>
+                            #end
                         #end
                     #end
                     #set($key="xnat:mrSessionData")
@@ -43,6 +51,26 @@
                                     href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
                                     'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
                             </li>
+                        #end
+                    #end
+                    ## Add links for project asset data types
+                    #foreach($ed in $userHelper.getBrowseableElementDisplays())
+                        #if($ed.isProjectAsset() && !$exptCounts.containsKey($ed.getElementName()))
+                            #if($ed.getSQLName())
+                                #if($ed.getSchemaElement().isDynamicDatatype())
+                                    <li class="yuimenuitem">
+                                        <a class="yuimenuitemlabel"
+                                           href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","${ed.getSchemaElement().getFullXMLName()}").addPathInfo(
+                                               'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
+                                    </li>
+                                #else
+                                    <li class="yuimenuitem">
+                                        <a class="yuimenuitemlabel"
+                                           href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo(
+                                               'project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</a>
+                                    </li>
+                                #end
+                            #end
                         #end
                     #end
                 #end

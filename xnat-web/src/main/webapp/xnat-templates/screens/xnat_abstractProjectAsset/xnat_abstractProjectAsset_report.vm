@@ -1,4 +1,4 @@
-<!-- BEGIN subjectAssessor/xnat_subjectAssessorData_report.vm -->
+<!-- BEGIN xnat_genericData/xnat_abstractProjectAsset_report.vm -->
 #if($project)
 
 #else
@@ -84,6 +84,8 @@
                 YAHOO.util.Connect.asyncRequest('PUT', serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getId()?activate=true&XNAT_CSRF=" + csrfToken, initCallback);
             #elseif($item.instanceOf("xnat:derivedData"))
                 YAHOO.util.Connect.asyncRequest('PUT', serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getImageSessionData().getSubjectId()/experiments/$om.getImageSessionData().getId()/assessors/$om.getId()?activate=true&XNAT_CSRF=" + csrfToken, initCallback);
+            #elseif($item.instanceOf("xnat:genericData"))
+                YAHOO.util.Connect.asyncRequest('PUT', serverRoot + "/REST/projects/$om.getProject()/experiments/$om.getId()?activate=true&XNAT_CSRF=" + csrfToken, initCallback);
             #else
                 YAHOO.util.Connect.asyncRequest('PUT', serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getSubjectId()/experiments/$om.getId()?activate=true&XNAT_CSRF=" + csrfToken, initCallback);
             #end
@@ -112,6 +114,8 @@
                 YAHOO.util.Connect.asyncRequest('PUT', serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getId()?quarantine=true&XNAT_CSRF=" + csrfToken, initCallback);
             #elseif($item.instanceOf("xnat:derivedData"))
                 YAHOO.util.Connect.asyncRequest('PUT', serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getImageSessionData().getSubjectId()/experiments/$om.getImageSessionData().getId()/assessors/$om.getId()?quarantine=true&XNAT_CSRF=" + csrfToken, initCallback);
+            #elseif($item.instanceOf("xnat:genericData"))
+                YAHOO.util.Connect.asyncRequest('PUT', serverRoot + "/REST/projects/$om.getProject()/experiments/$om.getId()?quarantine=true&XNAT_CSRF=" + csrfToken, initCallback);
             #else
                 YAHOO.util.Connect.asyncRequest('PUT', serverRoot + "/REST/projects/$om.getProject()/subjects/$om.getSubjectId()/experiments/$om.getId()?quarantine=true&XNAT_CSRF=" + csrfToken, initCallback);
             #end
@@ -119,4 +123,4 @@
     }
 
 </script>
-<!-- END subjectAssessor/xnat_subjectAssessorData_report.vm -->
+<!-- END xnat_genericData/xnat_abstractProjectAsset_report.vm -->

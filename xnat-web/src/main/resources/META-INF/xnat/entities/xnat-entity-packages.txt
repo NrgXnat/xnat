@@ -20,3 +20,5 @@ org.nrg.xnat.task.entities
 org.nrg.xnat.tracking.entities
 org.nrg.xnat.archive.entities
 org.nrg.dcm.scp
+org.nrg.xdat.display.transport.entities
+org.nrg.xft.schema.db.entities

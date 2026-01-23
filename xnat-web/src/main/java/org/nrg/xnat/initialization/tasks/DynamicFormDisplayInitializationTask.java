@@ -2,6 +2,7 @@ package org.nrg.xnat.initialization.tasks;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.DatabaseHelper;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.customforms.service.FormDisplayFieldService;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,7 @@ public class DynamicFormDisplayInitializationTask extends AbstractInitializingTa
 
     @Override
     protected void callImpl() throws InitializingTaskException {
+        XDATServlet.waitForInit();
         try {
                if (!appInfo.isInitialized() || !databaseHelper.tableExists("xdat_element_security")) {
                        throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);

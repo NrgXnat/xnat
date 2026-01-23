@@ -22,6 +22,7 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.actions.DisplayItemAction;
 import org.nrg.xdat.turbine.modules.actions.ModifyItem;
+import org.nrg.xdat.turbine.modules.actions.XDATActionRouter;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
@@ -290,7 +291,7 @@ public class ModifySubjectAssessorData extends ModifyItem {
                     TurbineUtils.SetParticipantItem(part, data);
                 }
                 TurbineUtils.SetEditItem(first, data);
-                data.setScreenTemplate("XDATScreen_edit_" + first.getGenericSchemaElement().getFormattedName() + ".vm");
+                XDATActionRouter.passToScreen(data,getContext(data),"edit",first.getXSIType());
             } else {
                 data.setScreenTemplate("Index.vm");
             }

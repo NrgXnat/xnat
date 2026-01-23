@@ -755,7 +755,7 @@ function SearchXMLManager(_xml){
 		lImg.onclick=function(){
 			for(var cfSc=0;cfSc<this.afS.options.length;cfSc++){
 				if(this.afS.options[cfSc].selected){
-					if(this.afS.options[cfSc].requires_value=="true"){
+					if(this.afS.options[cfSc].requires_value=="true" && this.afS.options[cfSc].field_id.indexOf("=")==-1){
 						this.manager.renderValueForm(this.afS.options[cfSc]);
 					}else{
 						this.manager.currentFields.push({
@@ -763,7 +763,8 @@ function SearchXMLManager(_xml){
 		  					"FieldId":this.afS.options[cfSc].field_id,
 		  					"Header":this.afS.options[cfSc].header,
 		  					"Type":this.afS.options[cfSc].type,
-							 "DESC":this.afS.options[cfSc].DESC});
+							 "DESC":this.afS.options[cfSc].DESC,
+							"Value":this.afS.options[cfSc].value});
 	                    for(var pfSc=0;pfSc<this.manager.pFs.length;pfSc++){
 	                        var pF = this.manager.pFs[pfSc];
 	                        if(pF.ELEMENT_NAME==this.afS.options[cfSc].element_name

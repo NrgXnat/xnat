@@ -268,7 +268,7 @@ public class SearchFieldListResource extends SecureResource{
 				params.put("versions", ed.getVersionsJSON());
 
 				final List<DisplayField> displays = ed.getSortedFields();
-				for (DislayField df : displays)
+				for (DisplayField df : displays)
 				{
 				   if(showHidden || df.isSearchable()){
 					   String id = df.getId();

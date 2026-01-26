@@ -40,17 +40,17 @@ public class AutomationConfig {
     }
 
     @Bean
-    public ScriptRunnerService scriptRunnerService(final ScriptService scriptService, final ScriptTriggerService triggerService) {
-        final DefaultScriptRunnerService service = new DefaultScriptRunnerService(scriptService, triggerService);
-        service.setRunnerPackages(Collections.singletonList("org.nrg.automation.runners"));
-        return service;
-    }
-
-    @Bean
     public AutomationService automationService(final AutomationEventIdsService eventIdsService,
                                                final AutomationEventIdsIdsService eventIdsIdsService,
                                                final AutomationFiltersService filtersService) {
         return new AutomationServiceImpl(eventIdsService, eventIdsIdsService, filtersService);
+    }
+
+    @Bean
+    public ScriptRunnerService scriptRunnerService(final AutomationService automationService, final ScriptService scriptService, final ScriptTriggerService triggerService) {
+        final DefaultScriptRunnerService service = new DefaultScriptRunnerService(automationService, scriptService, triggerService);
+        service.setRunnerPackages(Collections.singletonList("org.nrg.automation.runners"));
+        return service;
     }
 
     @Bean

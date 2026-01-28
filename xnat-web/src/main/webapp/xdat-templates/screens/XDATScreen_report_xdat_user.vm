@@ -150,7 +150,7 @@ $page.setVlinkColor($ui.vlink)
         </tr>
         <tr>
             <td>
-                <div style="padding:10px;background:#f0f0f0;border:1px solid #ccc">
+                <div style="padding:10px;background:var(--panel-bg);border:1px solid var(--border-color)">
 
                     <h3>Assign $displayManager.getSingularDisplayNameForProject().toLowerCase() membership and roles</h3>
 
@@ -173,7 +173,7 @@ $page.setVlinkColor($ui.vlink)
         </tr>
         <tr>
             <td>
-                <div style="padding:10px;background:#f0f0f0;border:1px solid #ccc">
+                <div style="padding:10px;background:var(--panel-bg);border:1px solid var(--border-color)">
                     <h3>Define security settings</h3>
                     <table width="100%" border="0">
                         <tr>

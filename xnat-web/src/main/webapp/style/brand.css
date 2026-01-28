@@ -28,23 +28,44 @@
     --XNAT-green-500: #339933;
     --XNAT-green-600: #227022;
 
-    /* basic text colors */
+    /* define default variables */
+    --page-bg: #ffffff;
+    --panel-bg: #f0f0f0;
+    --panel-header-bg: #1A75BB;
+    --panel-header-highlight: #3C8BC7;
+    --border-color: #cccccc;
+    --border-color-light: #dedede;
+    --table-border: #aaaaaa;
+    --highlight-color: #2fa4e7;
+    --hover-bg: #e4efff;
     --text-color: #000000;
     --text-color-reverse: #ffffff;
-
-    /* links and interactive elements */
     --link-color: #084fab;
     --link-color-hover: #1a75bb;
     --link-color-reverse: #66c7ff;
-    --link-color-reverse-hover: #cce1f3;
+    --link-color-reverse-hover: #99e8ff;
+
     --default-button-bg: #f7f7f7 linear-gradient( #ffffff, #f0f0f0 );
+    --default-button-bg-hover: #f7f7f7;
     --default-button-border: #848484; /* #a0a0a0 */
     --default-button-text: #000000;
-    --primary-button-bg: #1A75BB linear-gradient( #3C8BC7, #1A75BB );
+    --primary-button-bg: #1A75BB linear-gradient(#3C8BC7,#1A75BB);
+    --primary-button-bg-hover: #1A75BB;
     --primary-button-border: #085895;
     --primary-button-text: #ffffff;
 
-    /* noninteractive panels and elements */
-    --default-border: #ccc; /* #d0d0d0 #c0c0c0 #c8c8c8 */
+    --input-color: #ffffff;
+    --input-border: #c0c0c0;
+    --alert-color: #ffaa66;
+    --alert-color-bg: #ffffcc;
+    --alert-border: #eeee99;
+    --error-color: #993333;
+    --error-color-bg: #ffeaf5;
+    --error-border: #723131;
+    --message-color: #2d69b8;
+    --message-color-bg: rgba( 45,105,184);
+    --success-color: #66cc66;
+    --success-color-bg: rgba(102,204,102);
+    --success-border: #1dca23;
 
 }

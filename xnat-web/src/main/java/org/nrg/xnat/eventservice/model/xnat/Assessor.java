@@ -102,9 +102,10 @@ public class Assessor extends XnatModelObject {
         this.resources = Lists.newArrayList();
         // Image assessor resources are stored as out files rather that generic resources by default
         // Query both to be safe & consistent with legacy code
+        // Copy lists before streaming to avoid ConcurrentModificationException
         resources = Stream.concat(
-                xnatImageassessordataI.getResources_resource().stream(),
-                xnatImageassessordataI.getOut_file().stream()
+                Lists.newArrayList(xnatImageassessordataI.getResources_resource()).stream(),
+                Lists.newArrayList(xnatImageassessordataI.getOut_file()).stream()
         )
                           .filter(r -> r instanceof XnatResourcecatalog)
                           .map(r -> new Resource((XnatResourcecatalog) r, this.uri, rootArchivePath))

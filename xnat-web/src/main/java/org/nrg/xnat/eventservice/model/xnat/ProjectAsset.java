@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -79,22 +80,23 @@ public class ProjectAsset extends XnatModelObject {
             // ignored, I guess?
         }
 
+        // Copy lists before iterating to avoid ConcurrentModificationException
         this.subjects = Lists.newArrayList();
-        for (final XnatSubjectdataI xnatSubjectdataI : xnatProjectAssetI.getSubjects_subject()) {
+        for (final XnatSubjectdataI xnatSubjectdataI : new ArrayList<XnatSubjectdataI>(xnatProjectAssetI.getSubjects_subject())) {
             if (xnatSubjectdataI instanceof XnatSubjectdata) {
                 subjects.add(new Subject(xnatSubjectdataI, this.uri, rootArchivePath));
             }
         }
 
         this.sessions = Lists.newArrayList();
-        for (final XnatExperimentdataI xnatExperimentdataI : xnatProjectAssetI.getExperiments_experiment()) {
+        for (final XnatExperimentdataI xnatExperimentdataI : new ArrayList<XnatExperimentdataI>(xnatProjectAssetI.getExperiments_experiment())) {
             if (xnatExperimentdataI instanceof XnatImagesessiondataI imagesessiondataI) {
                 sessions.add(new Session(imagesessiondataI, this.uri, rootArchivePath));
             }
         }
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI : xnatProjectAssetI.getResources_resource()) {
+        for (final XnatAbstractresourceI xnatAbstractresourceI : new ArrayList<XnatAbstractresourceI>(xnatProjectAssetI.getResources_resource())) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog resourcecatalog) {
                 resources.add(new Resource(resourcecatalog, this.uri, rootArchivePath));
             }

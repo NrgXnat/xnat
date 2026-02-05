@@ -54,11 +54,7 @@ public class XnatObjectIntrospectionServiceImpl implements XnatObjectIntrospecti
     @Override
     public Boolean storedInDatabase(XnatSubjectdataI subject) {
         List<Map<String, Object>> result = simpleQuery(QUERY_SUBJECTDATA, "subjectId", subject.getId());
-        if(result != null && !result.isEmpty()){
-            return true;
-        } else {
-            return false;
-        }
+        return result != null && !result.isEmpty();
     }
 
     @Override

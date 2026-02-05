@@ -107,9 +107,10 @@ public class Project extends XnatModelObject {
         }
 
         this.subjects = new ArrayList<>();
+        // Copy lists before streaming to avoid ConcurrentModificationException
         try {
             if (preload) {
-                subjects.addAll(xnatProjectdata.getParticipants_participant().stream().map(subject -> new Subject(subject, this.uri, xnatProjectdata.getRootArchivePath())).collect(Collectors.toList()));
+                subjects.addAll(new ArrayList<>(xnatProjectdata.getParticipants_participant()).stream().map(subject -> new Subject(subject, this.uri, xnatProjectdata.getRootArchivePath())).collect(Collectors.toList()));
 
             }
         } catch (Exception e) { log.error("Exception trying to load participants. " + e.getMessage()); };
@@ -117,14 +118,14 @@ public class Project extends XnatModelObject {
         this.resources = new ArrayList<>();
         try {
             if (preload) {
-                resources.addAll(xnatProjectdata.getResources_resource().stream().filter(XnatResourcecatalog.class::isInstance).map(resource -> new Resource((XnatResourcecatalog) resource, this.uri, xnatProjectdata.getRootArchivePath())).collect(Collectors.toList()));
+                resources.addAll(new ArrayList<>(xnatProjectdata.getResources_resource()).stream().filter(XnatResourcecatalog.class::isInstance).map(resource -> new Resource((XnatResourcecatalog) resource, this.uri, xnatProjectdata.getRootArchivePath())).collect(Collectors.toList()));
                 }
             } catch(Exception e) { log.error("Exception trying to load project resources. " + e.getMessage()) ;}
 
         this.projectAssets = new ArrayList<>();
         try {
             if (preload) {
-                projectAssets.addAll(xnatProjectdata.getExperiments().stream().filter(XnatAbstractprojectasset.class::isInstance).map(asset -> new ProjectAsset((XnatAbstractprojectassetI) asset, this.uri, xnatProjectdata.getRootArchivePath())).collect(Collectors.toList()));
+                projectAssets.addAll(new ArrayList<>(xnatProjectdata.getExperiments()).stream().filter(XnatAbstractprojectasset.class::isInstance).map(asset -> new ProjectAsset((XnatAbstractprojectassetI) asset, this.uri, xnatProjectdata.getRootArchivePath())).collect(Collectors.toList()));
             }
         } catch(Exception e) { log.error("Exception trying to load project resources. " + e.getMessage()) ;}
 

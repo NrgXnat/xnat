@@ -24,6 +24,7 @@ import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 import javax.annotation.Nullable;
 
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -81,15 +82,16 @@ public class Subject extends XnatModelObject {
         this.source = xnatSubjectdataI.getSrc();
         this.initials = xnatSubjectdataI.getInitials();
 
+        // Copy lists before iterating to avoid ConcurrentModificationException
         this.sessions = Lists.newArrayList();
-        for (final XnatExperimentdataI xnatExperimentdataI : xnatSubjectdataI.getExperiments_experiment()) {
+        for (final XnatExperimentdataI xnatExperimentdataI : new ArrayList<XnatExperimentdataI>(xnatSubjectdataI.getExperiments_experiment())) {
             if (xnatExperimentdataI instanceof XnatImagesessiondataI imagesessiondataI) {
                 sessions.add(new Session(imagesessiondataI, this.uri, rootArchivePath));
             }
         }
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI : xnatSubjectdataI.getResources_resource()) {
+        for (final XnatAbstractresourceI xnatAbstractresourceI : new ArrayList<XnatAbstractresourceI>(xnatSubjectdataI.getResources_resource())) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog resourcecatalog) {
                 resources.add(new Resource(resourcecatalog, this.uri, rootArchivePath));
             }

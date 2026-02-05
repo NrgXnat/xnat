@@ -304,7 +304,7 @@ public class EventServiceItemSaveAspect {
                     + "\n" + Arrays.toString(e.getStackTrace()));
         }
         if (proceedingReturn == null) {
-            proceedingReturn = joinPoint.proceed();;
+            proceedingReturn = joinPoint.proceed();
         }
         return proceedingReturn;
     }

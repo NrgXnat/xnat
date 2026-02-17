@@ -12,6 +12,7 @@ import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.bean.ClassMappingFactory;
 import org.nrg.xdat.model.CatEntryI;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.junit.ConcurrentJunitRunner;
 
@@ -37,11 +38,22 @@ public class TestThreadAndProcessFileLock {
     private static File TEST_CATALOG_FILE;
     private static File TEST_DCMCATALOG;
     private static File TEST_DCMCATALOG_PERM;
-    
+    private static Object savedPreferences;
+
     private static final String fakeProject = null;
 
     @BeforeClass
     public static void setup() throws Exception {
+        // Replace cached PREFERENCES with a mock that returns a writable temp path,
+        // preventing getCachePath() from using a non-writable path like /data/xnat/cache
+        // that may have been set by a prior test's Spring context
+        Field prefsField = ThreadAndProcessFileLock.class.getDeclaredField("PREFERENCES");
+        prefsField.setAccessible(true);
+        savedPreferences = prefsField.get(null);
+        SiteConfigPreferences mockPrefs = Mockito.mock(SiteConfigPreferences.class);
+        Mockito.when(mockPrefs.getCachePath()).thenReturn(System.getProperty("java.io.tmpdir"));
+        prefsField.set(null, mockPrefs);
+
         TMPDIR.mkdirs();
 
         final String catFilename = "DEBUG_OUTPUT_catalog.xml";
@@ -86,8 +98,13 @@ public class TestThreadAndProcessFileLock {
     }
 
     @AfterClass
-    public static void cleanup() throws IOException {
+    public static void cleanup() throws Exception {
         org.apache.commons.io.FileUtils.deleteDirectory(TMPDIR);
+
+        // Restore cached PREFERENCES for other tests
+        Field prefsField = ThreadAndProcessFileLock.class.getDeclaredField("PREFERENCES");
+        prefsField.setAccessible(true);
+        prefsField.set(null, savedPreferences);
     }
 
     @Test

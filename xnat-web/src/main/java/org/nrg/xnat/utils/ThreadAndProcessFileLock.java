@@ -3,6 +3,7 @@ package org.nrg.xnat.utils;
 import com.google.common.base.MoreObjects;
 import com.google.common.util.concurrent.Striped;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 
@@ -66,7 +67,7 @@ public class ThreadAndProcessFileLock {
 
     private static SiteConfigPreferences PREFERENCES;
 
-    public static final String LOCKFILE_PREFIX = ".~lock-";
+    public static final String LOCKFILE_PREFIX = "lock-";
 
     public static ThreadAndProcessFileLock getThreadAndProcessFileLock(File file,
                                                                        boolean readOnly)
@@ -101,7 +102,6 @@ public class ThreadAndProcessFileLock {
                 try {
                     Path dummyFilePath = FILE_LOCKS.get(file).dummyFile.toPath();
                     Files.deleteIfExists(dummyFilePath);
-                    deleteEmptyParentDirectories(dummyFilePath.getParent(), FILE_LOCKS.get(file).getCachePath());
                 } catch (IOException e) {
                     log.error("Unable to delete dummy file", e);
                 }
@@ -187,7 +187,7 @@ public class ThreadAndProcessFileLock {
         this.readOnly = readOnly;
 
         // Open channel on the dummy file to synchronize across processes
-        this.dummyFile = Paths.get(getCachePath(), "file-locks", file.getParent(), LOCKFILE_PREFIX + file.getName()).toFile();
+        this.dummyFile = getLockFileForFile(file);
         openDummyRAF(true);
         this.channel = dummyRAF.getChannel();
 
@@ -198,6 +198,28 @@ public class ThreadAndProcessFileLock {
     private String getCachePath() {
         final SiteConfigPreferences preferences = getSiteConfigPreferences();
         return preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+    }
+
+    /**
+     * Create the lock-file File corresponding to the provided file.
+     *
+     * Takes a file path x/y/z and creates lock file.
+     * If length of path x/y/z is greater than 255
+     * lockfile is created at <cache-path>/file-locks/<LOCKFILE_PREFIX><MD5 hash of x/y/z>
+     * else lockfile is created at <cache-path>/file-locks/<LOCKFILE_PREFIX>x-y-z.
+     *
+     * @param file Generate the lock file for this file
+     * @return the lock file.
+     */
+    private File getLockFileForFile(File file) throws IOException {
+        final String filePath = file.getCanonicalPath();
+        Path path;
+        if (filePath.length() > 255) {
+            path = Paths.get(getCachePath(),"file-locks", LOCKFILE_PREFIX.concat( DigestUtils.md5Hex(filePath)));
+        } else {
+            path = Paths.get(getCachePath(), "file-locks", LOCKFILE_PREFIX.concat( filePath.replace("/", "-")));
+        }
+        return path.toFile();
     }
 
     private SiteConfigPreferences getSiteConfigPreferences() {

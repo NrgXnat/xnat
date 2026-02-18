@@ -36,9 +36,8 @@ function cFormatTextbox(el,oRecord,oColumn,oData){
     }
 }
 
-TextDataTable=function(t,fields,dataSrc,options){
-	TextDataTable.superclass.constructor.call(this,t,fields,dataSrc,options);
-	
+TextDataTable=function(encompassingDiv,fields,dataSrc,options){
+	TextDataTable.superclass.constructor.call(this,encompassingDiv,fields,dataSrc,options);
 	this.textChangeEvent=new YAHOO.util.CustomEvent("textboxChangeEvent",this);
 }
 
@@ -96,68 +95,69 @@ RestSharer = function(_array,_config) {
             '<input id="checkAll" type="button" value="Uncheck All" onclick="toggleShareCheckboxes(this);" style="width:110px;margin-bottom:10px;font-size:12px;"/>' +
             '<style>div.yui-dt table{ width:100%; } </style>';
         header.style.width = 100+'%';
-		var t=_div.appendChild(document.createElement("div"));
+		var tableDiv = _div.appendChild(document.createElement("div"));
 		var dataSource = new YAHOO.util.DataSource(this.a);
    		dataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
    		dataSource.responseSchema = {
      		fields:["redirect","checked","label","canRead","ru","primary_label","xsiType","date","processed","new_label"]
    		};
    		
-   this.dt=new TextDataTable(t,[
-   		{key:"check",label:"Share", formatter:function(el, oRecord, oColumn, oData) {
-            oRecord.setData("parentConflict", false);
-            oRecords.push(oRecord);
-			var canRead=oRecord.getData("canRead");
-			if(canRead){return YAHOO.widget.DataTable.formatCheckbox(el,oRecord,oColumn,true);}
-			else{el.innerHTML="N/A";}
-   	    }}
-   	    ,{label:"Label",key:"primary_label"}
-   	    ,{label:"Data-type",key:"xsiType"}
-   	    ,{label:"Date",key:"date"}
-   		,{label:"New Label",formatter:cFormatTextbox,key:"new_label"}
-   		,{label:"",formatter:function(el,oRecord,oColumn,oData){
-   			if(oRecord.getData("processed")==1){
-   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: darkorange\"></i>";
-   			}else if(oRecord.getData("processed")==2){
-   				el.innerHTML="<i class=\"fa fa-check\" style=\"color: green\" title=\""+oRecord.getData("xsiType")+" shared\"></i>";
-   			}else if(oRecord.getData("processed")==3){
-   				el.innerHTML="<i class=\"fa fa-times-circle\" style=\"color: #c66\" title=\"" + (oRecord.getData("msg") ? oRecord.getData("msg") : "") + "\"></i>";
-   			}else if(oRecord.getData("processed")==4){
-   				el.innerHTML="<i class=\"fa fa-hourglass\" style=\"color: darkorange\" title=\"" + (oRecord.getData("msg") ? oRecord.getData("msg") : "") + "\"></i>";
-   			}else{
-   				el.innerHTML="";
-   			}
-   		},key:"processed"}
-   		],dataSource,
-   		{});
-   
-  	   this.dt.subscribe("textboxChangeEvent", function(oArgs){   
-             var elTextbox = oArgs.target;   
-             var oRecord = this.dt.getRecord(elTextbox); 
-             oRecord.setData("new_label",elTextbox.value);   
-             
-             if(oRecord.getData("new_label") != "" && oRecord.getData("processed") == 3 && oRecord.getData("msg") != undefined){
-                     this.dt.updateCell(oRecord,"processed",undefined);
-                     this.leaveOpen = false;
-                     oRecord.setData("msg",undefined);
-                     if (oRecord.getData("checked")) {
-                         this.unMarkConflict();
-                     }
-             }
-       }.bind(this));
-  	   this.dt.subscribe("checkboxClickEvent", function(oArgs){   
-             var elCheckbox = oArgs.target;   
-             var oRecord = this.getRecord(elCheckbox);   
-             oRecord.setData("checked",elCheckbox.checked);
-             if (oRecord.getData("checked") && oRecord.getData("new_label") != "" && oRecord.getData("processed") == undefined && oRecord.getData("msg") == undefined) {
-                 this.unMarkConflict();
-             }
+        this.dt=new TextDataTable(tableDiv,[
+            {
+                key:"check",label:"Share", formatter:function(el, oRecord, oColumn, oData) {
+                    oRecord.setData("parentConflict", false);
+                    oRecords.push(oRecord);
+                    var canRead=oRecord.getData("canRead");
+                    if(canRead){return YAHOO.widget.DataTable.formatCheckbox(el,oRecord,oColumn,true);}
+                    else{el.innerHTML="N/A";}
+                }
+            },
+            { label:"Label",key:"primary_label" },
+            { label:"Data-type",key:"xsiType" },
+            { label:"Date",key:"date" },
+            { label:"New Label",formatter:cFormatTextbox,key:"new_label" },
+            {
+                label:"",formatter:function(el,oRecord,oColumn,oData ){
+                    if (oRecord.getData("processed")==1) {
+                        el.innerHTML="<i class=\"fa fa-check\" style=\"color: darkorange\"></i>";
+                    } else if (oRecord.getData("processed")==2) {
+                        el.innerHTML="<i class=\"fa fa-check\" style=\"color: green\" title=\""+oRecord.getData("xsiType")+" shared\"></i>";
+                    } else if (oRecord.getData("processed")==3) {
+                        el.innerHTML="<i class=\"fa fa-times-circle\" style=\"color: #c66\" title=\"" + (oRecord.getData("msg") ? oRecord.getData("msg") : "") + "\"></i>";
+                    } else if (oRecord.getData("processed")==4) {
+                        el.innerHTML="<i class=\"fa fa-hourglass\" style=\"color: darkorange\" title=\"" + (oRecord.getData("msg") ? oRecord.getData("msg") : "") + "\"></i>";
+                    } else {
+                        el.innerHTML="";
+                    }
+                },
+                key:"processed"
+            }
+        ],
+        dataSource,
+        {});
 
-       });
-  	   
-		
-	    var myButtons = [ { text:"Share", handler:this.handleShare, isDefault:true  },{ text:"Close", handler:this.handleCancel } ];
-		this.popup.cfg.queueProperty("buttons", myButtons);
+        this.dt.subscribe("textboxChangeEvent", function(event){
+            var elTextbox = event.target;
+            var oRecord = this.dt.getRecord(elTextbox);
+            oRecord.setData("new_label",elTextbox.value);
+
+            if (oRecord.getData("new_label") != "" && oRecord.getData("processed") == 3 && oRecord.getData("msg") != undefined) {
+                this.dt.updateCell(oRecord,"processed",undefined);
+                this.leaveOpen = false;
+                oRecord.setData("msg",undefined);
+                this.markConflict(oRecord._nCount, false);
+            }
+        }.bind(this));
+
+        this.dt.subscribe("checkboxClickEvent", (event) => {
+            var elCheckbox = event.target;
+            var oRecord = this.dt.getRecord(elCheckbox);
+            oRecord.setData("checked",elCheckbox.checked);
+            this.markConflict(oRecord._nCount, false);
+        })
+
+        var myButtons = [ { text:"Share", handler:this.handleShare, isDefault:true  },{ text:"Close", handler:this.handleCancel } ];
+        this.popup.cfg.queueProperty("buttons", myButtons);
     }
     
     this.handleCancel=function(){
@@ -167,28 +167,31 @@ RestSharer = function(_array,_config) {
     this.handleShare=function(){
         if (this.manager.hasConflict()) {
             this.manager.warnConflictExists();
+        } else {
+            this.manager.process();
         }
-    	this.manager.process();
     }
 
     this.warnConflictExists=function(label) {
-         if (label === undefined) {
-             xmodal.message('Conflict resolution',
-                            "There appears to be data conflict issue. You may not have assigned a new label or checked the row.", 'Ok',
-                            { action: function() {
-                                    xmodal.close();
-                                }
-                            }
-                            );
-         } else {
-             xmodal.message('Conflict resolution',
-                            "There appears to be data conflict issue. Destination project " + this.config.project.label + " already has " + label + ". Please modify the label and retry.", 'Ok',
-                            { action: function() {
-                                    xmodal.close();
-                                }
-                            }
-                            );
-         }
+        if (label === undefined) {
+            xmodal.message('Conflict resolution',
+                "There appears to be data conflict issue. Please modify the conflicting label or uncheck the conflicting row in order to successfully share.", 'Ok',
+                {
+                    action: function() {
+                        xmodal.close();
+                    }
+                }
+            );
+        } else {
+            xmodal.message('Conflict resolution',
+                "There appears to be data conflict issue. Destination project " + this.config.project.label + " already has " + label + ". Please modify the label and retry.", 'Ok',
+                    {
+                    action: function() {
+                        xmodal.close();
+                    }
+                }
+            );
+        }
     }
 
     this.asyncRequestPromise=function(url, handler) {
@@ -197,12 +200,10 @@ RestSharer = function(_array,_config) {
         });
     }
 
-
-
     this.process = async function(){
     	var processing=false;
-    	for(var rsDtC=0;rsDtC<this.dt.getRecordSet().getLength();rsDtC++){
-    		var oRecord=this.dt.getRecord(rsDtC);
+    	for(let i = 0; i < this.dt.getRecordSet().getLength(); i++){
+    		var oRecord=this.dt.getRecord(i);
     		if(oRecord.getData("checked")){
     			if(oRecord.getData("new_label")==""){
     				oRecord.setData("msg","New Label cannot be blank.");
@@ -210,31 +211,31 @@ RestSharer = function(_array,_config) {
     				this.leaveOpen=true;
     				continue;
     			}
-    			if(!oRecord.getData("parentConflict") && (oRecord.getData("processed")==null|| oRecord.getData("processed")==undefined)){
+    			if(!oRecord.getData("parentConflict") && (oRecord.getData("processed")==null || oRecord.getData("processed")==undefined)){
     				this.dt.updateCell(oRecord,"processed",4);
     				shareCB={
-    					success:function(o){
+    					success:function(data){
     						closeModalPanel("a_share");
-    						this.dt.updateCell(o.argument.oRecord,"processed",2);
-    						this.oncomplete.fire(o.argument.oRecord.getData("new_label"),o.argument.oRecord.getData("xsiType"));
+    						this.dt.updateCell(data.argument.oRecord,"processed",2);
+    						this.oncomplete.fire(data.argument.oRecord.getData("new_label"),data.argument.oRecord.getData("xsiType"));
+    						this.leaveOpen=false;
     						this.process();
     					},
-    					failure:function(o){
+    					failure:function(error) {
     						closeModalPanel("a_share");
     						this.leaveOpen=true;
-    						if(o.status!=409){
+    						if(error.status!=409) {
     							this.stopped=true;
-    							this.dt.updateCell(o.argument.oRecord,"processed",3);
-    							xmodal.message('Error' + o.status, "ERROR : Failed to share " + oRecord.getData("label"));
-    						}else{
-    							o.argument.oRecord.setData("msg","This item has either already been shared into this " + 
-    																XNAT.app.displayNames.singular.project.toLowerCase() + 
-    																", or there is already an item in this " + 
-    																XNAT.app.displayNames.singular.project.toLowerCase() + 
-    																" with the requested label.");
-    							this.dt.updateCell(o.argument.oRecord,"processed",3);
-    							o.argument.oRecord.setData("parentConflict", true);
-                                this.markConflict( rsDtC + 1);
+    							this.dt.updateCell(error.argument.oRecord,"processed",3);
+    							xmodal.message('Error' + error.status, "ERROR : Failed to share " + oRecord.getData("label"));
+    						} else{
+    						    let projectSingularName = XNAT.app.displayNames.singular.project.toLowerCase();
+    							error.argument.oRecord.setData("msg","This item has either already been shared into this " +
+                                    projectSingularName + ", or there is already an item in this " +
+                                    projectSingularName + " with the requested label.");
+    							this.dt.updateCell(error.argument.oRecord,"processed",3);
+    							error.argument.oRecord.setData("parentConflict", true);
+                                this.markConflict(oRecord._nCount, true);
     							this.warnConflictExists(oRecord.getData("label"));
     						}
     					},
@@ -256,42 +257,34 @@ RestSharer = function(_array,_config) {
     	}
     	
     	if(!processing){
-    		if(this.leaveOpen==undefined){
+    		if(this.leaveOpen!=true){
     			this.popup.destroy();
     		}
     	}
     }
 
-    this.markConflict = function (index) {
-      for(var rsDtC=index;rsDtC<this.dt.getRecordSet().getLength();rsDtC++){
-        var oRecord=this.dt.getRecord(rsDtC);
-        oRecord.setData("parentConflict",true);
-      }
-    }
-
-    this.unMarkConflict = function () {
-      for(var rsDtC=0;rsDtC<this.dt.getRecordSet().getLength();rsDtC++){
-        var oRecord=this.dt.getRecord(rsDtC);
-        oRecord.setData("parentConflict",false);
-      }
+    this.markConflict = function (index, isConflict) {
+        var recordSet = this.dt.getRecordSet()._records;
+        for (let i = 0; i < recordSet.length; i++) {
+            var oRecord = recordSet[i];
+            if (oRecord._nCount == index) {
+                 oRecord.setData("parentConflict", isConflict);
+            }
+        }
     }
 
     this.hasConflict = function () {
-      let hasParentConflict = false;
-      for(var rsDtC=0;rsDtC<this.dt.getRecordSet().getLength();rsDtC++){
-        var oRecord=this.dt.getRecord(rsDtC);
-        if (oRecord.getData("parentConflict")) {
-          hasParentConflict = true;
-          break;
+        let hasParentConflict = false;
+        for(let i = 0; i < this.dt.getRecordSet().getLength(); i++){
+            var oRecord=this.dt.getRecord(i);
+            if (oRecord.getData("parentConflict")) {
+                hasParentConflict = true;
+                break;
+            }
         }
-      }
-      return hasParentConflict;
+        return hasParentConflict;
     }
-
-
 };
-
-
 
 YAHOO.extend(RestSharer, BasePopup, {
 });

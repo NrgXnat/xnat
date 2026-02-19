@@ -22,6 +22,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
             <li><a href="#listing-config-tab"><em>Listing Configuration</em></a></li>
             <li><a href="#xft-elements-tab"><em>All XFT Elements</em></a></li>
             <li><a href="#dynamic-datatypes-tab"><em>Dynamic Data Types</em></a></li>
+            <li><a href="#db-display-docs-tab"><em>Dynamic Display Docs</em></a></li>
         </ul>
 
         <div class="yui-content">
@@ -300,6 +301,32 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                     </table>
                 </div>
             </div>
+
+            <div id="db-display-docs-tab">
+                <div style="padding: 10px 0;">
+                    <button type="button" onclick="loadDisplayDocs()" class="btn1 btn-sm">Load Display Docs</button>
+                    <p>This table displays all database-backed element display configurations. Click an entry to view its details.</p>
+                </div>
+                <div style="display: flex; gap: 10px; height: calc(100vh - 300px);">
+                    <div style="flex: 0 0 400px; overflow-y: auto; border: 1px solid #ddd;">
+                        <table id="display-docs-table" class="xnat-table clean" style="margin: 0;">
+                            <thead>
+                            <tr>
+                                <th class="sort">Element Name</th>
+                                <th class="sort">Display Label</th>
+                            </tr>
+                            </thead>
+                            <tbody id="displayDocsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="display-doc-details-panel" style="flex: 1; overflow-y: auto; border: 1px solid #ddd; padding: 15px; background-color: #f9f9f9;">
+                        <div style="color: #999; text-align: center; padding: 40px;">
+                            Select an element display to view its details
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -430,7 +457,8 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
     #tableOfElementsFields table,
     #tableOfElementsViews table,
     #xft-elements-table,
-    #dynamic-datatypes-table {
+    #dynamic-datatypes-table,
+    #display-docs-table {
         border-collapse: collapse;
     }
 
@@ -445,7 +473,9 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
     #xft-elements-table th,
     #xft-elements-table td,
     #dynamic-datatypes-table th,
-    #dynamic-datatypes-table td {
+    #dynamic-datatypes-table td,
+    #display-docs-table th,
+    #display-docs-table td {
         border: 1px solid #ddd;
     }
 
@@ -665,6 +695,71 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
         background-color: #f5f5f5;
     }
 
+    /* Display docs table styles */
+    #display-docs-table tbody tr.selected {
+        background-color: #e3f2fd !important;
+    }
+
+    #display-docs-table tbody tr {
+        cursor: pointer;
+    }
+
+    #display-docs-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .display-doc-section {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #fff;
+    }
+
+    .display-doc-section-header {
+        padding: 8px 12px;
+        background-color: #f0f0f0;
+        font-weight: bold;
+        border-bottom: 1px solid #ddd;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .display-doc-section-header:hover {
+        background-color: #e8e8e8;
+    }
+
+    .display-doc-section-body {
+        padding: 10px 12px;
+    }
+
+    .display-doc-prop {
+        margin-bottom: 6px;
+    }
+
+    .display-doc-prop-label {
+        font-weight: bold;
+        color: #555;
+        display: inline-block;
+        min-width: 140px;
+    }
+
+    .display-doc-child-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .display-doc-child-table th,
+    .display-doc-child-table td {
+        border: 1px solid #ddd;
+        padding: 4px 8px;
+        text-align: left;
+    }
+
+    .display-doc-child-table th {
+        background-color: #f5f5f5;
+    }
+
     /* Create Data Type Dialog height management */
     .ui-dialog.create-datatype-dialog {
         height: 450px !important;
@@ -732,7 +827,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
             }
         }
         
-        if (!confirm('WARNING: This operation will make structural modifications to your database. This may take several seconds to complete. Do you want to continue?')) {
+        if (!confirm('WARNING: Data Types in XNAT are generally permanent and can be difficult (though not impossible) to remove. This operation will also make structural modifications to your database and may take several seconds to complete.\n\nDo you want to continue?')) {
             return;
         }
         
@@ -1555,6 +1650,8 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
             // No auto-initialization needed, user clicks Load button
         } else if (newIndex === 4) { // Dynamic Data Types tab
             // No auto-initialization needed, user clicks Load button
+        } else if (newIndex === 5) { // DB Backed Display Docs tab
+            // No auto-initialization needed, user clicks Load button
         }
     });
 
@@ -1863,5 +1960,224 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
     // Download Schema XSD
     function downloadSchema(schemaId, schemaName) {
         window.location.href = serverRoot + "/xapi/dbschemas/" + schemaId + "/schema";
+    }
+
+    // ==========================================
+    // DB Backed Display Docs tab
+    // ==========================================
+
+    // Load all display docs
+    function loadDisplayDocs() {
+        var tbody = jq("#displayDocsTableBody");
+        tbody.html("<tr><td colspan='2' style='text-align: center;'>Loading...</td></tr>");
+
+        // Clear details panel
+        jq("#display-doc-details-panel").html('<div style="color: #999; text-align: center; padding: 40px;">Select an element display to view its details</div>');
+
+        jq.get(serverRoot + "/xapi/elementdisplays?format=json")
+            .done(function (data) {
+                tbody.empty();
+
+                if (data && data.length > 0) {
+                    // Sort alphabetically by elementName
+                    data.sort(function(a, b) {
+                        return (a.elementName || "").localeCompare(b.elementName || "");
+                    });
+
+                    jq(data).each(function(index, ed) {
+                        var row = jq("<tr></tr>");
+                        var nameCell = jq("<td></td>");
+                        var link = jq("<a class='element-link' href='#'></a>")
+                            .text(ed.elementName || "")
+                            .on('click', function(e) {
+                                e.preventDefault();
+                                jq("#display-docs-table tbody tr").removeClass("selected");
+                                row.addClass("selected");
+                                showDisplayDocDetails(ed.elementName);
+                            });
+                        nameCell.append(link);
+                        row.append(nameCell);
+                        row.append(jq("<td></td>").text(ed.displayLabel || ""));
+                        tbody.append(row);
+                    });
+                } else {
+                    tbody.append("<tr><td colspan='2' style='text-align: center;'>No display docs found</td></tr>");
+                }
+            })
+            .fail(function (xhr, status, error) {
+                tbody.empty();
+                tbody.append("<tr><td colspan='2' style='color: red; text-align: center;'>Failed to load display docs: [" + xhr.status + "] " + error + "</td></tr>");
+            });
+    }
+
+    // Show details for a specific display doc
+    function showDisplayDocDetails(elementName) {
+        var panel = jq("#display-doc-details-panel");
+        panel.html('<div style="color: #999; text-align: center; padding: 40px;">Loading details...</div>');
+
+        jq.get(serverRoot + "/xapi/elementdisplays/" + encodeURIComponent(elementName) + "?format=json")
+            .done(function (ed) {
+                var html = '';
+
+                // Header with element name and delete button
+                html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">';
+                html += '<h3 style="margin: 0;">' + (ed.elementName || '') + '</h3>';
+                html += '<button class="btn1 btn-sm" style="color: #c00;" onclick="deleteDisplayDoc(\'' + (ed.elementName || '').replace(/'/g, "\\'") + '\')">Delete</button>';
+                html += '</div>';
+
+                // Properties section
+                html += '<div class="display-doc-section">';
+                html += '<div class="display-doc-section-header">Properties</div>';
+                html += '<div class="display-doc-section-body">';
+                html += buildPropRow('Element Name', ed.elementName);
+                html += buildPropRow('Display Label', ed.displayLabel);
+                html += buildPropRow('Display Field', ed.displayField);
+                html += buildPropRow('Value Field', ed.valueField);
+                html += buildPropRow('Brief Description', ed.briefDescription);
+                html += buildPropRow('Full Description', ed.fullDescription);
+                html += buildPropRow('Light Color', ed.lightColor);
+                html += buildPropRow('Dark Color', ed.darkColor);
+                html += buildPropRow('Sort Order', ed.sortOrder);
+                html += '</div></div>';
+
+                // Display Fields section
+                if (ed.displayFields && ed.displayFields.length > 0) {
+                    html += '<div class="display-doc-section">';
+                    html += '<div class="display-doc-section-header" onclick="jq(this).next().toggle()">Display Fields (' + ed.displayFields.length + ')</div>';
+                    html += '<div class="display-doc-section-body">';
+                    html += '<table class="display-doc-child-table">';
+                    html += '<thead><tr><th>Field ID</th><th>Header</th><th>Searchable</th><th>Visible</th><th>Data Type</th></tr></thead>';
+                    html += '<tbody>';
+                    jq(ed.displayFields).each(function(i, df) {
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(df.fieldId || '') + '</td>';
+                        html += '<td>' + escapeHtml(df.header || '') + '</td>';
+                        html += '<td>' + (df.searchable ? 'Yes' : 'No') + '</td>';
+                        html += '<td>' + (df.visible ? 'Yes' : 'No') + '</td>';
+                        html += '<td>' + escapeHtml(df.dataType || '') + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                    html += '</div></div>';
+                }
+
+                // Display Versions section
+                if (ed.displayVersions && ed.displayVersions.length > 0) {
+                    html += '<div class="display-doc-section">';
+                    html += '<div class="display-doc-section-header" onclick="jq(this).next().toggle()">Display Versions (' + ed.displayVersions.length + ')</div>';
+                    html += '<div class="display-doc-section-body">';
+                    html += '<table class="display-doc-child-table">';
+                    html += '<thead><tr><th>Version Name</th><th>Description</th><th>Default Order By</th><th>Sort Order</th><th>Allow Diffs</th></tr></thead>';
+                    html += '<tbody>';
+                    jq(ed.displayVersions).each(function(i, dv) {
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(dv.versionName || '') + '</td>';
+                        html += '<td>' + escapeHtml(dv.briefDescription || '') + '</td>';
+                        html += '<td>' + escapeHtml(dv.defaultOrderBy || '') + '</td>';
+                        html += '<td>' + escapeHtml(dv.defaultSortOrder || '') + '</td>';
+                        html += '<td>' + (dv.allowDiffs ? 'Yes' : 'No') + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                    html += '</div></div>';
+                }
+
+                // Arcs section
+                if (ed.arcs && ed.arcs.length > 0) {
+                    html += '<div class="display-doc-section">';
+                    html += '<div class="display-doc-section-header" onclick="jq(this).next().toggle()">Arcs (' + ed.arcs.length + ')</div>';
+                    html += '<div class="display-doc-section-body">';
+                    html += '<table class="display-doc-child-table">';
+                    html += '<thead><tr><th>Name</th><th>Common Fields</th></tr></thead>';
+                    html += '<tbody>';
+                    jq(ed.arcs).each(function(i, arc) {
+                        var fields = '';
+                        if (arc.commonFields) {
+                            var pairs = [];
+                            for (var key in arc.commonFields) {
+                                if (arc.commonFields.hasOwnProperty(key)) {
+                                    pairs.push(escapeHtml(key) + ' = ' + escapeHtml(arc.commonFields[key]));
+                                }
+                            }
+                            fields = pairs.join(', ');
+                        }
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(arc.name || '') + '</td>';
+                        html += '<td>' + fields + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                    html += '</div></div>';
+                }
+
+                // View Links section
+                if (ed.viewLinks && ed.viewLinks.length > 0) {
+                    html += '<div class="display-doc-section">';
+                    html += '<div class="display-doc-section-header" onclick="jq(this).next().toggle()">View Links (' + ed.viewLinks.length + ')</div>';
+                    html += '<div class="display-doc-section-body">';
+                    html += '<table class="display-doc-child-table">';
+                    html += '<thead><tr><th>Alias</th><th>View</th></tr></thead>';
+                    html += '<tbody>';
+                    jq(ed.viewLinks).each(function(i, vl) {
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(vl.alias || '') + '</td>';
+                        html += '<td>' + escapeHtml(vl.view || '') + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                    html += '</div></div>';
+                }
+
+                panel.html(html);
+            })
+            .fail(function (xhr, status, error) {
+                panel.html('<div style="color: red; padding: 20px;">Failed to load display doc details: ' + error + '</div>');
+            });
+    }
+
+    // Delete a display doc
+    function deleteDisplayDoc(elementName) {
+        if (!confirm("Are you sure you want to delete the element display for '" + elementName + "'?\n\nThis will remove all configured display configuration (fields, versions, arcs, view links) for this element.\n\nNote: You will need to restart Tomcat after this deletion for the changes to be fully in effect.")) {
+            return;
+        }
+
+        jq.ajax({
+            url: serverRoot + "/xapi/elementdisplays/" + encodeURIComponent(elementName) + "?XNAT_CSRF=" + window.csrfToken,
+            type: "DELETE",
+            dataType: "json",
+            success: function(response) {
+                showMessage("page_body", "Success", "Element display for '" + elementName + "' has been deleted successfully.");
+                // Reload the list and clear details
+                loadDisplayDocs();
+            },
+            error: function(xhr, status, error) {
+                var errorMsg = "Failed to delete element display";
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.error) {
+                        errorMsg = response.error;
+                    }
+                } catch (e) {
+                    errorMsg = "Failed to delete element display: [" + xhr.status + "] " + error;
+                }
+                showMessage("page_body", "Error", errorMsg);
+            }
+        });
+    }
+
+    // Helper: build a property row
+    function buildPropRow(label, value) {
+        return '<div class="display-doc-prop"><span class="display-doc-prop-label">' + label + ':</span> ' + escapeHtml(value != null ? String(value) : '') + '</div>';
+    }
+
+    // Helper: escape HTML to prevent XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 </script>

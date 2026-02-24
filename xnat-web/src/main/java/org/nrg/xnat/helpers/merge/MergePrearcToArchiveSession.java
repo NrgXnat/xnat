@@ -24,6 +24,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.archive.ArchivingException;
+import org.nrg.xnat.archive.ScanIdValidator;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
@@ -208,6 +209,18 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
             }
         }
 
+        final XnatImagesessiondata session = populateSession(sessionXml);
+        try (final ScanIdValidator scanIdValidator = new ScanIdValidator(control, dest, session, _prearcSession, allowSessionMerge, overwriteFiles)) {
+            if (scanIdValidator.needsScanIdCorrection()) {
+                scanIdValidator.call();
+                return populateSession(sessionXml);
+            } else {
+                return session;
+            }
+        }
+    }
+
+    private XnatImagesessiondata populateSession(final File sessionXml) throws Exception {
         final XnatImagesessiondata session = new XNATSessionPopulater(user, sessionXml, src.getProject(), false).populate();
         session.setId(src.getId());
         return session;

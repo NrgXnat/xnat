@@ -1684,6 +1684,29 @@ sessionBuilder:
                 session&mdash;before attempting to build a session document from the DICOM data. This value is specified in
                 minutes and defaults to 5 minutes.
 
+nativeDicomPreCompression:
+    kind: panel.form
+    name: NativeDicomPreCompression
+    label: "Native DICOM Pre-Compression"
+    method: POST
+    contentType: json
+    url: /xapi/siteConfig
+    contents:
+        enableNativeDicomPreCompression:
+            kind: panel.input.switchbox
+            label: "Enable Native DICOM <br>Pre-Compression"
+            onText: Enabled
+            offText: Disabled
+            description: >
+                When enabled, large uncompressed (Native) DICOM files exceeding 2 GB
+                will be automatically pre-compressed to JPEG 2000 Lossless (encapsulated) format before anonymization.
+                This prevents the 2 GB byte array limit error during anonymization of large files such as
+                Breast Tomosynthesis (DBT) images.
+                <br><br>
+                If pre-compression fails, the original file is left unchanged,
+                but anonymization may still fail for files exceeding the 2 GB limit.
+                Default is Disabled.
+
 anonymization:
     kind: panel.form
     name: Anonymization
@@ -2899,6 +2922,7 @@ root:
             contents:
                 ${uploadChannels}
                 ${sessionBuilder}
+                ${nativeDicomPreCompression}
                 ${anonymization}
                 ${seriesImportFilter}
                 ${petTracers}

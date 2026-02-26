@@ -388,6 +388,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
                 }
 
+                if (XDAT.getSiteConfigPreferences().getEnableNativeDicomPreCompression()) {
+                    NativeDicomPreCompressor.preCompressIfNeeded(outputFile, transferSyntaxUID);
+                }
+
                 // check to see of this session came in through an application that may have performed anonymization
                 // prior to transfer, e.g. the XNAT Upload Assistant.
                 if (!session.getPreventAnon() && DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
@@ -417,6 +421,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     log.debug("The session {} {} {} has already been anonymized by the uploader, proceeding without " +
                             "further anonymization.", session.getProject(), session.getSubject(), session.getName());
                 }
+
             } finally {
                 //release the file lock
                 lock.release();

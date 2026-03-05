@@ -22,12 +22,17 @@ import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.io.DicomInputStream;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.StudyRouting;
 import org.nrg.xdat.model.ArcProjectI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.preferences.HandlePetMr;
+import org.nrg.xdat.services.StudyRoutingService;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
@@ -62,6 +67,7 @@ import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -849,6 +855,13 @@ public class PrearcUtils {
             params.put(PARAM_SOURCE, source);
         }
 
+        // Apply study routing overrides to build params — needed here for paths that
+        // build XML without going through PrearcTableBuilder#getSessionData (e.g., direct archive);
+        // see applyStudyRoutingOverrides.
+        // While we could use applyStudyRoutingOverrides to sd here, this feels safer, as subject can be passed in
+        // differently from various methods.
+        applyStudyRoutingToParams(sd, sessionDir, params);
+
         PrearcUtils.cleanLockDirs(sd.getSessionDataTriple());
 
         try {
@@ -865,6 +878,112 @@ public class PrearcUtils {
         } catch (Throwable t) {
             throw new PrearcDatabase.SyncFailedException("Error building session", t);
         }
+    }
+
+    /**
+     * Checks study routing for subject/label overrides and applies them to the session data.
+     * Uses the study instance UID from {@link SessionData#getTag()}.
+     */
+    public static void applyStudyRoutingOverrides(final SessionData sd) {
+        try {
+            final StudyRouting routing = getStudyRouting(sd.getTag());
+            if (routing == null) {
+                return;
+            }
+
+            if (StringUtils.isNotBlank(routing.getSubjectId())) {
+                log.debug("Study routing subject override for UID {}: '{}' -> '{}'",
+                          sd.getTag(), sd.getSubject(), routing.getSubjectId());
+                sd.setSubject(routing.getSubjectId());
+            }
+            if (StringUtils.isNotBlank(routing.getLabel())) {
+                log.debug("Study routing label override for UID {}: '{}' -> '{}'",
+                          sd.getTag(), sd.getName(), routing.getLabel());
+                sd.setName(routing.getLabel());
+            }
+        } catch (Exception e) {
+            log.warn("Error checking study routing; proceeding without routing overrides.", e);
+        }
+    }
+
+    /**
+     * Checks study routing for subject/label overrides and applies them to the build params.
+     * Gets the study instance UID from {@link SessionData#getTag()} if available, or reads
+     * it from a DICOM file in the session directory as a fallback.
+     */
+    private static void applyStudyRoutingToParams(final SessionData sd, final File sessionDir,
+                                                  final Map<String, String> params) {
+        try {
+            final String studyInstanceUid = getStudyInstanceUid(sd, sessionDir);
+            final StudyRouting routing = getStudyRouting(studyInstanceUid);
+            if (routing == null) {
+                return;
+            }
+
+            if (StringUtils.isNotBlank(routing.getSubjectId())) {
+                log.debug("Study routing subject override for UID {}: '{}' -> '{}'",
+                          studyInstanceUid, params.get(PARAM_SUBJECT_ID), routing.getSubjectId());
+                params.put(PARAM_SUBJECT_ID, routing.getSubjectId());
+            }
+            if (StringUtils.isNotBlank(routing.getLabel())) {
+                log.debug("Study routing label override for UID {}: '{}' -> '{}'",
+                          studyInstanceUid, params.get(PARAM_LABEL), routing.getLabel());
+                params.put(PARAM_LABEL, routing.getLabel());
+            }
+        } catch (Exception e) {
+            log.warn("Error checking study routing during session build; proceeding without routing overrides.", e);
+        }
+    }
+
+    /**
+     * Looks up the {@link StudyRouting} for the given study instance UID.
+     *
+     * @return the routing, or {@code null} if the UID is blank, the service is unavailable, or no routing exists
+     */
+    @Nullable
+    private static StudyRouting getStudyRouting(final String studyInstanceUid) {
+        if (StringUtils.isBlank(studyInstanceUid)) {
+            return null;
+        }
+        final StudyRoutingService routingService = XDAT.getContextService().getBean(StudyRoutingService.class);
+        if (routingService == null) {
+            return null;
+        }
+        return routingService.getStudyRouting(studyInstanceUid);
+    }
+
+    /**
+     * Gets the study instance UID, first from {@link SessionData#getTag()}, then by reading
+     * the first DICOM file found in the session directory as a fallback.
+     */
+    private static String getStudyInstanceUid(final SessionData sd, final File sessionDir) {
+        if (StringUtils.isNotBlank(sd.getTag())) {
+            return sd.getTag();
+        }
+        // Fallback: read from the first DICOM file in the session directory
+        final File[] scanDirs = sessionDir.listFiles(File::isDirectory);
+        if (scanDirs == null) {
+            return null;
+        }
+        for (final File scanDir : scanDirs) {
+            try (final DirectoryStream<Path> stream = Files.newDirectoryStream(scanDir.toPath())) {
+                for (final Path path : stream) {
+                    if (Files.isRegularFile(path) && !path.toString().endsWith(".xml")) {
+                        try (final DicomInputStream dis = new DicomInputStream(path.toFile())) {
+                            final Attributes attrs = dis.readDataset(Tag.StudyInstanceUID + 1);
+                            final String uid = attrs.getString(Tag.StudyInstanceUID);
+                            if (StringUtils.isNotBlank(uid)) {
+                                return uid;
+                            }
+                        }
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                // Not a DICOM file or couldn't read, try next scan dir
+            }
+        }
+        return null;
     }
 
     public static void setupScans(final XnatImagesessiondata session, final String root) {

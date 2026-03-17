@@ -157,7 +157,9 @@ public class FileUtils {
     @SafeVarargs
     public static <T extends String> File buildCacheSubDir(T... directories) {
         final File subDir = Paths.get(XDAT.getSiteConfigPreferences().getCachePath(), directories).toFile();
-        log.debug("Found cache sub-directory: {}", subDir.getAbsolutePath());
+        if (log.isDebugEnabled()) {
+            log.debug("Found cache sub-directory: {}", subDir.getAbsolutePath());
+        }
         return subDir;
     }
 
@@ -263,7 +265,7 @@ public class FileUtils {
     public static Map<Path, Path> getAllSharedPaths(final String projectId, final UserI user, final boolean includeProjectResources,
                                                       final boolean includeSubjectResources, final boolean removeArcs, final boolean addExperimentLabel)
             throws DBPoolException, SQLException, IOException, BaseXnatExperimentdata.UnknownPrimaryProjectException, InvalidArchiveStructure {
-        final long startTime = System.nanoTime();
+        final long startTime = log.isDebugEnabled() ? System.nanoTime() : 0;
         XnatProjectdata projectData = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
         Map<Path, Path> allPathsMap = new HashMap<>();
         if (!projectData.getProjectHasSharedExperiments()) {
@@ -273,7 +275,7 @@ public class FileUtils {
         }
         XFTTable subjectsTable = projectData.getSubjectsByProject();
         XFTTable experimentsTable = projectData.getExperimentsByProject();
-        final long queryTime = System.nanoTime();
+        final long queryTime = log.isDebugEnabled() ? System.nanoTime() : 0;
         Map<String, List<String>> allSubjectsForProject = convertXFTTableForProjectSharedPathsElements(subjectsTable);
         Map<String, List<String>> allExperimentsForProject = convertXFTTableForProjectSharedPathsElements(experimentsTable);
         Map<String, String> subjectLabelChanges = getAllChangedElementLabels(subjectsTable);
@@ -389,7 +391,7 @@ public class FileUtils {
                 }
             }
         }
-        final long experimentWalkTime = System.nanoTime();
+        final long experimentWalkTime = log.isDebugEnabled() ? System.nanoTime() : 0;
         int maxNumberOfSessions = XDAT.getSiteConfigPreferences().getMaxNumberOfSessionsForJobsWithSharedData();
         if (totalSessions > maxNumberOfSessions) {
             throw new RuntimeException("With the inclusion of shared data, more than " + maxNumberOfSessions + " sessions are present in the current project. " +
@@ -438,16 +440,18 @@ public class FileUtils {
 
             }
         }
-        final long endTime = System.nanoTime();
-        log.debug("getAllSharedPaths for project {} completed in {}ms (queries={}ms, experimentWalks={}ms, subjectsAndResources={}ms) — {} experiments, {} subjects, {} total files",
-                projectId,
-                (endTime - startTime) / 1_000_000,
-                (queryTime - startTime) / 1_000_000,
-                (experimentWalkTime - queryTime) / 1_000_000,
-                (endTime - experimentWalkTime) / 1_000_000,
-                allExperimentsForProject.values().stream().mapToInt(List::size).sum(),
-                allSubjectsForProject.values().stream().mapToInt(List::size).sum(),
-                allPathsMap.size());
+        if (log.isDebugEnabled()) {
+            final long endTime = System.nanoTime();
+            log.debug("getAllSharedPaths for project {} completed in {}ms (queries={}ms, experimentWalks={}ms, subjectsAndResources={}ms) — {} experiments, {} subjects, {} total files",
+                    projectId,
+                    (endTime - startTime) / 1_000_000,
+                    (queryTime - startTime) / 1_000_000,
+                    (experimentWalkTime - queryTime) / 1_000_000,
+                    (endTime - experimentWalkTime) / 1_000_000,
+                    allExperimentsForProject.values().stream().mapToInt(List::size).sum(),
+                    allSubjectsForProject.values().stream().mapToInt(List::size).sum(),
+                    allPathsMap.size());
+        }
         return allPathsMap;
     }
 
@@ -456,7 +460,7 @@ public class FileUtils {
     }
 
     public static Path createDirectoryForSharedData(Map<Path, Path> pathsMap, final Path inputLinksDirectory, final IntConsumer progressCallback) throws IOException {
-        final long startTime = System.nanoTime();
+        final long startTime = log.isDebugEnabled() ? System.nanoTime() : 0;
         Path destinationBaseDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath()).resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(inputLinksDirectory);
         final boolean useHardLink = "hard_link".equals(XDAT.getSiteConfigPreferences().getFileOperationUsedForJobsWithSharedData());
         final AtomicInteger processedCount = new AtomicInteger(0);
@@ -486,10 +490,12 @@ public class FileUtils {
         } catch (UncheckedIOException e) {
             throw e.getCause();
         }
-        log.debug("createDirectoryForSharedData completed in {}ms — {} files, mode={}",
-                (System.nanoTime() - startTime) / 1_000_000,
-                pathsMap.size(),
-                useHardLink ? "hard_link" : "copy");
+        if (log.isDebugEnabled()) {
+            log.debug("createDirectoryForSharedData completed in {}ms — {} files, mode={}",
+                    (System.nanoTime() - startTime) / 1_000_000,
+                    pathsMap.size(),
+                    useHardLink ? "hard_link" : "copy");
+        }
         return destinationBaseDirectory;
     }
 

@@ -77,14 +77,14 @@ public class ItemHTMLRepresentation extends TurbineScreenRepresentation {
 	 * falling back to the static DisplayItemAction.GetReportScreen() method.
 	 */
 	private String resolveReportScreen(SchemaElementI schemaElement) {
-		final String defaultReportIdentifierClass = XDAT.getSiteConfigurationProperty("UI.defaultReportIdentifier", "org.nrg.xdat.navigation.DefaultReportIdentifier");
 		try {
+			final String defaultReportIdentifierClass = XDAT.getSiteConfigurationProperty("UI.defaultReportIdentifier", "org.nrg.xdat.navigation.DefaultReportIdentifier");
 			final Object object = Class.forName(defaultReportIdentifierClass).getDeclaredConstructor().newInstance();
 			if (object instanceof DefaultReportIdentifierI) {
 				return ((DefaultReportIdentifierI) object).identifyReport(data, null);
 			}
 		} catch (Throwable e) {
-			logger.error("Failed to use configured report identifier " + defaultReportIdentifierClass + ", falling back to default", e);
+			logger.error("Failed to use configured report identifier, falling back to default", e);
 		}
 		return DisplayItemAction.GetReportScreen(schemaElement);
 	}

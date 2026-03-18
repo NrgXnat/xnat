@@ -9,6 +9,7 @@ import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -36,7 +37,7 @@ public class TestAction extends SingleActionProvider {
         return detectedEvents;
     }
 
-    List<EventServiceEvent> detectedEvents = new ArrayList();
+    List<EventServiceEvent> detectedEvents = Collections.synchronizedList(new ArrayList<>());
 
     @Autowired
     public TestAction(final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {

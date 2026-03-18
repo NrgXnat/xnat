@@ -311,6 +311,7 @@ dependencies {
     testImplementation "org.mockito:mockito-core"
     testImplementation "org.powermock:powermock-api-mockito2"
     testImplementation "org.powermock:powermock-module-junit4"
+    testImplementation "org.awaitility:awaitility:4.2.0"
 
     javadocCoverage "com.manoelcampos:javadoc-coverage"
 }
@@ -385,7 +386,7 @@ try {
     commitDistance = gitDetails.commitDistance
     lastTag = gitDetails.lastTag
     isCleanTag = gitDetails.isCleanTag
-} catch (IllegalArgumentException e) {
+} catch (IllegalArgumentException | NullPointerException e) {
     logger.info "Got an error trying to read VCS metadata from git. It's possible this project is not under VCS control. Using placeholder values for manifest entries."
     isDirty = true
     branchName = "Unknown"
@@ -436,6 +437,15 @@ war {
 
 test {
     systemProperties["xnat.home"] = "${buildDir}/tmp/test"
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = false
+        afterSuite { desc, result ->
+            if (!desc.parent) {
+                println "\nTest results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped)"
+            }
+        }
+    }
 }
 
 jacoco {

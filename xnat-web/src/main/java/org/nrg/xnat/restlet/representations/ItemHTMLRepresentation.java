@@ -84,7 +84,7 @@ public class ItemHTMLRepresentation extends TurbineScreenRepresentation {
 				return ((DefaultReportIdentifierI) object).identifyReport(data, null);
 			}
 		} catch (Throwable e) {
-			logger.error("Failed to use configured report identifier, falling back to default", e);
+			//do nothing, say nothing, this happens alot.
 		}
 		return DisplayItemAction.GetReportScreen(schemaElement);
 	}

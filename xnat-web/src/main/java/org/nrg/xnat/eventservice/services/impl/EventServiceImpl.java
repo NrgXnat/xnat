@@ -28,6 +28,7 @@ import org.nrg.xnat.eventservice.services.*;
 import org.nrg.xnat.eventservice.sort.SimpleEventComparator;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,7 @@ public class EventServiceImpl implements EventService {
     private final Configuration                       jaywayConf     = Configuration.builder().build().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
     private final EventServicePrefsBean               prefs;
     private final XnatAppInfo                         xnatAppInfo;
+    private final AsyncTaskExecutor                   asyncTaskExecutor;
 
 
     @Autowired
@@ -69,7 +71,8 @@ public class EventServiceImpl implements EventService {
                             EventPropertyService eventPropertyService,
                             ObjectMapper mapper,
                             EventServicePrefsBean prefsBean,
-                            final XnatAppInfo xnatAppInfo) {
+                            final XnatAppInfo xnatAppInfo,
+                            final AsyncTaskExecutor asyncTaskExecutor) {
         this.subscriptionService = subscriptionService;
         this.eventBus = eventBus;
         this.componentManager = componentManager;
@@ -81,7 +84,7 @@ public class EventServiceImpl implements EventService {
         this.mapper = mapper;
         this.prefs = prefsBean;
         this.xnatAppInfo = xnatAppInfo;
-
+        this.asyncTaskExecutor = asyncTaskExecutor;
     }
 
     @Override
@@ -322,8 +325,10 @@ public class EventServiceImpl implements EventService {
             }
             return;
         }
+        asyncTaskExecutor.execute(() -> doProcessEvent(listener, event));
+    }
 
-
+    private void doProcessEvent(EventServiceListener listener, Event event) {
         try {
             log.debug("Event noticed by EventService: " + event.getData().getClass().getSimpleName());
             String          jsonObject  = null;

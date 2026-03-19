@@ -31,6 +31,8 @@ import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.transaction.support.ResourceTransactionManager;
@@ -83,9 +85,10 @@ public class EventServiceTestConfig {
                                      EventPropertyService eventPropertyService,
                                      ObjectMapper mapper,
                                      EventServicePrefsBean mockEventServicePrefsBean,
-                                     final XnatAppInfo xnatAppInfo) {
+                                     final XnatAppInfo xnatAppInfo,
+                                     final AsyncTaskExecutor asyncTaskExecutor) {
         return new EventServiceImpl(subscriptionService, schedulingService, eventBus, componentManager, actionManager, subscriptionDeliveryEntityService,
-                                    userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean, xnatAppInfo);
+                                    userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean, xnatAppInfo, asyncTaskExecutor);
     }
 
     @Bean
@@ -99,8 +102,9 @@ public class EventServiceTestConfig {
                                          EventPropertyService eventPropertyService,
                                          ObjectMapper mapper,
                                          EventServicePrefsBean mockEventServicePrefsBean,
-                                         final XnatAppInfo xnatAppInfo) {
-        return new EventServiceImpl(subscriptionService, schedulingService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean, xnatAppInfo);
+                                         final XnatAppInfo xnatAppInfo,
+                                         final AsyncTaskExecutor asyncTaskExecutor) {
+        return new EventServiceImpl(subscriptionService, schedulingService, eventBus, componentManager, actionManager, mockSubscriptionDeliveryEntityService, userManagementService, eventPropertyService, mapper, mockEventServicePrefsBean, xnatAppInfo, asyncTaskExecutor);
     }
 
     @Bean
@@ -157,6 +161,18 @@ public class EventServiceTestConfig {
     @Bean
     public EventServiceLoggingAction mockEventServiceLoggingAction() {
         return Mockito.mock(EventServiceLoggingAction.class);
+    }
+
+    @Bean
+    public AsyncTaskExecutor asyncTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(16);
+        executor.setQueueCapacity(50000);
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
+        executor.initialize();
+        return executor;
     }
 
     @Bean

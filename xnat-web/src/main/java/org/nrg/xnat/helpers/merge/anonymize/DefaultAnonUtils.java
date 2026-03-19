@@ -108,7 +108,13 @@ public class DefaultAnonUtils implements AnonUtils {
 
     @Override
     public boolean isSiteWideScriptEnabled() {
-        return isProjectScriptEnabled(null);
+        try {
+            final Configuration config = getCachedSitewideAnon();
+            return config != null && config.getStatus().equals(Configuration.ENABLED_STRING);
+        } catch (Exception e) {
+            log.error("Error checking site-wide anon script status, falling back to uncached check", e);
+            return isProjectScriptEnabled(null);
+        }
     }
 
     @Override

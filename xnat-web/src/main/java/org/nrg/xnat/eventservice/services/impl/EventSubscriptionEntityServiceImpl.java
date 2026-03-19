@@ -52,6 +52,7 @@ import javax.persistence.Transient;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -65,7 +66,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     private EventService eventService;
     private ObjectMapper mapper;
     private UserManagementServiceI userManagementService;
-    private Map<Long, ActiveRegistration> activeRegistrations = new HashMap<>();
+    private final Map<Long, ActiveRegistration> activeRegistrations = new ConcurrentHashMap<>();
 
 
     @Autowired

@@ -126,6 +126,10 @@ public class PrearcTableBuilder implements PrearcTableBuilderI {
             data.setProtocol(getProtocol());
             data.setTimeZone(getTimeZone());
             data.setSource(getSource());
+            // Apply study routing overrides — needed here for paths that read existing XML
+            // without rebuilding (e.g., startup trawl, reset). Overlaps with buildSession
+            // routing but cannot be consolidated; see applyStudyRoutingToParams.
+            PrearcUtils.applyStudyRoutingOverrides(data);
             return data;
         }
 

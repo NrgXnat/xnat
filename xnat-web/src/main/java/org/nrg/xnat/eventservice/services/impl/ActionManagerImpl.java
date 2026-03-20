@@ -25,7 +25,6 @@ import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityService;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
@@ -46,12 +45,11 @@ import static org.nrg.xnat.eventservice.entities.TimedEventStatusEntity.Status.R
 
 @Slf4j
 @Service
-@EnableAsync
 public class ActionManagerImpl implements ActionManager {
 
     private final EventServiceComponentManager componentManager;
     private final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService;
-    private EventPropertyService eventPropertyService;
+    private final EventPropertyService eventPropertyService;
 
     @Autowired
     public ActionManagerImpl(final EventServiceComponentManager componentManager, final SubscriptionDeliveryEntityService subscriptionDeliveryEntityService, final EventPropertyService eventPropertyService) {
@@ -322,6 +320,8 @@ public class ActionManagerImpl implements ActionManager {
         }
     }
 
+    // Kept for callers that invoke this bean through the Spring proxy.
+    // The EventService path currently self-invokes and therefore runs inline on its worker thread.
     @Async
     @Override
     public void processAsync(EventServiceActionProvider provider, Subscription subscription, EventServiceEvent esEvent, final UserI user, final Long deliveryId, final PersistentWorkflowI workflow){

@@ -60,7 +60,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.concurrent.TimeUnit;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import static org.awaitility.Awaitility.await;
 import org.springframework.util.StopWatch;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
@@ -88,6 +98,7 @@ import static reactor.bus.selector.Selectors.type;
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = EventServiceTestConfig.class)
 public class EventServiceIntegrationTest {
     private static final String  EVENT_RESOURCE_PATTERN = "classpath*:META-INF/xnat/event/*-xnateventserviceevent.properties";
@@ -130,6 +141,10 @@ public class EventServiceIntegrationTest {
     private SubscriptionDeliveryEntityService mockSubscriptionDeliveryEntityService;
     @Autowired
     private EventServicePrefsBean             mockEventServicePrefsBean;
+    @Autowired
+    private DataSource                        dataSource;
+    @Autowired
+    private AsyncTaskExecutor                 asyncTaskExecutor;
 
     private SubscriptionCreator project1CreatedSubscription;
     private EventFilterCreator  project1EventFilterCreator;
@@ -147,8 +162,51 @@ public class EventServiceIntegrationTest {
     //private Subject subject1 = new Subject("SUBJECTID-1", mockUser);
     //private Subject subject2 = new Subject("SUBJECTID-2", mockUser);
 
+    /**
+     * Commits the current test transaction so that data is visible to async threads,
+     * then starts a new transaction for subsequent operations.
+     */
+    private void commitForAsyncVisibility() {
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+    }
+
+    /**
+     * Waits for all queued and active async tasks to complete.
+     */
+    private void waitForAsyncCompletion(long timeoutMs) throws InterruptedException {
+        if (asyncTaskExecutor instanceof ThreadPoolTaskExecutor) {
+            ThreadPoolTaskExecutor tpe = (ThreadPoolTaskExecutor) asyncTaskExecutor;
+            long deadline = System.currentTimeMillis() + timeoutMs;
+            while ((tpe.getThreadPoolExecutor().getActiveCount() > 0 ||
+                    !tpe.getThreadPoolExecutor().getQueue().isEmpty()) &&
+                   System.currentTimeMillis() < deadline) {
+                Thread.sleep(100);
+            }
+        }
+    }
+
     @Before
     public void setUp() throws Exception {
+        // Clean up data committed by previous tests' commitForAsyncVisibility().
+        // Uses a separate JDBC connection so deletes are outside the test transaction.
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("SET REFERENTIAL_INTEGRITY FALSE");
+            final List<String> tableNames = new ArrayList<>();
+            try (ResultSet rs = stmt.executeQuery(
+                    "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC'")) {
+                while (rs.next()) {
+                    tableNames.add(rs.getString(1));
+                }
+            }
+            for (final String tableName : tableNames) {
+                stmt.execute("TRUNCATE TABLE " + tableName);
+            }
+            stmt.execute("SET REFERENTIAL_INTEGRITY TRUE");
+        }
+
         project1EventFilterCreator  = EventFilterCreator.builder()
                                                         .projectIds(Arrays.asList("PROJECTID-1"))
                                                         .eventType("org.nrg.xnat.eventservice.events.ProjectEvent")
@@ -234,7 +292,7 @@ public class EventServiceIntegrationTest {
 
     @After
     public void tearDown() throws Exception {
-
+        waitForAsyncCompletion(30000);
     }
 
     @Test
@@ -296,7 +354,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void createSubscription() throws Exception {
         List<SimpleEvent> events = mockEventService.getEvents();
         assertThat("eventService.getEvents() should not return a null list", events, notNullValue());
@@ -355,7 +412,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void createSubscriptionWithBlankName() throws Exception {
         EventServiceEvent testSessionEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.SessionEvent");
         assertThat("Could not load SessionEvent from componentManager", testSessionEvent, notNullValue());
@@ -404,7 +460,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void saveSubscriptionEntity() throws Exception {
         Subscription subscription = eventSubscriptionEntityService.save(Subscription.create(project1CreatedSubscription, mockUser.getLogin()));
         assertThat("EventSubscriptionEntityService.save should not create a null entity.", subscription, not(nullValue()));
@@ -429,7 +484,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void activateAndSaveSubscriptions() throws Exception {
         Subscription subscription1 = eventSubscriptionEntityService.createSubscription(Subscription.create(project1CreatedSubscription, mockUser.getLogin()));
         assertThat(subscription1, not(nullValue()));
@@ -444,7 +498,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void deleteSubscriptionEntity() throws Exception {
         Subscription subscription1 = eventSubscriptionEntityService.createSubscription(Subscription.create(project1CreatedSubscription, mockUser.getLogin()));
         Subscription subscription2 = eventSubscriptionEntityService.createSubscription(Subscription.create(project2CreatedSubscription, mockUser.getLogin()));
@@ -570,7 +623,6 @@ public class EventServiceIntegrationTest {
     // ** Async Tests ** //
 
     @Test
-    @DirtiesContext
     public void testSampleEvent() throws InterruptedException {
         MockConsumer consumer = new MockConsumer();
 
@@ -593,7 +645,6 @@ public class EventServiceIntegrationTest {
 
     @Ignore("Fails with error message: Could not compile jsonPath filter. null - for some reason 'SampleEvent' is not being loaded into the context any longer")
     @Test
-    @DirtiesContext
     public void catchSubscribedEvent() throws Exception {
         EventServiceEvent event         = new SampleEvent();
         String            testActionKey = testAction.getAllActions().get(0).actionKey();
@@ -612,20 +663,17 @@ public class EventServiceIntegrationTest {
         Subscription savedSubscription = eventService.createSubscription(subscription);
 
         // Trigger event
+        commitForAsyncVisibility();
         eventService.triggerEvent(event);
 
-        // wait for listener (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> !action.getDetectedEvents().isEmpty());
         assertThat("List of detected events should not be null.", action.getDetectedEvents(), notNullValue());
         assertThat("List of detected events should not be empty.", action.getDetectedEvents().size(), not(0));
     }
 
     @Ignore("Fails with error message: Could not compile jsonPath filter. null")
     @Test
-    @DirtiesContext
     public void checkSubscriptionDeliveryEntry() throws Exception {
         catchSubscribedEvent();
         List<SubscriptionDelivery> subscriptionDeliveries = eventService.getSubscriptionDeliveries(null, null, null, null);
@@ -638,7 +686,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void registerMrSessionSubscription() throws Exception {
         EventServiceEvent testEvent = componentManager.getEvent("org.nrg.xnat.eventservice.events.SessionEvent");
         assertThat("Could not load SessionEvent from componentManager", testEvent, notNullValue());
@@ -672,7 +719,7 @@ public class EventServiceIntegrationTest {
 
 //    @Ignore
 //    @Test
-//    @DirtiesContext
+
 //    public void registerFilterablePayloadWorkflowStatusChangeSubscription() throws Exception {
 //        EventServiceEvent event = componentManager.getEvent("org.nrg.xnat.eventservice.events.WorkflowStatusChangeEvent");
 //        assertThat("Could not load WorkflowStatusChangeEvent from componentManager", event, notNullValue());
@@ -704,7 +751,7 @@ public class EventServiceIntegrationTest {
 
 //    @Ignore
 //    @Test
-//    @DirtiesContext
+
 //    public void tryToBreakReactorWithStringEventKey() throws Exception {
 //        String finished = null;
 //        try {
@@ -720,7 +767,6 @@ public class EventServiceIntegrationTest {
 
     @Ignore("Fails b/c test session doesn't have 'MRs in Session' as required by filter")
     @Test
-    @DirtiesContext
     public void matchMrSubscriptionToMrSession() throws Exception {
         registerMrSessionSubscription();
 
@@ -736,21 +782,18 @@ public class EventServiceIntegrationTest {
 
         SessionEvent testEvent = new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, "PROJECTID-1");
 
+        commitForAsyncVisibility();
         eventService.triggerEvent(testEvent);
 
-        // wait for async action (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
-
         TestAction actionProvider = (TestAction) testAction.provider();
+        await().atMost(5, TimeUnit.SECONDS).until(() -> !actionProvider.getDetectedEvents().isEmpty());
         assertThat("List of detected events should not be null.", actionProvider.getDetectedEvents(), notNullValue());
         assertThat("List of detected events should not be empty.", actionProvider.getDetectedEvents().size(), not(0));
     }
 
 //    @Ignore
 //    @Test
-//    @DirtiesContext
+
 //    public void matchWorkflowStatusChangeEvent() throws Exception {
 //        registerFilterablePayloadWorkflowStatusChangeSubscription();
 //
@@ -779,7 +822,7 @@ public class EventServiceIntegrationTest {
 
 //    @Ignore
 //    @Test
-//    @DirtiesContext
+
 //    public void mismatchWorkflowStatusChangeEvent() throws Exception {
 //        registerFilterablePayloadWorkflowStatusChangeSubscription();
 //
@@ -808,7 +851,6 @@ public class EventServiceIntegrationTest {
 
     @Ignore("Fails b/c test session doesn't have 'MRs in Session' as required by filter")
     @Test
-    @DirtiesContext
     public void mismatchProjectIdMrSubscriptionToMrSession() throws Exception {
         registerMrSessionSubscription();
 
@@ -821,12 +863,10 @@ public class EventServiceIntegrationTest {
 
         SessionEvent combinedEvent = new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, "PROJECTID-2");
 
+        commitForAsyncVisibility();
         eventService.triggerEvent(combinedEvent);
 
-        // wait for async action (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
+        waitForAsyncCompletion(5000);
 
         TestAction actionProvider = (TestAction) testAction.provider();
         assertThat("List of detected events should be empty (Mis-matched Project IDs.", actionProvider.getDetectedEvents(), is(empty()));
@@ -834,7 +874,6 @@ public class EventServiceIntegrationTest {
 
     @Ignore("Fails with error message: Could not load TestCombinedEvent from componentManager Expected: not null but: was null")
     @Test
-    @DirtiesContext
     public void testReactivateAllActive() throws Exception {
         // Create a working subscription
         matchMrSubscriptionToMrSession();
@@ -858,7 +897,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void mismatchMrSubscriptionToCtSession() throws Exception {
         registerMrSessionSubscription();
 
@@ -873,12 +911,10 @@ public class EventServiceIntegrationTest {
         session.setSessionType("xnat:imageSessionData");
 
         SessionEvent combinedEvent = new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, session.getProject());
+        commitForAsyncVisibility();
         eventService.triggerEvent(combinedEvent);
 
-        // wait for async action (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
+        waitForAsyncCompletion(5000);
 
         TestAction actionProvider = (TestAction) testAction.provider();
         assertThat("List of detected events should not be null.", actionProvider.getDetectedEvents(), notNullValue());
@@ -887,7 +923,6 @@ public class EventServiceIntegrationTest {
 
 
     @Test
-    @DirtiesContext
     public void catchSubjectEventWithProjectSubscription() throws Exception {
         // Create a user
         String          projectId1 = "PROJECTID_1";
@@ -912,20 +947,17 @@ public class EventServiceIntegrationTest {
         assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
 
         // Trigger Subject Created Event
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SubjectEvent(subject, mockUser.getLogin(), SubjectEvent.Status.CREATED, projectId1));
 
-        // wait for listener (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
         assertThat("Expected detected event to be of type SubjectEvent", action.getDetectedEvents().get(0).getType(), containsString("SubjectEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
     @Test
-    @DirtiesContext
     public void catchSubjectEventWithSiteSubscription() throws Exception {
         // Create a user
         String          projectId1 = "";
@@ -950,13 +982,11 @@ public class EventServiceIntegrationTest {
         assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
 
         // Trigger Subject Created Event
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SubjectEvent(subject, mockUser.getLogin(), SubjectEvent.Status.CREATED, projectId1));
 
-        // wait for listener (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
         assertThat("Expected detected event to be of type SubjectEvent", action.getDetectedEvents().get(0).getType(), containsString("SubjectEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
@@ -964,7 +994,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void missSubjectEventWithDifferentProjectSubscription() throws Exception {
         // Create a user
         String          projectId1 = "PROJECTID_1";
@@ -990,18 +1019,15 @@ public class EventServiceIntegrationTest {
         assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
 
         // Trigger Subject Created Event
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SubjectEvent(subject, mockUser.getLogin(), SubjectEvent.Status.CREATED, projectId2));
 
-        // wait for listener (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
+        waitForAsyncCompletion(5000);
         TestAction action = (TestAction) testAction;
         assertThat("Expected zero detected events.", action.getDetectedEvents().size(), is(0));
     }
 
     @Test
-    @DirtiesContext
     public void catchSessionArchiveEventWithProjectId() throws Exception {
         String projectId1 = "PROJECTID_1";
 
@@ -1027,20 +1053,17 @@ public class EventServiceIntegrationTest {
         assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
 
         // Trigger SessionEvent
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId1));
 
-        // wait for listener (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
         assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
     @Test
-    @DirtiesContext
     public void catchScanArchiveEventWithProjectId() throws Exception {
         String projectId1 = "PROJECTID_1";
 
@@ -1071,13 +1094,11 @@ public class EventServiceIntegrationTest {
         assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
 
         // Trigger ScanArchiveEvent
+        commitForAsyncVisibility();
         eventService.triggerEvent(new ScanEvent(scan, mockUser.getLogin(), ScanEvent.Status.CREATED, projectId1));
 
-        // wait for listener (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
         assertThat("Expected detected event to be of type ScanEvent", action.getDetectedEvents().get(0).getType(), containsString("ScanEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
@@ -1085,7 +1106,6 @@ public class EventServiceIntegrationTest {
 
 
     @Test
-    @DirtiesContext
     public void create1000SubscriptionsCatchOneWithDifferentEventType() throws Exception {
         StopWatch sw1 = new StopWatch();
         sw1.start("CreateEvents");
@@ -1104,15 +1124,14 @@ public class EventServiceIntegrationTest {
         session.setModality("MR");
         session.setProject(projectId);
         session.setSessionType("xnat:imageSessionData");
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId));
 
         StopWatch sw2 = new StopWatch();
         sw2.start("eventTriggerToAction");
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
-        sw2.stop();
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
+        sw2.stop();
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
         assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
@@ -1121,7 +1140,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void create1000SubscriptionsCatchTwoWithDifferentProjectId() throws Exception {
         StopWatch sw1 = new StopWatch();
         sw1.start("CreateSubscriptions");
@@ -1139,17 +1157,15 @@ public class EventServiceIntegrationTest {
         session.setModality("MR");
         session.setProject(projectId);
         session.setSessionType("xnat:imageSessionData");
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId + "500"));
-
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId + "600"));
 
         StopWatch sw2 = new StopWatch();
         sw2.start("eventTriggerToAction");
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
-        sw2.stop();
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 2);
+        sw2.stop();
         assertThat("Expected two detected events.", action.getDetectedEvents().size(), is(2));
         assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
         assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(1).getType(), containsString("SessionEvent"));
@@ -1159,7 +1175,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void createManySubscriptionsTriggerManyEventsCatch1000() throws Exception {
         String               projectIdToIgnore = "ProjectIdToIgnore";
         XnatImagesessiondata sessionToIgnore   = new XnatImagesessiondata();
@@ -1193,6 +1208,7 @@ public class EventServiceIntegrationTest {
 
         StopWatch sw2 = new StopWatch();
         sw2.start("eventTriggersToActions");
+        commitForAsyncVisibility();
         for (Integer i = 0; i < 10000; i++) {
             eventService.triggerEvent(new SessionEvent(sessionToIgnore, mockUser.getLogin(), SessionEvent.Status.CREATED, null));
         }
@@ -1201,12 +1217,11 @@ public class EventServiceIntegrationTest {
 
         StopWatch sw3 = new StopWatch();
         sw3.start("eventTriggersToActions");
+        commitForAsyncVisibility();
         for (Integer i = 0; i < 100; i++) {
             eventService.triggerEvent(new SessionEvent(sessionToCatch, mockUser.getLogin(), SessionEvent.Status.CREATED, projectIdToCatch));
         }
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
+        waitForAsyncCompletion(30000);
         sw3.stop();
         TestAction action = (TestAction) testAction;
         System.out.print("Triggered/Caught " + Integer.toString(action.getDetectedEvents().size()) + " detected events in : " + sw3.getTotalTimeSeconds() + "seconds\n");
@@ -1217,7 +1232,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void testDisabledSubscriptionHandlingSpeed() throws Exception {
         String               projectIdToCatch = "ProjectIdToCatch";
         XnatImagesessiondata sessionToCatch   = new XnatImagesessiondata();
@@ -1239,20 +1253,18 @@ public class EventServiceIntegrationTest {
         // time reaction to 1000 disabled subscriptions and 1 enabled
         StopWatch sw3 = new StopWatch();
         sw3.start("disabledEventTriggersToActions");
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SessionEvent(sessionToCatch, mockUser.getLogin(), SessionEvent.Status.CREATED, projectIdToCatch));
 
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
-        sw3.stop();
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
+        sw3.stop();
         System.out.print("Triggered " + Integer.toString(action.getDetectedEvents().size()) + " enabled event and " + i.toString() + " disabled events  in : " + sw3.getTotalTimeSeconds() + "seconds\n");
 
 
     }
 
     @Test
-    @DirtiesContext
     public void testSubscriptionDeliveryCreation() throws Exception {
         String               projectIdToCatch = "ProjectIdToCatch";
         XnatImagesessiondata sessionToCatch   = new XnatImagesessiondata();
@@ -1270,12 +1282,11 @@ public class EventServiceIntegrationTest {
         assertThat(subscriptionOfInterest, notNullValue());
         StopWatch sw3 = new StopWatch();
         sw3.start("eventTriggersToActions");
+        commitForAsyncVisibility();
         for (Integer i = 0; i < 10; i++) {
             eventService.triggerEvent(new SessionEvent(sessionToCatch, mockUser.getLogin(), SessionEvent.Status.CREATED, projectIdToCatch));
         }
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
+        waitForAsyncCompletion(10000);
         sw3.stop();
 
         List<SubscriptionDelivery> deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false, true);
@@ -1292,12 +1303,11 @@ public class EventServiceIntegrationTest {
 
         // Add some other things to the history table
         assertThat(createSessionSubscription("SubscriptionToIgnore", projectIdToIgnore, null), notNullValue());
+        commitForAsyncVisibility();
         for (Integer i = 0; i < 10; i++) {
             eventService.triggerEvent(new SessionEvent(sessionToIgnore, mockUser.getLogin(), SessionEvent.Status.CREATED, projectIdToIgnore));
         }
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
+        waitForAsyncCompletion(10000);
 
         deliveriesWithProjectId = eventService.getSubscriptionDeliveries(projectIdToCatch, null, false, true);
         assertThat("Expected 10 deliveries.", deliveriesWithProjectId.size(), is(10));
@@ -1323,7 +1333,6 @@ public class EventServiceIntegrationTest {
     }
 
     @Test
-    @DirtiesContext
     public void testCreateAndDelete() throws Exception {
 
         String projectId = "ProjectId";
@@ -1352,13 +1361,11 @@ public class EventServiceIntegrationTest {
         session.setProject(projectId);
         session.setSessionType("xnat:mrSessionData");
 
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId));
 
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
-
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
         assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
@@ -1366,7 +1373,6 @@ public class EventServiceIntegrationTest {
 
 
     @Test
-    @DirtiesContext
     public void testCreateAndDeactivate() throws Exception {
 
         String projectId = "ProjectId";
@@ -1393,20 +1399,17 @@ public class EventServiceIntegrationTest {
         session.setProject(projectId);
         session.setSessionType("xnat:mrSessionData");
 
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId));
 
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
-
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
         assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
     @Test
-    @DirtiesContext
     public void testCreateAndDeactivateAndActivate() throws Exception {
 
         String projectId = "ProjectId";
@@ -1434,23 +1437,20 @@ public class EventServiceIntegrationTest {
         session.setProject(projectId);
         session.setSessionType("xnat:mrSessionData");
 
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId));
 
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
+        waitForAsyncCompletion(5000);
 
         TestAction action = (TestAction) testAction;
         assertThat("Expected zero detected events.", action.getDetectedEvents().size(), is(0));
 
         eventService.activateSubscription(subscriptionToCatch.id());
 
+        commitForAsyncVisibility();
         eventService.triggerEvent(new SessionEvent(session, mockUser.getLogin(), SessionEvent.Status.CREATED, projectId));
 
-        synchronized (testAction) {
-            testAction.wait(100);
-        }
-
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
         assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
@@ -1458,7 +1458,6 @@ public class EventServiceIntegrationTest {
 
 
     @Test
-    @DirtiesContext
     public void catchSpecificEventWithOpenFilter() throws Exception {
         String projectId1 = "PROJECTID_1";
 
@@ -1488,13 +1487,11 @@ public class EventServiceIntegrationTest {
         assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
 
         // Trigger ScanArchiveEvent
+        commitForAsyncVisibility();
         eventService.triggerEvent(new ScanEvent(scan, mockUser.getLogin(), ScanEvent.Status.CREATED, projectId1));
 
-        // wait for listener (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
         TestAction action = (TestAction) testAction;
+        await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
         assertThat("Expected detected event to be of type ScanEvent", action.getDetectedEvents().get(0).getType(), containsString("ScanEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
@@ -1502,7 +1499,6 @@ public class EventServiceIntegrationTest {
 
 
     @Test
-    @DirtiesContext
     public void missOpenEventWithSpecificSubscription() throws Exception {
         String projectId1 = "PROJECTID_1";
         String eventType  = new ScanEvent().getType();
@@ -1532,23 +1528,19 @@ public class EventServiceIntegrationTest {
         assertThat("Subscription failed creation.", eventService.createSubscription(subscription), notNullValue());
 
         // Trigger ScanArchiveEvent
+        commitForAsyncVisibility();
         eventService.triggerEvent(new ScanEvent(scan, mockUser.getLogin(), null, projectId1));
 
-        // wait for listener (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
+        waitForAsyncCompletion(5000);
         TestAction action = (TestAction) testAction;
         assertThat("Expected zero detected events.", action.getDetectedEvents().size(), is(0));
 
 
         // Trigger ScanArchiveEvent
+        commitForAsyncVisibility();
         eventService.triggerEvent(new ScanEvent(scan, mockUser.getLogin(), ScanEvent.Status.CREATED, null));
 
-        // wait for listener (max 1 sec.)
-        synchronized (testAction) {
-            testAction.wait(1000);
-        }
+        waitForAsyncCompletion(5000);
         action = (TestAction) testAction;
         assertThat("Expected zero detected events.", action.getDetectedEvents().size(), is(0));
     }

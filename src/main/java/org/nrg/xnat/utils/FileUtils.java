@@ -23,13 +23,10 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
-import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatQcmanualassessordata;
-import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatProjectdata;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
@@ -42,6 +39,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntConsumer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -49,11 +49,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -154,7 +157,9 @@ public class FileUtils {
     @SafeVarargs
     public static <T extends String> File buildCacheSubDir(T... directories) {
         final File subDir = Paths.get(XDAT.getSiteConfigPreferences().getCachePath(), directories).toFile();
-        log.debug("Found cache sub-directory: {}", subDir.getAbsolutePath());
+        if (log.isDebugEnabled()) {
+            log.debug("Found cache sub-directory: {}", subDir.getAbsolutePath());
+        }
         return subDir;
     }
 
@@ -207,19 +212,60 @@ public class FileUtils {
         return Paths.get(XDAT.getSiteConfigPreferences().getArchivePath(), projectId, "subjects", subjectLabel);
     }
 
+    /**
+     * Cached permission check for shared data path resolution.
+     * For owned data (origProject == projectId), checks elementName/project against projectId.
+     * For shared data (origProject != projectId), checks elementName/sharing/share/project against projectId,
+     * since the user's access flows through their membership in the destination project.
+     */
+    private static boolean canReadElement(final UserI user, final String elementName, final String origProject,
+                                          final String projectId, final Set<String> granted, final Set<String> denied) {
+        final boolean isShared = !origProject.equals(projectId);
+        final String field = elementName + (isShared ? "/sharing/share/project" : "/project");
+        final String key = field + "|" + projectId;
+        if (denied.contains(key)) {
+            return false;
+        }
+        if (granted.contains(key)) {
+            return true;
+        }
+        try {
+            if (Permissions.canRead(user, field, projectId)) {
+                granted.add(key);
+                return true;
+            } else {
+                denied.add(key);
+                return false;
+            }
+        } catch (Exception e) {
+            log.warn("Permission check failed for {} in project {}", field, projectId, e);
+            denied.add(key);
+            return false;
+        }
+    }
+
     private static Map<String, List<String>> convertXFTTableForProjectSharedPathsElements(XFTTable elementsTable) {
         Map<String, String> elementsMap = elementsTable.convertToMap("label", "origProject", String.class, String.class);
-        return elementsMap.keySet().stream().collect(Collectors.groupingBy(elementsMap::get));
+        long nullCount = elementsMap.entrySet().stream().filter(e -> e.getKey() == null || e.getValue() == null).count();
+        if (nullCount > 0) {
+            log.warn("Shared data contains {} entries with null label or project, these will be excluded", nullCount);
+        }
+        return elementsMap.entrySet().stream()
+                .filter(e -> e.getKey() != null && e.getValue() != null)
+                .collect(Collectors.groupingBy(Map.Entry::getValue, Collectors.mapping(Map.Entry::getKey, Collectors.toList())));
     }
 
     private static Map<String, String> getAllChangedElementLabels(XFTTable elementsTable) {
         Map<String, String> elementsMap = elementsTable.convertToMap("label", "originalLabel", String.class, String.class);
-        return elementsMap.entrySet().stream().filter(f -> !f.getKey().equals(f.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return elementsMap.entrySet().stream()
+                .filter(f -> f.getKey() != null && f.getValue() != null && !f.getKey().equals(f.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     public static Map<Path, Path> getAllSharedPaths(final String projectId, final UserI user, final boolean includeProjectResources,
                                                       final boolean includeSubjectResources, final boolean removeArcs, final boolean addExperimentLabel)
             throws DBPoolException, SQLException, IOException, BaseXnatExperimentdata.UnknownPrimaryProjectException, InvalidArchiveStructure {
+        final long startTime = log.isDebugEnabled() ? System.nanoTime() : 0;
         XnatProjectdata projectData = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
         Map<Path, Path> allPathsMap = new HashMap<>();
         if (!projectData.getProjectHasSharedExperiments()) {
@@ -229,10 +275,45 @@ public class FileUtils {
         }
         XFTTable subjectsTable = projectData.getSubjectsByProject();
         XFTTable experimentsTable = projectData.getExperimentsByProject();
+        final long queryTime = log.isDebugEnabled() ? System.nanoTime() : 0;
         Map<String, List<String>> allSubjectsForProject = convertXFTTableForProjectSharedPathsElements(subjectsTable);
         Map<String, List<String>> allExperimentsForProject = convertXFTTableForProjectSharedPathsElements(experimentsTable);
         Map<String, String> subjectLabelChanges = getAllChangedElementLabels(subjectsTable);
         BiMap<String, String> experimentNewLabelToOriginal = HashBiMap.create(getAllChangedElementLabels(experimentsTable));
+
+        // Build lookup maps from enriched experiment data (element_name, imagesession_id, parent session info)
+        final Map<String, String> experimentElementNames = new HashMap<>();
+        final Map<String, String> experimentParentSessionProjects = new HashMap<>();
+        final Map<String, String> experimentParentSessionLabels = new HashMap<>();
+        final Set<String> assessorExperiments = new HashSet<>();
+
+        final Integer labelIdx = experimentsTable.getColumnIndex("label");
+        final Integer elementNameIdx = experimentsTable.getColumnIndex("element_name");
+        final Integer sessionIdIdx = experimentsTable.getColumnIndex("imagesession_id");
+        final Integer parentSessionProjectIdx = experimentsTable.getColumnIndex("parent_session_project");
+        final Integer parentSessionLabelIdx = experimentsTable.getColumnIndex("parent_session_label");
+
+        experimentsTable.resetRowCursor();
+        while (experimentsTable.hasMoreRows()) {
+            final Object[] row = experimentsTable.nextRow();
+            final String label = (String) row[labelIdx];
+            if (row[elementNameIdx] != null) {
+                experimentElementNames.put(label, (String) row[elementNameIdx]);
+            }
+            if (row[sessionIdIdx] != null) {
+                assessorExperiments.add(label);
+                if (row[parentSessionProjectIdx] != null) {
+                    experimentParentSessionProjects.put(label, (String) row[parentSessionProjectIdx]);
+                }
+                if (row[parentSessionLabelIdx] != null) {
+                    experimentParentSessionLabels.put(label, (String) row[parentSessionLabelIdx]);
+                }
+            }
+        }
+
+        final Set<String> permissionGranted = new HashSet<>();
+        final Set<String> permissionDenied = new HashSet<>();
+
         Path archivePath = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath());
         int totalSessions = 0;
         for (Map.Entry<String, List<String>> entry : allExperimentsForProject.entrySet()) {
@@ -240,21 +321,32 @@ public class FileUtils {
             Path pathTranslationPath = archivePath.resolve(origProject);
             List<String> experimentsForProject = entry.getValue();
             for (String experiment: experimentsForProject) {
-                XnatExperimentdata currentExperiment = XnatExperimentdata.GetExptByProjectIdentifier(origProject, experimentNewLabelToOriginal.getOrDefault(experiment, experiment), user, false);
-                //Check to see if the current experiment is accessible to the user. In the case that it's not - for instance
-                //the user group that the user is a part of does not have read access to that type of element - the current experiment
-                //field will be null and we can move onto the next experiment.
-                if (currentExperiment == null) {
+                final String originalLabel = experimentNewLabelToOriginal.getOrDefault(experiment, experiment);
+
+                final String elementName = experimentElementNames.get(experiment);
+                if (elementName == null) {
+                    log.warn("Missing element_name for experiment {}, skipping (cannot verify permissions)", experiment);
                     continue;
                 }
+                if (!canReadElement(user, elementName, origProject, projectId, permissionGranted, permissionDenied)) {
+                    continue;
+                }
+
                 Path fullPath;
                 final String assessorFolderString = "ASSESSORS";
-                boolean isAssessor = false;
-                if (currentExperiment instanceof XnatImageassessordata) {
-                    fullPath = currentExperiment.getExpectedSessionDir().toPath().resolve(assessorFolderString).resolve(currentExperiment.getLabel());
-                    isAssessor = true;
+                boolean isAssessor = assessorExperiments.contains(experiment);
+                if (isAssessor) {
+                    // Derive assessor path from parent session info without loading XFT objects
+                    final String parentProject = experimentParentSessionProjects.get(experiment);
+                    final String parentLabel = experimentParentSessionLabels.get(experiment);
+                    if (parentProject == null || parentLabel == null) {
+                        log.warn("Missing parent session info for assessor {}, skipping", experiment);
+                        continue;
+                    }
+                    Path parentSessionPath = getExperimentFullPath(parentProject, parentLabel);
+                    fullPath = parentSessionPath.resolve(assessorFolderString).resolve(originalLabel);
                 } else {
-                    fullPath = getExperimentFullPath(origProject, currentExperiment.getLabel());
+                    fullPath = getExperimentFullPath(origProject, originalLabel);
                     totalSessions+=1;
                 }
                 try (Stream<Path> walk = Files.walk(fullPath)) {
@@ -299,6 +391,7 @@ public class FileUtils {
                 }
             }
         }
+        final long experimentWalkTime = log.isDebugEnabled() ? System.nanoTime() : 0;
         int maxNumberOfSessions = XDAT.getSiteConfigPreferences().getMaxNumberOfSessionsForJobsWithSharedData();
         if (totalSessions > maxNumberOfSessions) {
             throw new RuntimeException("With the inclusion of shared data, more than " + maxNumberOfSessions + " sessions are present in the current project. " +
@@ -310,12 +403,14 @@ public class FileUtils {
                 final String origProject = entry.getKey();
                 final List<String> subjectsForProject = entry.getValue();
                 Path pathTranslationPath = archivePath.resolve(origProject);
+
+                if (!canReadElement(user, "xnat:subjectData", origProject, projectId, permissionGranted, permissionDenied)) {
+                    continue;
+                }
+
                 for (String subject : subjectsForProject) {
-                    XnatSubjectdata currentSubject = XnatSubjectdata.GetSubjectByIdOrProjectlabelCaseInsensitive(origProject, subjectLabelChanges.getOrDefault(subject, subject), user, false);
-                    if (currentSubject == null) {
-                        continue;
-                    }
-                    Path fullPath = getSubjectFullPath(origProject, currentSubject.getLabel());
+                    final String originalSubjectLabel = subjectLabelChanges.getOrDefault(subject, subject);
+                    Path fullPath = getSubjectFullPath(origProject, originalSubjectLabel);
                     try (Stream<Path> walk = Files.walk(fullPath)) {
                         List<Path> collectedSubjectFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
                         for (Path path : collectedSubjectFiles) {
@@ -345,23 +440,61 @@ public class FileUtils {
 
             }
         }
+        if (log.isDebugEnabled()) {
+            final long endTime = System.nanoTime();
+            log.debug("getAllSharedPaths for project {} completed in {}ms (queries={}ms, experimentWalks={}ms, subjectsAndResources={}ms) — {} experiments, {} subjects, {} total files",
+                    projectId,
+                    (endTime - startTime) / 1_000_000,
+                    (queryTime - startTime) / 1_000_000,
+                    (experimentWalkTime - queryTime) / 1_000_000,
+                    (endTime - experimentWalkTime) / 1_000_000,
+                    allExperimentsForProject.values().stream().mapToInt(List::size).sum(),
+                    allSubjectsForProject.values().stream().mapToInt(List::size).sum(),
+                    allPathsMap.size());
+        }
         return allPathsMap;
     }
 
     public static Path createDirectoryForSharedData(Map<Path, Path> pathsMap, final Path inputLinksDirectory) throws IOException {
-        Path destinationBaseDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath()).resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(inputLinksDirectory);
-        for (Map.Entry<Path, Path> pathConversion : pathsMap.entrySet()) {
-            Path destinationPathForCurrentFile = destinationBaseDirectory.resolve(pathConversion.getValue());
-            if (Files.exists(destinationPathForCurrentFile)) {
-                continue;
-            }
-            Files.createDirectories(destinationPathForCurrentFile.getParent());
-            if (XDAT.getSiteConfigPreferences().getFileOperationUsedForJobsWithSharedData().equals("hard_link")) {
-                Files.createLink(destinationPathForCurrentFile, pathConversion.getKey());
-            } else {
-                Files.copy(pathConversion.getKey(), destinationPathForCurrentFile);
-            }
+        return createDirectoryForSharedData(pathsMap, inputLinksDirectory, null);
+    }
 
+    public static Path createDirectoryForSharedData(Map<Path, Path> pathsMap, final Path inputLinksDirectory, final IntConsumer progressCallback) throws IOException {
+        final long startTime = log.isDebugEnabled() ? System.nanoTime() : 0;
+        Path destinationBaseDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath()).resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(inputLinksDirectory);
+        final boolean useHardLink = "hard_link".equals(XDAT.getSiteConfigPreferences().getFileOperationUsedForJobsWithSharedData());
+        final AtomicInteger processedCount = new AtomicInteger(0);
+        final int reportInterval = Math.max(pathsMap.size() / 20, 100);
+        try {
+            pathsMap.entrySet().parallelStream().forEach(pathConversion -> {
+                try {
+                    Path destinationPathForCurrentFile = destinationBaseDirectory.resolve(pathConversion.getValue());
+                    if (!Files.exists(destinationPathForCurrentFile)) {
+                        Files.createDirectories(destinationPathForCurrentFile.getParent());
+                        if (useHardLink) {
+                            Files.createLink(destinationPathForCurrentFile, pathConversion.getKey());
+                        } else {
+                            Files.copy(pathConversion.getKey(), destinationPathForCurrentFile);
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                if (progressCallback != null) {
+                    int processed = processedCount.incrementAndGet();
+                    if (processed % reportInterval == 0) {
+                        progressCallback.accept(processed);
+                    }
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("createDirectoryForSharedData completed in {}ms — {} files, mode={}",
+                    (System.nanoTime() - startTime) / 1_000_000,
+                    pathsMap.size(),
+                    useHardLink ? "hard_link" : "copy");
         }
         return destinationBaseDirectory;
     }

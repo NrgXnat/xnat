@@ -12,7 +12,6 @@ package org.nrg.xnat.archive;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
@@ -38,7 +37,6 @@ import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xdat.security.helpers.Groups;
@@ -61,7 +59,6 @@ import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.SessionMergingConfigMapper;
 import org.nrg.xnat.helpers.merge.MergePrearcToArchiveSession;
 import org.nrg.xnat.helpers.merge.MergeSessionsA.SaveHandlerI;
-import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
@@ -79,15 +76,11 @@ import org.xml.sax.SAXException;
 
 import javax.validation.constraints.NotNull;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -100,8 +93,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.nrg.dcm.xnat.CatalogBuilder.RESOURCE_FORMAT;
-import static org.nrg.dcm.xnat.CatalogBuilder.RESOURCE_LABEL_DICOM;
-import static org.nrg.dcm.xnat.CatalogBuilder.SCANS_DIR;
 import static org.nrg.xft.event.XftItemEventI.CREATE;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
 
@@ -130,10 +121,11 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     private final boolean allowSessionMerge;//should process proceed if the session already exists
     private final boolean overwriteFiles;//should process proceed if the same file is uploaded again
     private final boolean waitFor;
+    private final Object control;
 
     private ApplyPluginValidationService applyPluginValidationService;
     private ApplyPluginLabelingService   applyPluginLabelingService;
-    private boolean                      needsScanIdCorrection = false;
+    private ScanIdValidator              scanIdValidator;
     private DicomFilterService           filterService;
 
     protected PrearcSessionArchiver(final Object control, final XnatImagesessiondata src, final PrearcSession prearcSession, final UserI user, final String project, final Map<String, Object> params, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean waitFor, final Boolean overwriteFiles) {
@@ -147,12 +139,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         this.overwriteFiles = overwriteFiles != null && overwriteFiles;
         this.prearcSession = prearcSession;
         this.waitFor = waitFor;
-        try {
-            NULL_FILE = Files.createTempFile("null-", ".txt").toFile();
-            NULL_FILE.deleteOnExit();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        this.control = control;
     }
 
     public PrearcSessionArchiver(final Object control,
@@ -182,11 +169,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     public XnatImagesessiondata getSrc() {
         return src;
     }
-
-    public File getSrcDIR() {
-        return prearcSession.getSessionDir();
-    }
-
 
     public XnatImagesessiondata retrieveExistingExpt() {
         XnatImagesessiondata existing = null;
@@ -334,33 +316,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     }
 
     /**
-     * Updates the prearchive session XML, if possible. Errors here are logged but not
-     * otherwise handled; messing up the prearchive session XML is not a disaster.
-     *
-     * @param prearcSessionPath path of session directory in prearchive
-     */
-    protected void updatePrearchiveSessionXML(final String prearcSessionPath, final XnatImagesessiondata newSession) {
-        final File prearcSessionDir = new File(prearcSessionPath);
-        try (final FileWriter prearcXML = new FileWriter(prearcSessionDir.getPath() + ".xml")) {
-            log.debug("Preparing to update prearchive XML for {}", newSession);
-            ((XFTItem) newSession.getItem().clone()).toXML(prearcXML, false);
-        } catch (RuntimeException e) {
-            log.error("unable to update prearchive session XML", e);
-            warning("updated prearchive session XML could not be written: " + e.getMessage());
-        } catch (SAXException e) {
-            log.error("attempted to write invalid updated prearchive session XML", e);
-            warning("updated prearchive session XML is invalid: " + e.getMessage());
-        } catch (FileNotFoundException e) {
-            log.error("unable to update prearchive session XML", e);
-            warning("prearchive session XML not found, cannot update");
-        } catch (IOException e) {
-            log.error("error updating prearchive session XML", e);
-            warning("could not update prearchive session XML: " + e.getMessage());
-        }
-    }
-
-
-    /**
      * This method will allow users to pass xml path as parameters.  The values supplied will be copied into the loaded session.
      *
      * @throws ClientException When an error occurs on the client side.
@@ -383,78 +338,54 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     }
 
     public void checkForConflicts(final XnatImagesessiondata src, final File srcDIR, final XnatImagesessiondata existing, final File destDIR) throws ClientException {
-        if (existing != null) {
-            if (!allowSessionMerge) {
-                failed(PRE_EXISTS);
-                throw new ClientException(Status.CLIENT_ERROR_CONFLICT, PRE_EXISTS, new Exception());
+        if (existing == null) {
+            scanIdValidator = new ScanIdValidator(control);
+            return;
+        }
+
+        if (!allowSessionMerge) {
+            failed(PRE_EXISTS);
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, PRE_EXISTS, new Exception());
+        }
+
+        if (!StringUtils.equals(src.getLabel(), existing.getLabel())) {
+            failed(LABEL_MOD);
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, LABEL_MOD, new Exception());
+        }
+
+        if (!StringUtils.equals(existing.getProject(), src.getProject())) {
+            failed(PROJ_MOD);
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, PROJ_MOD, new Exception());
+        }
+
+        if (XDAT.getBoolSiteConfigurationProperty("preventCrossModalityMerge", true)) {
+            //check if the XSI types match
+            if (!StringUtils.equals(existing.getXSIType(), src.getXSIType())) {
+                failed(MODALITY_MOD);
+                throw new ClientException(Status.CLIENT_ERROR_CONFLICT, MODALITY_MOD, new Exception());
             }
+        }
 
-            if (!StringUtils.equals(src.getLabel(), existing.getLabel())) {
-                this.failed(LABEL_MOD);
-                throw new ClientException(Status.CLIENT_ERROR_CONFLICT, LABEL_MOD, new Exception());
-            }
+        if (!StringUtils.equals(existing.getSubjectId(), src.getSubjectId())) {
+            String subjectId = existing.getLabel();
+            String newError  = SUBJECT_MOD + ": " + subjectId + " Already Exists for another Subject";
+            failed(newError);
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, newError, new Exception());
+        }
 
-            if (!StringUtils.equals(existing.getProject(), src.getProject())) {
-                failed(PROJ_MOD);
-                throw new ClientException(Status.CLIENT_ERROR_CONFLICT, PROJ_MOD, new Exception());
-            }
-
-
-            if (XDAT.getBoolSiteConfigurationProperty("preventCrossModalityMerge", true)) {
-                //check if the XSI types match
-                if (!StringUtils.equals(existing.getXSIType(), src.getXSIType())) {
-                    failed(MODALITY_MOD);
-                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, MODALITY_MOD, new Exception());
-                }
-            }
-
-            if (!StringUtils.equals(existing.getSubjectId(), src.getSubjectId())) {
-                String subjectId = existing.getLabel();
-                String newError  = SUBJECT_MOD + ": " + subjectId + " Already Exists for another Subject";
-                failed(newError);
-                throw new ClientException(Status.CLIENT_ERROR_CONFLICT, newError, new Exception());
-            }
-
-            if (!overrideExceptions) {
-                if (StringUtils.isNotEmpty(existing.getUid()) && StringUtils.isNotEmpty(src.getUid())) {
-                    if (!StringUtils.equals(existing.getUid(), src.getUid())) {
-                        SessionMergingConfigMapper mapper = new SessionMergingConfigMapper();
-                        if (!mapper.getUidModSetting(existing.getProject())) {
-                            failed(UID_MOD);
-                            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, UID_MOD, new Exception());
-                        }
-                    }
-                }
-            }
-
-            for (final XnatImagescandataI newScan : src.getScans_scan()) {
-                XnatImagescandataI match = MergeUtils.getMatchingScanById(newScan.getId(), existing.getScans_scan());//match by ID
-                if (match != null) {
-                    if (StringUtils.equals(match.getUid(), newScan.getUid())) {
-                        //noinspection ConstantConditions
-                        if (!allowSessionMerge) {
-                            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Session already contains a scan (" + match.getId() + ") with the same UID and number.", new Exception());
-                        }
-                    } else if (StringUtils.isNotEmpty(match.getUid())) {
-                        //noinspection ConstantConditions
-                        if (!allowSessionMerge) {
-                            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Session already contains a scan (" + match.getId() + ") with the same number, but a different UID.", new Exception());
-                        } else {
-                            needsScanIdCorrection = true;
-                        }
-                    }
-                }
-
-                XnatImagescandataI match2 = MergeUtils.getMatchingScanByUID(newScan, existing.getScans_scan());//match by UID
-                if (match2 != null) {
-                    if (match == null || !StringUtils.equals(match.getId(), newScan.getId())) {
-                        if (!overrideExceptions) {
-                            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Session already contains a scan with the same UID, but a different number (" + match2.getId() + ").", new Exception());
-                        }
+        if (!overrideExceptions) {
+            if (StringUtils.isNotEmpty(existing.getUid()) && StringUtils.isNotEmpty(src.getUid())) {
+                if (!StringUtils.equals(existing.getUid(), src.getUid())) {
+                    SessionMergingConfigMapper mapper = new SessionMergingConfigMapper();
+                    if (!mapper.getUidModSetting(existing.getProject())) {
+                        failed(UID_MOD);
+                        throw new ClientException(Status.CLIENT_ERROR_CONFLICT, UID_MOD, new Exception());
                     }
                 }
             }
         }
+
+        scanIdValidator = new ScanIdValidator(control, existing, src, prearcSession, allowSessionMerge, overrideExceptions);
     }
 
     /* (non-Javadoc)
@@ -566,10 +497,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
 
                     final File arcSessionDir = getArcSessionDir();
 
-                    if (existing != null) {
-                        checkForConflicts(src, this.prearcSession.getSessionDir(), existing, arcSessionDir);
-                    }
-
+                    checkForConflicts(src, prearcSession.getSessionDir(), existing, arcSessionDir);
 
                     if (!overrideExceptions) {
                         validateDicomFiles();
@@ -597,8 +525,8 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                     final boolean shouldForceQuarantine;
                     shouldForceQuarantine = params.containsKey(ViewManager.QUARANTINE) && params.get(ViewManager.QUARANTINE).toString().equalsIgnoreCase("true");
 
-                    if (needsScanIdCorrection && existing != null) {
-                        correctScanID(existing);
+                    if (scanIdValidator.needsScanIdCorrection()) {
+                        scanIdValidator.call();
                     }
 
                     SaveHandlerI<XnatImagesessiondata> saveImpl = merged -> {
@@ -640,7 +568,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                     };
 
                     mergePrearcToArchiveSession = new MergePrearcToArchiveSession(src.getPrearchivePath(),
-                                                                                  this.prearcSession,
+                                                                                  prearcSession,
                                                                                   src,
                                                                                   src.getPrearchivepath(),
                                                                                   arcSessionDir,
@@ -649,9 +577,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                                                                                   allowSessionMerge,
                                                                                   overrideExceptions || overwriteFiles,
                                                                                   saveImpl, user, workflow.buildEvent());
-
                     ListenerUtils.addListeners(this, mergePrearcToArchiveSession).call();
-
                 } catch (Exception e) {
                     if (existing != null) {
                         Stream.of(workflow, workflow2).filter(Objects::nonNull)
@@ -872,171 +798,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         }
     }
 
-    /**
-     * Method to compare new scans to existing scans.  Matching scan IDs (with different UIDs) will have a _1 added to them.
-     *
-     * @param existing An existing session to correct.
-     *
-     * @throws ServerException When an error occurs on the server.
-     */
-    private void correctScanID(final XnatImagesessiondata existing) throws ServerException {
-        final List<List<XnatImagescandataI>> preexistingMatches = new ArrayList<>();
-
-        final List<String> usedIds = existing.getScans_scan().stream().map(XnatImagescandataI::getId).collect(Collectors.toList());
-
-        for (final XnatImagescandataI newScan : src.getScans_scan()) {
-            //build modality code via parsing of the xsi:type.  modality code matches first 2 characters after the : for xnat types.  Otherwise, leave it empty.
-            //this is a bit of a hack.  It would be better to have an official mapping
-            String modalityCode = (newScan.getXSIType().startsWith("xnat:")) ? newScan.getXSIType().substring(5, 7).toUpperCase() : "";
-            if ("PE".equals(modalityCode)) {
-                modalityCode = "PT";//this works for everything but PET, which gets called PE instead of PT, so we correct it.
-            }
-
-            //find matching scan by UID
-            final XnatImagescandataI match2 = MergeUtils.getMatchingScanByUID(newScan, existing.getScans_scan());//match by UID
-            if (match2 != null) {
-                if ((!StringUtils.equals(match2.getId(), newScan.getId())) || match2.getId().contains("-" + modalityCode)) {
-                    //this UID has been mapped to a different scan ID (or possibly different file system path)
-                    //update the prearc session to match
-                    //place them in an array and process them after the others, to avoid temporary conflicts
-                    preexistingMatches.add(Arrays.asList(newScan, match2));
-                }
-                //scan with matching UID is done (whether their ID's matched or not)
-                continue;
-            }
-
-
-            String       scan_id          = newScan.getId();
-            String       scan_stub        = null;
-            final String original_scan_id = newScan.getId();
-            int          count            = 1;
-            boolean      needsMove        = false;
-
-            if (scan_id.matches(".-" + modalityCode + "[0-9]+$")) {
-                scan_stub = scan_id.substring(0, scan_id.lastIndexOf("-"));
-            }
-
-            //make sure there aren't any matches by ID.  if there aren't needsMove stays false.  And, it identifies a good scan_id to use in the process.
-            while (usedIds.contains(scan_id)) {
-                if (scan_stub != null) {
-                    scan_id = scan_stub + "-" + modalityCode + count++;
-                } else {
-                    scan_id = newScan.getId() + "-" + modalityCode + count++;
-                }
-                needsMove = true;
-            }
-
-            usedIds.add(scan_id);
-
-            if (needsMove) {
-                //the scan id conflicted with a pre-existing one, so we have to rename this one.
-                processing("Renaming scan " + newScan.getId() + " to " + scan_id + " due to ID conflict.");
-                moveScan(newScan, scan_id, original_scan_id, null);
-            }
-        }
-
-        //process previously matched scans
-        for (final List<XnatImagescandataI> preexistingMatch : preexistingMatches) {
-            final XnatImagescandataI newScan = preexistingMatch.get(0);
-            final XnatImagescandataI match   = preexistingMatch.get(1);
-
-            //use same catalog path as existing resource
-            final XnatResourcecatalog cat          = (XnatResourcecatalog) match.getFile().get(0);
-            final String              archivedPath = cat.getUri();
-            final String              partialPath  = archivedPath.substring(archivedPath.lastIndexOf(SCANS_DIR));
-
-            processing("Renaming scan " + newScan.getId() + " to " + match.getId() + " due to UID match.");
-            moveScan(newScan, match.getId(), newScan.getId(), partialPath);
-
-            usedIds.add(match.getId());
-        }
-
-    }
-
-    /**
-     * Used to move a scan to a different scan ID within the prearchive, prior to transfer
-     *
-     * @param srcScan             The new scan to move to.
-     * @param destScanId          The new scan ID.
-     * @param srcScanId           The original scan ID
-     * @param destScanCatalogPath Destination for new catalog
-     *
-     * @throws ServerException When an error occurs moving the specified scan.
-     */
-    private void moveScan(final XnatImagescandataI srcScan, final String destScanId, final String srcScanId, String destScanCatalogPath)
-            throws ServerException {
-        for (XnatAbstractresourceI resource : srcScan.getFile()) {
-            final XnatResourcecatalog cat                = (XnatResourcecatalog) resource;
-            final String              srcScanCatalogPath = cat.getUri();
-            final File                srcCatalog         = new File(src.getPrearchivepath(), srcScanCatalogPath);
-            final String              srcScanFolderPath  = Paths.get(SCANS_DIR, srcScanId).toString();
-
-            //confirm expected structure
-            if (!srcCatalog.exists()) {
-                throw new ServerException("Non-standard prearchive structure (no catalog)- failed scan rename.");
-            }
-
-            if (destScanId.equals(srcScanId)) {
-                if (!srcScanCatalogPath.startsWith(srcScanFolderPath)) {
-                    throw new ServerException("Non-standard prearchive structure (invalid catalog location)- failed scan rename.");
-                }
-            }
-
-            if (destScanCatalogPath == null) {
-                if (RESOURCE_LABEL_DICOM.equals(cat.getLabel())) {
-                    destScanCatalogPath = Paths.get(SCANS_DIR, destScanId, RESOURCE_LABEL_DICOM,
-                                                    "scan_" + destScanId + "_catalog.xml").toString();
-                } else {
-                    destScanCatalogPath = Paths.get(SCANS_DIR, destScanId, cat.getLabel(),
-                                                    "scan_" + destScanId + "_" + cat.getLabel() + "_catalog.xml").toString();
-                }
-            }
-
-            final File destCatalogFile = new File(src.getPrearchivepath(), destScanCatalogPath);
-
-            final String originalScanFolder    = new File(src.getPrearchivepath(), srcScanCatalogPath).getParent();
-            final File   destinationScanFolder = destCatalogFile.getParentFile();
-
-            //get catalog bean
-            CatalogUtils.CatalogData catalogData = new CatalogUtils.CatalogData(srcCatalog, project, false);
-            //move each entry to its new location
-            final Map<File, File> fileMap = catalogData.catBean.getEntries_entry().stream().collect(
-                    Collectors.toMap(entry -> new File(destinationScanFolder, entry.getUri()),
-                                     entry -> ObjectUtils.defaultIfNull(CatalogUtils.getFile(entry, originalScanFolder, project), NULL_FILE)))
-                                                               .entrySet().stream()
-                                                               .filter(entry -> !entry.getValue().equals(NULL_FILE)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            for (final Map.Entry<File, File> entry : fileMap.entrySet()) {
-                final File source      = entry.getValue();
-                final File destination = entry.getKey();
-                try {
-                    FileUtils.MoveFile(source, destination, false);
-                } catch (IOException e) {
-                    throw new ServerException("An error occurred trying to move the file " + source.getAbsolutePath() +
-                                              " to the destination " + destination.getAbsolutePath(), e);
-                }
-            }
-
-            //move catalog file
-            try {
-                if (!StringUtils.equals(srcCatalog.getAbsolutePath(), destCatalogFile.getAbsolutePath())) {
-                    FileUtils.MoveFile(srcCatalog, destCatalogFile, true);
-                }
-            } catch (IOException e) {
-                throw new ServerException(e);
-            }
-
-            // fix the file path
-            cat.setUri(destScanCatalogPath);
-        }
-
-        srcScan.setId(destScanId);
-        try {
-            updatePrearchiveSessionXML(getSrcDIR().getAbsolutePath(), src);
-        } catch (Throwable e) {
-            throw new ServerException(e);
-        }
-    }
-
     public interface PostArchiveAction {
         Boolean execute(UserI user, XnatImagesessiondata src, Map<String, Object> params);
     }
@@ -1190,7 +951,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
      *
      * So, for now, I'll add a static List to track locked prearchive sessions and archived sessions.
      */
-    //tracks all of the strings locked by any archiver
+    //tracks all the strings locked by any archiver
     private static final List<String> GLOBAL_LOCKS = new ArrayList<>();
 
     @NotNull
@@ -1251,7 +1012,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     //with the validator (validator wants to collect all failure reasons, archiver fails on first one).
     //however, were possible, they should use the same code.  In those situations the Archiver should use these methods to trigger its exceptions.
     //then Validator can just change the way those exceptions are handled, by changing the implementation of these methods.
-    //ideally all of the Validator would work this way, but that requires large scale refactoring of PrearcSessionArchiver (which predated the Validator by several years).
+    //ideally all the Validator would work this way, but that requires large scale refactoring of PrearcSessionArchiver (which predated the Validator by several years).
 
     protected void fail(int code, String msg) throws ClientException {
         failed(msg);
@@ -1277,6 +1038,4 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         }
         return filterService;
     }
-
-    private final File NULL_FILE;
 }

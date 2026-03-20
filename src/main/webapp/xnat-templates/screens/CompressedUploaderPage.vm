@@ -148,8 +148,6 @@
         var form = document.getElementById("uploadFORM");
         var file = $('#image_archive').prop('files')[0];
         var usrResPath = usrResPathBase + encodeURIComponent(file.name);
-        var formDataUpload = new FormData();
-        formDataUpload.append("image_archive", file);
         var formDataArchive = new FormData(form);
         formDataArchive.delete("image_archive");
         formDataArchive.append("src", usrResPath);
@@ -172,9 +170,9 @@
         var loading;
         $.ajax({
             method: 'PUT',
-            contentType: false,
-            url: XNAT.url.csrfUrl('/data' + usrResPath),
-            data: formDataUpload,
+            contentType: file.type || 'application/octet-stream',
+            url: XNAT.url.csrfUrl('/data' + usrResPath + '?inbody=true'),
+            data: file,
             processData: false,
             cache: false,
             beforeSend: function() {

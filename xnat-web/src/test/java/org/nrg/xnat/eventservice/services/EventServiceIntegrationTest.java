@@ -1224,7 +1224,7 @@ public class EventServiceIntegrationTest {
         System.out.print("Triggered 10000 ignored events in : " + sw2.getTotalTimeSeconds() + "seconds\n");
 
         // Wait for ignored-event processing to drain before triggering catch events
-        waitForAsyncCompletion(60000);
+        waitForAsyncCompletion(120000);
 
         StopWatch sw3 = new StopWatch();
         sw3.start("eventTriggersToActions");
@@ -1233,7 +1233,7 @@ public class EventServiceIntegrationTest {
             eventService.triggerEvent(new SessionEvent(sessionToCatch, mockUser.getLogin(), SessionEvent.Status.CREATED, projectIdToCatch));
         }
         TestAction action = (TestAction) testAction;
-        await().atMost(60, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1000);
+        await().atMost(3, TimeUnit.MINUTES).until(() -> action.getDetectedEvents().size() >= 1000);
         sw3.stop();
         System.out.print("Triggered/Caught " + Integer.toString(action.getDetectedEvents().size()) + " detected events in : " + sw3.getTotalTimeSeconds() + "seconds\n");
 

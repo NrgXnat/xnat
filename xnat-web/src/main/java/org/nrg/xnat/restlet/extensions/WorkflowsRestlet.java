@@ -113,7 +113,7 @@ public class WorkflowsRestlet extends SecureResource {
 					   if (display.equalsIgnoreCase(DISPLAY_LATEST)) {
 						   query += " LIMIT 1 ";
 					   }
-				       System.out.println(query);
+					   _log.debug(query);
 				       
 				       
 					   mt = overrideVariant(variant);
@@ -226,7 +226,7 @@ public class WorkflowsRestlet extends SecureResource {
 					   query += " where " +addPipelineFilter("w");
 					   query += " and launch_time = ( " ;
 					   query += "select max(launch_time) from wrk_workflowdata w1 ";
-					   query += " where w.id=w1.id " + addPipelineFilter("w1") +"  group by w1.id";
+					   query += " where w.id=w1.id and " + addPipelineFilter("w1") +"  group by w1.id";
 					   query += " ) ";
 	
 					   if (status != null)
@@ -236,8 +236,8 @@ public class WorkflowsRestlet extends SecureResource {
 					   query += " and externalid = '" + project_id + "'";
 				   }
 				   query += " ORDER BY w.id, launch_time DESC ";
-	
-				   System.out.println(query);
+
+				   _log.debug(query);
 			       
 			       
 				   mt = overrideVariant(variant);
@@ -285,7 +285,7 @@ public class WorkflowsRestlet extends SecureResource {
 
     private String formatParameter(final String name, final Object value) {
         final String formattedName = StringUtils.rightPad(name, 20);
-        if (value instanceof String string && StringUtils.isNotBlank(string)) {
+		if (value instanceof String string && StringUtils.isNotBlank(string)) {
             return " * %s: %s\r".formatted(formattedName, value);
         } else if (value instanceof Map) {
             @SuppressWarnings("unchecked")

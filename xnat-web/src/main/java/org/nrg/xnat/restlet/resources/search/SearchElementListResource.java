@@ -26,6 +26,8 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class SearchElementListResource extends SecureResource {
@@ -50,8 +52,8 @@ public class SearchElementListResource extends SecureResource {
 				String prefix = getQueryVariable("prefix");
 				String type = getQueryVariable("complexType");
 				String name = getQueryVariable("name");
-				String singular = getQueryVariable("singular");
-				String plural = getQueryVariable("plural");
+				String singular = URLDecoder.decode(getQueryVariable("singular"), StandardCharsets.UTF_8);
+				String plural = URLDecoder.decode(getQueryVariable("plural"), StandardCharsets.UTF_8);
 				String extensionS = getQueryVariable("extends");
 
 				CreateDataTypeCallable callable = new CreateDataTypeCallable(prefix, type, name, singular, plural, extensionS);

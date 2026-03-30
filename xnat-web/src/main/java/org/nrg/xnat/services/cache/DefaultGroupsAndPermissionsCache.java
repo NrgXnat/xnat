@@ -128,6 +128,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final String EVENT_MOVE      = XftItemEventI.MOVE;
     private static final String EVENT_OPERATION = XftItemEventI.OPERATION;
 
+    private static final int    JMS_INIT_BATCH_SIZE     = 50;
+    private static final long   JMS_INIT_BATCH_PAUSE_MS = 100;
 
     private static final List<String> USER_CACHES                          = Arrays.asList(CACHE_ACCESS_MANAGERS,
             CACHE_BROWSEABLES,
@@ -313,9 +315,22 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             assert adminUser != null;
 
             stopWatch.lap("Found {} group IDs to run through, initializing cache with these as user {}", groupIds.size(), adminUser.getUsername());
-            for (final String groupId : groupIds) {
-                stopWatch.lap(Level.DEBUG, "Creating queue entry for group {}", groupId);
-                XDAT.sendJmsRequest(_jmsTemplate, new InitializeGroupRequest(groupId));
+            // Send in batches to avoid flooding the JMS broker and starving the connection pool
+            final List<String> groupIdList = new ArrayList<>(groupIds);
+            for (int batchStart = 0; batchStart < groupIdList.size(); batchStart += JMS_INIT_BATCH_SIZE) {
+                final int batchEnd = Math.min(batchStart + JMS_INIT_BATCH_SIZE, groupIdList.size());
+                for (int i = batchStart; i < batchEnd; i++) {
+                    stopWatch.lap(Level.DEBUG, "Creating queue entry for group {}", groupIdList.get(i));
+                    XDAT.sendJmsRequest(_jmsTemplate, new InitializeGroupRequest(groupIdList.get(i)));
+                }
+                if (batchEnd < groupIdList.size()) {
+                    try {
+                        Thread.sleep(JMS_INIT_BATCH_PAUSE_MS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
         } finally {
             if (stopWatch.isStarted()) {
@@ -887,12 +902,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             for (final String username : usernames) {
                 clearUserCache(username);
                 ACTIONS.forEach(a -> evictCacheMapPartition(CACHE_ACTIONS, a, username));
-                log.info("Initializing user group IDs cache entry for user '{}'", username);
-                updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
-                final List<String> groupIds = getCacheList(CACHE_USER_GROUPS, username, String.class);
-                log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
-                ACTIONS.forEach(a -> getActionElementDisplays(username, a));
-                getBrowseableElementDisplays(username);
+                log.debug("Evicted caches for user '{}', will rebuild lazily on next access", username);
             }
         }
         return false;
@@ -1006,8 +1016,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         if (affectsOtherDataTypes) {
             readableCountsCache.clear();
         } else {
-            // Update existing user element displays
-            clearAllUserProjectAccessCaches();
+            // Update existing user element displays — only clear caches for users actually associated with this project
+            clearProjectRelatedUserCaches(id);
             // CACHING: This would previously refresh cache for users that were already in the cache. Consider just leaving it and re-caching on reference.
             // initReadableCountsForUsers(cacheIds.stream().map(DefaultGroupsAndPermissionsCache::getUsernameFromCacheId).filter(StringUtils::isNotBlank).collect(Collectors.toSet()));
         }
@@ -1075,6 +1085,19 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         getReadableCountsCache().clear();
         getUserGroupsCache().clear();
         getUserLastUpdateCache().clear();
+    }
+
+    private void clearProjectRelatedUserCaches(final String projectId) {
+        final Set<String> users = getProjectUsers(projectId);
+        log.debug("Clearing caches for {} users related to project {}", users.size(), projectId);
+        for (final String username : users) {
+            evict(CACHE_ACCESS_MANAGERS, username);
+            ACTIONS.forEach(a -> evictCacheMapPartition(CACHE_ACTIONS, a, username));
+            evict(CACHE_BROWSEABLES, username);
+            evict(CACHE_READABLE_COUNTS, username);
+            evict(CACHE_USER_GROUPS, username);
+            evict(CACHE_USER_LAST_UPDATED, username);
+        }
     }
 
     private boolean isImageSession(String xsiType) {

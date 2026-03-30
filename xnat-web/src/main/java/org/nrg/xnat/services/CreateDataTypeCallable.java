@@ -74,12 +74,18 @@ public class CreateDataTypeCallable implements Callable<CreateDataTypeResult> {
 
         String finalType = type;
         if (finalType == null) {
-            finalType = name + "Data";
-
-            if(StringUtils.isAllUpperCase(name.substring(0, 1))){
-                finalType = name.substring(0, 1).toLowerCase() + finalType.substring(1);
-            }else{
+            if (name.endsWith("Data") && name.length() > 4) {
+                // User already included "Data" suffix — use as-is for complexType
+                finalType = name.substring(0, 1).toLowerCase() + name.substring(1);
+                name = name.substring(0, name.length() - 4);
                 name = name.substring(0, 1).toUpperCase() + name.substring(1);
+            } else {
+                finalType = name + "Data";
+                if (StringUtils.isAllUpperCase(name.substring(0, 1))) {
+                    finalType = name.substring(0, 1).toLowerCase() + finalType.substring(1);
+                } else {
+                    name = name.substring(0, 1).toUpperCase() + name.substring(1);
+                }
             }
         }
 

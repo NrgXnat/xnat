@@ -25,6 +25,15 @@
     </div>
 </div>
 
+<script type="text/javascript">
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('label')){
+        $('#form-json-container').append(
+            spawn('div.note','You have just created a new datatype. To add searchable attributes for this datatype, click "Add New" and select <b>"'+urlParams.get('label')+'"</b> in the Base XNAT Datatype selector, then create a custom form to support those attributes.')
+        );
+    }
+</script>
+
 #parse('screens/formioJSIncludes.vm')
 
 <script type="text/javascript" src="$content.getURI('/scripts/xnat/app/formJson/builderConfiguration.js')"></script>

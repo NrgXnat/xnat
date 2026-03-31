@@ -1003,7 +1003,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                     } else if (extendsValue === 'abstractProjectAsset') {
                         window.location.reload();
                     } else {
-                        showCustomFormPrompt();
+                        showCustomFormPrompt(singular,data.complexType);
                     }
                 }).catch(function(error) {
                     console.error('Error parsing response:', error);
@@ -1017,7 +1017,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                     if (extendsValue === 'imageAssessorData') {
                         showActionBoxEntriesPrompt();
                     } else {
-                        showCustomFormPrompt();
+                        showCustomFormPrompt(singular);
                     }
                 });
             } else if (response.status === 409) {
@@ -1092,7 +1092,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                     close: false,
                     action: function() {
                         XNAT.dialog.closeAll();
-                        showCustomFormPrompt();
+                        showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
                     }
                 }
             ]
@@ -1109,7 +1109,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 
         if (imageSessions.length === 0) {
             alert('No image session data types found.');
-            showCustomFormPrompt();
+            showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
             return;
         }
 
@@ -1194,15 +1194,15 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 
                             Promise.all(promises).then(function() {
                                 XNAT.dialog.closeAll();
-                                showCustomFormPrompt();
+                                showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
                             }).catch(function(error) {
                                 XNAT.dialog.closeAll();
                                 alert('Error adding action box entries: ' + error.message);
-                                showCustomFormPrompt();
+                                showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
                             });
                         } else {
                             XNAT.dialog.closeAll();
-                            showCustomFormPrompt();
+                            showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
                         }
                     }
                 },
@@ -1211,14 +1211,14 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                     close: false,
                     action: function() {
                         XNAT.dialog.closeAll();
-                        showCustomFormPrompt();
+                        showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
                     }
                 }
             ]
         });
     }
 
-    function showCustomFormPrompt() {
+    function showCustomFormPrompt(singular = false,complexType = false) {
         XNAT.dialog.open({
             title: 'Data Type Created Successfully',
             content: '<div style="padding: 20px;">' +
@@ -1233,7 +1233,9 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                     isDefault: true,
                     close: false,
                     action: function() {
-                        window.location.href = XNAT.url.rootUrl('/app/template/FormManagerDashBoard.vm');
+                        var queryParams = (singular) ? '?label='+encodeURIComponent(singular) : '';
+                        queryParams += (complexType) ? '&xsiType='+encodeURIComponent(complexType) : '';
+                        window.location.href = XNAT.url.rootUrl('/app/template/FormManagerDashBoard.vm' + queryParams);
                     }
                 },
                 {

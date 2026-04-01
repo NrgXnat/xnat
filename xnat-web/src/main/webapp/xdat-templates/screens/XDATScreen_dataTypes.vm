@@ -632,9 +632,9 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
     }
 
     .view-button.active {
-        background-color: #0D47A1 !important;
-        color: white !important;
-        border-color: #0D47A1 !important;
+        background: #0D47A1;
+        color: white;
+        border-color: #0D47A1;
     }
 
     /* Element tree styles */
@@ -1978,6 +1978,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                 tbody.empty();
 
                 if (data && data.length > 0) {
+                    data = data.sort(function(a,b){ return (a.name < b.name) ? -1 : 1 });
                     jq(data).each(function(index, schema) {
                         var row = "<tr>";
                         row += "<td>" + (schema.name || "") + "</td>";

@@ -40,6 +40,28 @@ $page.setVlinkColor($ui.vlink)
 <div class="alert">$data.message</div>
 #end
 
+
+<script type="text/javascript">
+    var elementName = "$!item.getXSIType()";
+    window.currentID = "$!om.getId()";
+#if($om.getProject())
+    #if($om.getProject().equals(""))
+    window.currentProject = "$!project";
+    #else
+    window.currentProject = "$!om.getProject()";
+    #end
+#else
+    window.currentProject = "$!project";
+#end
+    window.currentSubject = "$!om.getSubjectId()";
+#if($om.getSubjectData())
+    window.currentSubjectLabel = "$!om.getSubjectData().getLabel()";
+#end
+    window.currentLabel = "$!om.getLabel()";
+</script>
+
+
+
 #parse($turbineUtils.getTemplateName("validate.vm","xnat:subjectAssessorData",$project,"edit"))
 
 <p>

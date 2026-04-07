@@ -39,6 +39,8 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.db.entities.DBBackedSchema;
+import org.nrg.xft.schema.db.services.DBBackedSchemaService;
 import org.nrg.xnat.initialization.tasks.InitializeXftElementsTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -46,6 +48,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -62,6 +65,11 @@ public class SchemaApi extends AbstractXapiRestController {
     @Autowired
     public SchemaApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
+    }
+
+    @Autowired(required = false)
+    public void setDbBackedSchemaService(final DBBackedSchemaService dbBackedSchemaService) {
+        _dbBackedSchemaService = dbBackedSchemaService;
     }
 
     /**
@@ -109,6 +117,14 @@ public class SchemaApi extends AbstractXapiRestController {
                     log.error("Couldn't get a URI for the resource \"{}\", skipping", resource);
                 }
             }
+            if (_dbBackedSchemaService != null) {
+                for (final DBBackedSchema dbSchema : _dbBackedSchemaService.findAllSchema()) {
+                    final String path = StringUtils.stripStart(dbSchema.getPath(), "/");
+                    if (StringUtils.isNotBlank(path) && !schemas.contains(path)) {
+                        schemas.add(path);
+                    }
+                }
+            }
             return schemas;
         } catch (IOException e) {
             throw new InitializationException("Couldn't retrieve schema resources from the classpath using pattern: \"classpath*:schemas/*/*.xsd\"");
@@ -136,16 +152,25 @@ public class SchemaApi extends AbstractXapiRestController {
         if (SanitizeUtils.containsPathTraversal(namespace) || SanitizeUtils.containsPathTraversal(schema)) {
             throw new IllegalArgumentException("Invalid namespace or schema specification");
         }
+        log.debug("Schema request for namespace={}, schema={}", namespace, schema);
         final Resource resource = getResource(namespace, schema);
-        if (resource == null || !resource.exists()) {
-            throw new NotFoundException("classpath:schemas/" + namespace + "/" + schema + ".xsd");
+        if (resource != null && resource.exists()) {
+            log.debug("Found classpath resource for namespace={}, schema={}: {}", namespace, schema, resource);
+            if (!resource.isReadable()) {
+                throw new InsufficientPrivilegesException("classpath:schemas/" + namespace + "/" + schema + ".xsd");
+            }
+            try (final InputStream input = resource.getInputStream()) {
+                return new Scanner(input, "UTF-8").useDelimiter("\\A").next();
+            }
         }
-        if (!resource.isReadable()) {
-            throw new InsufficientPrivilegesException("classpath:schemas/" + namespace + "/" + schema + ".xsd");
+        log.debug("No classpath resource found for namespace={}, schema={}, trying DB-backed schema lookup", namespace, schema);
+        final String dbContent = getSchemaContentFromDB(namespace, schema);
+        if (dbContent != null) {
+            log.debug("Found DB-backed schema for namespace={}, schema={} ({} chars)", namespace, schema, dbContent.length());
+            return dbContent;
         }
-        try (final InputStream input = resource.getInputStream()) {
-            return new Scanner(input, "UTF-8").useDelimiter("\\A").next();
-        }
+        log.warn("Schema not found for namespace={}, schema={} (checked classpath and DB)", namespace, schema);
+        throw new NotFoundException("classpath:schemas/" + namespace + "/" + schema + ".xsd");
     }
 
     private Resource getResource(String namespace, String schema) {
@@ -409,6 +434,42 @@ public class SchemaApi extends AbstractXapiRestController {
                 uri + ":" + properName
         );
     }
+
+    @Nullable
+    private String getSchemaContentFromDB(final String namespace, final String schema) {
+        if (_dbBackedSchemaService == null) {
+            log.debug("DBBackedSchemaService not available, skipping DB lookup for namespace={}, schema={}", namespace, schema);
+            return null;
+        }
+        final String baseName = StringUtils.removeEnd(schema, ".xsd");
+        for (final String candidatePath : new String[]{
+                "/" + namespace + "/" + baseName,
+                "/" + namespace + "/" + schema,
+                "/" + baseName
+        }) {
+            log.debug("Trying DB schema lookup by path: {}", candidatePath);
+            final DBBackedSchema dbSchema = _dbBackedSchemaService.findConfigByPath(candidatePath);
+            if (dbSchema != null && StringUtils.isNotBlank(dbSchema.getContent())) {
+                log.debug("Found DB-backed schema by path={} (name={}, id={})", candidatePath, dbSchema.getName(), dbSchema.getId());
+                return dbSchema.getContent();
+            }
+        }
+        // Also try lookup by schema name (e.g., "prefix:complexType") since
+        // GetAllSchemaLocations uses the XFTDataModel fileName as the URL path
+        // segment, which is the schema name for DB-backed schemas.
+        for (final String candidateName : new String[]{namespace, baseName, schema}) {
+            log.debug("Trying DB schema lookup by name: {}", candidateName);
+            final DBBackedSchema dbSchema = _dbBackedSchemaService.findConfigByName(candidateName);
+            if (dbSchema != null && StringUtils.isNotBlank(dbSchema.getContent())) {
+                log.debug("Found DB-backed schema by name={} (path={}, id={})", candidateName, dbSchema.getPath(), dbSchema.getId());
+                return dbSchema.getContent();
+            }
+        }
+        log.debug("No DB-backed schema found for namespace={}, schema={}", namespace, schema);
+        return null;
+    }
+
+    private DBBackedSchemaService _dbBackedSchemaService;
 
     /**
      * Contains all elements mapped by the element's formatted name.

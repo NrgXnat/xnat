@@ -467,6 +467,19 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
     }
 
     /**
+     * getDirectArchiveOverwrite
+     *
+     * @param aeTitle The AE title of the instance to check
+     * @param port    The port of the instance to check
+     *
+     * @return the overwrite mode (null, "append", or "delete"), or null if SCP instance is unknown
+     */
+    public String getDirectArchiveOverwrite(String aeTitle, int port) {
+        Optional<DicomSCPInstance> instance = _dicomSCPInstanceService.findByAETitleAndPort(aeTitle, port);
+        return instance.map(DicomSCPInstance::getDirectArchiveOverwrite).orElse(null);
+    }
+
+    /**
      * isAnonymizationEnabled
      * Cache this because CStore asks this a lot.
      *

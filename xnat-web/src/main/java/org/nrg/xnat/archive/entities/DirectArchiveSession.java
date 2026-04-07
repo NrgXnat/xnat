@@ -16,7 +16,7 @@ import java.util.Date;
 public class DirectArchiveSession extends AbstractHibernateEntity {
     @Serial
     private static final long serialVersionUID = 1;
-    private String project, subject, name, folderName, tag, visit, protocol, timeZone, location, source, timestampUid, message;
+    private String project, subject, name, folderName, tag, visit, protocol, timeZone, location, source, timestampUid, message, overwriteMode;
     private Date uploadDate;
     private Date lastBuiltDate;
     private PrearcUtils.PrearcStatus status;
@@ -192,6 +192,14 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
 
     public Boolean getPreventAnon() {
         return this.preventAnon;
+    }
+
+    public String getOverwriteMode() {
+        return overwriteMode;
+    }
+
+    public void setOverwriteMode(String overwriteMode) {
+        this.overwriteMode = overwriteMode;
     }
 
     public SessionData toSessionData() {

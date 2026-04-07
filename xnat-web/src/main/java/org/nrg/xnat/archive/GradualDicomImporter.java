@@ -102,6 +102,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         _cache = XDAT.getContextService().getBean(UserProjectCache.class);
         _doCustomProcessing = PrearcUtils.parseParam(_parameters, CUSTOM_PROC_PARAM, false);
         _directArchive = PrearcUtils.parseParam(_parameters, DIRECT_ARCHIVE_PARAM, false);
+        _directArchiveOverwrite = (String) _parameters.getOrDefault(DIRECT_ARCHIVE_OVERWRITE_PARAM, null);
 
         // spring beans
         _mizer = XDAT.getContextService().getBeanSafely(MizerService.class);
@@ -501,9 +502,11 @@ public class GradualDicomImporter extends ImporterHandlerA {
         SessionData session = null;
         if (_directArchive) {
             try {
-                session = _directArchiveSessionService.getOrCreate(initialize, isNew);
+                session = _directArchiveSessionService.getOrCreate(initialize, isNew, _directArchiveOverwrite);
             } catch (Exception e) {
                 log.warn("Unable to directly archive session, will proceed through prearchive", e);
+            }
+            if (session == null) {
                 _directArchive = false;
                 initialize.setUrl(new File(prearchiveRoot, initialize.getFolderName()).getAbsolutePath());
             }
@@ -790,6 +793,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private final Map<String, Object> _parameters;
     private final boolean             _doCustomProcessing;
     private boolean                   _directArchive;
+    private final String              _directArchiveOverwrite;
 
     private String     _transferSyntax;
     private DicomFilterService _filterService;
@@ -808,6 +812,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     public static final String TSUID_PARAM = "Transfer-Syntax-UID";
     public static final String CUSTOM_PROC_PARAM = "Custom-Processing";
     public static final String DIRECT_ARCHIVE_PARAM = "Direct-Archive";
+    public static final String DIRECT_ARCHIVE_OVERWRITE_PARAM = "Direct-Archive-Overwrite";
 
     public final static String NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ = "AfterDicomRead";
     public final static String NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED = "AfterProjectSet";

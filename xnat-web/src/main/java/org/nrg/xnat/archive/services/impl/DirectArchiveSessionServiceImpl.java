@@ -48,6 +48,13 @@ import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.services.messaging.archive.DirectArchiveRequest;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
+import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xdat.model.CatEntryI;
+import org.nrg.xdat.model.CatDcmentryI;
+import org.nrg.xdat.model.XnatImagescandataI;
+import org.nrg.xdat.model.XnatAbstractresourceI;
+import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
@@ -58,9 +65,13 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -68,6 +79,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static org.nrg.xft.event.XftItemEventI.CREATE;
+import static org.nrg.xft.event.XftItemEventI.UPDATE;
 import static org.nrg.xnat.archive.Operation.Rebuild;
 import static org.nrg.xnat.archive.Operation.Separate;
 
@@ -79,6 +91,27 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     private final Object subjectLock = new Object();
 
     private final Object createLock = new Object();
+
+    /**
+     * Tracks experiments with pending merge workflow completions.
+     * Key = experiment ID, Value = info needed to check for active DirectArchiveSessions.
+     * When no more files arrive for the timeout period, the merge workflow is completed.
+     */
+    private final ConcurrentMap<String, PendingMergeInfo> pendingMergeCompletions = new ConcurrentHashMap<>();
+
+    private static class PendingMergeInfo {
+        final String project;
+        final String tag;
+        final String name;
+        long lastMergeTime;
+
+        PendingMergeInfo(String project, String tag, String name) {
+            this.project = project;
+            this.tag = tag;
+            this.name = name;
+            this.lastMergeTime = System.currentTimeMillis();
+        }
+    }
 
     @Autowired
     public DirectArchiveSessionServiceImpl(final DirectArchiveSessionHibernateService directArchiveSessionHibernateService,
@@ -120,7 +153,12 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     @Override
-    public SessionData getOrCreate(SessionData incoming, AtomicBoolean isNew) throws ArchivingException {
+    public SessionData getOrCreate(SessionData incoming, AtomicBoolean isNew, String overwriteMode) throws ArchivingException {
+        // Site-level feature flag: if direct archive append is not enabled, ignore the overwrite mode
+        if (StringUtils.isNotBlank(overwriteMode) && !XDAT.getSiteConfigPreferences().getEnableDirectArchiveAppend()) {
+            log.debug("Direct archive append is disabled site-wide; ignoring overwriteMode={}", overwriteMode);
+            overwriteMode = null;
+        }
         boolean     created = false;
         SessionData session = directArchiveSessionHibernateService.findBySessionData(incoming);
         if(session == null) {
@@ -128,10 +166,22 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                 session = directArchiveSessionHibernateService.findBySessionData(incoming);
                 if (session == null) {
                     if (Files.exists(Path.of(incoming.getUrl()))) {
-                        throw new ArchivingException("Cannot direct archive session " + incoming.getSessionDataTriple() +
-                            " because data already exists in " + incoming.getUrl());
+                        if (StringUtils.isBlank(overwriteMode)) {
+                            log.info("Session {} already exists at {} and append is not enabled; deferring to prearchive",
+                                incoming.getSessionDataTriple(), incoming.getUrl());
+                            return null;
+                        }
+                        // Allow writing directly into existing archive directory for append/overwrite
+                        log.info("Direct archive merge: allowing receive into existing directory {} with overwriteMode={}", incoming.getUrl(), overwriteMode);
                     }
                     session = directArchiveSessionHibernateService.create(incoming);
+                    if (StringUtils.isNotBlank(overwriteMode)) {
+                        try {
+                            directArchiveSessionHibernateService.setOverwriteMode(session.getId(), overwriteMode);
+                        } catch (NotFoundException e) {
+                            throw new ArchivingException("Failed to set overwrite mode on newly created session", e);
+                        }
+                    }
                     created = true;
                 }
             }
@@ -201,6 +251,15 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
             MergeUtils.deleteEmptyDirectoriesRecursively(new File(location));
 
+            // Determine if this is a merge into an existing archived session
+            String overwriteMode = directArchiveSessionHibernateService.getOverwriteMode(id);
+            boolean isMerge = StringUtils.isNotBlank(overwriteMode);
+
+            if (isMerge) {
+                archiveMerge(id, target, session, user, location, overwriteMode);
+                return;
+            }
+
             setSessionId(session);
             // TODO get rid of this check once XNAT-6889 is fixed
             if (!permissionsService.canCreate(user, session)) {
@@ -251,18 +310,20 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         // itself. A session could still be sent into building/archiving twice if additional files were received after
         // the build started, and this will be handled by sending the later files to the prearchive
         List<SessionData> sessions = directArchiveSessionHibernateService.findReadyForArchive();
-        if(sessions == null) {
-            return;
-        }
-        for (SessionData session : sessions) {
-            try {
-                triggerArchive(session);
-            } catch (ClientException e) {
-                log.warn("Skip trigger archive", e);
-            } catch (ServerException e) {
-                log.error("Unable to trigger archive", e);
+        if(sessions != null) {
+            for (SessionData session : sessions) {
+                try {
+                    triggerArchive(session);
+                } catch (ClientException e) {
+                    log.warn("Skip trigger archive", e);
+                } catch (ServerException e) {
+                    log.error("Unable to trigger archive", e);
+                }
             }
         }
+
+        // Complete any merge workflows whose timeout has expired with no new files arriving
+        completePendingMergeWorkflows();
     }
 
     @Override
@@ -347,13 +408,17 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     private void saveSession(XnatImagesessiondata session, EventMetaI c) throws Exception {
-        UserI user = c.getUser();
-        if(!SaveItemHelper.authorizedSave(session, c.getUser(), false, false, c)) {
-            throw new ArchivingException("Unable to save session");
-        }
+        saveSession(session, c, true);
+    }
 
-        XDAT.triggerXftItemEvent(session, CREATE);
-        Users.clearCache(user);
+    private void saveSession(XnatImagesessiondata session, EventMetaI c, boolean isNew) throws Exception {
+        UserI user = c.getUser();
+        // For merge/update (isNew=false), allow item removal so that overwritten
+        // catalog entries (e.g. replaced DICOM files) can be saved.
+        boolean allowItemRemoval = !isNew;
+        if(SaveItemHelper.authorizedSave(session, c.getUser(), false, allowItemRemoval, c)){
+            XDAT.triggerXftItemEvent(session, isNew ? CREATE : UPDATE);
+        }
     }
 
     private void setupScans(XnatImagesessiondata session, String root) {
@@ -478,6 +543,296 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         } catch (Exception e) {
             log.error("Unable to move {} to prearchive", target, e);
             directArchiveSessionHibernateService.setStatusToError(id, e);
+        }
+    }
+
+    // ---- Direct-to-archive merge (append/overwrite) support ----
+
+    private void archiveMerge(long id, SessionData target,
+                              XnatImagesessiondata incomingSession,
+                              UserI user, String location,
+                              String overwriteMode) throws Exception {
+        // Look up the existing archived session from XNAT DB
+        XnatExperimentdata existing = BaseXnatExperimentdata
+                .GetExptByProjectIdentifier(target.getProject(), incomingSession.getLabel(), user, false);
+
+        if (existing == null || !(existing instanceof XnatImagesessiondata existingSession)) {
+            // Session was deleted between receive and archive -- treat as fresh archive
+            log.info("Merge target session not found for {}, treating as fresh archive", target.getSessionDataTriple());
+            setSessionId(incomingSession);
+            if (!permissionsService.canCreate(user, incomingSession)) {
+                groupsAndPermissionsCache.clearUserCache(user.getUsername());
+            }
+            PrearcSessionArchiver.preArchive(user, incomingSession, EMPTY_MAP, null);
+            PersistentWorkflowI workflow = createWorkflow(user, incomingSession);
+            saveSubject(incomingSession, workflow.buildEvent());
+            setupScans(incomingSession, location);
+            saveSession(incomingSession, workflow.buildEvent());
+            PrearcSessionArchiver.postArchive(user, incomingSession, EMPTY_MAP);
+            Files.deleteIfExists(Path.of(location + ".xml"));
+            cleanupScans(incomingSession, location, workflow.buildEvent());
+            directArchiveSessionHibernateService.delete(id);
+            completeWorkflow(workflow);
+            return;
+        }
+
+        boolean overwriteFiles = PrearcUtils.DELETE.equals(overwriteMode);
+        log.info("Direct archive merge into existing session {} (overwriteMode={}, overwriteFiles={})",
+                existingSession.getId(), overwriteMode, overwriteFiles);
+
+        // Reuse the existing session's ID
+        incomingSession.setId(existingSession.getId());
+
+        // For each incoming scan, merge into existing session
+        List<XnatImagescandataI> existingScans = existingSession.getScans_scan();
+        for (XnatImagescandataI incomingScan : incomingSession.getScans_scan()) {
+            // Find matching scan by SeriesInstanceUID in existing session
+            XnatImagescandataI matchingScan = MergeUtils.getMatchingScanByUID(incomingScan, existingScans);
+
+            if (matchingScan != null) {
+                // CASE A: Appending files to an existing scan -- merge catalogs
+                log.debug("Merging files into existing scan {} (UID={})", matchingScan.getId(), matchingScan.getUid());
+                mergeScanCatalogs(incomingScan, matchingScan, target.getProject(), location, overwriteFiles, user);
+            } else {
+                // CASE B: New scan -- check for scan ID collision
+                XnatImagescandataI idCollision = MergeUtils.getMatchingScan(incomingScan, existingScans);
+                if (idCollision != null) {
+                    // Scan ID exists but different SeriesInstanceUID -- rename incoming scan
+                    String newId = generateUniqueScanId(incomingScan, existingScans);
+                    log.info("Scan ID collision: renaming incoming scan {} to {} (UID={})",
+                            incomingScan.getId(), newId, incomingScan.getUid());
+                    renameScanOnDisk(incomingScan, newId, location);
+                }
+                // Add new scan to existing session
+                existingSession.addScans_scan(incomingScan);
+            }
+        }
+
+        // Set up scan resources with archive paths
+        setupScans(existingSession, location);
+
+        // Get or reuse an open Merge workflow (pipeline_name='Merged').
+        // Creates and persists a new one if none exists.
+        PersistentWorkflowI workflow = getOrCreateMergeWorkflow(user, existingSession);
+
+        // Save updated session to DB (UPDATE, not CREATE).
+        // Because the workflow has pipeline_name='Merged', EventServiceItemSaveAspect
+        // will trigger SessionEvent.Status.MERGED for event service subscribers.
+        PrearcSessionArchiver.preArchive(user, existingSession, EMPTY_MAP, existingSession);
+        saveSession(existingSession, workflow.buildEvent(), false);
+        PrearcSessionArchiver.postArchive(user, existingSession, EMPTY_MAP);
+
+        // Finalize catalogs
+        cleanupScans(existingSession, location, workflow.buildEvent());
+
+        // Clean up the session XML
+        Files.deleteIfExists(Path.of(location + ".xml"));
+
+        // Delete the DirectArchiveSession tracking entry for this batch
+        directArchiveSessionHibernateService.delete(id);
+
+        // Do NOT complete the workflow here -- it stays In Progress because more files
+        // may arrive. Track this experiment for eventual workflow completion by the
+        // periodic triggerArchive handler when no new files arrive within the timeout.
+        pendingMergeCompletions.put(existingSession.getId(),
+                new PendingMergeInfo(target.getProject(), target.getTag(), target.getName()));
+    }
+
+    private void mergeScanCatalogs(XnatImagescandataI incomingScan, XnatImagescandataI existingScan,
+                                   String project, String rootPath, boolean overwriteFiles,
+                                   UserI user) throws Exception {
+        String fixedRootPath = rootPath.endsWith(File.separator) ? rootPath : rootPath + File.separator;
+        for (XnatAbstractresourceI incomingResource : incomingScan.getFile()) {
+            if (!(incomingResource instanceof XnatResourcecatalog incomingCatalog)) {
+                continue;
+            }
+            // Find matching resource in existing scan
+            XnatAbstractresourceI existingResource = MergeUtils.getMatchingResource(incomingResource, existingScan.getFile());
+            if (existingResource instanceof XnatResourcecatalog existingCatalogResource) {
+                // Merge entries from incoming catalog into existing catalog
+                CatalogUtils.CatalogData existingCatData = CatalogUtils.CatalogData.getOrCreate(
+                        fixedRootPath, existingCatalogResource, project);
+
+                CatalogUtils.CatalogData incomingCatData = CatalogUtils.CatalogData.getOrCreate(
+                        fixedRootPath, incomingCatalog, project);
+
+                for (CatEntryI incomingEntry : incomingCatData.catBean.getEntries_entry()) {
+                    // Check for duplicate by SOP Instance UID (for DICOM entries)
+                    boolean duplicate = false;
+                    if (incomingEntry instanceof CatDcmentryI dcmEntry && StringUtils.isNotBlank(dcmEntry.getUid())) {
+                        CatDcmentryI existingDcm = CatalogUtils.getDCMEntryByUID(existingCatData.catBean, dcmEntry.getUid());
+                        if (existingDcm != null) {
+                            duplicate = true;
+                            if (overwriteFiles) {
+                                log.debug("Overwriting existing catalog entry with UID={}", dcmEntry.getUid());
+                                CatalogUtils.addOrUpdateEntry(existingCatData, existingDcm,
+                                        incomingEntry.getUri(), incomingEntry.getUri(),
+                                        new File(existingCatData.catFile.getParentFile(), incomingEntry.getUri()),
+                                        null, null);
+                            } else {
+                                log.debug("Skipping duplicate DICOM entry with UID={} (append mode)", dcmEntry.getUid());
+                            }
+                        }
+                    }
+                    if (!duplicate) {
+                        existingCatData.catBean.addEntries_entry(incomingEntry);
+                    }
+                }
+
+                CatalogUtils.writeCatalogToFile(existingCatData);
+            } else {
+                // No matching resource in existing scan -- add the incoming resource
+                existingScan.addFile(incomingResource);
+            }
+        }
+    }
+
+    private String generateUniqueScanId(XnatImagescandataI scan, List<XnatImagescandataI> existingScans) {
+        // Extract modality code from XSI type (e.g., xnat:mrscandata -> MR)
+        String xsiType = scan.getXSIType();
+        String modalityCode = "";
+        if (xsiType != null && xsiType.startsWith("xnat:") && xsiType.length() >= 7) {
+            modalityCode = xsiType.substring(5, 7).toUpperCase();
+            if ("PE".equals(modalityCode)) {
+                modalityCode = "PT";
+            }
+        }
+
+        String originalId = scan.getId();
+        int counter = 1;
+        String newId;
+        do {
+            newId = originalId + "-" + modalityCode + counter;
+            counter++;
+        } while (scanIdExists(newId, existingScans));
+
+        return newId;
+    }
+
+    private boolean scanIdExists(String scanId, List<XnatImagescandataI> scans) {
+        return scans.stream().anyMatch(s -> scanId.equals(s.getId()));
+    }
+
+    private void renameScanOnDisk(XnatImagescandataI scan, String newId, String sessionDir) throws IOException {
+        File scansDir = new File(sessionDir, "scans");
+        File oldScanDir = new File(scansDir, scan.getId());
+        File newScanDir = new File(scansDir, newId);
+
+        if (oldScanDir.exists()) {
+            FileUtils.moveDirectory(oldScanDir, newScanDir);
+            log.debug("Renamed scan directory {} to {}", oldScanDir, newScanDir);
+        }
+
+        // Update the scan's ID
+        scan.setId(newId);
+
+        // Update catalog file references if present
+        for (XnatAbstractresourceI resource : scan.getFile()) {
+            if (resource instanceof XnatResourcecatalog catalog) {
+                String oldUri = catalog.getUri();
+                if (oldUri != null) {
+                    catalog.setUri(oldUri.replace(oldScanDir.getName(), newId));
+                }
+            }
+        }
+    }
+
+    /**
+     * Create a new Merge workflow for direct-to-archive merge operations and save it to the
+     * database immediately in In Progress state.
+     */
+    private PersistentWorkflowI createMergeWorkflow(UserI user, XnatImagesessiondata session) throws Exception {
+        PersistentWorkflowI workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, session.getItem(),
+                EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.WEB_SERVICE,
+                        EventUtils.MERGE, "Direct-to-archive upload", null));
+        assert workflow != null;
+        workflow.setStepDescription("Archiving");
+        PersistentWorkflowUtils.save(workflow, workflow.buildEvent());
+        return workflow;
+    }
+
+    /**
+     * Find an existing open (In Progress) Merge workflow with justification "Direct-to-archive upload"
+     * for this session, or create a new one. This ensures that multiple file additions to the same
+     * session share a single workflow entry rather than creating one per batch.
+     */
+    private PersistentWorkflowI getOrCreateMergeWorkflow(UserI user, XnatImagesessiondata session) throws Exception {
+        // Look for existing open Merge workflows for this session
+        Collection<? extends PersistentWorkflowI> openWorkflows =
+                PersistentWorkflowUtils.getOpenWorkflows(user, session.getId());
+
+        PersistentWorkflowI existing = openWorkflows.stream()
+                .filter(w -> EventUtils.MERGE.equals(w.getPipelineName()))
+                .filter(w -> "Direct-to-archive upload".equals(w.getJustification()))
+                .max(Comparator.comparing(PersistentWorkflowI::getLaunchTimeDate))
+                .orElse(null);
+
+        if (existing != null) {
+            log.debug("Reusing existing merge workflow for session {}", session.getId());
+            existing.setStepDescription("Archiving (append)");
+            return existing;
+        }
+
+        // No existing open Merge workflow -- create and persist a new one
+        return createMergeWorkflow(user, session);
+    }
+
+    /**
+     * Check for merge workflows that should be completed because no new files have arrived
+     * within the timeout period. Called periodically from {@link #triggerArchive()}.
+     *
+     * For each tracked experiment:
+     * 1. Skip if the timeout hasn't elapsed since the last merge
+     * 2. Skip if there's still a RECEIVING DirectArchiveSession for this study (files still arriving)
+     * 3. Otherwise, find the open Merge workflow and set it to Complete
+     */
+    private void completePendingMergeWorkflows() {
+        if (pendingMergeCompletions.isEmpty()) {
+            return;
+        }
+
+        long timeoutMs = XDAT.getSiteConfigPreferences().getSessionXmlRebuilderInterval() * 60 * 1000L;
+        long now = System.currentTimeMillis();
+        UserI user = receivedFileUserProvider.get();
+
+        for (Map.Entry<String, PendingMergeInfo> entry : pendingMergeCompletions.entrySet()) {
+            String experimentId = entry.getKey();
+            PendingMergeInfo pm = entry.getValue();
+
+            if (now - pm.lastMergeTime < timeoutMs) {
+                continue; // Not enough time has passed since last merge
+            }
+
+            // Check if there's still a RECEIVING DirectArchiveSession for this study
+            try {
+                SessionData active = directArchiveSessionHibernateService.findByProjectTagName(
+                        pm.project, pm.tag, pm.name);
+                if (active.getStatus() == PrearcUtils.PrearcStatus.RECEIVING) {
+                    log.debug("Still receiving files for experiment {}, deferring merge workflow completion",
+                            experimentId);
+                    continue;
+                }
+            } catch (NotFoundException e) {
+                // No active DirectArchiveSession -- safe to complete the workflow
+            }
+
+            // Find and complete the open Merge workflow for this experiment
+            try {
+                Collection<? extends PersistentWorkflowI> openWorkflows =
+                        PersistentWorkflowUtils.getOpenWorkflows(user, experimentId);
+
+                for (PersistentWorkflowI wf : openWorkflows) {
+                    if (EventUtils.MERGE.equals(wf.getPipelineName()) &&
+                            "Direct-to-archive upload".equals(wf.getJustification())) {
+                        log.info("Completing direct-archive merge workflow for experiment {}", experimentId);
+                        completeWorkflow(wf);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error completing merge workflow for experiment {}", experimentId, e);
+            }
+
+            pendingMergeCompletions.remove(experimentId);
         }
     }
 

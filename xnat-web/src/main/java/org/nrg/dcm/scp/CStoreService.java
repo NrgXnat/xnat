@@ -278,8 +278,9 @@ public class CStoreService extends BasicCStoreSCP {
                 doCustomProcessing   = _manager.isCustomProcessing( aeTitle, port);
                 directArchive        = _manager.isDirectArchive( aeTitle, port);
                 anonymizationEnabled = _manager.isAnonymizationEnabled( aeTitle, port);
+                String directArchiveOverwrite = _manager.getDirectArchiveOverwrite( aeTitle, port);
 
-                final ImmutableMap<String, Object> parameters = ImmutableMap.<String, Object>builder()
+                final ImmutableMap.Builder<String, Object> paramBuilder = ImmutableMap.<String, Object>builder()
                         .put(GradualDicomImporter.SENDER_ID_PARAM, identifySender(as))
                         .put(GradualDicomImporter.TSUID_PARAM, tsuid)
                         .put(GradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET())
@@ -287,8 +288,11 @@ public class CStoreService extends BasicCStoreSCP {
                         .put(GradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnection().getPort())
                         .put(GradualDicomImporter.CUSTOM_PROC_PARAM, doCustomProcessing)
                         .put(GradualDicomImporter.DIRECT_ARCHIVE_PARAM, directArchive)
-                        .put(URIManager.PREVENT_ANON, String.valueOf(!anonymizationEnabled))
-                        .build();
+                        .put(URIManager.PREVENT_ANON, String.valueOf(!anonymizationEnabled));
+                if (directArchiveOverwrite != null) {
+                    paramBuilder.put(GradualDicomImporter.DIRECT_ARCHIVE_OVERWRITE_PARAM, directArchiveOverwrite);
+                }
+                final ImmutableMap<String, Object> parameters = paramBuilder.build();
                 final GradualDicomImporter importer = new GradualDicomImporter(this,
                         userProvider.get(), fw, parameters);
                 importer.setIdentifier( _manager.getDicomObjectIdentifier( aeTitle, port));

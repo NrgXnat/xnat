@@ -19,6 +19,10 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
 
     SessionData create(SessionData initialize) throws ArchivingException;
 
+    void setOverwriteMode(long id, String overwriteMode) throws NotFoundException;
+
+    String getOverwriteMode(long id) throws NotFoundException;
+
     SessionData setStatusToBuildingAndReturn(long id) throws NotFoundException, ArchivingException;
     SessionData setStatusToArchivingAndReturn(long id) throws NotFoundException, ArchivingException;
 

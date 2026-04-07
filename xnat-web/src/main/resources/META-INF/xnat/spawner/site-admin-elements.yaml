@@ -2112,6 +2112,17 @@ dicomScpReceiversGlobal:
             onText: "DICOM Receivers: <b>Allowed</b>"
             offText: "DICOM Receivers: <b>Not Allowed</b>"
             description: Globally Allow or Disallow DICOM Receivers
+        enableDirectArchiveAppend:
+            kind: panel.input.switchbox
+            name: enableDirectArchiveAppend
+            label: Direct Archive Append
+            onText: "Direct Archive Append: <b>Enabled</b>"
+            offText: "Direct Archive Append: <b>Disabled</b>"
+            description: >
+                Allow Direct Archive to append files to existing archived sessions.
+                When disabled (default), Direct Archive will fail if a session already
+                exists in the archive. When enabled, the per-receiver overwrite mode
+                setting controls how files are merged into existing sessions.
 
 dicomScpReceivers:
     kind: panel

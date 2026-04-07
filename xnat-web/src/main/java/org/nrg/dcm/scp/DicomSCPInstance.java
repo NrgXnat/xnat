@@ -10,6 +10,7 @@
 package org.nrg.dcm.scp;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 
 import javax.persistence.*;
 
@@ -36,6 +37,7 @@ public class DicomSCPInstance extends AbstractHibernateEntity {
     private String       _projectRoutingExpression;
     private String       _subjectRoutingExpression;
     private String       _sessionRoutingExpression;
+    private String       _directArchiveOverwrite    = PrearcUtils.DELETE;
 
     public String getAeTitle() { return _aeTitle; }
     public void setAeTitle(String aeTitle) { this._aeTitle = aeTitle; }
@@ -99,6 +101,9 @@ public class DicomSCPInstance extends AbstractHibernateEntity {
         _sessionRoutingExpression = sessionRoutingExpression;
     }
 
+    public String getDirectArchiveOverwrite() { return _directArchiveOverwrite; }
+    public void setDirectArchiveOverwrite(String directArchiveOverwrite) { _directArchiveOverwrite = directArchiveOverwrite; }
+
     @Transient
     public String getLabel() {
         return formatDicomSCPInstanceKey(_aeTitle, _port);
@@ -135,6 +140,7 @@ public class DicomSCPInstance extends AbstractHibernateEntity {
         map.put("projectRoutingExpression", _projectRoutingExpression);
         map.put("subjectRoutingExpression", _subjectRoutingExpression);
         map.put("sessionRoutingExpression", _sessionRoutingExpression);
+        map.put("directArchiveOverwrite", _directArchiveOverwrite);
         map.put("created", getCreated());
         map.put("timestamp", getTimestamp());
         return map;
@@ -157,6 +163,7 @@ public class DicomSCPInstance extends AbstractHibernateEntity {
         instance.setProjectRoutingExpression( getProjectRoutingExpression());
         instance.setSubjectRoutingExpression( getSubjectRoutingExpression());
         instance.setSessionRoutingExpression( getSessionRoutingExpression());
+        instance.setDirectArchiveOverwrite( getDirectArchiveOverwrite());
         instance.setCreated( getCreated());
         instance.setTimestamp( getTimestamp());
         return instance;
@@ -178,7 +185,8 @@ public class DicomSCPInstance extends AbstractHibernateEntity {
                 + "routingExpressionsEnabled=" + _routingExpressionsEnabled + ", "
                 + "projectRoutingExpression='" + _projectRoutingExpression + "', "
                 + "subjectRoutingExpression='" + _subjectRoutingExpression + "', "
-                + "sessionRoutingExpression='" + _sessionRoutingExpression + "'"
+                + "sessionRoutingExpression='" + _sessionRoutingExpression + "', "
+                + "directArchiveOverwrite='" + _directArchiveOverwrite + "'"
                 + "}";
     }
 }

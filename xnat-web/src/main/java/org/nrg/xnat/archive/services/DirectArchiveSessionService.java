@@ -21,7 +21,7 @@ public interface DirectArchiveSessionService {
 
     SessionData findByProjectTagName(String project, String tag, String name) throws NotFoundException;
 
-    SessionData getOrCreate(SessionData initialize, AtomicBoolean isNew) throws ArchivingException;
+    SessionData getOrCreate(SessionData initialize, AtomicBoolean isNew, String overwriteMode) throws ArchivingException;
 
     void build(long id) throws NotFoundException, ArchivingException;
     void archive(long id) throws NotFoundException, ArchivingException;

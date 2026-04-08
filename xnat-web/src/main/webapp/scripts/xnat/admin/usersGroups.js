@@ -542,6 +542,39 @@ var XNAT = getObject(XNAT);
     }
     usersGroups.updateUsersTable = updateUsersTable;
 
+    function checkAllDataAccessPermissions(){
+        getUserProfiles(function(data){
+            data.forEach(function(user){
+                var rowId = '#'+user.username+'-'+user.id;
+                XNAT.xhr.getJSON({
+                    url: XNAT.url.restUrl('/xapi/users/'+user.username+'/groups'),
+                    success: function(data){
+                        const groupsToCheck = ['ALL_DATA_ADMIN','ALL_DATA_ACCESS'];
+                        groupsToCheck.forEach(function(thisRole){
+                            if (data.includes(thisRole)) {
+                                var knownRoles = $('#user-profiles').find(rowId).find('td.roles').text();
+                                if (knownRoles.length) {
+                                    knownRoles = $('#user-profiles').find(rowId).find('td.roles span').html();
+                                    if (knownRoles.indexOf(thisRole) <0) knownRoles += '<br>'+thisRole;
+                                } else {
+                                    knownRoles = thisRole;
+                                }
+                                var roleSpan = spawn('span.truncate',
+                                    {
+                                        style: { fontSize: '82.5%', textTransform:'uppercase' },
+                                        title: knownRoles.replace(/<br>/g,', ')
+                                    },
+                                    knownRoles
+                                );
+                                $('#user-profiles').find(rowId).find('td.roles').html(roleSpan);
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    }
+
 
     // get profile data for ALL users
     function getUserProfiles(success, failure){
@@ -1336,7 +1369,7 @@ var XNAT = getObject(XNAT);
                 element: {
                     html: 'Reload User List',
                     style: {
-                        marginLeft: '20px'
+                        marginLeft: '10px'
                     },
                     on: {
                         click: function(e){
@@ -1376,6 +1409,23 @@ var XNAT = getObject(XNAT);
             }
         }
 
+        function checkAllDataAccessButton(){
+            return {
+                tag: 'button#check-all-data-access',
+                element: {
+                    html: 'Check Data Admin',
+                    style: {
+                        marginLeft: '10px'
+                    },
+                    on: {
+                        click: function(e){
+                            checkAllDataAccessPermissions();
+                        }
+                    }
+                }
+            }
+        }
+
         function allUsersButtonInfoText(){
             return {
                 tag: 'span.tip.shadowed',
@@ -1389,27 +1439,18 @@ var XNAT = getObject(XNAT);
                     }
                 },
                 content: [
-                    'By default, the table below only shows "current" users: users that are <b>enabled</b>, or who ' +
+                    'By default, the table below only shows accounts and site-wide roles for "current" users: users that are <b>enabled</b>, or who ' +
                     'may be <b>disabled</b> but have logged in during the past year, or have an unused account created less ' +
                     'than a year ago.' +
                     '<br><br>' +
                     'Click the <b>"Load All Users"</b> button to view <i>all</i> users that have accounts on this system, ' +
-                    'even if their account is not "current."'
+                    'even if their account is not "current."' +
+                    '<br><br>' +
+                    'Click the <b>"Check Data Admin"</b> button to check for All Data Access or All Data Admin permissions for all users.'
                 ],
                 filler: null
             }
         }
-
-        // var alternateInfoText = '' +
-        //
-        //     'By default, the table below only shows "current" users: users that are <b>enabled</b>, users that have ' +
-        //     'logged in during the past year but are <b>disabled</b>, or users with accounts that were ' +
-        //     'created created in the past year but never used.' +
-        //     '<br><br>' +
-        //     'Click the <b>"Load All Users"</b> button to view <i>all</i> users that have accounts on this system, ' +
-        //     'even if their account is not "current."' +
-        //
-        //     '';
 
         function allUsersButtonInfo(){
             return {
@@ -1437,7 +1478,8 @@ var XNAT = getObject(XNAT);
                 },
                 contents: {
                     allUsersButtonInfo: allUsersButtonInfo(),
-                    loadAllUsersButton: loadAllUsersButton()
+                    loadAllUsersButton: loadAllUsersButton(),
+                    checkAllDataAccessButton: checkAllDataAccessButton()
                 }
             }
         }
@@ -1751,15 +1793,6 @@ var XNAT = getObject(XNAT);
                             XNAT.usersGroups.roles.forEach(function(role){
                                 if (role === 'SiteUser' || role === 'DataManager') return false; // ignore this bit of XNAT cruft
                                 if (XNAT.data['/xapi/users/rolemap'][role].indexOf(username) >= 0) userRoles.push(role);
-                            });
-
-                            // add a check for All Data Access. Sadly, this is not tracked as a role, and must be queried on a user-by-user basis
-                            XNAT.xhr.getJSON({
-                                url: XNAT.url.restUrl('/xapi/users/'+this.username+'/groups'),
-                                async: false,
-                                success: function(data){
-                                    if (data.includes('ALL_DATA_ADMIN')) userRoles.push('ALL_DATA_ADMIN');
-                                },
                             });
 
                             var userRoleTxt = userRoles.length ? userRoles.join('<br>') : '';

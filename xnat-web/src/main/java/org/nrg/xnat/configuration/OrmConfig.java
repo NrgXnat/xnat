@@ -52,7 +52,7 @@ import static org.nrg.framework.jcache.JCacheHelper.REDISSON_URI_DEFAULT;
 @Configuration
 @EnableTransactionManagement(proxyTargetClass = true)
 @EnableCaching
-@ComponentScan("org.nrg.framework.jcache")
+@ComponentScan({"org.nrg.framework.jcache", "org.nrg.xnat.hibernate.listeners"})
 @Slf4j
 public class OrmConfig {
     @Value("${hibernate.dialect:org.hibernate.dialect.PostgreSQL10Dialect}")

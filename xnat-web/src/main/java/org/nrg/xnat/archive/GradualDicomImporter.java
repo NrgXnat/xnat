@@ -32,6 +32,7 @@ import org.nrg.dcm.io.ResumableDicomInputStream;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
+import org.nrg.dicom.mizer.objects.Dcm4cheConvert;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerService;
@@ -132,25 +133,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
         return false;
     }
 
-    /**
-     * Archive processors and series import filters want a DicomObjectI. This object contains both FMI (when available)
-     * and the dataset, but thie combination causes havoc for regular dcm4che5 i/o.
-     * @param fmi File Metainformation
-     * @param dataset DICOM dataset (no File Meta Information)
-     * @param transferSyntaxUID inserted if Transfer Syntax UID is not present in the FMI.
-     * @return a DicomObjectI for use by archive processors, series import filters, etc.
-     */
-    private DicomObjectI copyForProcessing(final Attributes fmi, final Attributes dataset, final String transferSyntaxUID) {
-        final Attributes copy = new Attributes();
-        if (null == fmi || !fmi.contains(Tag.TransferSyntaxUID)) {
-            copy.setString(Tag.TransferSyntaxUID, VR.UI, transferSyntaxUID);
-        } else {
-            copy.addAll(fmi);
-        }
-        copy.addAll(dataset);
-        return new DicomObjectFactory.MizerDicomObject(copy);
-    }
-
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public List<String> call() throws ClientException {
@@ -163,20 +145,30 @@ public class GradualDicomImporter extends ImporterHandlerA {
              final DicomInputStream dis = new ResumableDicomInputStream(bis)) {
             final Attributes fmi = dis.readFileMetaInformation();
             final String transferSyntaxUID = null == _transferSyntax ? dis.getTransferSyntax() : _transferSyntax;
-            final Attributes dataset = new Attributes();
+            Attributes dataset = new Attributes();
             dis.readAttributes(dataset, -1, lastTag + 1);
             dis.reset();
 
-            DicomObjectI processingCopy = copyForProcessing(fmi, dataset, transferSyntaxUID);
-            if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ, processingCopy, null)) {
+            // Merge FMI into dataset so processors see a complete DICOM object.
+            // FMI will be split out before writing to file.
+            if (null == fmi || !fmi.contains(Tag.TransferSyntaxUID)) {
+                dataset.setString(Tag.TransferSyntaxUID, VR.UI, transferSyntaxUID);
+            } else {
+                dataset.addAll(fmi);
+            }
+
+            DicomObjectI dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
+            if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ, dicomObject, null)) {
                 return returnEmptyList();
             }
+            dataset = dicomObject.getAttributes();
 
             log.trace("handling file with query parameters {}", _parameters);
             try {
                 // project identifier is expensive, so avoid if possible
+                final Attributes datasetForProject = dataset;
                 project = getProject(PrearcUtils.identifyProject(_parameters),
-                        () -> dicomObjectIdentifier.getProject(dataset));
+                        () -> dicomObjectIdentifier.getProject(datasetForProject));
             } catch (MalformedURLException e1) {
                 log.error("unable to parse supplied destination flag", e1);
                 throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, e1);
@@ -186,9 +178,12 @@ public class GradualDicomImporter extends ImporterHandlerA {
             tempSession.setProject(project == null ? null : project.getId());
             tempSession.setSubject("");
             tempSession.setFolderName("");
-            if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, processingCopy, tempSession)) {
+
+            dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
+            if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicomObject, tempSession)) {
                 return returnEmptyList();
             }
+            dataset = dicomObject.getAttributes();
 
             final String projectId = project != null ? project.getId() : null;
             final SeriesImportFilter projectFilter = StringUtils.isNotBlank(projectId) ? getDicomFilterService().getSeriesImportFilter(projectId) : null;
@@ -216,9 +211,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
             }
 
-            // We may have added more attributes; rebuild the processing copy.
-            processingCopy = copyForProcessing(fmi, dataset, transferSyntaxUID);
-            if (!(shouldIncludeDicomObject(siteFilter, processingCopy) && shouldIncludeDicomObject(projectFilter, processingCopy))) {
+            dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
+            if (!(shouldIncludeDicomObject(siteFilter, dicomObject) && shouldIncludeDicomObject(projectFilter, dicomObject))) {
                 return returnEmptyList();
                 /* TODO: Return information to user on rejected files. Unfortunately throwing an
                  * exception causes DicomBrowser to display a panicked error message. Some way of
@@ -226,6 +220,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                  * nice, though. Possibly record the information and display on an admin page.
                  */
             }
+            dataset = dicomObject.getAttributes();
+
             if (Strings.isNullOrEmpty(dataset.getString(Tag.SOPClassUID))) {
                 throw new ClientException("object " + name + " contains no SOP Class UID");
             }
@@ -352,12 +348,14 @@ public class GradualDicomImporter extends ImporterHandlerA {
             Callable<Void> cleanupPrearcDb = isNew.get() ? () -> {
                 deleteSessionFromDb(session); return null;} : () -> null;
 
+            dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
             if (_doCustomProcessing &&
                     !customProcessing(NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE,
-                            processingCopy, session, cleanupPrearcDb)
+                            dicomObject, session, cleanupPrearcDb)
             ) {
                 return returnEmptyList();
             }
+            dataset = dicomObject.getAttributes();
 
             // Build the scan label
             final String seriesNum = dataset.getString(Tag.SeriesNumber);
@@ -384,7 +382,12 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
             try {
                 try {
-                    write(fmi, dataset, transferSyntaxUID, _parameters.get(SENDER_AE_TITLE_PARAM), bis, outputFile, source);
+                    // Split FMI from dataset before writing (dcm4che5 requires them separate for i/o)
+                    final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(dataset);
+                    write(split.fmi, split.onlyDataset, transferSyntaxUID, _parameters.get(SENDER_AE_TITLE_PARAM), bis, outputFile, source);
+                    // Re-merge FMI back into dataset for any subsequent processing
+                    //https://radiologics.atlassian.net/browse/XNAT-8719
+                    dataset.addAll(split.fmi);
                 } catch (IOException e) {
                     throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
                 }

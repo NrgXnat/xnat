@@ -14,7 +14,6 @@ import org.nrg.xdat.display.transport.services.ElementDisplayStorageService;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xft.schema.XFTDataModel;
 import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.schema.db.entities.DBBackedSchema;
 import org.nrg.xft.schema.db.services.DBBackedSchemaService;
 import org.slf4j.Logger;
@@ -58,6 +57,10 @@ public class LoadDBDataTypeCallable implements Callable<LoadDBDataTypeResult> {
             DBBackedSchema schema = dbBackedSchemaService.get(schemaId);
             if (schema == null) {
                 return LoadDBDataTypeResult.notFound("Schema not found with ID: " + schemaId);
+            }
+
+            if (dbBackedSchemaService.isSchemaLoaded(schema)) {
+                return LoadDBDataTypeResult.success("Schema already loaded: " + schema.getName());
             }
 
             logger.info("Loading schema: {} (ID: {})", schema.getName(), schemaId);
@@ -121,7 +124,7 @@ public class LoadDBDataTypeCallable implements Callable<LoadDBDataTypeResult> {
             return LoadDBDataTypeResult.success(schema.getName());
 
         } catch (Exception e) {
-            logger.error("Error loading schema with ID: " + schemaId, e);
+            logger.error("Error loading schema with ID: {}", schemaId, e);
             return LoadDBDataTypeResult.internalError("Failed to load schema: " + e.getMessage());
         }
     }

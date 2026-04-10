@@ -18,14 +18,11 @@ import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.transport.entities.ElementDisplayDB;
 import org.nrg.xdat.display.transport.services.ElementDisplayStorageService;
-import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.db.entities.DBBackedSchema;
 import org.nrg.xft.schema.db.services.DBBackedSchemaService;
@@ -38,7 +35,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import javax.xml.validation.Schema;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -186,29 +182,7 @@ public class DBBackedSchemaApi extends AbstractXapiRestController {
                         .body("{\"error\":\"Schema not found with ID: " + id + "\"}");
             }
 
-            // Get element names from the schema
-            List<String> elementNames = _dbBackedSchemaService.getElementNames(schema);
-            log.debug("Schema {} contains {} elements: {}", schema.getName(), elementNames.size(), elementNames);
-
-            // Check if any element from this schema is already loaded
-            boolean alreadyLoaded = false;
-            for (String elementName : elementNames) {
-                try {
-                    SchemaElement se = SchemaElement.GetElement(elementName);
-                    if (se != null) {
-                        log.info("Element {} is already loaded in the system", elementName);
-                        alreadyLoaded = true;
-                        break;
-                    }
-                } catch (XFTInitException e) {
-                    log.error("XFT initialization error checking for element: " + elementName, e);
-                } catch (ElementNotFoundException e) {
-                    // Element not found, which is expected if not loaded yet
-                    log.debug("Element {} not yet loaded", elementName);
-                }
-            }
-
-            if (alreadyLoaded) {
+            if (_dbBackedSchemaService.isSchemaLoaded(schema)) {
                 log.info("Schema {} is already loaded in the system", schema.getName());
                 return ResponseEntity.ok("{\"message\":\"Schema is already loaded\",\"status\":\"already_loaded\"}");
             }

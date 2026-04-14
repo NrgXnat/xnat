@@ -143,19 +143,19 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final int lastTag = Math.max(getMaxFilterTag(siteFilter), Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription))+ 1;
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
              final DicomInputStream dis = new ResumableDicomInputStream(bis)) {
-            final Attributes fmi = dis.readFileMetaInformation();
+            Attributes fmi = dis.readFileMetaInformation();
             final String transferSyntaxUID = null == _transferSyntax ? dis.getTransferSyntax() : _transferSyntax;
             Attributes dataset = new Attributes();
             dis.readAttributes(dataset, -1, lastTag + 1);
             dis.reset();
 
+            // CStore (DIMSE) has no FMI preamble, so fmi is null; generate complete FMI for file output.
+            if (null == fmi || !fmi.contains(Tag.TransferSyntaxUID)) {
+                fmi = dataset.createFileMetaInformation(transferSyntaxUID);
+            }
             // Merge FMI into dataset so processors see a complete DICOM object.
             // FMI will be split out before writing to file.
-            if (null == fmi || !fmi.contains(Tag.TransferSyntaxUID)) {
-                dataset.setString(Tag.TransferSyntaxUID, VR.UI, transferSyntaxUID);
-            } else {
-                dataset.addAll(fmi);
-            }
+            dataset.addAll(fmi);
 
             DicomObjectI dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
             if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ, dicomObject, null)) {
@@ -189,7 +189,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             final SeriesImportFilter projectFilter = StringUtils.isNotBlank(projectId) ? getDicomFilterService().getSeriesImportFilter(projectId) : null;
             final int maxProjectTag = getMaxFilterTag(projectFilter)+1;
             if (maxProjectTag > lastTag) {
-                try {  
+                try {
                     dis.readAttributes(dataset, -1, maxProjectTag+1);
                     dis.reset();
                 } catch (IOException e) {

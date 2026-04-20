@@ -25,6 +25,8 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
+import org.nrg.xnat.web.filter.ApiIncludeContentTypeIsolationFilter;
+
 import javax.servlet.*;
 import java.io.File;
 import java.io.IOException;
@@ -71,6 +73,20 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         addServlet(XNATRestletServlet.class, 2, "/REST/*", "/data/*");
         addServlet(XDATAjaxServlet.class, 4, "/ajax/*", "/servlet/XDATAjaxServlet", "/servlet/AjaxServlet");
         addServlet(ArchiveServlet.class, 7, "/archive/*");
+
+        // Register filter to isolate Content-Type during include dispatches to API endpoints.
+        // Tomcat 9.0.116+ (bug 69967) made getContentType()/getHeader("Content-Type") consistent
+        // during includes, which causes the outer JSP's text/html content type to leak into
+        // Spring MVC's content negotiation for <c:import> calls to /xapi/* endpoints.
+        final FilterRegistration.Dynamic apiIncludeFilter = context.addFilter(
+                "apiIncludeContentTypeIsolationFilter",
+                ApiIncludeContentTypeIsolationFilter.class
+        );
+        apiIncludeFilter.addMappingForUrlPatterns(
+                EnumSet.of(DispatcherType.INCLUDE),
+                false,
+                "/xapi/*"
+        );
     }
 
     @Override

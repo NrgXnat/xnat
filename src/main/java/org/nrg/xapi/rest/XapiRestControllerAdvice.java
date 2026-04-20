@@ -195,7 +195,8 @@ public class XapiRestControllerAdvice {
         // Log 500s as errors, other statuses can just be logged as info messages.
         final UserI  userDetails = XDAT.getUserDetails();
         final String username    = userDetails != null ? userDetails.getUsername() : "unauthenticated user";
-        final String requestUri  = request.getServletPath() + request.getPathInfo();
+        final String pathInfo    = request.getPathInfo();
+        final String requestUri  = request.getServletPath() + (pathInfo != null ? pathInfo : "");
 
         if (resolvedStatus == INTERNAL_SERVER_ERROR) {
             log.error("HTTP status 500: Request by user {} to URL {} caused an internal server error", username, requestUri, throwable);

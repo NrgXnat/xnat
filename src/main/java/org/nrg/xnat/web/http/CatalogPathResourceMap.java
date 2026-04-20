@@ -10,9 +10,6 @@
 package org.nrg.xnat.web.http;
 
 import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +26,6 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ResourceURII;
 import org.nrg.xnat.services.archive.PathResourceMap;
-import org.nrg.xnat.services.archive.impl.legacy.DownloadArchiveOptions;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -41,14 +37,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Creates path-to-resource mappings from the entries in a {@link CatCatalogI resource catalog}.
@@ -63,9 +57,6 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
 
         final String description = StringUtils.defaultIfBlank(catalog.getDescription(), "(no description)");
         log.debug("{}: Added catalog: {}", _catalogId, description);
-
-        _projectIncludedInPath = StringUtils.contains(description, DownloadArchiveOptions.Option.ProjectIncludedInPath.toString());
-        _subjectIncludedInPath = _projectIncludedInPath || StringUtils.contains(description, DownloadArchiveOptions.Option.SubjectIncludedInPath.toString());
 
         for (final CatCatalogI entrySet : catalog.getSets_entryset()) {
             _sessions.push(entrySet);
@@ -221,7 +212,8 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                     }
 
                     final CatCatalogI catalog     = catalogData.catBean;
-                    final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catalogData.catPath, catalogData.project), new Function<File, Mapping<String, Resource>>() {
+                    final String      catPath     = catalogData.catPath;
+                    final List<Mapping<String, Resource>> entries = Lists.transform(CatalogUtils.getFiles(catalog, catPath, catalogData.project), new Function<File, Mapping<String, Resource>>() {
                         @Nullable
                         @Override
                         public Mapping<String, Resource> apply(@Nullable final File file) {
@@ -229,8 +221,8 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                                 return null;
                             }
 
-                            log.debug("{}: Resource entry {} with name {}: {}", _catalogId, _resourceCount.incrementAndGet(), getResourceName(resourceName, file), resourceUri);
-                            return new CatalogPathResourceMapping(resourceName, file);
+                            log.debug("{}: Resource entry {} for {}: {}", _catalogId, _resourceCount.incrementAndGet(), resourceName, resourceUri);
+                            return new CatalogPathResourceMapping(resourceName, catPath, file);
                         }
                     });
                     _resources.addAll(entries);
@@ -256,25 +248,20 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         }
     }
 
-    private String getResourceName(final String resourceName, final File file) {
-        final List<String> components = Lists.newArrayList(Iterables.filter(Arrays.asList(resourceName.split("/")), IGNORED_PATH_COMPONENT));
-        // The subject isn't reflected in the archive path, so, if subject is included
-        // in the resource name, it needs to be removed or the matcher won't work.
-        if (_subjectIncludedInPath) {
-            // If the project path is included, that pushes the subject path to index
-            // 1, otherwise subject path should be index 0.
-            components.remove(_projectIncludedInPath ? 1 : 0);
-        }
-        final Matcher matcher = Pattern.compile(Joiner.on(".*").join(components) + "/(?<remnant>.*)$").matcher(file.getAbsolutePath());
-        if (matcher.find()) {
-            return matcher.group("remnant");
-        }
-        return file.getName();
-    }
-
     private class CatalogPathResourceMapping implements Mapping<String, Resource> {
+        CatalogPathResourceMapping(final String resource, final String resourceRoot, final File file) {
+            final Path rootPath = Paths.get(resourceRoot);
+            final Path filePath = file.toPath();
+            final String remnant = filePath.startsWith(rootPath)
+                    ? rootPath.relativize(filePath).toString()
+                    : file.getName();
+            _path = Paths.get(resource, remnant).toString();
+            _file = file;
+            log.info("Created resource mapping to path {} for file {}", _path, _file);
+        }
+
         CatalogPathResourceMapping(final String resource, final File file) {
-            _path = Paths.get(resource, getResourceName(resource, file)).toString();
+            _path = Paths.get(resource, file.getName()).toString();
             _file = file;
             log.info("Created resource mapping to path {} for file {}", _path, _file);
         }
@@ -297,15 +284,6 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
         private final File   _file;
     }
 
-    private static final Predicate<String> IGNORED_PATH_COMPONENT = new Predicate<String>() {
-        @Override
-        public boolean apply(@Nullable final String input) {
-            return !_ignored.contains(input);
-        }
-
-        private final List<String> _ignored = Arrays.asList("assessors", "resources", "scans");
-    };
-
     private final Stack<CatCatalogI>               _sessions      = new Stack<>();
     private final Stack<CatEntryI>                 _entries       = new Stack<>();
     private final Stack<Mapping<String, Resource>> _resources     = new Stack<>();
@@ -313,8 +291,6 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
 
     private final String  _catalogId;
     private final String  _archiveRoot;
-    private final boolean _projectIncludedInPath;
-    private final boolean _subjectIncludedInPath;
     private final File    _testFile;
     private UserI _user;
     private HttpServletRequest _request;

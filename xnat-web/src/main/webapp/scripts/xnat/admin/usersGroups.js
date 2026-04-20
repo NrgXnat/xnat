@@ -550,24 +550,40 @@ var XNAT = getObject(XNAT);
                     url: XNAT.url.restUrl('/xapi/users/'+user.username+'/groups'),
                     success: function(data){
                         const groupsToCheck = ['ALL_DATA_ADMIN','ALL_DATA_ACCESS'];
+                        var knownRolesList = $('#user-profiles').find(rowId).find('td.roles').text();
                         groupsToCheck.forEach(function(thisRole){
                             if (data.includes(thisRole)) {
-                                var knownRoles = $('#user-profiles').find(rowId).find('td.roles').text();
-                                if (knownRoles.length) {
-                                    knownRoles = $('#user-profiles').find(rowId).find('td.roles span').html();
-                                    if (knownRoles.indexOf(thisRole) <0) knownRoles += '<br>'+thisRole;
+                                var knownRolesHtml;
+                                if (knownRolesList.length) {
+                                    knownRolesHtml = $('#user-profiles').find(rowId).find('td.roles span').html();
+                                    if (knownRolesHtml.indexOf(thisRole) <0) knownRolesHtml += '<br>'+thisRole;
                                 } else {
-                                    knownRoles = thisRole;
+                                    knownRolesHtml = thisRole;
                                 }
                                 var roleSpan = spawn('span.truncate',
                                     {
                                         style: { fontSize: '82.5%', textTransform:'uppercase' },
-                                        title: knownRoles.replace(/<br>/g,', ')
+                                        title: knownRolesHtml.replace(/<br>/g,', ')
                                     },
-                                    knownRoles
+                                    knownRolesHtml
                                 );
                                 $('#user-profiles').find(rowId).find('td.roles').html(roleSpan);
-                            }
+                            } else if (knownRolesList.length && knownRolesList.indexOf(thisRole) >= 0) {
+                                // if this role was once added, remove it from the display
+                                var knownRolesHtml = $('#user-profiles').find(rowId).find('td.roles span').html();
+                                knownRolesHtml = (knownRolesHtml.indexOf('<br>') >= 0) ?
+                                    knownRolesHtml.replace('<br>'+thisRole,'') :
+                                    knownRolesHtml.replace(thisRole,'');
+
+                                var roleSpan = spawn('span.truncate',
+                                    {
+                                        style: { fontSize: '82.5%', textTransform:'uppercase' },
+                                        title: knownRolesHtml.replace(/<br>/g,', ')
+                                    },
+                                    knownRolesHtml
+                                );
+                                $('#user-profiles').find(rowId).find('td.roles').html(roleSpan);
+                              }
                         });
                     }
                 });

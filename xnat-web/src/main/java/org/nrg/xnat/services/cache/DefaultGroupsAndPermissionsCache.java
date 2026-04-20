@@ -3,8 +3,10 @@ package org.nrg.xnat.services.cache;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.Striped;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
@@ -85,6 +87,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -101,10 +105,10 @@ import static org.nrg.xnat.services.cache.extractors.DataExtractor.PARAM_EXPERIM
 import static org.nrg.xnat.services.cache.extractors.DataExtractor.PARAM_PROJECT_ID;
 import static org.nrg.xnat.services.cache.extractors.DataExtractor.PARAM_USERNAME;
 
+@SuppressWarnings({"NullableProblems", "LoggingSimilarMessage", "unused"})
 @Service(GroupsAndPermissionsCache.CACHE_NAME)
 @Slf4j
 public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEventHandlerMethod implements GroupsAndPermissionsCache, Initializing, GroupsAndPermissionsCache.Provider {
-    public static final int SMALL_SERVER_SUBJ_COUNT = 10000;
     public static final List<String> PERMISSIONS = Arrays.asList(SecurityManager.ACTIVATE, SecurityManager.CREATE, SecurityManager.DELETE, SecurityManager.EDIT, SecurityManager.READ);
     public static final String CACHE_ACCESS_MANAGERS   = "accessManagers";
     public static final String CACHE_ACTIONS           = "actions";
@@ -128,6 +132,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private static final String EVENT_MOVE      = XftItemEventI.MOVE;
     private static final String EVENT_OPERATION = XftItemEventI.OPERATION;
 
+    private static final Striped<Lock> USER_LOCKS = Striped.lazyWeakLock(64);
+
+    private final ReentrantLock _totalCountsLock = new ReentrantLock();
+    private final AtomicBoolean _totalCountsDirty = new AtomicBoolean(false);
 
     private static final List<String> USER_CACHES                          = Arrays.asList(CACHE_ACCESS_MANAGERS,
             CACHE_BROWSEABLES,
@@ -249,7 +257,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     private final NamedParameterJdbcTemplate _template;
     private final JmsTemplate                _jmsTemplate;
     private final DatabaseHelper             _helper;
-    private  Map<String, Long>          _totalCounts;
+    private volatile Map<String, Long>       _totalCounts;
     private final AtomicBoolean              _initialized;
 
     private Listener _listener;
@@ -260,7 +268,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         super(cacheHelper,
                 extractors.stream().filter(extractor -> StringUtils.equals(extractor.getCacheGroup(), GroupsAndPermissionsCache.CACHE_NAME)).collect(Collectors.toList()),
                 XftItemEventCriteria.builder().xsiType(XnatProjectdata.SCHEMA_ELEMENT_NAME).actions(EVENT_CREATE, EVENT_UPDATE, EVENT_DELETE).build(),
-                XftItemEventCriteria.builder().xsiType(XnatSubjectdata.SCHEMA_ELEMENT_NAME).xsiType(XnatExperimentdata.SCHEMA_ELEMENT_NAME).actions(EVENT_CREATE, EVENT_DELETE, EVENT_SHARE).build(),
+                XftItemEventCriteria.builder().xsiType(XnatSubjectdata.SCHEMA_ELEMENT_NAME).xsiType(XnatExperimentdata.SCHEMA_ELEMENT_NAME).actions(EVENT_CREATE, EVENT_DELETE, EVENT_SHARE, EVENT_MOVE).build(),
                 XftItemEventCriteria.getXsiTypeCriteria(XdatUsergroup.SCHEMA_ELEMENT_NAME),
                 XftItemEventCriteria.getXsiTypeCriteria(XdatElementSecurity.SCHEMA_ELEMENT_NAME));
         _userService = userService;
@@ -428,10 +436,6 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return getSearchableElementDisplays(user.getUsername());
     }
 
-    private boolean isSmallServer(){
-        return getTotalCounts().getOrDefault(XnatSubjectdata.SCHEMA_ELEMENT_NAME, 0L) < SMALL_SERVER_SUBJ_COUNT;
-    }
-
     @Override
     public List<ElementDisplay> getSearchableElementDisplays(final String username) {
         log.debug("Retrieving searchable element displays for user {}", username);
@@ -586,10 +590,20 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     @Override
     public Map<String, Long> getTotalCounts() {
-        if (_totalCounts.isEmpty()) {
-            resetTotalCounts();
+        Map<String, Long> counts = _totalCounts;
+        if (counts.isEmpty()) {
+            _totalCountsLock.lock();
+            try {
+                counts = _totalCounts;
+                if (counts.isEmpty()) {
+                    buildAndSwapTotalCounts();
+                    counts = _totalCounts;
+                }
+            } finally {
+                _totalCountsLock.unlock();
+            }
         }
-        return ImmutableMap.copyOf(_totalCounts);
+        return ImmutableMap.copyOf(counts);
     }
 
     @NotNull
@@ -744,7 +758,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                                 log.warn("The project {}'s accessibility setting was updated to an invalid value: {}. Must be one of private, protected, or public.", id, access);
                         }
                     }
-                    resetProjectCount(_totalCounts);
+                    resetTotalCounts(() -> resetProjectCount(_totalCounts));
                     return created;
 
                 case EVENT_UPDATE:
@@ -807,8 +821,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 break;
 
             case EVENT_MOVE:
-                projectIds.add((String) event.getProperties().get("origin"));
-                projectIds.add((String) event.getProperties().get("target"));
+                initReadableCountsForProjectUsers(Collections.singleton((String) event.getProperties().get("origin")), EVENT_DELETE, event.getXsiType());
+                initReadableCountsForProjectUsers(Collections.singleton((String) event.getProperties().get("target")), EVENT_CREATE, event.getXsiType());
                 break;
 
             case EVENT_DELETE:
@@ -819,12 +833,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
             default:
                 log.warn("I was informed that the '{}' action happened to subject '{}'. I don't know what to do with this action.", action, event.getId());
-        }
-        if (projectIds.isEmpty()) {
-            return false;
+                return false;
         }
 
-        initReadableCountsForProjectUsers(projectIds, action, event.getXsiType());
+        if (!projectIds.isEmpty()) {
+            initReadableCountsForProjectUsers(projectIds, action, event.getXsiType());
+        }
         return true;
     }
 
@@ -950,8 +964,8 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             case EVENT_MOVE:
                 origin = (String) event.getProperties().get("origin");
                 target = (String) event.getProperties().get("target");
-                projectIds.add(target);
-                projectIds.add(origin);
+                initReadableCountsForProjectUsers(Collections.singleton(origin), EVENT_DELETE, event.getXsiType());
+                initReadableCountsForProjectUsers(Collections.singleton(target), EVENT_CREATE, event.getXsiType());
                 break;
 
             default:
@@ -959,38 +973,27 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                 return false;
         }
 
-        final Map<String, ElementDisplay> displays = getBrowseableElementDisplays(getGuest());
-        log.debug("Found {} elements for guest user: {}", displays.size(), StringUtils.join(displays.keySet(), ", "));
-
-        // If the data type of the experiment isn't in the guest list AND the target project is public,
-        // OR if the origin project is both specified and public (meaning the data type might be REMOVED
-        // from the guest browseable element displays), then we update the guest browseable element displays.
-        final boolean hasEventXsiType        = displays.containsKey(xsiType);
+        // Only check guest browseable element displays when a public project is involved.
         final boolean isTargetProjectPublic  = Permissions.isProjectPublic(_template, target);
         final boolean hasOriginProject       = StringUtils.isNotBlank(origin);
         final boolean isMovedFromPublicToNon = !isTargetProjectPublic && hasOriginProject && Permissions.isProjectPublic(_template, origin);
 
-        // We need to add the XSI type if guest doesn't already have it and the target project is public.
-        final boolean needsPublicXsiTypeAdded = !hasEventXsiType && isTargetProjectPublic;
+        if (isTargetProjectPublic || isMovedFromPublicToNon) {
+            final Map<String, ElementDisplay> displays = getBrowseableElementDisplays(getGuest());
+            log.debug("Found {} elements for guest user: {}", displays.size(), StringUtils.join(displays.keySet(), ", "));
+            final boolean hasEventXsiType = displays.containsKey(xsiType);
 
-        // We need to check if the XSI type should be removed if guest has XSI type and item was moved from public to non-public.
-        final boolean needsXsiTypeChecked = hasEventXsiType && isMovedFromPublicToNon;
-
-        if (needsPublicXsiTypeAdded || needsXsiTypeChecked) {
-            if (needsPublicXsiTypeAdded) {
-                log.debug("Updating guest browseable element displays: guest doesn't have the event XSI type '{}' and the target project {} is public.", xsiType, target);
-            } else {
-                log.debug("Updating guest browseable element displays: guest has the event XSI type '{}' and item was moved from public project {} to non-public project {}.", xsiType, origin, target);
+            // Add the XSI type if guest doesn't already have it and the target project is public.
+            // Check if the XSI type should be removed if item was moved from public to non-public.
+            if ((isTargetProjectPublic && !hasEventXsiType) || (isMovedFromPublicToNon && hasEventXsiType)) {
+                log.debug("Evicting guest browseable element displays for XSI type '{}': targetPublic={}, movedFromPublic={}", xsiType, isTargetProjectPublic, isMovedFromPublicToNon);
+                evict(CACHE_BROWSEABLES, DEFAULT_GUEST_USERNAME);
             }
-            resetGuestBrowseableElementDisplays();
-        } else {
-            log.debug("Not updating guest browseable element displays: guest {} '{}' and {}",
-                    hasEventXsiType ? "already has the event XSI type " : "doesn't have the event XSI type",
-                    xsiType,
-                    isTargetProjectPublic ? "target project is public" : "target project is not public");
         }
 
-        initReadableCountsForProjectUsers(projectIds, action, event.getXsiType());
+        if (!projectIds.isEmpty()) {
+            initReadableCountsForProjectUsers(projectIds, action, event.getXsiType());
+        }
         return true;
     }
 
@@ -1019,32 +1022,57 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         return initActionElementDisplays(username, false);
     }
 
-    private synchronized Map<String, List<ElementDisplay>> initActionElementDisplays(final String username, final boolean evict) {
+    private Map<String, List<ElementDisplay>> initActionElementDisplays(final String username, final boolean evict) {
         log.info("Initializing action element displays for user '{}', evict is {}", username, evict);
 
-        // If they want to evict the cache entry, then do that and proceed. They explicitly don't want any cached entry to be returned.
-        if (evict) {
-            evict(CACHE_ACTIONS, username);
-        }
+        // Lock per username so that concurrent events for the same user don't
+        // interleave evict-then-repopulate (a later event's stale write could
+        // overwrite a newer event's correct data). Different users proceed in
+        // parallel since there's no cross-user dependency.
+        final Lock lock = USER_LOCKS.get(username);
+        lock.lock();
+        try {
+            if (evict) {
+                evict(CACHE_ACTIONS, username);
+            }
 
-        return ACTIONS.stream().collect(Collectors.toMap(Function.identity(), action -> ObjectUtils.getIfNull(getActionElementDisplays(username, action), Collections::emptyList)));
+            return ACTIONS.stream().collect(Collectors.toMap(Function.identity(), action -> ObjectUtils.getIfNull(getActionElementDisplays(username, action), Collections::emptyList)));
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void initReadableCountsForProjectUsers(final Set<String> projectIds, final String action, final String dataType) {
         final Set<String> users = getProjectUsers(projectIds);
         for (final String username : users) {
             final Map<String, Long> cachedCounts = getReadableCountsCache().get(username);
-            if (cachedCounts == null || cachedCounts.isEmpty()) {
-                initReadableCountsForUser(username);
-            } else if (StringUtils.equals(EVENT_CREATE, action) && (!cachedCounts.containsKey(dataType) || cachedCounts.get(dataType) == 0)) {
-                //we only need to worry about this if it is null or 0
-                initReadableCountsForUser(username);
-            } else if (StringUtils.equals(EVENT_DELETE, action)) {
-                //do we need this?  Only if its going from 1 to 0, but we don't know that if counts aren't refreshed as they get closer to 1
-                //leaving it, but if it becomes an issue in profiling, then we could consider removing it.
-                initReadableCountsForUser(username);
+            if (MapUtils.isNotEmpty(cachedCounts)) {
+                if (StringUtils.equals(EVENT_CREATE, action) || StringUtils.equals(EVENT_SHARE, action) || StringUtils.equals(EVENT_DELETE, action)) {
+                    final int adjustment = StringUtils.equals(EVENT_DELETE, action) ? -1 : 1;
+                    final long newCount = adjustXsiTypeCount(cachedCounts, dataType, adjustment);
+                    // Only evict browseables when a data type crosses the zero
+                    // boundary (appears in or disappears from the browse menu). This
+                    // matches the XNAT-8336 optimization: archiving another MR session
+                    // when MR sessions already exist doesn't change Browse > Data.
+                    // CREATE newCount==1: first item of this type (0→1).
+                    // DELETE newCount==0: last item of this type removed (1→0).
+                    if ((adjustment == 1 && newCount == 1) || (adjustment == -1 && newCount == 0)) {
+                        evict(CACHE_BROWSEABLES, username);
+                    }
+                    getUserLastUpdateCache().put(username, new Date());
+                }
             }
         }
+    }
+
+    /**
+     * Atomically adjusts the count for the given data type and returns the new count.
+     */
+    private long adjustXsiTypeCount(final Map<String, Long> cachedCounts, final String dataType, final int adjustment) {
+        // Use compute() for atomic read-modify-write on the ConcurrentHashMap.
+        // This avoids the race condition of a separate get() then put() where
+        // concurrent events for the same dataType could lose updates.
+        return cachedCounts.compute(dataType, (key, current) -> Math.max((current != null ? current : 0L) + adjustment, 0L));
     }
 
     private void initReadableCountsForUser(final String username) {
@@ -1091,8 +1119,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     private void decrementCount(final String xsiType) {
-        // decrement, but don't go below zero
-        _totalCounts.merge(isImageSession(xsiType) ? XnatImagesessiondata.SCHEMA_ELEMENT_NAME : xsiType, 1L, (a, b) -> max(a - b, 0L));
+        _totalCounts.computeIfPresent(isImageSession(xsiType) ? XnatImagesessiondata.SCHEMA_ELEMENT_NAME : xsiType, (k, v) -> max(v - 1, 0L));
     }
 
     private List<UserGroupI> getGroups(final String type, final String id) throws ItemNotFoundException {
@@ -1242,7 +1269,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
      * @return Returns true if the user has all-data-access, false otherwise.
      */
     private boolean hasAllDataAccess(final String username) {
-        return _template.queryForObject(QUERY_HAS_ALL_DATA_ACCESS, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class);
+        return Boolean.TRUE.equals(_template.queryForObject(QUERY_HAS_ALL_DATA_ACCESS, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class));
     }
 
     /**
@@ -1253,18 +1280,48 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
      * @return Returns true if the user has all-data-admin, false otherwise.
      */
     private boolean hasAllDataAdmin(final String username) {
-        return _template.queryForObject(QUERY_HAS_ALL_DATA_ADMIN, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class);
+        return Boolean.TRUE.equals(_template.queryForObject(QUERY_HAS_ALL_DATA_ADMIN, new MapSqlParameterSource(PARAM_USERNAME, username), Boolean.class));
     }
 
     private void resetTotalCounts(Runnable runnable) {
-        if (isSmallServer()) {
-            resetTotalCounts();
-        } else {
+        _totalCountsLock.lock();
+        try {
             runnable.run();
+        } finally {
+            _totalCountsLock.unlock();
         }
     }
-    public synchronized void resetTotalCounts() {
-        //modified this to be a bit more safe to being re-run.  i.e. don't clear the _totalCounts until the new values have been calculated.
+
+    public void resetTotalCounts() {
+        // Use tryLock so concurrent event handlers don't queue up to run
+        // redundant DB queries. If a reset is already in progress, flag it
+        // dirty so the lock holder re-runs once more after finishing — that
+        // second pass is guaranteed to see our committed data.
+        // Note: a small race exists between the dirty-flag check at the end
+        // of the do-while loop and the unlock — a flag set in that window
+        // won't trigger a re-run until the next resetTotalCounts() call.
+        // Acceptable since counts are approximate and self-correct on the
+        // next event.
+        if (!_totalCountsLock.tryLock()) {
+            _totalCountsDirty.set(true);
+            log.debug("Total-count reset already in progress, flagged dirty for re-run");
+            return;
+        }
+        try {
+            do {
+                _totalCountsDirty.set(false);
+                buildAndSwapTotalCounts();
+            } while (_totalCountsDirty.get());
+        } finally {
+            _totalCountsLock.unlock();
+        }
+    }
+
+    private void buildAndSwapTotalCounts() {
+        // Build the new map completely before publishing it. The volatile write
+        // to _totalCounts makes the swap atomic from the reader's perspective:
+        // they see either the old complete map or the new complete map, never
+        // partial state.
         final Map<String, Long> tempCounts = new ConcurrentHashMap<>();
         resetProjectCount(tempCounts);
         resetSubjectCount(tempCounts);

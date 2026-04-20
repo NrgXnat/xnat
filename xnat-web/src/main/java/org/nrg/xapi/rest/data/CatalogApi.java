@@ -190,7 +190,6 @@ public class CatalogApi extends AbstractXapiRestController {
             return ResponseEntity.ok()
                                  .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
                                  .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "xml"))
-                                 .header(HttpHeaders.CONTENT_LENGTH, Long.toString(_service.getCatalogSize(user, catalogId)))
                                  .body(outputStream -> {
                                      try (final OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
                                          if (catalog instanceof CatCatalogBean) {

@@ -136,7 +136,7 @@ public class PrearcUtils {
         }
 
         PrearcStatus() {
-            this(false);
+            this(true);
         }
 
         PrearcStatus(final boolean interruptable) {

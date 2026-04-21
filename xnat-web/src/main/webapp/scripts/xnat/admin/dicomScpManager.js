@@ -216,6 +216,7 @@ var XNAT = getObject(XNAT || {});
                     $form.find('[name="enabled"]').val(item.enabled);
                     $form.find('[name="customProcessing"]').prop('checked', item.customProcessing).val(item.customProcessing);
                     $form.find('[name="directArchive"]').prop('checked', item.directArchive).val(item.directArchive);
+                    $form.find('[name="directArchiveOverwrite"]').prop('checked', item.directArchiveOverwrite).val(item.directArchiveOverwrite);
                     $form.find('[name="anonymizationEnabled"]').prop('checked', item.anonymizationEnabled).val(item.anonymizationEnabled);
                     $form.find('[name="whitelistEnabled"]').prop('checked', item.whitelistEnabled).val(item.whitelistEnabled);
                     $form.find('[name="whitelistText"]').val(item.whitelist.join('\r\n'));
@@ -250,6 +251,7 @@ var XNAT = getObject(XNAT || {});
                             }
 
                         });
+
                         let identifier = item['identifier'];
 
                         dicomScpManager.setIdentifierDescription(identifier, obj.dialog$);
@@ -299,6 +301,7 @@ var XNAT = getObject(XNAT || {});
 
                                 dicomScpManager.setCheckBoxVal("customProcessing");
                                 dicomScpManager.setCheckBoxVal("directArchive");
+                                dicomScpManager.setCheckBoxVal("directArchiveOverwrite");
                                 dicomScpManager.setCheckBoxVal("anonymizationEnabled");
                                 dicomScpManager.setCheckBoxVal("whitelistEnabled");
                                 dicomScpManager.setCheckBoxVal(ROUTING_EXPRESSIONS_ENABLED);
@@ -643,7 +646,9 @@ var XNAT = getObject(XNAT || {});
 
         function displayBehavior(item){
             item.identifier = item.identifier || DICOM_OBJECT_IDENTIFIER;
-            var archiveBehavior = (item.directArchive) ? 'Direct Archive Behavior Enabled' : 'Uses Standard Prearchive Behavior';
+            var isAppendMode = (item.directArchiveOverwrite === true || item.directArchiveOverwrite === 'append');
+            var overwriteMode = isAppendMode ? 'Append' : 'Overwrite';
+            var archiveBehavior = (item.directArchive) ? 'Direct Archive Enabled (' + overwriteMode + ')' : 'Uses Standard Prearchive Behavior';
             var customRemapping = (item.customProcessing) ? 'Custom Remapping Enabled' : 'Uses Standard Anonymization';
             var whitelist = (item.whitelistEnabled) ? 'AE-Title Whitelist Enabled' : 'AE-Title Whitelist Disabled';
             var routingExpressionsEnabled = (item.routingExpressionsEnabled) ? 'Receiver-Specific Routing Enabled' : 'Receiver-Specific Routing Disabled';

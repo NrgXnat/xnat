@@ -2023,6 +2023,17 @@ dicomScpEditor:
             onText: "Direct to archive: <b>Enabled</b>"
             offText: "Direct to archive: <b>Disabled</b> (use prearchive)"
             description: Enable or Disable Direct Archive for DICOM Receiver (if disabled, data comes through the prearchive)
+        directArchiveOverwrite:
+            kind: panel.input.switchbox
+            name: directArchiveOverwrite
+            label: Direct Archive Append-Only Mode
+            onText: "Append-Only Mode: <b>Enabled</b> (skip duplicate files)"
+            offText: "Append-Only Mode: <b>Disabled</b> (overwrite duplicate files)"
+            description: >
+                Controls how Direct Archive handles files that already exist in an archived session.
+                When enabled (Append), duplicate files are skipped and existing files are preserved.
+                When disabled (Overwrite), incoming files with duplicate SOP Instance UIDs replace existing files.
+                This setting only applies when Direct Archive and the site-wide Direct Archive Append feature are both enabled.
         identifier:
             kind: panel.select.single
             id: scp-identifier

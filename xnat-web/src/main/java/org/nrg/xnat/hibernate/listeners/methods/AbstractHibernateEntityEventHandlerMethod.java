@@ -4,6 +4,8 @@ import org.hibernate.event.spi.AbstractEvent;
 import org.hibernate.event.spi.PostDeleteEvent;
 import org.hibernate.event.spi.PostInsertEvent;
 import org.hibernate.event.spi.PostUpdateEvent;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -70,19 +72,41 @@ public abstract class AbstractHibernateEntityEventHandlerMethod implements Hiber
         return handledEntityClasses;
     }
 
-    protected boolean matchInsert(final PostInsertEvent event) {
-        return matchesActionAndClass(handlesInserts, event.getEntity().getClass());
+    /**
+     * In some cases, notably when this method is handling a Hibernate entity that was deleted on another
+     * node in a multi-node system, it can be difficult to retrieve the actual entity object. In those
+     * cases the "entity" may actually be a string that contains the name of the entity class, rather
+     * than the entity itself. In those cases, the string is converted into an instance of that class.
+     * Otherwise, the class itself is just returned.
+     *
+     * @param entity The entity object from the event, which may actually be a string containing the name of the entity class.
+     *
+     * @return The class of the affected entity
+     */
+    protected Class<?> getEntityClass(final Object entity) {
+        if (entity instanceof String) {
+            try {
+                return Class.forName((String) entity);
+            } catch (ClassNotFoundException e) {
+                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Got a string as an entity, but that string doesn't seem to match known classes: " + entity);
+            }
+        }
+        return entity.getClass();
+    }
+
+    private boolean matchInsert(final PostInsertEvent event) {
+        return matchesActionAndClass(handlesInserts, event.getEntity());
     }
 
     private boolean matchUpdate(final PostUpdateEvent event) {
-        return matchesActionAndClass(handlesUpdates, event.getEntity().getClass());
+        return matchesActionAndClass(handlesUpdates, event.getEntity());
     }
 
     private boolean matchDelete(final PostDeleteEvent event) {
-        return matchesActionAndClass(handlesDeletes, event.getEntity().getClass());
+        return matchesActionAndClass(handlesDeletes, event.getEntity());
     }
 
-    private boolean matchesActionAndClass(final boolean handles, final Class<?> entityClass) {
-        return handles && handledEntityClasses.contains(entityClass);
+    private boolean matchesActionAndClass(final boolean handles, final Object entity) {
+        return handles && getHandledEntityClasses().contains(getEntityClass(entity));
     }
 }

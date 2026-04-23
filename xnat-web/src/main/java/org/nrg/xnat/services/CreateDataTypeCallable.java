@@ -11,18 +11,21 @@ package org.nrg.xnat.services;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.XFTDataModel;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
+import org.nrg.xft.schema.db.entities.DBBackedSchema;
 import org.nrg.xft.schema.db.services.DBBackedSchemaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -30,7 +33,9 @@ import java.util.concurrent.Callable;
  * This encapsulates the logic for validating and creating a new data type element.
  */
 public class CreateDataTypeCallable implements Callable<CreateDataTypeResult> {
-    private static final Logger logger = LoggerFactory.getLogger(CreateDataTypeCallable.class);
+    public static final String SCHEMA_ID = "schemaId";
+
+    private static final Logger       logger             = LoggerFactory.getLogger(CreateDataTypeCallable.class);
     private static final List<String> ALLOWED_EXTENSIONS = Lists.newArrayList("subjectAssessorData", "imageAssessorData", "abstractProjectAsset");
 
     private final String prefix;
@@ -67,6 +72,7 @@ public class CreateDataTypeCallable implements Callable<CreateDataTypeResult> {
             return CreateDataTypeResult.badRequest("Missing required fields");
         }
 
+        logger.debug("Being asked to create schema with name {} extension {} singular {} plural {}", name, extensionS, singular, plural);
         String finalPrefix = prefix;
         if (finalPrefix == null) {
             finalPrefix = nextSchemaPrefix();
@@ -156,7 +162,7 @@ public class CreateDataTypeCallable implements Callable<CreateDataTypeResult> {
 
         // Confirm it doesn't exist
         try {
-            SchemaElement se = SchemaElement.GetElement(newComplexType);
+            SchemaElement.GetElement(newComplexType);
             return CreateDataTypeResult.conflict("Data type already exists");
         } catch (XFTInitException e) {
             logger.error("", e);
@@ -181,6 +187,8 @@ public class CreateDataTypeCallable implements Callable<CreateDataTypeResult> {
             // Refresh settings
             ElementSecurity.refresh();
 
+            final DBBackedSchema schema = dbService.findConfigByName(newComplexType);
+            XDAT.triggerXftItemEvent(ElementSecurity.SCHEMA_ELEMENT_NAME, elementSecurity.getElementName(), XftItemEvent.CREATE, Map.of(SCHEMA_ID, schema.getId()));
             return CreateDataTypeResult.success(newComplexType);
         } catch (Exception e) {
             logger.error("", e);

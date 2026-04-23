@@ -60,6 +60,7 @@ public class LoadDBDataTypeCallable implements Callable<LoadDBDataTypeResult> {
             }
 
             if (dbBackedSchemaService.isSchemaLoaded(schema)) {
+                logger.info("Was asked to load schema with ID {} but that's already loaded", schema.getId());
                 return LoadDBDataTypeResult.success("Schema already loaded: " + schema.getName());
             }
 

@@ -574,8 +574,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    @Async
-    @Scheduled(cron = "*/30 * * * * *")
+    @Scheduled(fixedDelay = 30000)
     public void syncReactorRegistrations()
     {
         XnatNode node = xnatAppInfo.getNode();

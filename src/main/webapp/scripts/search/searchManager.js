@@ -1889,8 +1889,28 @@ function removeElementName(str,element_name){
 	}
 }
 
+xdat_criteria.MAX_VALUE_PREVIEW = 80;
+xdat_criteria.MAX_PREVIEW_TOKENS = 5;
+
+xdat_criteria.abbreviateValue=function(value){
+	if(value==null) return "";
+	var str = String(value);
+	if(str.length <= xdat_criteria.MAX_VALUE_PREVIEW) return str;
+	// Prefer a token-aware abbreviation when the value is a comma-separated list
+	// (e.g. the IN (...) criterion emitted for pastes of exact IDs).
+	if(str.indexOf(",") !== -1){
+		var tokens = str.split(",");
+		if(tokens.length > xdat_criteria.MAX_PREVIEW_TOKENS){
+			var shown = tokens.slice(0, xdat_criteria.MAX_PREVIEW_TOKENS).join(",");
+			return shown + ", ...and " + (tokens.length - xdat_criteria.MAX_PREVIEW_TOKENS) + " more (" + tokens.length + " total)";
+		}
+	}
+	return str.substring(0, xdat_criteria.MAX_VALUE_PREVIEW - 3) + "...";
+}
+
 xdat_criteria.prototype.toString=function(element_name,xss){
-	return (xss!=null)?xss.getFieldHeader(this.getSchemaField())+ " "+this.getComparisonType()+ " "+this.getValue():removeElementName(this.getSchemaField(),element_name)+ " "+this.getComparisonType()+ " "+this.getValue();
+	var field = (xss!=null) ? xss.getFieldHeader(this.getSchemaField()) : removeElementName(this.getSchemaField(),element_name);
+	return field + " " + this.getComparisonType() + " " + xdat_criteria.abbreviateValue(this.getValue());
 }
 
 xdat_criteria_set.prototype.needsSubmit=function(_autosubmit){
@@ -2048,6 +2068,21 @@ xdat_criteria_set.prototype.isProjectCriteria=function(){
 	return true;
 }
 
+// Render a run of Criteria that share (schemaField, comparisonType) as a single
+// summary. Prevents the Results Filter modal from exploding into hundreds of
+// repeated clauses when an OR'd set contains many LIKE/= criteria on the same
+// field (e.g. a paste of 60 session IDs expanded into 3 fields * 60 values).
+xdat_criteria_set.renderCriteriaRun=function(run, element_name, xss){
+	if(run.length==1){
+		return run[0].toString(element_name, xss);
+	}
+	var first = run[0];
+	var field = (xss!=null) ? xss.getFieldHeader(first.getSchemaField()) : removeElementName(first.getSchemaField(), element_name);
+	var values = run.map(function(c){ return c.getValue(); });
+	var combined = values.join(",");
+	return field + " " + first.getComparisonType() + " " + xdat_criteria.abbreviateValue(combined);
+}
+
 xdat_criteria_set.prototype.toString=function(element_name,xss){
 	if(this.isProjectCriteria()){
 		return "Project="+ this.Criteria[0].Value;
@@ -2061,25 +2096,31 @@ xdat_criteria_set.prototype.toString=function(element_name,xss){
 		return this.Criteria[0].toString(element_name,xss);
 	}
 
+	// Group consecutive criteria sharing the same field + comparison into runs.
+	var runs=[];
+	var currentRun=null;
+	for(var gC=0; gC<this.Criteria.length; gC++){
+		var crit=this.Criteria[gC];
+		var key=crit.getSchemaField()+"\u0000"+crit.getComparisonType();
+		if(currentRun!=null && currentRun.key==key){
+			currentRun.items.push(crit);
+		}else{
+			currentRun={key: key, items: [crit]};
+			runs.push(currentRun);
+		}
+	}
+
 	var _return="";
-
-	var eC=0;
-	for(;eC<this.Criteria.length;eC++){
-		if(eC>0){
-			_return +=" " + this.Method;
-		}
-
-		_return+=" (" + this.Criteria[eC].toString(element_name,xss) + ")";
+	var pieces=0;
+	for(var rC=0; rC<runs.length; rC++){
+		if(pieces++>0) _return +=" " + this.Method;
+		_return +=" (" + xdat_criteria_set.renderCriteriaRun(runs[rC].items, element_name, xss) + ")";
 	}
 
-	var tsxcsC=0;
-	for(;tsxcsC<this.ChildSet.length;tsxcsC++){
-		if(eC++>0){
-			_return +=" " + this.Method;
-		}
-		_return+=" (" + this.ChildSet[tsxcsC].toString(element_name,xss) + ")";
+	for(var tsxcsC=0; tsxcsC<this.ChildSet.length; tsxcsC++){
+		if(pieces++>0) _return +=" " + this.Method;
+		_return +=" (" + this.ChildSet[tsxcsC].toString(element_name,xss) + ")";
 	}
-	tsxcsC=null;
 
 	return _return;
 }

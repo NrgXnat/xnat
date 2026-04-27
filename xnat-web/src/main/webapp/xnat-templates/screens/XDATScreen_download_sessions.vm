@@ -226,6 +226,7 @@
                     #end
 
                         ## gather sessions
+                        <script>
                         #foreach($sessionRow in $sessionSummary)
 
                             #set($_ID = $!turbineUtils.escapeHTML("$!sessionRow.get(0)"))
@@ -236,28 +237,18 @@
                             #set($_SUBJECT = $!turbineUtils.escapeHTML("$!sessionRow.get(3)"))
                             #set($_PROJECT = $!turbineUtils.escapeHTML("$!sessionRow.get(4)"))
 
-                            ##<li class="session-item hidden">
-                            ##    <i class="id hidden">$_ID</i>
-                            ##    <i class="name hidden">$_NAME</i>
-                            ##    <i class="label hidden">$_LABEL</i>
-                            ##    <i class="value hidden">$_VALUE</i>
-                            ##    <i class="type hidden">$_TYPE</i>
-                            ##    <i class="subject hidden">$_SUBJECT</i>
-
-                            <script>
-                                XNAT.app.projectDownload.items.sessions.list.push('$_ID');
-                                XNAT.app.projectDownload.items.sessions.data.push({
-                                    id: '$_ID',
-                                    name: '$_NAME',
-                                    label: '$_LABEL',
-                                    value: '$_VALUE',
-                                    type: '$_TYPE',
-                                    subject: '$_SUBJECT',
-                                    project: '$_PROJECT',
-                                });
-                            </script>
-                            ##</li>
+                            XNAT.app.projectDownload.items.sessions.list.push('$_ID');
+                            XNAT.app.projectDownload.items.sessions.data.push({
+                                id: '$_ID',
+                                name: '$_NAME',
+                                label: '$_LABEL',
+                                value: '$_VALUE',
+                                type: '$_TYPE',
+                                subject: '$_SUBJECT',
+                                project: '$_PROJECT',
+                            });
                         #end
+                        </script>
                     ##</ul>
                 </div>
             </div>
@@ -281,9 +272,9 @@
                 </section>
                 #set($counter=0)
                 #set($_FORMAT="")
+                <script>
                 #foreach($format in $scan_formats)
                     #set($_FORMAT = $!turbineUtils.escapeHTML("$!format.get(0)").replaceAll("'", "\\'"))
-                    <script>
                             #if($!format.get(0))
                             XNAT.app.projectDownload.items.scan_formats.list.push('$_FORMAT')
                             XNAT.app.projectDownload.items.scan_formats.data.push({
@@ -301,9 +292,9 @@
                                 label: 'Unspecified'
                             });
                             #end
-                    </script>
                     #set($counter = $counter + 1)
                 #end
+                </script>
 
                 <!-- Scan Types -->
                 <h4>Scan Types</h4>
@@ -314,10 +305,10 @@
 
             ## gather scan types
                 #set($counter = 0)
+                <script>
                 #foreach($scan in $scans)
                     #set($_ID = $!turbineUtils.escapeHTML("$!scan.get(0)").replaceAll("'", "\\'"))
                     #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
-                    <script>
                             #if($!scan.get(0))
                             XNAT.app.projectDownload.items.scan_types.list.push('$_ID');
                             XNAT.app.projectDownload.items.scan_types.data.push({
@@ -337,9 +328,9 @@
                                 count: '$_COUNT'
                             });
                             #end
-                    </script>
                     #set($counter = $counter + 1)
                 #end
+                </script>
 
                 <!-- Additional Resources -->
                 #if($showResources)
@@ -350,9 +341,9 @@
                     </section>
                     ## gather resources
                     #set($counter = 0)
+                    <script>
                     #foreach($resource in $resources)
                         #set($_RESOURCE_ID = $!turbineUtils.escapeHTML("$!resource.get(0)").replaceAll("'", "\\'"))
-                        <script>
                                 #if($!resource.get(0))
                                 XNAT.app.projectDownload.items.resources.list.push('$_RESOURCE_ID');
                                 XNAT.app.projectDownload.items.resources.data.push({
@@ -370,9 +361,9 @@
                                     label: 'Unspecified'
                                 });
                                 #end
-                        </script>
                         #set($counter = $counter + 1)
                     #end
+                    </script>
                 #end
 
                 <!-- Reconstructions -->
@@ -397,11 +388,11 @@
                     </section>
                     ## gather assessors
                     #set($counter = 0)
+                    <script>
                     #foreach($scan in $assessors)
                         #set($_NAME = $!turbineUtils.escapeHTML("$!scan.get(2)").replaceAll("'", "\\'"))
                         #set($_VALUE = $!turbineUtils.escapeHTML("$!scan.get(0)").replaceAll("'", "\\'"))
                         #set($_COUNT = $!turbineUtils.escapeHTML("$!scan.get(1)"))
-                        <script>
                                 #if($!scan.get(2))
                                 XNAT.app.projectDownload.items.assessors.list.push('$_NAME');
                                 XNAT.app.projectDownload.items.assessors.data.push({
@@ -422,8 +413,8 @@
                                 });
                                 #end
                                 #set($counter = $counter + 1)
-                        </script>
                     #end
+                    </script>
                 #end
 
             </div>

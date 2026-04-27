@@ -20,7 +20,6 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Features;
@@ -29,6 +28,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -107,51 +107,62 @@ public class XDATScreen_download_sessions extends SecureScreen {
                 }
 
                 final ArrayListMultimap<String, String> invertedProjectSessionMap = Multimaps.invertFrom(projectSessionMap, ArrayListMultimap.create());
-                final Collection<String> sessionsUserCanDownload = sessionsUserCanAccess.stream()
-                        .filter(s -> Features.checkRestrictedFeature(user, hasProjectId ? getPrimaryProject(user, s) : invertedProjectSessionMap.get(s).get(0),"data_download"))
+                final Set<String>                       projectIds                = projectSessionMap.keySet();
+
+                // Fetch session summaries up front (with the primary project pulled into a sibling map),
+                // so the data_download feature check can use the primary project without a separate query.
+                final SessionSummaries summaries = querySessionSummaries(sessionsUserCanAccess, projectIds);
+
+                final Map<String, Boolean> downloadAllowedByProject = new HashMap<>();
+                final List<List<String>> sessionSummary = summaries.rows.stream()
+                        .filter(row -> {
+                            final String project = hasProjectId ? summaries.primaryProjectBySession.get(row.get(0)) : invertedProjectSessionMap.get(row.get(0)).get(0);
+                            if (project == null) {
+                                return false;
+                            }
+                            return downloadAllowedByProject.computeIfAbsent(project, p -> Features.checkRestrictedFeature(user, p, "data_download"));
+                        })
                         .collect(Collectors.toList());
 
-                if (sessionsUserCanDownload.isEmpty()) {
+                if (sessionSummary.isEmpty()) {
                     context.put("msg","None of the requested data is available for download.");
                     return;
-                }else if(sessionsUserCanDownload.size() != sessionsUserCanAccess.size()){
+                } else if (sessionSummary.size() != summaries.rows.size()) {
                     context.put("msg","Some of the requested data is unavailable for download and has been excluded from the table below.");
                 }
 
-                final Set<String>           projectIds = projectSessionMap.keySet();
+                final List<String> sessionsUserCanDownload = sessionSummary.stream().map(row -> row.get(0)).collect(Collectors.toList());
                 final String accessorsQuery = Groups.hasAllDataAccess(user) || Permissions.isProjectPublic(projectId) ? QUERY_GET_SESSION_ASSESSORS_ADMIN : QUERY_GET_SESSION_ASSESSORS;
+
+                context.put("projectIds", projectIds);
+                context.put("sessionSummary", sessionSummary);
+
                 if (sessionsUserCanDownload.size() <= QUERY_GROUP_SIZE) {
                     final MapSqlParameterSource parameters = new MapSqlParameterSource("sessionIds", sessionsUserCanDownload)
                             .addValue("projectIds", projectIds)
                             .addValue("userId", user.getUsername());
-                    context.put("projectIds", projectIds);
-                    context.put("sessionSummary", _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, parameters, SESSION_SUMMARY_ROW_MAPPER));
                     context.put("scans", _parameterized.query(QUERY_GET_SESSION_SCANS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
                     context.put("recons", _parameterized.query(QUERY_GET_SESSION_RECONS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
                     context.put("assessors", Lists.transform(_parameterized.query(accessorsQuery, parameters, ASSESSOR_ROW_MAPPER), ASSESSOR_DESCRIPTION_FUNCTION));
                     context.put("scan_formats", _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
                     context.put("resources", _parameterized.query(QUERY_GET_SESSION_RESOURCES, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
                 } else {
-                    List<List<String>> sessionSummary = new ArrayList<>();
                     Map<String, Integer> scans = new HashMap<>();
                     Map<String, Integer> recons = new HashMap<>();
                     Map<String, Integer> assessors = new HashMap<>();
                     Map<String, Integer> scan_formats = new HashMap<>();
                     Map<String, Integer> resources = new HashMap<>();
                     for (int i = 0; i < sessionsUserCanDownload.size(); i += QUERY_GROUP_SIZE) {
-                        Collection<String> subSessions = sessionsUserCanDownload.stream().skip(i).limit(QUERY_GROUP_SIZE).collect(Collectors.toList());
+                        final List<String> subSessions = sessionsUserCanDownload.subList(i, Math.min(i + QUERY_GROUP_SIZE, sessionsUserCanDownload.size()));
                         final MapSqlParameterSource parameters = new MapSqlParameterSource("sessionIds", subSessions)
                                 .addValue("projectIds", projectIds)
                                 .addValue("userId", user.getUsername());
-                        sessionSummary.addAll(_parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, parameters, SESSION_SUMMARY_ROW_MAPPER));
                         scans = mergeMap(scans, _parameterized.query(QUERY_GET_SESSION_SCANS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
                         recons = mergeMap(recons, _parameterized.query(QUERY_GET_SESSION_RECONS, parameters, SCAN_ROW_AND_RECON_ROW_MAPPER));
                         assessors = mergeMap(assessors, _parameterized.query(accessorsQuery, parameters, ASSESSOR_ROW_MAPPER));
                         scan_formats = mergeMap(scan_formats, _parameterized.query(QUERY_GET_SESSION_SCAN_FORMATS, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
                         resources = mergeMap(resources, _parameterized.query(QUERY_GET_SESSION_RESOURCES, parameters, SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER));
                     }
-                    context.put("projectIds", projectIds);
-                    context.put("sessionSummary", sessionSummary);
                     context.put("scans", mapToList(scans));
                     context.put("recons", mapToList(recons));
                     context.put("assessors", Lists.transform(mapToList(assessors), ASSESSOR_DESCRIPTION_FUNCTION));
@@ -180,9 +191,34 @@ public class XDATScreen_download_sessions extends SecureScreen {
         }).collect(Collectors.toList());
     }
 
-    private String getPrimaryProject(final UserI user, final String experimentId) {
-        BaseXnatExperimentdata experimentdata = BaseXnatExperimentdata.getXnatExperimentdatasById(experimentId, user, false);
-        return (experimentdata != null) ? experimentdata.getProject() :  null;
+    private SessionSummaries querySessionSummaries(final Collection<String> sessionIds, final Set<String> projectIds) {
+        final SessionSummaries result = new SessionSummaries();
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return result;
+        }
+        final List<String> sessionIdList = new ArrayList<>(sessionIds);
+        for (int i = 0; i < sessionIdList.size(); i += QUERY_GROUP_SIZE) {
+            final List<String> subSessions = sessionIdList.subList(i, Math.min(i + QUERY_GROUP_SIZE, sessionIdList.size()));
+            final MapSqlParameterSource parameters = new MapSqlParameterSource("sessionIds", subSessions)
+                    .addValue("projectIds", projectIds);
+            _parameterized.query(QUERY_GET_SESSION_ATTRIBUTES, parameters, (RowCallbackHandler) rs -> {
+                final String id = rs.getString("id");
+                final List<String> summary = new ArrayList<>(5);
+                summary.add(id);
+                summary.add(rs.getString("ids"));
+                summary.add(rs.getString("modality"));
+                summary.add(rs.getString("subject"));
+                summary.add(rs.getString("project"));
+                result.rows.add(summary);
+                result.primaryProjectBySession.put(id, rs.getString("primary_project"));
+            });
+        }
+        return result;
+    }
+
+    private static class SessionSummaries {
+        final List<List<String>>  rows                    = new ArrayList<>();
+        final Map<String, String> primaryProjectBySession = new HashMap<>();
     }
 
     /**
@@ -192,13 +228,19 @@ public class XDATScreen_download_sessions extends SecureScreen {
      * <li><b>sessions</b> is a list of session IDs</li>
      * <li><b>project</b> is the project that contains the referenced sessions</li>
      * </ul>
+     *
+     * The {@code primary_project} column carries the experiment's owning project (vs. the sharing-aware
+     * {@code project} above) and is consumed by the {@code data_download} feature check; the row
+     * callback in {@link #querySessionSummaries} routes it into a sibling map and does not surface it
+     * to the template.
      */
     private static final String QUERY_GET_SESSION_ATTRIBUTES = "SELECT "
                                                                + "  expt.id, "
                                                                + "  COALESCE(pp.label, expt.label, expt.id) AS IDS, "
                                                                + "  modality, "
                                                                + "  subj.label                              AS subject, "
-                                                               + "  COALESCE(pp.project, expt.project)      AS project "
+                                                               + "  COALESCE(pp.project, expt.project)      AS project, "
+                                                               + "  expt.project                            AS primary_project "
                                                                + "FROM xnat_imageSessionData isd "
                                                                + "  LEFT JOIN xnat_experimentData expt ON expt.id = isd.id "
                                                                + "  LEFT JOIN xnat_subjectassessordata sa ON sa.id = expt.id "
@@ -356,18 +398,6 @@ public class XDATScreen_download_sessions extends SecureScreen {
     private static final RowMapper<List<String>> SCAN_FORMAT_AND_SESSION_RESOURCE_ROW_MAPPER = new AttributeAndCountRowMapper("label");
     private static final RowMapper<List<String>> SCAN_ROW_AND_RECON_ROW_MAPPER               = new AttributeAndCountRowMapper("type");
 
-    private static final RowMapper<List<String>>              SESSION_SUMMARY_ROW_MAPPER    = new RowMapper<List<String>>() {
-        @Override
-        public List<String> mapRow(final ResultSet result, final int rowNum) throws SQLException {
-            final List<String> summaries = new ArrayList<>();
-            summaries.add(result.getString("id"));
-            summaries.add(result.getString("ids"));
-            summaries.add(result.getString("modality"));
-            summaries.add(result.getString("subject"));
-            summaries.add(result.getString("project"));
-            return summaries;
-        }
-    };
     private static final Function<List<String>, List<String>> ASSESSOR_DESCRIPTION_FUNCTION = new Function<List<String>, List<String>>() {
         @Nullable
         @Override

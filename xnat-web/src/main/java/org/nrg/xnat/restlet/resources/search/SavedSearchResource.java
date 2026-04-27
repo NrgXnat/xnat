@@ -106,16 +106,7 @@ public class SavedSearchResource extends ItemResource {
                     xss = ds.convertToStoredSearch(sID);
                     xss.setId(sID);
 
-                    if (XDAT.getBoolSiteConfigurationProperty("removeScanAggregateFields", Boolean.FALSE)) {
-                        int index = 0;
-                        for(XdatSearchField field: xss.getSearchField()){
-                            if(org.apache.commons.lang3.StringUtils.endsWith(field.getFieldId(),"SCAN_COUNT_AGG")){
-                                xss.removeSearchField(index);
-                                break;
-                            }
-                            index++;
-                        }
-                    }
+                    xss.removeScanAggregateFieldsIfConfigured();
 
                 } catch (XFTInitException | ElementNotFoundException e) {
                     logger.error("", e);

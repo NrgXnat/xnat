@@ -75,7 +75,7 @@ public final class SortedSets {
             }
 
             public boolean equals(Object o) {
-                return o instanceof Set && ((Set<?>)o).isEmpty();
+                return o instanceof Set<?> s && s.isEmpty();
             }
 
             public int hashCode() { return 0; }
@@ -180,8 +180,7 @@ public final class SortedSets {
             }
 
             public boolean equals(Object o) {
-                if (o instanceof Set) {
-                    final Set<?> s = (Set<?>)o;
+                if (o instanceof Set<?> s) {
                     return 1 == s.size() && s.contains(t);
                 } else {
                     return false;

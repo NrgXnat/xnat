@@ -54,7 +54,7 @@ public class XDATScreen_admin extends AdminScreen {
             if(boss != null && boss.isEnabled()){
                 TemplateLink link = (TemplateLink) context.get("link");
                 String uri = link.setAction("DisplayItemAction").addPathInfo("search_value", "boss").addPathInfo("search_element", "xdat:user").addPathInfo("search_field", "xdat:user.login").getAbsoluteURI();
-                data.setMessage(String.format("You currently have the user <b>boss</b> enabled. This user is deprecated and should be disabled to protect system security. <a href='%s'>Click here</a> to go to the boss user page.", uri));
+                data.setMessage("You currently have the user <b>boss</b> enabled. This user is deprecated and should be disabled to protect system security. <a href='%s'>Click here</a> to go to the boss user page.".formatted(uri));
             }
 
         } catch (Exception exception) {

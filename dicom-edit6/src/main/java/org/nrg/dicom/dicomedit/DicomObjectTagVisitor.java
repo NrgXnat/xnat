@@ -1,14 +1,16 @@
 package org.nrg.dicom.dicomedit;
 
+import org.dcm4che3.util.TagUtils;
 import org.nrg.dicom.mizer.objects.DicomElementI;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
-import org.nrg.dicom.mizer.tags.*;
+import org.nrg.dicom.mizer.tags.Tag;
+import org.nrg.dicom.mizer.tags.TagPath;
+import org.nrg.dicom.mizer.tags.TagPrivate;
+import org.nrg.dicom.mizer.tags.TagPrivateCreator;
+import org.nrg.dicom.mizer.tags.TagPublic;
+import org.nrg.dicom.mizer.tags.TagSequence;
 
 import java.util.Iterator;
-
-import static org.dcm4che2.util.TagUtils.isPrivateCreatorDataElement;
-import static org.dcm4che2.util.TagUtils.isPrivateDataElement;
-
 
 public abstract class DicomObjectTagVisitor {
     public void visit( DicomObjectI dicomObject) {
@@ -28,9 +30,9 @@ public abstract class DicomObjectTagVisitor {
         int t = dicomElement.tag();
 
         Tag tag;
-        if (isPrivateDataElement(t)) {
+        if (TagUtils.isPrivateTag(t) || TagUtils.isPrivateGroup(t)) {
             String pvtCreatorID;
-            if (isPrivateCreatorDataElement(t)) {
+            if (TagUtils.isPrivateCreator(t)) {
                 pvtCreatorID = dicomObject.getString(t);
                 tag = new TagPrivateCreator(t, pvtCreatorID);
             } else {

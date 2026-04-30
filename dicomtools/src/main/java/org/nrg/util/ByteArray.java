@@ -142,7 +142,7 @@ public final class ByteArray {
 	 */
 	 @Override
 	 public boolean equals(final Object o) {
-		return null != o && o instanceof ByteArray && Arrays.equals(bytes, ((ByteArray)o).bytes);
+		return null != o && o instanceof ByteArray ba && Arrays.equals(bytes, ba.bytes);
 	}
 
 	/*

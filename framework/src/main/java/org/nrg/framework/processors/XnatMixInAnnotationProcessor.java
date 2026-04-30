@@ -51,7 +51,7 @@ public class XnatMixInAnnotationProcessor extends NrgAbstractAnnotationProcessor
         // If there's a value specified for the value attribute, then that's the mix-in class. Otherwise the annotated
         // class is the mix-in class. There's only one mix-in class that can be set for each instance of this annotation
         // so we can set it once and not have to deal with it any more.
-        final String mixInClass = hasValue ? values.get(0) : annotatedClass;
+        final String mixInClass = hasValue ? values.getFirst() : annotatedClass;
 
         // If there's a value specified for the targets attribute, then that specifies the classes targeted by the
         // mix-in class. If there's not any targets specified, then the "targets" is a list of one: the annotated class.
@@ -69,6 +69,6 @@ public class XnatMixInAnnotationProcessor extends NrgAbstractAnnotationProcessor
      */
     @Override
     protected String getPropertiesName(final TypeElement element, final XnatMixIn mixIn) {
-        return String.format("META-INF/xnat/serializers/%s-mixin.properties", element.getQualifiedName().toString());
+        return "META-INF/xnat/serializers/%s-mixin.properties".formatted(element.getQualifiedName().toString());
     }
 }

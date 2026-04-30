@@ -48,7 +48,7 @@ public class GraphUtilsTest {
         m3.put("D", asMutableList(new String[]{"C"}));
         final List s3 = GraphUtils.topologicalSort(m3);
         assertThat(s3).isNotNull().isNotEmpty().hasSize(4);
-        assertThat((String) s3.get(0)).isNotNull().isNotEmpty().isIn("A", "B");
+        assertThat((String) s3.getFirst()).isNotNull().isNotEmpty().isIn("A", "B");
         assertThat((String) s3.get(1)).isNotNull().isNotEmpty().isIn("A", "B");
         assertThat((String) s3.get(2)).isNotNull().isNotEmpty().isEqualTo("C");
         assertThat((String) s3.get(3)).isNotNull().isNotEmpty().isEqualTo("D");

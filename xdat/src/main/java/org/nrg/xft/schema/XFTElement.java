@@ -1008,7 +1008,7 @@ public class XFTElement extends XFTNode{
      * @param quarantine The quarantine to set.
      */
     public void setQuarantineSetting(boolean quarantine) {
-        this.quarantine = new Boolean(quarantine);
+        this.quarantine = Boolean.valueOf(quarantine);
     }
 
     public boolean isAutoActivate()

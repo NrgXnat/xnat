@@ -2365,7 +2365,7 @@ public class GenericWrapperUtils {
                                 statements.add(sb.toString());
                             } else {
                                 XFTRelationSpecification spec = (XFTRelationSpecification) specArray
-                                        .get(0);
+                                        .getFirst();
 
                                 if (!input.getAddin().equalsIgnoreCase(
                                         "history")) {
@@ -2594,9 +2594,11 @@ public class GenericWrapperUtils {
                             	fTables.get(foreignSQLName).add(row);
                             }
                         } catch (ElementNotFoundException e1) {
-                            logger.error("", e1);
+                            if(!e1.getMessage().contains("xdat:xdat_meta_element")){
+                                //this one can be ignored.  it only shows up on initial initialization
+                                logger.error("", e1);
+                            }
                         }
-
                     }
                 }
             }
@@ -2614,7 +2616,7 @@ public class GenericWrapperUtils {
                 	if (i>0){
                 		sb.append(", ");
                 	}
-                	sb.append(row.get(i).get(0));
+                	sb.append(row.get(i).getFirst());
                 }
                 sb.append(") REFERENCES ");
                 sb.append(key).append("(");
@@ -2625,7 +2627,7 @@ public class GenericWrapperUtils {
                 	}
                 	sb.append(row.get(i).get(1));
                 }
-                sb.append(") ON DELETE ").append(row.get(0).get(2));
+                sb.append(") ON DELETE ").append(row.getFirst().get(2));
                 sb.append(" ON UPDATE CASCADE;");
                 statements.add(sb.toString());
             }

@@ -126,17 +126,17 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
         if (candidate == null) {
             return Collections.emptyList();
         }
-        if (candidate instanceof String) {
-            return Collections.singletonList((String) candidate);
+        if (candidate instanceof String string) {
+            return Collections.singletonList(string);
         }
         if (candidate instanceof List) {
             // TODO: This could eventually be a list of objects that need to be converted to IDs.
             //noinspection unchecked
             return (List<String>) candidate;
         }
-        if (candidate instanceof XFTItem) {
+        if (candidate instanceof XFTItem item) {
             try {
-                return Collections.singletonList(((XFTItem) candidate).getIDValue());
+                return Collections.singletonList(item.getIDValue());
             } catch (XFTInitException e) {
                 log.error("Error initializing XFT", e);
             } catch (ElementNotFoundException e) {
@@ -150,8 +150,7 @@ public abstract class AbstractXapiAuthorization implements XapiAuthorization {
         final String singularId = StringUtils.uncapitalize(annotation.getSimpleName()) + "Id";
         final String pluralIds  = singularId + "s";
 
-        if (candidate instanceof Map) {
-            final Map map = (Map) candidate;
+        if (candidate instanceof Map<?,?> map) {
             if (map.containsKey(plural)) {
                 //noinspection unchecked
                 return (List<String>) map.get(plural);

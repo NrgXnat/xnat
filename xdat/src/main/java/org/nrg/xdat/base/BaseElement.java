@@ -13,6 +13,7 @@ package org.nrg.xdat.base;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -76,9 +77,9 @@ public abstract class BaseElement extends ItemWrapper implements ItemI, Serializ
         {
             setItem(i);
         }else{
-            if (i instanceof ItemWrapper)
+            if (i instanceof ItemWrapper wrapper)
             {
-                setItem(((ItemWrapper)i).getItem());
+                setItem(wrapper.getItem());
             }
         }
 	}
@@ -288,29 +289,50 @@ public abstract class BaseElement extends ItemWrapper implements ItemI, Serializ
 
 	public static Class GetGeneratedClass(String elementName)
 	{
-	    try {
-	        GenericWrapperElement gwe = null;
-	        try {
-                gwe = GenericWrapperElement.GetElement(elementName);
-            } catch (XFTInitException e1) {
-                logger.error("",e1);
-            } catch (ElementNotFoundException e1) {
-                logger.error("",e1);
-            }
+        GenericWrapperElement gwe = null;
+        try {
+            gwe = GenericWrapperElement.GetElement(elementName);
+        } catch (XFTInitException e1) {
+            logger.error("",e1);
+        } catch (ElementNotFoundException e1) {
+            logger.error("",e1);
+        }
 
 
-            if (gwe ==null)
-            {
-                return null;
-            }else{
-                JavaFileGenerator gen = new JavaFileGenerator();
-                return Class.forName("org.nrg.xdat.om." + gen.getSQLClassName(gwe));
-            }
-        } catch (ClassNotFoundException e) {
-            logger.debug(e);
+        if (gwe ==null)
+        {
             return null;
+        }else{
+            JavaFileGenerator gen = new JavaFileGenerator();
+            Class c = null;
+            try {
+                c = Class.forName("org.nrg.xdat.om." + gen.getSQLClassName(gwe));
+            } catch (ClassNotFoundException e) {
+                //ignore
+            }
+            if(c==null){
+                for(Map.Entry<String,String> entry: ALLOWED_EXTENSION_DEFAULTS.entrySet()){
+                    if(gwe.instanceOf(entry.getKey())){
+                        try {
+                            c=Class.forName("org.nrg.xdat.om." + entry.getValue());
+                        } catch (ClassNotFoundException e) {
+                            //ignore
+                        }
+                    }
+
+                    if(c!=null)break;
+                }
+            }
+            return c;
         }
 	}
+
+    private static final Map<String,String> ALLOWED_EXTENSION_DEFAULTS= Maps.newHashMap();
+    static{
+        ALLOWED_EXTENSION_DEFAULTS.put("xnat:subjectAssessorData","XnatSubjectassessordata");
+        ALLOWED_EXTENSION_DEFAULTS.put("xnat:imageAssessorData","XnatImageassessordata");
+        ALLOWED_EXTENSION_DEFAULTS.put("xnat:abstractProjectAsset","XnatAbstractprojectasset");
+    };
 
 	public static ItemI GetGeneratedItem(ItemI item)
 	{

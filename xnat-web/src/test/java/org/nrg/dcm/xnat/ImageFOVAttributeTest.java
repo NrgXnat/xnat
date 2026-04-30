@@ -12,8 +12,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.nrg.dcm.Attributes.Cols;
-import static org.nrg.dcm.Attributes.Rows;
+import static org.nrg.dcm.NamedAttributes.Cols;
+import static org.nrg.dcm.NamedAttributes.Rows;
 
 import java.util.Collections;
 import java.util.Map;
@@ -28,10 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
+
 public class ImageFOVAttributeTest {	
     /**
      * Test method for {@link org.nrg.dcm.xnat.ImageFOVAttribute#ImageFOVAttribute(java.lang.String)}.

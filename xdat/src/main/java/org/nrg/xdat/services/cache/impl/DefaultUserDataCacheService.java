@@ -15,14 +15,13 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nonnull;
 import java.io.*;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Service
 @Slf4j
 public class DefaultUserDataCacheService implements UserDataCache {
     @Autowired
     public DefaultUserDataCacheService(final SiteConfigPreferences preferences) {
-        _userDataCachePath = Paths.get(preferences.getCachePath(), "USERS");
+        _userDataCachePath = Path.of(preferences.getCachePath(), "USERS");
     }
 
     /**

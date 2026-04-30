@@ -47,8 +47,8 @@ public class DeleteAction extends SecureAction {
                     postDelete(data, context);
 
                     String message;
-                    if (o instanceof XFTItem && o.getXSIType().equals(XdatElementSecurity.SCHEMA_ELEMENT_NAME)) {
-                        message = String.format("<b>Data type %s deleted:</b> You should re-start your application server to clear cached session references to this data type.", ((XFTItem) o).getField("element_name"));
+                    if (o instanceof XFTItem item && o.getXSIType().equals(XdatElementSecurity.SCHEMA_ELEMENT_NAME)) {
+                        message = "<b>Data type %s deleted:</b> You should re-start your application server to clear cached session references to this data type.".formatted(item.getField("element_name"));
                     } else {
                         message = "<p>Item Deleted.</p>";
                     }

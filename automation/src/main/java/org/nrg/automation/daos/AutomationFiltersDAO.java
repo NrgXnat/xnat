@@ -39,7 +39,7 @@ public class AutomationFiltersDAO extends AutomationEntitiesDAO<AutomationFilter
      */
     public AutomationFilters getAutomationFilters(String projectId, String srcEventClass, String column, boolean exactMatchExternalId) {
         List<AutomationFilters> filters = getAutomationFiltersImpl(projectId, srcEventClass, column, exactMatchExternalId);
-        return filters == null || filters.isEmpty() ? null : filters.get(0);
+        return filters == null || filters.isEmpty() ? null : filters.getFirst();
     }
 
     /**

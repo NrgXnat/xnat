@@ -12,10 +12,13 @@ import org.nrg.xdat.om.base.auto.AutoXnatPetqcscandataProcessingerror;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatPetqcscandataProcessingerror extends AutoXnatPetqcscandataProcessingerror {
+    @Serial
+    private static final long serialVersionUID = 1;
 	public BaseXnatPetqcscandataProcessingerror(ItemI item) {
 		super(item);
 	}

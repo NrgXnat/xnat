@@ -23,7 +23,7 @@ public class AutomationServiceImpl implements AutomationService {
     private final AutomationEventIdsIdsService eventIdsIdsService;
     private final AutomationFiltersService     filtersService;
 
-    @Value("${automation.enabled:true}")
+    @Value(AUTOMATION_ENABLED_PROPERTY)
     private boolean automationEnabled;
 
     @Autowired

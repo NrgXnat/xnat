@@ -42,12 +42,12 @@ public class FileTracker {
 
     public String addFile(String relativePath,java.io.File f,String status)
     {
-        Long size = new Long(0);
+        Long size = Long.valueOf(0);
         
             if (f.exists())
             {
                 try {
-                    size = new Long(f.length());
+                    size = Long.valueOf(f.length());
                 } catch (Throwable e) {
                     size=null;
                 }

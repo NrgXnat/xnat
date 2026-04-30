@@ -8,117 +8,137 @@
  */
 package org.nrg.dcm;
 
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.ItemPointer;
+import org.dcm4che3.util.TagUtils;
+import org.nrg.dicomtools.utilities.DicomUtils;
+
 import java.util.Arrays;
-
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.util.TagUtils;
-
+import java.util.Optional;
+import java.util.StringJoiner;
 
 /**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
+ * Index for a simple attribute that always gets its value from the same location.
  */
-public class FixedDicomAttributeIndex extends AbstractDicomAttributeIndex
-implements DicomAttributeIndex {
+public final class FixedDicomAttributeIndex extends AbstractDicomAttributeIndex implements DicomAttributeIndex {
     private final int[] path;
+    private final ItemPointer[] itemPointer;
+    private final int lastTag;
     private final String column;
 
-    public FixedDicomAttributeIndex(final String columnName, final int...tagPath) {
-        if (0 == tagPath.length) {
-            throw new IllegalArgumentException("must provide at least one tag");
+    public FixedDicomAttributeIndex(final String columnName, final int... tagPath) {
+        if (tagPath.length % 2 != 1) {
+            throw new IllegalArgumentException(columnName + ": tag path must have odd number of components");
         }
         path = new int[tagPath.length];
         System.arraycopy(tagPath, 0, path, 0, tagPath.length);
 
+        itemPointer = new ItemPointer[tagPath.length/2];
+        for (int i = 0; i < tagPath.length-1; i += 2) {
+            itemPointer[i/2] = new ItemPointer(tagPath[i], tagPath[i+1]);
+        }
+        lastTag = tagPath[tagPath.length-1];
+
         column = columnName;
     }
 
-    public FixedDicomAttributeIndex(final int...tagPath) {
+    public FixedDicomAttributeIndex(final int... tagPath) {
         this(makeColumnName(tagPath), tagPath);
     }
 
     private static String makeColumnName(final int[] tagPath) {
         final StringBuilder sb = new StringBuilder("ft");
-        sb.append(String.format("%1$08x", tagPath[0]));
+        sb.append("%1$08x".formatted(tagPath[0]));
         for (int i = 1; i < tagPath.length; i++) {
-            sb.append("_").append(String.format("%1$08x", tagPath[i]));
+            sb.append("_").append("%1$08x".formatted(tagPath[i]));
         }
         return sb.toString();
     }
 
-    /* (non-Javadoc)
-     * @see org.nrg.dcm.DicomAttributeIndex#getColumnName()
+    /**
+     * ${@inheritDoc}
      */
-    public String getColumnName() { return column; }
-
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.DicomAttributeIndex#getElement(org.dcm4che2.data.DicomObject)
-     */
-    public DicomElement getElement(final DicomObject o) {
-        return o.get(path);
+    @Override
+    public String getColumnName() {
+        return column;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.DicomAttributeIndex#getPath(org.dcm4che2.data.DicomObject)
-     */
-    public Integer[] getPath(final DicomObject context) {
+    private Integer[] getPath() {
         final Integer[] path = new Integer[this.path.length];
         for (int i = 0; i < path.length; i++) {
             path[i] = this.path[i];
         }
         return path;
     }
-    
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#toString()
+
+    public Integer[] getPath(final Attributes context) {
+        return getPath();
+    }
+
+    /**
+     * ${@inheritDoc}
+     */
+    private Optional<Attributes> containingDataset(final Attributes root) {
+        return itemPointer.length > 0 ? Optional.ofNullable(root.getNestedDataset(itemPointer)) : Optional.of(root);
+    }
+
+    /**
+     * ${@inheritDoc}
+     */
+    @Override
+    public String getString(final Attributes attributes) {
+        return containingDataset(attributes)
+                .flatMap(attrs -> Optional.ofNullable(attrs.getStrings(lastTag)))
+                .map(DicomUtils::combineValues)
+                .orElse(null);
+    }
+
+    /**
+     * ${@inheritDoc}
+     */
+    @Override
+    public String getString(final Attributes attributes, String defaultValue) {
+        return containingDataset(attributes)
+                .flatMap(attrs -> Optional.ofNullable(attrs.getStrings(lastTag)))
+                .filter(values -> values.length > 0)
+                .map(DicomUtils::combineValues)
+                .orElse(defaultValue);
+    }
+
+    /**
+     * ${@inheritDoc}
+     */
+    @Override
+    public String[] getStrings(final Attributes attributes) {
+       return containingDataset(attributes)
+               .map(attrs -> attrs.getStrings(lastTag))
+               .orElse(null);
+    }
+
+    /**
+     * ${@inheritDoc}
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder(super.toString());
-        sb.append(TagUtils.toString(path[0]));
-        for (int i = 1; i < path.length; i++) {
-            sb.append("/").append(TagUtils.toString(path[i]));
-        }
-        return sb.toString();
+        return Arrays.stream(path).mapToObj(TagUtils::toString)
+                .reduce(new StringJoiner(":", "Fixed[", "]"), StringJoiner::add, StringJoiner::merge)
+                .toString();
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#hashCode()
+    /**
+     * ${@inheritDoc}
      */
     @Override
     public int hashCode() {
         return Arrays.hashCode(path);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
+    /**
+     * ${@inheritDoc}
      */
     @Override
     public boolean equals(final Object o) {
         return o instanceof FixedDicomAttributeIndex &&
-        Arrays.equals(path, ((FixedDicomAttributeIndex)o).path);
-    }
-
-
-    public static DicomAttributeIndex[] makeIndices(int...tags) {
-        final DicomAttributeIndex[] indices = new DicomAttributeIndex[tags.length];
-        for (int i = 0; i < tags.length; i++) {
-            indices[i] = new FixedDicomAttributeIndex(tags[i]);
-        }
-        return indices;
-    }
-
-    public static DicomAttributeIndex[] makeIndices(Integer...tags) {
-        final DicomAttributeIndex[] indices = new DicomAttributeIndex[tags.length];
-        for (int i = 0; i < tags.length; i++) {
-            indices[i] = new FixedDicomAttributeIndex(tags[i]);
-        }
-        return indices;
+                Arrays.equals(path, ((FixedDicomAttributeIndex) o).path);
     }
 }

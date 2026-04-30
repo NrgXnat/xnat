@@ -8,11 +8,12 @@
  */
 package org.nrg.dcm.xnat;
 
-import static org.nrg.dcm.Attributes.*;
-
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.SetMultimap;
 import lombok.extern.slf4j.Slf4j;
-import org.dcm4che2.data.UID;
+import org.dcm4che3.data.UID;
 import org.nrg.attr.ConversionFailureException;
 import org.nrg.dcm.DicomAttributeIndex;
 import org.nrg.dcm.DicomMetadataStore;
@@ -23,12 +24,20 @@ import org.nrg.xdat.preferences.HandlePetMr;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.nrg.dcm.NamedAttributes.Modality;
+import static org.nrg.dcm.NamedAttributes.SOPClassUID;
+import static org.nrg.dcm.NamedAttributes.SeriesDescription;
+import static org.nrg.dcm.NamedAttributes.StudyInstanceUID;
 
 /**
  * Creates a PET/MR session if both MR and 2PET SOPs are present in the named study.
- *
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  */
 @Slf4j
 public final class XnatPetmrImagesessiondataBeanFactory extends XnatImagesessiondataBeanFactory {

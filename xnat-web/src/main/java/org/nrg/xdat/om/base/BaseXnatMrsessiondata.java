@@ -17,6 +17,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Hashtable;
@@ -29,6 +30,9 @@ import java.util.Map;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatMrsessiondata extends AutoXnatMrsessiondata {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public BaseXnatMrsessiondata(ItemI item) {
         super(item);
@@ -103,7 +107,7 @@ public class BaseXnatMrsessiondata extends AutoXnatMrsessiondata {
         cc.addClause("wrk:workFlowData.ID",getId());
         ArrayList al =WrkWorkflowdata.getWrkWorkflowdatasByField(cc, getUser(), false);
         if (al.size()>0){
-            wkdata= (WrkWorkflowdata)al.get(al.size()-1);
+            wkdata= (WrkWorkflowdata)al.getLast();
             if (wkdata.getPipelineName().toLowerCase().indexOf("transfer")!=-1){
                 if(wkdata.getStatus().equalsIgnoreCase("In Progress"))
                 {
@@ -158,8 +162,7 @@ public class BaseXnatMrsessiondata extends AutoXnatMrsessiondata {
     public void copyValuesFrom(final XnatImagesessiondata otherImageSession) throws Exception {
 	super.copyValuesFrom(otherImageSession);
         
-    	if(otherImageSession instanceof XnatMrsessiondata){
-	final XnatMrsessiondata otherMR = (XnatMrsessiondata)otherImageSession;
+    	if(otherImageSession instanceof XnatMrsessiondata otherMR){
 	
         if (null != otherMR.getStabilization()){
             this.setStabilization(otherMR.getStabilization());
@@ -214,7 +217,7 @@ public class BaseXnatMrsessiondata extends AutoXnatMrsessiondata {
     }
 
     public ArrayList getUnionOfScansByType(String csvType, String chronological) {
-    	return getUnionOfScansByType(csvType, new Boolean(chronological).booleanValue());
+    	return getUnionOfScansByType(csvType, Boolean.valueOf(chronological).booleanValue());
     }
     
     public Map<String,String> getCustomScanFields(String project){

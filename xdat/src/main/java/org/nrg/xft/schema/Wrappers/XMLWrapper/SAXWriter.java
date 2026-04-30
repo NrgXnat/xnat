@@ -346,8 +346,7 @@ public class SAXWriter {
                         while (iter.hasNext()) {
                             Object o = iter.next();
 
-                            if (o instanceof org.nrg.xft.XFTItem) {
-                                XFTItem many1 = (XFTItem) o;
+                            if (o instanceof org.nrg.xft.XFTItem many1) {
                                 long startTime = Calendar.getInstance().getTimeInMillis();
                                 if ((!limited) || (!many1.canBeRootWithBase())) {
                                     AttributesImpl atts = new AttributesImpl();

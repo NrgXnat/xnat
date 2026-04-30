@@ -63,7 +63,7 @@ public abstract class AbstractXapiRestController {
     protected static String getAttachmentDisposition(final String... parts) {
         final int    maxIndex = parts.length - 1;
         final String filename = maxIndex == 0 ? parts[0] : StringUtils.join(ArrayUtils.subarray(parts, 0, maxIndex)) + "." + parts[maxIndex];
-        return String.format(ATTACHMENT_DISPOSITION, filename);
+        return ATTACHMENT_DISPOSITION.formatted(filename);
     }
 
     /**

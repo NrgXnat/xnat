@@ -14,7 +14,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.SetMultimap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
 import org.nrg.attr.*;
 import org.nrg.dcm.AttrAdapter;
 import org.nrg.dcm.AttrDefs;
@@ -25,6 +25,7 @@ import org.nrg.dcm.xnat.AbstractConditionalAttrDef.EqualsRule;
 import org.nrg.dcm.xnat.services.DicomMappingService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.ContextService;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.io.RelativePathWriterFactory;
 import org.nrg.io.ScanCatalogFileWriterFactory;
 import org.nrg.session.BeanBuilder;
@@ -46,14 +47,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.nrg.framework.utilities.Reflection;
-
-import static org.nrg.dcm.Attributes.*;
+import static org.nrg.dcm.NamedAttributes.*;
 import static org.nrg.xdat.preferences.HandlePetMr.DEFAULT_EXCLUDED_FIELDS;
 
 /**
  * Generates an XNAT session metadata XML from a DICOM study.
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  */
 @Slf4j
 public class DICOMSessionBuilder extends SessionBuilder implements Closeable {
@@ -332,7 +330,7 @@ public class DICOMSessionBuilder extends SessionBuilder implements Closeable {
     public DICOMSessionBuilder(final File fileSetDir, final Writer writer,
                                final Collection<XnatAttrDef> sessionAttrDefs,
                                final Collection<XnatAttrDef> scanAttrDefs,
-                               @Nullable final Function<DicomObject, DicomObject> function,
+                               @Nullable final Function<Attributes, Attributes> function,
                                @Nullable final DicomMetadataStore store)
             throws IOException, NoUniqueSessionException, SQLException {
         super(fileSetDir, fileSetDir.getPath(), writer, new File(fileSetDir.getPath() + XML_SUFFIX));
@@ -367,7 +365,7 @@ public class DICOMSessionBuilder extends SessionBuilder implements Closeable {
     }
 
     @SuppressWarnings("unused")
-    public DICOMSessionBuilder(final File fileSetDir, final XnatAttrDef[]sessionAttrs, final Function<DicomObject,DicomObject> function) throws IOException, NoUniqueSessionException, SQLException {
+    public DICOMSessionBuilder(final File fileSetDir, final XnatAttrDef[]sessionAttrs, final Function<Attributes, Attributes> function) throws IOException, NoUniqueSessionException, SQLException {
         this(fileSetDir, null, Arrays.asList(sessionAttrs), Collections.emptyList(), function, null);
     }
 
@@ -421,7 +419,7 @@ public class DICOMSessionBuilder extends SessionBuilder implements Closeable {
     }
 
     private DicomMetadataStore getStore(final File root, final Collection<DicomAttributeIndex> extraTags,
-                                        @Nullable Function<DicomObject, DicomObject> function) throws IOException, SQLException {
+                                        @Nullable Function<Attributes, Attributes> function) throws IOException, SQLException {
         DicomMetadataStore s = createStore(extraTags);
         if (function == null) {
             s.add(Collections.singleton(root.toURI()));
@@ -546,8 +544,8 @@ public class DICOMSessionBuilder extends SessionBuilder implements Closeable {
             for (final Map.Entry<ExtAttrDef<DicomAttributeIndex>,Throwable> me: failures.entrySet()) {
                 if ("UID".equals(me.getKey().getName())) {
                     final Throwable cause = me.getValue();
-                    if (cause instanceof NoUniqueValueException) {
-                        throw new NoUniqueSessionException(((NoUniqueValueException)cause).getValues());
+                    if (cause instanceof NoUniqueValueException exception) {
+                        throw new NoUniqueSessionException(exception.getValues());
                     } else {
                         throw new RuntimeException("Unable to derive UID for unexpected cause", cause);
                     }
@@ -646,7 +644,7 @@ public class DICOMSessionBuilder extends SessionBuilder implements Closeable {
 
                     session.addScans_scan(scan);
                 } catch (Throwable t) {
-                    log.info("Unable to process scan " + nse.getKey(), t);
+                    log.info("Unable to process scan {}", nse.getKey(), t);
                     sessionLog.log("Unable to process scan " + nse.getKey(), t);
                 }
             }
@@ -662,7 +660,7 @@ public class DICOMSessionBuilder extends SessionBuilder implements Closeable {
             return session;
         } finally {
             if (sessionLog.hasMessages()) {
-                log.info("Warnings occurred in processing " + fileSetDir.getPath() + "; see " + sessionLog);
+                log.info("Warnings occurred in processing {}; see {}", fileSetDir.getPath(), sessionLog);
                 sessionLog.close();
             }
         }
@@ -682,17 +680,17 @@ public class DICOMSessionBuilder extends SessionBuilder implements Closeable {
 
     static void report(final Object context, final ExtAttrDef<?> subject, final Throwable t, final MicroLog microLog) {
         try {
-            if (t instanceof ConversionFailureException) {
-                report(context, subject, (ConversionFailureException)t, microLog);
-            } else if (t instanceof NoUniqueValueException) {
-                report(context, subject, (NoUniqueValueException)t, microLog);
+            if (t instanceof ConversionFailureException exception) {
+                report(context, subject, exception, microLog);
+            } else if (t instanceof NoUniqueValueException exception) {
+                report(context, subject, exception, microLog);
             } else {
                 final StringBuilder sb = startReport(context, subject);
                 sb.append(" could not be resolved :").append(t);
                 microLog.log(sb.toString());
             }
         } catch (IOException e1) {
-            log.error("Unable to write to session log " + microLog, e1);
+            log.error("Unable to write to session log {}", microLog, e1);
         }
     }
 

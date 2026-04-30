@@ -36,9 +36,9 @@ public class XFTTableSortTest {
 
 		for(int i=0;i<numRows;i++){
 			Object[] row=new Object[COLUMNS.length];
-			row[0]=new Long(random.nextLong()).toString();
-			row[1]=new Float(random.nextFloat());
-			row[2]=new Integer(random.nextInt());
+			row[0]=Long.valueOf(random.nextLong()).toString();
+			row[1]=Float.valueOf(random.nextFloat());
+			row[2]=Integer.valueOf(random.nextInt());
 			row[3]=new Date(random.nextLong());
 			t.rows().add(row);
 		}
@@ -54,11 +54,11 @@ public class XFTTableSortTest {
 		//This test has a 1/numRows chance of failing due to chance, which is why a large numRows is used here.
 		final XFTTable t = buildRandomTable(1000000);
 		
-		final Object[] o1=t.rows().get(0);
+		final Object[] o1=t.rows().getFirst();
 		
 		t.sort(Arrays.asList(COLUMNS));
 		
-		final Object[] o2=t.rows().get(0);
+		final Object[] o2=t.rows().getFirst();
 		
 		if(o1==o2){
 			fail("Objects should not be equal:" + System.lineSeparator() + System.lineSeparator() + " * o1: [" + Joiner.on(", ").join(o1) + "]" + System.lineSeparator() + " * o2: [" + Joiner.on(", ").join(o2) + "]");
@@ -73,7 +73,7 @@ public class XFTTableSortTest {
 		
 		final XFTTable t = buildRandomTable(100);
 		
-		final Object[] o1=t.rows().get(0);
+		final Object[] o1=t.rows().getFirst();
 		
 		try {
 			t.sort(null);
@@ -90,11 +90,11 @@ public class XFTTableSortTest {
 		
 		final XFTTable t = buildRandomTable(100);
 		
-		final Object[] o1=t.rows().get(0);
+		final Object[] o1=t.rows().getFirst();
 		
 		t.sort(new ArrayList<String>());
 		
-		final Object[] o2=t.rows().get(0);
+		final Object[] o2=t.rows().getFirst();
 		
 		if(o1!=o2){
 			fail("Objects should be equal.");
@@ -108,11 +108,11 @@ public class XFTTableSortTest {
 	public void testReverse() {
 		final XFTTable t = buildRandomTable(100);
 		
-		final Object[] o1=t.rows().get(0);
+		final Object[] o1=t.rows().getFirst();
 
 		t.reverse();
 		
-		final Object[] o2=t.rows().get(0);
+		final Object[] o2=t.rows().getFirst();
 		
 		if(o1==o2){
 			fail("Objects should not be equal.");

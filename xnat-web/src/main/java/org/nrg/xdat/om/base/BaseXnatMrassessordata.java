@@ -13,6 +13,7 @@ import org.nrg.xdat.om.XnatMrsessiondata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 import java.util.Iterator;
 
@@ -22,6 +23,9 @@ import java.util.Iterator;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatMrassessordata extends org.nrg.xdat.om.base.auto.AutoXnatMrassessordata {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatMrassessordata(ItemI item)
 	{

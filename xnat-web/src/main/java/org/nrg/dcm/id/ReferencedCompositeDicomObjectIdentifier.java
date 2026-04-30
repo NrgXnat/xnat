@@ -35,14 +35,14 @@ public class ReferencedCompositeDicomObjectIdentifier extends CompositeDicomObje
     }
 
     private void referenceExtractors(final Extractor extractor) {
-        if (extractor instanceof IdentifierReferencingExtractor) {
-            ((IdentifierReferencingExtractor) extractor).setIdentifier(this);
+        if (extractor instanceof IdentifierReferencingExtractor referencingExtractor) {
+            referencingExtractor.setIdentifier(this);
         }
-        if (extractor instanceof SubjectReferencingExtractor) {
-            ((SubjectReferencingExtractor) extractor).setSubjectExtractor(_subjectExtractor);
+        if (extractor instanceof SubjectReferencingExtractor referencingExtractor) {
+            referencingExtractor.setSubjectExtractor(_subjectExtractor);
         }
-        if (extractor instanceof SessionReferencingExtractor) {
-            ((SessionReferencingExtractor) extractor).setSessionExtractor(_sessionExtractor);
+        if (extractor instanceof SessionReferencingExtractor referencingExtractor) {
+            referencingExtractor.setSessionExtractor(_sessionExtractor);
         }
     }
 

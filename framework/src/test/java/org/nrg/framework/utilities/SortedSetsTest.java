@@ -41,7 +41,7 @@ public class SortedSetsTest {
     public void testEmptyFirst() {
         assertThrows(NoSuchElementException.class, () -> {
             final SortedSet<Object> s = SortedSets.empty();
-            s.first();
+            s.getFirst();
         });
     }
 
@@ -49,7 +49,7 @@ public class SortedSetsTest {
     public void testEmptyLast() {
         assertThrows(NoSuchElementException.class, () -> {
             final SortedSet<Object> s = SortedSets.empty();
-            s.last();
+            s.getLast();
         });
     }
 

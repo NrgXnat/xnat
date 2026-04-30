@@ -19,7 +19,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
 
@@ -29,9 +28,9 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 public class ConfigPathsTest {
     @BeforeEach
     public void setUpPropertiesFiles() throws IOException {
-        _root = Paths.get(System.getProperty("java.io.tmpdir"), getClass().getSimpleName() + "-" + (new Date().getTime())).toFile();
+        _root = Path.of(System.getProperty("java.io.tmpdir"), getClass().getSimpleName() + "-" + (new Date().getTime())).toFile();
         _root.mkdirs();
-        final Path firstParent = Paths.get(_root.getAbsolutePath(), "first");
+        final Path firstParent = Path.of(_root.getAbsolutePath(), "first");
         firstParent.toFile().mkdirs();
         _first = firstParent.resolve("first.properties").toFile();
         try (final PrintWriter output = new PrintWriter(new FileWriter(_first))) {
@@ -40,7 +39,7 @@ public class ConfigPathsTest {
             output.println("first.three=3");
             output.println("first.four=4");
         }
-        final Path secondParent = Paths.get(_root.getAbsolutePath(), "second");
+        final Path secondParent = Path.of(_root.getAbsolutePath(), "second");
         secondParent.toFile().mkdirs();
         _second = secondParent.resolve("second.properties").toFile();
         try (final PrintWriter output = new PrintWriter(new FileWriter(_second))) {
@@ -63,8 +62,8 @@ public class ConfigPathsTest {
     @Test
     public void testConfigPaths() {
         final ConfigPaths configPaths = new ConfigPaths();
-        configPaths.add(Paths.get(_root.getAbsolutePath(), "first"));
-        configPaths.add(Paths.get(_root.getAbsolutePath(), "second"));
+        configPaths.add(Path.of(_root.getAbsolutePath(), "first"));
+        configPaths.add(Path.of(_root.getAbsolutePath(), "second"));
         final List<File> paths = configPaths.findFiles("first.properties", "second.properties");
         assertThat(paths).isNotNull()
                          .isNotEmpty()

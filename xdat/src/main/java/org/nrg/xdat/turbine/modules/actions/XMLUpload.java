@@ -60,7 +60,7 @@ public class XMLUpload extends SecureAction {
         final FileItem          fileItem = params.getFileItem("xml_to_store");
         final ValidationHandler handler  = new XMLValidator().validateInputStream(fileItem.getInputStream());
         if (!handler.assertValid()) {
-            throw handler.getErrors().get(0);
+            throw handler.getErrors().getFirst();
         }
 
         final String    allowDeletion = (String) TurbineUtils.GetPassedParameter("allowdeletion", data);

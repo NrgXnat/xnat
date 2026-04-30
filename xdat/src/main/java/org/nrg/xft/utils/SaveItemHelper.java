@@ -52,7 +52,7 @@ public class SaveItemHelper {
 				}
 			} catch (Exception e) {
 				logger.error("",e);
-				i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);	
+				i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);
 				return;
 			}
 			temp.preSave();

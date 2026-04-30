@@ -25,11 +25,11 @@ public class TestEntityResolver {
     public void testSimpleResolve() {
         for (int index1 = 0; index1 < 2; index1++) {
             for (int index2 = 0; index2 < 6; index2++) {
-                final EntityId start  = new EntityId(Scope.Subject, String.format("p%ds%d", index1 + 1, index2 + 1));
+                final EntityId start  = new EntityId(Scope.Subject, "p%ds%d".formatted(index1 + 1, index2 + 1));
                 final Wired    finish = _resolver.resolve(start);
                 assertThat(_resolver.checkResults(start, finish.getEntityId())).isTrue();
             }
-            final EntityId start  = new EntityId(Scope.Project, String.format("project%d", index1 + 1));
+            final EntityId start  = new EntityId(Scope.Project, "project%d".formatted(index1 + 1));
             final Wired    finish = _resolver.resolve(start);
             assertThat(_resolver.checkResults(start, finish.getEntityId())).isTrue();
         }

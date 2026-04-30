@@ -30,7 +30,7 @@ public class CriteriaCollection implements SQLClause {
 
     public String getElementName() {
         if (size() > 0) {
-            return collection.get(0).getElementName();
+            return collection.getFirst().getElementName();
         } else {
             return "";
         }
@@ -191,8 +191,8 @@ public class CriteriaCollection implements SQLClause {
     public int numSchemaClauses() {
         int size = 0;
         for (final SQLClause clause : collection) {
-            if (clause instanceof CriteriaCollection) {
-                size += ((CriteriaCollection) clause).numSchemaClauses();
+            if (clause instanceof CriteriaCollection criteriaCollection) {
+                size += criteriaCollection.numSchemaClauses();
             } else if (clause instanceof SearchCriteria) {
                 size++;
             }
@@ -263,7 +263,7 @@ public class CriteriaCollection implements SQLClause {
      */
     public boolean containsXMLPathEndingWith(final String suffix){
         for(SQLClause clause: this.getCriteriaCollection()){
-            if(clause instanceof SearchCriteria && ((SearchCriteria)clause).getXMLPath().endsWith(suffix)){
+            if(clause instanceof SearchCriteria criteria && criteria.getXMLPath().endsWith(suffix)){
                 return true;
             }
         }
@@ -279,8 +279,8 @@ public class CriteriaCollection implements SQLClause {
     @Nullable
     public Object getValueEndingWith(final String suffix){
         for(final SQLClause clause: this.getCriteriaCollection()) {
-            if (clause instanceof SearchCriteria && ((SearchCriteria) clause).getXMLPath().endsWith(suffix)) {
-                return ((SearchCriteria) clause).getValue();
+            if (clause instanceof SearchCriteria criteria && criteria.getXMLPath().endsWith(suffix)) {
+                return criteria.getValue();
             }
         }
 

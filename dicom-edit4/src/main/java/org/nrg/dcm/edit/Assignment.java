@@ -10,9 +10,8 @@ package org.nrg.dcm.edit;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.VR;
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationException;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.values.ConstantValue;
@@ -65,7 +64,7 @@ public class Assignment extends AbstractOperation {
      * @see org.nrg.dcm.edit.Operation#getTopTag()
      */
     public long getTopTag() {
-        return getScriptTags().last();
+        return getScriptTags().getLast();
     }
 
     @Override
@@ -80,8 +79,7 @@ public class Assignment extends AbstractOperation {
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object o) {
-        if (o instanceof Assignment) {
-            final Assignment oa = (Assignment) o;
+        if (o instanceof Assignment oa) {
             return pattern.equals(oa.pattern) && value.equals(oa.value);
         } else {
             return false;
@@ -104,18 +102,17 @@ public class Assignment extends AbstractOperation {
         final String value = this.value.on(dicomObject);
         return new Action() {
             public void apply() throws ScriptEvaluationException {
-                final DicomObject    dcm4che2Object = dicomObject.getDcm4che2Object();
-                final Iterable<Long> iterable       = pattern.apply(dcm4che2Object);
+                final Iterable<Long> iterable       = pattern.apply(dicomObject);
                 if (iterable != null) {
                     for (final long longTag : iterable) {
                         final int tag = (int) longTag;
-                        VR vr = dcm4che2Object.vrOf(tag);
-                        if (VR.UN.equals(vr)) {
+                        VR vr = dicomObject.getAttributes().getVR(tag);
+                        if (vr ==null || VR.UN.equals(vr)) {
                             logger.debug("VR for {} is UN; writing as LO instead", TagUtils.toString(tag));
                             vr = VR.LO;
                         }
                         try {
-                            dcm4che2Object.putString(new int[]{tag}, vr, value);
+                            dicomObject.putString(tag, vr.toString(), value);
                         } catch (UnsupportedOperationException e) {
                             throw new ScriptEvaluationException("Unable to set attribute "
                                                                 + TagUtils.toString(tag) + " (VR " + vr + ") to \"" + value + "\"", e);

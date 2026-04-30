@@ -52,7 +52,7 @@ public class AutomationEventIdsIds extends AbstractHibernateEntity implements Se
 	}
 
 	public AutomationEventIdsIds(String externalId, String srcEventClass, String eventId, final List<AutomationEventIds> idsList) {
-		final AutomationEventIds autoEventIds = idsList.size() > 0 ? idsList.get(0) : new AutomationEventIds(externalId, srcEventClass);
+		final AutomationEventIds autoEventIds = idsList.size() > 0 ? idsList.getFirst() : new AutomationEventIds(externalId, srcEventClass);
 		this.setParentAutomationEventIds(autoEventIds);
 		this.setEventId(eventId);
 		this.setCounter(1L);

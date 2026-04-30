@@ -30,7 +30,7 @@ public class ConditionalAttrDefEqualsRuleTest extends TestCase {
 	 */
 	public void testGetTag() {
 		final EqualsRule rule = new EqualsRule(I42);
-		assertEquals(I42, rule.getTags().get(0));
+		assertEquals(I42, rule.getTags().getFirst());
 	}
 
 	/**

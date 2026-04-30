@@ -9,7 +9,7 @@
 
 package org.nrg.dicom.mizer.service.impl.test;
 
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.nrg.dicom.mizer.exceptions.MizerContextException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;

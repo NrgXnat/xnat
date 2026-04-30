@@ -75,7 +75,8 @@ import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.data.Status;
 
 import java.io.File;
-import java.nio.file.Paths;
+import java.io.Serial;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.text.DateFormat;
@@ -102,6 +103,8 @@ import static org.nrg.xft.event.XftItemEventI.UPDATE;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements ArchivableItem, MoveableI{
+    @Serial
+    private static final long serialVersionUID = 1;
     protected ArrayList<ItemI> minLoadAssessors = null;
 
 	public BaseXnatSubjectdata(ItemI item)
@@ -150,9 +153,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	    String s = null;
         try {
             XnatAbstractdemographicdataI ame = this.getDemographics();
-    	    if (ame instanceof XnatDemographicdata)
+    	    if (ame instanceof XnatDemographicdata demographicdata)
     	    {
-    	        s= ((XnatDemographicdata)ame).getGender();
+    	        s= demographicdata.getGender();
     	    }
         } catch (Exception e) {
             logger.error("",e);
@@ -182,9 +185,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public Date getDOB()
 	{
 	    XnatAbstractdemographicdataI ame = this.getDemographics();
-	    if (ame instanceof XnatDemographicdata)
+	    if (ame instanceof XnatDemographicdata demographicdata)
 	    {
-	        return (Date)((XnatDemographicdata)ame).getDob();
+	        return (Date)demographicdata.getDob();
 	    }
 	    return null;
 	}
@@ -192,9 +195,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public String getGender()
 	{
 	    XnatAbstractdemographicdataI ame = this.getDemographics();
-	    if (ame instanceof XnatDemographicdata)
+	    if (ame instanceof XnatDemographicdata demographicdata)
 	    {
-	        return ((XnatDemographicdata)ame).getGender();
+	        return demographicdata.getGender();
 	    }
 	    return null;
 	}
@@ -202,9 +205,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public String getHandedness()
 	{
 	    XnatAbstractdemographicdataI ame = this.getDemographics();
-	    if (ame instanceof XnatDemographicdata)
+	    if (ame instanceof XnatDemographicdata demographicdata)
 	    {
-	        return ((XnatDemographicdata)ame).getHandedness();
+	        return demographicdata.getHandedness();
 	    }
 	    return null;
 	}
@@ -212,9 +215,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public Integer getYOB()
 	{
 	    XnatAbstractdemographicdataI ame = this.getDemographics();
-	    if (ame instanceof XnatDemographicdata)
+	    if (ame instanceof XnatDemographicdata demographicdata)
 	    {
-	        return ((XnatDemographicdata)ame).getYob();
+	        return demographicdata.getYob();
 	    }
 	    return null;
 	}
@@ -224,9 +227,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	    String s = null;
 	    try {
             XnatAbstractdemographicdataI ame = this.getDemographics();
-    	    if (ame instanceof XnatDemographicdata)
+    	    if (ame instanceof XnatDemographicdata demographicdata)
     	    {
-    	        s= ((XnatDemographicdata)ame).getHandedness();
+    	        s= demographicdata.getHandedness();
     	    }
         } catch (Exception e) {
             logger.error("",e);
@@ -343,9 +346,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public String getRace(){
 	    try {
             XnatAbstractdemographicdataI ame = this.getDemographics();
-    	    if (ame instanceof XnatDemographicdata)
+    	    if (ame instanceof XnatDemographicdata demographicdata)
     	    {
-    	        return ((XnatDemographicdata)ame).getRace();
+    	        return demographicdata.getRace();
     	    }
         } catch (Exception e) {
             logger.error("",e);
@@ -356,9 +359,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public String getEthnicity(){
 	    try {
             XnatAbstractdemographicdataI ame = this.getDemographics();
-    	    if (ame instanceof XnatDemographicdata)
+    	    if (ame instanceof XnatDemographicdata demographicdata)
     	    {
-    	        return ((XnatDemographicdata)ame).getEthnicity();
+    	        return demographicdata.getEthnicity();
     	    }
         } catch (Exception e) {
             logger.error("",e);
@@ -369,9 +372,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public Integer getAge(){
 	    try {
             XnatAbstractdemographicdataI ame = this.getDemographics();
-    	    if (ame instanceof XnatDemographicdata)
+    	    if (ame instanceof XnatDemographicdata demographicdata)
     	    {
-    	        return ((XnatDemographicdata)ame).getAge();
+    	        return demographicdata.getAge();
     	    }
         } catch (Exception e) {
             logger.error("",e);
@@ -382,9 +385,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public Integer getEducation(){
 	    try {
             XnatAbstractdemographicdataI ame = this.getDemographics();
-    	    if (ame instanceof XnatDemographicdata)
+    	    if (ame instanceof XnatDemographicdata demographicdata)
     	    {
-    	        return ((XnatDemographicdata)ame).getEducation();
+    	        return demographicdata.getEducation();
     	    }
         } catch (Exception e) {
             logger.error("",e);
@@ -395,9 +398,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
     public String getEducationDesc(){
         try {
             XnatAbstractdemographicdataI ame = this.getDemographics();
-            if (ame instanceof XnatDemographicdata)
+            if (ame instanceof XnatDemographicdata demographicdata)
             {
-                return ((XnatDemographicdata)ame).getEducationdesc();
+                return demographicdata.getEducationdesc();
             }
         } catch (Exception e) {
             logger.error("",e);
@@ -408,9 +411,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public Integer getSes(){
 	    try {
             XnatAbstractdemographicdataI ame = this.getDemographics();
-    	    if (ame instanceof XnatDemographicdata)
+    	    if (ame instanceof XnatDemographicdata demographicdata)
     	    {
-    	        return ((XnatDemographicdata)ame).getSes();
+    	        return demographicdata.getSes();
     	    }
         } catch (Exception e) {
             logger.error("",e);
@@ -421,9 +424,9 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public String getCohort(){
 	    try {
 	        XnatAbstractsubjectmetadataI ame = this.getMetadata();
-		    if (ame instanceof XnatSubjectmetadata)
+		    if (ame instanceof XnatSubjectmetadata subjectmetadata)
 		    {
-		        return ((XnatSubjectmetadata)ame).getCohort();
+		        return subjectmetadata.getCohort();
 		    }
         } catch (Exception e) {
             logger.error("",e);
@@ -889,7 +892,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 
 			ArrayList al =  XnatSubjectdata.getXnatSubjectdatasByField(subcc1, user, preLoad);
 			if (al.size()>0){
-				return new XnatSubjectdata((ItemI)al.get(0));
+				return new XnatSubjectdata((ItemI)al.getFirst());
 			}
 
 			final CriteriaCollection subcc2 = new CriteriaCollection("AND");
@@ -898,7 +901,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 
 			al =  XnatSubjectdata.getXnatSubjectdatasByField(subcc2, user, preLoad);
 			if (al.size()>0){
-				return new XnatSubjectdata((ItemI)al.get(0));
+				return new XnatSubjectdata((ItemI)al.getFirst());
 			}else{
 				return null;
 			}
@@ -1035,7 +1038,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
     {
         XnatProjectparticipant ep = null;
         if (!this.getSharing_share().isEmpty()){
-        	ep = (XnatProjectparticipant)this.getSharing_share().get(0);
+        	ep = (XnatProjectparticipant)this.getSharing_share().getFirst();
         }
 
         try {
@@ -1139,7 +1142,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 
                 if (table.size()>0)
                 {
-                    final Object[] row = table.rows().get(0);
+                    final Object[] row = table.rows().getFirst();
                     name = (String)row[0];
                     description = (String)row[1];
                     secondaryID = (String)row[2];
@@ -1206,8 +1209,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
             if((projectID != null && !projectID.isEmpty()) && !projectID.equals(entry.getKey().getId())){
                continue;
             }
-            if (prot!=null && prot instanceof XnatDatatypeprotocol){
-					final XnatDatatypeprotocol dataProt = (XnatDatatypeprotocol) prot;
+            if (prot!=null && prot instanceof XnatDatatypeprotocol dataProt){
 					for (final XnatFielddefinitiongroupI group : dataProt.getDefinitions_definition()) {
                     groups.put(group.getId(), (XnatFielddefinitiongroup)group);
                 }
@@ -1405,7 +1407,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 			return;
 		}
 		final String rootPath    = project.getRootArchivePath();
-		final File   archivePath = Paths.get(rootPath, "subjects", getArchiveDirectoryName()).toFile();
+		final File   archivePath = Path.of(rootPath, "subjects", getArchiveDirectoryName()).toFile();
 		OmUtils.deleteResourceFiles(user, rootPath, project.getId(), archivePath, resources, ci);
 	}
 
@@ -1436,7 +1438,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 
     public void checkUniqueLabel() throws Exception{
 		if(!StringUtils.isBlank(this.getLabel())){
-			Long count=(Long)PoolDBUtils.ReturnStatisticQuery(String.format("SELECT COUNT(*) FROM (SELECT label,id FROM xnat_subjectData WHERE label='%1$s' AND ID !='%2$s' AND project='%3$s' UNION SELECT label, subject_id as ID FROM xnat_projectParticipant WHERE label='%1$s' AND subject_id !='%2$s' AND project='%3$s')SRCH",this.getLabel(),this.getId(),this.getProject()), "count", this.getDBName(), "system");
+			Long count=(Long)PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (SELECT label,id FROM xnat_subjectData WHERE label='%1$s' AND ID !='%2$s' AND project='%3$s' UNION SELECT label, subject_id as ID FROM xnat_projectParticipant WHERE label='%1$s' AND subject_id !='%2$s' AND project='%3$s')SRCH".formatted(this.getLabel(), this.getId(), this.getProject()), "count", this.getDBName(), "system");
 			if(count>0){
 				throw new ClientException(Status.CLIENT_ERROR_CONFLICT,"Conflict: Duplicate subject label",new Exception());
 			}
@@ -1476,10 +1478,10 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 
 		for(final XnatAbstractresourceI res: this.getResources_resource()){
 			final String uri;
-			if(res instanceof XnatResource){
-				uri=((XnatResource)res).getUri();
-			}else if(res instanceof XnatResourceseries){
-				uri=((XnatResourceseries)res).getPath();
+			if(res instanceof XnatResource resource){
+				uri=resource.getUri();
+			}else if(res instanceof XnatResourceseries resourceseries){
+				uri=resourceseries.getPath();
 			}else{
 				continue;
 			}

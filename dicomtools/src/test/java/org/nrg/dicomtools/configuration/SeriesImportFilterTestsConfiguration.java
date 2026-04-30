@@ -24,7 +24,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 @ComponentScan({"org.nrg.config.daos", "org.nrg.dicomtools.filters"})
 @Import({OrmTestConfiguration.class})
-@ImportResource("classpath:/META-INF/configuration/nrg-automation-context.xml")
 @PropertySources(@PropertySource("classpath:org/nrg/dicomtools/filters/filter-definitions.properties"))
 public class SeriesImportFilterTestsConfiguration {
     @Autowired

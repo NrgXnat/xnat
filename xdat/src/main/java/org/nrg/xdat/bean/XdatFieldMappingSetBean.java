@@ -76,8 +76,8 @@ public class XdatFieldMappingSetBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void addAllow(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatFieldMappingBean)
-			_Allow.add((org.nrg.xdat.bean.XdatFieldMappingBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatFieldMappingBean bean)
+			_Allow.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatFieldMappingBean");
 	}
@@ -120,8 +120,8 @@ public class XdatFieldMappingSetBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void addSubSet(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatFieldMappingSetBean)
-			_SubSet.add((org.nrg.xdat.bean.XdatFieldMappingSetBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatFieldMappingSetBean bean)
+			_SubSet.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatFieldMappingSetBean");
 	}

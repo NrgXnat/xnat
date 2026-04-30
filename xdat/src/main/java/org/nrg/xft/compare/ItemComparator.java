@@ -74,11 +74,11 @@ public class ItemComparator implements Comparator<XFTItem>, Serializable {
 	                        for (final List<Object> field:fields)
 	                        {
 	                            try {
-	                            	final Comparable o = (Comparable) newI.getProperty(newI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + field.get(0));
+	                            	final Comparable o = (Comparable) newI.getProperty(newI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + field.getFirst());
 
 	                                if (o!= null)
 	                                {
-	                                	final Comparable o2 = (Comparable) oldI.getProperty(oldI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + field.get(0));
+	                                	final Comparable o2 = (Comparable) oldI.getProperty(oldI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + field.getFirst());
 	                                    if (o2!= null)
 	                                    {
 	                                        int compare=o.compareTo(o2);

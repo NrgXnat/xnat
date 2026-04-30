@@ -9,28 +9,26 @@
 
 package org.nrg.dcm.io;
 
+import org.nrg.dicom.mizer.exceptions.MizerException;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
+
 import java.io.File;
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.io.DicomInputHandler;
-import org.dcm4che2.io.StopTagInputHandler;
-import org.nrg.dicomtools.utilities.DicomUtils;
 
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
-public class DicomFileObjectIterator implements Iterator<Map.Entry<File,DicomObject>> {
+public class DicomFileObjectIterator implements Iterator<Map.Entry<File, DicomObjectI>> {
     private final Iterator<File> files;
-    private DicomInputHandler inputHandler = null;
+    private int stopTag = -1;
     File nextFile = null, lastFile = null;
-    DicomObject nextObject = null;
+    DicomObjectI nextObject = null;
     
     public DicomFileObjectIterator(final Iterator<File> files) {
         this.files = files;
@@ -40,13 +38,9 @@ public class DicomFileObjectIterator implements Iterator<Map.Entry<File,DicomObj
         this(files.iterator());
     }
 
-    public DicomFileObjectIterator setInputHandler(final DicomInputHandler handler) {
-        this.inputHandler = handler;
-        return this;
-    }
-    
     public DicomFileObjectIterator setStopTag(final int stopTag) {
-        return setInputHandler(new StopTagInputHandler(stopTag));
+        this.stopTag = stopTag;
+        return this;
     }
     
     /* (non-Javadoc)
@@ -57,10 +51,14 @@ public class DicomFileObjectIterator implements Iterator<Map.Entry<File,DicomObj
             if (files.hasNext()) {
                 final File f = files.next();
                 try {
-                    nextObject = DicomUtils.read(f, inputHandler);
+                    if (this.stopTag == -1) {
+                        nextObject = DicomObjectFactory.newInstance(f);
+                    } else {
+                        nextObject = DicomObjectFactory.newInstance(f, this.stopTag);
+                    }
                     nextFile = f;
                     return true;
-                } catch (IOException skip) {
+                } catch (MizerException skip) {
                     continue;
                 }
             } else {
@@ -73,19 +71,20 @@ public class DicomFileObjectIterator implements Iterator<Map.Entry<File,DicomObj
     /* (non-Javadoc)
      * @see java.util.Iterator#next()
      */
-    public synchronized Entry<File,DicomObject> next() {
+    public synchronized Entry<File,DicomObjectI> next() {
         final File currentFile = lastFile;
         lastFile = nextFile;
         if (hasNext()) {
             lastFile = nextFile;
-            final File f = nextFile;
-            final DicomObject o = nextObject;
+            final File file = nextFile;
+            final DicomObjectI doi = nextObject;
             nextFile = null;
             nextObject = null;
-            return new Map.Entry<File, DicomObject>() {
-                public File getKey() { return f; }
-                public DicomObject getValue() { return o; }
-                public DicomObject setValue(final DicomObject value) {
+            return new Map.Entry<File, DicomObjectI>() {
+                public File getKey() { return file; }
+                public DicomObjectI getValue() { return doi; }
+                @Override
+                public DicomObjectI setValue(final DicomObjectI value) {
                     throw new UnsupportedOperationException("cannot set DICOM object value");
                 }
             };

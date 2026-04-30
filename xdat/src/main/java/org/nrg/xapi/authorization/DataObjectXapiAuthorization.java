@@ -49,7 +49,7 @@ public class DataObjectXapiAuthorization extends AbstractXapiAuthorization {
             throw new RuntimeException("Found request with experiments specified along with multiple subject. Multiple subjects can only be evaluated without dependent data objects.");
         }
 
-        final String              project = projects.isEmpty() ? null : projects.get(0);
+        final String              project = projects.isEmpty() ? null : projects.getFirst();
         final DataAccessPredicate predicate;
         final List<String>        targets;
         if (hasProjects && !hasSubjects && !hasExperiments) {
@@ -60,7 +60,7 @@ public class DataObjectXapiAuthorization extends AbstractXapiAuthorization {
             predicate = new SubjectAccessPredicate(_service, _template, user, accessLevel, project);
         } else {
             targets = experiments;
-            predicate = new ExperimentAccessPredicate(_service, _template, user, accessLevel, project, subjects.isEmpty() ? null : subjects.get(0));
+            predicate = new ExperimentAccessPredicate(_service, _template, user, accessLevel, project, subjects.isEmpty() ? null : subjects.getFirst());
         }
 
         final boolean checked = Iterables.all(targets, predicate);

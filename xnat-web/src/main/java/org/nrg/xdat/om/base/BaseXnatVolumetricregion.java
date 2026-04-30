@@ -13,6 +13,7 @@ import org.nrg.xdat.om.base.auto.AutoXnatVolumetricregion;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -23,6 +24,9 @@ import java.util.List;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatVolumetricregion extends AutoXnatVolumetricregion {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatVolumetricregion(ItemI item)
 	{

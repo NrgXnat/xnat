@@ -8,7 +8,7 @@
  */
 package org.nrg.dcm;
 
-import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -20,5 +20,5 @@ public interface DicomFileNamer {
      * @param o DicomObject to be saved to a file.
      * @return filename to which the object should be saved
      */
-    String makeFileName(DicomObject o);
+    String makeFileName(Attributes attributes);
 }

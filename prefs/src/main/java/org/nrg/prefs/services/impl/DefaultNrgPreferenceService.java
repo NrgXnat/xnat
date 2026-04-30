@@ -57,7 +57,7 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService {
         if (defaultResolver != null) {
             _defaultResolver = defaultResolver;
         } else if (resolvers.size() == 1) {
-            _defaultResolver = new ArrayList<>(resolvers.values()).get(0);
+            _defaultResolver = new ArrayList<>(resolvers.values()).getFirst();
         } else {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You must have at least one preferences entity resolver instance marked as the default resolver for the application.");
         }

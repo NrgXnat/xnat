@@ -47,6 +47,6 @@ public class DE4FAnnotationProcessor extends NrgAbstractAnnotationProcessor<Dico
 
     @Override
     protected String getPropertiesName(final TypeElement element, final DicomEdit4Function function) {
-        return String.format("dicom-edit4/%s-function.properties", function.name());
+        return "dicom-edit4/%s-function.properties".formatted(function.name());
     }
 }

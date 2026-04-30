@@ -81,8 +81,8 @@ public abstract class FlattenedItemA implements FlattenedItemI{
 	}
 	
 	public static Date standardizeDate(Date d){
-		if(d instanceof Timestamp){
-			return DateUtils.toDate((Timestamp)d);
+		if(d instanceof Timestamp timestamp){
+			return DateUtils.toDate(timestamp);
 		}else{
 			return d;
 		}
@@ -605,8 +605,8 @@ public abstract class FlattenedItemA implements FlattenedItemI{
 	static Map<Number,Number> xft_version_map=Collections.synchronizedSortedMap(new TreeMap<Number,Number>());;
 	public synchronized static Number translateXFTVersion(Number o) {
 		final Long key;
-		if(o instanceof Long){
-			key=(Long)o;
+		if(o instanceof Long long1){
+			key=long1;
 		}else{
 			key=Long.valueOf(o.toString());
 		}
@@ -614,7 +614,7 @@ public abstract class FlattenedItemA implements FlattenedItemI{
 		Number n=xft_version_map.get(key);
 		if(n==null){
 			try {
-				n=(Number)PoolDBUtils.ReturnStatisticQuery(String.format("SELECT event_id FROM xdat_change_info WHERE xdat_change_info_id=%s",key.toString()), "event_id", null, null);
+				n=(Number)PoolDBUtils.ReturnStatisticQuery("SELECT event_id FROM xdat_change_info WHERE xdat_change_info_id=%s".formatted(key.toString()), "event_id", null, null);
 			} catch (Exception e) {}
 			
 			if(n==null && o instanceof Integer){

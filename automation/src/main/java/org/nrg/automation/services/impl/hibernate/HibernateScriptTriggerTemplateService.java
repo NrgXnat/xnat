@@ -13,9 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.entities.ScriptTriggerTemplate;
 import org.nrg.automation.repositories.ScriptTriggerTemplateRepository;
+import org.nrg.automation.services.AutomationService;
 import org.nrg.automation.services.ScriptTriggerTemplateService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,8 +31,12 @@ import java.util.List;
 @Service
 @Slf4j
 public class HibernateScriptTriggerTemplateService extends AbstractHibernateEntityService<ScriptTriggerTemplate, ScriptTriggerTemplateRepository> implements ScriptTriggerTemplateService {
-    @Value("${automation.enabled:true}")
-    private boolean automationEnabled;
+    private final boolean automationEnabled;
+
+    @Autowired
+    public HibernateScriptTriggerTemplateService(final AutomationService automationService) {
+        automationEnabled = automationService.getAutomationEnabled();
+    }
 
     @Override
     @Transactional

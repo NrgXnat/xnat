@@ -8,14 +8,13 @@
  */
 package org.nrg.dcm.edit;
 
-import java.util.Map;
-import java.util.Set;
-
 import com.google.common.collect.Sets;
-import org.dcm4che2.data.DicomObject;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.variables.Variable;
 import org.nrg.dicomtools.exceptions.AttributeException;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -44,12 +43,10 @@ public class Deletion extends AbstractOperation {
     public Action makeAction(final DicomObjectI dicomObject) throws AttributeException {
         return new Action() {
             public void apply() {
-
-                final DicomObject    dcm4che2Object = dicomObject.getDcm4che2Object();
-                final Iterable<Long> iterable       = pattern.apply(dcm4che2Object);
+                final Iterable<Long> iterable       = pattern.apply(dicomObject);
                 if (iterable != null) {
                     for (final long tag : iterable) {
-                        dcm4che2Object.remove((int)tag);
+                        dicomObject.delete((int)tag);
                     }
                 }
             }

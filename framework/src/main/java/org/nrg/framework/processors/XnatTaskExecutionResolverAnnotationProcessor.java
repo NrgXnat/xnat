@@ -47,7 +47,7 @@ public class XnatTaskExecutionResolverAnnotationProcessor extends NrgAbstractAnn
     @Override
     protected String getPropertiesName(final TypeElement element, final XnatTaskExecutionResolver resolver) {
     	final String resolverId = resolver.resolverId();
-        return String.format("META-INF/xnat/task/%s-xnat-task-execution-resolver.properties", resolverId);
+        return "META-INF/xnat/task/%s-xnat-task-execution-resolver.properties".formatted(resolverId);
     }
     
 }

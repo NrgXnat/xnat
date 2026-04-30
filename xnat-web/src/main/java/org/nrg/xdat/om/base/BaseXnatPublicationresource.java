@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.Serial;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +34,9 @@ import java.util.Map;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatPublicationresource extends AutoXnatPublicationresource {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatPublicationresource(ItemI item)
 	{

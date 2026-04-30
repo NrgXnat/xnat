@@ -1,37 +1,37 @@
 rootProject.name = 'xnat-monorepo'
 
-// Layer 1: Foundation
+// Foundation
 include 'parent'
 include 'test'
 include 'framework'
 include 'transaction'
 include 'extattr'
 
-// Layer 2-3: Services
+// Services
 include 'prefs'
 include 'mail'
 include 'config'
 
-// Layer 4-5: DICOM Tools
+// DICOM Tools
 include 'dicomtools'
 include 'mizer'
 
-// Layer 6-7: Upper Services
+// Upper Services
 include 'notify'
 include 'automation'
 include 'dicom-image-utils'
 include 'xdat'
 include 'spawner'
 
-// Layer 8: dicom-xnat
+// dicom-xnat
 include 'dicom-xnat-sop'
 include 'dicom-xnat-util'
 
-// Layer 9: ANTLR Modules
+// ANTLR Modules
 include 'dicom-edit4'
 include 'dicom-edit6'
 
-// Layer 10: Web Application
+// Web Application
 include 'xnat-web'
 
 // Build plugin (for external XNAT plugins)

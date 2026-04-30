@@ -32,7 +32,7 @@ public class DisplayItemAction extends SecureAction {
         final String defaultReportIdentifierClass = XDAT.getSiteConfigurationProperty("UI.defaultReportIdentifier", "org.nrg.xdat.navigation.DefaultReportIdentifier");
 
         try {
-            final Object object = Class.forName(defaultReportIdentifierClass).newInstance();
+            final Object object = Class.forName(defaultReportIdentifierClass).getDeclaredConstructor().newInstance();
             if (object instanceof DefaultReportIdentifierI) {
                 data.setScreenTemplate(((DefaultReportIdentifier) object).identifyReport(data, context));
             }
@@ -46,7 +46,11 @@ public class DisplayItemAction extends SecureAction {
 
     public static String GetReportScreen(final SchemaElementI se) {
         final String templateName = "XDATScreen_report_" + se.getSQLName() + ".vm";
-        return Velocity.resourceExists("/screens/" + templateName) ? templateName : "DefaultReport.vm";
+        if(Velocity.resourceExists("/screens/" + templateName)){
+            return templateName;
+        }else{
+            return "DefaultReport.vm";
+        }
     }
 
     public static String GetReportScreen(final String elementName) throws XFTInitException, ElementNotFoundException {

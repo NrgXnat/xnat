@@ -9,19 +9,17 @@
 
 package org.nrg.dicom.dicomedit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
-import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.tags.TagPath;
 import org.nrg.dicom.mizer.tags.TagPrivate;
 import org.nrg.dicom.mizer.tags.TagPublic;
 import org.nrg.dicom.mizer.tags.TagSequence;
-import org.nrg.dicom.mizer.variables.Variable;
-
-import java.io.ByteArrayInputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -145,7 +143,7 @@ public class TestAssignmentStatement {
         src_dobj.putString(s0, "s0");
 
         assertEquals(src_dobj.getString(s0), "s0");
-        assertNull(src_dobj.getString(s1));
+        assertTrue(StringUtils.isEmpty(src_dobj.getString(s1)));
 
         final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(ASSIGN_TO_PUBLIC_TAG_IN_SEQ_FROM_STRING));
         final DicomObjectI result_dobj = sa.apply(src_dobj).getDicomObject();
@@ -168,16 +166,16 @@ public class TestAssignmentStatement {
         int[] s = {0x00210010};
         int[] s0 = {0x00211001, 0, 0x00100010};
         int[] s1 = {0x00211001, 1, 0x00100010};
-        assertEquals(src_dobj.getString(s), "PVT ID");
-        assertEquals(src_dobj.getString(s0), "s0");
-        assertEquals(src_dobj.getString(s1), "s1");
+        assertEquals("PVT ID", src_dobj.getString(s));
+        assertEquals("s0", src_dobj.getString(s0));
+        assertEquals("s1", src_dobj.getString(s1));
 
         final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(ASSIGN_TO_PVT_TAG_IN_SEQ_FROM_STRING));
         final DicomObjectI result_dobj = sa.apply(src_dobj).getDicomObject();
 
-        assertEquals(result_dobj.getString(s), "PVT ID");
-        assertEquals(result_dobj.getString(s0), "s0");
-        assertEquals(result_dobj.getString(s1), "Assigned string.");
+        assertEquals("PVT ID", result_dobj.getString(s));
+        assertEquals("s0", result_dobj.getString(s0));
+        assertEquals("Assigned string.", result_dobj.getString(s1));
     }
 
     @Test
@@ -194,16 +192,15 @@ public class TestAssignmentStatement {
         int[] s = {0x00210010};
         int[] s0 = {0x00211001, 0, 0x00100010};
         int[] s1 = {0x00211001, 1, 0x00100010};
-        assertNull(src_dobj.getString(s));
-        assertNull(src_dobj.getString(s0));
-        assertNull(src_dobj.getString(s1));
-//        public static final String ASSIGN_TO_PVT_TAG_IN_SEQ_FROM_STRING = "(0021,{PVT ID}01)[1]/(0010,0010) := \"Assigned string.\" \n";
+        assertTrue(StringUtils.isEmpty(src_dobj.getString(s)));
+        assertTrue(StringUtils.isEmpty(src_dobj.getString(s0)));
+        assertTrue(StringUtils.isEmpty(src_dobj.getString(s1)));
 
         final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(ASSIGN_TO_PVT_TAG_IN_SEQ_FROM_STRING));
         final DicomObjectI result_dobj = sa.apply(src_dobj).getDicomObject();
 
         assertEquals(result_dobj.getString(s), "PVT ID");
-        assertNull(result_dobj.getString(s0));
+        assertTrue(StringUtils.isEmpty(src_dobj.getString(s0)));
         assertEquals(result_dobj.getString(s1), "Assigned string.");
     }
 

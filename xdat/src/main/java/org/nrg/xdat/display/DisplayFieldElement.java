@@ -33,7 +33,8 @@ import java.util.Map;
 public class DisplayFieldElement {
     @JsonIgnore
     private static final Logger logger = LoggerFactory.getLogger(DisplayFieldElement.class);
-	private String name = "";
+
+    private String name = "";
 	private String schemaElementName = "";
 	private String viewName = "";
 	private String viewColumn = "";
@@ -141,6 +142,7 @@ public class DisplayFieldElement {
     @JsonIgnore
     String fieldType = null;
 
+    @JsonIgnore
     public String getFieldType() {
         if (fieldType == null) {
             try {
@@ -162,6 +164,7 @@ public class DisplayFieldElement {
     @JsonIgnore
     private String standardizedPath = null;
 
+    @JsonIgnore
     public String getStandardizedPath() {
         if (standardizedPath == null) {
             standardizedPath = this.getSchemaElementName();
@@ -172,7 +175,7 @@ public class DisplayFieldElement {
                     SchemaFieldI f = SchemaElement.GetSchemaField(standardizedPath);
                     if (f.isReference()) {
                         SchemaElementI foreign = f.getReferenceElement();
-                        SchemaFieldI sf = (SchemaFieldI) foreign.getAllPrimaryKeys().get(0);
+                        SchemaFieldI sf = (SchemaFieldI) foreign.getAllPrimaryKeys().getFirst();
                         standardizedPath = standardizedPath + sf.getXMLPathString("");
                     }
                 } catch (FieldNotFoundException e) {
@@ -191,6 +194,7 @@ public class DisplayFieldElement {
     @JsonIgnore
     SchemaField sf = null;
 
+    @JsonIgnore
     public SchemaField getSchemaField() throws Exception {
         if (sf == null) {
             GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(getSchemaElementName());
@@ -212,6 +216,16 @@ public class DisplayFieldElement {
      */
     public void setXdatType(String xdatType) {
         this.xdatType = xdatType;
+    }
+
+    public DisplayFieldElement clone(){
+        DisplayFieldElement dfe = new DisplayFieldElement();
+        dfe.setName(this.getName());
+        dfe.setSchemaElementName(this.getSchemaElementName());
+        dfe.setXdatType(this.getXdatType());
+        dfe.setViewColumn(this.getViewColumn());
+        dfe.setViewName(this.getViewName());
+        return dfe;
     }
 }
 

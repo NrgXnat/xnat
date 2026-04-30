@@ -5,6 +5,7 @@ plugins {
 dependencies {
     api project(':mail')
 
+    runtimeOnly libs.activation.com.sun.javax.activation
     implementation libs.spring.orm
     implementation libs.spring.context
     implementation libs.hibernate.core

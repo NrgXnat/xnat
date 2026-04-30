@@ -1,12 +1,24 @@
 package org.nrg.dicom.mizer.objects;
 
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.*;
-import org.dcm4che2.io.DicomInputStream;
-import org.dcm4che2.io.DicomOutputStream;
+import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.ElementDictionary;
+import org.dcm4che3.data.Sequence;
+import org.dcm4che3.data.SpecificCharacterSet;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.DicomOutputStream;
+import org.dcm4che3.util.TagUtils;
+import org.dcm4che3.util.UIDUtils;
 import org.nrg.dicom.mizer.exceptions.MizerException;
-import org.nrg.dicom.mizer.tags.*;
 import org.nrg.dicom.mizer.tags.Tag;
+import org.nrg.dicom.mizer.tags.TagPath;
+import org.nrg.dicom.mizer.tags.TagPrivate;
+import org.nrg.dicom.mizer.tags.TagPrivateCreator;
+import org.nrg.dicom.mizer.tags.TagPublic;
+import org.nrg.dicom.mizer.tags.TagSequence;
 import org.nrg.dicom.mizer.values.Value;
 import org.nrg.dicom.mizer.visitors.AssignIfExistsDicomObjectVisitor;
 import org.nrg.dicom.mizer.visitors.DeleteDicomObjectVisitor;
@@ -15,14 +27,25 @@ import org.nrg.dicom.mizer.visitors.OrphanPvtCreatorIDExterminator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Period;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
-
-import static org.dcm4che2.util.TagUtils.isPrivateDataElement;
 
 /**
  * Instantiate concrete implementations of DicomObjectI.
@@ -53,6 +76,14 @@ public class DicomObjectFactory {
         return new MizerDicomObject(file);
     }
 
+
+    public static DicomObjectI newInstance(final File file, boolean includeBulkData) throws MizerException {
+        return new MizerDicomObject(file, includeBulkData);
+    }
+
+    public static DicomObjectI newInstance(final File file, int stopTag) throws MizerException {
+        return new MizerDicomObject(file, stopTag);
+    }
     /**
      * Create DicomObjectI representing DICOM object in {@link InputStream}.
      *
@@ -64,6 +95,9 @@ public class DicomObjectFactory {
         return new MizerDicomObject(inputStream);
     }
 
+    public static DicomObjectI newInstance(final InputStream inputStream, int stopTag) throws MizerException {
+        return new MizerDicomObject(inputStream, stopTag);
+    }
     /**
      * Create DicomObjectI from the provided dcm4che2 dicom object and match file.
      * <p>
@@ -77,7 +111,11 @@ public class DicomObjectFactory {
      * @param dicomObject The DICOM object to be processed.
      */
     public static DicomObjectI newInstance(final File matchFile, final DicomObject dicomObject) {
-        return new MizerDicomObject(dicomObject);
+        try {
+            return new MizerDicomObject(dicomObject);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -89,7 +127,11 @@ public class DicomObjectFactory {
      * @param dicomObject The DICOM object to be processed.
      */
     public static DicomObjectI newInstance(final DicomObject dicomObject) {
-        return new MizerDicomObject(dicomObject);
+        try {
+            return new MizerDicomObject(dicomObject);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -97,15 +139,24 @@ public class DicomObjectFactory {
      */
     public static class MizerDicomObject implements DicomObjectI {
 
-        private DicomObject dobj;
+        private Attributes dataset;
         private final DeleteDicomObjectVisitor deleteVisitor = new DeleteDicomObjectVisitor();
+
+        public MizerDicomObject(DicomObject dicomObject) throws Exception {
+            this(Dcm4cheConvert.toDcm4che3Attributes(dicomObject));
+        }
 
         /**
          * Create an empty object.
          */
         public MizerDicomObject() {
-            this.dobj = new BasicDicomObject();
+            this.dataset = new Attributes();
         }
+
+        public MizerDicomObject(Attributes dataset) {
+            this.dataset = dataset;
+        }
+
 
         /**
          * Create from the DICOM object in file.
@@ -113,35 +164,71 @@ public class DicomObjectFactory {
          * @param file DICOM object file.
          * @throws MizerException on error.
          */
+        public MizerDicomObject(File file, boolean includeBulkData) throws MizerException {
+            try (final InputStream fin = getInputStream(file)) {
+                loadAttributes(fin, includeBulkData);
+            } catch (IOException e) {
+                throw new MizerException(e);
+            }
+        }
+
         public MizerDicomObject(File file) throws MizerException {
-            try (final InputStream fin = getInputStream(file); final DicomInputStream dis = new DicomInputStream(fin)) {
-                dobj = dis.readDicomObject();
+            this(file, true);
+        }
+
+        public MizerDicomObject(File file, int stopTag) throws MizerException {
+            try (final InputStream fin = getInputStream(file)) {
+                loadAttributes(fin, stopTag);
             } catch (IOException e) {
                 throw new MizerException(e);
             }
         }
-
-        /**
-         * Create from DICOM object in {@link InputStream}
-         *
-         * @param inputStream to DICOM object.
-         * @throws MizerException on error.
-         */
+            /**
+             * Create from DICOM object in {@link InputStream}
+             *
+             * @param inputStream to DICOM object.
+             * @throws MizerException on error.
+             */
         public MizerDicomObject(final InputStream inputStream) throws MizerException {
+            this(inputStream, true);
+        }
+
+        public MizerDicomObject(final InputStream inputStream, boolean includeBulkData) throws MizerException {
+            loadAttributes(inputStream, includeBulkData);
+        }
+
+        public MizerDicomObject(final InputStream inputStream, int stopTag) throws MizerException {
+            loadAttributes(inputStream, stopTag);
+        }
+
+        private void loadAttributes(InputStream inputStream, int stopTag) throws MizerException {
             try (final DicomInputStream dis = new DicomInputStream(inputStream)) {
-                dobj = dis.readDicomObject();
+                dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.NO);
+                Attributes fmi = dis.readFileMetaInformation();
+                dataset = dis.readDataset(stopTag);
+                if (fmi != null) {
+                    dataset.addAll(fmi);
+                }
             } catch (IOException e) {
                 throw new MizerException(e);
             }
         }
 
-        /**
-         * Create from dcm4che2 DicomObject.
-         *
-         * @param dicomObject dcm4che2 DICOM object.
-         */
-        public MizerDicomObject(final DicomObject dicomObject) {
-            this.dobj = dicomObject;
+        private void loadAttributes(InputStream inputStream, boolean includeBulkData) throws MizerException {
+            try (final DicomInputStream dis = new DicomInputStream(inputStream)) {
+                if (includeBulkData) {
+                    dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES); // or NO / URI / DEFERRED
+                } else {
+                    dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.NO); // or NO / URI / DEFERRED
+                }
+                Attributes fmi = dis.readFileMetaInformation();
+                dataset = dis.readDataset();
+                if (fmi != null) {
+                    dataset.addAll(fmi);
+                }
+            } catch (IOException e) {
+                throw new MizerException(e);
+            }
         }
 
         /**
@@ -157,12 +244,15 @@ public class DicomObjectFactory {
          */
         @Override
         public String getString(int tag) {
+            if (!dataset.contains(tag)) {
+                return null;
+            }
             int[] tagArray = new int[]{tag};
             final String value = getString(tagArray);
             if (logger.isDebugEnabled()) {
                 logger.debug("Got: {} = {}", TagPath.toString(tagArray), value);
             }
-            return value;
+            return value == null ? "null" : value;
         }
 
         /**
@@ -198,6 +288,7 @@ public class DicomObjectFactory {
          * {@inheritDoc}
          * All implementations of getString and getStrings ultimately rely on this method.
          */
+        private static final Set<VR> BYTES_VRS = new HashSet<>(Arrays.asList(VR.OB, VR.UN, VR.OW, VR.UC));
         @Override
         public String[] getStrings(final int... tagArray) {
             // tags with VR == UN do not have an implementation of getStrings(). Are there other VRs that do this?
@@ -208,14 +299,30 @@ public class DicomObjectFactory {
             if (isVR_UnAndPresentAndEmpty(tagArray)) {
                 return new String[]{};
             }
-            String[] strings;
-            try {
-                strings = dobj.getStrings(tagArray);
-            } catch (UnsupportedOperationException e) {
-                strings = new String[1];
-                strings[0] = dobj.getString(tagArray);
+            if (tagArray.length == 0) {
+                return new String[]{};
             }
-            return strings;
+            if (tagArray.length == 1) {
+                int tag = tagArray[0];
+                VR vr = dataset.getVR(tag);
+                if (BYTES_VRS.contains(vr)) {
+                    byte[] byteResult =getBytes(tag);
+                    if (byteResult[byteResult.length-1]==0) {
+                        byteResult = Arrays.copyOf(byteResult, byteResult.length-1);
+                    }
+                    return  new String[]{new String(byteResult,StandardCharsets.UTF_8)};
+                }
+                return dataset.getStrings(tagArray[0]);
+            }
+            Attributes current = Dcm4cheConvert.getNestedAttribute(dataset, tagArray);
+            if (current == null) {
+                return new String[]{};
+            }
+            VR vr = current.getVR(tagArray[tagArray.length - 1]);
+            if (BYTES_VRS.contains(vr)) {
+                return  new String[]{new String(Dcm4cheConvert.getNestedBytes(dataset, tagArray),StandardCharsets.UTF_8)};
+            }
+            return Dcm4cheConvert.getNestedStrings(dataset, tagArray);
         }
 
         /**
@@ -233,7 +340,11 @@ public class DicomObjectFactory {
          */
         @Override
         public byte[] getBytes(int tag) {
-            return dobj.getBytes(tag);
+            try {
+                return dataset.getBytes(tag);
+            } catch (IOException e) {
+                return null;
+            }
         }
 
         /**
@@ -253,7 +364,7 @@ public class DicomObjectFactory {
                     logger.debug("setting bytes with VR UN.");
                     break;
             }
-            dobj.putBytes(tag, vr, b);
+            dataset.setBytes(tag, vr, b);
         }
 
         /**
@@ -277,29 +388,42 @@ public class DicomObjectFactory {
         }
 
         private VR vr(int tag) {
-            // get existing VR if present
-            VR vr = (dobj.get(tag) != null) ? dobj.get(tag).vr() : null;
+            VR vr = dataset.getVR(tag);
             if (vr == null) {
-                // look up known value. UN if not found.
-                vr = (dobj.vrOf(tag) != null) ? dobj.vrOf(tag) : VR.UN;
+                vr = ElementDictionary.getStandardElementDictionary().vrOf(tag);
+                if (vr == null) {
+                    vr = VR.UN; // Unknown
+                }
             }
             return vr;
         }
 
-        private VR vr(int[] tag) {
-            // get existing VR if present
-            VR vr = (dobj.get(tag) != null) ? dobj.get(tag).vr() : null;
-            if (vr == null) {
-                // look up known value. UN if not found.
-                vr = (dobj.vrOf(tag[tag.length - 1]) != null) ? dobj.vrOf(tag[tag.length - 1]) : VR.UN;
+        private VR vr(int[] tagPath) {
+            Attributes current = dataset;
+            for (int i = 0; i < tagPath.length - 1; i++) {
+                current = current.getNestedDataset(tagPath[i]);
+                if (current == null) {
+                    break;
+                }
             }
+
+            VR vr = (current != null) ? current.getVR(tagPath[tagPath.length - 1]) : null;
+
+            if (vr == null) {
+                int lastTag = tagPath[tagPath.length - 1];
+                vr = ElementDictionary.getStandardElementDictionary().vrOf(lastTag);
+                if (vr == null) {
+                    vr = VR.UN;
+                }
+            }
+
             return vr;
         }
 
         private VR vr(String vrString) {
             switch (vrString) {
                 case "UN_SIEMENS":
-                    return VR.UN_SIEMENS;
+                    return VR.UN;
                 case "AS":
                     return VR.AS;
                 case "AT":
@@ -324,6 +448,18 @@ public class DicomObjectFactory {
                     return VR.LT;
                 case "OB":
                     return VR.OB;
+                case "OD":
+                    return VR.OD;
+                case "OL":
+                    return VR.OL;
+                case "OV":
+                    return VR.OV;
+                case "SV":
+                    return VR.SV;
+                case "UV":
+                    return VR.UV;
+                case "UC":
+                    return VR.UC;
                 case "OF":
                     return VR.OF;
                 case "OW":
@@ -367,7 +503,7 @@ public class DicomObjectFactory {
          */
         @Override
         public Optional<Period> getAge(int tag) {
-            String ageString = dobj.getString(tag);
+            String ageString = dataset.getString(tag);
             if (StringUtils.isEmpty(ageString)) {
                 return Optional.empty();
             }
@@ -396,7 +532,7 @@ public class DicomObjectFactory {
          */
         @Override
         public int resolvePrivateTag(int tag, String pvtCreator, boolean create) {
-            return dobj.resolveTag(tag, pvtCreator, create);
+            return resolvePrivateTag(dataset, tag, pvtCreator, create);
         }
 
         /**
@@ -446,7 +582,7 @@ public class DicomObjectFactory {
          */
         @Override
         public void delete(int tag) {
-            dobj.remove(tag);
+            dataset.remove(tag);
         }
 
         /**
@@ -454,7 +590,13 @@ public class DicomObjectFactory {
          */
         @Override
         public void delete(int[] tags) {
-            dobj.remove(tags);
+            if (tags == null || tags.length < 1) return;
+
+            if (tags.length == 1) {
+                dataset.remove(tags[0]);
+                return;
+            }
+            Dcm4cheConvert.removeNestedTag(dataset, tags);
         }
 
         /**
@@ -462,7 +604,7 @@ public class DicomObjectFactory {
          */
         @Override
         public void deleteAllTags() {
-            dobj.clear();
+            dataset.clear();
         }
 
         /**
@@ -492,7 +634,11 @@ public class DicomObjectFactory {
          */
         @Override
         public DicomObject getDcm4che2Object() {
-            return dobj;
+            try {
+                return Dcm4cheConvert.toDcm4che2DicomObject(dataset);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         /**
@@ -502,7 +648,7 @@ public class DicomObjectFactory {
          */
         @Override
         public void addMetaHeader() {
-            dobj.putString(0x00020010, VR.UI, "1.2.840.10008.1.2.1");
+            dataset.setString(0x00020010, VR.UI, "1.2.840.10008.1.2.1");
         }
 
         /**
@@ -513,125 +659,177 @@ public class DicomObjectFactory {
             return new MizerDicomObject.DOIterator();
         }
 
+        public static int resolvePrivateTag(Attributes attrs, int tag, String privateCreator, boolean create) {
+            int group = TagUtils.groupNumber(tag);
+            int elementInBlock = TagUtils.elementNumber(tag) & 0x00FF;
+            if (!TagUtils.isPrivateGroup(tag)) {
+                throw new IllegalArgumentException("Not a valid private tag: " + TagUtils.toString(tag));
+            }
+            // 1. Find existed Private Creator ID
+            for (int creatorElementOffset = 0x0010; creatorElementOffset <= 0x00FF; creatorElementOffset++) {
+                int creatorTag = (group << 16) | creatorElementOffset;
+                if (attrs.contains(creatorTag)) {
+                    String existingCreator = attrs.getString(creatorTag);
+                    if (privateCreator.equals(existingCreator)) {
+                        // Found
+                        // XX (10-FF)，is creatorElementOffset low byte
+                        int blockIdentifier = creatorElementOffset & 0x00FF;
+                        return (group << 16) | (blockIdentifier << 8) | elementInBlock;
+                    }
+                }
+            }
+
+            // 2. If can't find and create is true，try to assign a new slot.
+            if (create) {
+                for (int creatorElementOffset = 0x0010; creatorElementOffset <= 0x00FF; creatorElementOffset++) {
+                    int creatorTag = (group << 16) | creatorElementOffset;
+                    if (!attrs.contains(creatorTag)) { // Find an unused slot
+                        // assign it to pvtCreator
+                        attrs.setString(creatorTag, VR.LO, privateCreator); // LO is the private creator ID VR
+
+                        // XX (10-FF)，is creatorElementOffset's low byte
+                        int blockIdentifier = creatorElementOffset & 0x00FF;
+                        return (group << 16) | (blockIdentifier << 8) | elementInBlock;
+                    }
+                }
+                // If no unused private creator's slot.
+                System.err.println("Could not allocate new private creator ID slot in group " +
+                        TagUtils.toHexString(group << 16) + " for creator: " + privateCreator);
+                return -1;
+            }
+            return -1;
+        }
         /**
          * {@inheritDoc}
          */
         @Override
         public Optional<int[]> resolveTagPath(TagPath tagPath) {
-            if (!tagPath.isSingular()) {
-                throw new IllegalArgumentException("TagPath must be singular");
-            }
-            List<Integer> tagArray = new ArrayList<>();
-            DicomObject item = dobj;
-            boolean create = false;
+                if (!tagPath.isSingular()) {
+                    throw new IllegalArgumentException("TagPath must be singular");
+                }
 
-            for (Tag t : tagPath.getTags()) {
-                if (t instanceof TagSequence) {
-                    TagSequence ts = (TagSequence) t;
-                    int itemNumber = ts.getItemNumberAsInt();
-                    Tag tag = ts.getTag();
-                    int theTag = t.asInt();
+                List<Integer> tagList = new ArrayList<>();
+                Attributes current = this.dataset;
 
-                    if (tag instanceof TagPrivate) {
-                        TagPrivate tagPrivate = (TagPrivate) tag;
-                        theTag = item.resolveTag(theTag, tagPrivate.getPvtCreatorID(), create);
-                        if (theTag == -1) {
+                for (Tag tagItem : tagPath.getTags()) {
+                    int resolvedTag;
+
+                    if (tagItem instanceof TagSequence) {
+                        TagSequence ts = (TagSequence) tagItem;
+                        Tag innerTag = ts.getTag();
+                        int itemNumber = ts.getItemNumberAsInt();
+                        if (TagUtils.isPrivateTag(innerTag.asInt())) {
+                            TagPrivate tp = (TagPrivate) innerTag;
+                            resolvedTag = resolvePrivateTag(current, tp.asInt(), tp.getPvtCreatorID(), false);
+                        } else {
+                            resolvedTag = innerTag.asInt();
+                        }
+                        Sequence seq = current.getSequence(resolvedTag);
+                        if (seq == null || seq.size() <= itemNumber) {
                             return Optional.empty();
                         }
-                    }
-                    DicomElement de = item.get(theTag);
-                    if (de == null) {
-                        return Optional.empty();
-                    }
-                    tagArray.add(theTag);
-                    if (hasItem(de, itemNumber)) {
-                        tagArray.add(itemNumber);
-                        item = de.getDicomObject(itemNumber);
+                        tagList.add(resolvedTag);
+                        tagList.add(itemNumber);
+                        current = seq.get(itemNumber); // drill down
+                    } else if (tagItem instanceof TagPrivate) {
+                        TagPrivate tp = (TagPrivate) tagItem;
+                        resolvedTag = resolvePrivateTag(current, tagItem.asInt(), tp.getPvtCreatorID(), false);
+                        if (!current.contains(resolvedTag)) {
+                            return Optional.empty();
+                        }
+                        tagList.add(resolvedTag);
+                    } else if (tagItem instanceof TagPrivateCreator) {
+                        TagPrivateCreator tpc = (TagPrivateCreator) tagItem;
+                        resolvedTag = resolvePrivateTag(current, tagItem.asInt(), tpc.getPvtCreatorID(), false);
+                        if (resolvedTag == -1) {
+                            return Optional.empty();
+                        }
+                        tagList.add(resolvedTag);
+                    } else if (tagItem instanceof TagPublic) {
+                        resolvedTag = tagItem.asInt();
+                        if (!current.contains(resolvedTag)) {
+                            return Optional.empty();
+                        }
+                        tagList.add(resolvedTag);
                     } else {
+                        logger.debug("Unsupported tag type: {}", tagItem);
                         return Optional.empty();
                     }
-                } else if (t instanceof TagPublic) {
-                    if (!item.contains(t.asInt())) {
-                        return Optional.empty();
-                    }
-                    tagArray.add(t.asInt());
-                } else if (t instanceof TagPrivateCreator) {
-                    TagPrivateCreator tpc = (TagPrivateCreator) t;
-                    int resolvedTag = item.resolveTag(t.asInt(), tpc.getPvtCreatorID(), create);
-                    if (resolvedTag == -1) {
-                        return Optional.empty();
-                    }
-                    tagArray.add(resolvedTag);
-                } else if (t instanceof TagPrivate) {
-                    TagPrivate tagPrivate = (TagPrivate) t;
-                    int resolvedTag = item.resolveTag(t.asInt(), tagPrivate.getPvtCreatorID(), create);
-                    if (resolvedTag == -1) {
-                        return Optional.empty();
-                    }
-                    if (!item.contains(resolvedTag)) {
-                        return Optional.empty();
-                    }
-                    tagArray.add(resolvedTag);
-                } else {
-                    logger.debug("Error resolving tag of unimplemented type: {}", t);
                 }
-            }
-            return Optional.of(TagPath.copyListToArray(tagArray));
-        }
 
-        private boolean hasItem(DicomElement de, int itemNumber) {
-            return itemNumber < de.countItems();
-        }
+                return Optional.of(tagList.stream().mapToInt(Integer::intValue).toArray());
+            }
 
         private int[] resolve(TagPath tagPath, boolean create) {
             List<Integer> tagArray = new ArrayList<>();
-            DicomObject tmpdobj = dobj;
+            Attributes currentAttrs = dataset;
 
-            for (Tag t : tagPath.getTags()) {
-                if (t instanceof TagSequence) {
-                    TagSequence ts = (TagSequence) t;
-                    Tag tag = ts.getTag();
-                    if (tag instanceof TagPrivate) {
-                        TagPrivate tagPrivate = (TagPrivate) tag;
-                        int resolvedTag = tmpdobj.resolveTag(tag.asInt(), tagPrivate.getPvtCreatorID(), create);
-                        if (resolvedTag == -1) {
-                            DicomElement de = tmpdobj.putSequence(tag.asInt());
-                            tmpdobj.putString(tagPrivate.getPvtCreatorIDTag(), VR.LO, tagPrivate.getPvtCreatorID());
-                            tmpdobj = de.getDicomObject();
-                            resolvedTag = tagPrivate.getPvtCreatorIDTag();
-                        }
-                        tagArray.add(resolvedTag);
-                        tagArray.add(ts.getItemNumberAsInt());
-                    } else if (tag instanceof TagPublic) {
-                        DicomElement de = tmpdobj.get(tag.asInt());
-                        if (de == null) {
-                            de = tmpdobj.putSequence(tag.asInt());
-                            de.addDicomObject(new BasicDicomObject());
-                        }
-                        tmpdobj = de.getDicomObject();
-                        tagArray.add(tag.asInt());
-                        tagArray.add(ts.getItemNumberAsInt());
+            for (Tag tag : tagPath.getTags()) {
+                if (tag instanceof TagSequence) {
+                    TagSequence ts = (TagSequence) tag;
+                    Tag nestedTag = ts.getTag();
+                    int tagCode = nestedTag.asInt();
+                    int itemIndex = ts.getItemNumberAsInt();
+                    if (nestedTag instanceof TagPrivate) {
+                        TagPrivate tagPrivate = (TagPrivate) nestedTag;
+                        dataset.setString(tagPrivate.getPvtCreatorIDTag(), VR.LO, tagPrivate.getPvtCreatorID());
                     }
-                } else if (t instanceof TagPublic) {
-                    tagArray.add(t.asInt());
-                } else if (t instanceof TagPrivateCreator) {
-                    TagPrivateCreator tpc = (TagPrivateCreator) t;
-                    int resolvedTag = tmpdobj.resolveTag(t.asInt(), tpc.getPvtCreatorID(), false);
-                    tagArray.add(resolvedTag);
-                } else if (t instanceof TagPrivate) {
-                    TagPrivate tagPrivate = (TagPrivate) t;
-                    int resolvedTag = tmpdobj.resolveTag(t.asInt(), tagPrivate.getPvtCreatorID(), true);
+                    Sequence seq = currentAttrs.getSequence(tagCode);
+                    if (seq == null) {
+                        if (create) {
+                            seq = currentAttrs.newSequence(tagCode, itemIndex + 1);
+                        } else {
+                            return null; // not found, and not allowed to create
+                        }
+                    }
+
+                    // Expand the sequence if needed
+                    while (seq.size() <= itemIndex) {
+                        seq.add(new Attributes());
+                    }
+
+                    currentAttrs = seq.get(itemIndex);
+                    tagArray.add(tagCode);
+                    tagArray.add(itemIndex);
+                } else if (tag instanceof TagPublic) {
+                    int tagCode = tag.asInt();
+                    tagArray.add(tagCode);
+                } else if (tag instanceof TagPrivateCreator) {
+                    TagPrivateCreator tpc = (TagPrivateCreator) tag;
+                    String creator = tpc.getPvtCreatorID();
+                    int baseTag = tag.asInt();
+                    int privateTag = resolvePrivateTag(currentAttrs, baseTag, creator, false);
+                    if (privateTag == -1) {
+                        if (create) {
+                            currentAttrs.setString(baseTag, VR.LO, creator);
+                            privateTag = resolvePrivateTag(currentAttrs, baseTag, creator, true);
+                        } else {
+                            return null;
+                        }
+                    }
+                    tagArray.add(privateTag);
+                } else if (tag instanceof TagPrivate) {
+                    TagPrivate tagPrivate = (TagPrivate) tag;
+                    int baseTag = tag.asInt();
+                    String creator = tagPrivate.getPvtCreatorID();
+                    int resolvedTag = resolvePrivateTag(currentAttrs, baseTag, creator, true);
                     if (resolvedTag == -1) {
-                        tmpdobj.putString(tagPrivate.getPvtCreatorIDTag(), VR.LO, tagPrivate.getPvtCreatorID());
-                        resolvedTag = tagPrivate.getPvtCreatorIDTag();
+                        if (create) {
+                            currentAttrs.setString(tagPrivate.getPvtCreatorIDTag(), VR.LO, creator);
+                            resolvedTag = resolvePrivateTag(currentAttrs, baseTag, creator, true);
+                        } else {
+                            return null;
+                        }
                     }
                     tagArray.add(resolvedTag);
                 } else {
-                    logger.debug("Error resolving tag of unimplemented type: {}", t);
+                    logger.warn("Unsupported Tag type: {}", tag.getClass());
                 }
             }
+
             return TagPath.copyListToArray(tagArray);
         }
+
 
         /**
          * {@inheritDoc}
@@ -648,8 +846,20 @@ public class DicomObjectFactory {
         @Override
         public Optional<DicomObjectI> getItem(TagPath tagPath) {
             if (tagPath.isSingular() && tagPath.isSequence()) {
-                DicomObject nestedDicomObject = dobj.getNestedDicomObject(tagPath.getTagsAsArray());
-                return (nestedDicomObject != null) ? Optional.of(new MizerDicomObject(nestedDicomObject)) : Optional.empty();
+                int[] tags = tagPath.getTagsAsArray();
+                if (tags.length < 2) {
+                    return Optional.empty();
+                }
+                int seqTag = tags[0];
+                int itemIndex = tags[1];
+
+                Sequence seq = dataset.getSequence(seqTag);
+                if (seq != null && itemIndex >= 0 && itemIndex < seq.size()) {
+                    Attributes itemAttrs = seq.get(itemIndex);
+                    if (itemAttrs != null) {
+                        return Optional.of(new MizerDicomObject(itemAttrs));
+                    }
+                }
             }
             return Optional.empty();
         }
@@ -659,11 +869,10 @@ public class DicomObjectFactory {
          */
         @Override
         public DicomObjectI getItem(int[] tags) {
-            try {
-                DicomObject nestedDicomObject = dobj.getNestedDicomObject(tags);
-                return (nestedDicomObject != null) ? new MizerDicomObject(nestedDicomObject) : null;
-            } catch (Exception e) {
-                logger.error("Error finding item {}", tags);
+            Attributes nested = Dcm4cheConvert.getNestedAttribute(dataset, tags);
+            if (nested != null) {
+                return new MizerDicomObject(nested);
+            } else {
                 return null;
             }
         }
@@ -689,8 +898,16 @@ public class DicomObjectFactory {
          */
         @Override
         public DicomElementI getElement(int tag) {
-            DicomElement element = dobj.get(tag);
-            return (element != null) ? new MizerDicomElement(element) : null;
+            if (!dataset.contains(tag)) {
+                return null;
+            }
+            return new MizerDicomElement(dataset, tag);
+        }
+
+        @Override
+        public DicomElementI getElement(int[] tags) {
+            Attributes nested = Dcm4cheConvert.getNestedAttribute(dataset, tags);
+            return new MizerDicomElement(nested, tags[tags.length-1]);
         }
 
         /**
@@ -698,7 +915,7 @@ public class DicomObjectFactory {
          */
         @Override
         public int putCreatorIDString(int tag, String pvtCreatorID, String value) {
-            int t = dobj.resolveTag(tag, pvtCreatorID, true);
+            int t = resolvePrivateTag(tag, pvtCreatorID, true);
             VR vr = vr(t);
             putString(t, vr, value);
             return t;
@@ -792,7 +1009,7 @@ public class DicomObjectFactory {
          * @param vr  the VR encoding to use
          * @param s   the string to be written.
          */
-        private void putString(int tag, VR vr, String s) {
+        public void putString(int tag, VR vr, String s) {
             putString(new int[]{tag}, vr, s);
         }
 
@@ -814,42 +1031,50 @@ public class DicomObjectFactory {
                 case "DA":
                 case "DS":
                 case "DT":
-                case "FD":
-                case "FL":
+
                 case "IS":
                 case "LO":
                 case "LT":
                 case "PN":
                 case "SH":
-                case "SL":
-                case "SS":
                 case "ST":
                 case "TM":
-                case "UL":
-                case "US":
                 case "UT":
                 case "UI":
                 case "UR":
-                    dobj.putString(tags, vr, s);
+                    setStrings(tags, vr, s);
                     break;
+
                 case "OF":
-                    // OF can be a stream of floats. There is not an established way to encode multiple floats in
-                    // a string, so we assume the string contains a single float. Throws NumberFormatException if
-                    // string is not a valid float.
-                    dobj.putFloat(tags, vr, Float.parseFloat(s));
+                case "FL":
+                case "OD":
+                case "FD":
+                case "OL":
+                case "SL":
+                case "UL":
+                case "OS":
+                case "SS":
+                case "US":
+                case "OV":
+                case "SV":
+                case "UV":
+                    // Numeric VRs can have VM>1, but dcm4che doesn't handle setting \-separated
+                    Dcm4cheConvert.setNestedString(dataset, tags, vr, s.split("\\\\"));
                     break;
+
                 case "OB":
                 case "OW":
+                case "UC":
                 case "UN":
                     // These VRs do not have a dcmche putString implementation since encoding their values in a string is
                     // fraught. Try something basic here.
-                    // OD, OL, OV, SV, UC, UV are unknown by dcm4che2
-                    dobj.putBytes(tags, vr, s.getBytes(StandardCharsets.UTF_8));
+                    // OD, OL, OV, SV, UC, UV are unknown by dcm4che2, but knowing by dcm4che5
+                    putBytes(tags, vr, s.getBytes(StandardCharsets.UTF_8));
                     break;
                 case "SQ":
                     // Create but do not write a value to sequence tags.
                     if (tags != null && tags.length > 0) {
-                        dobj.putSequence(tags[tags.length - 1]);
+                        dataset.newSequence(tags[tags.length - 1], 0);
                     }
                     break;
                 default:
@@ -859,12 +1084,30 @@ public class DicomObjectFactory {
             }
         }
 
+        public void putBytes(int[] tags, VR vr, byte[] value) {
+            if (tags == null || tags.length == 0) return;
+            if (tags.length == 1) {
+                dataset.setBytes(tags[0], vr, value);
+                return;
+            }
+            Dcm4cheConvert.setNestedBytes(dataset, tags, vr, value);
+        }
+
+        private void setStrings(int[] tags, VR vr, String s) {
+            if (tags == null || tags.length == 0) return;
+            if (tags.length == 1) {
+                dataset.setString(tags[0], vr, s);
+                return;
+            }
+            Dcm4cheConvert.setNestedString(dataset, tags, vr, s);
+        }
+
         /**
          * {@inheritDoc}
          */
         @Override
         public void removeTag(int tag) {
-            dobj.remove(tag);
+            dataset.remove(tag);
         }
 
         /**
@@ -872,7 +1115,7 @@ public class DicomObjectFactory {
          */
         @Override
         public void removePrivateTag(int tag, String pvtCreatorID) {
-            dobj.remove(dobj.resolveTag(tag, pvtCreatorID));
+            dataset.remove(resolvePrivateTag(tag, pvtCreatorID, false));
         }
 
         /**
@@ -880,17 +1123,27 @@ public class DicomObjectFactory {
          */
         @Override
         public void write(OutputStream os) throws MizerException {
-            try (final DicomOutputStream out = new DicomOutputStream(os)) {
-                String tsString = dobj.getString(0x00020010);
+            try {
+                String tsString = dataset.getString(org.dcm4che3.data.Tag.TransferSyntaxUID);
                 if (tsString == null) {
-                    dobj.putString(0x00020010, VR.UI, "1.2.840.10008.1.2.1"); // ExplicitVRLittleEndian
+                    tsString = "1.2.840.10008.1.2.1"; // Explicit VR Little Endian
+                    dataset.setString(org.dcm4che3.data.Tag.TransferSyntaxUID, VR.UI, tsString);
                 }
-                String sopClassUID = dobj.getString(0x00080016);
-                dobj.putString(0x00020002, VR.UI, sopClassUID);
-                String sopInstanceUID = dobj.getString(0x00080018);
-                dobj.putString(0x00020003, VR.UI, sopInstanceUID);
-                out.writeDicomFile(dobj);
-            } catch (IOException e) {
+                try (DicomOutputStream out = new DicomOutputStream(os, UID.ExplicitVRLittleEndian)) {
+                    String sopClassUID = dataset.getString(org.dcm4che3.data.Tag.SOPClassUID);
+                    String sopInstanceUID = dataset.getString(org.dcm4che3.data.Tag.SOPInstanceUID);
+
+                    if (sopClassUID == null) {
+                        dataset.setString(org.dcm4che3.data.Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
+                    }
+                    if (sopInstanceUID == null) {
+                        dataset.setString(org.dcm4che3.data.Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
+                    }
+                    Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(dataset);
+                    out.writeDataset(split.fmi, split.onlyDataset);
+                    dataset.addAll(split.fmi);
+                }
+            }catch (IOException e) {
                 throw new MizerException(e);
             }
         }
@@ -900,11 +1153,7 @@ public class DicomObjectFactory {
          */
         @Override
         public void read(InputStream is) throws MizerException {
-            try (final DicomInputStream dis = new DicomInputStream(is)) {
-                dobj = dis.readDicomObject();
-            } catch (IOException e) {
-                throw new MizerException(e);
-            }
+            loadAttributes(is, true);
         }
 
         /**
@@ -913,7 +1162,12 @@ public class DicomObjectFactory {
         @Override
         public void read(File f) throws MizerException {
             try (final InputStream fin = getInputStream(f); final DicomInputStream dis = new DicomInputStream(fin)) {
-                dobj = dis.readDicomObject();
+                dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES); // or NO / URI / DEFERRED
+                Attributes fmi = dis.readFileMetaInformation();
+                dataset = dis.readDataset();
+                if (fmi != null) {
+                    dataset.addAll(fmi);
+                }
             } catch (IOException e) {
                 throw new MizerException(e);
             }
@@ -924,7 +1178,7 @@ public class DicomObjectFactory {
          */
         @Override
         public boolean contains(int tag) {
-            return dobj.contains(tag);
+            return dataset.contains(tag);
         }
 
         /**
@@ -932,11 +1186,20 @@ public class DicomObjectFactory {
          */
         @Override
         public boolean contains(int[] tagArray) {
-            if (isEven(tagArray.length)) {
-                return dobj.getNestedDicomObject(tagArray) != null;
-            } else {
-                return dobj.get(tagArray) != null;
+            if (tagArray == null || tagArray.length == 0) {
+                return false;
             }
+            if (tagArray.length == 1) {
+                return dataset.contains(tagArray[0]);
+            }
+            Attributes current =Dcm4cheConvert.getNestedAttribute(dataset, tagArray);
+            if (current == null) {
+                return false;
+            }
+            if (tagArray.length %2 ==0) {
+                return true;
+            }
+            return current.contains(tagArray[tagArray.length - 1]);
         }
 
         /**
@@ -944,7 +1207,7 @@ public class DicomObjectFactory {
          */
         @Override
         public boolean contains(int tag, String pvtCreatorID) {
-            return dobj.contains(dobj.resolveTag(tag, pvtCreatorID));
+            return dataset.contains(resolvePrivateTag(tag, pvtCreatorID, true));
         }
 
         private boolean isEven(int i) {
@@ -957,16 +1220,19 @@ public class DicomObjectFactory {
         @Override
         public boolean contains(Tag tag) {
             if (tag instanceof TagPublic) {
-                return dobj.contains(tag.asInt());
+                return dataset.contains(tag.asInt());
             } else if (tag instanceof TagPrivate) {
                 TagPrivate tagPrivate = (TagPrivate) tag;
-                int tagInt = dobj.resolveTag(tagPrivate.asInt(), tagPrivate.getPvtCreatorID(), false);
-                return dobj.contains(tagInt);
+                int tagInt = resolvePrivateTag(tagPrivate.asInt(), tagPrivate.getPvtCreatorID(), false);
+                return dataset.contains(tagInt);
             } else if (tag instanceof TagSequence) {
                 TagSequence tagSequence = (TagSequence) tag;
-                DicomElement dicomElement = dobj.get(tagSequence.getTag().asInt());
-                if (dicomElement != null) {
-                    return (dicomElement.getDicomObject(tagSequence.getItemNumberAsInt()) != null);
+                List<Attributes> seq = dataset.getSequence(tagSequence.getTag().asInt());
+                if (seq != null) {
+                    int index = tagSequence.getItemNumberAsInt();
+                    if (index >= 0 && index < seq.size()) {
+                        return seq.get(index) != null;
+                    }
                 }
                 return false;
             }
@@ -986,7 +1252,7 @@ public class DicomObjectFactory {
          */
         @Override
         public String getPrivateCreator(int tag) {
-            return dobj.getPrivateCreator(tag);
+            return dataset.getPrivateCreator(tag);
         }
 
         /**
@@ -994,8 +1260,15 @@ public class DicomObjectFactory {
          */
         @Override
         public boolean isSequenceElement(int tag) {
-            DicomElement element = dobj.get(tag);
-            return element != null && element.hasItems();
+            if (!dataset.contains(tag)) {
+                return false;
+            }
+            VR vr = dataset.getVR(tag);
+            if (!VR.SQ.equals(vr)) {
+                return false;
+            }
+            List<Attributes> seq = dataset.getSequence(tag);
+            return seq != null;
         }
 
         /**
@@ -1003,7 +1276,7 @@ public class DicomObjectFactory {
          */
         @Override
         public boolean isEmpty() {
-            return dobj.isEmpty();
+            return dataset.isEmpty();
         }
 
         /**
@@ -1011,11 +1284,10 @@ public class DicomObjectFactory {
          */
         @Override
         public boolean isEmpty(int tag) {
-            DicomElement element = dobj.get(tag);
-            if (element == null) {
+            if (!dataset.contains(tag)) {
                 throw new IllegalArgumentException(String.format("tag is not present: 0x%08X", tag));
             }
-            return element.isEmpty();
+            return !dataset.containsValue(tag);
         }
 
         /**
@@ -1023,15 +1295,17 @@ public class DicomObjectFactory {
          */
         @Override
         public boolean isEmpty(int[] tagArray) {
-            DicomElement element = dobj.get(tagArray);
-            if (element == null) {
-                throw new IllegalArgumentException(String.format("tag is not present: %s", asStringOfHex(tagArray)));
+            if (tagArray == null || tagArray.length == 0) {
+                throw new IllegalArgumentException(String.format("tag is not present: 0x%08X", tagArray));
             }
-            return element.isEmpty();
-        }
-
-        private String asStringOfHex(int[] tagArray) {
-            return Arrays.stream(tagArray).boxed().map(Integer::toHexString).collect(Collectors.joining("/"));
+            if (tagArray.length == 1) {
+                return isEmpty(tagArray[0]);
+            }
+            Attributes attr = Dcm4cheConvert.getNestedAttribute(dataset, tagArray);
+            if (attr == null) {
+                throw new IllegalArgumentException(String.format("tag is not present: 0x%08X", tagArray));
+            }
+            return !attr.containsValue(tagArray[tagArray.length - 1]);
         }
 
         /**
@@ -1039,7 +1313,7 @@ public class DicomObjectFactory {
          */
         @Override
         public int size() {
-            return dobj.size();
+            return dataset.size();
         }
 
         /**
@@ -1047,7 +1321,7 @@ public class DicomObjectFactory {
          */
         @Override
         public void deleteAllPrivateTags() {
-            deleteAllPrivateTags(dobj);
+            deleteAllPrivateTags(dataset);
         }
 
         /**
@@ -1055,7 +1329,7 @@ public class DicomObjectFactory {
          */
         @Override
         public String toString() {
-            return dobj.toString();
+            return dataset.toString();
         }
 
         /**
@@ -1063,11 +1337,7 @@ public class DicomObjectFactory {
          */
         @Override
         public String toCompleteString() {
-            StringBuffer sb = new StringBuffer();
-            DicomObjectToStringParam dp = DicomObjectToStringParam.getDefaultParam();
-            DicomObjectToStringParam params = new DicomObjectToStringParam(dp.name, dp.valueLength, dp.numItems, 128, Integer.MAX_VALUE, dp.indent, dp.lineSeparator);
-            dobj.toStringBuffer(sb, params);
-            return sb.toString();
+            return dataset.toString();
         }
 
         /**
@@ -1079,79 +1349,95 @@ public class DicomObjectFactory {
             visitor.visit(this);
         }
 
+        @Override
+        public Attributes getAttributes() {
+            return dataset;
+        }
+
+        @Override
+        public SpecificCharacterSet getSpecificCharacterSet() {
+            return this.dataset.getSpecificCharacterSet();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MizerDicomObject that = (MizerDicomObject) o;
+            return Objects.equals(dataset, that.dataset);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(dataset);
+        }
+
         private InputStream getInputStream(final File f) throws IOException {
             final InputStream fin = new BufferedInputStream(new FileInputStream(f));
             return f.getName().endsWith("gz") ? new GZIPInputStream(fin) : fin;
         }
 
-        /**
-         * listPrivateBlock
-         * Return a list of all tags in the specified private block.
-         * Does not descend into sequences.
-         *
-         * @param dicomObject object under scrutiny.
-         * @param tag         tag specifying private block. Can be any tag in the private block including private-creator-id tag. Returned list is empty if tag is not Private.
-         * @return list of private tags in block, excluding private-creator-id tag. List is empty if there are no private tags in block or if specified tag is not a private tag.
-         */
-        private List<Integer> listPrivateBlock(DicomObject dicomObject, int tag) {
+        private List<Integer> getPrivateTagsInBlock(Attributes attrs, int privateCreatorTag) {
             List<Integer> privateTags = new ArrayList<>();
-            int privateCreatorID;
-            try {
-                privateCreatorID = Tag.getPrivateCreatorIDTag(tag);
-            } catch (IllegalArgumentException e) {
-                String msg = "Tag is not private: " + Integer.toHexString(tag);
-                logger.warn(msg, e);
+            if (!TagUtils.isPrivateCreator(privateCreatorTag)) {
                 return privateTags;
             }
-            int group = Tag.getGroup(privateCreatorID);
-            int block = Tag.getPrivateCreatorBlock(privateCreatorID);
+            int group = TagUtils.groupNumber(privateCreatorTag);
+            int block = TagUtils.elementNumber(privateCreatorTag);
 
-            for (Iterator<DicomElement> it = dicomObject.datasetIterator(); it.hasNext(); ) {
-                DicomElement de = it.next();
-                if (Tag.isPrivateDataTag(de.tag()) && !Tag.isPrivateCreatorDataTag(de.tag())) {
-                    if (group == Tag.getGroup(de.tag()) && block == Tag.getPrivateBlock(de.tag())) {
-                        privateTags.add(de.tag());
+            for (int tag : attrs.tags()) {
+                if(TagUtils.isPrivateTag(tag)) {
+                    if (TagUtils.groupNumber(tag) == group && (TagUtils.elementNumber(TagUtils.creatorTagOf(tag)) == block)) {
+                        privateTags.add(tag);
                     }
                 }
             }
             return privateTags;
         }
-
         /**
          * {@inheritDoc}
          */
         @Override
         public boolean isEmptyPrivateBlock(int tag) {
-            return Tag.isPrivateCreatorDataTag(tag) && listPrivateBlock(this.dobj, tag).isEmpty();
+            return Tag.isPrivateCreatorDataTag(tag) && getPrivateTagsInBlock(this.dataset, tag).isEmpty();
         }
 
-        private void deleteAllPrivateTags(org.dcm4che2.data.DicomObject dicomObject) {
+        private void deleteAllPrivateTags(Attributes attrs) {
+            List<Integer> privateTags = new ArrayList<>();
 
-            for (Iterator<DicomElement> it = dicomObject.datasetIterator(); it.hasNext(); ) {
-                DicomElement de = it.next();
-                if (isPrivateDataElement(de.tag())) {
-                    dicomObject.remove(de.tag());
-                } else if (de.hasItems() && (de.tag() != 0x7FE00010)) {
-                    for (int i = 0; i < de.countItems(); i++) {
-                        deleteAllPrivateTags(de.getDicomObject(i));
+            for (int tag : attrs.tags()) {
+                if (TagUtils.isPrivateGroup(tag)) {
+                    privateTags.add(tag);
+                } else if (attrs.contains(tag) && attrs.getVR(tag).equals(org.dcm4che3.data.VR.SQ) && tag != org.dcm4che3.data.Tag.PixelData) {
+                    Sequence seq = attrs.getSequence(tag);
+                    if (seq != null) {
+                        for (Attributes item : seq) {
+                            deleteAllPrivateTags(item);
+                        }
                     }
                 }
-
+            }
+            for (int tag : privateTags) {
+                attrs.remove(tag);
             }
         }
 
         private class DOIterator implements Iterator<DicomElementI> {
-
-            Iterator<DicomElement> iterator = dobj.iterator();
+            private final int[] allTags = dataset.tags();
+            private int index = 0;
 
             @Override
             public boolean hasNext() {
-                return iterator.hasNext();
+                return index < allTags.length;
             }
 
             @Override
             public DicomElementI next() {
-                return new MizerDicomElement(iterator.next());
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                int tag = allTags[index++];
+                return new MizerDicomElement(dataset, tag);
             }
 
             @Override
@@ -1162,54 +1448,10 @@ public class DicomObjectFactory {
 
     }
 
-    private static class MizerDicomElement implements DicomElementI {
+    private static class MizerDicomElement extends AbstractDicomElement implements DicomElementI {
 
-        private final DicomElement element;
-
-        public MizerDicomElement(final DicomElement element) {
-            this.element = element;
+        public MizerDicomElement(Attributes attrs, int tag) {
+            super(attrs, tag);
         }
-
-        @Override
-        public int tag() {
-            return element.tag();
-        }
-
-        public String tagString() {
-            return Integer.toHexString(element.tag());
-        }
-
-        @Override
-        public boolean hasItems() {
-            // dcm4che2 element.hasItems() would be better named canHaveItems().
-            // return element.hasItems();
-            return element.countItems() > 0;
-        }
-
-        @Override
-        public int countItems() {
-            return element.countItems();
-        }
-
-        @Override
-        public DicomObjectI getDicomObject(int i) {
-            return new MizerDicomObject(element.getDicomObject(i));
-        }
-
-        @Override
-        public void removeItem(int i) {
-            element.removeDicomObject(i);
-        }
-
-        @Override
-        public boolean isUID() {
-            return element.vr() == VR.UI;
-        }
-
-        @Override
-        public String getVRAsString() {
-            return element.vr().toString();
-        }
-
     }
 }

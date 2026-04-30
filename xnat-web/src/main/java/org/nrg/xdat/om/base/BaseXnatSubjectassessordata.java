@@ -20,6 +20,7 @@ import org.nrg.xft.utils.DateUtils;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 
 import java.io.File;
+import java.io.Serial;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -32,6 +33,9 @@ import java.util.Map;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatSubjectassessordata extends AutoXnatSubjectassessordata {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatSubjectassessordata(ItemI item)
 	{
@@ -61,7 +65,7 @@ public class BaseXnatSubjectassessordata extends AutoXnatSubjectassessordata {
                 ArrayList al = XnatSubjectdata.getXnatSubjectdatasByField("xnat:subjectData/ID",this.getSubjectId(),this.getUser(),false);
                 if (al.size()>0)
                 {
-                    subject = (XnatSubjectdata)al.get(0);
+                    subject = (XnatSubjectdata)al.getFirst();
                 }
             }
 	    }
@@ -85,9 +89,9 @@ public class BaseXnatSubjectassessordata extends AutoXnatSubjectassessordata {
         } else {
             try {
                 Object o = this.getDate();
-                if (o instanceof String)
+                if (o instanceof String string)
                 {
-                    Date expt_date = DateUtils.parseDateTime((String)o);
+                    Date expt_date = DateUtils.parseDateTime(string);
                     return s.getAge(expt_date);
                 }else{
                     Date expt_date = (Date) this.getDate();

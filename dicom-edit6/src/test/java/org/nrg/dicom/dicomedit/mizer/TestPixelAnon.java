@@ -1,7 +1,6 @@
 package org.nrg.dicom.dicomedit.mizer;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,7 +29,7 @@ public class TestPixelAnon {
     @Ignore
     public void testPixelAnon() throws MizerException {
         final DicomObjectI dicom          = DicomObjectFactory.newInstance(DICOM_TEST);
-        final DicomObject dcm4che2Object = dicom.getDcm4che2Object();
+        final DicomObjectI dcm4che2Object = dicom;
 
         assertEquals("head^DHead", dcm4che2Object.getString(Tag.StudyDescription));
         assertEquals("Sample Patient", dcm4che2Object.getString(Tag.PatientName));

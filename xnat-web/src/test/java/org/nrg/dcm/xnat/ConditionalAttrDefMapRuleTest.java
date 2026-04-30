@@ -34,7 +34,7 @@ public class ConditionalAttrDefMapRuleTest extends TestCase {
 	public void testGetTag() {
 		final Map<String,String> map = Collections.emptyMap();
 		final MapRule rule = new MapRule(I42, map);
-		assertEquals(I42, rule.getTags().get(0));
+		assertEquals(I42, rule.getTags().getFirst());
 	}
 
 	/**

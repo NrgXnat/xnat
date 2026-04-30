@@ -8,16 +8,21 @@
  */
 package org.nrg.dcm;
 
+import org.dcm4che3.data.Attributes;
+
 import java.util.SortedSet;
 
-import org.dcm4che2.data.DicomObject;
-
-/**
- * 
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
 public interface Extractor {
-    String extract(DicomObject o);
+    /**
+     * Extract a value from the provided DICOM dataset.
+     * @param attributes DICOM dataset
+     * @return Attribute value, or null if none can be extracted.
+     */
+    String extract(Attributes attributes);
+
+    /**
+     * Get the DICOM tags on which this extraction operation depends.
+     * @return DICOM tags
+     */
     SortedSet<Integer> getTags();
 }

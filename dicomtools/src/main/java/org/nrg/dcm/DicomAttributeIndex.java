@@ -8,15 +8,11 @@
  */
 package org.nrg.dcm;
 
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
 import org.nrg.attr.ConversionFailureException;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- */
 public interface DicomAttributeIndex {
-    String getAttributeName(DicomObject o);
+    String getAttributeName(Attributes attributes);
 
     /**
      * Returns the name of the column for the target attribute in the SQL database.
@@ -35,15 +31,33 @@ public interface DicomAttributeIndex {
      *
      * @return The tag path for the indicated object.
      */
-    Integer[] getPath(DicomObject context);
+    Integer[] getPath(Attributes context);
 
-    DicomElement getElement(DicomObject o);
+    /**
+     * Returns the value of the target attributes in the provided dataset.
+     * @param attributes DICOM dataset
+     * @return value of the provided attribute: joined by \\ if multiple values, null if undefined
+     * @throws ConversionFailureException
+     * Note: no instances actually throw this ConversionFailureException? may be deprecated
+     */
+    String getString(Attributes attributes) throws ConversionFailureException;
 
-    String getString(DicomObject o) throws ConversionFailureException;
+    /**
+     * Returns the value of the target attributes in the provided dataset.
+     * @param attributes DICOM dataset
+     * @return value of the provided attribute: joined by \\ if multiple values, provided default if undefined
+     * @throws ConversionFailureException
+     * Note: no instances actually throw this ConversionFailureException? may be deprecated
+     */
+    String getString(Attributes attributes, String defaultValue) throws ConversionFailureException;
 
-    String getString(DicomObject o, String defaultValue) throws ConversionFailureException;
+    /**
+     * Get all values for this attributes on this dataset.
+     * @param attributes dataset from which the attribute is to be extracted
+     * @return zero or more values, or null if the attribute can't be evaluated on this dataset
+     */
+    String[] getStrings(Attributes attributes);
 
-    String[] getStrings(DicomObject o);
 
     class Comparator implements java.util.Comparator<DicomAttributeIndex> {
         public int compare(final DicomAttributeIndex i0, final DicomAttributeIndex i1) {

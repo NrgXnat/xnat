@@ -13,7 +13,7 @@ import java.util.function.Function;
 @Accessors(prefix = "_")
 @Slf4j
 public abstract class AbstractDataExtractor<C extends XnatCache, K, V> implements DataExtractor<K, V> {
-    private static final Function<Type, Class<?>> TYPE_TO_CLASS = type -> (Class<?>) (type instanceof ParameterizedType ? ((ParameterizedType) type).getRawType() : type);
+    private static final Function<Type, Class<?>> TYPE_TO_CLASS = type -> (Class<?>) (type instanceof ParameterizedType pt ? pt.getRawType() : type);
 
     private final Class<K> _keyType;
     private final Class<V> _valueType;

@@ -56,9 +56,9 @@ public abstract class AbstractXnatResourceLocator implements XnatResourceLocator
             return null;
         }
         if (_patterns.size() > 1) {
-            log.debug("Resource requested, but multiple patterns are specified. Only retrieving resource matching first pattern: {}", _patterns.get(0));
+            log.debug("Resource requested, but multiple patterns are specified. Only retrieving resource matching first pattern: {}", _patterns.getFirst());
         }
-        return _resolver.getResource(_patterns.get(0));
+        return _resolver.getResource(_patterns.getFirst());
     }
 
     @Override

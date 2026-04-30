@@ -1,7 +1,5 @@
 package org.nrg.dicom.mizer.service.impl;
 
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.DicomObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -16,14 +14,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestMizerConfig.class)
@@ -80,9 +83,6 @@ public class BaseMizerServiceTest {
         // delegates to TestMizer whose anonymizeImpl() method always returns success with message.
         assertEquals(TestMizer.RESULT_MESSAGE, service.anonymize(dobj, scriptContext).getMessage());
         assertEquals(TestMizer.RESULT_MESSAGE, service.anonymize(dobj, Arrays.asList(scriptContext)).getMessage());
-
-        DicomObject dobj2 = new BasicDicomObject();
-        assertEquals(TestMizer.RESULT_MESSAGE, service.anonymize(dobj2, "project", "subject", "session", SCRIPT_STRING, ignoreRejection).getMessage());
 
         Properties properties = new Properties();
         // Attempt at adding script via properties doesn't work.

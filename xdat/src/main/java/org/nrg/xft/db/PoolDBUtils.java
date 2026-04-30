@@ -629,6 +629,9 @@ public class PoolDBUtils {
 						if (!(boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_HAS_ID, "cache_has_id", dbName, login)) {
 							PoolDBUtils.ExecuteNonSelectQuery(QUERY_ITEM_CACHE_ADD_ID, dbName, login);
 						}
+						if (!(boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_HAS_INDEX, "cache_has_index", dbName, login)) {
+							PoolDBUtils.ExecuteNonSelectQuery(QUERY_ITEM_CACHE_ADD_INDEX, dbName, login);
+						}
 					} else {
 						PoolDBUtils.ExecuteNonSelectQuery(QUERY_CREATE_ITEM_CACHE, dbName, login);
 					}
@@ -698,15 +701,37 @@ public class PoolDBUtils {
 
                 CreateCache(e.getDbName(),login);
 
-                itemString =(String)PoolDBUtils.ReturnStatisticQuery("SELECT contents FROM xs_item_cache WHERE elementName='" + rootElement + "' AND ids='" + ids + "';","contents",e.getDbName(),login);
+                // Use PreparedStatement to avoid SQL injection and eliminate string escaping overhead
+                try (Connection conn = XDAT.getDataSource().getConnection();
+                     PreparedStatement ps = conn.prepareStatement(
+                             "SELECT contents FROM xs_item_cache WHERE elementName=? AND ids=?")) {
+                    ps.setString(1, rootElement);
+                    ps.setString(2, ids);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) { itemString = rs.getString("contents"); }
+                    }
+                }
                 if (itemString==null){
                     itemString =(String)PoolDBUtils.ReturnStatisticQuery(functionQuery,functionName,e.getDbName(),login);
                     if(itemString!=null){
-                    	// itemString.replaceAll("\\\\", "\\\\\\\\") is to escape backslashes in Windows paths,
-						// "'", "''" is to replace single quotes with escaped single quotes, e.g. "O'Connor" becomes
-						// "O''Connor".
-                        final String query = "INSERT INTO xs_item_cache (elementName,ids,contents) VALUES ('" + rootElement + "','" + ids + "','" + itemString.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "''") + "');";
-                        PoolDBUtils.ExecuteNonSelectQuery(query, e.getDbName(), login);
+                        try (Connection conn = XDAT.getDataSource().getConnection();
+                             PreparedStatement ps = conn.prepareStatement(
+                                     "INSERT INTO xs_item_cache (elementName, ids, contents) VALUES (?, ?, ?) " +
+                                     "ON CONFLICT (elementname, ids) DO NOTHING")) {
+                            ps.setString(1, rootElement);
+                            ps.setString(2, ids);
+                            ps.setString(3, itemString);
+                            try {
+                                ps.executeUpdate();
+                            } catch (SQLException sqlEx) {
+                                logger.debug("ON CONFLICT INSERT failed (possibly no unique index), retrying as plain INSERT: {}", sqlEx.getMessage());
+                                try (PreparedStatement ps2 = conn.prepareStatement(
+                                        "INSERT INTO xs_item_cache (elementName, ids, contents) VALUES (?, ?, ?)")) {
+                                    ps2.setString(1, rootElement); ps2.setString(2, ids); ps2.setString(3, itemString);
+                                    ps2.executeUpdate();
+                                }
+                            }
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -808,14 +833,16 @@ public class PoolDBUtils {
 					}
                     CUSTOM_SEARCH_LOG_EXISTS=true;
                 }else{
-                    query = "CREATE TABLE xs_custom_searches"+
-                    "\n("+
-                    "\n  id serial,"+
-                    "\n  create_date timestamp DEFAULT now(),"+
-                    "\n  username VARCHAR(255),"+
-                    "\n  search_xml text,"+
-					"\n  random_id_string VARCHAR(255)"+
-                    "\n);";
+                    query = """
+                    CREATE TABLE xs_custom_searches
+                    (
+                      id serial,
+                      create_date timestamp DEFAULT now(),
+                      username VARCHAR(255),
+                      search_xml text,
+                      random_id_string VARCHAR(255)
+                    );\
+                    """;
 
                     PoolDBUtils.ExecuteNonSelectQuery(query, dbName, login);
 
@@ -1155,14 +1182,19 @@ public class PoolDBUtils {
 	private static final Pattern CANNOT_DROP_MESSAGE        = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
 	private static final String  QUERY_ITEM_CACHE_EXISTS    = "SELECT EXISTS(SELECT relname FROM pg_catalog.pg_class WHERE relname = LOWER('xs_item_cache')) AS cache_exists";
 	private static final String  QUERY_ITEM_CACHE_HAS_ID    = "SELECT EXISTS(SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'xs_item_cache' AND column_name = 'id') AS cache_has_id";
-	private static final String  QUERY_CREATE_ITEM_CACHE    = "CREATE TABLE xs_item_cache" +
-															  "\n(" +
-															  "\n  id BIGSERIAL PRIMARY KEY," +
-															  "\n  elementName VARCHAR(255) NOT NULL," +
-															  "\n  ids VARCHAR(255) NOT NULL," +
-															  "\n  create_date timestamp DEFAULT now()," +
-															  "\n  contents TEXT" +
-															  "\n);";
+	private static final String  QUERY_ITEM_CACHE_HAS_INDEX = "SELECT EXISTS(SELECT 1 FROM pg_indexes WHERE tablename = 'xs_item_cache' AND indexname = 'idx_xs_item_cache_lookup') AS cache_has_index";
+	private static final String  QUERY_ITEM_CACHE_ADD_INDEX = "CREATE UNIQUE INDEX IF NOT EXISTS idx_xs_item_cache_lookup ON xs_item_cache(elementName, ids)";
+	private static final String  QUERY_CREATE_ITEM_CACHE    = """
+                                                              CREATE TABLE xs_item_cache
+                                                              (
+                                                                id BIGSERIAL PRIMARY KEY,
+                                                                elementName VARCHAR(255) NOT NULL,
+                                                                ids VARCHAR(255) NOT NULL,
+                                                                create_date timestamp DEFAULT now(),
+                                                                contents TEXT
+                                                              );
+                                                              CREATE UNIQUE INDEX idx_xs_item_cache_lookup ON xs_item_cache(elementName, ids);\
+                                                              """;
 
 	private static Float VERSION = null;
 

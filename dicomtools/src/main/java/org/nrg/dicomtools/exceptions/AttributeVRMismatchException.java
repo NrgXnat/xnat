@@ -8,14 +8,13 @@
  */
 package org.nrg.dicomtools.exceptions;
 
-import org.dcm4che2.data.VR;
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.util.TagUtils;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  */
 public class AttributeVRMismatchException extends AttributeException {
-    public AttributeVRMismatchException(final int tag, final VR vr) {
+    public AttributeVRMismatchException(final int tag, final String vr) {
         super("Cannot use DICOM attribute " + TagUtils.toString(tag)
               + " -- uninterpretable type " + vr);
     }

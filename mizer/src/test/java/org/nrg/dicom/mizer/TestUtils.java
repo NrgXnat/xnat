@@ -1,7 +1,5 @@
 package org.nrg.dicom.mizer;
 
-import org.dcm4che2.data.SpecificCharacterSet;
-import org.dcm4che2.data.VR;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 
 import java.nio.charset.StandardCharsets;
@@ -115,8 +113,8 @@ public class TestUtils {
         }
     }
 
-    private static boolean isEven(int i) {
-        return (i | 1) > i;
+    private static boolean isEven(int number) {
+        return (number % 2) == 0;
     }
 
     public static void put(DicomObjectI dobj, TestSeqTagVM tag) {
@@ -124,11 +122,18 @@ public class TestUtils {
     }
 
     public static String encodeHex(String string) {
-        return VR.OB.toString(string.getBytes(StandardCharsets.UTF_8), false, new SpecificCharacterSet("ISO 8859-1"));
+        byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
+        return encodeHex(bytes);
     }
 
     public static String encodeHex(byte[] bytes) {
-        return VR.OB.toString(bytes, false, new SpecificCharacterSet("ISO 8859-1"));
+        if (bytes == null) return null;
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        sb.append(String.format("%02X", bytes[0]));
+        for (int i = 1; i < bytes.length; i++) {
+            sb.append('\\').append(String.format("%02X", bytes[i]));
+        }
+        return sb.toString();
     }
 
 }

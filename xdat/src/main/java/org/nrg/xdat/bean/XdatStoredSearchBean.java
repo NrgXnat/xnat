@@ -95,8 +95,8 @@ public class XdatStoredSearchBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void addSearchField(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatSearchFieldBean)
-			_SearchField.add((org.nrg.xdat.bean.XdatSearchFieldBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatSearchFieldBean bean)
+			_SearchField.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatSearchFieldBean");
 	}
@@ -139,8 +139,8 @@ public class XdatStoredSearchBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void addSearchWhere(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatCriteriaSetBean)
-			_SearchWhere.add((org.nrg.xdat.bean.XdatCriteriaSetBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatCriteriaSetBean bean)
+			_SearchWhere.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatCriteriaSetBean");
 	}
@@ -221,8 +221,8 @@ public class XdatStoredSearchBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void addAllowedUser(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatStoredSearchAllowedUserBean)
-			_AllowedUser.add((org.nrg.xdat.bean.XdatStoredSearchAllowedUserBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatStoredSearchAllowedUserBean bean)
+			_AllowedUser.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatStoredSearchAllowedUserBean");
 	}
@@ -265,8 +265,8 @@ public class XdatStoredSearchBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void addAllowedGroups_groupid(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatStoredSearchGroupidBean)
-			_AllowedGroups_groupid.add((org.nrg.xdat.bean.XdatStoredSearchGroupidBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatStoredSearchGroupidBean bean)
+			_AllowedGroups_groupid.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatStoredSearchGroupidBean");
 	}
@@ -344,10 +344,10 @@ public class XdatStoredSearchBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void setAllowDiffColumns(Object v){
-		if(v instanceof Boolean){
-			_AllowDiffColumns=(Boolean)v;
-		}else if(v instanceof String){
-			_AllowDiffColumns=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_AllowDiffColumns=boolean1;
+		}else if(v instanceof String string){
+			_AllowDiffColumns=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -369,10 +369,10 @@ public class XdatStoredSearchBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void setSecure(Object v){
-		if(v instanceof Boolean){
-			_Secure=(Boolean)v;
-		}else if(v instanceof String){
-			_Secure=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_Secure=boolean1;
+		}else if(v instanceof String string){
+			_Secure=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}

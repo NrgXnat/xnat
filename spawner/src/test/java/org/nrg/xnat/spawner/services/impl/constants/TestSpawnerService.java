@@ -38,15 +38,19 @@ import java.util.stream.Stream;
 @Service
 @Slf4j
 public class TestSpawnerService implements SpawnerService {
-    public static final String SIMPLE_YAML_RESOLVED    = "This isn't really YAML, just a string with references:\n" +
-                                                         " * This is from SIMPLE_YAML_ONE\n" +
-                                                         " * This is from SIMPLE_YAML_TWO\n" +
-                                                         " * This is from SIMPLE_YAML_THREE\n";
+    public static final String SIMPLE_YAML_RESOLVED    = """
+                                                         This isn't really YAML, just a string with references:
+                                                          * This is from SIMPLE_YAML_ONE
+                                                          * This is from SIMPLE_YAML_TWO
+                                                          * This is from SIMPLE_YAML_THREE
+                                                         """;
     public static final String SIMPLE_ID_ROOT          = "SIMPLE_ROOT";
-    public static final String COMPLEX_YAML_RESOLVED   = "This isn't really YAML, just a string with references:\n" +
-                                                         " * This is from COMPLEX_YAML_ONE, it includes COMPLEX_ONE_ONE, COMPLEX_ONE_TWO, and COMPLEX_ONE_THREE\n" +
-                                                         " * This is from COMPLEX_YAML_TWO, it includes COMPLEX_TWO_ONE, COMPLEX_TWO_TWO, and COMPLEX_TWO_THREE\n" +
-                                                         " * This is from COMPLEX_YAML_THREE, it includes COMPLEX_THREE_ONE, COMPLEX_THREE_TWO, and COMPLEX_THREE_THREE\n";
+    public static final String COMPLEX_YAML_RESOLVED   = """
+                                                         This isn't really YAML, just a string with references:
+                                                          * This is from COMPLEX_YAML_ONE, it includes COMPLEX_ONE_ONE, COMPLEX_ONE_TWO, and COMPLEX_ONE_THREE
+                                                          * This is from COMPLEX_YAML_TWO, it includes COMPLEX_TWO_ONE, COMPLEX_TWO_TWO, and COMPLEX_TWO_THREE
+                                                          * This is from COMPLEX_YAML_THREE, it includes COMPLEX_THREE_ONE, COMPLEX_THREE_TWO, and COMPLEX_THREE_THREE
+                                                         """;
     public static final String COMPLEX_ID_ROOT         = "COMPLEX_ROOT";
     public static final String SITE_INFO_YAML_RESOLVED = "siteInfo:\n" + "    label: Site Information\n" + "    type: panel\n" + "    controls:\n" + "       siteId:\n" + "           label: Site ID\n" + "           type: text\n" + "           id: site-id\n" + "           description: Identifies your XNAT site.\n" + "           placeholder: Enter your XNAT site ID...\n" + "           url: /xapi/services/prefs/siteId/{siteId}\n" + "           default: XNAT\n" + "           validation:\n" + "               required: true\n" + "               type: xnat-id\n" + "       siteUrl:\n" + "           label: Site Url\n" + "           type: url\n" + "           description: The root URL for the site. This is passed to external services.\n" + "           placeholder: Enter the URL for your XNAT site...\n" + "           value: https://cnda.wustl.edu\n" + "           validation:\n" + "               required: true\n" + "       siteDescription:\n" + "           label: Site Description\n" + "           type: composite\n" + "           selection: radio\n" + "           url: /data/services/prefs/{desc}\n" + "           children:\n" + "               siteDescriptionPage:\n" + "                   id: desc-page\n" + "                   label: Page\n" + "                   type: site.path\n" + "                   description: The page to display for the site description, e.g. /screens/site_description.vm.\n" + "                   value: /screens/site_description.vm\n" + "                   placeholder: Enter a page for your site description...\n" + "                   validation:\n" + "                       required: true\n" + "               siteDescriptionMarkdown:\n" + "                   id: desc-markdown\n" + "                   label: Text (Markdown)\n" + "                   type: markdown\n" + "                   tooltip: XNAT allows you to use GitHub-flavored Markdown to create and format your own site description. [&gt;&gt; View Tutorial](http://foobar)\n" + "                   description: Compose a site description without referencing a template or site page.\n" + "                   validation:\n" + "                       required: true\n" + "       landingPage:\n" + "           label: Landing Page\n" + "           type: site.path\n" + "           description: The page to display when the user logs in.\n" + "           value: /screens/QuickSearch.vm\n" + "           placeholder: Enter the default landing page...\n" + "           overrides:\n" + "               target: homePage\n" + "               type: checkbox\n" + "               position: right\n" + "               description: Use this as my home page.\n" + "               hideTarget: false\n" + "           validation:\n" + "               required: true\n" + "       homePage:\n" + "           label: Home Page\n" + "           type: site.path\n" + "           description: The page to display when the user clicks the home link.\n" + "           value: /screens/AdminUsers.vm\n" + "           placeholder: Enter the default home page...\n" + "           validation:\n" + "               required: true\n";
     public static final String SITE_ADMIN_ID_SITE_INFO = "siteInfo";
@@ -339,10 +343,12 @@ public class TestSpawnerService implements SpawnerService {
     private static final String                      SIMPLE_ID_ONE              = "SIMPLE_ONE";
     private static final String                      SIMPLE_ID_TWO              = "SIMPLE_TWO";
     private static final String                      SIMPLE_ID_THREE            = "SIMPLE_THREE";
-    private static final String                      SIMPLE_YAML_ROOT           = "This isn't really YAML, just a string with references:\n" +
-                                                                                  " * ${SIMPLE_ONE}\n" +
-                                                                                  " * ${SIMPLE_TWO}\n" +
-                                                                                  " * ${SIMPLE_THREE}\n";
+    private static final String                      SIMPLE_YAML_ROOT           = """
+                                                                                  This isn't really YAML, just a string with references:
+                                                                                   * ${SIMPLE_ONE}
+                                                                                   * ${SIMPLE_TWO}
+                                                                                   * ${SIMPLE_THREE}
+                                                                                  """;
     private static final String                      SIMPLE_YAML_ONE            = "This is from SIMPLE_YAML_ONE";
     private static final String                      SIMPLE_YAML_TWO            = "This is from SIMPLE_YAML_TWO";
     private static final String                      SIMPLE_YAML_THREE          = "This is from SIMPLE_YAML_THREE";
@@ -358,10 +364,12 @@ public class TestSpawnerService implements SpawnerService {
     private static final String                      COMPLEX_ID_THREE_ONE       = "COMPLEX_THREE_ONE";
     private static final String                      COMPLEX_ID_THREE_TWO       = "COMPLEX_THREE_TWO";
     private static final String                      COMPLEX_ID_THREE_THREE     = "COMPLEX_THREE_THREE";
-    private static final String                      COMPLEX_YAML_ROOT          = "This isn't really YAML, just a string with references:\n" +
-                                                                                  " * ${COMPLEX_ONE}\n" +
-                                                                                  " * ${COMPLEX_TWO}\n" +
-                                                                                  " * ${COMPLEX_THREE}\n";
+    private static final String                      COMPLEX_YAML_ROOT          = """
+                                                                                  This isn't really YAML, just a string with references:
+                                                                                   * ${COMPLEX_ONE}
+                                                                                   * ${COMPLEX_TWO}
+                                                                                   * ${COMPLEX_THREE}
+                                                                                  """;
     private static final String                      COMPLEX_YAML_ONE           = "This is from COMPLEX_YAML_ONE, it includes ${COMPLEX_ONE_ONE}, ${COMPLEX_ONE_TWO}, and ${COMPLEX_ONE_THREE}";
     private static final String                      COMPLEX_YAML_TWO           = "This is from COMPLEX_YAML_TWO, it includes ${COMPLEX_TWO_ONE}, ${COMPLEX_TWO_TWO}, and ${COMPLEX_TWO_THREE}";
     private static final String                      COMPLEX_YAML_THREE         = "This is from COMPLEX_YAML_THREE, it includes ${COMPLEX_THREE_ONE}, ${COMPLEX_THREE_TWO}, and ${COMPLEX_THREE_THREE}";

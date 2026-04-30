@@ -20,27 +20,35 @@ import java.io.Reader;
 @Slf4j
 public class XMLValidator {
     public void validateSchema(final String documentUrl) throws Exception {
-        final ValidationHandler handler = XDAT.getSerializerService().validateSchema(documentUrl, XFT.GetAllSchemaLocations(null));
+        final String schemaLocations = XFT.GetAllSchemaLocations(null);
+        log.debug("Validating schema from URL {} with schema locations: {}", documentUrl, schemaLocations);
+        final ValidationHandler handler = XDAT.getSerializerService().validateSchema(documentUrl, schemaLocations);
         if (!handler.assertValid()) {
             log.error("{} errors occurred while processing the XML document loaded from URI {}", handler.getErrors().size(), documentUrl);
-            throw handler.getErrors().get(0);
+            throw handler.getErrors().getFirst();
         }
     }
 
     @SuppressWarnings("unused")
     public ValidationHandler validateReader(final Reader reader) throws Exception {
-        return XDAT.getSerializerService().validateReader(reader, XFT.GetAllSchemaLocations(null));
+        final String schemaLocations = XFT.GetAllSchemaLocations(null);
+        log.debug("Validating reader with schema locations: {}", schemaLocations);
+        return XDAT.getSerializerService().validateReader(reader, schemaLocations);
     }
 
     public ValidationHandler validateInputStream(final InputStream inputStream) throws Exception {
-        return XDAT.getSerializerService().validateInputStream(inputStream, XFT.GetAllSchemaLocations(null));
+        final String schemaLocations = XFT.GetAllSchemaLocations(null);
+        log.debug("Validating input stream with schema locations: {}", schemaLocations);
+        return XDAT.getSerializerService().validateInputStream(inputStream, schemaLocations);
     }
 
     public void validateString(final String xml) throws Exception {
-        final ValidationHandler handler = XDAT.getSerializerService().validateString(xml, XFT.GetAllSchemaLocations(null));
+        final String schemaLocations = XFT.GetAllSchemaLocations(null);
+        log.debug("Validating XML string with schema locations: {}", schemaLocations);
+        final ValidationHandler handler = XDAT.getSerializerService().validateString(xml, schemaLocations);
         if (!handler.assertValid()) {
             log.error("{} errors occurred while processing the XML document:\n{}", handler.getErrors().size(), xml);
-            throw handler.getErrors().get(0);
+            throw handler.getErrors().getFirst();
         }
     }
 }

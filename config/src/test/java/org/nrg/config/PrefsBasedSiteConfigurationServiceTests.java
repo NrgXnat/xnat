@@ -65,7 +65,7 @@ public class PrefsBasedSiteConfigurationServiceTests {
         final Properties props = _service.getSiteConfiguration();
         assertNull(props.getProperty("prop2"));
         List<String> mockConfigFileLocations = _service.getConfigFilesLocations();
-        mockConfigFileLocations.set(0, mockConfigFileLocations.get(0).concat("/additionalProperties"));
+        mockConfigFileLocations.set(0, mockConfigFileLocations.getFirst().concat("/additionalProperties"));
         _service.updateSiteConfiguration(mockConfigFileLocations);
         props.clear();
         props.putAll(_service.getSiteConfiguration());
@@ -93,7 +93,7 @@ public class PrefsBasedSiteConfigurationServiceTests {
     @Test(expected = DuplicateConfigurationDetectedException.class)
     public void initSiteConfigurationFailsWhenDuplicateSiteConfigFileIsFound() throws SiteConfigurationException {
         final List<String> mockConfigFileLocations = _service.getConfigFilesLocations();
-        mockConfigFileLocations.add(mockConfigFileLocations.get(0));
+        mockConfigFileLocations.add(mockConfigFileLocations.getFirst());
         _service.updateSiteConfiguration(mockConfigFileLocations);
         _service.getSiteConfiguration();
     }
@@ -101,14 +101,14 @@ public class PrefsBasedSiteConfigurationServiceTests {
     @Test(expected = DuplicateConfigurationDetectedException.class)
     public void initSiteConfigurationFailsWhenDuplicateCustomConfigFileIsFound() throws SiteConfigurationException {
         final List<String> mockConfigFileLocations = _service.getConfigFilesLocations();
-        mockConfigFileLocations.add(mockConfigFileLocations.get(0).concat("/duplicateFiles"));
+        mockConfigFileLocations.add(mockConfigFileLocations.getFirst().concat("/duplicateFiles"));
         _service.updateSiteConfiguration(mockConfigFileLocations);
     }
 
     @Test(expected = DuplicateConfigurationDetectedException.class)
     public void initSiteConfigurationFailsWhenDuplicateCustomConfigPropertyIsFound() throws SiteConfigurationException {
         final List<String> mockConfigFileLocations = _service.getConfigFilesLocations();
-        mockConfigFileLocations.add(mockConfigFileLocations.get(0).concat("/duplicateProperties"));
+        mockConfigFileLocations.add(mockConfigFileLocations.getFirst().concat("/duplicateProperties"));
         _service.updateSiteConfiguration(mockConfigFileLocations);
     }
 

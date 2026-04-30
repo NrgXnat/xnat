@@ -10,6 +10,9 @@
 package org.nrg.dicom.mizer.objects;
 
 import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.SpecificCharacterSet;
+import org.dcm4che3.data.VR;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.tags.Tag;
 import org.nrg.dicom.mizer.tags.TagPath;
@@ -428,6 +431,8 @@ public interface DicomObjectI {
      */
     DicomElementI getElement(int tag);
 
+    DicomElementI getElement(int[] tagPath);
+
     /**
      * Put the string value to the specified tag.
      * The tag will be created if not present or updated. The VR will be that found in the dictionary, otherwise UN.
@@ -440,6 +445,16 @@ public interface DicomObjectI {
      */
     void putString(int tag, String value);
 
+    /**
+     * Put the string value to the specified tag using the given VR.
+     * The tag will be updated, or created if not present. The specified VR is used regardless of the tag's VR
+     * in the dictionary or current VR in the object.
+     *
+     * @param tag      to create or update.
+     * @param vr        the VR  to use.
+     * @param value    value to set.
+     */
+    void putString(int tag, VR vr, String value);
     /**
      * Put the string value to the specified tag using the given VR.
      * The tag will be updated, or created if not present. The specified VR is used regardless of the tag's VR
@@ -593,4 +608,8 @@ public interface DicomObjectI {
      * @return Dcm4che2 instance of a Dicom Object.
      */
     DicomObject getDcm4che2Object();
+
+    Attributes getAttributes();
+
+    SpecificCharacterSet getSpecificCharacterSet();
 }

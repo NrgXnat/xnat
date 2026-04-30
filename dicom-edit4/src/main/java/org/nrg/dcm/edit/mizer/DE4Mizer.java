@@ -61,8 +61,7 @@ public class DE4Mizer extends AbstractMizer {
      */
     @Override
     public Set<TagPath> getScriptTags(final MizerContext context) {
-        if (context instanceof MizerContextWithScript) {
-            final MizerContextWithScript scriptContext = (MizerContextWithScript) context;
+        if (context instanceof MizerContextWithScript scriptContext) {
             try (final InputStream is = scriptContext.getScriptInputStream()) {
                 final ScriptApplicator sa = new ScriptApplicator(is, context.getElements());
                 return sa.getScriptTags().stream().mapToInt(Math::toIntExact).mapToObj(TagPublic::new).map(TagPath::new).collect(Collectors.toSet());

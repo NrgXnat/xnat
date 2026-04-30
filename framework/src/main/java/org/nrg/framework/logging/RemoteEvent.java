@@ -73,8 +73,8 @@ public class RemoteEvent extends HashMap<String, String> {
     private void addProperties(final Properties properties) {
         for (String property : properties.stringPropertyNames()) {
             final Object value = properties.get(property);
-            if (value instanceof String) {
-                put(property, (String) value);
+            if (value instanceof String string) {
+                put(property, string);
             } else {
                 try {
                     put(property, _mapper.writeValueAsString(value));

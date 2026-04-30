@@ -8,7 +8,7 @@
  */
 package org.nrg.dcm.xnat;
 
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.nrg.attr.LabeledAttrDef;
 import org.nrg.attr.ValueJoiningAttrDef;
 import org.nrg.dcm.AttrDefs;

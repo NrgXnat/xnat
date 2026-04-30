@@ -22,7 +22,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FieldMapping;
 
 import java.io.File;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 public class XDATScreen_uploadCSV extends SecureScreen {
@@ -35,7 +35,7 @@ public class XDATScreen_uploadCSV extends SecureScreen {
         final UserI user = XDAT.getUserDetails();
         assert user != null;
 
-        final File   dir   = XDAT.getContextService().getBean(UserDataCache.class).getUserDataCacheFile(user, Paths.get("csv"), UserDataCache.Options.Folder);
+        final File   dir   = XDAT.getContextService().getBean(UserDataCache.class).getUserDataCacheFile(user, Path.of("csv"), UserDataCache.Options.Folder);
         final File[] files = dir.listFiles();
         if (files != null) {
             context.put("fms", Lists.transform(Arrays.asList(files), new Function<File, FieldMapping>() {

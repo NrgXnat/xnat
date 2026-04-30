@@ -537,10 +537,10 @@ public class DatabaseHelper {
             return new SqlParameter[0];
         }
         final Stream<String> stream;
-        if (parameters instanceof MapSqlParameterSource) {
-            stream = ((MapSqlParameterSource) parameters).getValues().keySet().stream();
-        } else if (parameters instanceof BeanPropertySqlParameterSource) {
-            stream = Arrays.stream(((BeanPropertySqlParameterSource) parameters).getReadablePropertyNames());
+        if (parameters instanceof MapSqlParameterSource source) {
+            stream = source.getValues().keySet().stream();
+        } else if (parameters instanceof BeanPropertySqlParameterSource source) {
+            stream = Arrays.stream(source.getReadablePropertyNames());
         } else {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The submitted SqlParameterSource object is of an unknown type: " + parameters.getClass().getName());
         }

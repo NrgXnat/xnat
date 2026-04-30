@@ -1648,7 +1648,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 				XMLFieldData data = new XMLFieldData();
 				
 				data.setSqlName(getSQLName());
-				data.setLevels(new Integer(level));
+				data.setLevels(Integer.valueOf(level));
 				data.setAttribute(this.isAttribute());
 				data.setReference(true);
 				data.setXmlFieldName(this.getName());
@@ -1670,7 +1670,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 				XMLFieldData data = new XMLFieldData();
 				
 				data.setSqlName(getSQLName());
-				data.setLevels(new Integer(level));
+				data.setLevels(Integer.valueOf(level));
 				data.setAttribute(true);
 				data.setReference(false);
 				data.setXmlFieldName(this.getName());
@@ -1692,7 +1692,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 				XMLFieldData data = new XMLFieldData();
 				
 				data.setSqlName(getSQLName());
-				data.setLevels(new Integer(level));
+				data.setLevels(Integer.valueOf(level));
 				data.setAttribute(false);
 				data.setReference(false);
 				data.setXmlFieldName(this.getName());

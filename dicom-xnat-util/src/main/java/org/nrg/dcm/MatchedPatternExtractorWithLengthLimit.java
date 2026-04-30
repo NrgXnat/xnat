@@ -8,9 +8,8 @@
  */
 package org.nrg.dcm;
 
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.framework.utilities.SortedSets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +18,7 @@ import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * 
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
+
 public class MatchedPatternExtractorWithLengthLimit implements Extractor {
     private final Logger logger = LoggerFactory.getLogger(MatchedPatternExtractorWithLengthLimit.class);
     private final int tag, group, maxLength;
@@ -36,47 +31,43 @@ public class MatchedPatternExtractorWithLengthLimit implements Extractor {
         this.maxLength = maxLength;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.Extractor#extract(org.dcm4che2.data.DicomObject)
+    /**
+     * {@inheritDoc}
      */
-    public String extract(final DicomObject o) {
-        DicomElement el = o.get(tag);
-
-        if (el == null || el.isEmpty()) {
+    @Override
+    public String extract(final Attributes attributes) {
+        String tagValue;
+        try {
+            tagValue = attributes.getString(tag);
+        } catch (Exception e) {
+            logger.error("Unable to getString for tag " + Integer.toHexString(tag), e);
+            return null;
+        }
+        if (tagValue == null || tagValue.isEmpty()) {
             logger.trace("no match to {}: null or empty tag", this);
             return null;
+        }
+        tagValue = (maxLength < 0 || tagValue.length() <= maxLength) ? tagValue : tagValue.substring(0, maxLength);
+        final Matcher m = pattern.matcher(tagValue);
+        if (m.matches()) {
+            logger.trace("input {} matched rule {}", tagValue, this);
+            return m.group(group);
         } else {
-            String v;
-            try {
-                v = el.getString(o.getSpecificCharacterSet(), false);
-            } catch (Exception e) {
-                logger.error("Unable to getString for tag " + Integer.toHexString(tag), e);
-                return null;
-            }
-            v = (maxLength < 0 || v.length() <= maxLength)? v: v.substring(0, maxLength);
-            final Matcher m = pattern.matcher(v);
-            if (m.matches()) {
-                logger.trace("input {} matched rule {}", v, this);
-                return m.group(group);
-            } else {
-                logger.trace("input {} did not match rule {}", v, this);
-                return null;
-            }
+            logger.trace("input {} did not match rule {}", tagValue, this);
+            return null;
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.Extractor#getTags()
+    /**
+     * {@inheritDoc}
      */
+    @Override
     public SortedSet<Integer> getTags() {
         return SortedSets.singleton(tag);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#toString()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public String toString() {

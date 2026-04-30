@@ -1,14 +1,21 @@
 package org.nrg.dicom.mizer.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.dcm4che2.io.DicomCodingException;
-import org.dcm4che2.io.DicomInputStream;
-import org.nrg.dicom.mizer.objects.*;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.DicomStreamException;
+import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.AnonymizationResultError;
+import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.service.Mizer;
 import org.nrg.dicom.mizer.service.MizerContext;
 import org.nrg.transaction.operations.CallOnFile;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * Apply the given script to the given dicom file on the filesystem.
@@ -48,13 +55,13 @@ public class AnonymizeCallOnFileWithPixels extends CallOnFile<AnonymizationResul
              final DicomInputStream dicom = new DicomInputStream(buffer);
              final FileOutputStream output = new FileOutputStream(getFile())) {
 
-            final AnonymizationResult result = _mizer.anonymize(DicomObjectFactory.newInstance(dicom.readDicomObject()), _mizerContext);
+            final AnonymizationResult result = _mizer.anonymize(DicomObjectFactory.newInstance(dicom), _mizerContext);
             if (!(result instanceof AnonymizationResultReject) && !(result instanceof AnonymizationResultError)) {
                 result.getDicomObject().write( output);
             }
             result.releaseObjectFromMemory();
             return result;
-        } catch (DicomCodingException e) {
+        } catch (DicomStreamException e) {
             throw new IOException(e);
         }
     }

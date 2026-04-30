@@ -15,6 +15,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.PipelineNotFoundException;
 
+import java.io.Serial;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -24,6 +25,9 @@ import java.util.List;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseArcProjectDescendant extends AutoArcProjectDescendant {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseArcProjectDescendant(ItemI item)
 	{

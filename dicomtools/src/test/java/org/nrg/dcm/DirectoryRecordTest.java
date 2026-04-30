@@ -8,19 +8,20 @@
  */
 package org.nrg.dcm;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
-import java.util.HashMap;
-import java.text.SimpleDateFormat;
-
-import org.dcm4che2.data.Tag;
-
-import static org.junit.Assert.*;
-
+import org.dcm4che3.data.Tag;
 import org.junit.Test;
 
-import org.nrg.dcm.DirectoryRecord;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class DirectoryRecordTest {
   private final static SimpleDateFormat dicomDateFormat = new SimpleDateFormat("yyyyMMdd");

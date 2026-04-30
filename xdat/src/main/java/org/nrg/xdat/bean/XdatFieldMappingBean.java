@@ -92,10 +92,10 @@ public class XdatFieldMappingBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void setCreateElement(Object v){
-		if(v instanceof Boolean){
-			_CreateElement=(Boolean)v;
-		}else if(v instanceof String){
-			_CreateElement=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_CreateElement=boolean1;
+		}else if(v instanceof String string){
+			_CreateElement=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -117,10 +117,10 @@ public class XdatFieldMappingBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void setReadElement(Object v){
-		if(v instanceof Boolean){
-			_ReadElement=(Boolean)v;
-		}else if(v instanceof String){
-			_ReadElement=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_ReadElement=boolean1;
+		}else if(v instanceof String string){
+			_ReadElement=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -142,10 +142,10 @@ public class XdatFieldMappingBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void setEditElement(Object v){
-		if(v instanceof Boolean){
-			_EditElement=(Boolean)v;
-		}else if(v instanceof String){
-			_EditElement=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_EditElement=boolean1;
+		}else if(v instanceof String string){
+			_EditElement=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -167,10 +167,10 @@ public class XdatFieldMappingBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void setDeleteElement(Object v){
-		if(v instanceof Boolean){
-			_DeleteElement=(Boolean)v;
-		}else if(v instanceof String){
-			_DeleteElement=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_DeleteElement=boolean1;
+		}else if(v instanceof String string){
+			_DeleteElement=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -192,10 +192,10 @@ public class XdatFieldMappingBean extends BaseElement implements java.io.Seriali
 	 * @param v Value to Set.
 	 */
 	public void setActiveElement(Object v){
-		if(v instanceof Boolean){
-			_ActiveElement=(Boolean)v;
-		}else if(v instanceof String){
-			_ActiveElement=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_ActiveElement=boolean1;
+		}else if(v instanceof String string){
+			_ActiveElement=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}

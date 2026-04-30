@@ -89,8 +89,8 @@ public class HibernateSpawnerService extends AbstractHibernateEntityService<Spaw
     public SpawnerElement newEntity(final Object... parameters) {
         // If there are two parameters, they're using the constructor with a YAML string as the second parameter.
         if (parameters.length == 2) {
-            if (parameters[0] instanceof String && parameters[1] instanceof String) {
-                _worker.validateElement((String) parameters[0], (String) parameters[1]);
+            if (parameters[0] instanceof String string && parameters[1] instanceof String string1) {
+                _worker.validateElement(string, string1);
             } else {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The parameters passed into this method should be String, String, you submitted " + parameters[0].getClass().getName() + ", " + parameters[1].getClass().getName() + ".");
             }
@@ -326,11 +326,11 @@ public class HibernateSpawnerService extends AbstractHibernateEntityService<Spaw
                 return resource.toString();
             }
         }
-        if (resource instanceof FileSystemResource) {
-            return ((FileSystemResource) resource).getPath();
+        if (resource instanceof FileSystemResource systemResource) {
+            return systemResource.getPath();
         }
-        if (resource instanceof ClassPathResource) {
-            return ((ClassPathResource) resource).getPath();
+        if (resource instanceof ClassPathResource pathResource) {
+            return pathResource.getPath();
         }
         if (resource instanceof InputStreamResource) {
             try {

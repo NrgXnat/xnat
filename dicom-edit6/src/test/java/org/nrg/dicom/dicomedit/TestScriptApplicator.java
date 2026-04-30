@@ -9,8 +9,9 @@
 
 package org.nrg.dicom.dicomedit;
 
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.util.UIDUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.util.UIDUtils;
 import org.junit.Test;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultSeverity;
@@ -171,7 +172,7 @@ public class TestScriptApplicator {
 
         final BaseScriptApplicator s_use_hashUID   = BaseScriptApplicator.getInstance( bytes(S_USE_HASHUID));
         final DicomObjectI      do4_use_hashUID = s_use_hashUID.apply(FILE4).getDicomObject();
-        assertTrue(UIDUtils.isValidUID(do4_use_hashUID.getString(Tag.StudyInstanceUID)));
+        assertTrue(UIDUtils.isValid(do4_use_hashUID.getString(Tag.StudyInstanceUID)));
         assertFalse(do4.getString(Tag.StudyInstanceUID).equals(do4_use_hashUID.getString(Tag.StudyInstanceUID)));
 
     }
@@ -263,13 +264,14 @@ public class TestScriptApplicator {
         assertNotNull(do4.getString(new int[]{0x00081140, 0, 0x00081155}));
         assertNotNull(do4.getString(new int[]{0x00081140, 1, 0x00081155}));
         assertNotNull(do4.getString(new int[]{0x00081140, 2, 0x00081155}));
-        assertNull(do4.getString(new int[]{0x00081140, 3, 0x00081155}));
+        assertTrue(StringUtils.isEmpty(do4.getString(new int[]{0x00081140, 3, 0x00081155})));
+
         final DicomObjectI do4a = a1.apply(FILE4).getDicomObject();
         assertNotNull(do4a.getString(new int[]{0x00081140, 0, 0x00081155})); // SQ item 0 untouched
         assertNotNull(do4a.getString(new int[]{0x00081140, 0, 0x00081150})); // SQ item 1 still present
         assertNull(do4a.getString(new int[]{0x00081140, 1, 0x00081155}));   // but matching elements removed
         assertNotNull(do4a.getString(new int[]{0x00081140, 2, 0x00081155})); // SQ item 2 untouched
-        assertNull(do4a.getString(new int[]{0x00081140, 3, 0x00081155}));
+        assertTrue(StringUtils.isEmpty(do4a.getString(new int[]{0x00081140, 3, 0x00081155})));
     }
 
     @Test
@@ -279,13 +281,13 @@ public class TestScriptApplicator {
         assertNotNull(do4.getString(new int[]{0x00081140, 0, 0x00081155}));
         assertNotNull(do4.getString(new int[]{0x00081140, 1, 0x00081155}));
         assertNotNull(do4.getString(new int[]{0x00081140, 2, 0x00081155}));
-        assertNull(do4.getString(new int[]{0x00081140, 3, 0x00081155}));
+        assertTrue(StringUtils.isEmpty(do4.getString(new int[]{0x00081140, 3, 0x00081155})));
         final DicomObjectI do4a = a1.apply(FILE4).getDicomObject();
         assertNotNull(do4a.getString(new int[]{0x00081140, 0, 0x00081150})); // SQ item 0 still present
-        assertNull(do4a.getString(new int[]{0x00081140, 0, 0x00081155}));   // but matching elements removed
-        assertNull(do4a.getString(new int[]{0x00081140, 1, 0x00081155}));
-        assertNull(do4a.getString(new int[]{0x00081140, 2, 0x00081155}));
-        assertNull(do4a.getString(new int[]{0x00081140, 3, 0x00081155}));
+        assertTrue(StringUtils.isEmpty(do4a.getString(new int[]{0x00081140, 0, 0x00081155})));   // but matching elements removed
+        assertTrue(StringUtils.isEmpty(do4a.getString(new int[]{0x00081140, 1, 0x00081155})));
+        assertTrue(StringUtils.isEmpty(do4a.getString(new int[]{0x00081140, 2, 0x00081155})));
+        assertTrue(StringUtils.isEmpty(do4a.getString(new int[]{0x00081140, 3, 0x00081155})));
     }
 
     @Test
@@ -295,13 +297,13 @@ public class TestScriptApplicator {
         assertNotNull(do4.getString(new int[]{0x00081140, 0, 0x00081155}));
         assertNotNull(do4.getString(new int[]{0x00081140, 1, 0x00081155}));
         assertNotNull(do4.getString(new int[]{0x00081140, 2, 0x00081155}));
-        assertNull(do4.getString(new int[]{0x00081140, 3, 0x00081155}));
+        assertTrue(StringUtils.isEmpty(do4.getString(new int[]{0x00081140, 3, 0x00081155})));
         final DicomObjectI do4a = a1.apply(FILE4).getDicomObject();
         assertNotNull(do4a.getString(new int[]{0x00081140, 0, 0x00081150})); // SQ item 0 still present
-        assertNull(do4a.getString(new int[]{0x00081140, 0, 0x00081155}));   // but matching elements removed
-        assertNull(do4a.getString(new int[]{0x00081140, 1, 0x00081155}));
-        assertNull(do4a.getString(new int[]{0x00081140, 2, 0x00081155}));
-        assertNull(do4a.getString(new int[]{0x00081140, 3, 0x00081155}));
+        assertTrue(StringUtils.isEmpty(do4a.getString(new int[]{0x00081140, 0, 0x00081155})));   // but matching elements removed
+        assertTrue(StringUtils.isEmpty(do4a.getString(new int[]{0x00081140, 1, 0x00081155})));
+        assertTrue(StringUtils.isEmpty(do4a.getString(new int[]{0x00081140, 2, 0x00081155})));
+        assertTrue(StringUtils.isEmpty(do4a.getString(new int[]{0x00081140, 3, 0x00081155})));
     }
 
     @Test

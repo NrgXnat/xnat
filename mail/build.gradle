@@ -16,6 +16,6 @@ dependencies {
     api libs.mail.javax.mail
 
     testImplementation libs.junit.junit
-    testImplementation libs.mockito.all
+    testImplementation libs.mockito.core
     testImplementation libs.spring.test
 }

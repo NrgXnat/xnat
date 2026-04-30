@@ -14,11 +14,12 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.InputStreamSource;
 import org.springframework.core.io.Resource;
 
 public class XFTDataModel {
     public String    db           = "";
-    public Resource    resource = null;
+    public Resource source = null;
     public String    fileName     = "";
     public String    packageName  = "";
     public XFTSchema schema       = null;
@@ -48,7 +49,7 @@ public class XFTDataModel {
      * @return The resource.
      */
     public Resource getResource() {
-        return resource;
+        return source;
     }
 
     /**
@@ -56,7 +57,7 @@ public class XFTDataModel {
      *
      */
     public void setResource(Resource res) {
-        this.resource=res;
+        this.source=res;
     }
 
     /**
@@ -123,7 +124,7 @@ public class XFTDataModel {
 
     public String toString() {
         final XFTSchema schema = getSchema();
-        return schema != null ? schema.toString() : (StringUtils.isNotBlank(fileName) ? fileName : (StringUtils.isNotBlank(packageName) ? getPackageName() : (resource != null ? resource.toString() : "(Uninitialized)")));
+        return schema != null ? schema.toString() : (StringUtils.isNotBlank(fileName) ? fileName : (StringUtils.isNotBlank(packageName) ? getPackageName() : (source != null ? source.toString() : "(Uninitialized)")));
     }
 
     /**

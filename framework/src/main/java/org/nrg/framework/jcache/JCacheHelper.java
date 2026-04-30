@@ -115,7 +115,7 @@ public class JCacheHelper {
 
     public <K, V> Cache<K, V> getCache(final String cacheName) {
         final Optional<Pair<Class<?>, Class<?>>> optional = getCacheTypes(cacheName);
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
             return null;
         }
         final Pair<Class<?>, Class<?>> keyAndValueTypes = optional.get();

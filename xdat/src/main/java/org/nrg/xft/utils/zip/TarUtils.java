@@ -19,7 +19,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.utils.FileUtils;
 
 import java.io.*;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -132,7 +132,7 @@ public class TarUtils implements ZipI {
 
     @SuppressWarnings("unused")
     public File unGzip(final File f, final String dir, final boolean deleteZip) throws IOException {
-        File destF = Paths.get(dir, "upload.tar").toFile();
+        File destF = Path.of(dir, "upload.tar").toFile();
 
         try (final GZIPInputStream gis = new GZIPInputStream(new FileInputStream(f));
              final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destF))) {

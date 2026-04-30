@@ -30,7 +30,7 @@ public final class Uppercase implements ScriptFunction {
         if (args == null || args.size() == 0) {
             throw new ScriptEvaluationException(name + " requires one argument");
         }
-        return new MizerValueShim(args.get(0)) {
+        return new MizerValueShim(args.getFirst()) {
             public String on(final Map<Integer, String> map) throws ScriptEvaluationException {
                 return toUpper(getValue().on(map));
             }

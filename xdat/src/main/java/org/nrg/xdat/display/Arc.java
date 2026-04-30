@@ -23,7 +23,7 @@ public class Arc {
      *
      * @return A table containing the common fields.
      */
-    public Hashtable getCommonFields() {
+    public Hashtable<String, String> getCommonFields() {
         return commonFields;
     }
 

@@ -144,13 +144,13 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
 
         try {
             if (source instanceof StreamSource || StaxUtils.isStaxSource(source)) {
-                try (final InputStream stream = source instanceof StreamSource ? ((StreamSource) source).getInputStream() : new ByteArrayInputStream(StaxUtils.getXMLStreamReader(source).getText().getBytes())) {
+                try (final InputStream stream = source instanceof StreamSource ss ? ss.getInputStream() : new ByteArrayInputStream(StaxUtils.getXMLStreamReader(source).getText().getBytes())) {
                     final Document document = _serializer.parse(stream);
                     xmlElementName = document.getDocumentElement().getNodeName();
                     xmlSource      = getStringFromDocument(document);
                 }
-            } else if (source instanceof DOMSource) {
-                final Node     node     = ((DOMSource) source).getNode();
+            } else if (source instanceof DOMSource mSource) {
+                final Node     node     = mSource.getNode();
                 final Document document = getDocument();
                 document.adoptNode(node);
                 document.appendChild(node);
@@ -374,8 +374,8 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
          * @see java.lang.Object#equals(java.lang.Object)
          */
         public boolean equals(Object o) {
-            if (o instanceof ContextDescriptor) {
-                final ContextDescriptor un = ((ContextDescriptor) o);
+            if (o instanceof ContextDescriptor descriptor) {
+                final ContextDescriptor un = descriptor;
                 return className.equals(un.className);
             }
             return false;

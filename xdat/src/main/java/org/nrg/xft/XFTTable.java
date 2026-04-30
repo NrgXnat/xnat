@@ -717,7 +717,7 @@ public class XFTTable implements XFTTableI {
     public Object getFirstObject() {
         XFTTable t = cloneTable();
 
-        Object[] row = t.rows().get(0);
+        Object[] row = t.rows().getFirst();
         return row[0];
     }
 
@@ -918,8 +918,8 @@ public class XFTTable implements XFTTableI {
         for (int i = 0; i < this.numCols; i++) {
             ArrayList col = new ArrayList();
             col.add(this.getColumns()[i]);
-            if (cp.containsKey(col.get(0))) {
-                Map<String, String> props = cp.get(col.get(0));
+            if (cp.containsKey(col.getFirst())) {
+                Map<String, String> props = cp.get(col.getFirst());
                 if (props.containsKey("type")) {
                     col.add(props.get("type"));
                 }
@@ -932,12 +932,12 @@ public class XFTTable implements XFTTableI {
             for (int i = 0; i < this.numCols; i++) {
                 ArrayList<String> columnSpec = columnsWType.get(i);
                 try {
-                    if(row[i] instanceof Time){
+                    if(row[i] instanceof Time time){
                         //XNAT-7784 conversion to capture milliseconds in output
-                        java.util.Date d = new java.util.Date(((Time)row[i]).getTime());
-                        json.put(columnSpec.get(0), DateUtils.format(d,"HH:mm:ss.SSS"));
+                        java.util.Date d = new java.util.Date(time.getTime());
+                        json.put(columnSpec.getFirst(), DateUtils.format(d,"HH:mm:ss.SSS"));
                     }else{
-                        json.put(columnSpec.get(0), ValueParser(row[i]));
+                        json.put(columnSpec.getFirst(), ValueParser(row[i]));
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();

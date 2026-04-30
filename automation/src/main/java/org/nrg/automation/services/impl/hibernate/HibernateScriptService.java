@@ -20,6 +20,7 @@ import org.hibernate.envers.query.AuditEntity;
 import org.hibernate.envers.query.AuditQuery;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.repositories.ScriptRepository;
+import org.nrg.automation.services.AutomationService;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,13 +45,12 @@ import java.util.Map;
 @Transactional
 @Slf4j
 public class HibernateScriptService extends AbstractHibernateEntityService<Script, ScriptRepository> implements ScriptService {
+    private final boolean        _automationEnabled;
     private final SessionFactory _sessionFactory;
 
-    @Value("${automation.enabled:true}")
-    private boolean _automationEnabled;
-
     @Autowired
-    public HibernateScriptService(final SessionFactory sessionFactory) {
+    public HibernateScriptService(final AutomationService automationService, final SessionFactory sessionFactory) {
+        _automationEnabled = automationService.getAutomationEnabled();
         _sessionFactory = sessionFactory;
     }
 
@@ -94,9 +94,9 @@ public class HibernateScriptService extends AbstractHibernateEntityService<Scrip
             return null;
         }
         final Session session = _sessionFactory.getCurrentSession();
-        final Long    id      = (Long) session.createQuery("select id from Script where script_id='" + scriptId + "'").list().get(0);
+        final Long    id      = (Long) session.createQuery("select id from Script where script_id='" + scriptId + "'").list().getFirst();
         AuditReader   reader  = AuditReaderFactory.get(session);
-        return ((Object[]) reader.createQuery().forRevisionsOfEntity(Script.class, false, true).add(AuditEntity.id().eq(id)).add(AuditEntity.revisionNumber().eq(Integer.parseInt(version))).getResultList().get(0))[0];
+        return ((Object[]) reader.createQuery().forRevisionsOfEntity(Script.class, false, true).add(AuditEntity.id().eq(id)).add(AuditEntity.revisionNumber().eq(Integer.parseInt(version))).getResultList().getFirst())[0];
     }
 
     @Override
@@ -105,7 +105,7 @@ public class HibernateScriptService extends AbstractHibernateEntityService<Scrip
             return Collections.emptyList();
         }
         final Session     session             = _sessionFactory.getCurrentSession();
-        final Long        id                  = (Long) session.createQuery("select id from Script where script_id = :scriptId").setParameter("scriptId", scriptId).list().get(0);
+        final Long        id                  = (Long) session.createQuery("select id from Script where script_id = :scriptId").setParameter("scriptId", scriptId).list().getFirst();
         AuditReader       reader              = AuditReaderFactory.get(session);
         AuditQuery        query               = reader.createQuery().forRevisionsOfEntity(Script.class, false, true).add(AuditEntity.id().eq(id));
         List<?>           revisionsList       = query.getResultList();

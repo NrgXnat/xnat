@@ -22,6 +22,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.PipelineNotFoundException;
 import org.nrg.pipeline.utils.PipelineConstants;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -33,6 +34,9 @@ import java.util.List;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseArcProject extends AutoArcProject {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseArcProject(ItemI item)
 	{
@@ -59,7 +63,7 @@ public abstract class BaseArcProject extends AutoArcProject {
 	public Integer getPrearchiveCode() {
 		Integer i= super.getPrearchiveCode();
 		if(i==null){
-			return new Integer(0);
+			return Integer.valueOf(0);
 		}else{
 			return i;
 		}
@@ -69,7 +73,7 @@ public abstract class BaseArcProject extends AutoArcProject {
 	public Integer getQuarantineCode() {
 		Integer i= super.getQuarantineCode();
 		if(i==null){
-			return new Integer(0);
+			return Integer.valueOf(0);
 		}else{
 			return i;
 		}

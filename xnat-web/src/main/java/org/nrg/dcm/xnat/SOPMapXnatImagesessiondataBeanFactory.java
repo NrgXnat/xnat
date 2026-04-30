@@ -10,12 +10,9 @@ package org.nrg.dcm.xnat;
 
 import org.nrg.dcm.SOPModel;
 
-import static org.nrg.dcm.Attributes.SOPClassUID;
+import static org.nrg.dcm.NamedAttributes.SOPClassUID;
 import static org.nrg.dcm.SOPModel.LEAD_SOP_EXTRACTOR;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- */
 public final class SOPMapXnatImagesessiondataBeanFactory extends AttributeMapXnatImagesessiondataBeanFactory {
     /**
      * Creates a new instance of the factory class

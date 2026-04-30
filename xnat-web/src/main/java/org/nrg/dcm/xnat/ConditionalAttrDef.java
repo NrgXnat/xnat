@@ -59,7 +59,7 @@ public class ConditionalAttrDef extends AbstractConditionalAttrDef<String> {
             if (Strings.isNullOrEmpty(val)) {
                 logger.trace("no match for {} in {}", rule, m);
             } else {
-                v = String.format(format, val);
+                v = format.formatted(val);
                 logger.trace("{} obtained value {} from {} on {}",
                         new Object[]{ this, v, rule, m });
                 break;

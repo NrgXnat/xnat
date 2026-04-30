@@ -232,7 +232,7 @@ public class PreferenceBeanTests {
                           .extracting("scpId", "port", "enabled")
                           .containsOnly(tuple("XNAT", 8104, true), tuple("CCIR", 8104, true));
 
-        final boolean                 isZeroXnat = prefCs.get(0).getScpId().equals("XNAT");
+        final boolean                 isZeroXnat = prefCs.getFirst().getScpId().equals("XNAT");
         final BeanPrefsToolPreference xnat       = prefCs.get(isZeroXnat ? 0 : 1);
         final BeanPrefsToolPreference ccir       = prefCs.get(isZeroXnat ? 1 : 0);
 
@@ -348,9 +348,9 @@ public class PreferenceBeanTests {
             assertThat(value).isNotNull();
             assertThat(getter.getReturnType()).isAssignableFrom(value.getClass());
             try {
-                if (value instanceof List) {
+                if (value instanceof List<?> list) {
                     //noinspection unchecked,rawtypes
-                    assertThat(((List) value)).containsAll((List) getter.invoke(bean));
+                    assertThat(list).containsAll((List) getter.invoke(bean));
                 } else {
                     assertThat(getter.invoke(bean)).isEqualTo(value);
                 }

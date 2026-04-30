@@ -15,11 +15,14 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.scanAssessors.ScanAssessorI;
 import org.nrg.xnat.scanAssessors.ScanAssessorScanI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 import java.util.List;
 
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseXnatQcmanualassessordata extends AutoXnatQcmanualassessordata implements ScanAssessorI{
+    @Serial
+    private static final long serialVersionUID = 1;
 	public BaseXnatQcmanualassessordata(ItemI item) {
 		super(item);
 	}

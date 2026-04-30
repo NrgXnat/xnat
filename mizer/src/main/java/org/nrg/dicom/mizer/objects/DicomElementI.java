@@ -9,6 +9,9 @@
 
 package org.nrg.dicom.mizer.objects;
 
+import org.dcm4che3.data.SpecificCharacterSet;
+import org.dcm4che3.data.VR;
+
 /**
  * Interface representing elements within DICOM Ojbects.
  *
@@ -20,6 +23,7 @@ public interface DicomElementI {
 
     int tag();
 
+    byte[] getBytes();
     /**
      * @return  hex string representation of this element
      */
@@ -40,5 +44,16 @@ public interface DicomElementI {
     boolean isUID();
 
     String getVRAsString();
+    VR getVR();
 
+    /**
+     * Retrieve the value of this element, as a String.
+     * If the element has VR SQ, return null.
+     * If the element has VM > 1, concatenate all values, separated by \
+     *
+     * @return String representation of the value
+     */
+    String getValueAsString();
+    String[] getStrings();
+    SpecificCharacterSet getSpecificCharacterSet();
 }

@@ -186,7 +186,7 @@ public class LapStopWatch extends StopWatch {
      * @return The last lap recorded.
      */
     public Lap getLastLap() {
-        return laps.isEmpty() ? null : laps.get(laps.size() - 1);
+        return laps.isEmpty() ? null : laps.getLast();
     }
 
     /**
@@ -204,7 +204,7 @@ public class LapStopWatch extends StopWatch {
      * @return The last lap time recorded.
      */
     public long getLastLapNanoTime() {
-        return laps.isEmpty() ? 0 : laps.get(laps.size() - 1).getLapTime();
+        return laps.isEmpty() ? 0 : laps.getLast().getLapTime();
     }
 
     /**
@@ -279,14 +279,14 @@ public class LapStopWatch extends StopWatch {
         final int elapsedPadding = Math.max(getNumberFormattedDisplaySize(laps.get(size - 1).getOverallTime()), HEADER_ELAPSED_MS_LENGTH);
 
         final StringBuilder builder = new StringBuilder();
-        final String        header  = String.format("%" + indexPadding + "s  |  %" + lapPadding + "s  |  %" + elapsedPadding + "s  |  %s", HEADER_LAP, HEADER_LAP_MS, HEADER_ELAPSED_MS, HEADER_MESSAGE);
+        final String        header  = ("%" + indexPadding + "s  |  %" + lapPadding + "s  |  %" + elapsedPadding + "s  |  %s").formatted(HEADER_LAP, HEADER_LAP_MS, HEADER_ELAPSED_MS, HEADER_MESSAGE);
         builder.append(header).append("\n");
         builder.append(StringUtils.repeat("-", header.length())).append("\n");
 
         final String formatString = "%" + indexPadding + "d  |  %," + lapPadding + "d  |  %," + elapsedPadding + "d  |  %s\n";
         for (int index = 0; index < size; ) {
             final Lap lap = laps.get(index);
-            builder.append(String.format(formatString, ++index, lap.getLapTime(), lap.getOverallTime(), lap.getMessage()));
+            builder.append(formatString.formatted(++index, lap.getLapTime(), lap.getOverallTime(), lap.getMessage()));
         }
 
         return builder.toString();

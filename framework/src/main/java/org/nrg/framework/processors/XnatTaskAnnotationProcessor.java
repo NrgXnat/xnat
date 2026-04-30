@@ -49,6 +49,6 @@ public class XnatTaskAnnotationProcessor extends NrgAbstractAnnotationProcessor<
     @Override
     protected String getPropertiesName(final TypeElement element, final XnatTask task) {
         final String taskId = task.taskId();
-        return String.format("META-INF/xnat/task/%s-xnat-task.properties", taskId);
+        return "META-INF/xnat/task/%s-xnat-task.properties".formatted(taskId);
     }
 }

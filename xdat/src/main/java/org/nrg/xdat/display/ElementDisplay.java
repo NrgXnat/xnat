@@ -11,6 +11,7 @@
 package org.nrg.xdat.display;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.velocity.app.Velocity;
 import org.nrg.xdat.collections.DisplayFieldCollection;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 public class ElementDisplay extends DisplayFieldCollection {
     @JsonIgnore
     static Logger logger = Logger.getLogger(ElementDisplay.class);
+
     private String elementName = "";
     private String valueField = "";
     private String displayField = "";
@@ -490,7 +492,6 @@ public class ElementDisplay extends DisplayFieldCollection {
     }
 
     public String getVersionsXML() {
-
         StringBuilder sb = new StringBuilder();
         sb.append("<DisplayVersions ");
         sb.append("element_name=\"").append(this.getElementName()).append("\">");
@@ -673,6 +674,63 @@ public class ElementDisplay extends DisplayFieldCollection {
         }
 
         return null;
+    }
+
+    /**
+     * Checks if this ElementDisplay represents a project asset data type.
+     * @return true if the schema element extends xnat:abstractProjectAsset, false otherwise
+     */
+    public boolean isProjectAsset() {
+        try {
+            SchemaElement se = getSchemaElement();
+            return se != null && se.instanceOf("xnat:abstractProjectAsset");
+        } catch (Exception e) {
+            logger.debug("Error checking if element is project asset: " + elementName, e);
+            return false;
+        }
+    }
+
+    public void merge(ElementDisplay ed){
+        if (StringUtils.isNotBlank(ed.getValueField())) {
+            this.setValueField(ed.getValueField());
+        }
+        if (StringUtils.isNotBlank(ed.getDisplayField())) {
+            this.setDisplayField(ed.getDisplayField());
+        }
+        if (StringUtils.isNotBlank(ed.getDisplayLabel())) {
+            this.setDisplayLabel(ed.getDisplayLabel());
+        }
+        if (StringUtils.isNotBlank(ed.getBriefDescription())) {
+            this.setBriefDescription(ed.getBriefDescription());
+        }
+        if (StringUtils.isNotBlank(ed.getFullDescription())) {
+            this.setFullDescription(ed.getFullDescription());
+        }
+
+        for(DisplayField newDF: ed.getSortedFields()){
+            DisplayField existingDF = this.getDisplayField(newDF.getId());
+            if(existingDF==null){
+                newDF.setParentDisplay(this);
+                this.addDisplayField(newDF);
+            }else{
+                existingDF.setHeader(newDF.getHeader());
+                existingDF.setSearchable(newDF.isSearchable());
+                existingDF.setDescription(newDF.getDescription());
+            }
+        }
+
+        for(DisplayVersion dv: ed.getVersions().values()){
+            dv.setParentElementDisplay(this);
+            this.addVersion(dv);
+        }
+
+        for(Object arcO: ed.getArcs().values()){
+            this.addArc((Arc)arcO);
+        }
+
+        for(Object viewLinkO : ed.getViewLinks().values()){
+            this.addViewLink((ViewLink)viewLinkO);
+        }
     }
 }
 

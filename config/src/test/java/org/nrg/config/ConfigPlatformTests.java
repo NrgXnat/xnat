@@ -99,7 +99,7 @@ public class ConfigPlatformTests {
     public void testGetAll() throws ConfigServiceException {
         final List<String> paths = Stream.of(PATH, NEW_PATH, ANOTHER_PATH).sorted().collect(Collectors.toList());
 
-        _configService.replaceConfig(USERNAME, REASON_CREATED, TOOL_NAME, paths.get(0), CONTENTS);
+        _configService.replaceConfig(USERNAME, REASON_CREATED, TOOL_NAME, paths.getFirst(), CONTENTS);
         _configService.replaceConfig(USERNAME, REASON_CREATED, TOOL_NAME, paths.get(1), CONTENTS);
         _configService.replaceConfig(USERNAME, REASON_CREATED, TOOL_NAME, paths.get(2), CONTENTS);
 
@@ -128,7 +128,7 @@ public class ConfigPlatformTests {
     public void testGetTools() throws ConfigServiceException {
         final List<String> tools = Stream.of(PATH, FRANK, BILL).sorted().collect(Collectors.toList());
 
-        _configService.replaceConfig(USERNAME, REASON_CREATED, tools.get(0), PATH, CONTENTS);
+        _configService.replaceConfig(USERNAME, REASON_CREATED, tools.getFirst(), PATH, CONTENTS);
         _configService.replaceConfig(USERNAME, REASON_CREATED, tools.get(1), PATH, CONTENTS);
         _configService.replaceConfig(USERNAME, REASON_CREATED, tools.get(2), PATH, CONTENTS);
 
@@ -142,7 +142,7 @@ public class ConfigPlatformTests {
     public void testGetToolsByProject() throws ConfigServiceException {
         final List<String> tools = Stream.of(TOOL_NAME, FRANK).sorted().collect(Collectors.toList());
 
-        _configService.replaceConfig(USERNAME, REASON_CREATED, tools.get(0), PATH, CONTENTS, Scope.Project, PROJECT);
+        _configService.replaceConfig(USERNAME, REASON_CREATED, tools.getFirst(), PATH, CONTENTS, Scope.Project, PROJECT);
         _configService.replaceConfig(USERNAME, REASON_CREATED, tools.get(1), PATH, CONTENTS, Scope.Project, PROJECT);
         _configService.replaceConfig(USERNAME, REASON_CREATED, BILL, PATH, CONTENTS, Scope.Project, NOT_THAT_PROJECT);
 
@@ -161,7 +161,7 @@ public class ConfigPlatformTests {
         final List<Configuration> list = _configService.getConfigsByTool(TOOL_NAME);
         assertThat(list).isNotNull().isNotEmpty().hasSize(1);
 
-        final Configuration configuration = list.get(0);
+        final Configuration configuration = list.getFirst();
 
         assertThat(configuration).isNotNull().hasFieldOrPropertyWithValue("tool", TOOL_NAME);
 
@@ -170,7 +170,7 @@ public class ConfigPlatformTests {
         assertThat(franksNotProjectList).isNotNull().isEmpty();
 
         final List<Configuration> billsNotProjectList = _configService.getConfigsByTool(BILL, Scope.Project, NOT_THAT_PROJECT);
-        final Configuration       billsConfiguration  = billsNotProjectList.get(0);
+        final Configuration       billsConfiguration  = billsNotProjectList.getFirst();
         assertThat(billsConfiguration).isNotNull().hasFieldOrPropertyWithValue("tool", BILL);
     }
 

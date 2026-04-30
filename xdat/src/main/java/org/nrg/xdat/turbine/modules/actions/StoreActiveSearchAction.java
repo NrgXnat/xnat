@@ -111,7 +111,7 @@ public class StoreActiveSearchAction extends SearchAction {
                else
                    xsf.setHeader(ref.getHeader());
 		       xsf.setType(ref.getDisplayField().getDataType());
-		       xsf.setSequence(new Integer(i++));
+		       xsf.setSequence(Integer.valueOf(i++));
 		       xss.setSearchField(xsf);
 		   }
 		}
@@ -127,9 +127,8 @@ public class StoreActiveSearchAction extends SearchAction {
 		    while (iter.hasNext())
 		    {
 		        SQLClause c = (SQLClause)iter.next();
-			    if (c instanceof ElementCriteria)
+			    if (c instanceof ElementCriteria ec)
 			    {
-			        ElementCriteria ec = (ElementCriteria)c;
 			        XdatCriteria criteria = new XdatCriteria();
 			        criteria.setSchemaField(ec.getXMLPath());
 			        criteria.setComparisonType(ec.getComparison_type());

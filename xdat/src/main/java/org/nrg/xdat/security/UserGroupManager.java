@@ -325,7 +325,7 @@ public class UserGroupManager implements UserGroupServiceI {
             throw new Exception("Count didn't match query results");
         }
 
-        final XdatUsergroup       group    = groups.get(0);
+        final XdatUsergroup       group    = groups.getFirst();
         final PersistentWorkflowI workflow = getWorkflow(tag, authenticatedUser, group, group.getXdatUsergroupId().toString(), "Modified permissions");
 
         if (workflow == null) {
@@ -482,7 +482,7 @@ public class UserGroupManager implements UserGroupServiceI {
     @Override
     public UserGroupI getGroupByPK(Object gID) {
         try {
-            String id = (String) PoolDBUtils.ReturnStatisticQuery(String.format("SELECT id FROM xdat_usergroup WHERE xdat_userGroup_id=%1$s;", gID), "id", null, null);
+            String id = (String) PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xdat_usergroup WHERE xdat_userGroup_id=%1$s;".formatted(gID), "id", null, null);
             if (id != null) {
                 return getGroup(id);
             }
@@ -495,7 +495,7 @@ public class UserGroupManager implements UserGroupServiceI {
     @Override
     public UserGroupI getGroupByTagAndName(final String tag, final String displayName) {
         try {
-            String id = (String) PoolDBUtils.ReturnStatisticQuery(String.format("SELECT id FROM xdat_usergroup WHERE tag='%1$s' AND displayname='%2$s';", tag, displayName), "id", null, null);
+            String id = (String) PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xdat_usergroup WHERE tag='%1$s' AND displayname='%2$s';".formatted(tag, displayName), "id", null, null);
             if (id != null) {
                 return getGroup(id);
             }
@@ -522,7 +522,7 @@ public class UserGroupManager implements UserGroupServiceI {
                 // If access IS set up, extract from there rather than trusting the tag.
                 String value = null;
                 for (final XdatElementAccess ea : access) {
-                    value = getPermissionValues(ea.getPermissions_allowSet().get(0)).get(0);
+                    value = getPermissionValues(ea.getPermissions_allowSet().getFirst()).getFirst();
                     if (StringUtils.isNotBlank(value)) {
                         break;
                     }
@@ -551,7 +551,7 @@ public class UserGroupManager implements UserGroupServiceI {
                 if (values.size() != 1) {
                     throw new InvalidValueException();
                 }
-                if (!StringUtils.equals(values.get(0), tag)) {
+                if (!StringUtils.equals(values.getFirst(), tag)) {
                     throw new InvalidValueException();
                 }
             }
@@ -656,7 +656,7 @@ public class UserGroupManager implements UserGroupServiceI {
             final Optional<XdatFieldMapping> optional        = fieldMappingSet.getAllow().stream().filter(mapping -> mapping.getFieldValue().equals(value) && mapping.getField().equals(primarySecurityField)).findAny();
 
             final XdatFieldMapping fieldMapping;
-            if (!optional.isPresent()) {
+            if (optional.isEmpty()) {
                 if (!(create || read || edit || delete || activate)) {
                     return false;
                 }

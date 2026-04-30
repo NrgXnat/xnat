@@ -2,11 +2,13 @@ package org.nrg.dicom.mizer.service.impl;
 
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.*;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
 import org.nrg.dicom.mizer.exceptions.MizerContextException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
-import org.nrg.dicom.mizer.objects.AnonymizationResultSeverity;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.Mizer;
 import org.nrg.dicom.mizer.service.MizerContext;
@@ -14,7 +16,6 @@ import org.nrg.dicom.mizer.service.VersionString;
 import org.nrg.dicom.mizer.variables.Variable;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -173,17 +174,24 @@ public abstract class AbstractMizer implements Mizer {
             throw new MizerException("One of the arguments: " + sUniqueId + "," + meaning + "," + schemeDesignator + "," + schemeVersion + " " + "exceeds the size fixed by the DICOM standard.");
         }
 
-        if (dicomObject.getDcm4che2Object().get(Tag.DeidentificationMethodCodeSequence) == null) {
-            dicomObject.getDcm4che2Object().putSequence(Tag.DeidentificationMethodCodeSequence);
+        Attributes attrs = dicomObject.getAttributes();
+
+        if (!attrs.contains(Tag.DeidentificationMethodCodeSequence)) {
+            attrs.newSequence(Tag.DeidentificationMethodCodeSequence, 1);
         }
 
-        final SequenceDicomElement record = (SequenceDicomElement) dicomObject.getDcm4che2Object().get(Tag.DeidentificationMethodCodeSequence);
-        DicomObject item = new BasicDicomObject();
-        item.putString( Tag.CodeValue, VR.SH, sUniqueId);
-        item.putString( Tag.CodeMeaning, VR.LO, meaning);
-        item.putString( Tag.CodingSchemeDesignator, VR.SH, schemeDesignator);
-        item.putString( Tag.CodingSchemeVersion, VR.SH, schemeVersion);
-        record.addDicomObject( item);
+        Sequence sequence = attrs.getSequence(Tag.DeidentificationMethodCodeSequence);
+        if (sequence == null) {
+            sequence = attrs.newSequence(Tag.DeidentificationMethodCodeSequence, 1);
+        }
+
+        Attributes item = new Attributes();
+        item.setString(Tag.CodeValue, VR.SH, sUniqueId);
+        item.setString(Tag.CodeMeaning, VR.LO, meaning);
+        item.setString(Tag.CodingSchemeDesignator, VR.SH, schemeDesignator);
+        item.setString(Tag.CodingSchemeVersion, VR.SH, schemeVersion);
+
+        sequence.add(item);
 
     }
 

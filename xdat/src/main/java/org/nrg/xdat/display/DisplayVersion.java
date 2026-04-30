@@ -23,7 +23,9 @@ import java.util.Iterator;
  * @author Tim
  */
 public class DisplayVersion extends DisplayFieldRefCollection {
+    @JsonIgnore
     private static final Logger logger = LoggerFactory.getLogger(DisplayVersion.class);
+
     private String versionName = "";
     private String defaultOrderBy = "";
     private String defaultSortOrder = "";
@@ -201,6 +203,7 @@ public class DisplayVersion extends DisplayFieldRefCollection {
      *
      * @return The parent {@link ElementDisplay element display}.
      */
+    @JsonIgnore
     public ElementDisplay getParentElementDisplay() {
         return parentElementDisplay;
     }
@@ -233,8 +236,8 @@ public class DisplayVersion extends DisplayFieldRefCollection {
         headerCell = cell;
     }
 
-    @SuppressWarnings("unused")
     @JsonIgnore
+    @SuppressWarnings("unused")
     public Collection getDisplayFields() {
         ArrayList al = new ArrayList();
 

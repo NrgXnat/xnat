@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
@@ -60,8 +61,9 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
                 _service.createTool(siteConfig);
             } else {
                 log.info("Working with the existing {} tool, checking for new import values.", SITE_CONFIG_TOOL_ID);
-
-                final Set<String> found = properties.stringPropertyNames();
+                //This change is required to avoid UnsupportedOperationException when removeAll is called on line 75
+                //This exception is thrown since properties.stringPropertyNames() returns an unmodifiableSet
+                final Set<String> found = new HashSet<>(properties.stringPropertyNames());
                 final Properties existing = _service.getToolProperties(SITE_CONFIG_TOOL_ID);
 
                 // We're only concerned about properties in found that aren't already in existing. Those should be added to

@@ -422,7 +422,7 @@ public class ItemSearch implements SearchI {
 			final XFTTable table = XFTTable.ExecutePS(query, params);
 			if (table.getNumRows() > 0 && table.getNumCols()>0) {
 				final List<IdentifierResults> inner = new ArrayList<IdentifierResults>();
-				inner.add(new IdentifierResults(table.rows().get(0)[0], "string"));
+				inner.add(new IdentifierResults(table.rows().getFirst()[0], "string"));
 				final List<List<IdentifierResults>> matches = Lists.newArrayList();
 				matches.add(inner);
 				return matches;
@@ -487,10 +487,10 @@ public class ItemSearch implements SearchI {
 			}
 		}else	if (instanceOf(getElement(),"xnat:subjectData")) {
 			if (this.getCriteriaCollection().size() == 1 &&
-					this.getCriteriaCollection().toArrayList().get(0) instanceof SearchCriteria &&
-					"xnat:subjectData/ID".equals(((SearchCriteria) this.getCriteriaCollection().toArrayList().get(0)).getXMLPath())) {
+					this.getCriteriaCollection().toArrayList().getFirst() instanceof SearchCriteria &&
+					"xnat:subjectData/ID".equals(((SearchCriteria) this.getCriteriaCollection().toArrayList().getFirst()).getXMLPath())) {
 				String query = "SELECT ID FROM xnat_subjectData WHERE ID=?";
-				String id = (String) ((SearchCriteria) this.getCriteriaCollection().toArrayList().get(0)).getValue();
+				String id = (String) ((SearchCriteria) this.getCriteriaCollection().toArrayList().getFirst()).getValue();
 				matches= getIdMatch(query,new SQLClause.ParamValue(id, Types.VARCHAR));
 			}else if(isLabelSearch==PROJECT_MATCH.PRIMARY){
 				final String query = "SELECT ID FROM xnat_subjectData WHERE project=? AND label=?";
@@ -915,7 +915,7 @@ public class ItemSearch implements SearchI {
 		if(cc.toArrayList().size()==0){
 			return new ItemCollection();
 		}
-        SQLClause clause = (SQLClause)cc.toArrayList().get(0);
+        SQLClause clause = (SQLClause)cc.toArrayList().getFirst();
 		try {
 	    return GetItems(clause.getElementName(),cc,user,preLoad);
 		} catch (IllegalAccessException e) {

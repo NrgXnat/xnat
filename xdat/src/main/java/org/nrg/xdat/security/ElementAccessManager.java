@@ -136,7 +136,7 @@ public class ElementAccessManager {
     public List<PermissionCriteriaI> getRootPermissions() throws Exception {
         final List<PermissionSetI> sets = getPermissionSets();
         if (!sets.isEmpty()) {
-            final PermissionSetI set = sets.get(0);
+            final PermissionSetI set = sets.getFirst();
             if (set != null) {
                 return set.getPermCriteria();
             }
@@ -147,7 +147,7 @@ public class ElementAccessManager {
     public PermissionCriteriaI getMatchingPermissions(String fieldName, Object value) throws Exception {
         final List<PermissionSetI> sets = getPermissionSets();
         if (sets.size() > 0) {
-            PermissionSetI ps = sets.get(0);
+            PermissionSetI ps = sets.getFirst();
             if (ps != null) {
                 return ps.getMatchingPermissions(fieldName, value);
             } else {

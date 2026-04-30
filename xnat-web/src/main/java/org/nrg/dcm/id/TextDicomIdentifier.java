@@ -9,8 +9,8 @@
 
 package org.nrg.dcm.id;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.framework.utilities.SortedSets;
 import org.slf4j.Logger;
@@ -30,8 +30,8 @@ public final class TextDicomIdentifier implements DicomObjectFunction, DicomDeri
     /**
      * Gets the value of the DICOM header specified by the {@link #getTags()} property.
      */
-    public String apply(final DicomObject dicomObject) {
-        return dicomObject.getString(_tag);
+    public String apply(final Attributes attributes) {
+        return attributes.getString(_tag);
     }
 
     /**

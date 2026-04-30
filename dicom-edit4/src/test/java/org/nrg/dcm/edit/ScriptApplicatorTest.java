@@ -9,12 +9,12 @@
 package org.nrg.dcm.edit;
 
 import com.google.common.base.Function;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.util.UIDUtils;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.util.UIDUtils;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationException;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.variables.Variable;
 import org.nrg.dicomtools.exceptions.AttributeException;
@@ -27,7 +27,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * The test scripts here are based on the script language documentation at:
@@ -50,15 +56,21 @@ public class ScriptApplicatorTest {
     private static final String S_ASSIGN = "(0008,0080) := \"" + NEW_INSTITUTION + "\"\n";
     private static final String S_DELETE = "- (0010,0020)\n";
 
-    private static final String S_COND_EQ = "(0020,0011) = \"5\" : (0008,103E) := \"Series Five\"\n"
-                                            + "lowercase[(0020,0011)] = \"6\" : (0008,103E) := \"Series Six\"\n"
-                                            + "(0020,0011) = \"4\" : - (0008,103E)\n";
+    private static final String S_COND_EQ = """
+                                            (0020,0011) = "5" : (0008,103E) := "Series Five"
+                                            lowercase[(0020,0011)] = "6" : (0008,103E) := "Series Six"
+                                            (0020,0011) = "4" : - (0008,103E)
+                                            """;
 
-    private static final String S_COND_RE = "(0020,0011) ~ \"[45]\" : (0008,103e) := \"Four or five: {0}\" (0020,0011)\n"
-                                            + "(0020,0011) ~ \"[6-9]\" : (0008,103e) := \"Six through nine: {0}\" (0020,0011)\n";
+    private static final String S_COND_RE = """
+                                            (0020,0011) ~ "[45]" : (0008,103e) := "Four or five: {0}" (0020,0011)
+                                            (0020,0011) ~ "[6-9]" : (0008,103e) := "Six through nine: {0}" (0020,0011)
+                                            """;
 
-    private static final String S_PRECEDENCE = "(0020,0011) = \"4\" : (0008,103e) := \"Series Four\"\n"
-                                               + "(0008,103e) := \"Some other series\"\n";
+    private static final String S_PRECEDENCE = """
+                                               (0020,0011) = "4" : (0008,103e) := "Series Four"
+                                               (0008,103e) := "Some other series"
+                                               """;
 
     private static final String S_MULTILINE = "(0008,103e) :=\\\n\"foo\"\n";
 
@@ -90,13 +102,11 @@ public class ScriptApplicatorTest {
 
     private static final String S_REMOVE_PRIVATE = "-(XXX#,XXXX)\n";
 
-    private static final Function<File, DicomObject> loader = new Function<File, DicomObject>() {
-        public DicomObject apply(final File f) {
-            try {
-                return DicomUtils.read(f);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    private static final Function<File, DicomObjectI> loader = f -> {
+        try {
+            return new DicomObjectFactory.MizerDicomObject(DicomUtils.read(f));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     };
 
@@ -117,9 +127,9 @@ public class ScriptApplicatorTest {
      */
     @Test
     public void testApplyFile() throws Exception {
-        final DicomObject do4 = loader.apply(f4);
+        final DicomObjectI do4 = loader.apply(f4);
         //	final DicomObject do5 = (DicomObject)loader.apply(f5);
-        final DicomObject do6 = loader.apply(f6);
+        final DicomObjectI do6 = loader.apply(f6);
 
         assertNotNull(do4);
         assertNotNull(do6);
@@ -202,13 +212,13 @@ public class ScriptApplicatorTest {
 
         final ScriptApplicator s_use_hashUID   = new ScriptApplicator(bytes(S_USE_HASHUID));
         final DicomObjectI     do4_use_hashUID = s_use_hashUID.apply(f4);
-        assertTrue(UIDUtils.isValidUID(do4_use_hashUID.getString(Tag.StudyInstanceUID)));
+        assertTrue(UIDUtils.isValid(do4_use_hashUID.getString(Tag.StudyInstanceUID)));
         assertFalse(do4.getString(Tag.StudyInstanceUID).equals(do4_use_hashUID.getString(Tag.StudyInstanceUID)));
     }
 
     @Test
     public void testScriptsWithTerminatingComments() throws AttributeException, MizerException, IOException {
-        final DicomObject do7 = loader.apply(f4);
+        final DicomObjectI do7 = loader.apply(f4);
 
         assertNotNull(do7);
 
@@ -232,7 +242,7 @@ public class ScriptApplicatorTest {
         assertEquals("b", applicator.getSortedVariables().get(2).getName());
         assertEquals(2, applicator.getSortedVariables(new String[]{"b"}).size());
         assertEquals(1, applicator.getSortedVariables(Arrays.asList(new String[]{"a", "b"})).size());
-        assertEquals("c", applicator.getSortedVariables(Arrays.asList(new String[]{"a", "b"})).get(0).getName());
+        assertEquals("c", applicator.getSortedVariables(Arrays.asList(new String[]{"a", "b"})).getFirst().getName());
     }
 
     @Test
@@ -287,7 +297,7 @@ public class ScriptApplicatorTest {
         final ScriptApplicator a1 = new ScriptApplicator(bytes(S_INIT_VAR_FROM_TAG));
         final ScriptApplicator a2 = new ScriptApplicator(bytes(S_USE_FORMAT_FROM_VAR));
 
-        final DicomObject do4 = loader.apply(f4);
+        final DicomObjectI do4 = loader.apply(f4);
         assertNotNull(do4);
         assertEquals("head^DHead", do4.getString(Tag.StudyDescription));
         assertEquals("head^DHead_null", a2.apply(f4).getString(Tag.StudyDescription));
@@ -301,7 +311,7 @@ public class ScriptApplicatorTest {
     @Test
     public void testRemovePrivate() throws Exception {
         final ScriptApplicator a1 = new ScriptApplicator(bytes(S_REMOVE_PRIVATE));
-        final DicomObject do4 = loader.apply(f4);
+        final DicomObjectI do4 = loader.apply(f4);
         assertNotNull(do4);
         assertTrue(do4.contains(0x00185100));
         assertTrue(do4.contains(0x00190010));

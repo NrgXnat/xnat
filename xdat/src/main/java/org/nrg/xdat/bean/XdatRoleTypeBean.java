@@ -76,8 +76,8 @@ public class XdatRoleTypeBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void addAllowedActions_allowedAction(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatActionTypeBean)
-			_AllowedActions_allowedAction.add((org.nrg.xdat.bean.XdatActionTypeBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatActionTypeBean bean)
+			_AllowedActions_allowedAction.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatActionTypeBean");
 	}

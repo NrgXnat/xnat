@@ -54,15 +54,13 @@ public class XdatCriteria extends BaseXdatCriteria {
 
 	
 	public void populateCriteria(SQLClause c){
-		if (c instanceof ElementCriteria)
+		if (c instanceof ElementCriteria ec)
         {
-            ElementCriteria ec = (ElementCriteria)c;
             this.setSchemaField(ec.getXMLPath());
             this.setComparisonType(ec.getComparison_type());
             this.setValue(ec.getValue().toString());
             this.setOverrideValueFormatting(ec.overrideFormatting());
-        }else if(c instanceof SearchCriteria){
-            SearchCriteria ec = (SearchCriteria)c;
+        }else if(c instanceof SearchCriteria ec){
             this.setSchemaField(ec.getXMLPath());
             this.setComparisonType(ec.getComparison_type());
             this.setValue(ec.getValue().toString());
@@ -211,8 +209,7 @@ public class XdatCriteria extends BaseXdatCriteria {
         if (this == anObject) {
             return true;
         }
-        if (anObject instanceof XdatCriteria) {
-            XdatCriteria other = (XdatCriteria) anObject;
+        if (anObject instanceof XdatCriteria other) {
             return StringUtils.equals(this.getComparisonType(), other.getComparisonType()) &&
                    StringUtils.equals(this.getCustomSearch(), other.getCustomSearch()) &&
                    StringUtils.equals(this.getSchemaElementName(), other.getSchemaElementName()) &&

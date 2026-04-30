@@ -44,7 +44,7 @@ public class TestXnatPluginBeans {
                                     .hasFieldOrPropertyWithValue(PROPERTY_NAME, "XNAT Central Data Types Plugin")
                                     .hasFieldOrPropertyWithValue(PROPERTY_BEAN_NAME, "centralDataPlugin");
         assertThat(centralDataTypes.getDataModelBeans()).isNotNull().isNotEmpty().hasSize(1);
-        assertThat(centralDataTypes.getDataModelBeans().get(0)).isNotNull()
+        assertThat(centralDataTypes.getDataModelBeans().getFirst()).isNotNull()
                                                                .hasFieldOrPropertyWithValue(PROPERTY_TYPE, "genetics:geneticTestResults")
                                                                .hasFieldOrPropertyWithValue(PROPERTY_SECURED, true)
                                                                .hasFieldOrPropertyWithValue(PROPERTY_SINGULAR, "Genetic Test Result")
@@ -58,7 +58,7 @@ public class TestXnatPluginBeans {
                                   .hasFieldOrPropertyWithValue(PROPERTY_NAME, "XNAT 1.7 ADRC Plugin")
                                   .hasFieldOrPropertyWithValue(PROPERTY_BEAN_NAME, "adrcPlugin");
         assertThat(cndaPluginAdrc.getDataModelBeans()).isNotNull().isNotEmpty().hasSize(1);
-        assertThat(cndaPluginAdrc.getDataModelBeans().get(0)).isNotNull()
+        assertThat(cndaPluginAdrc.getDataModelBeans().getFirst()).isNotNull()
                                                              .hasFieldOrPropertyWithValue(PROPERTY_TYPE, "adrc:ADRCClinicalData")
                                                              .hasFieldOrPropertyWithValue(PROPERTY_SECURED, true)
                                                              .hasFieldOrPropertyWithValue(PROPERTY_SINGULAR, "ADRC Clinical Data")
@@ -81,7 +81,7 @@ public class TestXnatPluginBeans {
                                  .hasFieldOrPropertyWithValue(PROPERTY_BEAN_NAME, "udsPlugin");
         final List<XnatDataModelBean> cndaPluginUdsDataModelBeans = cndaPluginUds.getDataModelBeans().stream().sorted(Comparator.comparing(XnatDataModelBean::getType)).collect(Collectors.toList());
         assertThat(cndaPluginUdsDataModelBeans).isNotNull().isNotEmpty().hasSize(16);
-        assertThat(cndaPluginUdsDataModelBeans.get(0)).isNotNull()
+        assertThat(cndaPluginUdsDataModelBeans.getFirst()).isNotNull()
                                                       .hasFieldOrPropertyWithValue(PROPERTY_TYPE, "uds:a1subdemoData")
                                                       .hasFieldOrPropertyWithValue(PROPERTY_SECURED, true)
                                                       .hasFieldOrPropertyWithValue(PROPERTY_SINGULAR, "UDS A1: Sub Demo")
@@ -194,7 +194,7 @@ public class TestXnatPluginBeans {
                                        .hasFieldOrPropertyWithValue(PROPERTY_BEAN_NAME, "freesurferCommonPlugin");
         final List<XnatDataModelBean> nrgPluginFreesurferDataModelBeans = nrgPluginFreesurfer.getDataModelBeans().stream().sorted(Comparator.comparing(XnatDataModelBean::getType)).collect(Collectors.toList());
         assertThat(nrgPluginFreesurferDataModelBeans).isNotNull().isNotEmpty().hasSize(5);
-        assertThat(nrgPluginFreesurferDataModelBeans.get(0)).isNotNull()
+        assertThat(nrgPluginFreesurferDataModelBeans.getFirst()).isNotNull()
                                                             .hasFieldOrPropertyWithValue(PROPERTY_TYPE, "fs:aparcRegionAnalysis")
                                                             .hasFieldOrPropertyWithValue(PROPERTY_SECURED, true)
                                                             .hasFieldOrPropertyWithValue(PROPERTY_SINGULAR, "APARC")
@@ -232,7 +232,7 @@ public class TestXnatPluginBeans {
                                 .hasFieldOrPropertyWithValue(PROPERTY_NAME, "XNAT 1.7 PUP Plugin")
                                 .hasFieldOrPropertyWithValue(PROPERTY_BEAN_NAME, "pupPlugin");
         assertThat(nrgPluginPup.getDataModelBeans()).isNotNull().isNotEmpty().hasSize(1);
-        assertThat(nrgPluginPup.getDataModelBeans().get(0)).isNotNull()
+        assertThat(nrgPluginPup.getDataModelBeans().getFirst()).isNotNull()
                                                            .hasFieldOrPropertyWithValue(PROPERTY_TYPE, "pup:pupTimeCourseData")
                                                            .hasFieldOrPropertyWithValue(PROPERTY_SECURED, true)
                                                            .hasFieldOrPropertyWithValue(PROPERTY_SINGULAR, "PUP Timecourse")

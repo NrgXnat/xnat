@@ -16,6 +16,7 @@ import org.nrg.xdat.om.base.auto.AutoWrkXnatexecutionenvironment;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -25,6 +26,9 @@ import java.util.List;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseWrkXnatexecutionenvironment extends AutoWrkXnatexecutionenvironment {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseWrkXnatexecutionenvironment(ItemI item)
 	{

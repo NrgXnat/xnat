@@ -128,8 +128,8 @@ public class XnatPluginAnnotationProcessor extends NrgAbstractAnnotationProcesso
         final String namespace = plugin.namespace();
         final String pluginId  = plugin.value();
         if (StringUtils.isBlank(namespace)) {
-            return String.format("META-INF/xnat/%s-plugin.properties", pluginId);
+            return "META-INF/xnat/%s-plugin.properties".formatted(pluginId);
         }
-        return String.format("META-INF/xnat/%s/%s-plugin.properties", namespace, pluginId);
+        return "META-INF/xnat/%s/%s-plugin.properties".formatted(namespace, pluginId);
     }
 }

@@ -12,10 +12,13 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 
 /**
@@ -33,6 +36,9 @@ public class XDATScreen_edit extends SecureScreen {
 					String s = TurbineUtils.GetSearchElement(data);
 					item = XFTItem.NewItem(s,TurbineUtils.getUser(data));
 					SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
+					ItemI om = BaseElement.GetGeneratedItem(item);
+
+					context.put("om", om);
 					context.put("item",item);
 					context.put("element",se);
 					context.put("search_element",s);
@@ -46,6 +52,9 @@ public class XDATScreen_edit extends SecureScreen {
 			}else{
 				try {
 					SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
+					ItemI om = BaseElement.GetGeneratedItem(item);
+
+					context.put("om", om);
 					context.put("item",item);
 					context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
 					context.put("search_element",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));

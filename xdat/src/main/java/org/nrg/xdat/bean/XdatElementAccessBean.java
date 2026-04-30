@@ -73,10 +73,10 @@ public class XdatElementAccessBean extends BaseElement implements java.io.Serial
 	 * @param v Value to Set.
 	 */
 	public void setSecondaryPassword_encrypt(Object v){
-		if(v instanceof Boolean){
-			_SecondaryPassword_encrypt=(Boolean)v;
-		}else if(v instanceof String){
-			_SecondaryPassword_encrypt=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_SecondaryPassword_encrypt=boolean1;
+		}else if(v instanceof String string){
+			_SecondaryPassword_encrypt=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -120,8 +120,8 @@ public class XdatElementAccessBean extends BaseElement implements java.io.Serial
 	 * @param v Value to Set.
 	 */
 	public void addSecureIp(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatElementAccessSecureIpBean)
-			_SecureIp.add((org.nrg.xdat.bean.XdatElementAccessSecureIpBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatElementAccessSecureIpBean bean)
+			_SecureIp.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatElementAccessSecureIpBean");
 	}
@@ -164,8 +164,8 @@ public class XdatElementAccessBean extends BaseElement implements java.io.Serial
 	 * @param v Value to Set.
 	 */
 	public void addPermissions_allowSet(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatFieldMappingSetBean)
-			_Permissions_allowSet.add((org.nrg.xdat.bean.XdatFieldMappingSetBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatFieldMappingSetBean bean)
+			_Permissions_allowSet.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatFieldMappingSetBean");
 	}

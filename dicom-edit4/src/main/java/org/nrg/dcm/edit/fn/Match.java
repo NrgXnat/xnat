@@ -24,7 +24,7 @@ public final class Match implements ScriptFunction {
 
     @Override
     public Value apply(List<? extends Value> args) throws ScriptEvaluationException {
-        final Value value   = args.get(0);
+        final Value value   = args.getFirst();
         final Value pattern = args.get(1);
         final int   group   = ((IntegerValue) args.get(2)).getValue();
 

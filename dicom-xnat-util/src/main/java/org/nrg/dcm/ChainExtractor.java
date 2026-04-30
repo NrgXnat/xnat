@@ -8,21 +8,19 @@
  */
 package org.nrg.dcm;
 
-import java.util.Arrays;
-import java.util.SortedSet;
-
-import org.dcm4che2.data.DicomObject;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
+import org.dcm4che3.data.Attributes;
+
+import java.util.Arrays;
+import java.util.SortedSet;
 
 /**
  * Extractor that applies its constituent Extractors in order until
  * one produces a non-null-or-empty value.
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public class ChainExtractor implements Extractor {
@@ -43,12 +41,13 @@ public class ChainExtractor implements Extractor {
         this(Arrays.asList(extractors));
     }
 
-    /* (non-Javadoc)
-     * @see org.nrg.dcm.Extractor#extract(org.dcm4che2.data.DicomObject)
+    /**
+     * {@inheritDoc}
      */
-    public String extract(final DicomObject o) {
+    @Override
+    public String extract(final Attributes attributes) {
         for (final Extractor extractor : extractors) {
-            final String v = extractor.extract(o);
+            final String v = extractor.extract(attributes);
             if (!Strings.isNullOrEmpty(v)) {
                 return v;
             }
@@ -56,17 +55,16 @@ public class ChainExtractor implements Extractor {
         return null;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.Extractor#getTags()
+    /**
+     * {@inheritDoc}
      */
+    @Override
     public SortedSet<Integer> getTags() {
         return tags;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#toString()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public String toString() {

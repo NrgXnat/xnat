@@ -32,7 +32,7 @@ public class XDATUserHelperService extends UserHelperServiceI implements Seriali
         if (user == null) {
             throw new UserNotFoundException("null");
         }
-        _user = (user instanceof XDATUser) ? (XDATUser) user : new XDATUser(user.getUsername());
+        _user = (user instanceof XDATUser xdatu) ? xdatu : new XDATUser(user.getUsername());
         _username = user.getUsername();
     }
     

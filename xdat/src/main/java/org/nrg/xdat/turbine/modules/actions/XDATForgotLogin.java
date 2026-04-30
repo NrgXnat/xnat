@@ -80,7 +80,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
                 return;
             }
 
-            final UserI user = users.get(0);
+            final UserI user = users.getFirst();
             try {
                 additionalProcessing(data, context, user);
             } catch (Exception e) {
@@ -97,9 +97,9 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     if (auths.isEmpty()) {
                         usernames = user.getUsername();
                     } else if (auths.size() == 1) {
-                        usernames = auths.get(0).getAuthUser();
+                        usernames = auths.getFirst().getAuthUser();
                     } else {
-                        usernames = String.format("<br><br><ul><li>%s</li></ul>", auths.stream().map(XdatUserAuth::getAuthUser).collect(Collectors.joining("</li><li>")));
+                        usernames = "<br><br><ul><li>%s</li></ul>".formatted(auths.stream().map(XdatUserAuth::getAuthUser).collect(Collectors.joining("</li><li>")));
                     }
                     String body = _notifications.getEmailMessageForgotUsernameRequest();
                     body = XDAT.getNotificationsPreferences().replaceCommonAnchorTags(body, user);

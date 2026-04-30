@@ -26,7 +26,9 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import javax.annotation.Nullable;
-import java.nio.file.Paths;
+
+import java.io.Serial;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -38,6 +40,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @SuppressWarnings("unused")
 public abstract class BaseArcArchivespecification extends AutoArcArchivespecification {
+    @Serial
+    private static final long serialVersionUID = 1;
     public BaseArcArchivespecification(final ItemI item) {
         super(item);
         log.debug("Initializing arc spec with item of type {}", item.getXSIType());
@@ -313,7 +317,7 @@ public abstract class BaseArcArchivespecification extends AutoArcArchivespecific
 
     private String getRawGlobalPath(final @Nullable ArcProject project, final String path) {
         final String resolved = StringUtils.defaultIfBlank(getPathInfoProperty(getGlobalpaths(), path), ".");
-        return project != null ? Paths.get(resolved, project.getId()).toString() : resolved;
+        return project != null ? Path.of(resolved, project.getId()).toString() : resolved;
     }
 
     private boolean arcProjectExists(final String arcProjectId) {

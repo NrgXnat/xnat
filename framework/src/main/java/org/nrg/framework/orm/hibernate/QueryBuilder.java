@@ -240,20 +240,20 @@ public class QueryBuilder<E extends BaseHibernateEntity> {
     public Predicate between(String property, Object lo, Object hi) {
         Validate.notBlank(property, "The property value can't be blank");
         Validate.noNullElements(Arrays.asList(lo, hi), "Can't do between when one or both of the boundaries is null");
-        if (lo instanceof Integer) {
-            return betweenImpl(property, (int) lo, (int) hi);
+        if (lo instanceof Integer integer) {
+            return betweenImpl(property, integer, (int) hi);
         }
-        if (lo instanceof Long) {
-            return betweenImpl(property, (long) lo, (long) hi);
+        if (lo instanceof Long long1) {
+            return betweenImpl(property, long1, (long) hi);
         }
-        if (lo instanceof Float) {
-            return betweenImpl(property, (float) lo, (float) hi);
+        if (lo instanceof Float float1) {
+            return betweenImpl(property, float1, (float) hi);
         }
-        if (lo instanceof Double) {
-            return betweenImpl(property, (double) lo, (double) hi);
+        if (lo instanceof Double double1) {
+            return betweenImpl(property, double1, (double) hi);
         }
-        if (lo instanceof Date) {
-            return betweenImpl(property, (Date) lo, (Date) hi);
+        if (lo instanceof Date date) {
+            return betweenImpl(property, date, (Date) hi);
         }
         throw new InvalidMappingException("The property \"" + property + "\"'s type " + _root.get(property).getJavaType().getName() + " does not match the type (" + lo.getClass().getName() + ") of the lower and upper bounds", _entityType.getName(), property);
     }

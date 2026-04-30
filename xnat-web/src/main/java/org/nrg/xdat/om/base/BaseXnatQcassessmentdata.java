@@ -15,6 +15,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.scanAssessors.ScanAssessorI;
 import org.nrg.xnat.scanAssessors.ScanAssessorScanI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -24,6 +25,9 @@ import java.util.List;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseXnatQcassessmentdata extends AutoXnatQcassessmentdata implements ScanAssessorI{
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatQcassessmentdata(ItemI item)
 	{

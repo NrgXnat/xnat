@@ -22,6 +22,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 import java.util.Iterator;
 
@@ -31,6 +32,9 @@ import java.util.Iterator;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatAbstractprotocol extends AutoXnatAbstractprotocol {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatAbstractprotocol(ItemI item)
 	{

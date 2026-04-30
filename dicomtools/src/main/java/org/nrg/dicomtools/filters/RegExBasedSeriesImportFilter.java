@@ -13,16 +13,21 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.SpecificCharacterSet;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.nrg.dicom.mizer.objects.DicomElementI;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -45,28 +50,31 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
         super(createMap(contents, projectId, mode, enabled));
     }
 
-    @Override
-    public String findModality(final DicomObject dicomObject) {
+
+    public String findModality(final DicomObjectI dicomObject) {
         return "";
     }
+
+    @Override
+    public String findModality(final Attributes attributes) { return ""; }
 
     @Override
     public String findModality(final Map<String, String> headers) {
         return "";
     }
 
-    @Override
-    public boolean shouldIncludeDicomObject(final DicomObject dicomObject) {
+
+    public boolean shouldIncludeDicomObject(final DicomObjectI dicomObject) {
         // If this filter isn't enabled, then it should always return true because it's not filtering anything out.
         if (!isEnabled()) {
             return true;
         }
         final Map<Integer, String> values       = new LinkedHashMap<>();
-        final SpecificCharacterSet characterSet = dicomObject.getSpecificCharacterSet();
+//        final SpecificCharacterSet characterSet = dicomObject.getSpecificCharacterSet();
         for (final int header : getFilters().keySet()) {
             if (dicomObject.contains(header)) {
-                final DicomElement dicomElement = dicomObject.get(header);
-                final String       value        = dicomElement.getValueAsString(characterSet, 300);
+                final DicomElementI dicomElement = dicomObject.get(header);
+                final String       value        = dicomElement.getValueAsString();
                 values.put(header, StringUtils.isNotBlank(value) ? value : "");
             } else {
                 values.put(header, null);
@@ -76,8 +84,18 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
     }
 
     @Override
-    public boolean shouldIncludeDicomObject(final DicomObject dicomObject, final String targetModality) {
+    public boolean shouldIncludeDicomObject(final Attributes attributes) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+
+    public boolean shouldIncludeDicomObject(final DicomObjectI dicomObject, final String targetModality) {
         return shouldIncludeDicomObject(dicomObject);
+    }
+
+    @Override
+    public boolean shouldIncludeDicomObject(final Attributes attributes, final String targetModality) {
+        return shouldIncludeDicomObject(attributes);
     }
 
     @Override
@@ -246,7 +264,7 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
             final List<String> failedSections = new ArrayList<>(failed.size());
             for (final String failedSection : failed.keySet()) {
                 final List<String> failedPatterns = failed.get(failedSection);
-                failedSections.add(failedPatterns.size() == 1 ? failedSection + ": " + failedPatterns.get(0) : failedSection + ": " + Joiner.on(", ").join(failedPatterns));
+                failedSections.add(failedPatterns.size() == 1 ? failedSection + ": " + failedPatterns.getFirst() : failedSection + ": " + Joiner.on(", ").join(failedPatterns));
             }
             final StringBuilder buffer = new StringBuilder("The series import filter contains the following invalid pattern(s):\n");
             for (final String failedSection : failedSections) {

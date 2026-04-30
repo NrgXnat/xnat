@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -37,9 +36,9 @@ public class FileUtilsTest {
     private static final String     BOM_UTF_8              = "\uFEFF";
     private static final String     ACCESSION_NUMBER       = "Accession Number";
     private static final String     UTF_8_ACCESSION_NUMBER = BOM_UTF_8 + ACCESSION_NUMBER;
-    private static final Path       ORIGIN_PATH            = Paths.get("/this/is/the/origin");
-    private static final Path       DESTINATION_PATH       = Paths.get("/this/is/the/destination");
-    private static final Path       UNRELATED_PATH         = Paths.get("/this/one/is/unrelated");
+    private static final Path       ORIGIN_PATH            = Path.of("/this/is/the/origin");
+    private static final Path       DESTINATION_PATH       = Path.of("/this/is/the/destination");
+    private static final Path       UNRELATED_PATH         = Path.of("/this/one/is/unrelated");
     private static final List<Path> STARTING_PATHS         = Arrays.asList(ORIGIN_PATH.resolve("path/one"), ORIGIN_PATH.resolve("path/two"), ORIGIN_PATH.resolve("path/three"), ORIGIN_PATH.resolve("path/four"), ORIGIN_PATH.resolve("path/five"), UNRELATED_PATH.resolve("path/six"));
     private static final List<Path> ENDING_PATHS           = Arrays.asList(DESTINATION_PATH.resolve("path/one"), DESTINATION_PATH.resolve("path/two"), DESTINATION_PATH.resolve("path/three"), DESTINATION_PATH.resolve("path/four"), DESTINATION_PATH.resolve("path/five"), UNRELATED_PATH.resolve("path/six"));
     private static final List<File> STARTING_FILES         = STARTING_PATHS.stream().map(Path::toFile).collect(Collectors.toList());
@@ -89,9 +88,9 @@ public class FileUtilsTest {
         assertThat(untranslated).isNotNull().isNotEmpty().hasSize(3).allMatch(row -> row != null && !row.isEmpty());
         assertThat(translated).isNotNull().isNotEmpty().hasSize(3).allMatch(row -> row != null && !row.isEmpty());
 
-        final String untranslatedHeader = untranslated.get(0).get(0);
+        final String untranslatedHeader = untranslated.getFirst().getFirst();
         assertThat(untranslatedHeader).isNotBlank().isNotEqualTo(ACCESSION_NUMBER).isEqualTo(UTF_8_ACCESSION_NUMBER);
-        final String translatedHeader = translated.get(0).get(0);
+        final String translatedHeader = translated.getFirst().getFirst();
         assertThat(translatedHeader).isNotBlank().isNotEqualTo(UTF_8_ACCESSION_NUMBER).isEqualTo(ACCESSION_NUMBER);
     }
 

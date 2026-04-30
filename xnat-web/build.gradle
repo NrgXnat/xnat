@@ -9,6 +9,12 @@ group = 'org.nrg.xnat'
 
 // --- Global exclusions (must match original xnat-web/build.gradle exactly, see monorepo A6) ---
 configurations.matching { it.name != 'xdatGenerator' }.configureEach {
+    resolutionStrategy {
+        // commons-text 1.11.0 calls Range.of() which is missing in commons-lang3
+        // bundled by Tomcat — pin to versions that work in production.
+        force 'org.apache.commons:commons-lang3:3.11'
+        force 'org.apache.commons:commons-text:1.10.0'
+    }
     exclude group: 'ant',                      module: 'ant'
     exclude group: 'avalon-logkit'
     exclude group: 'berkeleydb'
@@ -84,6 +90,15 @@ configurations.matching { it.name != 'xdatGenerator' }.configureEach {
 
     // batik from fop — not needed at runtime
     exclude group: 'batik'
+
+    // antlr plugin (used by dicom-edit4/6) makes implementation extend antlr,
+    // pulling the full antlr4 compiler + transitives (~16MB, mostly icu4j) into
+    // runtimeClasspath. Only antlr-runtime / antlr4-runtime are needed at runtime.
+    exclude group: 'org.antlr',          module: 'antlr4'
+    exclude group: 'org.antlr',          module: 'antlr'
+    exclude group: 'org.antlr',          module: 'ST4'
+    exclude group: 'org.abego.treelayout', module: 'org.abego.treelayout.core'
+    exclude group: 'com.ibm.icu',         module: 'icu4j'
 }
 
 dependencies {
@@ -145,7 +160,10 @@ dependencies {
     implementation libs.hibernate.envers
     implementation libs.ehcache.ehcache
     implementation libs.vladmihalcea.hibernate.types55
-    implementation libs.redisson.redisson
+    implementation(libs.redisson.redisson) {
+        // redisson 3.22 pulls reactor-core 3.x; framework needs 2.x (forced in convention plugin).
+        exclude group: 'io.projectreactor', module: 'reactor-core'
+    }
 
     // --- DICOM dcm4che 2.x ---
     implementation libs.dcm4che.core
@@ -158,6 +176,7 @@ dependencies {
     implementation libs.dcm4che5.dcm4che.core
     implementation libs.dcm4che5.dcm4che.image
     implementation libs.dcm4che5.dcm4che.imageio
+    implementation libs.dcm4che5.dcm4che.net
     implementation libs.imagej.ij
 
     // --- Jackson ---
@@ -190,7 +209,28 @@ dependencies {
     implementation libs.reactor.bus
 
     // --- Turbine/Torque (from satellite merge) ---
-    implementation(libs.turbine.turbine) { transitive = false }
+    // transitive=false would cut off torque (turbine's core dep) and cause
+    // NoClassDefFoundError: GroupPeerManagerConstants at Tomcat runtime.
+    // Use precise excludes for legacy/conflicting artifacts instead.
+    implementation(libs.turbine.turbine) {
+        exclude group: 'commons-dbcp'
+        exclude group: 'commons-email'
+        exclude group: 'commons-pool'
+        exclude group: 'fulcrum'
+        exclude group: 'javax.activation', module: 'activation'
+        exclude group: 'javax.mail'
+        exclude group: 'javax.servlet'
+        exclude group: 'jython'
+        exclude group: 'xalan'
+        exclude group: 'xml-apis'
+        exclude group: 'log4j',           module: 'log4j'
+        exclude group: 'berkeleydb'
+        exclude group: 'javax.sql'
+        exclude group: 'jndi'
+        exclude group: 'mysql'
+        exclude group: 'tomcat'
+        exclude group: 'xerces'
+    }
     implementation libs.torque.village
     implementation(libs.apache.velocity) { transitive = false }
     implementation libs.ecs.ecs
@@ -277,10 +317,17 @@ dependencies {
     testImplementation libs.spring.security.spring.security.config
     testImplementation libs.hamcrest.hamcrest
     testImplementation libs.mockito.core
-    testImplementation libs.powermock.api.mockito2
-    testImplementation libs.powermock.module.junit4
+    testImplementation libs.testcontainers.testcontainers
+    testImplementation libs.testcontainers.junit.jupiter
+    testImplementation libs.testcontainers.postgresql
     testImplementation 'org.awaitility:awaitility:4.2.0'
     testImplementation libs.commons.dbcp2
+}
+
+// junit-3.8.1 leaks from itext:2.1.7 transitives. Cannot use a global exclude
+// because junit/jsr305 are needed at compile/test time.
+war {
+    rootSpec.exclude '**/junit-*.jar'
 }
 
 // --- XDAT code generation (replaces xdat-data-builder plugin) ---

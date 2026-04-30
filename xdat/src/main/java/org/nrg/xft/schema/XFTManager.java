@@ -12,6 +12,7 @@ package org.nrg.xft.schema;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -21,6 +22,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.references.XFTReferenceI;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.references.XFTRelationSpecification;
@@ -29,11 +31,14 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
+import org.nrg.xft.schema.db.entities.DBBackedSchema;
+import org.nrg.xft.schema.db.services.DBBackedSchemaService;
 import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.utils.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -48,6 +53,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.*;
 
 public class XFTManager {
@@ -64,6 +70,15 @@ public class XFTManager {
     private static Map<String,String> ROOT_LEVEL_ELEMENTS = new Hashtable<>();
 
     private String sourceDir = "";
+
+    private static DBBackedSchemaService _dbService;
+
+    public static DBBackedSchemaService getDBBackedSchemaService() {
+        if (_dbService == null) {
+            _dbService = XDAT.getContextService().getBean(DBBackedSchemaService.class);
+        }
+        return _dbService;
+    }
 
     /**
      * Indicates whether the manager instance has been initialized.
@@ -88,7 +103,7 @@ public class XFTManager {
      *
      * @throws XFTInitException When an error occurs in XFT.
      */
-    public static XFTManager GetInstance() throws XFTInitException {
+    public synchronized static XFTManager GetInstance() throws XFTInitException {
         if (MANAGER == null) {
             throw new XFTInitException();
         }
@@ -273,10 +288,63 @@ public class XFTManager {
             }
         }
 
+
         //if there are still some to be loaded AFTER all loadable ones have been loaded, then there is a dependency problem.
         if (toLoad.size() > 0) {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Unable to startup due to missing or cyclical schema dependency in the following schemas: " + Joiner.on(", ").join(toLoad));
         }
+    }
+
+    public static final String XFT_INITIALIZATION_DELAY = "XFT access attempt failed due to XFT initialization delay";
+    public static final String WAITING_FOR_XFT_INITIALIZATION = "XFT access attempt waiting for XFT initialization";
+    public static final String PROCEEDING_AFTER_XFT_INITIALIZATION = "XFT access attempt proceeding after XFT initialization";
+    private static final int waitIterations = 120;
+    private static final int waitPeriod = 10000;
+
+    public static void waitForInit() {
+        if(XFTManager.isComplete()) {
+            return;
+        }
+
+        int i = 0;
+
+        while(i < waitIterations){
+            if(XFTManager.isComplete()){
+                System.out.println(PROCEEDING_AFTER_XFT_INITIALIZATION);
+                break;
+            }
+
+            //wait 10s
+            try {
+                //this intentionally goes to System.out as that is what is monitored during server startup
+                System.out.println(WAITING_FOR_XFT_INITIALIZATION);
+                Thread.sleep(waitPeriod);
+            } catch (InterruptedException e) {
+                break;
+                //ignore
+            }
+            i++;
+        }
+
+        if(i == waitIterations){
+            RuntimeException exception = new RuntimeException(XFT_INITIALIZATION_DELAY);
+            logger.error(XFT_INITIALIZATION_DELAY,exception);
+            throw exception;
+        }
+    }
+
+    public XFTDataModel addSchema(final String fileName, final String schemaContent) throws Exception {
+        if(!DATA_MODELS.containsKey(fileName)){
+            final XFTDataModel model = new XFTDataModel();
+            model.setResource(new ByteArrayResource(IOUtils.toByteArray(IOUtils.toInputStream(schemaContent, Charset.defaultCharset()))));
+            model.setFileName(fileName);
+            model.setSchema(new XFTSchema(XMLUtils.GetDOM(IOUtils.toInputStream(schemaContent,Charset.defaultCharset())), model));
+
+            DATA_MODELS.put(model.getFileName(), model);
+
+            return model;
+        }
+        return null;
     }
 
     private List<SchemaWrapper> discoverSchema(final String source) {
@@ -332,6 +400,25 @@ public class XFTManager {
             }
         } catch (IOException e) {
             logger.error("Unable to discover XSD's from classpath.", e);
+        }
+
+        final DBBackedSchemaService dbSchemaService = this.getDBBackedSchemaService();
+        if(dbSchemaService!=null) {
+            for (final DBBackedSchema schema : this.getDBBackedSchemaService().getAll()) {
+                String name = schema.getName();
+                logger.info("DEV: Found db schema " + name);
+                if (!schemaLoaded.contains(name) && !IGNORED_SCHEMA_NAMES.contains(name)) {
+                    schemaLoaded.add(name);
+                    try {
+                        logger.info("DEV: Parsing db schema " + name);
+                        final List<String> dependencies = getDependentSchema(IOUtils.toInputStream(schema.getContent(), Charset.defaultCharset()));
+                        logger.info("DEV: Found dependencies " + dependencies.size());
+                        toLoad.add(new SchemaWrapper("db", schema.getPath(), name, new ByteArrayResource(IOUtils.toByteArray(IOUtils.toInputStream(schema.getContent(), Charset.defaultCharset()))), dependencies));
+                    } catch (Exception e) {
+                        logger.error("An error occurred while loading db resource " + name, e);
+                    }
+                }
+            }
         }
 
         return toLoad;
@@ -468,8 +555,73 @@ public class XFTManager {
         return doc;
     }
 
-    private void manageAddins() throws Exception {
-        //XFT.LogCurrentTime("MANAGER ADD_INS:1","ERROR");
+    public List<XFTElement> getAddinsByType(String type){
+        final List<XFTElement> addins = Lists.newArrayList();
+
+        for (final Object o : getAddInElements()) {
+            final XFTElement addIn = (XFTElement) o;
+            if (StringUtils.equals(addIn.getAddin(),type)) {
+                addins.add(addIn);
+            }
+        }
+
+        return addins;
+    }
+
+    public void manageAddins() throws Exception {
+        manageAddins(null);
+    }
+
+
+    private void populateGlobalAddins(XFTSchema schema, XFTElement addIn, List<String> localModified) throws Exception {
+        for (final Object o2 : schema.getSortedElements()) {
+            XFTElement element = (XFTElement) o2;
+            if (element.getAddin() == null || element.getAddin().equalsIgnoreCase("")) {
+                final String xmlType = element.getType().getFullForeignType();
+                localModified.add(xmlType);
+
+                XFTElement clone = addIn.clone(element, false);
+                clone.setExtensionType(null);
+                clone.setExtension(false);
+                clone.setAddin("meta");
+                clone.setSkipSQL(element.isSkipSQL());
+
+                XFTReferenceField field = XFTReferenceField.GetEmptyRef();
+                field.setName("meta");
+                field.setXMLType(clone.getType());
+                field.setFullName("meta");
+                field.setMinOccurs("0");
+                field.setExpose("false");
+                field.getRelation().setOnDelete("SET NULL");
+                field.setParent(element);
+                field.setSequence(1001);
+                String parentType = element.getType().getLocalType();
+                if (element.getSqlElement() != null && element.getSqlElement().getName() != null) {
+                    parentType = element.getSqlElement().getName();
+                }
+                field.getSqlField().setSqlName(parentType + "_info");
+                element.addField(field);
+
+                schema.addElement(clone);
+            }
+        }
+    }
+
+    private void populateLocalAddins(XFTSchema schema, XFTElement addIn, List<String> localModified) throws Exception {
+        for (final Object o2 : schema.getSortedElements()) {
+            XFTElement element = (XFTElement) o2;
+            if (element.getAddin() == null || element.getAddin().equalsIgnoreCase("")) {
+                final String xmlType = element.getType().getFullForeignType();
+                localModified.add(xmlType);
+
+                XFTElement clone = addIn.clone(element, false);
+                schema.addElement(clone);
+            }
+        }
+    }
+
+    public void manageAddins(String schemaPrefix) throws Exception {
+        List<String> localModified = Lists.newArrayList();
 
         ArrayList histories = new ArrayList();
         for (final Object o : getAddInElements()) {
@@ -478,58 +630,35 @@ public class XFTManager {
                 //Every data element should have a reference to this element
                 for (final Object o1 : GetSchemas()) {
                     XFTSchema schema = (XFTSchema) o1;
-                    for (final Object o2 : schema.getSortedElements()) {
-                        XFTElement element = (XFTElement) o2;
-                        if (element.getAddin() == null || element.getAddin().equalsIgnoreCase("")) {
-                            XFTElement clone = addIn.clone(element, false);
-                            clone.setExtensionType(null);
-                            clone.setExtension(false);
-                            clone.setAddin("meta");
-                            clone.setSkipSQL(element.isSkipSQL());
-
-                            XFTReferenceField field = XFTReferenceField.GetEmptyRef();
-                            field.setName("meta");
-                            field.setXMLType(clone.getType());
-                            field.setFullName("meta");
-                            field.setMinOccurs("0");
-                            field.setExpose("false");
-                            field.getRelation().setOnDelete("SET NULL");
-                            field.setParent(element);
-                            field.setSequence(1001);
-                            String parentType = element.getType().getLocalType();
-                            if (element.getSqlElement() != null && element.getSqlElement().getName() != null) {
-                                parentType = element.getSqlElement().getName();
-                            }
-                            field.getSqlField().setSqlName(parentType + "_info");
-                            element.addField(field);
-
-
-                            schema.addElement(clone);
-                        }
+                    if(schemaPrefix==null || StringUtils.equals(schemaPrefix,schema.getTargetNamespacePrefix())) {
+                        populateGlobalAddins(schema, addIn, localModified);
                     }
                 }
             } else if (addIn.getAddin().equalsIgnoreCase("local")) {
 //				Every data element should have an additional table of this type
                 for (final Object o1 : GetSchemas()) {
                     XFTSchema schema = (XFTSchema) o1;
-                    for (final Object o2 : schema.getSortedElements()) {
-                        XFTElement element = (XFTElement) o2;
-                        if (element.getAddin() == null || element.getAddin().equalsIgnoreCase("")) {
-                            XFTElement clone = addIn.clone(element, false);
-                            schema.addElement(clone);
-                        }
+                    if(schemaPrefix==null || StringUtils.equals(schemaPrefix,schema.getTargetNamespacePrefix())) {
+                        populateLocalAddins(schema, addIn, localModified);
                     }
                 }
-            } else if (addIn.getAddin().equalsIgnoreCase("history")) {
+            } else if (addIn.getType().getFullForeignType().equalsIgnoreCase("xdat:history")) {
                 histories.add(addIn);
             } else if (addIn.getAddin().equalsIgnoreCase("extension")) {
 
             }
         }
 
-        //XFT.LogCurrentTime("MANAGER ADD_INS:2","ERROR");
-        XFTReferenceManager.init();
-        //XFT.LogCurrentTime("MANAGER ADD_INS:3","ERROR");
+        if(schemaPrefix!=null){
+            //register any data types created in the previous code
+            try {
+                XFTMetaManager.GetInstance().load(schemaPrefix);
+            } catch (XFTInitException e) {
+                logger.error("",e);
+            }
+        }
+
+        XFTReferenceManager.init(schemaPrefix);
 
         for (final Object history : histories) {
             XFTElement addIn = (XFTElement) history;
@@ -537,80 +666,108 @@ public class XFTManager {
             Iterator schemas = GetSchemas().iterator();
             while (schemas.hasNext()) {
                 XFTSchema schema = (XFTSchema) schemas.next();
-                Iterator elements = schema.getSortedElements().iterator();
-                while (elements.hasNext()) {
-                    XFTElement element = (XFTElement) elements.next();
-                    GenericWrapperElement wrapE = (GenericWrapperElement) GenericWrapperFactory.GetInstance().wrapElement(element);
+                if(schemaPrefix==null || StringUtils.equals(schemaPrefix,schema.getTargetNamespacePrefix())) {
+                    populateHistoryAddins(schema, addIn, localModified);
+                }
+            }
+        }
 
-                    if (element.getAddin() == null || element.getAddin().equalsIgnoreCase("")) {
-                        XFTElement clone = addIn.clone(element, true);
-                        clone.setExtension(false);
+        if(schemaPrefix!=null){
+            try {
+                XFTMetaManager.GetInstance().load(schemaPrefix);
+            } catch (XFTInitException e) {
+                logger.error("",e);
+            }
 
-                        clone.setSkipSQL(element.isSkipSQL());
+            //run again to register the history entries
+            XFTReferenceManager.init(schemaPrefix);
 
-                        final List<GenericWrapperField> fields = (List<GenericWrapperField>) wrapE.getAllFieldsWAddIns(false, false);
-                        for (GenericWrapperField field : fields) {
-                            if (field.isReference()) {
-                                XFTReferenceI ref = field.getXFTReference();
-                                try {
-                                    if (!ref.isManyToMany()) {
-                                        Iterator specs = ((XFTSuperiorReference) ref).getKeyRelations().iterator();
-                                        while (specs.hasNext()) {
-                                            XFTRelationSpecification spec = (XFTRelationSpecification) specs.next();
-                                            XFTField cloneField = XFTDataField.GetEmptyField();
-                                            cloneField.setMinOccurs("0");
-                                            cloneField.setRequired("");
-                                            cloneField.setParent(clone);
-                                            cloneField.setUnique("false");
-                                            cloneField.setUniqueComposite("false");
-                                            cloneField.setName(spec.getLocalCol());
-                                            cloneField.setFullName(spec.getLocalCol());
-                                            cloneField.setXMLType(spec.getSchemaType());
-                                            clone.addField(cloneField);
-                                        }
-                                    }
-                                } catch (RuntimeException e) {
-                                    throw new RuntimeException("Error managing XDAT add-ins for element(" + wrapE.getFullXMLName() + ") field(" + field.getXMLPathString("") + ")");
-                                }
-                            } else {
-                                if (GenericWrapperField.IsLeafNode(field.getWrapped())) {
+            try {
+                XFTMetaManager.GetInstance().load(schemaPrefix);
+            } catch (XFTInitException e) {
+                logger.error("",e);
+            }
+        }
+
+        complete = true;
+    }
+
+    private void populateHistoryAddins(XFTSchema schema, XFTElement addIn, List<String> localModified) throws Exception {
+        Iterator elements = schema.getSortedElements().iterator();
+        while (elements.hasNext()) {
+            XFTElement element = (XFTElement) elements.next();
+            GenericWrapperElement wrapE = (GenericWrapperElement) GenericWrapperFactory.GetInstance().wrapElement(element);
+
+            if (element.getAddin() == null || element.getAddin().equalsIgnoreCase("")) {
+                final String xmlType = element.getType().getFullForeignType();
+                if (!localModified.contains(xmlType)) localModified.add(xmlType);
+
+                XFTElement clone = addIn.clone(element, true);
+                clone.setExtension(false);
+
+                clone.setSkipSQL(element.isSkipSQL());
+
+                final List<GenericWrapperField> fields = (List<GenericWrapperField>) wrapE.getAllFieldsWAddIns(false, false);
+                for (GenericWrapperField field : fields) {
+                    if (field.isReference()) {
+                        XFTReferenceI ref = field.getXFTReference();
+                        try {
+                            if (!ref.isManyToMany()) {
+                                Iterator specs = ((XFTSuperiorReference) ref).getKeyRelations().iterator();
+                                while (specs.hasNext()) {
+                                    XFTRelationSpecification spec = (XFTRelationSpecification) specs.next();
                                     XFTField cloneField = XFTDataField.GetEmptyField();
                                     cloneField.setMinOccurs("0");
                                     cloneField.setRequired("");
                                     cloneField.setParent(clone);
                                     cloneField.setUnique("false");
                                     cloneField.setUniqueComposite("false");
-                                    cloneField.setSize(field.getSize());
-                                    cloneField.setName(field.getSQLName());
-                                    cloneField.setFullName(field.getSQLName());
-                                    cloneField.getSqlField().setSqlName(field.getSQLName());
-                                    cloneField.setXMLType(field.getXMLType());
+                                    cloneField.setName(spec.getLocalCol());
+                                    cloneField.setFullName(spec.getLocalCol());
+                                    cloneField.setXMLType(spec.getSchemaType());
                                     clone.addField(cloneField);
                                 }
                             }
+                        } catch (RuntimeException e) {
+                            throw new RuntimeException("Error managing XDAT add-ins for element(" + wrapE.getFullXMLName() + ") field(" + field.getXMLPathString("") + ")");
                         }
-
-
-                        XFTField cloneField = XFTDataField.GetEmptyField();
-                        cloneField.setMinOccurs("0");
-                        cloneField.setRequired("");
-                        cloneField.setParent(clone);
-                        cloneField.setUnique("false");
-                        cloneField.setUniqueComposite("false");
-                        cloneField.setSize("");
-                        cloneField.setName("change_id");
-                        cloneField.setFullName("xft_version");
-                        cloneField.getSqlField().setSqlName("xft_version");
-                        cloneField.setXMLType(new XMLType("xs:integer", schema));
-                        clone.addField(cloneField);
-
-                        schema.addElement(clone);
+                    } else {
+                        if (GenericWrapperField.IsLeafNode(field.getWrapped())) {
+                            XFTField cloneField = XFTDataField.GetEmptyField();
+                            cloneField.setMinOccurs("0");
+                            cloneField.setRequired("");
+                            cloneField.setParent(clone);
+                            cloneField.setUnique("false");
+                            cloneField.setUniqueComposite("false");
+                            cloneField.setSize(field.getSize());
+                            cloneField.setName(field.getSQLName());
+                            cloneField.setFullName(field.getSQLName());
+                            cloneField.getSqlField().setSqlName(field.getSQLName());
+                            cloneField.setXMLType(field.getXMLType());
+                            clone.addField(cloneField);
+                        }
                     }
                 }
+
+
+                XFTField cloneField = XFTDataField.GetEmptyField();
+                cloneField.setMinOccurs("0");
+                cloneField.setRequired("");
+                cloneField.setParent(clone);
+                cloneField.setUnique("false");
+                cloneField.setUniqueComposite("false");
+                cloneField.setSize("");
+                cloneField.setName("change_id");
+                cloneField.setFullName("xft_version");
+                cloneField.getSqlField().setSqlName("xft_version");
+                cloneField.setXMLType(new XMLType("xs:integer", schema));
+                clone.addField(cloneField);
+
+                schema.addElement(clone);
             }
         }
-        complete = true;
     }
+
 
     private ArrayList getAddInElements() {
         ArrayList al = new ArrayList();

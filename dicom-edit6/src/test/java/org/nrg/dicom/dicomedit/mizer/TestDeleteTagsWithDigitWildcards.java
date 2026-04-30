@@ -1,7 +1,6 @@
 package org.nrg.dicom.dicomedit.mizer;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -17,9 +16,15 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.File;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestMizerConfig.class)
@@ -27,10 +32,8 @@ public class TestDeleteTagsWithDigitWildcards {
     @Test
     public void testMultiscriptResolution() throws MizerException {
         final DicomObjectI dicom          = DicomObjectFactory.newInstance(DICOM_TEST);
-        final DicomObject dcm4che2Object = dicom.getDcm4che2Object();
-
-        assertEquals("head^DHead", dcm4che2Object.getString(Tag.StudyDescription));
-        assertEquals("t1_mpr_1mm_p2_pos50", dcm4che2Object.getString(Tag.SeriesDescription));
+        assertEquals("head^DHead", dicom.getString(Tag.StudyDescription));
+        assertEquals("t1_mpr_1mm_p2_pos50", dicom.getString(Tag.SeriesDescription));
 
         final Map<String, Object> elements = new HashMap<>();
         elements.put("project", "XNAT_01");

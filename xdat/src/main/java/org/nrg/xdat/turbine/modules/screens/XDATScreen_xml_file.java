@@ -73,7 +73,7 @@ public class XDATScreen_xml_file extends RawScreen {
     protected final void doOutput(final RunData data) throws Exception {
         try (final ByteArrayOutputStream outputStream = buildXml(data)) {
             if (outputStream != null) {
-                final String fileName = StringUtils.defaultIfBlank((String) TurbineUtils.GetPassedParameter("fileName", data), String.format(XML_FILENAME_FORMAT, Calendar.getInstance().getTime()));
+                final String fileName = StringUtils.defaultIfBlank((String) TurbineUtils.GetPassedParameter("fileName", data), XML_FILENAME_FORMAT.formatted(Calendar.getInstance().getTime()));
                 log.debug("Writing output for XML to filename {}", fileName);
 
                 //We have to set the size to workaround a bug in IE (see com.lowagie iText FAQ)

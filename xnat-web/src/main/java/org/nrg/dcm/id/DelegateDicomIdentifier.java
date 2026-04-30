@@ -9,7 +9,7 @@
 
 package org.nrg.dcm.id;
 
-import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
 
 import java.util.SortedSet;
 
@@ -39,8 +39,8 @@ public class DelegateDicomIdentifier implements DicomDerivedString {
      * {@inheritDoc}
      */
     @Override
-    public final String apply(final DicomObject dicomObject) {
-        return _identifier.apply(dicomObject);
+    public final String apply(final Attributes attributes) {
+        return _identifier.apply(attributes);
     }
 
     /**

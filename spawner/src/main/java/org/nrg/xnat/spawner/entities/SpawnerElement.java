@@ -18,6 +18,8 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.spawner.exceptions.InvalidElementIdException;
 
 import javax.persistence.*;
+
+import java.io.Serial;
 import java.util.regex.Pattern;
 
 @SuppressWarnings("JpaDataSourceORMInspection")
@@ -25,6 +27,7 @@ import java.util.regex.Pattern;
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"namespace", "elementId"}))
 @Cacheable
 public class SpawnerElement extends AbstractHibernateEntity implements Comparable<SpawnerElement> {
+    @Serial
     private static final long serialVersionUID = -8959822111407129444L;
 
     public static final String DEFAULT_NAMESPACE = "xnat";

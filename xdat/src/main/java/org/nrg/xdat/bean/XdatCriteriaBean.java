@@ -130,10 +130,10 @@ public class XdatCriteriaBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void setOverrideValueFormatting(Object v){
-		if(v instanceof Boolean){
-			_OverrideValueFormatting=(Boolean)v;
-		}else if(v instanceof String){
-			_OverrideValueFormatting=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_OverrideValueFormatting=boolean1;
+		}else if(v instanceof String string){
+			_OverrideValueFormatting=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}

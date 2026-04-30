@@ -63,12 +63,13 @@ public class DisplayField implements Identifier, SequentialObject {
     private final List<String> possibleValues = new ArrayList<>();
 
     public String generatedFor = "";
+    private String parentDisplayStr = "";
 
     public DisplayField() {
     }
 
     public DisplayField(ElementDisplay ed) {
-        parentDisplay = ed;
+        this.setParentDisplay(ed);
     }
 
     /**
@@ -150,6 +151,7 @@ public class DisplayField implements Identifier, SequentialObject {
         return content;
     }
 
+    @JsonIgnore
     /**
      * Builds and returns the SQL content of the display field based on the {@link QueryOrganizerI query organizer}.
      *
@@ -205,6 +207,7 @@ public class DisplayField implements Identifier, SequentialObject {
         return content;
     }
 
+    @JsonIgnore
     /**
      * Gets a summary of field content.
      *
@@ -379,22 +382,33 @@ public class DisplayField implements Identifier, SequentialObject {
         htmlImage = image;
     }
 
+    @JsonIgnore
     /**
      * Gets the parent element display for this display field.
      *
      * @return The parent element display for this display field.
      */
     public ElementDisplay getParentDisplay() {
+        if(parentDisplay==null){
+            parentDisplay=DisplayManager.GetElementDisplay(parentDisplayStr);
+        }
+
         return parentDisplay;
     }
 
+    public void setParentDisplay(ElementDisplay ed){
+        parentDisplay = ed;
+        this.parentDisplayStr=ed.getElementName();
+    }
+
+    @JsonIgnore
     /**
      * Gets the primary schema field associated with this display field.
      *
      * @return The primary schema field associated with ths display field.
      */
     public String getPrimarySchemaField() {
-        DisplayFieldElement dfe = this.getElements().get(0);
+        DisplayFieldElement dfe = this.getElements().getFirst();
 
         if (dfe.getSchemaElementName().equalsIgnoreCase("")) {
             return "VIEW_" + this.getParentDisplay().getElementName() + "." + dfe.getViewName() + "." + dfe.getViewColumn();
@@ -403,10 +417,10 @@ public class DisplayField implements Identifier, SequentialObject {
         }
     }
 
+    @JsonIgnore
     /**
      * @return ArrayList of Object[String path, SchemaFieldI sf]
      */
-    @JsonIgnore
     public List<Object[]> getSchemaFields() {
         final List<Object[]> al = new ArrayList<>();
         for (final DisplayFieldElement dfe : getElements()) {
@@ -428,9 +442,12 @@ public class DisplayField implements Identifier, SequentialObject {
                         logger.error("XFT failed to initialize properly.", e);
                         o[1] = null;
                     } catch (ElementNotFoundException e) {
-                        logger.error("XFT element not found: " + e.ELEMENT, e);
+                        logger.error("DisplayField.getSchemaFields: Element Not Found " + e.ELEMENT);
                         o[1] = null;
-                    } catch (Exception e) {
+                    }  catch (FieldNotFoundException e) {
+                        logger.error("DisplayField.getSchemaFields: Field Not Found " + e.FIELD);
+                        o[1] = null;
+                    }catch (Exception e) {
                         logger.error("Unknown error occurred", e);
                         o[1] = null;
                     }
@@ -605,16 +622,16 @@ public class DisplayField implements Identifier, SequentialObject {
         setSortIndex(sequence);
     }
 
+    @JsonIgnore
     /**
      * Gets the enumeration from the display field, if available.
      *
      * @param login The login to authorize.
      * @return A list of any enumeration values the user can see.
      */
-    @JsonIgnore
     public List<String> getEnumeration(String login) {
         if (this.elements.size() == 1) {
-            DisplayFieldElement dfe = elements.get(0);
+            DisplayFieldElement dfe = elements.getFirst();
             try {
                 SchemaField sf = dfe.getSchemaField();
                 //noinspection unchecked
@@ -645,8 +662,7 @@ public class DisplayField implements Identifier, SequentialObject {
     public String toString() {
         return this.getParentDisplay().getElementName() + ":" + this.getId();
     }
-
-    /**
+   /**
      * @return Returns the htmlContent.
      */
     public boolean isHtmlContent() {
@@ -704,7 +720,7 @@ public class DisplayField implements Identifier, SequentialObject {
 
     private String deriveType() {
         if (this.elements.size() == 1) {
-            DisplayFieldElement dfe = elements.get(0);
+            DisplayFieldElement dfe = elements.getFirst();
             try {
                 return dfe.getFieldType();
             } catch (Exception ignored) {
@@ -713,6 +729,43 @@ public class DisplayField implements Identifier, SequentialObject {
         } else {
             return "UNKNOWN";
         }
+    }
+
+    public DisplayField clone(){
+        DisplayField df;
+        if(this instanceof SQLQueryField){
+            df = new SQLQueryField(parentDisplay);
+            ((SQLQueryField)df).setSubQuery(((SQLQueryField) this).getSubQuery());
+            ((SQLQueryField)df).setValue(((SQLQueryField) this).getValue());
+
+            for(SQLQueryField.QueryMappingColumn mapping: ((SQLQueryField)df).getMappingColumns()){
+                ((SQLQueryField)df).addMappingColumn(mapping.getSchemaField(), mapping.getQueryField());
+            }
+        }else{
+            df = new DisplayField(parentDisplay);
+        }
+
+        df.setHeader(this.getHeader());
+        df.setDescription(this.getDescription());
+        df.setId(this.getId());
+        df.setDataType(this.getDataType());
+        df.getContent().putAll(this.getContent());
+        df.setHtmlLink(this.getHtmlLink());
+        df.setVisible(this.isVisible());
+        df.setSortOrder(this.getSortOrder());
+        df.setSortBy(this.getSortBy());
+        df.setSortIndex(this.getSortIndex());
+        df.setSearchable(this.isSearchable());
+        df.setImage(this.isImage());
+        df.setHtmlContent(this.isHtmlContent());
+        df.setHtmlCell(this.getHtmlCell());
+        df.setHtmlImage(this.getHtmlImage());
+
+        for(DisplayFieldElement dfe : this.getElements()){
+            df.addDisplayFieldElement(dfe.clone());
+        }
+
+        return df;
     }
 }
 

@@ -19,7 +19,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -56,7 +55,7 @@ public class PathBasedScriptRunnerOutputAdapter implements ScriptRunnerOutputAda
         if (StringUtils.isBlank(path)) {
             return;
         }
-        Path resolved = Paths.get(path);
+        Path resolved = Path.of(path);
         if (resolved.compareTo(_path) == 0) {
             return;
         }
@@ -73,7 +72,7 @@ public class PathBasedScriptRunnerOutputAdapter implements ScriptRunnerOutputAda
             setPath(path);
         } else {
             log.debug("Initializing the path-based script runner output adapter without a path specified. Using temp path.");
-            final Path tmpdir  = Paths.get(System.getProperty("java.io.tmpdir"));
+            final Path tmpdir  = Path.of(System.getProperty("java.io.tmpdir"));
             final Path scripts = tmpdir.resolve("scripts");
             //noinspection ResultOfMethodCallIgnored
             scripts.toFile().mkdir();

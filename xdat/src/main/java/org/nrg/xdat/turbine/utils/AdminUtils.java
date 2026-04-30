@@ -435,7 +435,7 @@ public class AdminUtils {
                 return prefMessage;
             }
             if (XDAT.getSiteConfigPreferences().getMaxFailedLogins() > 0) {
-                return String.format(prefMessage, XDAT.getSiteConfigPreferences().getMaxFailedLogins());
+                return prefMessage.formatted(XDAT.getSiteConfigPreferences().getMaxFailedLogins());
             }
             log.warn("Found login error message that contained a %d format placeholder, but the max failed login attempts is zero or less. Using the default login failure message instead.");
         } else {

@@ -8,15 +8,16 @@
  */
 package org.nrg.dcm.edit;
 
+import org.nrg.dicom.mizer.exceptions.MizerException;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
+
 import java.io.File;
 import java.io.IOException;
-
-import org.dcm4che2.data.DicomObject;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public interface DicomFileObjectProcessor {
-    Object process(File file, DicomObject o) throws IOException;
+    Object process(File file, DicomObjectI o) throws IOException, MizerException;
 }

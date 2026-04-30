@@ -22,6 +22,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -33,6 +34,9 @@ import java.util.Map;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatDicomseries extends AutoXnatDicomseries {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatDicomseries(ItemI item)
 	{

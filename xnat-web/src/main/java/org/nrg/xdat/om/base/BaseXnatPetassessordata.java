@@ -13,6 +13,7 @@ import org.nrg.xdat.om.base.auto.AutoXnatPetassessordata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 
 /**
@@ -21,6 +22,9 @@ import java.util.Hashtable;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatPetassessordata extends AutoXnatPetassessordata {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatPetassessordata(ItemI item)
 	{

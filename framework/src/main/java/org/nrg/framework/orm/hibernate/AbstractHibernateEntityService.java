@@ -545,7 +545,7 @@ public abstract class AbstractHibernateEntityService<E extends BaseHibernateEnti
      * @return Returns the list if it's not null and contains at least one item, <b>null</b> otherwise.
      */
     protected E instance(final List<E> list) {
-        return isEmpty(list) ? null : list.get(0);
+        return isEmpty(list) ? null : list.getFirst();
     }
 
     protected static boolean isEmpty(final List<?> list) {

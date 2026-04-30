@@ -10,6 +10,7 @@
 package org.nrg.automation.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import javax.validation.constraints.NotNull;
 import org.nrg.automation.annotations.Supports;
@@ -17,6 +18,7 @@ import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
+import org.nrg.automation.services.AutomationService;
 import org.nrg.automation.services.Filtering;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptService;
@@ -29,7 +31,6 @@ import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,14 +58,13 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
 
     private final ScriptService        _scriptService;
     private final ScriptTriggerService _triggerService;
-
-    @Value("${automation.enabled:true}")
-    private boolean _automationEnabled;
+    private final boolean              _automationEnabled;
 
     @Autowired
-    public DefaultScriptRunnerService(final ScriptService scriptService, final ScriptTriggerService triggerService) {
-        _scriptService  = scriptService;
-        _triggerService = triggerService;
+    public DefaultScriptRunnerService(final AutomationService automationService, final ScriptService scriptService, final ScriptTriggerService triggerService) {
+        _scriptService     = scriptService;
+        _triggerService    = triggerService;
+        _automationEnabled = automationService.getAutomationEnabled();
     }
 
     /**
@@ -200,7 +200,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     @Override
     public List<Script> getScripts(final Scope scope, final String entityId) {
         final List<ScriptTrigger> triggers = _triggerService.getByScope(scope, entityId);
-        if (triggers == null || triggers.size() == 0) {
+        if (CollectionUtils.isEmpty(triggers)) {
             return new ArrayList<>();
         }
         final List<Script> scripts = new ArrayList<>(triggers.size());
@@ -573,13 +573,13 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         try {
             final ScriptOutput results = runner.run(parameters, exceptionOnError);
             if (log.isDebugEnabled()) {
-                log.debug("Got the following results from running " + formatScriptAndParameters(script, parameters));
+                log.debug("Got the following results from running {}", formatScriptAndParameters(script, parameters));
                 if (results.getResults() == null) {
                     log.debug(" * Null results");
                 } else {
-                    log.debug(" * Object type: " + results.getResults().getClass());
+                    log.debug(" * Object type: {}", results.getResults().getClass());
                     final String renderedResults = results.toString();
-                    log.debug(" * Results: " + (renderedResults.length() > 64 ? renderedResults.substring(0, 63) + "..." : renderedResults));
+                    log.debug(" * Results: {}", renderedResults.length() > 64 ? renderedResults.substring(0, 63) + "..." : renderedResults);
                 }
             }
             return results;

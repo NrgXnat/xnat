@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.om.base;
 
+import java.io.Serial;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -35,6 +36,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
  */
 @SuppressWarnings("unused")
 public abstract class BaseXnatAbstractprojectasset extends AutoXnatAbstractprojectasset {
+    @Serial
+    private static final long serialVersionUID = 1;
     public BaseXnatAbstractprojectasset(final ItemI item) {
         super(item);
     }

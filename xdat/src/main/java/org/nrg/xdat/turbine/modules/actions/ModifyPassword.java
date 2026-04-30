@@ -98,8 +98,8 @@ public class ModifyPassword extends ModifyAction {
         final ValidationResultsI validate = Users.validate(existing);
         if (!validate.isValid()) {
             final String message;
-            if (validate instanceof ValidationResults) {
-                message = "<p>The submitted user information failed validation for the following reasons:</p><ul>" + ((ValidationResults) validate).toHTML();
+            if (validate instanceof ValidationResults results) {
+                message = "<p>The submitted user information failed validation for the following reasons:</p><ul>" + results.toHTML();
             } else {
                 message = "The submitted password seems to be invalid, but I have no further details.";
             }

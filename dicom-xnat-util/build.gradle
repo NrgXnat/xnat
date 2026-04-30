@@ -6,11 +6,12 @@ dependencies {
     api project(':framework')
 
     implementation libs.google.guava
-    implementation libs.dcm4che.core
+    implementation libs.dcm4che5.dcm4che.core
+    implementation libs.dcm4che5.dcm4che.dict
     implementation libs.slf4j.api
 
     testImplementation libs.junit.junit
-    testImplementation libs.mockito.all
+    testImplementation libs.mockito.core
     testImplementation libs.assertj.core
     testImplementation libs.h2database.h2
     testImplementation libs.hibernate.jcache

@@ -27,10 +27,10 @@ public class OmUtils {
     public static void validateXnatAbstractResources(final String expectedPath, final List<XnatAbstractresourceI> resources) throws InvalidValueException {
         for (final XnatAbstractresourceI resource : resources) {
             final String uri;
-            if (resource instanceof XnatResource) {
-                uri = ((XnatResource) resource).getUri();
-            } else if (resource instanceof XnatResourceseries) {
-                uri = ((XnatResourceseries) resource).getPath();
+            if (resource instanceof XnatResource xnatResource) {
+                uri = xnatResource.getUri();
+            } else if (resource instanceof XnatResourceseries resourceseries) {
+                uri = resourceseries.getPath();
             } else {
                 continue;
             }

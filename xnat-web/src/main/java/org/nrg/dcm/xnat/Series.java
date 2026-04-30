@@ -75,7 +75,7 @@ public final class Series implements Comparable<Series> {
    * @see java.lang.Object#equals(java.lang.Object)
    */
   public boolean equals(final Object o) {
-    return o instanceof Series && uid.equals(((Series)o).uid) && number.equals(((Series)o).uid);
+    return o instanceof Series s && uid.equals(s.uid) && number.equals(s.uid);
   }
   
   /*

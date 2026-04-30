@@ -79,7 +79,7 @@ public class XFTElementSorter {
 			GenericWrapperElement gwe = (GenericWrapperElement)elementIter.next();
 			if (gwe.getFormattedName().equalsIgnoreCase(sqlName))
 			{
-				return new Integer(counter);
+				return Integer.valueOf(counter);
 			}
 			counter++;
 		}
@@ -118,7 +118,7 @@ public class XFTElementSorter {
 			assignUnOrderedElements();
 			if (counter++ == 10)
 			{
-				GenericWrapperElement gwe = (GenericWrapperElement)unOrderedElements.remove(0);
+				GenericWrapperElement gwe = (GenericWrapperElement)unOrderedElements.removeFirst();
 				elements.add(gwe);
 				counter = 0;
 			}

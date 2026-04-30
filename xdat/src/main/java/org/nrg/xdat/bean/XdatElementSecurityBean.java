@@ -76,8 +76,8 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void addPrimarySecurityFields_primarySecurityField(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatPrimarySecurityFieldBean)
-			_PrimarySecurityFields_primarySecurityField.add((org.nrg.xdat.bean.XdatPrimarySecurityFieldBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatPrimarySecurityFieldBean bean)
+			_PrimarySecurityFields_primarySecurityField.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatPrimarySecurityFieldBean");
 	}
@@ -120,8 +120,8 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void addElementActions_elementAction(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatElementActionTypeBean)
-			_ElementActions_elementAction.add((org.nrg.xdat.bean.XdatElementActionTypeBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatElementActionTypeBean bean)
+			_ElementActions_elementAction.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatElementActionTypeBean");
 	}
@@ -164,8 +164,8 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void addListingActions_listingAction(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatElementSecurityListingActionBean)
-			_ListingActions_listingAction.add((org.nrg.xdat.bean.XdatElementSecurityListingActionBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatElementSecurityListingActionBean bean)
+			_ListingActions_listingAction.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatElementSecurityListingActionBean");
 	}
@@ -205,10 +205,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setSecondaryPassword(Object v){
-		if(v instanceof Boolean){
-			_SecondaryPassword=(Boolean)v;
-		}else if(v instanceof String){
-			_SecondaryPassword=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_SecondaryPassword=boolean1;
+		}else if(v instanceof String string){
+			_SecondaryPassword=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -230,10 +230,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setSecureIp(Object v){
-		if(v instanceof Boolean){
-			_SecureIp=(Boolean)v;
-		}else if(v instanceof String){
-			_SecureIp=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_SecureIp=boolean1;
+		}else if(v instanceof String string){
+			_SecureIp=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -255,10 +255,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setSecure(Object v){
-		if(v instanceof Boolean){
-			_Secure=(Boolean)v;
-		}else if(v instanceof String){
-			_Secure=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_Secure=boolean1;
+		}else if(v instanceof String string){
+			_Secure=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -280,10 +280,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setBrowse(Object v){
-		if(v instanceof Boolean){
-			_Browse=(Boolean)v;
-		}else if(v instanceof String){
-			_Browse=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_Browse=boolean1;
+		}else if(v instanceof String string){
+			_Browse=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -332,10 +332,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setQuarantine(Object v){
-		if(v instanceof Boolean){
-			_Quarantine=(Boolean)v;
-		}else if(v instanceof String){
-			_Quarantine=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_Quarantine=boolean1;
+		}else if(v instanceof String string){
+			_Quarantine=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -357,10 +357,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setPreLoad(Object v){
-		if(v instanceof Boolean){
-			_PreLoad=(Boolean)v;
-		}else if(v instanceof String){
-			_PreLoad=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_PreLoad=boolean1;
+		}else if(v instanceof String string){
+			_PreLoad=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -382,10 +382,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setSearchable(Object v){
-		if(v instanceof Boolean){
-			_Searchable=(Boolean)v;
-		}else if(v instanceof String){
-			_Searchable=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_Searchable=boolean1;
+		}else if(v instanceof String string){
+			_Searchable=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -407,10 +407,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setSecureRead(Object v){
-		if(v instanceof Boolean){
-			_SecureRead=(Boolean)v;
-		}else if(v instanceof String){
-			_SecureRead=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_SecureRead=boolean1;
+		}else if(v instanceof String string){
+			_SecureRead=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -432,10 +432,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setSecureEdit(Object v){
-		if(v instanceof Boolean){
-			_SecureEdit=(Boolean)v;
-		}else if(v instanceof String){
-			_SecureEdit=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_SecureEdit=boolean1;
+		}else if(v instanceof String string){
+			_SecureEdit=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -457,10 +457,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setSecureCreate(Object v){
-		if(v instanceof Boolean){
-			_SecureCreate=(Boolean)v;
-		}else if(v instanceof String){
-			_SecureCreate=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_SecureCreate=boolean1;
+		}else if(v instanceof String string){
+			_SecureCreate=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -482,10 +482,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setSecureDelete(Object v){
-		if(v instanceof Boolean){
-			_SecureDelete=(Boolean)v;
-		}else if(v instanceof String){
-			_SecureDelete=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_SecureDelete=boolean1;
+		}else if(v instanceof String string){
+			_SecureDelete=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -507,10 +507,10 @@ public class XdatElementSecurityBean extends BaseElement implements java.io.Seri
 	 * @param v Value to Set.
 	 */
 	public void setAccessible(Object v){
-		if(v instanceof Boolean){
-			_Accessible=(Boolean)v;
-		}else if(v instanceof String){
-			_Accessible=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_Accessible=boolean1;
+		}else if(v instanceof String string){
+			_Accessible=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}

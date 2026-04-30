@@ -12,6 +12,7 @@ import org.nrg.xdat.om.base.auto.AutoXnatRegionresource;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 
 /**
@@ -20,6 +21,9 @@ import java.util.Hashtable;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatRegionresource extends AutoXnatRegionresource {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatRegionresource(ItemI item)
 	{

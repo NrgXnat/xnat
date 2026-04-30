@@ -1,262 +1,125 @@
-/*
- * dicomtools: org.nrg.dcm.DicomSender
- * XNAT http://www.xnat.org
- * Copyright (c) 2017, Washington University School of Medicine
- * All Rights Reserved
- *
- * Released under the Simplified BSD.
- */
-
 package org.nrg.dcm;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-
-import javax.net.ssl.SSLContext;
-
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.data.UID;
-
-import org.dcm4che2.net.ConfigurationException;
-import org.dcm4che2.net.Association;
-import org.dcm4che2.net.Device;
-import org.dcm4che2.net.DataWriterAdapter;
-import org.dcm4che2.net.NewThreadExecutor;
-import org.dcm4che2.net.NetworkApplicationEntity;
-import org.dcm4che2.net.TransferCapability;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Association;
+import org.dcm4che3.net.Connection;
+import org.dcm4che3.net.DataWriterAdapter;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.IncompatibleConnectionException;
+import org.dcm4che3.net.pdu.AAssociateRQ;
+import org.dcm4che3.net.pdu.PresentationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.nrg.dcm.DimseRSPStatusHandler.ServiceStatus;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *         Minimal DICOM Storage Service SCU
- */
 public class DicomSender {
-    // these three arrays lifted from DcmSnd
-    private static final String[] IVLE_TS = {
-            UID.ImplicitVRLittleEndian,
-            UID.ExplicitVRLittleEndian,
-            UID.ExplicitVRBigEndian,
-            };
-
-    private static final String[] EVLE_TS = {
-            UID.ExplicitVRLittleEndian,
-            UID.ImplicitVRLittleEndian,
-            UID.ExplicitVRBigEndian,
-            };
-
-    private static final String[] EVBE_TS = {
-            UID.ExplicitVRBigEndian,
-            UID.ExplicitVRLittleEndian,
-            UID.ImplicitVRLittleEndian,
-            };
-
-    private static final String DEVICE_NAME          = "DicomSender";
-    private static final String THREAD_EXECUTOR_NAME = "DicomSender";
-
-
     private final Logger logger = LoggerFactory.getLogger(DicomSender.class);
-
-    private       Association assoc;
-    private final String[]    tsuids;
-
-    private final int priority = 0;
-
-    private final NetworkApplicationEntity localAE, remoteAE;
+    private final ApplicationEntity localAE;
+    private final ApplicationEntity remoteAE;
     private final Device device;
+    private final Connection remoteConnection;
+    private Association association; // current Association
 
-    public DicomSender(final NetworkApplicationEntity localAE, final NetworkApplicationEntity remoteAE) {
+    public DicomSender(final ApplicationEntity localAE, final ApplicationEntity remoteAE) {
         this.localAE = localAE;
         this.remoteAE = remoteAE;
 
-        device = new Device(DEVICE_NAME);
-        device.setNetworkApplicationEntity(this.localAE);
-        device.setNetworkConnection(localAE.getNetworkConnection());
+        this.device = new Device("DicomSender3Device");
+        this.device.addApplicationEntity(localAE);
 
-        final Collection<String> tsuids = new HashSet<>();
-        for (final TransferCapability tc : localAE.getTransferCapability()) {
-            if (tc.isSCU()) {
-                tsuids.addAll(Arrays.asList(tc.getTransferSyntax()));
-            }
-        }
-        this.tsuids = tsuids.toArray(new String[0]);
-
-        assoc = null;
+        this.remoteConnection = new Connection();
+        this.remoteConnection.setHostname(remoteAE.getConnections().get(0).getHostname());
+        this.remoteConnection.setPort(remoteAE.getConnections().get(0).getPort());
     }
 
-    /**
-     * Initialize a TLS connection with the given security information
-     *
-     * @param keyStoreURL    Location of keystore
-     * @param keyStorePass   Password for keystore
-     * @param keyPass        Password for key
-     * @param trustStoreURL  Location of trust store
-     * @param trustStorePass Password for trust store
-     * @throws IOException              When an error occurs reading or writing data.
-     * @throws GeneralSecurityException When a security error occurs.
-     */
+    // TLS initialize
     public void initTLS(final String keyStoreURL, final String keyStorePass, final String keyPass,
-                        final String trustStoreURL, final String trustStorePass) throws IOException, GeneralSecurityException {
-        final char[]   ksp        = null == keyStorePass ? null : keyStorePass.toCharArray();
-        final KeyStore keyStore   = loadKeyStore(keyStoreURL, ksp);
-        final char[]   tsp        = null == trustStorePass ? null : trustStorePass.toCharArray();
-        final KeyStore trustStore = loadKeyStore(trustStoreURL, tsp);
-        device.initTLS(keyStore, null == keyPass ? ksp : keyPass.toCharArray(), trustStore);
+                        final String trustStoreURL, final String trustStorePass) throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("JKS");
+        try (FileInputStream kis = new FileInputStream(keyStoreURL)) {
+            keyStore.load(kis, keyStorePass.toCharArray());
+        }
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(keyStore, keyPass.toCharArray());
+
+        KeyStore trustStore = KeyStore.getInstance("JKS");
+        try (FileInputStream tis = new FileInputStream(trustStoreURL)) {
+            trustStore.load(tis, trustStorePass.toCharArray());
+        }
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(trustStore);
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+
+        setSSLContext(sslContext);
     }
 
+    // Setup SSLContext
     public void setSSLContext(final SSLContext context) {
-        device.setSSLContext(context);
+        if (context == null) throw new IllegalArgumentException("SSLContext cannot be null");
+        localAE.getConnections().forEach(conn -> {
+                    conn.setTlsProtocols("TLSv1.2", "TLSv1.3");
+                    conn.setTlsCipherSuites(context.getSupportedSSLParameters().getCipherSuites());
+                });
+        remoteConnection.setTlsProtocols("TLSv1.2", "TLSv1.3");
+        remoteConnection.setTlsCipherSuites(context.getSupportedSSLParameters().getCipherSuites());
     }
 
-    public String send(final DicomObject o, String tsuid)
-            throws IOException, CStoreException {
-        if (null == assoc || !assoc.isReadyForDataTransfer()) {
-            try {
-                assoc = connect();
-            } catch (ConfigurationException e) {
-                logger.error("association configuration failed", e);
-                throw new IOException("unable to configure association: " + e.getMessage());
-            } catch (InterruptedException e) {
-                logger.error("unable to (re)open association", e);
-                throw new IOException("thread interrupted opening association: " + e.getMessage());
-            }
-        }
+    // Send DICOM object
+    public void send(Attributes dicomObject) throws IOException, InterruptedException, IncompatibleConnectionException, GeneralSecurityException {
+        // create request
+        AAssociateRQ rq = new AAssociateRQ();
+        String sopClassUID = dicomObject.getString(org.dcm4che3.data.Tag.SOPClassUID);
+        String sopInstanceUID = dicomObject.getString(org.dcm4che3.data.Tag.SOPInstanceUID);
 
-        // TODO: error checking
-        final String cuid = o.getString(Tag.SOPClassUID);
-        final String iuid = o.getString(Tag.SOPInstanceUID);
+        // add Presentation Context
+        rq.addPresentationContext(new PresentationContext(1, sopClassUID, UID.ImplicitVRLittleEndian));
 
-        // TODO: select transfer syntax
-        tsuid = selectTransferSyntax(tsuids, tsuid);
+        // open Association
+        association = localAE.connect(remoteConnection, rq);
 
-        final CStoreRSPHandler rsph = new CStoreRSPHandler();
+        final CStoreRSPHandler rspHandler = new CStoreRSPHandler(association.nextMessageID());
 
-        try {
-            assoc.cstore(cuid, iuid, priority, new DataWriterAdapter(o), tsuid, rsph);
-            assoc.waitForDimseRSP();
-        } catch (InterruptedException e) {
-            logger.error("send interrupted", e);
-        }
+        association.cstore(sopClassUID, sopInstanceUID, 0, new DataWriterAdapter(dicomObject), UID.ImplicitVRLittleEndian, rspHandler);
 
-        final ServiceStatus status = rsph.getStatus();
-        if (ServiceStatus.SUCCESS == status) {
-            return null;
-        } else if (ServiceStatus.WARNING == status) {
-            return rsph.toString();
-        } else if (ServiceStatus.FAILURE == status) {
-            throw new CStoreException(rsph.toString());
-        } else {
-            throw new RuntimeException("Undefined ServiceStatus " + status);
-        }
+        // Wait
+        association.waitForOutstandingRSP();
     }
-
 
     public void close() {
-        try {
-            if (null != assoc) {
-                assoc.release(false);
+        if (association != null && association.isReadyForDataTransfer()) {
+            try {
+                association.release();
+            } catch (Exception e) {
+                logger.warn("release interrupted", e);
+            } finally {
+                association = null;
             }
-        } catch (InterruptedException e) {
-            logger.warn("release interrupted", e);
         }
     }
 
     public void abort() {
-        assoc.abort();
-    }
-
-    private static InputStream openURI(final URI uri) throws IOException {
-        final String scheme = uri.getScheme();
-        if (null == scheme || "file".equals(scheme)) {
-            return new FileInputStream(uri.getPath());
-        } else if ("resource".equalsIgnoreCase(scheme)) {
-            return DicomSender.class.getClassLoader().getResourceAsStream(uri.getPath());
-        }
-        try {
-            return uri.toURL().openStream();
-        } catch (MalformedURLException e) {
-            // last-ditch attempt
-            return new FileInputStream(uri.getPath());
-        }
-    }
-
-    private static String toKeyStoreType(final String fname) {
-        return null == fname ? null : fname.matches(".*\\.[pP]12\\Z") ? "PKCS12" : "JKS";
-    }
-
-    private static KeyStore loadKeyStore(final String uri, final char[] password)
-            throws IOException, GeneralSecurityException {
-        if (null == uri) {
-            return null;
-        }
-
-        final KeyStore    key = KeyStore.getInstance(toKeyStoreType(uri));
-        final InputStream is;
-        try {
-            is = openURI(new URI(uri));
-        } catch (URISyntaxException e) {
-            throw new FileNotFoundException("invalid keystore URI " + e.getMessage());
-        }
-        try {
-            key.load(is, password);
-            return key;
-        } finally {
-            is.close();
-        }
-    }
-
-    /**
-     * Lifted from DcmSnd
-     *
-     * @param available The available transfer syntaxes.
-     * @param tsuid     The specified transfer syntax ID.
-     * @return The specified transfer syntax.
-     */
-    private String selectTransferSyntax(String[] available, String tsuid) {
-        if (UID.ImplicitVRLittleEndian.equals(tsuid)) {
-            return selectTransferSyntax(available, IVLE_TS);
-        }
-        if (UID.ExplicitVRLittleEndian.equals(tsuid)) {
-            return selectTransferSyntax(available, EVLE_TS);
-        }
-        if (UID.ExplicitVRBigEndian.equals(tsuid)) {
-            return selectTransferSyntax(available, EVBE_TS);
-        }
-        return tsuid;
-    }
-
-    /**
-     * Lifted from DcmSnd
-     *
-     * @param available The available transfer syntaxes.
-     * @param tsuids    The specified transfer syntax IDs.
-     * @return The first transfer syntax found matching one of the IDs.
-     */
-    private String selectTransferSyntax(final String[] available, final String[] tsuids) {
-        for (final String tsuid : tsuids) {
-            for (final String anAvailable : available) {
-                if (anAvailable.equals(tsuid)) {
-                    return anAvailable;
-                }
+        if (association != null && association.isReadyForDataTransfer()) {
+            try {
+                association.abort();
+            } catch (Exception e) {
+                logger.warn("abort interrupted", e);
+            } finally {
+                association = null;
             }
         }
-        return null;
-    }
-
-    private Association connect() throws ConfigurationException, IOException, InterruptedException {
-        return localAE.connect(remoteAE, new NewThreadExecutor(THREAD_EXECUTOR_NAME));
     }
 }

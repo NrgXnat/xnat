@@ -29,9 +29,6 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- */
 public class CatalogBuilderTest extends Scan4TestCase {
     @Before
     public void setUp() throws IOException {
@@ -88,7 +85,7 @@ public class CatalogBuilderTest extends Scan4TestCase {
 
     static {
         final Collection<DicomAttributeIndex> tags = Lists.newArrayList();
-        tags.add(Attributes.SOPClassUID);
+        tags.add(NamedAttributes.SOPClassUID);
         tags.addAll(ImageFileAttributes.get().getNativeAttrs());
         tags.addAll(CatalogAttributes.get().getNativeAttrs());
         TAGS = ImmutableList.copyOf(tags);

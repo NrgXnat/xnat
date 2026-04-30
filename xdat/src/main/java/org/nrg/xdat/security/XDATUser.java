@@ -89,7 +89,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 throw new UserNotFoundException(login);
             }
 
-            setItem(found.get(0));
+            setItem(found.getFirst());
 
             if (!isExtended()) {
                 init();

@@ -78,24 +78,24 @@ public class InsufficientPrivilegesException extends XapiException {
         if (StringUtils.isNotBlank(_project)) {
             switch (_resources.size()) {
                 case 0:
-                    return String.format(MESSAGE_USERNAME_PROJECT, _username, _project);
+                    return MESSAGE_USERNAME_PROJECT.formatted(_username, _project);
 
                 case 1:
-                    return String.format(MESSAGE_USERNAME_PROJECT_RESOURCE, _username, _project, getResource());
+                    return MESSAGE_USERNAME_PROJECT_RESOURCE.formatted(_username, _project, getResource());
 
                 default:
-                    return String.format(MESSAGE_USERNAME_PROJECT_RESOURCES, _username, _project, getResource());
+                    return MESSAGE_USERNAME_PROJECT_RESOURCES.formatted(_username, _project, getResource());
             }
         } else {
             switch (_resources.size()) {
                 case 0:
-                    return String.format(MESSAGE_USERNAME, _username);
+                    return MESSAGE_USERNAME.formatted(_username);
 
                 case 1:
-                    return String.format(MESSAGE_USERNAME_RESOURCE, _username, getResource());
+                    return MESSAGE_USERNAME_RESOURCE.formatted(_username, getResource());
 
                 default:
-                    return String.format(MESSAGE_USERNAME_RESOURCES, _username, getResource());
+                    return MESSAGE_USERNAME_RESOURCES.formatted(_username, getResource());
             }
         }
     }

@@ -16,6 +16,7 @@ import org.nrg.xdat.om.base.auto.AutoXnatStatisticsdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -25,6 +26,9 @@ import java.util.List;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseXnatStatisticsdata extends AutoXnatStatisticsdata {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatStatisticsdata(ItemI item)
 	{

@@ -49,41 +49,100 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     private static final String USER_REG_EMAIL        = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p> <p>Welcome to the SITE_NAME Web Archive!</p> <p>You can now log on to the SITE_NAME at: SITE_LINK</p><p>Your username is: USER_USERNAME</p> <p>For support, contact the ADMIN_MAIL_LINK</p>";
     private static final String FORGOT_USERNAME_EMAIL = "<p>You requested your username, which is: USER_USERNAME</p>\n <p>Please login to the site for additional user information SITE_LINK.</p>\n";
     private static final String FORGOT_PASSWORD_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n<p>Please click this link to reset your password: RESET_LINK</p> \n<p>This link will expire in 2 hours.</p>";
-    private static final String NEW_USER_VERIFICATION_EMAIL = "<p>USER_FIRSTNAME USER_LASTNAME, </p>\n<p>We received a request to register an account for you on XNAT. If you did not make this request, you can safely ignore this email. </p>\n" +
-            "<p>If you would like to register, please confirm your email address by clicking this link within the next 24 hours: VERIFY_URL </p>\n" +
-            "<p>ENABLED_MESSAGE</p>\n" +
-            "<p>To request a new email verification link, please click this link and select \"Resend email verification\": FORGOT_LOGIN_URL</p>";
-    private static final String REQUEST_PROJECT_ACCESS_EMAIL = "<p>Hello,</p>\n" +
-            "<p>We received a request to access the PROJECT_NAME project from a user on SITE_NAME as a(n) RQ_ACCESS_LEVEL. Granting this kind of access in this project will mean the user can LIST_PERMISSIONS</p>\n" +
-            "<p>Login: USER_USERNAME<br>\nEmail: USER_EMAIL<br>\nFirstname: USER_FIRSTNAME<br>\nLastname: USER_LASTNAME<br>Comments: RQA_COMMENTS<br>\nTo approve or deny this project access request, please click the following link: ACCESS_URL</p>\n" +
-            "<p>The SITE_NAME team.<br>\nSITE_LINK <br>\nADMIN_MAIL_LINK</p>";
-    private static final String PROJECT_ACCESS_APPROVAL_EMAIL = "<p>Hello,</p>\n" + "<p>You have been granted access to the PROJECT_NAME project as a member of the RQ_ACCESS_LEVEL group.</p>\n" +
-            "<p>To proceed to SITE_LINK and begin working with this project, please click the following link: ACCESS_URL</p>\n" +
-            "<p>The SITE_NAME team.<br>\nSITE_LINK <br>\nADMIN_MAIL_LINK </p>";
-    private static final String PROJECT_ACCESS_DENIAL_EMAIL = "<p>We regret to inform you that your request to access the PROJECT_NAME project has been denied.  Please consult the project manager for additional details at USER_EMAIL.</p>\n" +
-            "<p>The SITE_NAME team.<br>\nSITE_LINK <br>\nADMIN_MAIL_LINK</p>";
-    private static final String INVITE_PROJECT_ACCESS_EMAIL = "<p>Hello,</p>\n" + "<p>You have been invited to join the PROJECT_NAME project on SITE_NAME by USER_FIRSTNAME USER_LASTNAME. If you were not expecting to receive this invitation, you can safely ignore this email.\n</p>" +
-            "<p>To accept this invitation and begin working in this project, please click the following link: ACCEPT_URL \n<br />\n<br /></p>" + "<p>The SITE_NAME team.\n<br />SITE_LINK \n<br />ADMIN_MAIL_LINK</p>";
-    private static final String DISABLED_USER_VERIFICATION_EMAIL = "<p>Expired User Reverified</p>\n" + "<ul style=\"list-style-type:none;\"> <li>Date: DATE_INPUT</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li></ul>"
-            + "ENABLED_MESSAGE";
+    private static final String NEW_USER_VERIFICATION_EMAIL = """
+            <p>USER_FIRSTNAME USER_LASTNAME, </p>
+            <p>We received a request to register an account for you on XNAT. If you did not make this request, you can safely ignore this email. </p>
+            <p>If you would like to register, please confirm your email address by clicking this link within the next 24 hours: VERIFY_URL </p>
+            <p>ENABLED_MESSAGE</p>
+            <p>To request a new email verification link, please click this link and select "Resend email verification": FORGOT_LOGIN_URL</p>\
+            """;
+    private static final String REQUEST_PROJECT_ACCESS_EMAIL = """
+            <p>Hello,</p>
+            <p>We received a request to access the PROJECT_NAME project from a user on SITE_NAME as a(n) RQ_ACCESS_LEVEL. Granting this kind of access in this project will mean the user can LIST_PERMISSIONS</p>
+            <p>Login: USER_USERNAME<br>
+            Email: USER_EMAIL<br>
+            Firstname: USER_FIRSTNAME<br>
+            Lastname: USER_LASTNAME<br>Comments: RQA_COMMENTS<br>
+            To approve or deny this project access request, please click the following link: ACCESS_URL</p>
+            <p>The SITE_NAME team.<br>
+            SITE_LINK <br>
+            ADMIN_MAIL_LINK</p>\
+            """;
+    private static final String PROJECT_ACCESS_APPROVAL_EMAIL = """
+            <p>Hello,</p>
+            <p>You have been granted access to the PROJECT_NAME project as a member of the RQ_ACCESS_LEVEL group.</p>
+            <p>To proceed to SITE_LINK and begin working with this project, please click the following link: ACCESS_URL</p>
+            <p>The SITE_NAME team.<br>
+            SITE_LINK <br>
+            ADMIN_MAIL_LINK </p>\
+            """;
+    private static final String PROJECT_ACCESS_DENIAL_EMAIL = """
+            <p>We regret to inform you that your request to access the PROJECT_NAME project has been denied.  Please consult the project manager for additional details at USER_EMAIL.</p>
+            <p>The SITE_NAME team.<br>
+            SITE_LINK <br>
+            ADMIN_MAIL_LINK</p>\
+            """;
+    private static final String INVITE_PROJECT_ACCESS_EMAIL = """
+            <p>Hello,</p>
+            <p>You have been invited to join the PROJECT_NAME project on SITE_NAME by USER_FIRSTNAME USER_LASTNAME. If you were not expecting to receive this invitation, you can safely ignore this email.
+            </p>\
+            <p>To accept this invitation and begin working in this project, please click the following link: ACCEPT_URL\s
+            <br />
+            <br /></p>\
+            <p>The SITE_NAME team.
+            <br />SITE_LINK\s
+            <br />ADMIN_MAIL_LINK</p>\
+            """;
+    private static final String DISABLED_USER_VERIFICATION_EMAIL = """
+            <p>Expired User Reverified</p>
+            <ul style="list-style-type:none;"> <li>Date: DATE_INPUT</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li></ul>\
+            ENABLED_MESSAGE\
+            """;
     private static final String ERROR_EMAIL= "<p>Error Thrown:</p>\n <ul style=\"list-style-type:none;\"> <li>Host: SITE_NAME</li> <li>User: USER_LOGIN (USER_USERNAME USER_LASTNAME)</li> <li>Time: ERROR_TIME</li> <li>Error: ERROR_MESSAGE</li> </ul>";
-    private static final String NEW_USER_NOTIFICATION_EMAIL = "<p>New User Created</p>\n" + "<ul style=\"list-style-type:none;\"> <li>Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>" +
-            "<p>This account has been created and automatically enabled based on the current system configuration.</p>\n" + "PROJECT_ACCESS_REQUESTS" +
-            "<p> REVIEW_LINK </p>\n" +
-            "<p>User Comments: USER_COMMENTS</p>";
-    private static final String NEW_USER_REQUEST_EMAIL = "<p>New User Request</p>\n" + "<ul style=\"list-style-type:none;\"> <li> Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>" +
-            "<p>This account has been created but will be disabled until you enable the account. You must log in before enabling the account.</p>\n" + "<p>PROJECT_ACCESS_REQUESTS</p>\n" +
-            "<p> REVIEW_LINK </p>\n" +
-            "<p>User Comments: USER_COMMENTS</p>";
-    private static final String PIPELINE_AUTORUN_SUCCESS_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n <p>The following session was archived in SITE_NAME <ul style=\"list-style-type:none;\"> <li> Project: PROJECT_NAME</li> <li>Subject: SUBJECT_NAME</li> <li>Session: EXPERIMENT_NAME</li> </ul>" +
-            "<p>Additional details for this session are available SUCCESS_URL.\n<br>SITE_NAME team</p>";
+    private static final String NEW_USER_NOTIFICATION_EMAIL = """
+            <p>New User Created</p>
+            <ul style="list-style-type:none;"> <li>Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>\
+            <p>This account has been created and automatically enabled based on the current system configuration.</p>
+            PROJECT_ACCESS_REQUESTS\
+            <p> REVIEW_LINK </p>
+            <p>User Comments: USER_COMMENTS</p>\
+            """;
+    private static final String NEW_USER_REQUEST_EMAIL = """
+            <p>New User Request</p>
+            <ul style="list-style-type:none;"> <li> Time: TIME</li> <li>Site: SITE_NAME</li> <li>Host: SITE_LINK</li> <li>Username: USER_USERNAME</li> <li>First: USER_FIRSTNAME</li> <li>Last: USER_LASTNAME</li> <li>Phone: USER_PHONE</li> <li>Lab: LAB_NAME</li> <li>Email: USER_EMAIL</li> </ul>\
+            <p>This account has been created but will be disabled until you enable the account. You must log in before enabling the account.</p>
+            <p>PROJECT_ACCESS_REQUESTS</p>
+            <p> REVIEW_LINK </p>
+            <p>User Comments: USER_COMMENTS</p>\
+            """;
+    private static final String PIPELINE_AUTORUN_SUCCESS_EMAIL = """
+            <p>Dear USER_FIRSTNAME USER_LASTNAME,</p>
+             <p>The following session was archived in SITE_NAME <ul style="list-style-type:none;"> <li> Project: PROJECT_NAME</li> <li>Subject: SUBJECT_NAME</li> <li>Session: EXPERIMENT_NAME</li> </ul>\
+            <p>Additional details for this session are available SUCCESS_URL.
+            <br>SITE_NAME team</p>\
+            """;
     private static final String PIPELINE_EMAIL_DEFAULT_SUCCESS = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n <p>PIPELINE_NAME has completed without errors for EXPERIMENT_NAME.</p>\n <p>Details are available at SUCCESS_URL. <br>\nSITE_NAME team</p>";
-    private static final String PIPELINE_EMAIL_DEFAULT_FAILURE = "<p>The pipeline PIPELINE_NAME encountered an error.</p> <ul style=\"list-style-type:none;\"> <li>Project: PROJECT_NAME</li> <li>Experiment: EXPERIMENT_NAME</li> <li>Pipeline Step: PIPELINE_STEP </li> </ul>" +
-            "<p>The SITE_NAME technical team is aware of the issue and will notify you when it has been resolved.</p>\n <p>We appreciate your patience. Please contact CONTACT_EMAIL with questions or concerns.</p>\n" +
-            "<p>ATTACHMENTS_STATEMENT<br>\nPIPELINE_PARAMETERS<br>\nSTDOUT<br>\nSTDERR</p>";
-    private static final String BATCH_WORKFLOW_COMPLETE_EMAIL = "<p>Dear USER_FIRSTNAME USER_LASTNAME,</p>\n <p>The following batch procedure has been completed: \n<br>PROCESS_NAME </p>\n" +
-            "<p>NUMBER_MESSAGES successful transfer(s).\n<br>MESSAGES_LIST \n<br>ERRORS_LIST \n<br>Details for this project are available at SITE_LINK.</p>\n" +
-            "<p>The SITE_NAME team.<br>\nSITE_LINK <br>\n ADMIN_MAIL_LINK </p>";
+    private static final String PIPELINE_EMAIL_DEFAULT_FAILURE = """
+            <p>The pipeline PIPELINE_NAME encountered an error.</p> <ul style="list-style-type:none;"> <li>Project: PROJECT_NAME</li> <li>Experiment: EXPERIMENT_NAME</li> <li>Pipeline Step: PIPELINE_STEP </li> </ul>\
+            <p>The SITE_NAME technical team is aware of the issue and will notify you when it has been resolved.</p>
+             <p>We appreciate your patience. Please contact CONTACT_EMAIL with questions or concerns.</p>
+            <p>ATTACHMENTS_STATEMENT<br>
+            PIPELINE_PARAMETERS<br>
+            STDOUT<br>
+            STDERR</p>\
+            """;
+    private static final String BATCH_WORKFLOW_COMPLETE_EMAIL = """
+            <p>Dear USER_FIRSTNAME USER_LASTNAME,</p>
+             <p>The following batch procedure has been completed:\s
+            <br>PROCESS_NAME </p>
+            <p>NUMBER_MESSAGES successful transfer(s).
+            <br>MESSAGES_LIST\s
+            <br>ERRORS_LIST\s
+            <br>Details for this project are available at SITE_LINK.</p>
+            <p>The SITE_NAME team.<br>
+            SITE_LINK <br>
+             ADMIN_MAIL_LINK </p>\
+            """;
     private static final String UNAUTHORIZED_DATA_ATTEMPT_EMAIL = "<p>Unauthorized access TYPE USER_DETAILS prevented</p>";
     private static final String EMAIL_CHANGE_REQUEST_EMAIL = "<p>A request was made to change the email address for the user with username USER_USERNAME to NEW_EMAIL. If you did not make this request, someone else may have gotten access to your account and you should contact the site administrator: ADMIN_MAIL_LINK.</p>";
     private static final String VERIFY_EMAIL_CHANGE_REQUEST_EMAIL = "<p>A request was made to change the email address for the user with username USER_USERNAME to this address. If you did not make this request, you can ignore this email. If you made this request and wish to have this change take effect, please log into your account and click CHANGE_EMAIL_LINK.</p>";
@@ -91,8 +150,12 @@ public class NotificationsPreferences extends EventTriggeringAbstractPreferenceB
     private static final String SYSTEM_PATH_ERROR = "<p>The following system path errors have been discovered:\n<br>ERRORS_LIST</p>";
     private static final String UPLOAD_BY_REFERENCE_SUCCESS = "<p>The upload by reference requested by USER_USERNAME has finished successfully.\n<br>DUPLICATES_LIST</p>";
     private static final String UPLOAD_BY_REFERENCE_ERROR = "<p>The upload by reference requested by USER_USERNAME has encountered an error.</p>\n <p>Please contact your IT staff or the application logs for more information.</p>";
-    private static final String DATA_ALERT_CUSTOM_MESSAGE = "<p>Hello, </p> <p>USER_FIRSTNAME USER_LASTNAME thought you might be interested in a data set contained in the SITE_NAME. Please follow REQUEST_LINK to view the data.</p>\n" +
-            "<p>Message from sender:<br>\n" + "SENDER_MESSAGE<br>\n</p> <p>This email was sent by the SITE_LINK data management system on TIME_SENT. If you have questions or concerns, please contact HELP_CONTACT</p>.";
+    private static final String DATA_ALERT_CUSTOM_MESSAGE = """
+            <p>Hello, </p> <p>USER_FIRSTNAME USER_LASTNAME thought you might be interested in a data set contained in the SITE_NAME. Please follow REQUEST_LINK to view the data.</p>
+            <p>Message from sender:<br>
+            SENDER_MESSAGE<br>
+            </p> <p>This email was sent by the SITE_LINK data management system on TIME_SENT. If you have questions or concerns, please contact HELP_CONTACT</p>.\
+            """;
 
     @Autowired
     public NotificationsPreferences(final NrgPreferenceService preferenceService, final NrgEventServiceI eventService, final ConfigPaths configPaths, final OrderedProperties initPrefs) {

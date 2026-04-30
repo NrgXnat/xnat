@@ -11,10 +11,7 @@ javaPlatform {
 
 dependencies {
     constraints {
-        // ============================================================
         // Internal NRG modules
-        // ============================================================
-
         api project(':test')
         api project(':framework')
         api project(':transaction')
@@ -37,9 +34,7 @@ dependencies {
         api "org.nrg.xnat:web:${project.version}"
         api project(':xnat-data-builder')
 
-        // ============================================================
-        // External third-party libraries — from Version Catalog
-        // ============================================================
+        // External third-party libraries (from Version Catalog)
 
         // Spring Framework
         api libs.spring.core
@@ -210,6 +205,8 @@ dependencies {
 
         // Java/Jakarta EE
         api libs.activation.javax.activation.api
+        api libs.activation.com.sun.javax.activation
+        api libs.jakarta.inject.api
         api libs.annotation.javax.annotation.api
         api libs.el.javax.el.api
         api libs.inject.javax.inject
@@ -297,7 +294,6 @@ dependencies {
         api libs.junit.jupiter.api
         api libs.junit.jupiter.engine
         api libs.junit.vintage.engine
-        api libs.mockito.all
         api libs.mockito.core
         api libs.mockito.junit.jupiter
         api libs.easymock.easymock
@@ -306,8 +302,13 @@ dependencies {
         api libs.hamcrest.hamcrest
         api libs.assertj.core
         api libs.sbrannen.spring.test.junit5
-        api libs.powermock.api.mockito2
-        api libs.powermock.module.junit4
+        api libs.testcontainers.testcontainers
+        api libs.testcontainers.junit.jupiter
+        api libs.testcontainers.postgresql
+        api libs.tomakehurst.wiremock
+        api libs.graaljs.polyglot
+        api libs.graaljs.js.community
+        api libs.graaljs.js.scriptengine
         api libs.ttddyy.datasource.proxy
     }
 }

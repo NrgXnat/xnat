@@ -172,7 +172,7 @@ public class ItemAccessHistory {
 		his.setMethod(method);
 		his.setSearch_element(item.getXSIType());
 		SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
-		SchemaField sf = (SchemaField)se.getAllPrimaryKeys().get(0);
+		SchemaField sf = (SchemaField)se.getAllPrimaryKeys().getFirst();
 		his.setSearch_field(StringUtils.replace(StringUtils.replace(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
 		Object o = item.getProperty(sf.getId());
 		his.setSearch_value(o.toString());

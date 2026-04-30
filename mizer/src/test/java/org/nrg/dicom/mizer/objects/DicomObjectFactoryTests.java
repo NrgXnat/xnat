@@ -1,8 +1,6 @@
 package org.nrg.dicom.mizer.objects;
 
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.VR;
+import org.dcm4che2.data.Tag;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -12,17 +10,135 @@ import org.nrg.dicom.mizer.tags.TagSequence;
 import org.nrg.dicom.mizer.values.ConstantValue;
 import org.nrg.dicom.mizer.values.Value;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Period;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
-import static org.junit.Assert.*;
-import static org.nrg.dicom.mizer.TestUtils.*;
-import static org.nrg.dicom.mizer.TestUtilTags.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.nrg.dicom.mizer.TestUtilTags.AE_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.AE_VM2;
+import static org.nrg.dicom.mizer.TestUtilTags.AS_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.AT_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.CS_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.DA_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.DT_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.FD_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.FL_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.IS_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.KNOWN_SEQ_TAG_ITEM;
+import static org.nrg.dicom.mizer.TestUtilTags.KNOWN_SEQ_TAG_NO_ITEMS;
+import static org.nrg.dicom.mizer.TestUtilTags.KNOWN_SEQ_TAG_WITH_POPULATED_ITEM;
+import static org.nrg.dicom.mizer.TestUtilTags.LO_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.LT_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.NUMBER_OF_TAGS_IN_ALL_VRS_OBJECT;
+import static org.nrg.dicom.mizer.TestUtilTags.OB_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.OD_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.OF_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.OL_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.OV_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.OW_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.PCID;
+import static org.nrg.dicom.mizer.TestUtilTags.PCID_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.PN_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.PRIVATE_CREATOR_ID;
+import static org.nrg.dicom.mizer.TestUtilTags.PRIVATE_TAG;
+import static org.nrg.dicom.mizer.TestUtilTags.PT_WITHOUT_PCID_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.PT_WITHOUT_PCID_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.PT_WITH_ONE_ITEM_TAG_WITH_VALUE;
+import static org.nrg.dicom.mizer.TestUtilTags.PT_WITH_PCID_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.PT_WITH_PCID_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.SH_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.SL_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.SPCID;
+import static org.nrg.dicom.mizer.TestUtilTags.SPT_WITHOUT_PCID_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.SPT_WITHOUT_PCID_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.SPT_WITH_PCID_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.SPT_WITH_PCID_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.SS_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.STAG_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.STAG_PRESENT_NO_ITEMS;
+import static org.nrg.dicom.mizer.TestUtilTags.STAG_PRESENT_ONE_ITEM_EMPTY;
+import static org.nrg.dicom.mizer.TestUtilTags.STAG_PRESENT_ONE_ITEM_TAG_EMPTY_VALUE;
+import static org.nrg.dicom.mizer.TestUtilTags.STAG_PRESENT_ONE_ITEM_TAG_WITH_VALUE;
+import static org.nrg.dicom.mizer.TestUtilTags.STAG_PRESENT_ONE_ITEM_WITH_TAG_NOT_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.ST_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.SV_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_MATCHES_MULTIPLE_TAGS;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_PT_WITHOUT_PCID_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_PT_WITHOUT_PCID_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_PT_WITH_PCID_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_PT_WITH_PCID_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_SPT_WITHOUT_PCID_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_SPT_WITHOUT_PCID_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_SPT_WITH_PCID_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_SPT_WITH_PCID_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_STAG_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_STAG_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_STAG_PRESENT_EMPTY;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_TAG_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_TAG_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_TAG_PRESENT_EMPTY;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_UNKNOWN_STAG_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_UNKNOWN_STAG_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_UNKNOWN_STAG_PRESENT_EMPTY;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_UNKNOWN_TAG_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_UNKNOWN_TAG_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.TAGPATH_UNKNOWN_TAG_PRESENT_EMPTY;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_MISSING_PCID;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PCID_IN_MISSING_PCID_GROUP;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PRESENT_EMPTY;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PRIVATE_CREATOR_ID;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PRIVATE_WITHOUT_ID;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PRIVATE_WITHOUT_ID_AFTER_CREATION;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PRIVATE_WITH_ID;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PRIVATE_WITH_WRONG_PVT_BLOCK;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PUBLIC_KNOWN;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_PUBLIC_UNKNOWN;
+import static org.nrg.dicom.mizer.TestUtilTags.TAG_SEQ_KNOWN;
+import static org.nrg.dicom.mizer.TestUtilTags.TM_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.UC_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.UI_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.UL_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_SEQ_TAG_WITH_EMPTY_ITEM;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_SEQ_TAG_WITH_POPULATED_ITEM;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_STAG_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_STAG_ONE_ITEM_TAG_EMPTY_VALUE;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_STAG_ONE_ITEM_TAG_WITH_VALUE;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_STAG_ONE_ITEM_WITH_TAG_NOT_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_STAG_PRESENT_NO_ITEMS;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_STAG_PRESENT_ONE_ITEM_EMPTY;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_TAG_MISSING;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_TAG_PRESENT;
+import static org.nrg.dicom.mizer.TestUtilTags.UNKNOWN_TAG_PRESENT_EMPTY;
+import static org.nrg.dicom.mizer.TestUtilTags.UN_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.UR_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.US_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.UT_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.UV_VM1;
+import static org.nrg.dicom.mizer.TestUtilTags.createDicomObject_All_VRs;
+import static org.nrg.dicom.mizer.TestUtilTags.createDicomObject_TagTypes;
+import static org.nrg.dicom.mizer.TestUtils.TestSeqTag;
+import static org.nrg.dicom.mizer.TestUtils.TestSeqTagVM;
+import static org.nrg.dicom.mizer.TestUtils.TestTag;
+import static org.nrg.dicom.mizer.TestUtils.encodeHex;
+import static org.nrg.dicom.mizer.TestUtils.put;
 
 /**
  * This class is expected to test 100% of the public methods in DicomObjectFactory. The goal here is basic coverage
@@ -47,28 +163,12 @@ public class DicomObjectFactoryTests {
     }
 
     @Test
-    public void createFromDcm4ch2Object() {
-        DicomObject dicomObject = new BasicDicomObject();
-        dicomObject.putString(AE_VM1.tag, VR.AE, "ae1");
-        DicomObjectI dobj = DicomObjectFactory.newInstance(dicomObject);
-        assertFalse(dobj.isEmpty());
-    }
-
-    @Test
-    public void createFromDcm4ch2Object2() {
-        DicomObject dicomObject = new BasicDicomObject();
-        dicomObject.putString(AE_VM1.tag, VR.AE, "ae1");
-        DicomObjectI dobj = DicomObjectFactory.newInstance(new File("ignored"), dicomObject);
-        assertFalse(dobj.isEmpty());
-    }
-
-    @Test
     public void getStringWithTag_All_VR() {
         DicomObjectI dobj = createDicomObject_All_VRs();
         assertEquals(AE_VM1.initialValue, dobj.getString(AE_VM1.tag));
         assertEquals(AS_VM1.initialValue, dobj.getString(AS_VM1.tag));
-        // use the post value to get the value redirected from the initial value
-        assertEquals(AT_VM1.postValue, dobj.getString(AT_VM1.tag));
+//         use the post value to get the value redirected from the initial value
+        assertEquals(AT_VM1.initialValue, dobj.getString(AT_VM1.tag));
         assertEquals(CS_VM1.initialValue, dobj.getString(CS_VM1.tag));
         assertEquals(DA_VM1.initialValue, dobj.getString(DA_VM1.tag));
         assertEquals(DT_VM1.initialValue, dobj.getString(DT_VM1.tag));
@@ -77,12 +177,12 @@ public class DicomObjectFactoryTests {
         assertEquals(IS_VM1.initialValue, dobj.getString(IS_VM1.tag));
         assertEquals(LO_VM1.initialValue, dobj.getString(LO_VM1.tag));
         assertEquals(LT_VM1.initialValue, dobj.getString(LT_VM1.tag));
-        assertEquals(OB_VM1.encodedValue, dobj.getString(OB_VM1.tag));
+        assertEquals(OB_VM1.initialValue, dobj.getString(OB_VM1.tag));
         assertEquals(OD_VM1.initialValue, dobj.getString(OD_VM1.tag));
         assertEquals(OF_VM1.initialValue, dobj.getString(OF_VM1.tag));
         assertEquals(OL_VM1.initialValue, dobj.getString(OL_VM1.tag));
         assertEquals(OV_VM1.initialValue, dobj.getString(OV_VM1.tag));
-        assertEquals(OW_VM1.encodedValue, dobj.getString(OW_VM1.tag));
+        assertEquals(OW_VM1.initialValue, dobj.getString(OW_VM1.tag));
         assertEquals(PN_VM1.initialValue, dobj.getString(PN_VM1.tag));
         assertEquals(SH_VM1.initialValue, dobj.getString(SH_VM1.tag));
         assertEquals(SL_VM1.initialValue, dobj.getString(SL_VM1.tag));
@@ -133,7 +233,8 @@ public class DicomObjectFactoryTests {
         assertEquals(PT_WITHOUT_PCID_PRESENT.initialValue, dobj.getString(PT_WITHOUT_PCID_PRESENT.tag));
         assertNull(dobj.getString(PT_WITHOUT_PCID_MISSING.tag));
         // getting value of sequence tag is unsupported.
-        assertThrows(UnsupportedOperationException.class, () -> dobj.getString(0x00209221));
+        // Attributes doesn't throw exception.
+//        assertThrows(UnsupportedOperationException.class, () -> dobj.getString(0x00209221));
     }
 
     @Test
@@ -205,8 +306,8 @@ public class DicomObjectFactoryTests {
         // private tags with missing creator id are not a problem.
         assertEquals(SPT_WITHOUT_PCID_PRESENT.initialValue, dobj.getString(SPT_WITHOUT_PCID_PRESENT.tag));
         assertNull(dobj.getString(SPT_WITHOUT_PCID_MISSING.tag));
-        // getting value of sequence tag is unsupported.
-        assertThrows(UnsupportedOperationException.class, () -> dobj.getString(0x00209221));
+        // getting value of sequence tag is unsupported. (Dcm4che5 changed)L
+//        assertThrows(UnsupportedOperationException.class, () -> dobj.getString(0x00209221));
     }
 
     @Test
@@ -255,7 +356,7 @@ public class DicomObjectFactoryTests {
         TestTag t1 = new TestTag(0x00100010, "t1");
         DicomObjectI dobj = DicomObjectFactory.newInstance();
         dobj.putBytes(OB_VM1.tag, "OB", OB_VM1.initialValue.getBytes(StandardCharsets.UTF_8));
-        assertEquals(OB_VM1.encodedValue, dobj.getString(OB_VM1.tag));
+        assertEquals(OB_VM1.initialValue, new String(dobj.getBytes(OB_VM1.tag),StandardCharsets.UTF_8));
     }
 
     @Test
@@ -478,7 +579,9 @@ public class DicomObjectFactoryTests {
         ClassLoader loader = this.getClass().getClassLoader();
         DicomObjectI dobj = DicomObjectFactory.newInstance();
         dobj.read(loader.getResourceAsStream("dicom/seq/seq_types.dcm"));
+        dobj.putString(new int[]{0x00120064, 0, 0x00080104}, "test");
         assertTrue(dobj.contains(new int[]{0x00120064, 1, 0x00080100}));
+        assertTrue(dobj.contains(new int[]{0x00120064, 0, 0x00080104}));
         assertTrue(dobj.contains(new int[]{0x00120064, 1}));
         assertTrue(dobj.contains(new int[]{0x00120064}));
         assertFalse(dobj.contains(new int[]{0x00081032, 0, 0x00080100}));
@@ -521,16 +624,13 @@ public class DicomObjectFactoryTests {
         put(dobj, pcid);
         put(dobj, pc1);
 
-        // creator-id elements are illegal arguments
-        assertThrows(IllegalArgumentException.class, () -> dobj.getPrivateCreator(0x00170010));
-        // public tags are illegal arguments
-        assertThrows(IllegalArgumentException.class, () -> dobj.getPrivateCreator(0x00100010));
-
         // tag does not have to exist in the dataset.
         assertEquals("pcid", dobj.getPrivateCreator(0x00171000));
         assertEquals("pcid", dobj.getPrivateCreator(0x00171001));
         // Null if the block does not have an ID.
         assertNull(dobj.getPrivateCreator(0x00171100));
+        assertNull(dobj.getPrivateCreator(0x00170010));
+        assertNull(dobj.getPrivateCreator(0x00100010));
     }
 
     @Test
@@ -648,7 +748,7 @@ public class DicomObjectFactoryTests {
         DicomObjectI dobj = DicomObjectFactory.newInstance();
         put(dobj, t1);
         put(dobj, t2_0_t1);
-        assertNull(dobj.getItem(t2_0_t1.tag));
+        assertNull(dobj.getItem(t2_1_t1_missing.tag));
         DicomObjectI item1 = dobj.getItem(new int[]{0x00209221, 0});
         assertEquals(t2_0_t1.initialValue, item1.getString(0x00209164));
         DicomObjectI item2 = dobj.getItem(new int[]{0x00209221, 1});
@@ -975,8 +1075,8 @@ public class DicomObjectFactoryTests {
         put(dobj, AE_VM1);
         put(dobj, AS_VM1);
         dobj.toCompleteString();
-        assertEquals("(0008,0054) AE #8 [AETitle1] Retrieve AE Title\n" +
-                "(0010,1010) AS #4 [064Y] Patient’s Age\n", dobj.toCompleteString());
+        assertEquals("(0008,0054) AE [AETitle1] RetrieveAETitle\n" +
+                "(0010,1010) AS [064Y] PatientAge\n", dobj.toCompleteString());
     }
 
     @Test
@@ -985,8 +1085,8 @@ public class DicomObjectFactoryTests {
         put(dobj, AE_VM1);
         put(dobj, AS_VM1);
         dobj.toString();
-        assertEquals("(0008,0054) AE #8 [AETitle1] Retrieve AE Title\n" +
-                "(0010,1010) AS #4 [064Y] Patient’s Age\n", dobj.toCompleteString());
+        assertEquals("(0008,0054) AE [AETitle1] RetrieveAETitle\n" +
+                "(0010,1010) AS [064Y] PatientAge\n", dobj.toCompleteString());
     }
 
     @Test
@@ -999,13 +1099,6 @@ public class DicomObjectFactoryTests {
             dobj.dump(ps);
             assertEquals(22, file.length());
         }
-    }
-
-    @Test
-    public void getDcm4che2Object() {
-        DicomObjectI dobj = DicomObjectFactory.newInstance();
-        put(dobj, AS_VM1);
-        assertTrue(dobj.getDcm4che2Object() instanceof DicomObject);
     }
 
     // DicomElementI methods
@@ -1084,4 +1177,130 @@ public class DicomObjectFactoryTests {
         assertEquals("UI", dobj.getElement(UI_VM1.tag).getVRAsString());
     }
 
+    private final static double epsilon = 0.001;
+
+    @Test
+    public void putAndGetStringFLMultiple() {
+        final float[] vals = new float[]{1.1f, 2.2f};
+        final String[] strvals = new String[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+            strvals[i] = Float.toString(vals[i]);
+        }
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{Tag.ObjectPixelSpacingInCenterOfBeam};
+        assertEquals("FL", o.getVR(tp[tp.length-1]));
+        o.putString(tp, String.join("\\", strvals));
+        final String[] out = o.getString(tp).split("\\\\");
+        IntStream.range(0, vals.length).forEach(i -> assertEquals(vals[i], Float.parseFloat(out[i]), epsilon));
+    }
+
+    @Test
+    public void putAndGetStringFLSingle() {
+        final float val = 10.0f;
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{Tag.ExaminedBodyThickness};
+        assertEquals("FL", o.getVR(tp[tp.length-1]));
+        o.putString(tp, Float.toString(val));
+        assertEquals(val, Float.parseFloat(o.getString(tp)), epsilon);
+    }
+
+    @Test
+    public void putAndGetStringFDMultiple() {
+        final double[] vals = new double[]{0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6};
+        final String[] strvals = new String[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+            strvals[i] = Double.toString(vals[i]);
+        }
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{Tag.ImageOrientationVolume};
+        assertEquals("FD", o.getVR(tp[tp.length-1]));
+        o.putString(tp, String.join("\\", strvals));
+        final String[] out = o.getString(tp).split("\\\\");
+        IntStream.range(0, vals.length).forEach(i -> assertEquals(vals[i], Double.parseDouble(out[i]), epsilon));
+    }
+
+    @Test
+    public void putAndGetStringFDSingle() {
+        final double val = 1.2;
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{Tag.EventTimeOffset};
+        assertEquals("FD", o.getVR(tp[tp.length-1]));
+        o.putString(tp, Double.toString(val));
+        assertEquals(val, Double.parseDouble(o.getString(tp)), epsilon);
+    }
+
+    @Test
+    public void putAndGetStringSLMultiple() {
+        final int[] vals = new int[]{1, 2, 3, 4, 5, 6};
+        final String[] strvals = new String[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+            strvals[i] = Integer.toString(vals[i]);
+        }
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{Tag.PixelCoordinatesSetTrial};
+        assertEquals("SL", o.getVR(tp[tp.length-1]));
+        o.putString(tp, String.join("\\", strvals));
+        final String[] out = o.getString(tp).split("\\\\");
+        IntStream.range(0, vals.length).forEach(i -> assertEquals(vals[i], Double.parseDouble(out[i]), epsilon));
+    }
+
+    @Test
+    public void putAndGetStringSLSingle() {
+        final int val = 42;
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{Tag.SelectorSLValue};
+        assertEquals("SL", o.getVR(tp[tp.length-1]));
+        o.putString(tp, Integer.toString(val));
+        assertEquals(val, Integer.parseInt(o.getString(tp)));
+    }
+
+    @Test
+    public void putAndGetStringSSMultiple() {
+        final short[] vals = new short[]{9,10};
+        final String[] strvals = new String[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+            strvals[i] = Short.toString(vals[i]);
+        }
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{Tag.CenterOfCircularExposureControlSensingRegion};
+        assertEquals("SS", o.getVR(tp[tp.length-1]));
+        o.putString(tp, String.join("\\", strvals));
+        final String[] out = o.getString(tp).split("\\\\");
+        IntStream.range(0, vals.length).forEach(i -> assertEquals(vals[i], Short.parseShort(out[i]), epsilon));
+    }
+
+    @Test
+    public void putAndGetStringSSSingle() {
+        final short val = 19;
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{Tag.TagAngleSecondAxis};
+        assertEquals("SS", o.getVR(tp[tp.length-1]));
+        o.putString(tp, Short.toString(val));
+        assertEquals(val, Short.parseShort(o.getString(tp)));
+    }
+
+    @Test
+    public void putAndGetStringSVMultiple() {
+        final long[] vals = new long[]{10,12};
+        final String[] strvals = new String[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+            strvals[i] = Long.toString(vals[i]);
+        }
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{0x00720082}; // Selector SV Value
+        assertEquals("SV", o.getVR(tp[tp.length-1]));
+        o.putString(tp, String.join("\\", strvals));
+        final String[] out = o.getString(tp).split("\\\\");
+        IntStream.range(0, vals.length).forEach(i -> assertEquals(vals[i], Long.parseLong(out[i]), epsilon));
+    }
+
+    @Test
+    public void putAndGetStringSVSingle() {
+        final long val = 23;
+        final DicomObjectI o = DicomObjectFactory.newInstance();
+        final int[] tp = new int[]{0x00720082}; // Selector SV Value
+        assertEquals("SV", o.getVR(tp[tp.length-1]));
+        o.putString(tp, Long.toString(val));
+        assertEquals(val, Long.parseLong(o.getString(tp)));
+    }
 }

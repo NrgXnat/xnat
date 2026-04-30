@@ -409,7 +409,7 @@ public class UserGroup implements UserGroupI {
             fieldMappingSet.setMethod("OR");
             xea.setPermissions_allowSet(fieldMappingSet);
         } else {
-            fieldMappingSet = set.get(0);
+            fieldMappingSet = set.getFirst();
         }
 
         final XdatFieldMapping xfm;

@@ -26,7 +26,7 @@ public class TestMagicCaret {
     public void testHappy() throws MizerException {
         DicomObjectI dobj = DicomObjectFactory.newInstance();
 
-        TestTag t1 = new TestTag( 0x00100010, "Doe^John^^^", "Handsome!");
+        TestTag t1 = new TestTag( 0x00100010, "Doe^John", "Handsome!");
         put( dobj, t1);
 
         String script =

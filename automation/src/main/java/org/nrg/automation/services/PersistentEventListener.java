@@ -14,7 +14,6 @@ import org.nrg.automation.event.AutomationEventImplementerI;
 import org.nrg.framework.event.StructuredEventI;
 import org.nrg.framework.event.persist.PersistentEventImplementerI;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
@@ -35,9 +34,7 @@ import static reactor.bus.selector.Selectors.type;
 @Slf4j
 public class PersistentEventListener implements Consumer<Event<PersistentEventImplementerI>> {
     private final PersistentEventService _persistentEventService;
-
-    @Value("${automation.enabled:true}")
-    private boolean _automationEnabled;
+    private final boolean                _automationEnabled;
 
     /**
      * Instantiates a new persistent event listener.
@@ -45,8 +42,9 @@ public class PersistentEventListener implements Consumer<Event<PersistentEventIm
      * @param eventBus the event bus
      */
     @Autowired
-    public PersistentEventListener(EventBus eventBus, PersistentEventService persistentEventService) {
+    public PersistentEventListener(final AutomationService automationService, final EventBus eventBus, final PersistentEventService persistentEventService) {
         _persistentEventService = persistentEventService;
+        _automationEnabled      = automationService.getAutomationEnabled();
         eventBus.on(type(PersistentEventImplementerI.class), this);
     }
 

@@ -240,8 +240,8 @@ public class MockUser extends AbstractHibernateEntity implements UserI {
         if (object == null) {
             return false;
         }
-        if (object instanceof Boolean) {
-            return (Boolean) object;
+        if (object instanceof Boolean boolean1) {
+            return boolean1;
         }
         return Boolean.parseBoolean(object.toString());
     }

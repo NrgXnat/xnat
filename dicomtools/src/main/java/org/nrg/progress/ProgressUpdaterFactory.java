@@ -25,8 +25,8 @@ public final class ProgressUpdaterFactory {
             final ProgressMonitorI pm, final int initProgress) {
         if (null == pm) {
             return new NullProgressUpdater();
-        } else if (items instanceof Collection) {
-            return new CollectionProgressMonitor((Collection<?>)items, pm, 0);
+        } else if (items instanceof Collection<?> collection) {
+            return new CollectionProgressMonitor(collection, pm, 0);
         } else {
             return new IterableProgressUpdater(pm);
         }

@@ -72,24 +72,24 @@ public class NotAuthenticatedException extends XapiException {
         if (StringUtils.isNotBlank(_project)) {
             switch (_resources.size()) {
                 case 0:
-                    return String.format(MESSAGE_PROJECT, _request, _project);
+                    return MESSAGE_PROJECT.formatted(_request, _project);
 
                 case 1:
-                    return String.format(MESSAGE_PROJECT_RESOURCE, _request, _project, getResource());
+                    return MESSAGE_PROJECT_RESOURCE.formatted(_request, _project, getResource());
 
                 default:
-                    return String.format(MESSAGE_PROJECT_RESOURCES, _request, _project, getResource());
+                    return MESSAGE_PROJECT_RESOURCES.formatted(_request, _project, getResource());
             }
         } else {
             switch (_resources.size()) {
                 case 0:
-                    return String.format(MESSAGE, _request);
+                    return MESSAGE.formatted(_request);
 
                 case 1:
-                    return String.format(MESSAGE_RESOURCE, _request, getResource());
+                    return MESSAGE_RESOURCE.formatted(_request, getResource());
 
                 default:
-                    return String.format(MESSAGE_RESOURCES, _request, getResource());
+                    return MESSAGE_RESOURCES.formatted(_request, getResource());
             }
         }
     }

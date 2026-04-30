@@ -149,10 +149,10 @@ public class XdatUserBean extends BaseElement implements java.io.Serializable, o
 	 * @param v Value to Set.
 	 */
 	public void setPrimaryPassword_encrypt(Object v){
-		if(v instanceof Boolean){
-			_PrimaryPassword_encrypt=(Boolean)v;
-		}else if(v instanceof String){
-			_PrimaryPassword_encrypt=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_PrimaryPassword_encrypt=boolean1;
+		}else if(v instanceof String string){
+			_PrimaryPassword_encrypt=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -196,8 +196,8 @@ public class XdatUserBean extends BaseElement implements java.io.Serializable, o
 	 * @param v Value to Set.
 	 */
 	public void addElementAccess(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatElementAccessBean)
-			_ElementAccess.add((org.nrg.xdat.bean.XdatElementAccessBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatElementAccessBean bean)
+			_ElementAccess.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatElementAccessBean");
 	}
@@ -240,8 +240,8 @@ public class XdatUserBean extends BaseElement implements java.io.Serializable, o
 	 * @param v Value to Set.
 	 */
 	public void addAssignedRoles_assignedRole(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatRoleTypeBean)
-			_AssignedRoles_assignedRole.add((org.nrg.xdat.bean.XdatRoleTypeBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatRoleTypeBean bean)
+			_AssignedRoles_assignedRole.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatRoleTypeBean");
 	}
@@ -303,8 +303,8 @@ public class XdatUserBean extends BaseElement implements java.io.Serializable, o
 	 * @param v Value to Set.
 	 */
 	public void addGroups_groupid(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatUserGroupidBean)
-			_Groups_groupid.add((org.nrg.xdat.bean.XdatUserGroupidBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatUserGroupidBean bean)
+			_Groups_groupid.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatUserGroupidBean");
 	}
@@ -325,10 +325,10 @@ public class XdatUserBean extends BaseElement implements java.io.Serializable, o
 	 * @param v Value to Set.
 	 */
 	public void setEnabled(Object v){
-		if(v instanceof Boolean){
-			_Enabled=(Boolean)v;
-		}else if(v instanceof String){
-			_Enabled=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_Enabled=boolean1;
+		}else if(v instanceof String string){
+			_Enabled=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}
@@ -350,10 +350,10 @@ public class XdatUserBean extends BaseElement implements java.io.Serializable, o
 	 * @param v Value to Set.
 	 */
 	public void setVerified(Object v){
-		if(v instanceof Boolean){
-			_Verified=(Boolean)v;
-		}else if(v instanceof String){
-			_Verified=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_Verified=boolean1;
+		}else if(v instanceof String string){
+			_Verified=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}

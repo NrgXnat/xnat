@@ -9,9 +9,9 @@
 
 package org.nrg.dcm;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.net.Association;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.Association;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,11 +20,15 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class CStoreRSPHandler extends DimseRSPStatusHandler {
+  public CStoreRSPHandler(int msgId) {
+    super(msgId);
+  }
+
   /* (non-Javadoc)
    * @see org.nrg.dcm.DimseRSPMaybeExceptionHandler#onDimseRSP(org.dcm4che2.net.Association, org.dcm4che2.data.DicomObject, org.dcm4che2.data.DicomObject)
    */
-  public void onDimseRSP(final Association as, final DicomObject cmd, final DicomObject data) {
-    final int status = cmd.getInt(Tag.Status);
+  public void onDimseRSP(final Association as, final DicomObjectI cmd, final DicomObjectI data) {
+    final int status = cmd.getAttributes().getInt(Tag.Status, -1);
     switch (status) {
     case 0:
       setSuccess();
@@ -54,7 +58,7 @@ public class CStoreRSPHandler extends DimseRSPStatusHandler {
         return;
       } else {
         final Logger logger = LoggerFactory.getLogger(CStoreRSPHandler.class);
-        logger.error(String.format("Unexpected RSP status %1$04x: %2s", status, cmd.getString(Tag.ErrorComment)));
+        logger.error("Unexpected RSP status %1$04x: %2s".formatted(status, cmd.getString(Tag.ErrorComment)));
         setFailure(status, "Noncompliant DIMSE error", cmd.getString(Tag.ErrorComment));
         return;
       }

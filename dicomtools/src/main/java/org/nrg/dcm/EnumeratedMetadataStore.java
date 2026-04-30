@@ -11,15 +11,24 @@ package org.nrg.dcm;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Sets;
+
 import org.apache.commons.io.FileUtils;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.media.DicomDirReader;
-import org.dcm4che2.net.TransferCapability;
-import org.dcm4che2.util.StringUtils;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.util.StringUtils;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.nrg.attr.ConversionFailureException;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
+import org.nrg.dicomtools.utilities.DicomDirReader;
 import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.progress.NullProgressUpdater;
 import org.nrg.progress.ProgressMonitorI;
@@ -30,15 +39,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.*;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
-import static org.nrg.dcm.Attributes.*;
+import static org.nrg.dcm.NamedAttributes.SOPClassUID;
+import static org.nrg.dcm.NamedAttributes.SeriesInstanceUID;
+import static org.nrg.dcm.NamedAttributes.StudyInstanceUID;
+import static org.nrg.dcm.NamedAttributes.TransferSyntaxUID;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -53,13 +85,13 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
      * @author aditya
      */
     private class FileOp {
-        final Function<DicomObject, DicomObject> dicomOp;
+        final Function<Attributes, Attributes> dicomOp;
 
         FileOp() {
             this.dicomOp = null;
         }
 
-        FileOp(final Function<DicomObject, DicomObject> dicomOp) {
+        FileOp(final Function<Attributes, Attributes> dicomOp) {
             this.dicomOp = dicomOp;
         }
 
@@ -108,14 +140,14 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
                 add(statement, resource, addCols);
             } else {
                 try (final InputStream in = uriOpener.open(resource)) {
-                    final DicomObject o = this.dicomOp.apply(DicomUtils.read(in));
+                    final Attributes o = this.dicomOp.apply(DicomUtils.read(in));
                     add(resource, o, addCols);
-                } catch (RuntimeException e) {
+                } catch (RuntimeException e) {  // FIXME: this is dodgy
                     final Throwable cause = e.getCause();
-                    if (null != cause && cause instanceof SQLException) {
-                        throw (SQLException) cause;
+                    if (null != cause && cause instanceof SQLException exception) {
+                        throw exception;
                     } else {
-                        throw e;
+                        throw new IOException(e);
                     }
                 }
             }
@@ -138,13 +170,11 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
     private static final Map<DicomAttributeIndex, String> UNCONSTRAINED          = Collections.emptyMap();
     private static final ProgressUpdaterFactory           progressUpdaterFactory = ProgressUpdaterFactory.getFactory();
 
-    private final static Function<File, URI> toURI = new Function<File, URI>() {
-        public URI apply(final File f) {
-            try {
-                return DicomUtils.getQualifiedUri(f.getPath());
-            } catch (URISyntaxException e) {
-                return f.toURI();
-            }
+    private final static Function<File, URI> toURI = f -> {
+        try {
+            return DicomUtils.getQualifiedUri(f.getPath());
+        } catch (URISyntaxException e) {
+            return f.toURI();
         }
     };
 
@@ -244,13 +274,17 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         while (rs.next()) {
             final String scuid = rs.getString(1);
             if (!tcmap.containsKey(scuid)) {
-                tcmap.put(scuid, new LinkedHashSet<String>());
+                tcmap.put(scuid, new LinkedHashSet<>());
             }
             tcmap.get(scuid).add(rs.getString(2));
         }
         final List<TransferCapability> tcs = Lists.newArrayList();
         for (Map.Entry<String, Set<String>> e : tcmap.entrySet()) {
-            tcs.add(new TransferCapability(e.getKey(), e.getValue().toArray(new String[0]), role));
+            TransferCapability tc = new TransferCapability();
+            tc.setSopClass(e.getKey());
+            tc.setRole(DicomUtils.parseRole(role));
+            tc.setTransferSyntaxes(e.getValue().toArray(new String[0]));
+            tcs.add(tc);
         }
         return tcs.toArray(new TransferCapability[0]);
     }
@@ -286,9 +320,7 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         columns.put(StudyInstanceUID, StudyInstanceUID);
         columns.put(SeriesInstanceUID, SeriesInstanceUID);
 
-        for (final DicomAttributeIndex i : indices) {
-            columns.put(i, i);
-        }
+        indices.forEach(i -> columns.put(i, i));
 
         final StringBuilder createTable = new StringBuilder("CREATE TABLE ");
         createTable.append(tableName);
@@ -298,6 +330,7 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
                 createTable.append(", ").append(columnName).append(" VARCHAR(").append(COLUMN_SIZE).append(")");
             }
         }
+
         for (final DicomAttributeIndex i : columns.keySet()) {
             createTable.append(", ").append(i.getColumnName()).append(" VARCHAR(").append(COLUMN_SIZE).append(")");
         }
@@ -324,7 +357,7 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         findResources(resources.iterator(), new FileOp(), new NullProgressUpdater());
     }
 
-    public void add(Iterable<URI> resources, Function<DicomObject, DicomObject> fn)
+    public void add(Iterable<URI> resources, Function<Attributes, Attributes> fn)
             throws IOException, SQLException {
         findResources(resources.iterator(), new FileOp(fn), new NullProgressUpdater());
     }
@@ -382,11 +415,15 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         add(statement, resource, DataSetAttrs.create(resource, columns.keySet(), uriOpener), addCols);
     }
 
+    public void add(final URI resource, final Attributes attributes) throws IOException, SQLException {
+        add(resource, attributes, null);
+    }
+
     /*
      * (non-Javadoc)
      * @see org.nrg.dcm.DicomMetadataStore#add(java.io.File, org.dcm4che2.data.DicomObject)
      */
-    public void add(final URI resource, final DicomObject o) throws IOException, SQLException {
+    public void add(final URI resource, final DicomObjectI o) throws IOException, SQLException {
         add(resource, o, null);
     }
 
@@ -394,10 +431,15 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
      * (non-Javadoc)
      * @see org.nrg.dcm.DicomMetadataStore#add(java.io.File, org.dcm4che2.data.DicomObject, java.util.Map)
      */
-    public void add(final URI resource, final DicomObject o, final Map<String, String> addCols) throws IOException, SQLException {
+    @Deprecated
+    public void add(final URI resource, final DicomObjectI o, final Map<String, String> addCols) throws IOException, SQLException {
+        add(resource, o.getAttributes(), addCols);
+    }
+
+    public void add(final URI resource, final Attributes attributes, final Map<String, String> addCols) throws IOException, SQLException {
         try (final Connection connection = dataSource.getConnection();
              final Statement statement = connection.createStatement()) {
-            add(statement, resource, new DataSetAttrs(o, columns.keySet()), addCols);
+            add(statement, resource, new DataSetAttrs(attributes, columns.keySet()), addCols);
         }
     }
 
@@ -451,7 +493,7 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
             joiner.appendTo(sb, Iterables.transform(constraints.entrySet(),
                     new Function<Map.Entry<String, String>, String>() {
                         public String apply(final Map.Entry<String, String> me) {
-                            return String.format("%s='%s'", me.getKey(), me.getValue());
+                            return "%s='%s'".formatted(me.getKey(), me.getValue());
                         }
                     }));
         }
@@ -519,7 +561,7 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
                 new Function<DicomAttributeIndex, String>() {
                     public String apply(final DicomAttributeIndex i) {
                         try {
-                            return String.format("%s='%s'", i.getColumnName(), dsa.get(i));
+                            return "%s='%s'".formatted(i.getColumnName(), dsa.get(i));
                         } catch (ConversionFailureException e) {
                             throw new RuntimeException(e);
                         }
@@ -827,11 +869,7 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
                                                         Iterable<URI> files) throws SQLException {
         final StringBuilder sb = new StringBuilder("SELECT DISTINCT SOPClassUID, TransferSyntaxUID FROM ");
         sb.append(tableName).append(" WHERE uri IN ('");
-        Joiner.on("','").appendTo(sb, Iterables.transform(files, new Function<URI, String>() {
-            public String apply(final URI uri) {
-                return uri.toString();
-            }
-        }));
+        Joiner.on("','").appendTo(sb, Iterables.transform(files, uri -> uri.toString()));
         sb.append("')");
 
         try (final Connection connection = dataSource.getConnection();
@@ -1015,16 +1053,16 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
      * Walks the entries of a DICOMDIR file set to extract the image file information.
      */
     private synchronized Collection<File> readFileSetRecords(final File dir, final DicomDirReader dcd,
-                                                             final DicomObject fsRecord)
+                                                             final Attributes fsRecord)
             throws IOException {
         final List<File> files = Lists.newArrayList();
 
-        for (DicomObject r = fsRecord; r != null; r = dcd.findNextSiblingRecord(r)) {
+        for (Attributes r = fsRecord; r != null; r = dcd.findNextSiblingRecord(r)) {
             try {
                 if (r.contains(Tag.ReferencedFileID)) {
                     // dcm4che breaks fields on the same character used as pathname separator ('\')
                     // this isn't such a bad thing, because we want to use the os-appropriate separator anyway
-                    final File file = new File(dir, StringUtils.join(r.getStrings(Tag.ReferencedFileID), File.separatorChar)).getCanonicalFile();
+                    final File file = new File(dir, StringUtils.concat(r.getStrings(Tag.ReferencedFileID), File.separatorChar)).getCanonicalFile();
                     assert file.getCanonicalPath().equals(file.getPath());
                     if (file.exists()) {
                         final DirectoryRecord.Type type = DirectoryRecord.Type.getInstance(r.getString(Tag.DirectoryRecordType));
@@ -1034,7 +1072,7 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
                     }
                 }
 
-                final DicomObject child = dcd.findFirstChildRecord(r);
+                final Attributes child = dcd.findFirstChildRecord(r);
                 if (child != null) {
                     files.addAll(readFileSetRecords(dir, dcd, child));
                 }
@@ -1106,11 +1144,7 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         final StringBuilder sb = new StringBuilder("DELETE FROM ");
         sb.append(tableName);
         sb.append(" WHERE uri IN (");
-        Joiner.on(",").appendTo(sb, Iterables.transform(resources, new Function<URI, String>() {
-            public String apply(final URI resource) {
-                return "'" + resource.toString() + "'";
-            }
-        }));
+        Joiner.on(",").appendTo(sb, Iterables.transform(resources, resource -> "'" + resource.toString() + "'"));
         sb.append(")");
         try (final Connection connection = dataSource.getConnection();
              final Statement statement = connection.createStatement()) {
@@ -1140,10 +1174,9 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         final Map<String, String> translated = Maps.newLinkedHashMap();
         for (final Map.Entry<?, ? extends String> me : constraints.entrySet()) {
             final Object key = me.getKey();
-            if (key instanceof String) {
-                translated.put((String) key, me.getValue());
-            } else if (key instanceof DicomAttributeIndex) {
-                final DicomAttributeIndex i = (DicomAttributeIndex) key;
+            if (key instanceof String string) {
+                translated.put(string, me.getValue());
+            } else if (key instanceof DicomAttributeIndex i) {
                 translated.put(i.getColumnName(), me.getValue());
                 if (null != dicomAttributes) {
                     dicomAttributes.add(i);

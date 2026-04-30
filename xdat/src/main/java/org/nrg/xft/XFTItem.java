@@ -466,7 +466,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                 Iterator iter = getGenericSchemaElement().getExtendedElements().iterator();
                 while (iter.hasNext()){
                     ArrayList sub = (ArrayList)iter.next();
-                    GenericWrapperElement foreign = (GenericWrapperElement)sub.get(0);
+                    GenericWrapperElement foreign = (GenericWrapperElement)sub.getFirst();
                     if (foreign.getXSIType().equalsIgnoreCase(t)){
                         return true;
                     }
@@ -821,9 +821,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 			Object o = getField(current);
 			if (o != null)
 			{
-				if (o instanceof XFTItem)
+				if (o instanceof XFTItem item)
 				{
-					return ((XFTItem)o).findSubValue(theRest,key);
+					return item.findSubValue(theRest,key);
 				}
 			}
 		}else
@@ -831,9 +831,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 			Object o = getField(sub);
 			if (o != null)
 			{
-				if (o instanceof XFTItem)
+				if (o instanceof XFTItem item)
 				{
-					return ((XFTItem)o).getField(key);
+					return item.getField(key);
 				}
 			}
 		}
@@ -888,12 +888,12 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 						while(refs.hasNext())
 						{
 							ArrayList refMapping = (ArrayList)refs.next();
-							o = props.get((String)refMapping.get(0));
+							o = props.get((String)refMapping.getFirst());
 							if (o != null)
 							{
 								foreign = (GenericWrapperElement)refMapping.get(2);
 								GenericWrapperField foreignKey = (GenericWrapperField)refMapping.get(1);
-								SearchCriteria c = new SearchCriteria(foreignKey,props.get(refMapping.get(0)));
+								SearchCriteria c = new SearchCriteria(foreignKey,props.get(refMapping.getFirst()));
 								search.setElement(foreign);
 								search.addCriteria(c);
 							}
@@ -1276,7 +1276,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 				}else if (foreign.isExtended())
 				{
 					//populate missing objects (lazy load)
-					final GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
+					final GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().getFirst();
 					final List<XFTItem> children = (List<XFTItem>) getChildItems(f,allowMultiples,false,user,false,null);
 					for(final XFTItem sub: children)
 					{
@@ -1381,7 +1381,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 						}
 					}else{
 						//load extended child objects
-						final GenericWrapperField primaryKey = (GenericWrapperField)getGenericSchemaElement().getAllPrimaryKeys().get(0);
+						final GenericWrapperField primaryKey = (GenericWrapperField)getGenericSchemaElement().getAllPrimaryKeys().getFirst();
 						final ItemSearch search = new ItemSearch();
 
 						search.setUser(this.getUser());
@@ -1411,7 +1411,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 					//populate missing objects (lazy load) that may need additional extension
 					//this is like when imageSession references imageScanData.
 					//You need to execute a query that will return the MrScanData objects, not the imageScanData objects.
-					final GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
+					final GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().getFirst();
 					int childCounter =0;
 					final List<XFTItem> children = (List<XFTItem>) getChildItems(f,allowMultiples,false,user,false,null);
 					for(final XFTItem sub: children)
@@ -1470,7 +1470,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 						final GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
 						if (foreign.isExtended())
 						{
-							final GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
+							final GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().getFirst();
 							final String extensionName = sub.getExtensionElement();
 							if (extensionName != null && (! extensionName.equalsIgnoreCase(sub.getXSIType())) && (!extensionName.equalsIgnoreCase(getXSIType())))
 							{
@@ -1794,13 +1794,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 					        ArrayList field = (ArrayList)fields.next();
 
 					        try {
-                                Object o = this.getProperty(this.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + (String)field.get(0));
+                                Object o = this.getProperty(this.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPARATOR + (String)field.getFirst());
                                 if (o!= null)
                                 {
                                     try {
                                         SearchCriteria c = new SearchCriteria();
                                         c.setValue(o);
-                                        c.setFieldWXMLPath(getXSIType() + XFT.PATH_SEPARATOR + (String)field.get(0));
+                                        c.setFieldWXMLPath(getXSIType() + XFT.PATH_SEPARATOR + (String)field.getFirst());
                                         cc.addClause(c);
                                     } catch (Exception e) {
                                         log.error("",e);
@@ -2273,7 +2273,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 
         Map<GenericWrapperField,Object> pks=getPkValuesWTypes();
         for(Map.Entry<GenericWrapperField, Object> entry:pks.entrySet()){
-        	rows.get(0).add(new IdentifierResults(entry.getValue(),entry.getKey()));
+        	rows.getFirst().add(new IdentifierResults(entry.getValue(),entry.getKey()));
         }
 
         try {
@@ -2311,7 +2311,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                 String query = "SELECT " + functionName + "(";
 
                 int count=0;
-    		    for (IdentifierResults ir:keys.get(0))
+    		    for (IdentifierResults ir:keys.getFirst())
     		    {
     		        if (count++>0){
                         query+=", ";
@@ -2666,9 +2666,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                 }
                 if (child != null)
                 {
-					if (child instanceof XFTItem)
+					if (child instanceof XFTItem childItem)
 					{
-						XFTItem childItem = (XFTItem)child;
 						set = childItem.setFieldValue(fieldName,value);
 					}
                 }
@@ -2820,9 +2819,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 		}else{
 		    if (this.getGenericSchemaElement().isExtension()) {
 				Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
-				if (o instanceof XFTItem)
+				if (o instanceof XFTItem item)
 				{
-					((XFTItem) o).setChild(xmlPath,value,replace);
+					item.setChild(xmlPath,value,replace);
 				    return;
 				}else{
 
@@ -3312,7 +3311,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 	    while (extensions.hasNext())
 	    {
 	        ArrayList al = (ArrayList)extensions.next();
-	        SchemaElementI e = (SchemaElementI)al.get(0);
+	        SchemaElementI e = (SchemaElementI)al.getFirst();
 	        if (e.getFullXMLName().equals(extensionName))
 	        {
 	            return (XFTItem)getProperty((String)al.get(1));
@@ -3342,9 +3341,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             	final Object key = entry.getKey();
             	try {
             	    final Object o = props.get(key);
-            	    if (o instanceof XFTItem)
+            	    if (o instanceof XFTItem tItem)
             	    {
-            	        item.getProps().put(key,((XFTItem)o).clone());
+            	        item.getProps().put(key,tItem.clone());
             	    }else{
             	        item.getProps().put(key,o);
             	    }
@@ -3521,9 +3520,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 					{
 					    if (this.getGenericSchemaElement().isExtension()) {
 							Object sub = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
-							if (sub instanceof XFTItem)
+							if (sub instanceof XFTItem item)
 							{
-							    return ((XFTItem)sub).hasProperty(id,find);
+							    return item.hasProperty(id,find);
 
 							}else if (sub==null && find.equals("NULL")){
 							    return true;
@@ -3543,9 +3542,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 				} catch (FieldNotFoundException e) {
 				    if (this.getGenericSchemaElement().isExtension()) {
 						Object sub = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
-						if (sub instanceof XFTItem)
+						if (sub instanceof XFTItem item)
 						{
-						    return ((XFTItem)sub).hasProperty(id,find);
+						    return item.hasProperty(id,find);
 
 						}else if (sub==null && find.equals("NULL")){
                             return true;
@@ -3582,9 +3581,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                 } catch (FieldNotFoundException e1) {
                     if (this.getGenericSchemaElement().isExtension()) {
 						Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
-						if (o instanceof XFTItem)
+						if (o instanceof XFTItem item)
 						{
-						    return ((XFTItem)o).hasProperty(parse,find);
+						    return item.hasProperty(parse,find);
 						}else if (o==null && find.equals("NULL")){
                             return true;
                         }else if (o==null){
@@ -3634,9 +3633,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 					{
 					    if (this.getGenericSchemaElement().isExtension()) {
 							Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName(),allowMultipleValues);
-							if (o instanceof XFTItem)
+							if (o instanceof XFTItem item)
 							{
-							    return ((XFTItem)o).getProperty(id,allowMultipleValues,user);
+							    return item.getProperty(id,allowMultipleValues,user);
 							}else if (o==null){
 							    return null;
 							}else{
@@ -3653,9 +3652,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 				} catch (FieldNotFoundException e) {
 				    if (this.getGenericSchemaElement().isExtension()) {
 						Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName(),allowMultipleValues);
-						if (o instanceof XFTItem)
+						if (o instanceof XFTItem item)
 						{
-						    return ((XFTItem)o).getProperty(id,allowMultipleValues,user);
+						    return item.getProperty(id,allowMultipleValues,user);
 						}else if (o==null){
 						    return null;
 						}else{
@@ -3756,9 +3755,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                 } catch (FieldNotFoundException e1) {
                     if (this.getGenericSchemaElement().isExtension()) {
 						Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName(),allowMultipleValues);
-						if (o instanceof XFTItem)
+						if (o instanceof XFTItem item)
 						{
-						    return ((XFTItem)o).getProperty(parse,allowMultipleValues,user);
+						    return item.getProperty(parse,allowMultipleValues,user);
 						}else if (o==null){
 						    return null;
 						}else{
@@ -3942,13 +3941,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 		Object o = getProperty(lastField,true);
 		if (o!=null)
 		{
-            if (o instanceof ArrayList){
-                Iterator iter = ((ArrayList)o).iterator();
+            if (o instanceof ArrayList<?> list){
+                Iterator iter = list.iterator();
                 boolean matched = false;
                 while (iter.hasNext()){
                     Object temp = iter.next();
-                    if (temp instanceof XFTItem){
-                        if( ((XFTItem)temp).hasProperty(xmlPath, find)){
+                    if (temp instanceof XFTItem item){
+                        if( item.hasProperty(xmlPath, find)){
                             matched=true;
                             break;
                         }
@@ -3964,9 +3963,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 		}else{
 			if (this.getGenericSchemaElement().isExtension()) {
 				o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
-				if (o instanceof XFTItem)
+				if (o instanceof XFTItem item)
 				{
-				    return ((XFTItem)o).hasProperty(xmlPath,find);
+				    return item.hasProperty(xmlPath,find);
 				}else{
                     if (find.equals("NULL")){
                         return true;
@@ -4099,9 +4098,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 							{
 								XFTItem sub = (XFTItem)subsIter.next();
 								Object o = sub.getProperty(xmlPath,allowMultipleValues,user);
-								if (o instanceof ArrayList)
+								if (o instanceof ArrayList<?> list)
 								{
-									al.addAll((ArrayList)o);
+									al.addAll(list);
 								}else if (o !=null){
 									al.add(o);
 								}
@@ -4215,9 +4214,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 		}else{
 			if (this.getGenericSchemaElement().isExtension()) {
 				o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName(),allowMultipleValues,user);
-				if (o instanceof XFTItem)
+				if (o instanceof XFTItem item)
 				{
-				    return ((XFTItem)o).getProperty(xmlPath,allowMultipleValues,user);
+				    return item.getProperty(xmlPath,allowMultipleValues,user);
 				}else{
 				    return null;
 				}
@@ -4251,7 +4250,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 	    if (XftStringUtils.EndsWithInt(s))
 	    {
 	 	   int index= XftStringUtils.GetEndingInt(s);
-           map.put("@index", new Integer(index));
+           map.put("@index", Integer.valueOf(index));
            s = XftStringUtils.CleanEndingInt(s);
 	    }
 
@@ -4415,9 +4414,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             		{
             		    if (this.getGenericSchemaElement().isExtension()) {
             				Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
-            				if (o instanceof XFTItem)
+            				if (o instanceof XFTItem item)
             				{
-            				    ((XFTItem)o).setProperty(next + XFT.PATH_SEPARATOR + xmlPath, value, parseValue);
+            				    item.setProperty(next + XFT.PATH_SEPARATOR + xmlPath, value, parseValue);
             				    return;
             				}else{
             				    XFTItem sub = XFTItem.NewItem((GenericWrapperElement)getGenericSchemaElement().getExtensionField().getReferenceElement(),user);
@@ -4603,10 +4602,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 
             		if (this.getGenericSchemaElement().isExtension()) {
             			Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
-                        if (o instanceof XFTItem)
+                        if (o instanceof XFTItem item)
             			{
             			    try {
-                                ((XFTItem)o).setProperty(originalPath,value,parseValue);
+                                item.setProperty(originalPath,value,parseValue);
                                 return;
             			    } catch (FieldNotFoundException e1) {
                             }
@@ -4633,9 +4632,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             			            Object o = (Object)getProperty(secondToLastField.getId());
             			            Date date = null;
 
-            			            if (o instanceof Date)
+            			            if (o instanceof Date date1)
             			            {
-            			                date = (Date)o;
+            			                date = date1;
             			            }else{
             			                if (o!= null)
             			                {
@@ -4768,10 +4767,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                 {
                     if (lastField.isReference())
                     {
-                        if (value instanceof XFTItem)
+                        if (value instanceof XFTItem item)
                         {
                             if (multiIndex==null && where==null)
-                                setChild(lastField, (XFTItem)value, true);
+                                setChild(lastField, item, true);
                             else{
                                 ArrayList subs = this.getChildItems(lastField,expectedXSIType,false);
 
@@ -4796,7 +4795,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                                 }
                                 if (subs.size() > multiIndex.intValue())
                                 {
-                                    setChild(lastField,(ItemI)value,multiIndex.intValue());
+                                    setChild(lastField,item,multiIndex.intValue());
                                     return;
                                 }else{
                                     int counter = 0;
@@ -4821,7 +4820,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                                         counter++;
                                     }
 
-                                    setChild(lastField,(ItemI)value,multiIndex.intValue(),expectedXSIType);
+                                    setChild(lastField,item,multiIndex.intValue(),expectedXSIType);
                                     return;
                                 }
                             }
@@ -4953,7 +4952,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                                 if (! ref.isManyToMany())
                                 {
                                     XFTSuperiorReference sup = (XFTSuperiorReference)ref;
-                                    XFTRelationSpecification spec = (XFTRelationSpecification)sup.getKeyRelations().get(0);
+                                    XFTRelationSpecification spec = (XFTRelationSpecification)sup.getKeyRelations().getFirst();
                                     setDirectProperty(spec.getLocalCol().toLowerCase(),spec.getSchemaType().parseValue(value));
                                 }
                             }
@@ -5059,9 +5058,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 	        } catch (FieldNotFoundException e1) {
 	            if (this.getGenericSchemaElement().isExtension()) {
 					Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
-					if (o instanceof XFTItem)
+					if (o instanceof XFTItem item)
 					{
-					    return ((XFTItem)o).getChildItems(id,xsiType,allowDBAccess,false);
+					    return item.getChildItems(id,xsiType,allowDBAccess,false);
 					}else{
 					    throw new FieldNotFoundException(id);
 					}
@@ -5077,9 +5076,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             } catch (FieldNotFoundException e) {
                 if (this.getGenericSchemaElement().isExtension()) {
 					Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
-					if (o instanceof XFTItem)
+					if (o instanceof XFTItem item)
 					{
-					    return ((XFTItem)o).getChildItems(id,xsiType,allowDBAccess,false);
+					    return item.getChildItems(id,xsiType,allowDBAccess,false);
 					}else{
 					    throw new FieldNotFoundException(id);
 					}
@@ -5262,9 +5261,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 		        {
 		            try {
                         Object o =props.remove(f.getId() + counter++);
-                        if (o instanceof XFTItem)
+                        if (o instanceof XFTItem item)
                         {
-                            ((XFTItem)o).clear();
+                            item.clear();
                         }
                     } catch (RuntimeException e1) {
                     }
@@ -5272,9 +5271,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 			}else{
 			    try {
 			        Object o =props.remove(f.getId());
-			        if (o instanceof XFTItem)
+			        if (o instanceof XFTItem item)
                     {
-                        ((XFTItem)o).clear();
+                        item.clear();
                     }
                 } catch (RuntimeException e1) {
                 }
@@ -5467,7 +5466,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 			                        	ItemCollection extendedItems = null;
 
 			                            SearchCriteria c = new SearchCriteria();
-			                            GenericWrapperField foreignKey = (GenericWrapperField)child.getGenericSchemaElement().getAllPrimaryKeys().get(0);
+			                            GenericWrapperField foreignKey = (GenericWrapperField)child.getGenericSchemaElement().getAllPrimaryKeys().getFirst();
 			                            c.setFieldWXMLPath(extensionElement + String.valueOf(XFT.PATH_SEPARATOR) + foreignKey.getSQLName());
 			                            Object v = child.getProperty(foreignKey.getId());
 			                            c.setValue(v);
@@ -5885,7 +5884,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                 			ArrayList al = this.getChildItems(f);
                 			if (al.size() > 0)
                 			{
-                				meta = (ItemI)al.get(0);
+                				meta = (ItemI)al.getFirst();
                 				if (meta.getProperty(SHAREABLE)!=null || meta.getProperty(INSERT_DATE)!=null)
                 				{
                 				    return meta;
@@ -5922,7 +5921,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 							ArrayList al = this.getChildItems(f);
 							if (al.size() > 0)
 							{
-								meta = (ItemI)al.get(0);
+								meta = (ItemI)al.getFirst();
 								if (meta.getProperty(SHAREABLE)!=null || meta.getProperty(INSERT_DATE)!=null)
 								{
 								    return meta;
@@ -6428,9 +6427,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             }else{
                 if (this.getGenericSchemaElement().isExtension()) {
                     Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName(),false);
-                    if (o instanceof XFTItem)
+                    if (o instanceof XFTItem item)
                     {
-                        ((XFTItem)o).removeChild(xmlPath,index);
+                        item.removeChild(xmlPath,index);
                     }else if (o==null){
                         throw new FieldNotFoundException(xmlPath);
                     }else{
@@ -6540,8 +6539,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 		{
 	        try {
 				Object rlm = this.getMeta().getProperty("row_last_modified");
-				if (rlm instanceof String) {
-					return  convertToDate((String) rlm);
+				if (rlm instanceof String string) {
+					return  convertToDate(string);
 				}
 				return (Date) rlm;
 	        } catch (XFTInitException e) {
@@ -6576,8 +6575,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 	        try {
 	            Object o= this.getMeta().getProperty("xft_version");
 	            if(o!=null){
-		            if(o instanceof Long){
-		            	return (Long)o;
+		            if(o instanceof Long long1){
+		            	return long1;
 		            }else{
 		            	return Long.valueOf(o.toString());
 		            }
@@ -6599,8 +6598,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 		{
 	        try {
 	            Object insertDate = this.getMeta().getProperty(INSERT_DATE);
-				if (insertDate instanceof String) {
-					return convertToDate((String) insertDate);
+				if (insertDate instanceof String string) {
+					return convertToDate(string);
 				}
 				return (Date) insertDate;
 	        } catch (XFTInitException e) {
@@ -6886,13 +6885,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
         {
             String key = (String)enumer.nextElement();
             Object o = props.get(key);
-            if (o instanceof XFTItem)
+            if (o instanceof XFTItem item)
             {
                 s+="(" +key + ":XFTItem)=(";
-                s+= ((XFTItem)o).writeToFlatString(++count) + ")";
-            }else if (o instanceof String){
+                s+= item.writeToFlatString(++count) + ")";
+            }else if (o instanceof String string){
                 s+="(" +key + ":)=(";
-                o = StringUtils.replace(StringUtils.replace(((String)o), "(", SPECIAL_CHAR1), ")", SPECIAL_CHAR2);
+                o = StringUtils.replace(StringUtils.replace(string, "(", SPECIAL_CHAR1), ")", SPECIAL_CHAR2);
 
                s+= o + ")";
             }else if (o instanceof JsonNode){
@@ -6984,20 +6983,20 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 						try {
 							return Class.forName(className).getMethod("valueOf", new Class[]{String.class});
 						} catch (NoSuchMethodException|ClassNotFoundException e) {
-							log.error(String.format("XFTItem.parseObject(1): %s,%s",type,className),e);
+							log.error("XFTItem.parseObject(1): %s,%s".formatted(type, className),e);
 							return null;
 						}
 					});
 
 					if(m==null){
-						log.error(String.format("XFTItem.parseObject(2): %s,%s,%s",type,className,value));
+						log.error("XFTItem.parseObject(2): %s,%s,%s".formatted(type, className, value));
 						return value;
 					}else{
 						return m.invoke(null,new Object[]{value});
 					}
 
                 } catch (Exception e) {
-                    log.error(String.format("XFTItem.parseObject(3): %s,%s,%s",type,className,value),e);
+                    log.error("XFTItem.parseObject(3): %s,%s,%s".formatted(type, className, value),e);
                     return value;
                 }
 	        }
@@ -7036,7 +7035,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 					final int item_num = Integer.parseInt(childCountSt.toString());
 					int endItem = StringUtils.indexOf(s, SPECIAL_CHAR3 + item_num + POP_CLOSE, startIndex);
 					if (endItem == -1) {
-						throw new ItemPopulationException(String.format("Invalid content (3) in XFTItem(%1$s) parsing:%2$s", this.getXSIType(),childCountSt));
+						throw new ItemPopulationException("Invalid content (3) in XFTItem(%1$s) parsing:%2$s".formatted(this.getXSIType(), childCountSt));
 					}
 					endItem += childCountSt.length() + 11;
 					final CharSequence value = s.subSequence(startIndex, endItem);
@@ -7060,7 +7059,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 
 			if(((s.length() > (startIndex +4)) && ((s.charAt(startIndex) != POP_CLOSE)  || (s.charAt(startIndex+1) != '*') || (s.charAt(startIndex+2) != 'E')))){//matches )*END_ITEM
 				//throw exception for unparsable content
-				throw new ItemPopulationException(String.format("Invalid content (1) in XFTItem(%1$s) parsing:%2$s", this.getXSIType(),s.subSequence(startIndex,(startIndex+4))));
+				throw new ItemPopulationException("Invalid content (1) in XFTItem(%1$s) parsing:%2$s".formatted(this.getXSIType(), s.subSequence(startIndex, (startIndex + 4))));
 			}
 
 			if (isMetaElement()) {
@@ -7069,7 +7068,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 		}else{
 			if(((s.length() > startIndex))){
 				//throw exception for unparsable content
-				throw new ItemPopulationException(String.format("Invalid content (2) in XFTItem(%1$s) parsing:%2$s", this.getXSIType(),s.subSequence(startIndex,(startIndex+4))));
+				throw new ItemPopulationException("Invalid content (2) in XFTItem(%1$s) parsing:%2$s".formatted(this.getXSIType(), s.subSequence(startIndex, (startIndex + 4))));
 			}
 		}
 	}

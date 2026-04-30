@@ -14,7 +14,7 @@ import java.util.Comparator;
  * @author Tim
  *
  */
-public class SQLView {
+public class SQLView implements SQLObjectI{
 	private String name="";
 	private String sql = "";
 	private int sortOrder = 0;

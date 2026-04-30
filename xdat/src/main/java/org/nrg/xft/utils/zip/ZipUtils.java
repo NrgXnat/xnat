@@ -380,7 +380,7 @@ public class ZipUtils implements ZipI {
         return temp;
     }
     private static Pattern getExtensionPattern(final String... extras) {
-        return Pattern.compile(String.format(EXTENSION_PATTERN, Arrays.stream(extras).map(extra -> RegExUtils.removePattern(extra, "^\\.")).map(extra -> RegExUtils.replaceAll(extra, "\\.", "\\\\.")).collect(Collectors.joining("|"))));
+        return Pattern.compile(EXTENSION_PATTERN.formatted(Arrays.stream(extras).map(extra -> RegExUtils.removePattern(extra, "^\\.")).map(extra -> RegExUtils.replaceAll(extra, "\\.", "\\\\.")).collect(Collectors.joining("|"))));
     }
 
     private static final String EXTENSION_PATTERN = "^(?<filename>.*)\\.(?<extension>%s)$";

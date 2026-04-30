@@ -8,8 +8,8 @@
  */
 package org.nrg.dcm.xnat;
 
-import static org.nrg.dcm.Attributes.EchoNumbers;
-import static org.nrg.dcm.Attributes.EchoTime;
+import static org.nrg.dcm.NamedAttributes.EchoNumbers;
+import static org.nrg.dcm.NamedAttributes.EchoTime;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,7 +33,6 @@ import com.google.common.collect.Maps;
  * Multiplex attribute for Echo Time (TE).  If multiple values are present, this is
  * a multiecho scan, and the values go into parameters/addParam fields named
  * MultiEcho_TE{EchoNumber} instead of parameters/te.
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public final class MREchoTimeAttribute extends XnatAttrDef.Abstract<Map<Integer,Double>> {
@@ -96,7 +95,7 @@ public final class MREchoTimeAttribute extends XnatAttrDef.Abstract<Map<Integer,
                 vals.add(new BasicExtAttrValue("parameters/addParam", 
                         String.valueOf(me.getValue()),
                         Collections.singletonMap("name",
-                                String.format(meFormat, me.getKey()))));
+                                meFormat.formatted(me.getKey()))));
             }
         }
         return vals;

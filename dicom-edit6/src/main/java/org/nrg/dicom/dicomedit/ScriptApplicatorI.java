@@ -1,6 +1,5 @@
 package org.nrg.dicom.dicomedit;
 
-import org.dcm4che2.data.DicomObject;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
@@ -9,7 +8,6 @@ import org.nrg.dicom.mizer.variables.Variable;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,7 +28,7 @@ public interface ScriptApplicatorI {
 
     long getTopTag();
 
-    void apply(File matchFile, DicomObject dicomObject) throws MizerException;
+    void apply(File matchFile, DicomObjectI dicomObject) throws MizerException;
 
     Map<String, Variable> getVariables();
 

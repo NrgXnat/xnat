@@ -47,7 +47,7 @@ public class BaseScriptApplicatorTests {
         assertEquals("Success", applicator.apply(new BufferedInputStream(Files.newInputStream(DICOM_FILE.toPath()))).getMessage());
         assertEquals("Success", applicator.apply(DicomObjectFactory.newInstance()).getMessage());
         // returns void
-        applicator.apply(new File("matchfile"), DicomObjectFactory.newInstance().getDcm4che2Object());
+        applicator.apply(new File("matchfile"), DicomObjectFactory.newInstance());
 
         Variable scriptVariable = new BasicVariable("scriptVariableName", "scriptVariableValue");
         assertEquals(scriptVariable.getValue().asString(), applicator.getVariable("scriptVariableName").getValue().asString());

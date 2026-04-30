@@ -185,7 +185,7 @@ public class Tool extends AbstractHibernateEntity {
 
     @Override
     public String toString() {
-        return String.format("Tool {id='%s', name='%s'}", _toolId, _toolName);
+        return "Tool {id='%s', name='%s'}".formatted(_toolId, _toolName);
     }
 
     @Override

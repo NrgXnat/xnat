@@ -8,8 +8,8 @@
  */
 package org.nrg.dcm.xnat;
 
-import static org.nrg.dcm.Attributes.Cols;
-import static org.nrg.dcm.Attributes.Rows;
+import static org.nrg.dcm.NamedAttributes.Cols;
+import static org.nrg.dcm.NamedAttributes.Rows;
 
 import java.util.Arrays;
 import java.util.Collections;

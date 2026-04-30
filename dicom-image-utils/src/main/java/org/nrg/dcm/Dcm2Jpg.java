@@ -9,7 +9,7 @@
 
 package org.nrg.dcm;
 
-import org.dcm4che2.io.DicomInputStream;
+import org.dcm4che3.io.DicomInputStream;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;

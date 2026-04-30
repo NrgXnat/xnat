@@ -9,7 +9,7 @@
 package org.nrg.dcm;
 
 import com.google.common.collect.Sets;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Test;
 import org.nrg.attr.ConversionFailureException;
 import org.nrg.util.FileURIOpener;
@@ -22,11 +22,6 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-/**
- * 
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
 public class DataSetAttrsTest {
     // Tests based on the sample1 dataset, with each file gzipped
     private static final String DICOM_RESOURCE = "dicom/1.MR.head_DHead.4.1.20061214.091206.156000.1632817982.dcm.gz";

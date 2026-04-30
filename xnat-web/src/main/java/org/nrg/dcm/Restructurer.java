@@ -16,7 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Move;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.nrg.AbstractRestructurer;
 import org.nrg.attr.ConversionFailureException;
 import org.nrg.attr.Utils;
@@ -48,10 +48,10 @@ import java.util.stream.Stream;
 public final class Restructurer extends AbstractRestructurer {
     private final static String                   MULTIPLE_FILES         = "(selected files)";
     private final static String                   DEFAULT_SESSION_NAME   = "session";
-    private final static Set<DicomAttributeIndex> DEFAULT_KEYS           = Stream.of(Attributes.StudyInstanceUID, Attributes.Modality, Attributes.SeriesNumber).collect(Collectors.toSet());
-    private final static Set<DicomAttributeIndex> PATIENT_SELECTION_KEYS = Collections.singleton(Attributes.PatientID);
+    private final static Set<DicomAttributeIndex> DEFAULT_KEYS           = Stream.of(NamedAttributes.StudyInstanceUID, NamedAttributes.Modality, NamedAttributes.SeriesNumber).collect(Collectors.toSet());
+    private final static Set<DicomAttributeIndex> PATIENT_SELECTION_KEYS = Collections.singleton(NamedAttributes.PatientID);
     private final static Set<DicomAttributeIndex> STUDY_LABEL_KEYS       = Collections.singleton(new FixedDicomAttributeIndex(Tag.StudyID));
-    private final static Set<DicomAttributeIndex> SERIES_SELECTION_KEYS  = Stream.of(Attributes.SeriesInstanceUID, Attributes.SeriesDescription, Attributes.TransferSyntaxUID).collect(Collectors.toSet());
+    private final static Set<DicomAttributeIndex> SERIES_SELECTION_KEYS  = Stream.of(NamedAttributes.SeriesInstanceUID, NamedAttributes.SeriesDescription, NamedAttributes.TransferSyntaxUID).collect(Collectors.toSet());
     private final static Set<DicomAttributeIndex> ALL_KEYS               = Stream.of(DEFAULT_KEYS, PATIENT_SELECTION_KEYS, STUDY_LABEL_KEYS, SERIES_SELECTION_KEYS).flatMap(Collection::stream).collect(Collectors.toSet());
     private final static Set<Integer>             ALL_KEYS_TAGS          = ALL_KEYS.stream().map(Restructurer::getAttributeTag).collect(Collectors.toSet());
 
@@ -156,7 +156,7 @@ public final class Restructurer extends AbstractRestructurer {
         try {
             final Set<String> studyUIDs;
             try {
-                studyUIDs = dicomMetadataStore.getUniqueValues(Attributes.StudyInstanceUID);
+                studyUIDs = dicomMetadataStore.getUniqueValues(NamedAttributes.StudyInstanceUID);
             } catch (ConversionFailureException | IOException | SQLException e) {
                 publishFailure(masterObj, e.getMessage());
                 return;
@@ -165,11 +165,11 @@ public final class Restructurer extends AbstractRestructurer {
             boolean warnedAboutDecompression = false;
             STUDIES:
             for (final String studyUID : studyUIDs) {
-                final Map<DicomAttributeIndex, String> studySpec = Collections.singletonMap(Attributes.StudyInstanceUID, studyUID);
+                final Map<DicomAttributeIndex, String> studySpec = Collections.singletonMap(NamedAttributes.StudyInstanceUID, studyUID);
 
                 final Set<DicomAttributeIndex> keys = new LinkedHashSet<>(PATIENT_SELECTION_KEYS);
                 keys.addAll(STUDY_LABEL_KEYS);
-                keys.add(Attributes.Modality);
+                keys.add(NamedAttributes.Modality);
 
                 final SetMultimap<DicomAttributeIndex, String> values;
                 try {
@@ -208,7 +208,7 @@ public final class Restructurer extends AbstractRestructurer {
                         continue;
                     }
 
-                    seriesUIDs = seriesUIDm.get(Attributes.SeriesInstanceUID);
+                    seriesUIDs = seriesUIDm.get(NamedAttributes.SeriesInstanceUID);
 
 
                     final Set<Map<String, String>> seriesAttributes = dicomMetadataStore.getUniqueCombinationsGivenValues(studySpec, referencedAttributes, failures)
@@ -239,7 +239,7 @@ public final class Restructurer extends AbstractRestructurer {
                 boolean needsDecompression = false;
                 for (final String seriesUID : seriesUIDs) {
                     final Map<DicomAttributeIndex, String> seriesSpec = new HashMap<>(studySpec);
-                    seriesSpec.put(Attributes.SeriesInstanceUID, seriesUID);
+                    seriesSpec.put(NamedAttributes.SeriesInstanceUID, seriesUID);
 
                     final Set<URI> files;
                     final File     scanDir;
@@ -248,7 +248,7 @@ public final class Restructurer extends AbstractRestructurer {
                         files = dicomMetadataStore.getResourcesForValues(seriesSpec, failures);
                         if (failures.isEmpty()) {
                             final SetMultimap<DicomAttributeIndex, String> metadata      = dicomMetadataStore.getUniqueValuesGiven(seriesSpec, SERIES_SELECTION_KEYS, failures);
-                            final Set<String>                              seriesNumbers = metadata.get(Attributes.SeriesNumber).stream().filter(Objects::nonNull).collect(Collectors.toSet());
+                            final Set<String>                              seriesNumbers = metadata.get(NamedAttributes.SeriesNumber).stream().filter(Objects::nonNull).collect(Collectors.toSet());
 
                             final String seriesNumber;
                             if (!seriesNumbers.isEmpty()) {
@@ -262,7 +262,7 @@ public final class Restructurer extends AbstractRestructurer {
 
                             final String scanId = determineScanSubdir(seriesNumber, seriesUID);
                             scanDir = new File(scansDir, scanId);
-                            for (final String tsuid : metadata.get(Attributes.TransferSyntaxUID)) {
+                            for (final String tsuid : metadata.get(NamedAttributes.TransferSyntaxUID)) {
                                 if (Decompress.needsDecompress(tsuid)) {
                                     needsDecompression = true;
                                     break;

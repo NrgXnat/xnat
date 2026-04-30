@@ -228,11 +228,11 @@ public class SearchCriteria implements SQLClause {
         if (value == null) {
             this.value = null;
         } else {
-            if(value instanceof Date){
+            if(value instanceof Date date){
                 //Timestamp type must be hardcoded for PrepraredStatement execution
-                this.value = new Timestamp(((Date)value).getTime());
+                this.value = new Timestamp(date.getTime());
             }else{
-                temp = value instanceof String ? (String) value : value.toString();
+                temp = value instanceof String s ? s : value.toString();
                 hackCheck(temp);
                 this.value = temp.contains("'") ? XftStringUtils.CleanForSQLValue(temp) : temp;
             }
@@ -409,9 +409,9 @@ public class SearchCriteria implements SQLClause {
         copy.overrideFormatting=(true);
         copy.xmlPath=this.xmlPath;
 
-        if(StringUtils.equals(getCleanedType(),"dateTime") && value instanceof String){
+        if(StringUtils.equals(getCleanedType(),"dateTime") && value instanceof String string){
             try {
-                value = DateUtils.parseDateTime((String)value);
+                value = DateUtils.parseDateTime(string);
             } catch (ParseException e) {
                 log.error("");
             }

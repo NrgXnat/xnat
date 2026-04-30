@@ -231,7 +231,7 @@ public class ViewManager {
 						ArrayList ref = (ArrayList) refs.next();
 						String array[] = new String[6];
 						array[0]= element.getSQLName();
-						array[1]= (String) ref.get(0);
+						array[1]= (String) ref.getFirst();
 						array[2]= XftStringUtils.RegCharsAbbr(element.getSQLName());
 						if (tableAlias !=null && !tableAlias.equalsIgnoreCase(""))
 						{
@@ -239,7 +239,7 @@ public class ViewManager {
 						}else{
 							array[3]= element.getSQLName();
 						}
-						array[5] = xmlPath + XFT.PATH_SEPARATOR + (String) ref.get(0);
+						array[5] = xmlPath + XFT.PATH_SEPARATOR + (String) ref.getFirst();
 						
 						if (element.getAddin().equalsIgnoreCase("meta") && !isRoot)
 						{
@@ -297,7 +297,7 @@ public class ViewManager {
 					{
 						ArrayList refs = field.getLocalRefNames();
 						Iterator refIter = refs.iterator();
-						GenericWrapperElement foreign =	(GenericWrapperElement) ((ArrayList) refs.get(0)).get(2);
+						GenericWrapperElement foreign =	(GenericWrapperElement) ((ArrayList) refs.getFirst()).get(2);
 						
 						if ((e.getAddin().equalsIgnoreCase("")) || (!foreign.getAddin().equalsIgnoreCase("")))
 						{
@@ -320,10 +320,10 @@ public class ViewManager {
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(ViewManager.GetViewName(foreign,level,allowMultiples,isExtension));
 											sb.append(" ").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
-											sb.append(" ON ").append(e.getSQLName()).append(".").append((String) ref.get(0));
+											sb.append(" ON ").append(e.getSQLName()).append(".").append((String) ref.getFirst());
 											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(temp);
 										} else {
-											sb.append(" AND ").append(e.getSQLName()).append(".").append((String) ref.get(0));
+											sb.append(" AND ").append(e.getSQLName()).append(".").append((String) ref.getFirst());
 											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(temp);
 										}
 									}
@@ -332,7 +332,7 @@ public class ViewManager {
 					}else if(! field.getXMLDisplay().equalsIgnoreCase("root")){
 						ArrayList refs = field.getLocalRefNames();
 						Iterator refIter = refs.iterator();
-						GenericWrapperElement foreign =	(GenericWrapperElement) ((ArrayList) refs.get(0)).get(2);
+						GenericWrapperElement foreign =	(GenericWrapperElement) ((ArrayList) refs.getFirst()).get(2);
 						
 						if ((e.getAddin().equalsIgnoreCase("")) || (!foreign.getAddin().equalsIgnoreCase("")))
 						{
@@ -346,10 +346,10 @@ public class ViewManager {
 									if (counter++ == 0) {
 										sb.append(" \nLEFT JOIN ").append(foreign.getSQLName());
 										sb.append(" ").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
-										sb.append(" ON ").append(e.getSQLName()).append(".").append((String) ref.get(0));
+										sb.append(" ON ").append(e.getSQLName()).append(".").append((String) ref.getFirst());
 										sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(foreignKey.getSQLName());
 									} else {
-										sb.append(" AND ").append(e.getSQLName()).append(".").append((String) ref.get(0));
+										sb.append(" AND ").append(e.getSQLName()).append(".").append((String) ref.getFirst());
 										sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(foreignKey.getSQLName());
 									}
 								}
@@ -430,7 +430,7 @@ public class ViewManager {
 										ArrayList ref = (ArrayList) refIter.next();
 										GenericWrapperField foreignKey =
 											(GenericWrapperField) ref.get(1);
-										String temp = ViewManager.GetViewColumnName(foreign, foreign.getFullXMLName() + XFT.PATH_SEPARATOR + (String)ref.get(0));
+										String temp = ViewManager.GetViewColumnName(foreign, foreign.getFullXMLName() + XFT.PATH_SEPARATOR + (String)ref.getFirst());
 										
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(ViewManager.GetViewName(foreign,level,allowMultiples,false));
@@ -527,14 +527,14 @@ public class ViewManager {
 												".").append(
 												foreignKey.getSQLName());
 											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
-												".").append((String) ref.get(0));
+												".").append((String) ref.getFirst());
 										} else {
 											sb.append(" AND ").append(
 												e.getSQLName()).append(
 												".").append(
 												foreignKey.getSQLName());
 											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
-												".").append((String) ref.get(0));
+												".").append((String) ref.getFirst());
 										}
 									}
 								}

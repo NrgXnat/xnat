@@ -30,7 +30,7 @@ public class DateUtils {
     public synchronized static DateUtils GetInstance() {
         DateUtils d = null;
         if (FREE.size() > 0) {
-            d = FREE.remove(0);
+            d = FREE.removeFirst();
 		}
 
         if (d != null) {

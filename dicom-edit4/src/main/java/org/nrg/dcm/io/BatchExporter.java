@@ -10,7 +10,6 @@ package org.nrg.dcm.io;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.dcm4che2.data.DicomObject;
 import org.nrg.dcm.edit.Action;
 import org.nrg.dcm.edit.Statement;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
@@ -107,11 +106,10 @@ public final class BatchExporter implements Runnable {
             final File         file;
             final DicomObjectI dicomObject;
             try {
-                if (object instanceof File) {
-                    file = (File)object;
+                if (object instanceof File file1) {
+                    file = file1;
                     dicomObject = DicomObjectFactory.newInstance(file);
-                } else if (object instanceof URI) {
-                    final URI uri = (URI)object;
+                } else if (object instanceof URI uri) {
                     if ("file".equals(uri.getScheme())) {
                         file = new File(uri);
                         dicomObject = DicomObjectFactory.newInstance(file);
@@ -121,9 +119,10 @@ public final class BatchExporter implements Runnable {
                             dicomObject = DicomObjectFactory.newInstance(input);
                         }
                     }
-                } else if (object instanceof DicomObject) {
+                } else if (object instanceof DicomObjectI) {
                     file = null;
-                    dicomObject = DicomObjectFactory.newInstance((DicomObject) object);
+                    dicomObject = (DicomObjectI)object;
+//                    dicomObject = DicomObjectFactory.newInstance((DicomObject) object);
                 } else {
                     failures.put(object, new IllegalArgumentException("cannot export class " + object.getClass().getName()));
                     continue EXPORT_LOOP;
@@ -145,7 +144,7 @@ public final class BatchExporter implements Runnable {
 
             try {
                 logger.trace("exporting {}", object);
-                objectExporter.export(dicomObject.getDcm4che2Object(), file);
+                objectExporter.export(dicomObject, file);
                 progress++;
                 if (null != pm) {
                     pm.setProgress(progress);

@@ -60,8 +60,8 @@ public class XdatChangeInfoBean extends BaseElement implements java.io.Serializa
 	 * @param v Value to Set.
 	 */
 	public void setChangeUser(Object v) {
-		if (v instanceof org.nrg.xdat.bean.XdatUserBean)
-			_ChangeUser =(org.nrg.xdat.bean.XdatUserBean)v;
+		if (v instanceof org.nrg.xdat.bean.XdatUserBean bean)
+			_ChangeUser =bean;
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatUserBean");
 	}

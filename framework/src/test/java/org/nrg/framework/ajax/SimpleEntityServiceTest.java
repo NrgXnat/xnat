@@ -185,7 +185,7 @@ public class SimpleEntityServiceTest {
         final List<SimpleEntity> retrieved = _service.getAll();
         assertThat(retrieved).isNotNull().isNotEmpty().hasSize(SORTABLES.size());
 
-        final SimpleEntity           single = retrieved.get(0);
+        final SimpleEntity           single = retrieved.getFirst();
         final Optional<SimpleEntity> unique = _service.findByIdAndUsername(single.getId(), single.getUsername());
         assertThat(unique).isNotNull().isPresent().get().hasFieldOrPropertyWithValue("id", single.getId()).hasFieldOrPropertyWithValue("username", single.getUsername());
 

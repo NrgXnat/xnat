@@ -1,15 +1,15 @@
 [versions]
 # Auto-extracted from parent/pom.xml
-# Source: parent releases/1.9.3.2-rc branch
+# Source: parent 1.10.0 tag (updated 2026-04-28 for Phase 2)
 
 activemq = "5.16.7"
 activemq-protobuf = "1.1"
 ant = "1.9.8"
 antlr3 = "3.5.3"
-antlr4 = "4.9.3"
+antlr4 = "4.13.2"
 aopalliance = "1.0"
 aspectj = "1.8.10"
-assertj = "3.24.2"
+assertj = "3.26.3"
 auto-value = "1.7.4"
 avalon = "4.3"
 batch-launch = "0.4.0"
@@ -43,9 +43,9 @@ container-service = "3.0.0"
 datasets = "1.0.0"
 datasource-proxy = "1.6"
 dcm4che = "2.0.29"
-dcm4che5 = "5.31.0"
-dicom-edit6 = "6.8.0"
-dom4j = "1.6.1"
+dcm4che5 = "5.33.1"
+dicom-edit6 = "6.9.0"
+dom4j = "2.1.4"
 dqr = "1.0.0"
 easymock = "1.2_Java1.3"
 eclipse-jgit = "5.13.3.202401111512-r"
@@ -54,13 +54,14 @@ ehcache3 = "3.10.8"
 fastmd5 = "2.7.1"
 fest-swing = "1.2.1"
 findbugs-jsr305 = "3.0.2"
+graaljs = "23.1.0"
 fop = "0.20.5"
 glassfish-jakarta-el = "4.0.2"
 glassfish-javax-el = "3.0.1-b12"
 groovy = "2.4.20"
 gson = "2.9.0"
 guava = "32.1.3-jre"
-h2 = "1.4.200"
+h2 = "2.2.224"
 hamcrest = "1.3"
 hamcrest2 = "2.2"
 hibernate = "5.6.15.Final"
@@ -68,7 +69,7 @@ hibernate-commons = "5.1.2.Final"
 hibernate-jpa-api = "1.0.2.Final"
 hibernate-validator = "5.4.3.Final"
 hikaricp = "4.0.3"
-hsqldb = "2.3.6"
+hsqldb = "2.7.4"
 httpcomponents-client = "4.5.13"
 httpcomponents-core = "4.4.6"
 httpcomponents-mime = "4.5.14"
@@ -76,13 +77,14 @@ imagej = "1.53c"
 io-projectreactor = "2.0.8.RELEASE"
 itext = "2.1.7"
 jackson = "2.13.5"
-jacoco = "0.8.10"
+jacoco = "0.8.12"
 jai-imageio = "1.1"
+jakarta-annotation = "3.0.0"
+jakarta-inject = "1.0.3"
 jakarta-el = "4.0.2"
 jargon = "1.4.25"
 java-getopt = "1.0.13"
 java-uuid-generator = "3.1.4"
-javadoc-coverage = "1.1.1"
 javamelody = "1.91.0"
 javassist = "3.24.0-GA"
 javax-activation = "1.2.0"
@@ -108,18 +110,15 @@ junit = "4.13.2"
 junit-jupiter = "5.8.1"
 jython = "2.7.3"
 jzlib = "1.1.3"
-log4j = "1.2.17"
-log4j2 = "2.12.0"
 log4jdbc = "0.2.0"
 logback = "1.2.13"
 logstash = "5.3"
-lombok = "1.18.26"
+lombok = "1.18.34"
 lorem = "2.1"
 metainf-services = "1.8"
 ml = "1.0.0"
-mockito = "2.28.2"
-mockito-all = "1.10.19"
-mockito-jupiter = "4.0.0"
+mockito = "5.7.0"
+mockito-jupiter = "5.7.0"
 msv = "2013.6.1"
 nifti-io = "1.0"
 ohif-viewer = "3.0.0"
@@ -128,7 +127,6 @@ org-postgresql = "42.7.3"
 pixelmed = "nrg-20200327"
 pixelmed-codec = "20200328"
 pixelmed-imageio = "20200328"
-powermock = "2.0.5"
 quartz = "2.3.2"
 redisson = "3.22.0"
 reflections = "0.10.2"
@@ -146,6 +144,7 @@ spring-security = "5.7.13"
 spring-test-junit5 = "1.5.0"
 springockito = "1.0.5"
 swagger = "2.9.2"
+testcontainers = "1.21.4"
 tomcat-embed = "9.0.93"
 torque = "3.3"
 turbine = "2.3.3"
@@ -153,7 +152,7 @@ user-agent-utils = "1.20"
 velocity = "1.7"
 velocity-tools = "2.0"
 vladmihalcea-hibernate-types = "2.14.0"
-wiremock = "2.21.0"
+wiremock = "3.0.1"
 wizard = "1.2.1"
 xalan = "2.7.2"
 xbean = "3.17"
@@ -162,6 +161,7 @@ xbean = "3.17"
 # Auto-extracted from parent/pom.xml dependencyManagement
 
 activation-javax-activation-api = { group = "javax.activation", name = "javax.activation-api", version.ref = "javax-activation" }
+activation-com-sun-javax-activation = { group = "com.sun.activation", name = "javax.activation", version.ref = "javax-activation" }
 activemq-all = { group = "org.apache.activemq", name = "activemq-all", version.ref = "activemq" }
 activemq-broker = { group = "org.apache.activemq", name = "activemq-broker", version.ref = "activemq" }
 activemq-client = { group = "org.apache.activemq", name = "activemq-client", version.ref = "activemq" }
@@ -183,7 +183,6 @@ apache-ant = { group = "org.apache.ant", name = "ant", version.ref = "ant" }
 apache-com-springsource-org-apache-regexp = { group = "org.apache.regexp", name = "com.springsource.org.apache.regexp", version.ref = "org-apache-regexp" }
 apache-jena-core = { group = "org.apache.jena", name = "jena-core", version.ref = "jena" }
 apache-jena-tdb = { group = "org.apache.jena", name = "jena-tdb", version.ref = "jena-tdb" }
-apache-log4j-bom = { group = "org.apache.logging.log4j", name = "log4j-bom", version.ref = "log4j2" }
 apache-tomcat-embed-core = { group = "org.apache.tomcat.embed", name = "tomcat-embed-core", version.ref = "tomcat-embed" }
 apache-tomcat-embed-jasper = { group = "org.apache.tomcat.embed", name = "tomcat-embed-jasper", version.ref = "tomcat-embed" }
 apache-tomcat-embed-logging-juli = { group = "org.apache.tomcat.embed", name = "tomcat-embed-logging-juli", version.ref = "tomcat-embed" }
@@ -249,7 +248,7 @@ dcm4che5-dcm4che-net = { group = "org.dcm4che", name = "dcm4che-net", version.re
 dcm4che5-dcm4che-tool-common = { group = "org.dcm4che.tool", name = "dcm4che-tool-common", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-tool-storescp = { group = "org.dcm4che.tool", name = "dcm4che-tool-storescp", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-tool-storescu = { group = "org.dcm4che.tool", name = "dcm4che-tool-storescu", version.ref = "dcm4che5" }
-dom4j-dom4j = { group = "dom4j", name = "dom4j", version.ref = "dom4j" }
+dom4j-dom4j = { group = "org.dom4j", name = "dom4j", version.ref = "dom4j" }
 easymock-easymock = { group = "easymock", name = "easymock", version.ref = "easymock" }
 easytesting-fest-swing = { group = "org.easytesting", name = "fest-swing", version.ref = "fest-swing" }
 easytesting-fest-swing-junit = { group = "org.easytesting", name = "fest-swing-junit", version.ref = "fest-swing" }
@@ -259,6 +258,9 @@ ehcache-ehcache = { group = "org.ehcache", name = "ehcache", version.ref = "ehca
 el-javax-el-api = { group = "javax.el", name = "javax.el-api", version.ref = "javax-el" }
 fop-fop = { group = "fop", name = "fop", version.ref = "fop" }
 getopt-java-getopt = { group = "gnu.getopt", name = "java-getopt", version.ref = "java-getopt" }
+graaljs-js-community = { group = "org.graalvm.polyglot", name = "js-community", version.ref = "graaljs" }
+graaljs-js-scriptengine = { group = "org.graalvm.js", name = "js-scriptengine", version.ref = "graaljs" }
+graaljs-polyglot = { group = "org.graalvm.polyglot", name = "polyglot", version.ref = "graaljs" }
 # SKIP: gitversion-gradle-git-version = { group = "com.palantir.gradle.gitversion", name = "gradle-git-version" } # unresolved version: ${gradle-git-version}
 glassfish-jakarta-el = { group = "org.glassfish", name = "jakarta.el", version.ref = "glassfish-jakarta-el" }
 glassfish-javax-el = { group = "org.glassfish", name = "javax.el", version.ref = "glassfish-javax-el" }
@@ -290,6 +292,8 @@ httpcomponents-httpmime = { group = "org.apache.httpcomponents", name = "httpmim
 imagej-ij = { group = "net.imagej", name = "ij", version.ref = "imagej" }
 inject-javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javax-inject" }
 interceptor-javax-interceptor-api = { group = "javax.interceptor", name = "javax.interceptor-api", version.ref = "javax-interceptor" }
+jakarta-annotation-api = { group = "jakarta.annotation", name = "jakarta.annotation-api", version.ref = "jakarta-annotation" }
+jakarta-inject-api = { group = "jakarta.inject", name = "jakarta.inject-api", version.ref = "jakarta-inject" }
 j2ee-javax-management-j2ee-api = { group = "javax.management.j2ee", name = "javax.management.j2ee-api", version.ref = "javax-j2ee-api" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jackson" }
@@ -321,7 +325,6 @@ junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", v
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
 junit-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "junit-jupiter" }
 kubek2k-springockito = { group = "org.kubek2k", name = "springockito", version.ref = "springockito" }
-log4j-log4j = { group = "log4j", name = "log4j", version.ref = "log4j" }
 log4jdbc-file = { group = "com.github.marcosemiao.log4jdbc", name = "log4jdbc-file", version.ref = "log4jdbc" }
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = "logback" }
@@ -329,10 +332,8 @@ logback-logstash-logback-encoder = { group = "net.logstash.logback", name = "log
 lowagie-itext = { group = "com.lowagie", name = "itext", version.ref = "itext" }
 mail-javax-mail = { group = "com.sun.mail", name = "javax.mail", version.ref = "javax-mail" }
 mail-javax-mail-api = { group = "javax.mail", name = "javax.mail-api", version.ref = "javax-mail" }
-manoelcampos-javadoc-coverage = { group = "com.manoelcampos", name = "javadoc-coverage", version.ref = "javadoc-coverage" }
 media-jai_imageio = { group = "com.sun.media", name = "jai_imageio", version.ref = "jai-imageio" }
 metainf-services-metainf-services = { group = "org.kohsuke.metainf-services", name = "metainf-services", version.ref = "metainf-services" }
-mockito-all = { group = "org.mockito", name = "mockito-all", version.ref = "mockito-all" }
 mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 mockito-junit-jupiter = { group = "org.mockito", name = "mockito-junit-jupiter", version.ref = "mockito-jupiter" }
 msv-core = { group = "net.java.dev.msv", name = "msv-core", version.ref = "msv" }
@@ -342,8 +343,6 @@ pixelmed-codec = { group = "com.dclunie", name = "pixelmed-codec", version.ref =
 pixelmed-imageio = { group = "com.dclunie", name = "pixelmed-imageio", version.ref = "pixelmed-imageio" }
 pixelmed-pixelmed = { group = "com.dclunie", name = "pixelmed", version.ref = "pixelmed" }
 postgresql-postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "org-postgresql" }
-powermock-api-mockito2 = { group = "org.powermock", name = "powermock-api-mockito2", version.ref = "powermock" }
-powermock-module-junit4 = { group = "org.powermock", name = "powermock-module-junit4", version.ref = "powermock" }
 projectlombok-lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
 python-jython = { group = "org.python", name = "jython", version.ref = "jython" }
 python-jython-standalone = { group = "org.python", name = "jython-standalone", version.ref = "jython" }
@@ -400,6 +399,9 @@ springfox-swagger2 = { group = "io.springfox", name = "springfox-swagger2", vers
 swinglabs-wizard = { group = "org.swinglabs", name = "wizard", version.ref = "wizard" }
 thedeanda-lorem = { group = "com.thedeanda", name = "lorem", version.ref = "lorem" }
 toedter-jcalendar = { group = "com.toedter", name = "jcalendar", version.ref = "jcalendar" }
+testcontainers-junit-jupiter = { group = "org.testcontainers", name = "junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }
+testcontainers-testcontainers = { group = "org.testcontainers", name = "testcontainers", version.ref = "testcontainers" }
 tomakehurst-wiremock = { group = "com.github.tomakehurst", name = "wiremock", version.ref = "wiremock" }
 tools-checkstyle = { group = "com.puppycrawl.tools", name = "checkstyle", version.ref = "checkstyle" }
 torque-torque = { group = "torque", name = "torque", version.ref = "torque" }

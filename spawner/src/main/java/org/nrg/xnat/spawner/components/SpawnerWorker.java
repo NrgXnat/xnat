@@ -56,7 +56,7 @@ public class SpawnerWorker {
         final List<List<String>> references = extractReferencedIds(element.getNamespace(), element.getYaml());
         log.debug("Found {} references in the element {}", references.size(), elementId);
         for (final List<String> reference : references) {
-            final String namespace   = StringUtils.isNotBlank(reference.get(0)) ? reference.get(0) : element.getNamespace();
+            final String namespace   = StringUtils.isNotBlank(reference.getFirst()) ? reference.getFirst() : element.getNamespace();
             final String referenceId = reference.get(1);
             log.debug("Processing new element {}:{}", namespace, referenceId);
             final SpawnerElement child = _service.retrieve(namespace, referenceId);

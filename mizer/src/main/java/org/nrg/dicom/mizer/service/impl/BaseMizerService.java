@@ -3,10 +3,8 @@ package org.nrg.dicom.mizer.service.impl;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
-import org.dcm4che2.data.DicomObject;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
-import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.Mizer;
 import org.nrg.dicom.mizer.service.MizerContext;
@@ -25,7 +23,13 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.InputStream;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -190,13 +194,12 @@ public class BaseMizerService implements MizerService {
      * @throws MizerException When an error occurs processing the script.
      */
     @Override
-    public AnonymizationResult anonymize(final DicomObject dicomObject, String project, String subject, String session, String scriptString, final boolean ignoreRejection) throws MizerException {
-        final DicomObjectI doi = DicomObjectFactory.newInstance(dicomObject);
+    public AnonymizationResult anonymize(final DicomObjectI dicomObject, String project, String subject, String session, String scriptString, final boolean ignoreRejection) throws MizerException {
         final Properties anonContext = new Properties();
         anonContext.put("project", project);
         anonContext.put("subject", subject);
         anonContext.put("session", session);
-        return anonymize(doi, anonContext, scriptString, ignoreRejection);
+        return anonymize(dicomObject, anonContext, scriptString, ignoreRejection);
     }
 
     @Override

@@ -61,7 +61,7 @@ public final class Echo implements Operation {
      */
     public long getTopTag() {
         final SortedSet<Long> tags = getScriptTags();
-        return tags.isEmpty() ? 0 : tags.last();
+        return tags.isEmpty() ? 0 : tags.getLast();
     }
 
     @Override

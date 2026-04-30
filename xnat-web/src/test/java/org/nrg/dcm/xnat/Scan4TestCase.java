@@ -43,7 +43,7 @@ public class Scan4TestCase {
 
         final FileSet scan4 = new FileSet();
         scan4.setIncludes(includes);
-        scan4.setDir(RESOURCE_MANAGER.getTestResourceFile(resources.get(0).getURL()).getParentFile());
+        scan4.setDir(RESOURCE_MANAGER.getTestResourceFile(resources.getFirst().getURL()).getParentFile());
 
         final File folder = File.createTempFile("org.nrg.dcm.xnat.DICOMScanBuilder", ".test");
         folder.delete();

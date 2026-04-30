@@ -68,6 +68,7 @@ import org.restlet.data.Status;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.Serial;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -94,7 +95,8 @@ import java.util.stream.Stream;
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements ArchivableItem, MoveableI {
 
-  private static final long serialVersionUID = -1237275273363081417L;
+    @Serial
+    private static final long serialVersionUID = -1237275273363081417L;
   public static final int ONE_MINUTE = 60000;
 
   public BaseXnatExperimentdata(ItemI item)
@@ -309,7 +311,7 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
 
 	        if (table.size()>0)
 	        {
-	            return table.rows().get(0);
+	            return table.rows().getFirst();
 	        }
     	} catch (SQLException | DBPoolException e) {
             logger.error("",e);
@@ -388,8 +390,7 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
                 if ((projectID != null && !projectID.isEmpty()) && !projectID.equals(entry.getKey().getId())) {
                     continue;
                 }
-                if (prot != null && prot instanceof XnatDatatypeprotocol) {
-                    final XnatDatatypeprotocol dataProt = (XnatDatatypeprotocol) prot;
+                if (prot != null && prot instanceof XnatDatatypeprotocol dataProt) {
                     for (final XnatFielddefinitiongroupI group : dataProt.getDefinitions_definition()) {
                         groups.put(group.getId(), (XnatFielddefinitiongroup) group);
                     }
@@ -411,7 +412,7 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
         ArrayList al =  XnatExperimentdata.getXnatExperimentdatasByField(subcc1, user, preLoad);
         if (al.size()>0){
             al = BaseElement.WrapItems(al);
-            return (XnatExperimentdata)al.get(0);
+            return (XnatExperimentdata)al.getFirst();
         }
 
 
@@ -422,7 +423,7 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
         al =  XnatExperimentdata.getXnatExperimentdatasByField(subcc2, user, preLoad);
         if (al.size()>0){
             al = BaseElement.WrapItems(al);
-            return (XnatExperimentdata)al.get(0);
+            return (XnatExperimentdata)al.getFirst();
         }else{
             return null;
         }
@@ -558,8 +559,8 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
 
 
 				//unshare children before unsharing parent
-				if(expt instanceof XnatImagesessiondata){
-					final  List<XnatImageassessordata> expts = ((XnatImagesessiondata)expt).getAssessors_assessor();
+				if(expt instanceof XnatImagesessiondata imagesessiondata){
+					final  List<XnatImageassessordata> expts = imagesessiondata.getAssessors_assessor();
 			        for (XnatImageassessordataI exptI : expts){
 			        	final XnatImageassessordata assess = (XnatImageassessordata)exptI;
 			        	if(assess.getProject().equals(proj.getId())){
@@ -839,7 +840,7 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
 
     public void checkUniqueLabel() throws Exception{
 		if(!StringUtils.isBlank(this.getLabel())){
-			Long count=(Long)PoolDBUtils.ReturnStatisticQuery(String.format("SELECT COUNT(*) FROM (SELECT label, ID FROM xnat_experimentData WHERE label='%1$s' AND ID !='%2$s' AND project='%3$s' UNION SELECT label, sharing_share_xnat_experimentda_id AS ID FROM xnat_experimentData_share WHERE label='%1$s' AND sharing_share_xnat_experimentda_id !='%2$s' AND project='%3$s') SRCH",this.getLabel(),this.getId(),this.getProject()), "count", this.getDBName(), "system");
+			Long count=(Long)PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (SELECT label, ID FROM xnat_experimentData WHERE label='%1$s' AND ID !='%2$s' AND project='%3$s' UNION SELECT label, sharing_share_xnat_experimentda_id AS ID FROM xnat_experimentData_share WHERE label='%1$s' AND sharing_share_xnat_experimentda_id !='%2$s' AND project='%3$s') SRCH".formatted(this.getLabel(), this.getId(), this.getProject()), "count", this.getDBName(), "system");
 			if(count>0){
 				throw new ClientException(Status.CLIENT_ERROR_CONFLICT,"Conflict: Duplicate experiment label",new Exception());
 			}
@@ -875,9 +876,9 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
     }
 
 	public static String getUriForMatchingCatalog(final String label, final List<XnatAbstractresourceI> resources) {
-        final Optional<XnatAbstractresourceI> first = resources.stream().filter(resource -> resource instanceof XnatResourcecatalog
+        final Optional<XnatAbstractresourceI> first = resources.stream().filter(resource -> resource instanceof XnatResourcecatalog xr
                                               && StringUtils.equalsIgnoreCase(label, resource.getLabel())
-                                              && StringUtils.contains(((XnatResourcecatalog) resource).getUri(), "/"))
+                                              && StringUtils.contains(xr.getUri(), "/"))
                 .findFirst();
         return first.map(xnatAbstractresourceI -> StringUtils.substringBeforeLast(((XnatResourcecatalog) xnatAbstractresourceI).getUri(), "/"))
                     .orElse(null);
@@ -942,10 +943,10 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
         new_expt.setId(this.getId());
         new_expt.setLabel(this.getLabel());
         new_expt.setProject(this.getProject());
-        if (this instanceof XnatSubjectassessordata) {
-            ((XnatSubjectassessordata) new_expt).setSubjectId(((XnatSubjectassessordata) this).getSubjectId());
-        } else if (this instanceof XnatImageassessordata) {
-            ((XnatImageassessordata) new_expt).setImagesessionId(((XnatImageassessordata) this).getImagesessionId());
+        if (this instanceof XnatSubjectassessordata subjectassessordata) {
+            ((XnatSubjectassessordata) new_expt).setSubjectId(subjectassessordata.getSubjectId());
+        } else if (this instanceof XnatImageassessordata imageassessordata) {
+            ((XnatImageassessordata) new_expt).setImagesessionId(imageassessordata.getImagesessionId());
         }
         return new_expt;
     }

@@ -55,12 +55,15 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.XFTElement;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
+import org.nrg.xft.schema.db.entities.DBBackedSchema;
+import org.nrg.xft.schema.db.services.DBBackedSchemaService;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -134,6 +137,30 @@ public class ElementSecurity extends ItemWrapper {
             }
         }
 
+        final DBBackedSchemaService dbService=XFTManager.getDBBackedSchemaService();
+
+        for (final DBBackedSchema schema: dbService.getAll()) {
+            for(final String securedElements: dbService.getElementNames(schema)){
+                try {
+                    //is a valid element
+                    if (StringUtils.isNotBlank(securedElements) && !elements.containsKey(securedElements)){
+                        //isn't an addon (history, meta_data)
+                        if(StringUtils.isBlank(GenericWrapperElement.GetElement(securedElements).getAddin())) {
+                            //has a /project field, i.e. is a standard securable element
+                            if (GenericWrapperElement.GetFieldForXMLPath(securedElements + "/project") != null) {
+                                log.error("Registering data type for secure access: {}",securedElements);
+                                final ElementSecurity elementSecurity = ElementSecurity.newElementSecurity(securedElements);
+                                elementSecurity.initExistingPermissions();
+                                newTypes.add(elementSecurity.getElementName());
+                            }
+                        }
+                    }
+                }catch (FieldNotFoundException e){
+                    log.error("Failed to generate Element Security entry: {}",securedElements);
+                }
+            }
+        }
+
         newTypes.addAll(checkForReferencedDataModels(template, beanManager));
 
         if (!newTypes.isEmpty()) {
@@ -192,6 +219,10 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     public static ElementSecurity newElementSecurity(String elementName) throws Exception {
+        return newElementSecurity(elementName,null);
+    }
+
+    public static ElementSecurity newElementSecurity(String elementName, final String properName) throws Exception {
         if (GetElementSecurity(elementName) != null) {
             return GetElementSecurity(elementName);
         }
@@ -213,6 +244,11 @@ public class ElementSecurity extends ItemWrapper {
         securityItem.setProperty("secure_create", "1");
         securityItem.setProperty("secure_delete", "1");
         securityItem.setProperty("accessible", "1");
+
+        if(StringUtils.isNotBlank(properName)){
+            securityItem.setProperty("singular", properName);
+            securityItem.setProperty("plural", properName);
+        }
 
         securityItem.setProperty("element_security_set_element_se_xdat_security_id", TurbineUtils.GetSystemID());
         securityItem.setProperty("xdat:element_security/primary_security_fields/primary_security_field[0]/primary_security_field", elementName + "/sharing/share/project");
@@ -1032,8 +1068,7 @@ public class ElementSecurity extends ItemWrapper {
                         while (values.hasNext()) {
                             Object o = values.next();
 
-                            if (o instanceof XFTItem) {
-                                XFTItem sub = (XFTItem) o;
+                            if (o instanceof XFTItem sub) {
                                 if (sub.hasProperties()) {
                                     o = sub.getPK();
 
@@ -1204,7 +1239,7 @@ public class ElementSecurity extends ItemWrapper {
             return "";
         }
         if (primarySecurityFields.size() == 1) {
-            return primarySecurityFields.get(0);
+            return primarySecurityFields.getFirst();
         }
         return StringUtils.join(primarySecurityFields, " ");
     }

@@ -204,7 +204,7 @@ public class XftItemEvent implements XftItemEventI {
             if (xsiTypes.size() > 1) {
                 throw new IllegalArgumentException("You specified " + xsiTypes.size() + " items, which is fine, but there are multiple XSI types, which is not fine. XFT item events support multiple items but they must all be of the same type, while you specified items of type: " + String.join(", ", xsiTypes));
             }
-            _xsiType = xsiTypes.get(0);
+            _xsiType = xsiTypes.getFirst();
             _ids = _items.stream().map(item -> {
                 try {
                     return item.getIDValue();
@@ -251,7 +251,7 @@ public class XftItemEvent implements XftItemEventI {
                 log.warn("An error occurred trying to retrieve the XFTItem for object via XMLPath {} with ID {}", xmlPath, id, e);
             }
         }
-        return _items.get(0);
+        return _items.getFirst();
     }
 
     @Override

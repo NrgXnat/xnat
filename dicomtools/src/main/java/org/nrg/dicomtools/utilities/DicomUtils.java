@@ -9,17 +9,16 @@
 
 package org.nrg.dicomtools.utilities;
 
-import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.*;
-import org.dcm4che2.io.DicomInputHandler;
-import org.dcm4che2.io.DicomInputStream;
-import org.dcm4che2.io.StopTagInputHandler;
-import org.dcm4che2.iod.module.macro.Code;
+import org.dcm4che3.data.*;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.dcm.DicomAttributeIndex;
 import org.nrg.dcm.RequiredAttributeUnsetException;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicomtools.exceptions.AttributeVRMismatchException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 
@@ -28,6 +27,7 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -60,7 +60,7 @@ public class DicomUtils {
     public static final Pattern DICOM_TAG = Pattern.compile("^(?<open>[(]?)(?<tag>(?<prefix>[\\p{Alnum}]{4}),(?<suffix>[\\p{Alnum}]{4}))(?<close>[)]?)$");
 
     /**
-     * Converts a map with {@link DicomAttributeIndex} keys to one with string keys. This calls the {@link DicomAttributeIndex#getPath(DicomObject)} method
+     * Converts a map with {@link DicomAttributeIndex} keys to one with string keys. This calls the {@link DicomAttributeIndex#getPath(DicomObjectI)} method
      * and uses the first integer in the returned array. That is converted to the attribute tag name using the {@link #getDicomAttribute(int)} method.
      */
     public static final Function<Map<DicomAttributeIndex, String>, Map<String, String>> MAP_BY_ATTRIBUTE_TO_STRING_FUNCTION = map -> map.keySet().stream().collect(Collectors.toMap(DicomUtils::getDicomAttribute, map::get));
@@ -92,7 +92,7 @@ public class DicomUtils {
             }
         }
         try {
-            return Tag.forName(headerId);
+            return TagUtils.forName(headerId);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid DICOM tag: unknown tag name. Submitted tag: " + headerId);
         }
@@ -112,7 +112,11 @@ public class DicomUtils {
     public static String getDicomAttribute(final int tag) {
         if (DICOM_TAGS.isEmpty()) {
             synchronized (DICOM_TAGS) {
-                for (Field field : Tag.class.getDeclaredFields()) {
+                Field[] fields = Tag.class.getDeclaredFields();
+                for (Field field : fields) {
+                    if (field.getType() != int.class) {
+                        continue;
+                    }
                     try {
                         DICOM_TAGS.put(field.getInt(null), field.getName());
                     } catch (IllegalAccessException ignored) {
@@ -129,7 +133,7 @@ public class DicomUtils {
 
     /**
      * Gets the DICOM attribute name&mdash;e.g. SeriesDescription, Modality, or StudyInstanceUID&mdash;for the indicated
-     * tag. This calls the {@link DicomAttributeIndex#getPath(DicomObject)} method to get the integer value of the tag.
+     * tag. This calls the {@link DicomAttributeIndex#getPath(DicomObjectI)} method to get the integer value of the tag.
      * If the attribute is a nested tag, this method uses the last item in the path. This may work properly, but you may
      * get unpredictable results.
      *
@@ -167,10 +171,36 @@ public class DicomUtils {
         return getDicomAttribute(parseDicomHeaderId(tag));
     }
 
+    public static String getAttributeName(DicomObjectI doi, int tag) {
+        return getAttributeName(doi.getAttributes(), tag);
+    }
+
+    public static String getAttributeName(final Attributes attrs, int tag) {
+        ElementDictionary dict = ElementDictionary.getStandardElementDictionary();
+        String name = dict.keywordOf(tag);
+        if (name != null && !name.isEmpty()) {
+            return name;
+        }
+
+        if (TagUtils.isPrivateTag(tag)) {
+            int creatorTag = TagUtils.creatorTagOf(tag);
+            String creatorID = attrs.getString(creatorTag);
+            if (creatorID != null) {
+                name = ElementDictionary.keywordOf(tag, creatorID);
+                if (name != null && !name.isEmpty()) {
+                    return name;
+                }
+                return String.format("PrivateTag_%08X_%s", tag, creatorID);
+            }
+            return String.format("PrivateTag_%08X", tag);
+        }
+        return String.format("Tag_%08X", tag);
+    }
+
     /**
      * Retrieves codes indicating the deidentification methods from DICOM data contained in the submitted file. The
      * codes are taken from the DICOM tag indicated by the {@link #RecordTag} value. This method reads the DICOM header
-     * values from the file into a DICOM object then calls the {@link #getCodes(DicomObject)} method to extract the
+     * values from the file into a DICOM object then calls the {@link #getCodes(DicomObjectI)} method to extract the
      * appropriate values.
      *
      * @param file The file from which DICOM data should be retrieved.
@@ -179,12 +209,8 @@ public class DicomUtils {
      *
      * @throws IOException If an error occurs reading the submitted file.
      */
-    public static Code[] getCodes(final File file) throws IOException {
-        try (DicomInputStream input = new DicomInputStream(file)) {
-            input.setHandler(new StopTagInputHandler(RecordTag + 1));
-            DicomObject dicomObject = input.readDicomObject();
-            return getCodes(dicomObject);
-        }
+    public static List<Code> getCodes(final File file) throws IOException {
+        return getCodes(read(file, RecordTag + 1));
     }
 
     /**
@@ -195,94 +221,56 @@ public class DicomUtils {
      *
      * @return The codes found in the DICOM header field specified by the {@link #RecordTag} value.
      */
-    public static Code[] getCodes(final DicomObject dicomObject) {
-        final DicomElement record = dicomObject.get(RecordTag);
-        return Code.toCodes(record);
+    public static List<Code> getCodes(final Attributes attrs) {
+        return Arrays.stream(attrs.tags())
+                .filter(tag -> VR.SQ.equals(attrs.getVR(tag))).boxed()
+                .flatMap(tag -> attrs.getSequence(tag).stream())
+                .filter(item -> item.containsValue(Tag.CodeValue))
+                .filter(item -> item.containsValue(Tag.CodingSchemeDesignator))
+                .map(Code::new)
+                .collect(Collectors.toList());
     }
 
-    public static String getStringRequired(final DicomObject o, final int tag) throws RequiredAttributeUnsetException {
-        final String v = o.getString(tag);
-        if (null == v || "".equals(v)) {
-            throw new RequiredAttributeUnsetException(o, tag);
+    public static List<Code> getCodes(final DicomObjectI dicomObject) {
+        return getCodes(dicomObject.getAttributes());
+    }
+
+    public static String getStringRequired(final DicomObjectI doi, final int tag) throws RequiredAttributeUnsetException {
+        final String value = doi.getString(tag);
+        if (StringUtils.isBlank(value)) {
+            throw new RequiredAttributeUnsetException(doi, tag);
         } else {
-            return v;
+            return value;
         }
     }
 
-    public static String getTransferSyntaxUID(final DicomObject o) {
+    public static String getStringRequired(final Attributes attributes, final int tag) throws RequiredAttributeUnsetException {
+        final String value = attributes.getString(tag);
+        if (StringUtils.isBlank(value)) {
+            throw new RequiredAttributeUnsetException(attributes, tag);
+        }
+        return value;
+    }
+
+    public static String getTransferSyntaxUID(final DicomObjectI doi) {
         // Default TS UID is Implicit VR LE (PS 3.5, Section 10)
-        return o.getString(Tag.TransferSyntaxUID, UID.ImplicitVRLittleEndian);
-    }
-
-    /**
-     * Returns a stop-tag input handler with the stop tag set to the value for the submitted parameter plus one. In
-     * comparison to the {@link #getStopTagInputHandler(int)} version, this method truncates any part of the long value
-     * <i>above</i> the value of 2 bytes (0xFFFFFFFF).
-     *
-     * @param stopTag The last tag to be processed.
-     *
-     * @return A stop-tag input handler that indicates that the DICOM tags should processed up to the submitted tag.
-     */
-    public static StopTagInputHandler getStopTagInputHandler(final long stopTag) {
-        // Scanning Sequence is the largest internally required tag:
-        // > SOP Class UID and all of File metainformation Header
-        final long truncated = 0xffffffffL & stopTag;
-        if (0xffffffffL == truncated) {
-            return null;
+        String tuid =doi.getString(Tag.TransferSyntaxUID);
+        if (tuid ==null) {
+            tuid =UID.ImplicitVRLittleEndian;
         }
-        return getStopTagInputHandler((int) truncated);
+        return tuid;
+    }
+
+    public static String getTransferSyntaxUID(final Attributes attributes) {
+        return attributes.getString(Tag.TransferSyntaxUID, UID.ExplicitVRLittleEndian);
     }
 
     /**
-     * Returns a stop-tag input handler with the stop tag set to the value for the submitted parameter plus one. The
-     * maximum stop-tag value is {@link Tag#ScanningSequence}. If you need to anonymize tag values above this, you
-     * should call {@link #getMaxStopTagInputHandler()} or create the {@link StopTagInputHandler} directly.
+     * Reads a new DicomObject, including File Metainformation Header, from the given InputStream
      *
-     * @param stopTag The last tag to be processed.
-     *
-     * @return A stop-tag input handler that indicates that the DICOM tags should processed up to the submitted tag.
-     */
-    public static StopTagInputHandler getStopTagInputHandler(final int stopTag) {
-        return (stopTag > Tag.PixelData) ? MAX_STOP_TAG_INPUT_HANDLER : stopTag > 0 ? new StopTagInputHandler(stopTag + 1) : null;
-    }
-
-    /**
-     * Returns the maximum useful stop-tag input handler, which processes all DICOM tags up to the pixel data.
-     *
-     * @return The maximum useful stop-tag input handler.
-     */
-    public static StopTagInputHandler getMaxStopTagInputHandler() {
-        return MAX_STOP_TAG_INPUT_HANDLER;
-    }
-
-    /**
-     * Reads a new DicomObject from the given InputStream
-     *
-     * @param in      InputStream from which the object will be read
-     * @param handler determines whether next DICOM element should be read
-     *
-     * @return new DicomObject
-     *
-     * @throws IOException When an error occurs reading or writing data.
-     */
-    public static DicomObject read(final InputStream in, final DicomInputHandler handler) throws IOException {
-        try (final DicomInputStream din = new DicomInputStream(new BufferedInputStream(in))) {
-            if (null != handler) {
-                din.setHandler(handler);
-            }
-            final DicomObject o = din.readDicomObject();
-            if (o.contains(Tag.SOPClassUID)) {
-                return o;
-            } else {
-                throw new IOException("no SOP class UID in prospective DICOM object");
-            }
-        } catch (Throwable t) {
-            throw new IOException("unable to read as DICOM", t);
-        }
-    }
-
-    /**
-     * Reads a new DicomObject from the given InputStream
+     * Deprecated because dcm4che5 separates FMI from dataset; this has some annoying consequences
+     * (notably decoupling TS from the dataset, though it could be important for decoding pixel data)
+     * but is how dcm4che5 does things.
      *
      * @param in     InputStream from which the object will be read
      * @param maxTag last DICOM attribute to be included in the object
@@ -291,12 +279,24 @@ public class DicomUtils {
      *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final InputStream in, final int maxTag) throws IOException {
-        return read(in, getStopTagInputHandler(maxTag));
+    @Deprecated
+    public static Attributes read(final InputStream in, final int maxTag) throws IOException {
+        try (final InputStream buffered = in instanceof BufferedInputStream ? in : new BufferedInputStream(in);
+             final DicomInputStream din = new DicomInputStream(buffered)) {
+            din.setIncludeBulkData(DicomInputStream.IncludeBulkData.NO);
+            final Attributes fmi = din.readFileMetaInformation();
+            final Attributes dataset = din.readDataset(maxTag + 1);
+            if (fmi != null) {
+                dataset.addAll(fmi);
+            }
+            return dataset;
+        }
     }
 
     /**
      * Reads a complete new DicomObject from the given InputStream
+     *
+     * See deprecation note for read(InputStream, int)
      *
      * @param in InputStream from which the object will be read
      *
@@ -304,38 +304,35 @@ public class DicomUtils {
      *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final InputStream in) throws IOException {
-        return read(in, null);
-    }
-
-    /**
-     * Reads the named file into a new DicomObject
-     *
-     * @param file    File to be read
-     * @param handler determines whether next DICOM element should be read
-     *
-     * @return new DicomObject
-     *
-     * @throws IOException When an error occurs reading or writing data.
-     */
-    public static DicomObject read(final File file, final DicomInputHandler handler) throws IOException {
-        try (final InputStream fin = file.getName().endsWith(GZIP_SUFFIX) ? new GZIPInputStream(new FileInputStream(file)) : new FileInputStream(file)) {
-            return read(fin, handler);
+    @Deprecated
+    public static Attributes read(final InputStream in) throws IOException {
+        try (final InputStream buffered = in instanceof BufferedInputStream ? in : new BufferedInputStream(in);
+             final DicomInputStream din = new DicomInputStream(buffered)) {
+            din.setIncludeBulkData(DicomInputStream.IncludeBulkData.NO);
+            final Attributes fmi = din.readFileMetaInformation();
+            final Attributes dataset = din.readDataset();
+            if (fmi != null) {
+                dataset.addAll(fmi);
+            }
+            return dataset;
         }
     }
 
     /**
      * Reads the named file into a new DicomObject
      *
-     * @param file   File to be read
-     * @param maxTag last tag to be included in the object
+     * @param file    File to be read
+//     * @param handler determines whether next DICOM element should be read
      *
      * @return new DicomObject
      *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final File file, final int maxTag) throws IOException {
-        return read(file, getStopTagInputHandler(maxTag));
+    public static Attributes read(final File file, final int stopTag) throws IOException {
+        try (final InputStream fin = file.getName().endsWith(GZIP_SUFFIX) ? new GZIPInputStream(Files.newInputStream(file.toPath())) :
+                new FileInputStream(file)) {
+            return read(fin, stopTag);
+        }
     }
 
     /**
@@ -347,45 +344,34 @@ public class DicomUtils {
      *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final File file) throws IOException {
-        return read(file, null);
-    }
-
-    /**
-     * Reads a DicomObject from the named resource.
-     *
-     * @param uri     URI of the resource to be read
-     * @param handler The handler for DICOM.
-     *
-     * @return The new DicomObject
-     *
-     * @throws IOException When an error occurs reading or writing data.
-     */
-    public static DicomObject read(final URI uri, final DicomInputHandler handler) throws IOException {
-        if ("file".equals(uri.getScheme())) {
-            return read(new File(uri), handler);
-        } else if (uri.isAbsolute()) {
-            final URL url = uri.toURL();
-            try (final InputStream in = url.openStream()) {
-                return read(in, handler);
-            }
-        } else {
-            throw new IllegalArgumentException("URIs must be absolute");
+    public static Attributes read(final File file) throws IOException {
+        try (final InputStream fin = file.getName().endsWith(GZIP_SUFFIX) ? new GZIPInputStream(Files.newInputStream(file.toPath())) :
+                Files.newInputStream(file.toPath())) {
+            return read(fin);
         }
     }
 
     /**
      * Reads a DicomObject from the named resource.
      *
-     * @param uri    URI of the resource to be read
-     * @param maxTag last tag to be included in the object
+     * @param uri     URI of the resource to be read
+//     * @param handler The handler for DICOM.
      *
-     * @return new DicomObject
+     * @return The new DicomObject
      *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final URI uri, final int maxTag) throws IOException {
-        return read(uri, getStopTagInputHandler(maxTag));
+    public static Attributes read(final URI uri, final int stopTag) throws IOException {
+        if ("file".equals(uri.getScheme())) {
+            return read(new File(uri), stopTag);
+        } else if (uri.isAbsolute()) {
+            final URL url = uri.toURL();
+            try (final InputStream in = url.openStream()) {
+                return read(in, stopTag);
+            }
+        } else {
+            throw new IllegalArgumentException("URIs must be absolute");
+        }
     }
 
     /**
@@ -397,8 +383,8 @@ public class DicomUtils {
      *
      * @throws IOException When an error occurs reading or writing data.
      */
-    public static DicomObject read(final URI uri) throws IOException {
-        return read(uri, null);
+    public static Attributes read(final URI uri) throws IOException {
+        return read(new File(uri));
     }
 
     public static URI getQualifiedUri(final String address) throws URISyntaxException {
@@ -416,52 +402,43 @@ public class DicomUtils {
         return stripTrailingChars(new StringBuilder(s), toStrip).toString();
     }
 
-    private static StringBuffer join(final StringBuffer sb, final int[] array) {
-        if (array.length > 0) {
-            sb.append(array[0]);
-            for (int i = 1; i < array.length; i++) {
-                sb.append("\\");
-                sb.append(array[i]);
-            }
-        }
-        return sb;
+    public static boolean isBigEndian(final DicomObjectI doi) {
+        return isBigEndian(doi.getAttributes());
     }
 
-    private static String join(final int[] array) {
-        return join(new StringBuffer(), array).toString();
+    public static boolean isBigEndian(final Attributes attributes) {
+        return UID.ExplicitVRBigEndian.equals(attributes.getString(Tag.TransferSyntaxUID));
     }
 
-    private interface Converter {
-        String convert(DicomObject o, DicomElement e) throws AttributeVRMismatchException;
+    public static String getString(final DicomObjectI doi, final int tag) throws AttributeVRMismatchException {
+        return getString(doi.getAttributes(), tag);
     }
 
-    private final static Map<VR, Converter> conversions =
-            ImmutableMap.of(VR.SQ, (dicomObject, dicomElement) -> {
-                                throw new AttributeVRMismatchException(dicomElement.tag(), dicomElement.vr());
-                            },
-                            VR.UN, (dicomObject, dicomElement) -> dicomElement.getString(dicomObject.getSpecificCharacterSet(), false),
-                            VR.AT, (dicomObject, dicomElement) -> join(dicomElement.getInts(false)),
-                            VR.OB, (dicomObject, dicomElement) -> VR.OB.toString(dicomElement.getBytes(), dicomObject.bigEndian(), dicomObject.getSpecificCharacterSet()));
-
-    public static String getString(final DicomObject o, final int tag) throws AttributeVRMismatchException {
-        final DicomElement de = o.get(tag);
-        if (null == de) {
-            return null;
-        }
-        final Converter converter = conversions.get(de.vr());
-        if (null == converter) {
-            // all other data types can be treated as simple strings, maybe with
-            // multiple values separated by backslashes.  Join these.
+    public static String getString(final Attributes attributes, final int tag) throws AttributeVRMismatchException {
+        final String[] values;
+        final VR vr = attributes.getVR(tag);
+        if (VR.UN.equals(vr)) {
+            // VR UN gets special rendering for backwards compatibility with dcm4che2
             try {
-                return String.join("\\", de.getStrings(o.getSpecificCharacterSet(), false));
-            } catch (UnsupportedOperationException e) {
-                throw new AttributeVRMismatchException(tag, de.vr());
+                final byte[] byteVals = attributes.getBytes(tag);
+                if (null == byteVals) {
+                    return null;
+                }
+                values = new String[byteVals.length];
+                for (int i = 0; i < byteVals.length; i++) {
+                    values[i] = Byte.toString(byteVals[i]);
+                }
+            } catch (IOException e) {
+                log.error("error reading UN attribute {}", TagUtils.toString(tag), e);
+                return null;
             }
+        } else if (VR.SQ.equals(vr)) {
+            throw new AttributeVRMismatchException(tag, attributes.getVR(tag).name());
         } else {
-            return converter.convert(o, de);
+            values = attributes.getStrings(tag);
         }
+        return combineValues(values);
     }
-
 
     private final static Pattern VALID_UID_PATTERN = Pattern.compile("(0|([1-9][0-9]*))(\\.(0|([1-9][0-9]*)))*");
     private final static int     UID_MIN_LEN       = 1;
@@ -488,9 +465,9 @@ public class DicomUtils {
      *
      * @return combined Date object
      */
-    public static Date getDateTime(final DicomObject o, final int dateTag, final int timeTag) {
-        final Date date = o.getDate(dateTag);
-        final Date time = o.getDate(timeTag);
+    public static Date getDateTime(final DicomObjectI o, final int dateTag, final int timeTag) {
+        final Date date = o.getAttributes().getDate(dateTag);
+        final Date time = o.getAttributes().getDate(timeTag);
         if (null == date) {
             return time;
         } else if (null == time) {
@@ -511,7 +488,24 @@ public class DicomUtils {
         }
     }
 
+    public static TransferCapability.Role parseRole(String roleStr) {
+        if (roleStr == null) return null;
+        switch (roleStr.trim().toUpperCase()) {
+            case "SCU":
+                return TransferCapability.Role.SCU;
+            case "SCP":
+                return TransferCapability.Role.SCP;
+            default:
+                throw new IllegalArgumentException("Unknown Role: " + roleStr);
+        }
+    }
+
     private static final String               GZIP_SUFFIX                = ".gz";
-    private static final StopTagInputHandler  MAX_STOP_TAG_INPUT_HANDLER = new StopTagInputHandler(Tag.PixelData);
     private static final Map<Integer, String> DICOM_TAGS                 = new HashMap<>();
+
+    public static final String MULTI_VALUE_SEPARATOR = "\\";
+
+    public static String combineValues(final String[] values) {
+        return null == values ? null : String.join(MULTI_VALUE_SEPARATOR, values);
+    }
 }

@@ -261,7 +261,7 @@ public abstract class AutoXdatElementAccess extends org.nrg.xdat.base.BaseElemen
 	public XdatFieldMappingSet getOrCreateFieldMappingSet(final UserI user) throws Exception {
 		final List<XdatFieldMappingSet> fieldMappingSets = getPermissions_allowSet();
 		if (!fieldMappingSets.isEmpty()) {
-			return fieldMappingSets.get(0);
+			return fieldMappingSets.getFirst();
 		}
 		final XdatFieldMappingSet fieldMappingSet = new XdatFieldMappingSet(user);
 		fieldMappingSet.setMethod("OR");

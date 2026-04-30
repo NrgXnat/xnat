@@ -12,10 +12,13 @@ import org.nrg.xdat.om.base.auto.AutoXnatGenericdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 
 
 public class BaseXnatGenericdata extends AutoXnatGenericdata{
+    @Serial
+    private static final long serialVersionUID = 1;
 	public BaseXnatGenericdata(ItemI item)
 	{
 		super(item);

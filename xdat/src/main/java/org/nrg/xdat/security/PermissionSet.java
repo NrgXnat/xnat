@@ -42,7 +42,7 @@ public class PermissionSet implements PermissionSetI{
 
 	public PermissionSet(final String elementName, final List<Map<String, Object>> propertySets) {
 		// Method is the same across the property sets.
-		method = (String) propertySets.get(0).get("method");
+		method = (String) propertySets.getFirst().get("method");
 		permCriteria.addAll(Lists.transform(propertySets, new Function<Map<String,Object>, PermissionCriteriaI>() {
 			@Override
 			public PermissionCriteriaI apply(final Map<String, Object> propertySet) {

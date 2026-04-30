@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -33,9 +34,6 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
 
     protected NrgAbstractAnnotationProcessor() {
         final Annotation[] annotations = getClass().getAnnotations();
-        if (annotations == null) {
-            throw new NrgRuntimeException("The class " + getClass().getName() + " is supposed to be an annotation processor but has no annotations itself. It must have at least the @SupportedAnnotationType annotation to indicate the type of annotation(s) it wants to process.");
-        }
         //noinspection unchecked
         _class = (Class<? extends A>) findSupportedAnnotationType(annotations);
     }
@@ -44,7 +42,7 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
      * This processes the annotation of the parameterized type on the specified element, which should be an instantiable
      * class (i.e. not an interface or abstract class). The annotation is processed according to the logic provided in
      * the implementation of this method and converted into a properties object.
-     *
+     * <p>
      * Note that the map maintained by this processor is sorted based on order of insertion. If your subclass should
      * have a particular ordering, your implementation of this method should return an ordered map of some sort, for
      * example a LinkedHashMap.
@@ -59,13 +57,13 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
     /**
      * Returns the name for the properties resource to be generated for the annotation instance. This can be as simple
      * as just the bare name of the properties bundle without a path or properties extension: these will be added if not
-     * present. However you can also add folder hierarchies to the returned name if you want to further segregate the
+     * present. However, you can also add folder hierarchies to the returned name if you want to further segregate the
      * generated properties files.
      *
      * @param element    The annotated class element.
      * @param annotation The annotation instance.
      *
-     * @return The name for the properties resource.
+     * @return The name for the properties' resource.
      */
     protected abstract String getPropertiesName(final TypeElement element, final A annotation);
 
@@ -74,6 +72,18 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
      */
     @Override
     public SourceVersion getSupportedSourceVersion() {
+        try {
+            return SourceVersion.valueOf("RELEASE_21");
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            return SourceVersion.valueOf("RELEASE_17");
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            return SourceVersion.valueOf("RELEASE_11");
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             return SourceVersion.valueOf("RELEASE_8");
         } catch (IllegalArgumentException ignored) {
@@ -98,11 +108,10 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
         messager.printMessage(Diagnostic.Kind.NOTE, "Beginning processing for the " + _class.getName() + " annotation.");
         final Map<String, Map<String, String>> outputs = new LinkedHashMap<>();
         for (final Element element : roundEnv.getElementsAnnotatedWith(_class)) {
-            if (!(element instanceof TypeElement)) {
+            if (!(element instanceof TypeElement typeElement)) {
                 continue;
             }
-            final TypeElement typeElement = (TypeElement) element;
-            messager.printMessage(Diagnostic.Kind.NOTE, "Found the " + typeElement.toString() + " class.");
+            messager.printMessage(Diagnostic.Kind.NOTE, "Found the " + typeElement + " class.");
 
             final A annotation = typeElement.getAnnotation(_class);
             if (annotation == null) {
@@ -112,7 +121,7 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
                 continue;
             }
 
-            messager.printMessage(Diagnostic.Kind.NOTE, "Processing the " + typeElement.toString() + " class.");
+            messager.printMessage(Diagnostic.Kind.NOTE, "Processing the " + typeElement + " class.");
             outputs.put(xnatize(getPropertiesName(typeElement, annotation)), processAnnotation(typeElement, annotation));
         }
 
@@ -121,7 +130,7 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
         for (final String propertiesPath : outputs.keySet()) {
             messager.printMessage(Diagnostic.Kind.NOTE, "Writing resource to " + propertiesPath);
 
-            try (final PrintWriter writer = new PrintWriter(new OutputStreamWriter(filer.createResource(StandardLocation.CLASS_OUTPUT, "", propertiesPath).openOutputStream(), "UTF-8"))) {
+            try (final PrintWriter writer = new PrintWriter(new OutputStreamWriter(filer.createResource(StandardLocation.CLASS_OUTPUT, "", propertiesPath).openOutputStream(), StandardCharsets.UTF_8))) {
                 final Map<String, String> properties = outputs.get(propertiesPath);
                 for (final String property : properties.keySet()) {
                     writer.println(property + "=" + properties.get(property));
@@ -158,7 +167,7 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
             throw new IllegalArgumentException("You should only specify a single class for the " + key + " attribute for " + _class.getName() + " annotations.");
         }
         if (list.size() == 1) {
-            return list.get(0);
+            return list.getFirst();
         }
         return null;
     }
@@ -187,9 +196,8 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
         }
         final List<String> elements = new ArrayList<>();
         final Object value = annotationValue.getValue();
-        if (value instanceof List) {
-            final List list = (List) value;
-            if (list.size() == 0) {
+        if (value instanceof List<?> list) {
+            if (list.isEmpty()) {
                 return null;
             }
 
@@ -199,15 +207,15 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
                     elements.add(typeElement.toString());
                 }
             }
-        } else if (value instanceof AnnotationValue) {
-            final TypeElement typeElement = convertAnnotationValueToTypeElement((AnnotationValue) value);
+        } else if (value instanceof AnnotationValue annotationValue1) {
+            final TypeElement typeElement = convertAnnotationValueToTypeElement(annotationValue1);
             if (typeElement != null) {
                 elements.add(typeElement.toString());
             }
         } else {
             elements.add(value.toString());
         }
-        return elements.size() > 0 ? elements : null;
+        return !elements.isEmpty() ? elements : null;
     }
 
     /**
@@ -224,7 +232,6 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
      *
      * @return The class for the supported annotation type.
      */
-    @Nullable
     private Class<? extends Annotation> findSupportedAnnotationType(final Annotation[] annotations) {
         for (final Annotation annotation : annotations) {
             if (annotation.annotationType().equals(SupportedAnnotationTypes.class)) {
@@ -251,9 +258,9 @@ public abstract class NrgAbstractAnnotationProcessor<A extends Annotation> exten
      * This "xnatizes" the name of the properties resource to be generated. This means it is prefaced with META-INF/xnat
      * (specifying another root path, e.g. /META-INF/foo, will result in an exception) and ended with ".properties".
      *
-     * @param propertiesName The name for the generated properties resource.
+     * @param propertiesName The name for the generated properties' resource.
      *
-     * @return The full path and name for the generated properties resource.
+     * @return The full path and name for the generated properties' resource.
      */
     private String xnatize(final String propertiesName) {
         if (StringUtils.isEmpty(propertiesName)) {

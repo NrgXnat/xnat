@@ -60,7 +60,8 @@ public class TestUtilTags {
 
     // Attribute Tag AT
     // OriginalImageIdentification    VM 1-n
-    public static TestTag AT_VM1 = new TestTag(0x00205000, "ImageComments", "00204000");
+//    (0020,5000)	AT	Original Image Identification	Retired
+    public static TestTag AT_VM1 = new TestTag(0x00205000, "00205000", "00205000");
     public static TestTag AT_VM1_REPLACED = new TestTag(0x00205000, "StudyInstanceUID", "0020000D");
 
     // Code String CS

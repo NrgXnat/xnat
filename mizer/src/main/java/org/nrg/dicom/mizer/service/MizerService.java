@@ -1,6 +1,5 @@
 package org.nrg.dicom.mizer.service;
 
-import org.dcm4che2.data.DicomObject;
 import org.nrg.dicom.mizer.exceptions.MizerContextException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
@@ -50,12 +49,12 @@ public interface MizerService {
      * @return {@link AnonymizationResult} containing the processed Dicom and related messages
      */
     // leak dcm4che2
-    AnonymizationResult anonymize(DicomObject dicomFile,
-                                      String project,
-                                      String subject,
-                                      String session,
-                                      String script,
-                                      boolean ignoreRejection) throws MizerException;
+    AnonymizationResult anonymize(DicomObjectI dicomFile,
+                                  String project,
+                                  String subject,
+                                  String session,
+                                  String script,
+                                  boolean ignoreRejection) throws MizerException;
 
     /**
      * Anonymize the dicom file by applying the given edit script.

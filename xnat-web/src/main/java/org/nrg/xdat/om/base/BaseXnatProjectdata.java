@@ -72,7 +72,8 @@ import org.restlet.data.Status;
 
 import javax.annotation.Nullable;
 import java.io.File;
-import java.nio.file.Paths;
+import java.io.Serial;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.*;
@@ -92,6 +93,8 @@ import static org.nrg.xft.event.XftItemLifecyclePhase.*;
 @SuppressWarnings({"unchecked", "rawtypes", "WeakerAccess", "unused", "RedundantThrows", "deprecation", "DuplicateThrows"})
 @Slf4j
 public class BaseXnatProjectdata extends AutoXnatProjectdata implements ArchivableItem {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String OWNER_GROUP        = Groups.OWNER_GROUP;
     public static final String MEMBER_GROUP       = Groups.MEMBER_GROUP;
     public static final String COLLABORATOR_GROUP = Groups.COLLABORATOR_GROUP;
@@ -354,7 +357,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
         }
 
         if (path == null) {
-            path = Paths.get(ArcSpecManager.GetInstance().getGlobalArchivePath(), getId()).toString();
+            path = Path.of(ArcSpecManager.GetInstance().getGlobalArchivePath(), getId()).toString();
         }
 
         path = path.replace('\\', '/');
@@ -619,8 +622,8 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
 
             final XnatAbstractprotocol protocol = getProtocolByDataType(elementName);
             if (protocol != null) {
-                if (protocol instanceof XnatDatatypeprotocol) {
-                    for (final XnatFielddefinitiongroupI group : ((XnatDatatypeprotocol) protocol).getDefinitions_definition()) {
+                if (protocol instanceof XnatDatatypeprotocol datatypeprotocol) {
+                    for (final XnatFielddefinitiongroupI group : datatypeprotocol.getDefinitions_definition()) {
                         for (final XnatFielddefinitiongroupFieldI field : group.getFields_field()) {
                             final XdatSearchField searchField = new XdatSearchField(getUser());
                             searchField.setElementName(protocol.getDataType());
@@ -1024,8 +1027,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
 
                                 for (XFTItem resource : hash) {
                                     ItemI om = BaseElement.GetGeneratedItem(resource);
-                                    if (om instanceof XnatAbstractresource) {
-                                        XnatAbstractresource resourceA = (XnatAbstractresource) om;
+                                    if (om instanceof XnatAbstractresource resourceA) {
                                         resourceA.deleteWithBackup(getRootArchivePath(), this.getId(), user, ci);
                                     }
                                 }
@@ -1063,8 +1065,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
 
                                 for (XFTItem resource : hash) {
                                     ItemI om = BaseElement.GetGeneratedItem(resource);
-                                    if (om instanceof XnatAbstractresource) {
-                                        XnatAbstractresource resourceA = (XnatAbstractresource) om;
+                                    if (om instanceof XnatAbstractresource resourceA) {
                                         resourceA.deleteFromFileSystem(getRootArchivePath(), this.getId());
                                     }
                                 }
@@ -1294,7 +1295,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
         if (project == null) {
             final List<XnatProjectdata> matches = XnatProjectdata.getXnatProjectdatasByField("xnat:projectData/aliases/alias/alias", pID, user, preLoad);
             if (matches != null && !matches.isEmpty()) {
-                return matches.get(0);
+                return matches.getFirst();
             }
         }
         return null;

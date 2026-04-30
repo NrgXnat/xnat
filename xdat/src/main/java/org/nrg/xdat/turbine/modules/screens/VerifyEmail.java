@@ -94,7 +94,7 @@ public class VerifyEmail extends VelocitySecureScreen {
                         buffer.append(user.getEmail()).append(" has been verified for the following users: ");
                         for (final UserI current : verifiedUsers) {
                             // Append a list of user names that we have verified.
-                            if (verifiedUsers.get(verifiedUsers.size() - 1) == current) {
+                            if (verifiedUsers.getLast() == current) {
                                 buffer.append(current.getUsername()); // Don't append comma if it's the last in the list.
                             } else {
                                 buffer.append(current.getUsername()).append(", ");

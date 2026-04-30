@@ -8,40 +8,34 @@
  */
 package org.nrg.dcm.xnat;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import lombok.Getter;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.dcm.AbstractDicomAttributeIndex;
 import org.nrg.dcm.DicomAttributeIndex;
-import org.nrg.dcm.MergedDicomElement;
+import org.nrg.dicomtools.utilities.DicomUtils;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Sets;
+import java.util.Arrays;
+
 
 /**
  * Describes an attribute derived from a Code Sequence as described in PS 3.3 Section 8
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
-public final class BasicCodedEntryAttributeIndex
-extends AbstractDicomAttributeIndex implements DicomAttributeIndex {
+public final class BasicCodedEntryAttributeIndex extends AbstractDicomAttributeIndex implements DicomAttributeIndex {
 	private static final int DEFAULT_VALUE_TAG = Tag.CodeMeaning;
 
 	private final Integer[] sequencePath;
-	private final String codingSchemeDesignator, codingSchemeVersion;
+    private final Integer[] codingSchemeDesignatorPath;
+	private final String codingSchemeDesignator;
+	private final String codingSchemeVersion;
+    @Getter
 	private final String columnName;
 	private final int valueTag;
 
 	private String attributeName = null;
 
-	/**
-	 * 
-	 */
 	public BasicCodedEntryAttributeIndex(final Integer[] sequencePath,
 			final String codingSchemeDesignator, final String codingSchemeVersion,
 			final String columnName, final int valueTag) {
@@ -50,11 +44,17 @@ extends AbstractDicomAttributeIndex implements DicomAttributeIndex {
 		this.codingSchemeDesignator = codingSchemeDesignator;
 		this.codingSchemeVersion = codingSchemeVersion;
 		this.columnName = columnName;
+        this.codingSchemeDesignatorPath = new Integer[sequencePath.length + 2];
+        System.arraycopy(sequencePath, 0, codingSchemeDesignatorPath, 0, sequencePath.length);
+        codingSchemeDesignatorPath[sequencePath.length] = null;
+        codingSchemeDesignatorPath[sequencePath.length+1] = Tag.CodingSchemeDesignator;
 		this.valueTag = valueTag;
 	}
 
-	public BasicCodedEntryAttributeIndex(final Integer[] sequencePath,
-			final String codingSchemeDesignator, final String codingSchemeVersion,
+	public BasicCodedEntryAttributeIndex(
+			final Integer[] sequencePath,
+			final String codingSchemeDesignator,
+			final String codingSchemeVersion,
 			final String columnName) {
 		this(sequencePath, codingSchemeDesignator, codingSchemeVersion, columnName, DEFAULT_VALUE_TAG);
 	}
@@ -70,7 +70,7 @@ extends AbstractDicomAttributeIndex implements DicomAttributeIndex {
 			final String designator, final String version) {
 		final StringBuilder sb = new StringBuilder("cosq");
 		for (final int elem : sequencePath) {
-			sb.append(String.format("%08x", elem));
+			sb.append("%08x".formatted(elem));
 		}
 		sb.append("_").append(makeColumnName(designator));
 		sb.append("_").append(makeColumnName(version));
@@ -81,65 +81,33 @@ extends AbstractDicomAttributeIndex implements DicomAttributeIndex {
 		return s.replaceAll("[^\\w]", "_");
 	}
 
-	/* (non-Javadoc)
-	 * @see org.nrg.dcm.DicomAttributeIndex#getAttributeName(org.dcm4che2.data.DicomObject)
-	 */
-	public String getAttributeName(final DicomObject unused) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getAttributeName(final Attributes attributes) {
 		if (null == attributeName) {
-			final StringBuilder sb = new StringBuilder();
-			sb.append(unused.nameOf(sequencePath[sequencePath.length - 1]));
-			sb.append("[").append(codingSchemeDesignator);
-			sb.append(":v").append(codingSchemeVersion).append("]");
-			attributeName = sb.toString();
+            attributeName = DicomUtils.getAttributeName(attributes, sequencePath[sequencePath.length - 1]) +
+                    "[" + codingSchemeDesignator + ":v" + codingSchemeVersion + "]";
 		}
 		return attributeName;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.nrg.dcm.DicomAttributeIndex#getColumnName()
+	/**
+     * {@inheritDoc}
 	 */
-	public String getColumnName() {
-		return columnName;
-	}
-
-	/* (non-Javadoc)
-	 * @see org.nrg.dcm.DicomAttributeIndex#getElement(org.dcm4che2.data.DicomObject)
-	 */
-	public DicomElement getElement(final DicomObject o) {
-	    final Set<DicomElement> sqs = AbstractDicomAttributeIndex.getElements(o, sequencePath, 0, new LinkedHashSet<DicomElement>());
-	    if (sqs.isEmpty()) {
-	        return null;
-	    }
-	    final Set<DicomElement> ves = Sets.newLinkedHashSet();
-	    for (final DicomElement sq : sqs) {
-	        for (int i = 0, n = sq.countItems(); i < n; i++) {
-	            final DicomObject elem = sq.getDicomObject(i);
-	            if (codingSchemeDesignator.equals(elem.getString(Tag.CodingSchemeDesignator)) &&
-	                    codingSchemeVersion.equals(elem.getString(Tag.CodingSchemeVersion))) {
-	                final DicomElement ve = elem.get(valueTag);
-	                if (null != ve) {
-	                    ves.add(ve);
-	                }
-	                break;
-	            }
-	        }
-		}
-	    final Iterator<DicomElement> vesi = ves.iterator();
-	    if (!vesi.hasNext()) {
-	        return null;
-	    }
-	    final DicomElement ve0 = vesi.next();
-	    if (vesi.hasNext()) {
-	        return new MergedDicomElement(o, ve0, Iterators.toArray(vesi, DicomElement.class));
-	    } else {
-	        return ve0;
-	    }
-	}
-
-	/* (non-Javadoc)
-	 * @see org.nrg.dcm.DicomAttributeIndex#getPath(org.dcm4che2.data.DicomObject)
-	 */
-	public Integer[] getPath(final DicomObject unused) {
+	public Integer[] getPath(final Attributes unused) {
 		return Arrays.copyOf(sequencePath, sequencePath.length);
 	}
+
+    @Override
+    public String[] getStrings(final Attributes attributes) {
+        return getNestedContexts(attributes, codingSchemeDesignatorPath).stream()
+                .filter(context ->
+                        codingSchemeDesignator.equals(context.getString(Tag.CodingSchemeDesignator)))
+                .filter(context ->
+                        codingSchemeVersion.equals(context.getString(Tag.CodingSchemeVersion)))
+                .map(context -> DicomUtils.combineValues(context.getStrings(valueTag)))
+                .toArray(String[]::new);
+    }
 }

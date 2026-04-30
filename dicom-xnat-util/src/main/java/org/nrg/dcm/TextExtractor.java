@@ -8,33 +8,31 @@
  */
 package org.nrg.dcm;
 
-import java.util.SortedSet;
-
-import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
 import org.nrg.framework.utilities.SortedSets;
 
-/**
- * 
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
+import java.util.SortedSet;
+
+
 public class TextExtractor implements Extractor {
     private final int tag;
     
     public TextExtractor(final int tag) {
         this.tag = tag;
     }
-    
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.Extractor#extract(org.dcm4che2.data.DicomObject)
+
+    /**
+     * {@inheritDoc}
      */
-    public String extract(final DicomObject o) { return o.getString(tag); }
+    @Override
+    public String extract(final Attributes attributes) {
+        return attributes.getString(tag);
+    }
     
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.Extractor#getTags()
+    /**
+     * {@inheritDoc}
      */
+    @Override
     public SortedSet<Integer> getTags() {
         return SortedSets.singleton(tag);
     }

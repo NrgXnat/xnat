@@ -22,12 +22,16 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.Serial;
+
 @NrgPreferenceBean(toolId = SpawnerPreferences.SPAWNER_TOOL_ID,
                    toolName = "XNAT Spawner Preferences",
                    description = "Manages preferences for the Spawner configuration.")
 @XnatMixIn(ProxiedBeanMixIn.class)
 @Slf4j
 public class SpawnerPreferences extends EventTriggeringAbstractPreferenceBean {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String SPAWNER_TOOL_ID = "spawner";
 
     @Autowired

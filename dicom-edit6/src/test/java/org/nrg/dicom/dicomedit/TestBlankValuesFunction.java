@@ -1,6 +1,9 @@
 package org.nrg.dicom.dicomedit;
 
 import org.apache.commons.lang3.StringUtils;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
+import org.dcm4che3.data.VR;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
@@ -8,6 +11,8 @@ import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.test.workers.resources.ResourceManager;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 import static org.junit.Assert.*;
 import static org.nrg.dicom.dicomedit.TestUtils.*;
@@ -253,6 +258,46 @@ public class TestBlankValuesFunction {
         dobj = sa.apply(dobj).getDicomObject();
 
         assertTrue( StringUtils.isEmpty( dobj.getString( t0.tag)));
+    }
+
+    /**
+     * Adapted from REST test TestAnonymizationCollectBlankValues#testBlankValuesImplicitAscii.
+     * There is non-obvious behavior around blankValues and binary VRs; reproduce what was
+     * done in dcm4che2-based DicomEdit 6, saving for later the discussion of whether this
+     * is the behavior we want.
+     */
+    @Test
+    public void testBinaryVRsBlanking() throws MizerException, IOException, URISyntaxException {
+        final String script = "version \"6.6\"\nblankValues[(0044,0001)]";
+        final DicomObjectI original = DicomObjectFactory.newInstance();
+        final Attributes attrs = original.getAttributes();
+
+        // ASCII for "CHOCOLATE", plus a null byte for padding
+        final byte[] paddedChocolate = new byte[]{ 0x43, 0x48, 0x4f, 0x43, 0x4f, 0x4c, 0x41, 0x54, 0x45, 0x00 };
+        final Sequence sq = attrs.ensureSequence(0x00180026, 1);
+        sq.add(new Attributes());
+        sq.get(0).setString(0x00180024, VR.LO, "CHOCOLATE\0");  // include null padding byte
+        sq.get(0).setBytes(0x00180025, VR.OB, paddedChocolate);  // and again
+
+        attrs.setBytes(0x00440001, VR.UN, new byte[]{ 0x43, 0x48, 0x4f, 0x43, 0x4f, 0x4c, 0x41, 0x54, 0x45});   // ASCII for "CHOCOLATE" no padding
+        attrs.setString(0x00490010, VR.LO, "Ascii test");
+        attrs.setBytes(0x00491010, VR.UN, paddedChocolate);
+        attrs.setBytes(0x00491011, VR.UN, new byte[]{ 0x43, 0x48, 0x4f, 0x43, 0x4f, 0x4c, 0x41, 0x54, 0x54, 0x45 }); // ASCII for "CHOCOLATTE"
+
+        assertEquals("CHOCOLATE", original.getString(0x00180026, 0, 0x00180024));
+        assertEquals("CHOCOLATE\0", original.getString(0x00180026, 0, 0x00180025));
+        assertEquals("CHOCOLATE", original.getString(0x00440001));
+        assertEquals("CHOCOLATE", original.getString(0x00491010));  // getString() trims padding \0
+        assertEquals("CHOCOLATTE", original.getString(0x00491011));
+
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        final DicomObjectI anon = sa.apply(original).getDicomObject();
+
+        assertEquals("", anon.getString(0x00180026, 0, 0x00180024));
+        assertEquals("", anon.getString(0x00440001));   // String types (LO) strip padding 0 for comparisons
+        assertEquals("CHOCOLATE\0", anon.getString(0x00180026, 0, 0x00180025));   // but binary types don't
+        assertEquals("CHOCOLATE", anon.getString(0x00491010));
+        assertEquals("CHOCOLATTE", anon.getString(0x00491011));
     }
 
     private static final ResourceManager _resourceManager = ResourceManager.getInstance();

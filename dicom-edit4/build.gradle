@@ -24,7 +24,6 @@ dependencies {
     api project(':dicomtools')
     api(project(':framework')) { transitive = false }
 
-    api libs.dcm4che.core
     api libs.google.guava
     api libs.json.json
     api libs.reflections.reflections

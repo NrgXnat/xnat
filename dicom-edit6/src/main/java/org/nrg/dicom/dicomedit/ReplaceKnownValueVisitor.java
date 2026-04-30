@@ -14,6 +14,7 @@ import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.objects.DicomObjectVisitor;
 import org.nrg.dicom.mizer.tags.TagPath;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -54,7 +55,13 @@ public class ReplaceKnownValueVisitor extends DicomObjectVisitor {
     }
 
     protected boolean replaceThisTag(TagPath tp, DicomElementI dicomElement, DicomObjectI dicomObject, Collection<String> knownValues) {
-        return knownValues.contains(dicomObject.getString(dicomElement.tag()));
+        if ("UN".equals(dicomElement.getVRAsString())) {    // use UN behavior for non-UN but unknown VRs
+            // Reproducing probably-not-intentional behavior of dcm4che2-based DicomEdit here:
+            // terminating NUL is stripped from string representation but used in UN value comparison
+            final byte[] elementRep = dicomElement.getBytes();
+            return knownValues.stream().anyMatch(s -> Arrays.equals(elementRep, s.getBytes()));
+        } else {
+            return knownValues.contains(dicomElement.getValueAsString());
+        }
     }
-
 }

@@ -57,6 +57,7 @@ import org.nrg.xnat.turbine.utils.CatalogSet;
 import org.nrg.xnat.utils.CatalogUtils;
 
 import java.io.File;
+import java.io.Serial;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.*;
@@ -70,6 +71,8 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String SCAN_ABBR="scan";
     public static final String RECON_ABBR="recon";
     public static final String ASSESSOR_ABBR="assess";
@@ -603,7 +606,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                 String id2 = s2.getId();
                 int comp;
                 try {
-                    comp = (new Integer(id1)).compareTo(new Integer(id2));
+                    comp = (Integer.valueOf(id1)).compareTo(Integer.valueOf(id2));
                 } catch (NumberFormatException e) {
                     comp = id1.compareTo(id2);
                 }
@@ -1017,8 +1020,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                         }
                     }
 
-                    if (xnatFile instanceof XnatResourcecatalog) {
-                        File f = ((XnatResourcecatalog)xnatFile).getCatalogFile(rootPath);
+                    if (xnatFile instanceof XnatResourcecatalog resourcecatalog) {
+                        File f = resourcecatalog.getCatalogFile(rootPath);
                         if (f.exists()) {
                             String fileID = this._files.addFile(f.getPath(),f,FileTracker.KNOWN);
                             fileGrouping.add(fileID);
@@ -1053,8 +1056,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
 
                     }
 
-                    if (xnatFile instanceof XnatResourcecatalog) {
-                        File f = ((XnatResourcecatalog)xnatFile).getCatalogFile(rootPath);
+                    if (xnatFile instanceof XnatResourcecatalog resourcecatalog) {
+                        File f = resourcecatalog.getCatalogFile(rootPath);
                         if (f.exists()) {
                             String fileID = this._files.addFile(f.getPath(),f,FileTracker.KNOWN);
                             fileGrouping.add(fileID);
@@ -1090,8 +1093,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                         }
                     }
 
-                    if (xnatFile instanceof XnatResourcecatalog) {
-                        File f = ((XnatResourcecatalog)xnatFile).getCatalogFile(rootPath);
+                    if (xnatFile instanceof XnatResourcecatalog resourcecatalog) {
+                        File f = resourcecatalog.getCatalogFile(rootPath);
                         if (f.exists()) {
                             String fileID = this._files.addFile(f.getPath(),f,FileTracker.KNOWN);
                             fileGrouping.add(fileID);
@@ -1120,8 +1123,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                 }
             }
 
-            if (xnatFile instanceof XnatResourcecatalog) {
-                File f = ((XnatResourcecatalog)xnatFile).getCatalogFile(rootPath);
+            if (xnatFile instanceof XnatResourcecatalog resourcecatalog) {
+                File f = resourcecatalog.getCatalogFile(rootPath);
                 if (f.exists()) {
                     String fileID = this._files.addFile(f.getPath(),f,FileTracker.KNOWN);
                     fileGrouping.add(fileID);
@@ -1310,8 +1313,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                         }
                     }
 
-                    if (xnatFile instanceof XnatResourcecatalog) {
-                        File f = ((XnatResourcecatalog)xnatFile).getCatalogFile(rootPath);
+                    if (xnatFile instanceof XnatResourcecatalog resourcecatalog) {
+                        File f = resourcecatalog.getCatalogFile(rootPath);
                         if (f.exists()) {
                             String fileID = this._files.addFile(f.getAbsolutePath(),f,FileTracker.KNOWN);
                             scanLinkBuffer.append("<b>").append(f.getName()).append("</b><BR>");
@@ -1393,8 +1396,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                         }
                     }
 
-                    if (xnatFile instanceof XnatResourcecatalog) {
-                        File f = ((XnatResourcecatalog)xnatFile).getCatalogFile(rootPath);
+                    if (xnatFile instanceof XnatResourcecatalog resourcecatalog) {
+                        File f = resourcecatalog.getCatalogFile(rootPath);
                         if (f.exists()) {
                             String fileID = this._files.addFile(f.getAbsolutePath(),f,FileTracker.KNOWN);
                             scanLinkBuffer.append("<b>").append(f.getName()).append("</b><BR>");
@@ -1481,8 +1484,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                                 }
                             }
 
-                            if (xnatFile instanceof XnatResourcecatalog) {
-                                File f = ((XnatResourcecatalog)xnatFile).getCatalogFile(rootPath);
+                            if (xnatFile instanceof XnatResourcecatalog resourcecatalog) {
+                                File f = resourcecatalog.getCatalogFile(rootPath);
                                 if (f.exists()) {
                                     String fileID = this._files.addFile(f.getAbsolutePath(),f,FileTracker.KNOWN);
                                     scanLinkBuffer.append("<b>").append(f.getName()).append("</b><BR>");
@@ -1567,8 +1570,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                         }
                     }
 
-                    if (xnatFile instanceof XnatResourcecatalog) {
-                        File f = ((XnatResourcecatalog)xnatFile).getCatalogFile(rootPath);
+                    if (xnatFile instanceof XnatResourcecatalog resourcecatalog) {
+                        File f = resourcecatalog.getCatalogFile(rootPath);
                         if (f.exists()) {
                             String fileID = this._files.addFile(f.getAbsolutePath(),f,FileTracker.KNOWN);
                             scanLinkBuffer.append("<b>").append(f.getName()).append("</b><BR>");
@@ -1586,8 +1589,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                     if (label==null) {
                         label = xnatFile.getXnatAbstractresourceId().toString();
                     }
-                    if(xnatFile instanceof XnatResourcecatalog) {
-                        if (((XnatResourcecatalog)xnatFile).getTags_tag().size()>0) {
+                    if(xnatFile instanceof XnatResourcecatalog resourcecatalog) {
+                        if (resourcecatalog.getTags_tag().size()>0) {
                             int counter =0;
                             label +="&nbsp;&nbsp;Tags: ";
                             for(XnatAbstractresourceTagI tag : xnatFile.getTags_tag()) {
@@ -1773,8 +1776,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
             String last_dir = null;
             for(XnatImagescandataI scan : this.getSortedScans()) {
             	for (XnatAbstractresourceI xnatFile:scan.getFile()) {
-                    if (xnatFile instanceof org.nrg.xdat.om.XnatResource){
-                        XnatResource resource = (XnatResource)xnatFile;
+                    if (xnatFile instanceof org.nrg.xdat.om.XnatResource resource){
                         String uri =resource.getFullPath(rootPath);
                         if (last_dir==null) {
                             last_dir= uri;
@@ -1792,8 +1794,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                         } else {
 
                         }
-                    } else if(xnatFile instanceof org.nrg.xdat.om.XnatDicomseries) {
-                        XnatDicomseries resource = (XnatDicomseries)xnatFile;
+                    } else if(xnatFile instanceof org.nrg.xdat.om.XnatDicomseries resource) {
                         String uri =resource.getFullPath(rootPath);
                         if (last_dir==null) {
                             last_dir= uri;
@@ -1809,8 +1810,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                                 }
                             }
                         }
-                    } else if(xnatFile instanceof org.nrg.xdat.om.XnatResourceseries) {
-                        XnatResourceseries resource = (XnatResourceseries)xnatFile;
+                    } else if(xnatFile instanceof org.nrg.xdat.om.XnatResourceseries resource) {
                         String uri =resource.getFullPath(rootPath);
                         if (last_dir==null) {
                             last_dir= uri;
@@ -1852,8 +1852,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                 Iterator files = scanFiles.iterator();
                 while (files.hasNext()) {
                     XnatAbstractresource xnatFile = (XnatAbstractresource) files.next();
-                    if (xnatFile instanceof org.nrg.xdat.om.XnatResource) {
-                        XnatResource resource = (XnatResource)xnatFile;
+                    if (xnatFile instanceof org.nrg.xdat.om.XnatResource resource) {
                         String uri =resource.getFullPath(rootPath);
                         logger.debug("CHECKING RESOURCE: " + uri);
                         String last_dir = null;
@@ -1887,8 +1886,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                                 }
                             }
                         }
-                    } else if(xnatFile instanceof org.nrg.xdat.om.XnatDicomseries) {
-                        XnatDicomseries resource = (XnatDicomseries)xnatFile;
+                    } else if(xnatFile instanceof org.nrg.xdat.om.XnatDicomseries resource) {
                         String uri =resource.getFullPath(rootPath);
                         String last_dir = null;
                         if (last_dir==null) {
@@ -1917,8 +1915,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                                 }
                             }
                         }
-                    } else if(xnatFile instanceof org.nrg.xdat.om.XnatResourceseries) {
-                        XnatResourceseries resource = (XnatResourceseries)xnatFile;
+                    } else if(xnatFile instanceof org.nrg.xdat.om.XnatResourceseries resource) {
                         String uri =resource.getFullPath(rootPath);
                         String last_dir = null;
                         if (last_dir==null) {
@@ -2092,7 +2089,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
             entry.addMetafields_metafield(meta);
 
             meta = new CatEntryMetafieldBean();
-            meta.setMetafield(new Long(f.length()).toString());
+            meta.setMetafield(Long.valueOf(f.length()).toString());
             meta.setName("SIZE");
             entry.addMetafields_metafield(meta);
 
@@ -2121,13 +2118,13 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                 mappers.get(scan.getXSIType()).setType(scan);
 
             	if(scan.getFile().size()>0){
-        			XnatAbstractresourceI abstRes=scan.getFile().get(0);
-            		if(abstRes instanceof XnatResource){
-            			if(((XnatResource)abstRes).getContent()==null || ((XnatResource)abstRes).getContent().equals("")){
-            				((XnatResource)abstRes).setContent("RAW");
+        			XnatAbstractresourceI abstRes=scan.getFile().getFirst();
+            		if(abstRes instanceof XnatResource resource){
+            			if(resource.getContent()==null || resource.getContent().equals("")){
+            				resource.setContent("RAW");
             			}
-            			if(abstRes.getLabel()!=null && ((XnatResource)abstRes).getFormat()==null){
-            				((XnatResource)abstRes).setFormat(abstRes.getLabel());
+            			if(abstRes.getLabel()!=null && resource.getFormat()==null){
+            				resource.setFormat(abstRes.getLabel());
             			}
             		}
         		}
@@ -2351,7 +2348,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
     public String getFormattedSessionReadableScanStats(){
         List<String> stats = this.getSessionReadableScanStats();
         if (stats.size() == 1) {
-            return stats.get(0);
+            return stats.getFirst();
         } else {
             return BaseXnatImagescandata.getListAsTipText(stats);
         }
@@ -2362,8 +2359,8 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
         int count = 0;
         long size = 0;
         for (XnatImagescandataI scan : scans){
-           if(scan instanceof BaseXnatImagescandata){
-               Map<String,Number> prearcStats = ((BaseXnatImagescandata)scan).getPrearchiveFileStats();
+           if(scan instanceof BaseXnatImagescandata imagescandata){
+               Map<String,Number> prearcStats = imagescandata.getPrearchiveFileStats();
                count += prearcStats.get("count").intValue();
                size += prearcStats.get("size").longValue();
            }else{
@@ -2410,15 +2407,15 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
 
                      if (fileCount != null) {
                          count += fileCount;
-                         Long aggregate = data.get(0);
+                         Long aggregate = data.getFirst();
                          data.set(0, aggregate + fileCount);
                      }
                      if (rawFileSize != null) {
                          long fileSize;
-                         if (rawFileSize instanceof Integer) {
-                             fileSize = (Integer) rawFileSize;
-                         } else if (rawFileSize instanceof Long) {
-                             fileSize = (Long) rawFileSize;
+                         if (rawFileSize instanceof Integer integer) {
+                             fileSize = integer;
+                         } else if (rawFileSize instanceof Long long1) {
+                             fileSize = long1;
                          } else {
                              fileSize = Long.parseLong(rawFileSize.toString());
                          }
@@ -2431,12 +2428,12 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
          }
         if (accumulator.containsKey("DICOM")) {
             List<Long> values = accumulator.get("DICOM");
-            stats.add(CatalogUtils.formatFileStats("DICOM", values.get(0), values.get(1)));
+            stats.add(CatalogUtils.formatFileStats("DICOM", values.getFirst(), values.get(1)));
             accumulator.remove("DICOM");
         }
         for (String modality : accumulator.keySet()) {
             List<Long> values = accumulator.get(modality);
-            stats.add(CatalogUtils.formatFileStats(modality, values.get(0), values.get(1)));
+            stats.add(CatalogUtils.formatFileStats(modality, values.getFirst(), values.get(1)));
         }
         return stats;
     }
@@ -2703,7 +2700,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
 	public XnatQcmanualassessordataI getManualQC() {
 		final List<XnatImageassessordata> assessors = getMinimalLoadAssessors(XnatQcmanualassessordata.SCHEMA_ELEMENT_NAME);
 		if (assessors != null && assessors.size() > 0) {
-			return (XnatQcmanualassessordata) assessors.get(assessors.size()-1);
+			return (XnatQcmanualassessordata) assessors.getLast();
 		}
 		return null;
 	}
@@ -2717,7 +2714,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
 			}
 		}
 		if (qcassessorOfType != null && qcassessorOfType.size() > 0) {
-			return (XnatQcassessmentdata) qcassessorOfType.get(qcassessorOfType.size()-1);
+			return (XnatQcassessmentdata) qcassessorOfType.getLast();
 		}
 		return null;
 	}
@@ -2725,7 +2722,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
 	public ValProtocoldataI getProtocolValidation() {
 		final List<XnatImageassessordata> protocolData = getMinimalLoadAssessors(AutoValProtocoldata.SCHEMA_ELEMENT_NAME);
 		if (protocolData != null && protocolData.size() > 0) {
-			return (ValProtocoldataI) protocolData.get(protocolData.size()-1);
+			return (ValProtocoldataI) protocolData.getLast();
 		}
 		return null;
 	}
@@ -2733,7 +2730,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
 	public ScrScreeningassessmentI getScreeningAssessment() {
 		final List<XnatImageassessordata> screeningAssessment = getMinimalLoadAssessors(AutoScrScreeningassessment.SCHEMA_ELEMENT_NAME);
 		if (screeningAssessment != null && screeningAssessment.size() > 0) {
-			return (ScrScreeningassessmentI) screeningAssessment.get(screeningAssessment.size()-1);
+			return (ScrScreeningassessmentI) screeningAssessment.getLast();
 		}
 		return null;
 	}
@@ -2856,18 +2853,15 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
             while (files.hasNext())
             {
                 XnatAbstractresource xnatFile = (XnatAbstractresource) files.next();
-                if (xnatFile instanceof org.nrg.xdat.om.XnatResource){
-                    XnatResource resource = (XnatResource)xnatFile;
+                if (xnatFile instanceof org.nrg.xdat.om.XnatResource resource){
                     String uri =resource.getFullPath(rootPath);
                     if (uri.startsWith("srb:"))
                         return true;
-                }else if(xnatFile instanceof org.nrg.xdat.om.XnatDicomseries){
-                    XnatDicomseries resource = (XnatDicomseries)xnatFile;
+                }else if(xnatFile instanceof org.nrg.xdat.om.XnatDicomseries resource){
                     String uri =resource.getFullPath(rootPath);
                     if (uri.startsWith("srb:"))
                         return true;
-                }else if(xnatFile instanceof org.nrg.xdat.om.XnatResourceseries){
-                    XnatResourceseries resource = (XnatResourceseries)xnatFile;
+                }else if(xnatFile instanceof org.nrg.xdat.om.XnatResourceseries resource){
                     String uri =resource.getFullPath(rootPath);
                     if (uri.startsWith("srb:"))
                         return true;

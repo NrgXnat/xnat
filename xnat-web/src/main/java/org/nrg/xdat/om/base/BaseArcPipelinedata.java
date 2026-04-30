@@ -18,6 +18,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -28,6 +29,9 @@ import java.util.List;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseArcPipelinedata extends AutoArcPipelinedata {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseArcPipelinedata(ItemI item)
 	{

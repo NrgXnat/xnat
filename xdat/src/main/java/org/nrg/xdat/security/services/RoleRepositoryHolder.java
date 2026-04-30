@@ -19,7 +19,7 @@ import java.util.Collection;
 public class RoleRepositoryHolder implements RoleRepositoryServiceI {
     public RoleRepositoryHolder() {
         try {
-            roleRepositoryService = Class.forName(RoleRepositoryServiceI.DEFAULT_ROLE_REPO_SERVICE).asSubclass(RoleRepositoryServiceI.class).newInstance();
+            roleRepositoryService = Class.forName(RoleRepositoryServiceI.DEFAULT_ROLE_REPO_SERVICE).asSubclass(RoleRepositoryServiceI.class).getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             log.error("An error occurred trying to create the role repository service {}", RoleRepositoryServiceI.DEFAULT_ROLE_REPO_SERVICE, e);
         }

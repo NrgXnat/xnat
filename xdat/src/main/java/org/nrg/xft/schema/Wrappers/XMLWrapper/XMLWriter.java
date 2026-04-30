@@ -900,26 +900,24 @@ public class XMLWriter {
 				return o.toString();
 			}else if (type.equalsIgnoreCase("date"))
 			{
-                if (o instanceof String)
+                if (o instanceof String string)
                 {
                     try {
-                        java.util.Date d = DateUtils.parseDate((String)o);
+                        java.util.Date d = DateUtils.parseDate(string);
                         o=d;
                     } catch (ParseException e) {
                         log.error("", e);
                     }
                 }
 
-                if (o instanceof java.util.Date)
+                if (o instanceof java.util.Date d)
                 {
-                    java.util.Date d = (java.util.Date)o;
                     StringBuffer sb = new StringBuffer();
                     java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyy-MM-dd");
                     sb.append(formatter.format(d));
                     return sb.toString();
-                }else if (o instanceof java.sql.Date)
+                }else if (o instanceof java.sql.Date d)
                 {
-                    java.sql.Date d = (java.sql.Date)o;
                     StringBuffer sb = new StringBuffer();
                     sb.append(d.getYear());
                     sb.append("-");
@@ -927,9 +925,8 @@ public class XMLWriter {
                     sb.append("-");
                     sb.append(d.getDate());
                     return sb.toString();
-                }else if (o instanceof java.sql.Timestamp)
+                }else if (o instanceof java.sql.Timestamp d)
                 {
-                    java.util.Date d = (java.util.Date)o;
                     StringBuffer sb = new StringBuffer();
                     java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyy-MM-dd");
                     sb.append(formatter.format(d));
@@ -938,10 +935,10 @@ public class XMLWriter {
                 return o.toString();
 			}else if (type.equalsIgnoreCase("dateTime"))
 			{
-                if (o instanceof String)
+                if (o instanceof String string)
                 {
                     try {
-                        java.util.Date d = DateUtils.parseDateTime((String)o);
+                        java.util.Date d = DateUtils.parseDateTime(string);
                         o=d;
                     } catch (ParseException e) {
                         log.error("", e);

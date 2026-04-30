@@ -9,7 +9,7 @@
 
 package org.nrg.dicom.dicomedit;
 
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
@@ -44,7 +44,7 @@ public class TestDicomObject {
         File f = new File("src/test/resources/dicom/1.MR.head_DHead.4.1.20061214.091206.156000.1632817982.dcm.gz");
         final DicomObjectI dicomObjectI = DicomObjectFactory.newInstance(f);
 
-        String s = dicomObjectI.getString( org.dcm4che2.data.Tag.StudyInstanceUID);
+        String s = dicomObjectI.getString(Tag.StudyInstanceUID);
 
         assertEquals( s, "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034");
     }

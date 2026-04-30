@@ -45,8 +45,8 @@ public class DisplayFieldCollection extends XFTCollection {
 
 	public void addDisplayField(DisplayField df)
 	{
-	    	df.setSortIndex(this.getItemHash().size());
-			this.addStoredItem(df);
+		df.setSortIndex(this.getItemHash().size());
+		this.addStoredItem(df);
 	}
 
 	public void removeDisplayField(String displayFieldId){

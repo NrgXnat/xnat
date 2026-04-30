@@ -453,7 +453,7 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         if (matches.size() > 1) {
             throw new RuntimeException("The specified property " + property + " is not a unique constraint!");
         }
-        return matches.isEmpty() ? null : matches.get(0);
+        return matches.isEmpty() ? null : matches.getFirst();
     }
 
     /**
@@ -465,7 +465,7 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         if (matches.size() > 1) {
             throw new RuntimeException("The specified properties " + String.join(", ", properties.keySet()) + " are not a unique constraint!");
         }
-        return matches.isEmpty() ? null : matches.get(0);
+        return matches.isEmpty() ? null : matches.getFirst();
     }
 
     /**
@@ -630,8 +630,8 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         }
         if (getParameterizedType().isAssignableFrom(result.getClass())) {
             return getParameterizedType().cast(result);
-        } else if (result instanceof Object[]) {
-            for (final Object object : (Object[]) result) {
+        } else if (result instanceof Object[] object1s) {
+            for (final Object object : object1s) {
                 if (getParameterizedType().isAssignableFrom(object.getClass())) {
                     return getParameterizedType().cast(object);
                 }
@@ -758,7 +758,7 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
      * @return Returns the list if it's not null and contains at least one item, <b>null</b> otherwise.
      */
     protected E instance(final List<E> list) {
-        return isEmpty(list) ? null : list.get(0);
+        return isEmpty(list) ? null : list.getFirst();
     }
 
     protected static boolean isEmpty(final List<?> list) {
@@ -784,7 +784,7 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         Object enabled = properties.get(ENABLED_PROPERTY);
         if (enabled == null) {
             properties.put(ENABLED_PROPERTY, true);
-        } else if (enabled instanceof String && StringUtils.equals(ENABLED_ALL, (String) enabled)) {
+        } else if (enabled instanceof String string && StringUtils.equals(ENABLED_ALL, string)) {
             properties.remove(ENABLED_PROPERTY);
         }
     }

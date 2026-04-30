@@ -77,10 +77,10 @@ public class TestVR {
         assertEquals("LO", dobj.get(LO_VM1.tag).getVRAsString());
         assertEquals("LT", dobj.get(LT_VM1.tag).getVRAsString());
         assertEquals("OB", dobj.get(OB_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(OD_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("OD", dobj.get(OD_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("OF", dobj.get(OF_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(OL_VM1.tag).getVRAsString());  // retrieved as UN
-        assertEquals("UN", dobj.get(OV_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("OL", dobj.get(OL_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("OV", dobj.get(OV_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("OW", dobj.get(OW_VM1.tag).getVRAsString());
         assertEquals("PN", dobj.get(PN_VM1.tag).getVRAsString());
         assertEquals("SH", dobj.get(SH_VM1.tag).getVRAsString());
@@ -88,16 +88,16 @@ public class TestVR {
         assertEquals("SS", dobj.get(SS_VM1.tag).getVRAsString());
 //        assertEquals( "SQ", dobj.get(sqTag.tag).getVRAsString());
         assertEquals("ST", dobj.get(ST_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(SV_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("SV", dobj.get(SV_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("TM", dobj.get(TM_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(UC_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("UC", dobj.get(UC_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("UI", dobj.get(UI_VM1.tag).getVRAsString());
         assertEquals("UL", dobj.get(UL_VM1.tag).getVRAsString());
         assertEquals("UN", dobj.get(UN_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(UR_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("UR", dobj.get(UR_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("US", dobj.get(US_VM1.tag).getVRAsString());
         assertEquals("UT", dobj.get(UT_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(UV_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("UV", dobj.get(UV_VM1.tag).getVRAsString());  // retrieved as UN
 
         assertEquals("LO", dobj.get(MYSTERY_TAG_KNOWN_VR.tag).getVRAsString());
 
@@ -163,10 +163,10 @@ public class TestVR {
         assertEquals("LO", dobj.get(LO_VM1.tag).getVRAsString());
         assertEquals("LT", dobj.get(LT_VM1.tag).getVRAsString());
         assertEquals("OB", dobj.get(OB_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(OD_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("OD", dobj.get(OD_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("OF", dobj.get(OF_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(OL_VM1.tag).getVRAsString());  // retrieved as UN
-        assertEquals("UN", dobj.get(OV_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("OL", dobj.get(OL_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("OV", dobj.get(OV_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("OW", dobj.get(OW_VM1.tag).getVRAsString());
         assertEquals("PN", dobj.get(PN_VM1.tag).getVRAsString());
         assertEquals("SH", dobj.get(SH_VM1.tag).getVRAsString());
@@ -174,16 +174,16 @@ public class TestVR {
         assertEquals("SS", dobj.get(SS_VM1.tag).getVRAsString());
 //        assertEquals( "SQ", dobj.get(sqTag.tag).getVRAsString());
         assertEquals("ST", dobj.get(ST_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(SV_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("SV", dobj.get(SV_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("TM", dobj.get(TM_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(UC_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("UC", dobj.get(UC_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("UI", dobj.get(UI_VM1.tag).getVRAsString());
         assertEquals("UL", dobj.get(UL_VM1.tag).getVRAsString());
         assertEquals("UN", dobj.get(UN_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(UR_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("UR", dobj.get(UR_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("US", dobj.get(US_VM1.tag).getVRAsString());
         assertEquals("UT", dobj.get(UT_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(UV_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("UV", dobj.get(UV_VM1.tag).getVRAsString());  // retrieved as UN
 
         assertEquals("LO", dobj.get(MYSTERY_TAG_KNOWN_VR.tag).getVRAsString());
     }
@@ -194,7 +194,7 @@ public class TestVR {
 
         dobj.putString(AE_VM1.tag, AE_VM1.initialValue);
         dobj.putString(AS_VM1.tag, AS_VM1.initialValue);
-        dobj.putString(AT_VM1.tag, AT_VM1.initialValue);
+        dobj.putString(AT_VM1.tag, AT_VM1.postValue);
         dobj.putString(CS_VM1.tag, CS_VM1.initialValue);
         dobj.putString(DA_VM1.tag, DA_VM1.initialValue);
         dobj.putString(DS_VM1.tag, DS_VM1.initialValue);
@@ -241,10 +241,10 @@ public class TestVR {
         assertEquals("LO", dobj.get(LO_VM1.tag).getVRAsString());
         assertEquals("LT", dobj.get(LT_VM1.tag).getVRAsString());
         assertEquals("OB", dobj.get(OB_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(OD_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("OD", dobj.get(OD_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("OF", dobj.get(OF_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(OL_VM1.tag).getVRAsString());  // retrieved as UN
-        assertEquals("UN", dobj.get(OV_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("OL", dobj.get(OL_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("OV", dobj.get(OV_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("OW", dobj.get(OW_VM1.tag).getVRAsString());
         assertEquals("PN", dobj.get(PN_VM1.tag).getVRAsString());
         assertEquals("SH", dobj.get(SH_VM1.tag).getVRAsString());
@@ -252,16 +252,16 @@ public class TestVR {
         assertEquals("SS", dobj.get(SS_VM1.tag).getVRAsString());
 //        assertEquals( "SQ", dobj.get(sqTag.tag).getVRAsString());
         assertEquals("ST", dobj.get(ST_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(SV_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("SV", dobj.get(SV_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("TM", dobj.get(TM_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(UC_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("UC", dobj.get(UC_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("UI", dobj.get(UI_VM1.tag).getVRAsString());
         assertEquals("UL", dobj.get(UL_VM1.tag).getVRAsString());
         assertEquals("UN", dobj.get(UN_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(UR_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("UR", dobj.get(UR_VM1.tag).getVRAsString());  // retrieved as UN
         assertEquals("US", dobj.get(US_VM1.tag).getVRAsString());
         assertEquals("UT", dobj.get(UT_VM1.tag).getVRAsString());
-        assertEquals("UN", dobj.get(UV_VM1.tag).getVRAsString());  // retrieved as UN
+        assertEquals("UV", dobj.get(UV_VM1.tag).getVRAsString());  // retrieved as UN
 
         assertEquals("UN", dobj.get(MYSTERY_TAG_KNOWN_VR.tag).getVRAsString());
     }

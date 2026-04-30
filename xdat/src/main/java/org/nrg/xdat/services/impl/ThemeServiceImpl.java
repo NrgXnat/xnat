@@ -36,7 +36,7 @@ public class ThemeServiceImpl implements ThemeService {
     @Autowired
     public ThemeServiceImpl(final SerializerService serializer, final ServletContext context) {
         _serializer = serializer;
-        _themesPath = Paths.get(context.getRealPath("/"), WEB_RELATIVE_THEME_PATH);
+        _themesPath = Path.of(context.getRealPath("/"), WEB_RELATIVE_THEME_PATH);
         _themeFile = _themesPath.resolve("theme.json").toFile();
 
         final File checkThemesPath = _themesPath.toFile();
@@ -139,9 +139,11 @@ public class ThemeServiceImpl implements ThemeService {
             useTypeSeparator = true;
         }
         for (String ext : extensions) {
-            File themePageFile = (useTypeSeparator ? Paths.get(theme.getPath(), type + "s", pageName + "." + ext) : Paths.get(theme.getPath(), pageName + "." + ext)).toFile();
+            String themePath = theme.getPath() == null ?  "null": theme.getPath();
+            String themeName = theme.getName() == null ?  "null": theme.getName();
+            File themePageFile = (useTypeSeparator ? Paths.get(themePath, type + "s", pageName + "." + ext) : Paths.get(themePath, pageName + "." + ext)).toFile();
             if(themePageFile.exists()) {
-                pagePath = safeJoin("/" + WEB_RELATIVE_THEME_PATH, theme.getName(), type + "s", pageName + "." + ext);
+                pagePath = safeJoin("/" + WEB_RELATIVE_THEME_PATH, themeName, type + "s", pageName + "." + ext);
                 break;
             }
         }

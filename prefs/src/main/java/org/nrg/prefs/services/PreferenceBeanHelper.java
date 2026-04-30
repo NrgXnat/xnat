@@ -133,7 +133,7 @@ public class PreferenceBeanHelper {
             if (isArray || isList) {
                 final Class<?> itemType;
                 try {
-                    itemType = isArray ? type.getComponentType() : getClassesFromParameterizedType(genericType).get(0);
+                    itemType = isArray ? type.getComponentType() : getClassesFromParameterizedType(genericType).getFirst();
                 } catch (NotParameterizedTypeException e) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a list that is not parameterized, i.e. is just a List rather than List<String>. This is not currently supported.");
                 } catch (NotConcreteTypeException e) {
@@ -154,7 +154,7 @@ public class PreferenceBeanHelper {
                 } catch (NotConcreteTypeException e) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that is parameterized to contain a parameterized type, e.g. Map<String, List<String>>. This is not currently supported.");
                 }
-                final Class<?> keyType = classes.get(0);
+                final Class<?> keyType = classes.getFirst();
                 if (!keyType.equals(String.class)) {
                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that uses a non-String key type. This is not currently supported.");
                 }

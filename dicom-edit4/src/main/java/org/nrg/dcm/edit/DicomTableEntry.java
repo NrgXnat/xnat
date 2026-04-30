@@ -8,8 +8,8 @@
  */
 package org.nrg.dcm.edit;
 
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.util.TagUtils;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -25,7 +25,7 @@ public final class DicomTableEntry {
 	this.tag = tag;
 	this.level = level;
 	this.isSubstitution = isSubstitution;
-	this.header = null == header ? new BasicDicomObject().nameOf(tag) : header;
+	this.header = null == header ? new Attributes().getString(tag) : header;
     }
 
     public DicomTableEntry(final int tag, final String level) {

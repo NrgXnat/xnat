@@ -8,7 +8,7 @@
  */
 package org.nrg.dicomtools.exceptions;
 
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.util.TagUtils;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;

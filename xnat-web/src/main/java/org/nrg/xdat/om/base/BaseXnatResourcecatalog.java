@@ -43,6 +43,9 @@ import java.util.zip.GZIPInputStream;
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseXnatResourcecatalog extends AutoXnatResourcecatalog {
 
+    @Serial
+    private static final long serialVersionUID = 1;
+
 	public BaseXnatResourcecatalog(ItemI item)
 	{
 		super(item);
@@ -111,7 +114,7 @@ public abstract class BaseXnatResourcecatalog extends AutoXnatResourcecatalog {
      */
     public ArrayList getCorrespondingFileNames(String rootPath) {
 		if (fileNames == null) {
-			fileNames = GenericUtils.convertToTypedList(getCorrespondingFiles(rootPath), File.class).stream().map(File::getName).collect(Collectors.toCollection((Supplier<ArrayList>) ArrayList::new));
+			fileNames = GenericUtils.convertToTypedList(getCorrespondingFiles(rootPath), File.class).stream().map(File::getName).collect(Collectors.toCollection(ArrayList::new));
 		}
 		return fileNames;
     }
@@ -303,8 +306,8 @@ public abstract class BaseXnatResourcecatalog extends AutoXnatResourcecatalog {
         XDATXMLReader reader = new XDATXMLReader();
         BaseElement base = reader.parse(fis);
 
-        if (base instanceof CatCatalogBean){
-        	moveCatalogEntries((CatCatalogBean) base, catalog.getParent(), newFile.getParent(), currentProject,
+        if (base instanceof CatCatalogBean bean){
+        	moveCatalogEntries(bean, catalog.getParent(), newFile.getParent(), currentProject,
 					destinationProject);
         }
         
@@ -324,8 +327,8 @@ public abstract class BaseXnatResourcecatalog extends AutoXnatResourcecatalog {
 								   @Nullable String currentProject, @Nullable String destinationProject)
 			throws IOException {
 
-    	if (currentProject == null && cat instanceof CatCatalogBean) {
-    		currentProject = CatalogUtils.getCatalogProject((CatCatalogBean) cat);
+    	if (currentProject == null && cat instanceof CatCatalogBean bean) {
+    		currentProject = CatalogUtils.getCatalogProject(bean);
 		}
 
     	for (CatEntryI entry : cat.getEntries_entry()) {
@@ -372,8 +375,8 @@ public abstract class BaseXnatResourcecatalog extends AutoXnatResourcecatalog {
     	}
 
     	// reset project in catalog
-		if (destinationProject != null && !destinationProject.equals(currentProject) && cat instanceof CatCatalogBean) {
-			CatalogUtils.setCatalogProject((CatCatalogBean) cat, destinationProject);
+		if (destinationProject != null && !destinationProject.equals(currentProject) && cat instanceof CatCatalogBean bean) {
+			CatalogUtils.setCatalogProject(bean, destinationProject);
 		}
     }
 }

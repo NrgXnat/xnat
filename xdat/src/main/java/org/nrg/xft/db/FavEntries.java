@@ -112,7 +112,7 @@ public class FavEntries {
 				" dataType='" + dataType + "' AND id='" + id + "' AND xdat_user_id=" + user.getID();
 		XFTTable t= XFTTable.Execute(query, user.getDBName(), user.getLogin());
 		if(t.size()>0){
-			Hashtable h=t.rowHashs().get(0);
+			Hashtable h=t.rowHashs().getFirst();
 			FavEntries f = new FavEntries();
 			f.setId(id);
 			f.setDataType(dataType);

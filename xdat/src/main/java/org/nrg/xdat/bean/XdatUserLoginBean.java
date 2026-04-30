@@ -168,8 +168,8 @@ public class XdatUserLoginBean extends BaseElement implements java.io.Serializab
 	 * @param v Value to Set.
 	 */
 	public void setUserProperty(Object v) {
-		if (v instanceof org.nrg.xdat.bean.XdatUserBean)
-			_userProperty =(org.nrg.xdat.bean.XdatUserBean)v;
+		if (v instanceof org.nrg.xdat.bean.XdatUserBean bean)
+			_userProperty =bean;
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatUserBean");
 	}

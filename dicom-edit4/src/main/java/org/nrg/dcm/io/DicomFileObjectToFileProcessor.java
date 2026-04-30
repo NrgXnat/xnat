@@ -8,15 +8,14 @@
  */
 package org.nrg.dcm.io;
 
+import com.google.common.base.Function;
+import org.nrg.dcm.edit.DicomFileObjectProcessor;
+import org.nrg.dicom.mizer.exceptions.MizerException;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.io.DicomOutputStream;
-import org.nrg.dcm.edit.DicomFileObjectProcessor;
-
-import com.google.common.base.Function;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -37,13 +36,12 @@ public final class DicomFileObjectToFileProcessor implements DicomFileObjectProc
         this.fn = fn;
     }
 
-    public Object process(final File f, final DicomObject o) throws IOException {
+    public Object process(final File f, final DicomObjectI o) throws IOException, MizerException {
         final File out = fn.apply(f);
         if (out != null) {
-            try (final FileOutputStream fos = new FileOutputStream(out);
-                 final DicomOutputStream dos = new DicomOutputStream(fos)) {
-                    dos.writeDicomFile(o);
-                    return out;
+            try (final FileOutputStream fos = new FileOutputStream(out)) {
+                 o.write(fos);
+                 return out;
             }
         }
         return null;

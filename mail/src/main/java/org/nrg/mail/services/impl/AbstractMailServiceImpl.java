@@ -438,7 +438,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
                 tos.append(address);
             }
         }
-        _log.debug(String.format("Sending mail message: FROM[%s] TO [%S], SUBJECT[%S]", from, tos.toString(), subject));
+        _log.debug("Sending mail message: FROM[%s] TO [%S], SUBJECT[%S]".formatted(from, tos.toString(), subject));
     }
 
     private static final Logger _log = LoggerFactory.getLogger(AbstractMailServiceImpl.class);

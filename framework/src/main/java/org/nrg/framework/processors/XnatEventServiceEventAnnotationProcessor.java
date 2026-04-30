@@ -48,7 +48,7 @@ public class XnatEventServiceEventAnnotationProcessor extends NrgAbstractAnnotat
     @Override
     protected String getPropertiesName(final TypeElement element, final XnatEventServiceEvent event) {
     	final String eventName = event.name();
-        return String.format("META-INF/xnat/event/%s-xnateventserviceevent.properties", eventName.length() > 0 ? eventName : "ESEV" + Long.toString(new Date().getTime()));
+        return "META-INF/xnat/event/%s-xnateventserviceevent.properties".formatted(eventName.length() > 0 ? eventName : "ESEV" + Long.toString(new Date().getTime()));
     }
     
 }

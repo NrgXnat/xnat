@@ -29,50 +29,16 @@ public class XDATActionRouter extends SecureAction
    		String action = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("xdataction",data));
    		if (action != null)
    		{
+			   if(action.contains("/")){
+				   action = action.substring(0,action.lastIndexOf("/"));
+			   }
+			   if(action.contains("..")){
+				   action = action.substring(0,action.lastIndexOf(".."));
+			   }
    			String elementName = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data));
    			if (elementName != null)
    			{
-   				try {
-					SchemaElementI se = SchemaElement.GetElement(elementName);
-					String templateName = "/screens/XDATScreen_" + action  + "_" + se.getFormattedName() + ".vm";
-					logger.debug("looking for: " + templateName);
-					if (Velocity.resourceExists(templateName))
-					{
-						data.setScreenTemplate("XDATScreen_" + action  + "_" + se.getFormattedName() + ".vm");
-					}else
-					{
-					    templateName = "/screens/XDATScreen_" + action + ".vm";
-
-					    logger.debug("looking for: " + templateName);
-					    if (Velocity.resourceExists(templateName))
-						{
-					        data.setScreenTemplate("XDATScreen_" + action + ".vm");
-						}else
-						{
-						    templateName = "/screens/" + action   + "_" + se.getFormattedName() + ".vm";
-
-						    logger.debug("looking for: " + templateName);
-						    if (Velocity.resourceExists(templateName))
-							{
-						        data.setScreenTemplate(action   + "_" + se.getFormattedName() + ".vm");
-							}else
-							{
-							    templateName = "/screens/" + action   + ".vm";
-
-							    logger.debug("looking for: " + templateName);
-							    if (Velocity.resourceExists(templateName))
-								{
-							        data.setScreenTemplate(action   + ".vm");
-								}else
-								{
-								    data.setScreen("XDATScreen_" + action);
-								}
-							}
-						}
-					}
-					} catch (XFTInitException | ElementNotFoundException e) {
-						data.setScreenTemplate("XDATScreen_" + action + ".vm");
-					}
+				passToScreen(data,context,action,elementName);
 			}else{
    			    String templateName = "/screens/XDATScreen_" + action   + ".vm";
 
@@ -86,5 +52,50 @@ public class XDATActionRouter extends SecureAction
 				}
    			}
    		}
+   }
+
+   public static void passToScreen(RunData data, Context context, String action, String elementName){
+	   try {
+		   SchemaElementI se = SchemaElement.GetElement(elementName);
+		   String templateName = "/screens/XDATScreen_" + action  + "_" + se.getFormattedName() + ".vm";
+		   logger.debug("looking for: " + templateName);
+		   if (Velocity.resourceExists(templateName))
+		   {
+			   data.setScreenTemplate("XDATScreen_" + action  + "_" + se.getFormattedName() + ".vm");
+		   }else
+		   {
+			   templateName = "/screens/XDATScreen_" + action + ".vm";
+
+			   logger.debug("looking for: " + templateName);
+			   if (Velocity.resourceExists(templateName))
+			   {
+				   data.getParameters().setString("search_element",elementName);
+				   data.setScreenTemplate("XDATScreen_" + action + ".vm");
+			   }else
+			   {
+				   templateName = "/screens/" + action   + "_" + se.getFormattedName() + ".vm";
+
+				   logger.debug("looking for: " + templateName);
+				   if (Velocity.resourceExists(templateName))
+				   {
+					   data.setScreenTemplate(action   + "_" + se.getFormattedName() + ".vm");
+				   }else
+				   {
+					   templateName = "/screens/" + action   + ".vm";
+
+					   logger.debug("looking for: " + templateName);
+					   if (Velocity.resourceExists(templateName))
+					   {
+						   data.setScreenTemplate(action   + ".vm");
+					   }else
+					   {
+						   data.setScreen("XDATScreen_" + action);
+					   }
+				   }
+			   }
+		   }
+	   } catch (XFTInitException | ElementNotFoundException e) {
+		   data.setScreenTemplate("XDATScreen_" + action + ".vm");
+	   }
    }
 }

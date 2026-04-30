@@ -23,18 +23,16 @@ import org.nrg.xdat.bean.XnatResourcecatalogBean;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 
 import static org.junit.Assert.*;
-import static org.nrg.dcm.Attributes.*;
+import static org.nrg.dcm.NamedAttributes.*;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- */
+
 public class DICOMScanBuilderTest extends Scan4TestCase {
     @Before
     public void setUp() throws IOException {
@@ -47,7 +45,7 @@ public class DICOMScanBuilderTest extends Scan4TestCase {
     }
 
     /**
-     * Test method for {@link org.nrg.dcm.xnat.DICOMScanBuilder#getNativeTypeAttrs(Map<Class<? extends XnatImagescandataBean>, AttrDefs >)}.
+     * Test method for {@testFromScanDirectoryWithAbsolutePathslink org.nrg.dcm.xnat.DICOMScanBuilder#getNativeTypeAttrs(Map<Class<? extends XnatImagescandataBean>, AttrDefs >)}.
      */
     @Test
     public void testGetNativeTypeAttrs() {
@@ -118,8 +116,14 @@ public class DICOMScanBuilderTest extends Scan4TestCase {
         assertTrue(catalogFile.exists());
     }
 
-    // This is the long representation of 14 December, 2006.
-    private static Date SCAN_DATE = new Date(1166124948805L);
+    // 14 December, 2006 — constructed via Calendar to avoid timezone/locale sensitivity.
+    private static final Date SCAN_DATE;
+    static {
+        final Calendar cal = Calendar.getInstance();
+        cal.set(2006, Calendar.DECEMBER, 14, 0, 0, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        SCAN_DATE = cal.getTime();
+    }
 
     private File scan4Dir = null;
 }

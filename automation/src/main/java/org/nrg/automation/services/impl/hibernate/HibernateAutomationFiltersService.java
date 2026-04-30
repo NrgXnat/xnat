@@ -75,7 +75,7 @@ public class HibernateAutomationFiltersService extends AbstractHibernateEntitySe
 	@Override
 	@Transactional
 	public void saveOrUpdate(AutomationFilters filters) {
-		if (filters.getClass()!=null && filters.getSrcEventClass()!=null && filters.getField()!=null) {
+		if (filters.getSrcEventClass() != null && filters.getField() != null) {
 			getDao().saveOrUpdate(filters);
 		}
 	}

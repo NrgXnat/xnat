@@ -76,8 +76,8 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void addGroups_group(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatUsergroupBean)
-			_Groups_group.add((org.nrg.xdat.bean.XdatUsergroupBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatUsergroupBean bean)
+			_Groups_group.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatUsergroupBean");
 	}
@@ -120,8 +120,8 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void addUsers_user(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatUserBean)
-			_Users_user.add((org.nrg.xdat.bean.XdatUserBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatUserBean bean)
+			_Users_user.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatUserBean");
 	}
@@ -164,8 +164,8 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void addRoles_role(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatRoleTypeBean)
-			_Roles_role.add((org.nrg.xdat.bean.XdatRoleTypeBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatRoleTypeBean bean)
+			_Roles_role.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatRoleTypeBean");
 	}
@@ -208,8 +208,8 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void addActions_action(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatActionTypeBean)
-			_Actions_action.add((org.nrg.xdat.bean.XdatActionTypeBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatActionTypeBean bean)
+			_Actions_action.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatActionTypeBean");
 	}
@@ -252,8 +252,8 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void addElementSecuritySet_elementSecurity(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatElementSecurityBean)
-			_ElementSecuritySet_elementSecurity.add((org.nrg.xdat.bean.XdatElementSecurityBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatElementSecurityBean bean)
+			_ElementSecuritySet_elementSecurity.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatElementSecurityBean");
 	}
@@ -280,8 +280,8 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void setNewslist_news(Object v) {
-		if (v instanceof org.nrg.xdat.bean.XdatNewsentryBean)
-			_Newslist_news =(org.nrg.xdat.bean.XdatNewsentryBean)v;
+		if (v instanceof org.nrg.xdat.bean.XdatNewsentryBean bean)
+			_Newslist_news =bean;
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatNewsentryBean");
 	}
@@ -334,8 +334,8 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void setInfolist_info(Object v) {
-		if (v instanceof org.nrg.xdat.bean.XdatInfoentryBean)
-			_Infolist_info =(org.nrg.xdat.bean.XdatInfoentryBean)v;
+		if (v instanceof org.nrg.xdat.bean.XdatInfoentryBean bean)
+			_Infolist_info =bean;
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatInfoentryBean");
 	}
@@ -401,10 +401,10 @@ public class XdatSecurityBean extends BaseElement implements java.io.Serializabl
 	 * @param v Value to Set.
 	 */
 	public void setRequireLogin(Object v){
-		if(v instanceof Boolean){
-			_RequireLogin=(Boolean)v;
-		}else if(v instanceof String){
-			_RequireLogin=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_RequireLogin=boolean1;
+		}else if(v instanceof String string){
+			_RequireLogin=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}

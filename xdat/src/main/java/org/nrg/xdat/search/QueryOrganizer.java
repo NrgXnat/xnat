@@ -482,8 +482,8 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
         final ManualJoin mj = getOptimizedJoin(SchemaElement.GetElement(this.getRootElement().getFullXMLName()),foreign);
         if(mj!=null){
             String subJoin = foreignQO.buildJoin();
-            final String toReplace = String.format(mj._join[0],foreign.getSQLName(),this.getTableNameForType(mj._srcType));
-            final String toReplaceWith = String.format(mj._join[1],foreign.getSQLName(),this.getTableNameForType(mj._srcType));
+            final String toReplace = (mj._join[0]).formatted(foreign.getSQLName(), this.getTableNameForType(mj._srcType));
+            final String toReplaceWith = (mj._join[1]).formatted(foreign.getSQLName(), this.getTableNameForType(mj._srcType));
             subJoin = StringUtils.replace(subJoin, toReplace,toReplaceWith);
 
             joins.append(subJoin);
@@ -943,7 +943,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 			String foreignField = (String)foreignArc.getCommonFields().get(arcDefine.getEqualsField());
 
 			DisplayField df = (new SchemaElement(rootElement.getGenericXFTElement())).getDisplayField(rootField);
-			DisplayFieldElement dfe = df.getElements().get(0);
+			DisplayFieldElement dfe = df.getElements().getFirst();
 			this.addField(dfe.getSchemaElementName());
 			String[] layers = GenericWrapperElement.TranslateXMLPathToTables(dfe.getSchemaElementName());
 			this.addFieldToJoin(layers);
@@ -951,7 +951,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 			String localCol = this.getTableAndFieldSQL(dfe.getSchemaElementName());
 
 			DisplayField df2 = foreign.getDisplayField(foreignField);
-			DisplayFieldElement dfe2 = df2.getElements().get(0);
+			DisplayFieldElement dfe2 = df2.getElements().getFirst();
 			qo.addField(dfe2.getSchemaElementName());
 			
              
@@ -977,14 +977,14 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 			String rootField = (String)rootArc.getCommonFields().get(arcDefine.getEqualsField());
 
 			DisplayField df = (new SchemaElement(rootElement.getGenericXFTElement())).getDisplayField(rootField);
-			DisplayFieldElement dfe = df.getElements().get(0);
+			DisplayFieldElement dfe = df.getElements().getFirst();
 			this.addField(dfe.getSchemaElementName());
 			String[] layers = GenericWrapperElement.TranslateXMLPathToTables(dfe.getSchemaElementName());
 			this.addFieldToJoin(layers);
 			String localCol = getTableAndFieldSQL(dfe.getSchemaElementName());
 
 			DisplayField df2 = foreign.getDisplayField(foreignField);
-			DisplayFieldElement dfe2 = df2.getElements().get(0);
+			DisplayFieldElement dfe2 = df2.getElements().getFirst();
 			qo.addField(dfe2.getSchemaElementName());
 
          	qo.setWhere(buildStatusCriteria(foreign,level));
@@ -1619,7 +1619,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                 if (f.isReference())
                 {
                     SchemaElementI foreign = f.getReferenceElement();
-                    SchemaFieldI sf = (SchemaFieldI)foreign.getAllPrimaryKeys().get(0);
+                    SchemaFieldI sf = (SchemaFieldI)foreign.getAllPrimaryKeys().getFirst();
                     xmlPath = xmlPath + sf.getXMLPathString("");
                 }
             } catch (Exception e) {
@@ -1682,7 +1682,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                 if (f.isReference())
                 {
                     SchemaElementI foreign = f.getReferenceElement();
-                    SchemaFieldI sf = (SchemaFieldI)foreign.getAllPrimaryKeys().get(0);
+                    SchemaFieldI sf = (SchemaFieldI)foreign.getAllPrimaryKeys().getFirst();
                     xmlPath = xmlPath + sf.getXMLPathString("");
                 }
             } catch (Exception e) {

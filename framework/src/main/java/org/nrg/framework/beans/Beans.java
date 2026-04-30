@@ -62,8 +62,7 @@ public class Beans {
     }
 
     public static Properties getNamespacedProperties(final Environment environment, final String namespace, final boolean truncate) {
-        if (environment instanceof AbstractEnvironment) {
-            final AbstractEnvironment abstractEnvironment = (AbstractEnvironment) environment;
+        if (environment instanceof AbstractEnvironment abstractEnvironment) {
             return getNamespacedProperties(abstractEnvironment.getPropertySources(), namespace, truncate);
         }
         return new Properties();
@@ -245,13 +244,11 @@ public class Beans {
 
     private static Properties getMatchingProperties(final PropertySource<?> propertySource, final String regex) {
         return new Properties() {{
-            if (propertySource instanceof CompositePropertySource) {
-                final CompositePropertySource compositePropertySource = (CompositePropertySource) propertySource;
+            if (propertySource instanceof CompositePropertySource compositePropertySource) {
                 for (final PropertySource<?> containedPropertySource : compositePropertySource.getPropertySources()) {
                     putAll(getMatchingProperties(containedPropertySource, regex));
                 }
-            } else if (propertySource instanceof EnumerablePropertySource<?>) {
-                EnumerablePropertySource<?> containedPropertySource = (EnumerablePropertySource<?>) propertySource;
+            } else if (propertySource instanceof EnumerablePropertySource<?> containedPropertySource) {
                 for (final String propertyName : containedPropertySource.getPropertyNames()) {
                     if (propertyName.matches(regex)) {
                         put(propertyName, containedPropertySource.getProperty(propertyName).toString());
@@ -262,7 +259,7 @@ public class Beans {
     }
 
     private static String getNamespacePattern(final int count) {
-        return String.format(EXTRACT_NAMESPACE_PATTERN, StringUtils.join(new RepeatingString(NAMESPACE_PATTERN, count), "\\."));
+        return EXTRACT_NAMESPACE_PATTERN.formatted(StringUtils.join(new RepeatingString(NAMESPACE_PATTERN, count), "\\."));
     }
 
     private static final Predicate<String> DATA_MODEL_PROPERTY_PREDICATE = StreamUtils.predicateFromPatterns(Collections.singletonList(Pattern.compile("^" + StringUtils.replace(PLUGIN_DATA_MODEL_PREFIX, ".", "\\.") + ".*$")));

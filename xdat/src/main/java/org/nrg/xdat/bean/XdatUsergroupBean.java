@@ -76,8 +76,8 @@ public class XdatUsergroupBean extends BaseElement implements java.io.Serializab
 	 * @param v Value to Set.
 	 */
 	public void addElementAccess(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatElementAccessBean)
-			_ElementAccess.add((org.nrg.xdat.bean.XdatElementAccessBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatElementAccessBean bean)
+			_ElementAccess.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatElementAccessBean");
 	}

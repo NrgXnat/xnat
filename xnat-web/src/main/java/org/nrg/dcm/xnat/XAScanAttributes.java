@@ -1,9 +1,9 @@
 package org.nrg.dcm.xnat;
 
+import org.dcm4che3.data.Tag;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang.StringUtils;
-import org.dcm4che2.data.Tag;
 import org.nrg.attr.ConversionFailureException;
 import org.nrg.attr.ExtAttrValue;
 import org.nrg.dcm.AttrDefs;

@@ -17,25 +17,32 @@ import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.collections.DisplayFieldCollection;
 import org.nrg.xdat.collections.DisplayFieldRefCollection;
+import org.nrg.xdat.display.transport.services.ArcDefService;
+import org.nrg.xdat.display.transport.services.DisplayStoredViewService;
+import org.nrg.xdat.display.transport.services.ElementDisplayStorageService;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.XFTDataModel;
+import org.nrg.xft.generators.JavaFileGenerator;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.XFTElement;
 import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.schema.XFTSchema;
+import org.nrg.xft.schema.db.entities.DBBackedSchema;
+import org.nrg.xft.schema.db.services.DBBackedSchemaService;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.QueryOrganizer.CachedRootQuery;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.w3c.dom.Document;
@@ -43,9 +50,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -61,6 +71,33 @@ public class DisplayManager {
     private final        List<Object[]>                    schemaLinks         = new ArrayList<>();
     private final        Map<String, ArcDefinition>        arcDefinitions      = new HashMap<>();
     private static final Map<String, SQLFunction>          SQL_FUNCTIONS       = new HashMap<>();
+    private static final Map<String, SQLView>          SQL_VIEWS       = new HashMap<>();
+
+    private ElementDisplayStorageService _elementDisplayService;
+    private static DisplayStoredViewService _displayStoredViewService;
+    private ArcDefService _arcDefService;
+
+    private ElementDisplayStorageService getElementDisplayService() {
+        if (_elementDisplayService == null) {
+            _elementDisplayService = XDAT.getContextService().getBean(ElementDisplayStorageService.class);
+        }
+        return _elementDisplayService;
+    }
+
+    private static DisplayStoredViewService getDisplayStoredViewervice() {
+        if (_displayStoredViewService == null) {
+            _displayStoredViewService = XDAT.getContextService().getBean(DisplayStoredViewService.class);
+        }
+        return _displayStoredViewService;
+    }
+
+    private ArcDefService getArcDefService() {
+        if (_arcDefService == null) {
+            _arcDefService = XDAT.getContextService().getBean(ArcDefService.class);
+        }
+        return _arcDefService;
+    }
+
 
     /**
      * Gets the elements set in the display manager.
@@ -99,6 +136,8 @@ public class DisplayManager {
      */
     public static DisplayManager GetInstance() {
         if (instance == null) {
+            XFTManager.waitForInit();
+
             instance = new DisplayManager();
             instance.init();
         }
@@ -111,8 +150,10 @@ public class DisplayManager {
      * @param location The location of the plugin schemas directory when getting an instance while building a plugin.
      * @return An instance of the display manager.
      */
-    public static DisplayManager GetInstance(String location) {
+    public static DisplayManager GetInstance(final String location) {
         if (instance == null) {
+            XFTManager.waitForInit();
+
             instance = new DisplayManager();
             instance.init(location);
         }
@@ -125,7 +166,7 @@ public class DisplayManager {
      * @param name The name of the display element to retrieve.
      * @return The display element.
      */
-    public static ElementDisplay GetElementDisplay(String name) {
+    public static ElementDisplay GetElementDisplay(final String name) {
         return (ElementDisplay) GetInstance().getElements().get(name);
     }
 
@@ -134,10 +175,36 @@ public class DisplayManager {
      *
      * @param doc The document to be parsed and processed.
      */
-    public void assignDisplays(Document doc){
-        this.assignDisplays(doc,false);
+    public ElementDisplay assignDisplays(final Document doc, final boolean postInitialization){
+       return this.assignDisplays(doc,false, postInitialization);
 
     }
+
+    /**
+     * Assigns displays based on the contents of the submitted xml.
+     *
+     */
+    public ElementDisplay assignDisplays(final StringBuilder buffer, final boolean postInitialization){
+        try(final InputStream in=new ByteArrayInputStream(buffer.toString().getBytes(StandardCharsets.UTF_8))){
+            if (in != null) {
+                final Document doc = XMLUtils.GetDOM(in);
+                return assignDisplays(doc,postInitialization);
+            }
+            return null;
+        } catch (IOException e) {
+            logger.error("Error reading xml",e);
+            return null;
+        }
+    }
+
+    public ElementDisplay registerDisplay(final StringBuilder buffer){
+        final ElementDisplay ed = assignDisplays(buffer,true);
+        if(ed!=null){
+            getElementDisplayService().saveElementDisplay(ed);
+        }
+        return ed;
+    }
+
     /**
      * Assigns displays based on the contents of the submitted document.
      *
@@ -145,10 +212,10 @@ public class DisplayManager {
      * @param allowReplacement - Allow replacement of display fields that already exist
      */
     @SuppressWarnings({"unchecked"})
-    public void assignDisplays(Document doc, boolean allowReplacement) {
-        Element root = doc.getDocumentElement();
+    public ElementDisplay assignDisplays(Document doc, boolean allowReplacement, boolean postInitialization) {
+        final Element root = doc.getDocumentElement();
 
-        String name = NodeUtils.GetAttributeValue(root, "schema-element", "");
+        final String name = NodeUtils.GetAttributeValue(root, "schema-element", "");
 
         ElementDisplay ed = GetElementDisplay(name);
         if (ed == null) {
@@ -198,6 +265,7 @@ public class DisplayManager {
                 }
 
                 df.setId(NodeUtils.GetAttributeValue(child1, "id", ""));
+
                 df.setHeader(NodeUtils.GetAttributeValue(child1, "header", ""));
                 df.setImage(NodeUtils.GetAttributeValue(child1, "image", "false"));
                 df.setVisible(NodeUtils.GetAttributeValue(child1, "visible", "true"));
@@ -206,7 +274,6 @@ public class DisplayManager {
                 df.setSortBy(NodeUtils.GetAttributeValue(child1, "sort-by", ""));
                 df.setSortOrder(NodeUtils.GetAttributeValue(child1, "sort-order", ""));
                 df.setHtmlContent(NodeUtils.GetBooleanAttributeValue(child1, "html-content", false));
-
 
                 for (int k = 0; k < child1.getChildNodes().getLength(); k++) {
                     Node child2 = child1.getChildNodes().item(k);
@@ -274,13 +341,12 @@ public class DisplayManager {
                         df.getHtmlImage().setWidth(NodeUtils.GetAttributeValue(child2, "width", ""));
                         df.getHtmlImage().setHeight(NodeUtils.GetAttributeValue(child2, "height", ""));
                     } else if (child2.getNodeName().equalsIgnoreCase("SubQuery")) {
-                        if (df instanceof SQLQueryField) {
+                        if (df instanceof SQLQueryField field) {
                             String value = child2.getFirstChild().getNodeValue();
-                            ((SQLQueryField) df).setSubQuery(value);
+                            field.setSubQuery(value);
                         }
                     } else if (child2.getNodeName().equalsIgnoreCase("MappingColumns")) {
-                        if (df instanceof SQLQueryField) {
-                            SQLQueryField sqf = (SQLQueryField) df;
+                        if (df instanceof SQLQueryField sqf) {
                             for (int l = 0; l < child2.getChildNodes().getLength(); l++) {
                                 Node child3 = child2.getChildNodes().item(l);
                                 if (child3.getNodeName().equalsIgnoreCase("MappingColumn")) {
@@ -297,8 +363,7 @@ public class DisplayManager {
                 try {
                     ed.addDisplayFieldWException(df);
                 } catch (DisplayFieldCollection.DuplicateDisplayFieldException e) {
-                    logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
-                    logger.error("", e);
+                    logger.error("DisplayManager.init: DUPLICATE DisplayField {} {}.{} ",ed.getElementName(), df.getParentDisplay().getElementName(),df.getId());
                 }
             } else if (nodes.item(i).getNodeName().equalsIgnoreCase("DisplayVersion")) {
                 Node displayVersion = nodes.item(i);
@@ -347,12 +412,22 @@ public class DisplayManager {
                 sql.setName(NodeUtils.GetAttributeValue(nodes.item(i), "name", ""));
                 sql.setSql(NodeUtils.GetAttributeValue(nodes.item(i), "sql", ""));
                 sql.setSortOrder(views++);
-                ed.addView(sql);
+
+                if(postInitialization){
+                    getDisplayStoredViewervice().createView(sql.getName(),sql.getSql(), sql.getSortOrder(), false);
+                }
+
+                AddSqlView(sql);
             } else if (nodes.item(i).getNodeName().equalsIgnoreCase("SQLFunction")) {
                 SQLFunction sql = new SQLFunction();
                 sql.setName(NodeUtils.GetAttributeValue(nodes.item(i), "name", ""));
                 sql.setContent(NodeUtils.GetAttributeValue(nodes.item(i), "content", ""));
                 sql.setSortOrder(functions++);
+
+                if(postInitialization){
+                    getDisplayStoredViewervice().createView(sql.getName(),sql.getContent(), sql.getSortOrder(), true);
+                }
+
                 AddSqlFunction(sql);
             } else if (nodes.item(i).getNodeName().equalsIgnoreCase("Arc-Definition")) {
                 Node child = nodes.item(i);
@@ -447,6 +522,8 @@ public class DisplayManager {
             }
         }
         this.addElement(ed);
+
+        return ed;
     }
 
     public static void clean() {
@@ -479,15 +556,13 @@ public class DisplayManager {
         final PathMatchingResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
         try {
             final Resource[] resources = resolver.getResources(pattern);
-            logger.info("Discovered " + resources.length + " display documents on classpath.");
             for (final Resource resource : resources) {
                 if(!loaded.contains(resource.getFilename())){
-                    logger.info("Importing display document: " + resource.getFilename());
                     try {
                         InputStream in=resource.getInputStream();
                         if (in != null) {
                             Document doc = XMLUtils.GetDOM(in);
-                            assignDisplays(doc, allowReplacement);
+                            ElementDisplay ed = assignDisplays(doc, allowReplacement);
                             loaded.add(resource.getFilename());
                         }
                     } catch (IOException | RuntimeException e) {
@@ -502,73 +577,104 @@ public class DisplayManager {
     }
 
     public void init(String location) {
-            List<String> loaded                 = Lists.newArrayList();
-            final Map<String, Exception> errors = Maps.newHashMap();
+        List<String> loaded                 = Lists.newArrayList();
+        final Map<String, Exception> errors = Maps.newHashMap();
 
-//        Enumeration enumer = XFTManager.GetDataModels().elements();
-//        List<String> processed = Lists.newArrayList();
-//        while (enumer.hasMoreElements()) {
-//            XFTDataModel dm = (XFTDataModel) enumer.nextElement();
-//            String location = FileUtils.AppendSlash(dm.getFileLocation());
-//
-//            if (!processed.contains(location)) {
-//                processed.add(location);
-//                File folder = new File(location + "display");
-//                if (folder.exists()) {
-//                    File[] files = folder.listFiles();
-//                    if (files != null) {
-//                        for (final File file : files) {
-//                            if (file.getName().endsWith("_display.xml")) {
-//                                Document doc = XMLUtils.GetDOM(file);
-//                                assignDisplays(doc);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
+        loadDisplayDocumentsFromLocation("classpath*:schemas/*/display/*_display.xml", errors, loaded, false);
 
-            loadDisplayDocumentsFromLocation("classpath*:schemas/*/display/*_display.xml", errors, loaded, false);
-
-            if(!StringUtils.isEmpty(location)) {
+        if(!StringUtils.isEmpty(location)) {
+            try {
+                ArrayList<String> buildPathDisplayXml = new ArrayList<>();
                 try {
-                    ArrayList<String> buildPathDisplayXml = new ArrayList<>();
-                    try {
-                        DirectoryScanner scanner = new DirectoryScanner();
-                        scanner.setBasedir(location);
-                        scanner.setIncludes(new String[]{"*/display/*_display.xml"});
-                        scanner.setCaseSensitive(false);
-                        scanner.scan();
-                        String[] displayFilePaths = scanner.getIncludedFiles();
-                        for (String displayFilePath : displayFilePaths) {
-                            buildPathDisplayXml.add(String.valueOf(Paths.get(location, displayFilePath)));
-                        }
-                    } catch (Throwable e) {
-                        logger.error("Unable to locate display xml files in build location.", e);
+                    DirectoryScanner scanner = new DirectoryScanner();
+                    scanner.setBasedir(location);
+                    scanner.setIncludes(new String[]{"*/display/*_display.xml"});
+                    scanner.setCaseSensitive(false);
+                    scanner.scan();
+                    String[] displayFilePaths = scanner.getIncludedFiles();
+                    for (String displayFilePath : displayFilePaths) {
+                        buildPathDisplayXml.add(String.valueOf(Path.of(location, displayFilePath)));
                     }
+                } catch (Throwable e) {
+                    logger.error("Unable to locate display xml files in build location.", e);
+                }
 
-                    //final Resource[] pathResourcesArray = (AbstractResource[]) pathResources.toArray((AbstractResource[]) Array.newInstance(AbstractResource.class, pathResources.size()));
-                    logger.info("Discovered " + buildPathDisplayXml.size() + " display documents on build path.");
-                    for (final String displayXmlFilePath : buildPathDisplayXml) {
-                        File displayXmlFile = new File(displayXmlFilePath);
-                        if (!loaded.contains(displayXmlFile.getName())) {
-                            logger.info("Importing display document: " + displayXmlFile.getName());
-                            try {
-                                    Document doc = XMLUtils.GetDOM(displayXmlFile);
-                                    assignDisplays(doc);
-
-                                    loaded.add(displayXmlFile.getName());
-                            } catch (RuntimeException e) {
-                                //noinspection ThrowableResultOfMethodCallIgnored
-                                errors.put(displayXmlFile.getPath(), e);
-                            }
+                for (final String displayXmlFilePath : buildPathDisplayXml) {
+                    File displayXmlFile = new File(displayXmlFilePath);
+                    if (!loaded.contains(displayXmlFile.getName())) {
+                        try {
+                            Document doc = XMLUtils.GetDOM(displayXmlFile);
+                            ElementDisplay ed = assignDisplays(doc, false);
+                            loaded.add(displayXmlFile.getName());
+                        } catch (RuntimeException e) {
+                            //noinspection ThrowableResultOfMethodCallIgnored
+                            errors.put(displayXmlFile.getPath(), e);
                         }
                     }
+                }
 
-                } catch (Throwable e1) {
-                    logger.error("Unable to discover display.xml's from build path.",e1);
+            } catch (Throwable e1) {
+                logger.error("Unable to discover display.xml's from build path.",e1);
+            }
+        }
+
+        final ElementDisplayStorageService displayService = this.getElementDisplayService();
+        if(displayService != null){
+            List<ElementDisplay> eds=displayService.findAllActive();
+            for(ElementDisplay ed: eds){
+                ElementDisplay existing= DisplayManager.GetElementDisplay(ed.getElementName());
+                if(existing!=null){
+                    existing.merge(ed);
+                }else{
+                    addElement(ed);
                 }
             }
+        }
+
+        //check for missing display docs
+        final DBBackedSchemaService dbService=XFTManager.getDBBackedSchemaService();
+        if(dbService != null){
+            for (final DBBackedSchema schema: dbService.getAll()) {
+                for (final String xsiType : dbService.getElementNames(schema)) {
+                    if(!this.getElements().containsKey(xsiType)) {//isn't there already
+                        try {
+                            if (StringUtils.isBlank(GenericWrapperElement.GetElement(xsiType).getAddin())) {//not an addon
+                                if (GenericWrapperElement.GetFieldForXMLPath(xsiType + "/project") != null) {// is a securable element
+                                    logger.error("Generating DisplayDoc for data type: {}", xsiType);
+                                    GenericWrapperElement se = GenericWrapperElement.GetElement(xsiType);
+                                    final StringBuilder displayXML = (new JavaFileGenerator()).generateDisplayXml(se);
+                                    DisplayManager.GetInstance().registerDisplay(displayXML);
+                                }
+                            }
+                        } catch (XFTInitException e) {
+                            logger.error("", e);
+                        } catch (ElementNotFoundException e) {
+                            logger.error("", e);
+                        } catch (Throwable e) {
+                            //ignore
+                        }
+                    }
+                }
+            }
+        }
+
+        final DisplayStoredViewService viewService = getDisplayStoredViewervice();
+        if(viewService != null) {
+            for (SQLObjectI sqlObj : viewService.findAllSQLObjects()) {
+                if (sqlObj instanceof SQLView) {
+                    AddSqlView((SQLView) sqlObj);
+                } else {
+                    AddSqlFunction((SQLFunction) sqlObj);
+                }
+            }
+        }
+
+        final ArcDefService arcDefService = getArcDefService();
+        if(arcDefService != null) {
+            for(ArcDefinition arcDef: arcDefService.findAllArcDefs()){
+                addArcDefinition(arcDef);
+            }
+        }
 
         if (errors.size() > 0) {
             logger.error("{} errors occurred while processing the following display documents:", errors.size());
@@ -582,8 +688,9 @@ public class DisplayManager {
         try {
             initArcs();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("",e);
         }
+
     }
 
     @SuppressWarnings("rawtypes")
@@ -635,13 +742,14 @@ public class DisplayManager {
         }
 
         final List<String> createdAlias = new ArrayList<>();
+
+        for (final SQLView view : getSqlViews().values()) {
+            views.add("--DEFINED VIEW\nCREATE OR REPLACE VIEW " + view.getName() + " AS " + view.getSql() + ";\n\n");
+        }
+
+
         for (final Object aCol : col) {
             ElementDisplay ed = (ElementDisplay) aCol;
-            logger.debug("CREATE VIEWS FOR " + ed.getElementName());
-            for (final Object o : ed.getSortedViews()) {
-                SQLView view = (SQLView) o;
-                views.add("--DEFINED VIEW\nCREATE OR REPLACE VIEW " + view.getName() + " AS " + view.getSql() + ";\n\n");
-            }
 
             try {
                 SchemaElementI root = SchemaElement.GetElement(ed.getElementName());
@@ -649,10 +757,13 @@ public class DisplayManager {
                 try {
                     DisplaySearch ds = new DisplaySearch();
                     ds.setRootElement(ed.getElementName());
-                    for (final Object df : ed.getSortedFields()) {
-                        if (!(df instanceof SQLQueryField))
+                    for (final DisplayField df : ed.getSortedFields()) {
+                        if (!(df instanceof SQLQueryField)) {
                             ds.addDisplayField((DisplayField) df);
+                        }
                     }
+
+
 
                     String query = ds.getSQLQuery(null);
 
@@ -671,116 +782,126 @@ public class DisplayManager {
             }
         }
 
-        views.add("CREATE OR REPLACE FUNCTION xdat_search_create(\"varchar\",\"varchar\")" +
-                "\n  RETURNS \"varchar\" AS" +
-                "\n'" +
-                "\n    declare" +
-                "\n        search_query_name alias for $1;" +
-                "\n        search_query alias for $2;" +
-                "\n	entry xdat_searches%ROWTYPE;" +
-                "\n    begin" +
-                "\n	SELECT * INTO entry FROM xdat_searches WHERE search_name = search_query_name;" +
-                "\n" +
-                "\n	    IF FOUND THEN" +
-                "\n		RAISE NOTICE ''Search Table % exists.''," +
-                "\n		  search_query_name;" +
-                "\n		UPDATE xdat_searches SET last_access=NOW() WHERE search_name = search_query_name;" +
-                "\n	    ELSE" +
-                "\n		RAISE NOTICE ''Creating Search Table %.''," +
-                "\n		  search_query_name;" +
-                "\n		EXECUTE ''CREATE TABLE '' || search_query_name || '' AS '' || search_query;" +
-                "\n		INSERT INTO xdat_searches (search_name) VALUES (search_query_name);" +
-                "\n     EXECUTE ''GRANT ALL ON TABLE '' || search_query_name || '' TO public'';" +
-                "\n	    END IF;" +
-                "\n" +
-                "\n	PERFORM xdat_search_drop_unused();" +
-                "\n" +
-                "\n	RETURN ''DONE'';" +
-                "\n    end;" +
-                "\n'" +
-                "\n  LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION xdat_search_create("varchar","varchar")
+                  RETURNS "varchar" AS
+                '
+                    declare
+                        search_query_name alias for $1;
+                        search_query alias for $2;
+                	entry xdat_searches%ROWTYPE;
+                    begin
+                	SELECT * INTO entry FROM xdat_searches WHERE search_name = search_query_name;
+                
+                	    IF FOUND THEN
+                		RAISE NOTICE ''Search Table % exists.'',
+                		  search_query_name;
+                		UPDATE xdat_searches SET last_access=NOW() WHERE search_name = search_query_name;
+                	    ELSE
+                		RAISE NOTICE ''Creating Search Table %.'',
+                		  search_query_name;
+                		EXECUTE ''CREATE TABLE '' || search_query_name || '' AS '' || search_query;
+                		INSERT INTO xdat_searches (search_name) VALUES (search_query_name);
+                     EXECUTE ''GRANT ALL ON TABLE '' || search_query_name || '' TO public'';
+                	    END IF;
+                
+                	PERFORM xdat_search_drop_unused();
+                
+                	RETURN ''DONE'';
+                    end;
+                '
+                  LANGUAGE 'plpgsql' VOLATILE;\
+                """);
 
-        views.add("CREATE OR REPLACE FUNCTION xdat_search_create(\"varchar\", \"varchar\", \"varchar\")" +
-                "\n  RETURNS \"varchar\" AS" +
-                "\n'" +
-                "\n    declare" +
-                "\n        search_query_name alias for $1;" +
-                "\n        search_query alias for $2;" +
-                "\n        search_owner alias for $3;" +
-                "\n	entry xdat_searches%ROWTYPE;" +
-                "\n    begin" +
-                "\n	SELECT * INTO entry FROM xdat_searches WHERE search_name = search_query_name;" +
-                "\n" +
-                "\n	    IF FOUND THEN" +
-                "\n		RAISE NOTICE ''Search Table % exists.''," +
-                "\n		  search_query_name;" +
-                "\n		UPDATE xdat_searches SET last_access=NOW() WHERE search_name = search_query_name;" +
-                "\n	    ELSE" +
-                "\n		RAISE NOTICE ''Creating Search Table %.''," +
-                "\n		  search_query_name;" +
-                "\n		EXECUTE ''CREATE TABLE '' || search_query_name || '' AS '' || search_query;" +
-                "\n		INSERT INTO xdat_searches (search_name,owner) VALUES (search_query_name,search_owner);" +
-                "\n	    END IF;" +
-                "\n" +
-                "\n	PERFORM xdat_search_drop_unused(search_owner);" +
-                "\n" +
-                "\n	RETURN ''DONE'';" +
-                "\n    end;" +
-                "\n'" +
-                "\n  LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION xdat_search_create("varchar", "varchar", "varchar")
+                  RETURNS "varchar" AS
+                '
+                    declare
+                        search_query_name alias for $1;
+                        search_query alias for $2;
+                        search_owner alias for $3;
+                	entry xdat_searches%ROWTYPE;
+                    begin
+                	SELECT * INTO entry FROM xdat_searches WHERE search_name = search_query_name;
+                
+                	    IF FOUND THEN
+                		RAISE NOTICE ''Search Table % exists.'',
+                		  search_query_name;
+                		UPDATE xdat_searches SET last_access=NOW() WHERE search_name = search_query_name;
+                	    ELSE
+                		RAISE NOTICE ''Creating Search Table %.'',
+                		  search_query_name;
+                		EXECUTE ''CREATE TABLE '' || search_query_name || '' AS '' || search_query;
+                		INSERT INTO xdat_searches (search_name,owner) VALUES (search_query_name,search_owner);
+                	    END IF;
+                
+                	PERFORM xdat_search_drop_unused(search_owner);
+                
+                	RETURN ''DONE'';
+                    end;
+                '
+                  LANGUAGE 'plpgsql' VOLATILE;\
+                """);
 
-        views.add("CREATE OR REPLACE FUNCTION xdat_search_drop(\"varchar\")" +
-                "\n  RETURNS \"varchar\" AS" +
-                "\n'" +
-                "\n    declare" +
-                "\n        search_query_name alias for $1;" +
-                "\n    begin" +
-                "\n	EXECUTE ''DROP TABLE '' || search_query_name;" +
-                "\n	DELETE FROM xdat_searches WHERE search_name = search_query_name;" +
-                "\n	" +
-                "\n	RETURN ''DONE'';" +
-                "\n    end;" +
-                "\n'" +
-                "\n  LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION xdat_search_drop("varchar")
+                  RETURNS "varchar" AS
+                '
+                    declare
+                        search_query_name alias for $1;
+                    begin
+                	EXECUTE ''DROP TABLE '' || search_query_name;
+                	DELETE FROM xdat_searches WHERE search_name = search_query_name;
+                	
+                	RETURN ''DONE'';
+                    end;
+                '
+                  LANGUAGE 'plpgsql' VOLATILE;\
+                """);
 
-        views.add("CREATE OR REPLACE FUNCTION xdat_search_drop_unused()" +
-                "\n  RETURNS \"varchar\" AS" +
-                "\n'" +
-                "\n    declare" +
-                "\n	entry xdat_searches%ROWTYPE;" +
-                "\n    begin" +
-                "\n	FOR entry IN SELECT * FROM xdat_searches WHERE last_access + INTERVAL ''1 hour'' / int ''2'' < NOW()" +
-                "\n	LOOP" +
-                "\n		PERFORM xdat_search_drop(entry.search_name);" +
-                "\n" +
-                "\n		RAISE NOTICE ''Dropped Expired Search Table %. (Last Access: %)''," +
-                "\n		  entry.search_name,entry.last_access;" +
-                "\n	END LOOP;" +
-                "\n" +
-                "\n	RETURN ''DONE'';" +
-                "\n    end;" +
-                "\n'" +
-                "\n  LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION xdat_search_drop_unused()
+                  RETURNS "varchar" AS
+                '
+                    declare
+                	entry xdat_searches%ROWTYPE;
+                    begin
+                	FOR entry IN SELECT * FROM xdat_searches WHERE last_access + INTERVAL ''1 hour'' / int ''2'' < NOW()
+                	LOOP
+                		PERFORM xdat_search_drop(entry.search_name);
+                
+                		RAISE NOTICE ''Dropped Expired Search Table %. (Last Access: %)'',
+                		  entry.search_name,entry.last_access;
+                	END LOOP;
+                
+                	RETURN ''DONE'';
+                    end;
+                '
+                  LANGUAGE 'plpgsql' VOLATILE;\
+                """);
 
-        views.add("CREATE OR REPLACE FUNCTION xdat_search_drop_unused(\"varchar\")" +
-                "\n  RETURNS \"varchar\" AS" +
-                "\n'" +
-                "\n    declare" +
-                "\n	entry xdat_searches%ROWTYPE;" +
-                "\n        search_owner alias for $1;" +
-                "\n    begin" +
-                "\n	FOR entry IN SELECT * FROM xdat_searches WHERE owner=search_owner AND last_access + INTERVAL ''1 hour'' / int ''2'' < NOW()" +
-                "\n	LOOP" +
-                "\n		PERFORM xdat_search_drop(entry.search_name);" +
-                "\n" +
-                "\n		RAISE NOTICE ''Dropped Expired Search Table %. (Last Access: %)''," +
-                "\n		  entry.search_name,entry.last_access;" +
-                "\n	END LOOP;" +
-                "\n" +
-                "\n	RETURN ''DONE'';" +
-                "\n    end;" +
-                "\n'" +
-                "\n  LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION xdat_search_drop_unused("varchar")
+                  RETURNS "varchar" AS
+                '
+                    declare
+                	entry xdat_searches%ROWTYPE;
+                        search_owner alias for $1;
+                    begin
+                	FOR entry IN SELECT * FROM xdat_searches WHERE owner=search_owner AND last_access + INTERVAL ''1 hour'' / int ''2'' < NOW()
+                	LOOP
+                		PERFORM xdat_search_drop(entry.search_name);
+                
+                		RAISE NOTICE ''Dropped Expired Search Table %. (Last Access: %)'',
+                		  entry.search_name,entry.last_access;
+                	END LOOP;
+                
+                	RETURN ''DONE'';
+                    end;
+                '
+                  LANGUAGE 'plpgsql' VOLATILE;\
+                """);
 
 //		try {
 //			if(!PoolDBUtils.checkIfTypeExists("sortedstrings")){
@@ -790,46 +911,56 @@ public class DisplayManager {
 //			logger.error("",e);
 //		}
 
-        views.add("CREATE OR REPLACE FUNCTION getnextview()   RETURNS name AS " +
-                "\n' DECLARE   my_record RECORD;  viewName name; " +
-                "\nBEGIN  FOR my_record IN SELECT c.relname FROM pg_catalog.pg_class AS c LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace" +
-                "\nWHERE     c.relkind IN (''v'') AND n.nspname NOT IN (''pg_catalog'', ''pg_toast'') AND pg_catalog.pg_table_is_visible(c.oid) LIMIT 1" +
-                "\nLOOP   viewName := my_record.relname;  END LOOP;  RETURN (viewName); END; '  LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION getnextview()   RETURNS name AS\s
+                ' DECLARE   my_record RECORD;  viewName name;\s
+                BEGIN  FOR my_record IN SELECT c.relname FROM pg_catalog.pg_class AS c LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
+                WHERE     c.relkind IN (''v'') AND n.nspname NOT IN (''pg_catalog'', ''pg_toast'') AND pg_catalog.pg_table_is_visible(c.oid) LIMIT 1
+                LOOP   viewName := my_record.relname;  END LOOP;  RETURN (viewName); END; '  LANGUAGE 'plpgsql' VOLATILE;\
+                """);
 
-        views.add("CREATE OR REPLACE FUNCTION viewcount()   RETURNS int8 AS ' DECLARE   my_record RECORD;  counter int8;" +
-                "\nBEGIN  FOR my_record IN SELECT * FROM (SELECT COUNT (c.relname) AS view_count FROM pg_catalog.pg_class AS c " +
-                "\nLEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace WHERE     c.relkind IN (''v'') AND n.nspname " +
-                "\nNOT IN (''pg_catalog'', ''pg_toast'') AND pg_catalog.pg_table_is_visible(c.oid) LIMIT 1) AS COUNT_TABLE  LOOP   counter := my_record.view_count;  " +
-                "\nEND LOOP;  RETURN (counter); END; '  LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION viewcount()   RETURNS int8 AS ' DECLARE   my_record RECORD;  counter int8;
+                BEGIN  FOR my_record IN SELECT * FROM (SELECT COUNT (c.relname) AS view_count FROM pg_catalog.pg_class AS c\s
+                LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace WHERE     c.relkind IN (''v'') AND n.nspname\s
+                NOT IN (''pg_catalog'', ''pg_toast'') AND pg_catalog.pg_table_is_visible(c.oid) LIMIT 1) AS COUNT_TABLE  LOOP   counter := my_record.view_count; \s
+                END LOOP;  RETURN (counter); END; '  LANGUAGE 'plpgsql' VOLATILE;\
+                """);
 
-        views.add("CREATE OR REPLACE FUNCTION getsortedstring(\"varchar\", int4)   RETURNS sortedstrings AS 'DECLARE  sorted_strings sortedStrings%ROWTYPE; " +
-                "\nBEGIN  sorted_strings.strings:=$1;  sorted_strings.sort_order:=$2;  return sorted_strings; END;'   LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION getsortedstring("varchar", int4)   RETURNS sortedstrings AS 'DECLARE  sorted_strings sortedStrings%ROWTYPE;\s
+                BEGIN  sorted_strings.strings:=$1;  sorted_strings.sort_order:=$2;  return sorted_strings; END;'   LANGUAGE 'plpgsql' VOLATILE;\
+                """);
 
-        views.add("CREATE OR REPLACE FUNCTION removeviews()   RETURNS varchar AS ' DECLARE  viewName name;  viewCounter int8; " +
-                "\nBEGIN  SELECT INTO viewName getnextview();  SELECT INTO viewCounter viewCount();  WHILE (viewCounter > 0)   LOOP" +
-                "\nEXECUTE ''DROP VIEW ''|| viewName || '' CASCADE'';   RAISE NOTICE ''DROPPED %. % more.'',viewName,viewCounter;   SELECT INTO viewName getnextview();" +
-                "\nSELECT INTO viewCounter viewCount();  END LOOP;   RETURN (''DONE''); END; '   LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION removeviews()   RETURNS varchar AS ' DECLARE  viewName name;  viewCounter int8;\s
+                BEGIN  SELECT INTO viewName getnextview();  SELECT INTO viewCounter viewCount();  WHILE (viewCounter > 0)   LOOP
+                EXECUTE ''DROP VIEW ''|| viewName || '' CASCADE'';   RAISE NOTICE ''DROPPED %. % more.'',viewName,viewCounter;   SELECT INTO viewName getnextview();
+                SELECT INTO viewCounter viewCount();  END LOOP;   RETURN (''DONE''); END; '   LANGUAGE 'plpgsql' VOLATILE;\
+                """);
 
-        views.add("CREATE OR REPLACE FUNCTION stringstosortedtable(varchar[])" +
-                "\nRETURNS SETOF sortedstrings AS" +
-                "\n'DECLARE  " +
-                "\nss sortedstrings%ROWTYPE; " +
-                "\ni int4;  " +
-                "\nBEGIN  " +
-                "\ni :=1 ;" +
-                "\nWHILE ($1[i] IS NOT NULL) " +
-                "\nLOOP   " +
-                "\n		FOR ss IN " +
-                "\n			SELECT * FROM getSortedString($1[i],i) " +
-                "\n		LOOP" +
-                "\n			RAISE NOTICE ''SORTED STRING: %,%'',ss.strings,ss.sort_order;" +
-                "\n			RETURN NEXT ss;" +
-                "\n		END LOOP;" +
-                "\n		i:=i+1; " +
-                "\n	END LOOP; " +
-                "\n	RETURN; " +
-                "\nEND;'" +
-                "\n   LANGUAGE 'plpgsql' VOLATILE;");
+        views.add("""
+                CREATE OR REPLACE FUNCTION stringstosortedtable(varchar[])
+                RETURNS SETOF sortedstrings AS
+                'DECLARE \s
+                ss sortedstrings%ROWTYPE;\s
+                i int4; \s
+                BEGIN \s
+                i :=1 ;
+                WHILE ($1[i] IS NOT NULL)\s
+                LOOP  \s
+                		FOR ss IN\s
+                			SELECT * FROM getSortedString($1[i],i)\s
+                		LOOP
+                			RAISE NOTICE ''SORTED STRING: %,%'',ss.strings,ss.sort_order;
+                			RETURN NEXT ss;
+                		END LOOP;
+                		i:=i+1;\s
+                	END LOOP;\s
+                	RETURN;\s
+                END;'
+                   LANGUAGE 'plpgsql' VOLATILE;\
+                """);
         return views;
     }
 
@@ -1091,6 +1222,24 @@ public class DisplayManager {
         functions.addAll(GetSqlFunctions().values());
         Collections.sort(functions, SQLFunction.SequenceComparator);
         return functions;
+    }
+
+    public static void AddSqlView(SQLView function) {
+        SQL_VIEWS.put(function.getName(), function);
+    }
+
+    /**
+     * @return Returns the sqlFunctions.
+     */
+    public static Map<String, SQLView> getSqlViews() {
+        return SQL_VIEWS;
+    }
+
+    public static List<SQLView> GetSortedViews() {
+        final List<SQLView> views = Lists.newArrayList();
+        views.addAll(getSqlViews().values());
+        Collections.sort(views, SQLView.SequenceComparator);
+        return views;
     }
 
     public String getSingularDisplayNameForElement(String elementName) {

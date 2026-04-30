@@ -9,23 +9,27 @@
 
 package org.nrg.dcm;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.net.Association;
-import org.dcm4che2.net.DimseRSPHandler;
+import org.dcm4che3.net.Association;
+import org.dcm4che3.net.DimseRSPHandler;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
 public abstract class DimseRSPStatusHandler extends DimseRSPHandler {
-  public static enum ServiceStatus { SUCCESS, WARNING, FAILURE }
+  public DimseRSPStatusHandler(int msgId) {
+    super(msgId);
+  }
+
+  public enum ServiceStatus { SUCCESS, WARNING, FAILURE }
 
   private ServiceStatus status = null;
   private int statusCode;
   private String meaning = null;
   private String comment = null;
   
-  public abstract void onDimseRSP(Association as, DicomObject cmd, DicomObject data);
+  public abstract void onDimseRSP(Association as, DicomObjectI cmd, DicomObjectI data);
 
   private void setFields(final ServiceStatus status,
       final int statusCode, final String meaning, final String comment) {

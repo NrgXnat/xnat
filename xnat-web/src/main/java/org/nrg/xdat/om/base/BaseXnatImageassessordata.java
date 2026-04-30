@@ -24,6 +24,7 @@ import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
 import java.io.File;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -36,6 +37,9 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings({"rawtypes"})
 public abstract class BaseXnatImageassessordata extends AutoXnatImageassessordata{
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatImageassessordata(ItemI item)
 	{
@@ -69,7 +73,7 @@ public abstract class BaseXnatImageassessordata extends AutoXnatImageassessordat
             ArrayList al = XnatImagesessiondata.getXnatImagesessiondatasByField("xnat:imageSessionData/ID",this.getImagesessionId(),this.getUser(),false);
             if (al.size()>0)
             {
-                mr = (XnatImagesessiondata)al.get(0);
+                mr = (XnatImagesessiondata)al.getFirst();
             }
         }
 

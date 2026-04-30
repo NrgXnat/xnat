@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -112,7 +111,7 @@ public class XDATTool {
 	 */
 	public void generateSQL() throws Exception
 	{
-		SQLCreateGenerator.generateDoc(Paths.get(getWorkDirectory(), "xdat.sql").toString());
+		SQLCreateGenerator.generateDoc(Path.of(getWorkDirectory(), "xdat.sql").toString());
 	}
 
     /**
@@ -404,7 +403,7 @@ public class XDATTool {
 
 	public String getWorkDirectory()
 	{
-		final Path directory = Paths.get(location, "work");
+		final Path directory = Path.of(location, "work");
 		final File f         = directory.toFile();
 		if (!f.exists()) {
 			f.mkdir();
@@ -416,11 +415,11 @@ public class XDATTool {
 	{
 	    int counter =0;
 
-	    File f = Paths.get(getWorkDirectory(), "search" + counter + "." + extension).toFile();
+	    File f = Path.of(getWorkDirectory(), "search" + counter + "." + extension).toFile();
 
 	    while (f.exists())
 	    {
-	        f = Paths.get(getWorkDirectory(), "search" + (++counter) + "." + extension).toFile();
+	        f = Path.of(getWorkDirectory(), "search" + (++counter) + "." + extension).toFile();
 	    }
 	    return f.getAbsolutePath();
 	}

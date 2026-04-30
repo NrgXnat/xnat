@@ -190,7 +190,7 @@ public class DisplayCriteria implements SQLClause {
         }
         String adjustedValue = userValue;
         if (displayFieldType.equalsIgnoreCase(TIME_DATATYPE) && userValue.toUpperCase().indexOf("::"+TIME_DATATYPE) == -1) {
-            adjustedValue = String.format("%s%s%s", "'", userValue, "'::"+TIME_DATATYPE);
+            adjustedValue = "%s%s%s".formatted("'", userValue, "'::" + TIME_DATATYPE);
         }
         return adjustedValue;
     }
@@ -243,8 +243,7 @@ public class DisplayCriteria implements SQLClause {
      * @throws Exception When an error occurs.
      */
     public void setValue(Object value, boolean hackCheck) throws Exception {
-        if (value instanceof String) {
-            String temp = (String) value;
+        if (value instanceof String temp) {
 
             if (hackCheck && PoolDBUtils.HackCheck(temp)) {
                 if (XDAT.getNotificationsPreferences().getSmtpEnabled()) {

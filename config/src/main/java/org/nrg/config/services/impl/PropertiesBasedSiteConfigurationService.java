@@ -31,7 +31,7 @@ import org.springframework.web.context.ServletContextAware;
 import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 import java.io.*;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -347,7 +347,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
             if (contents != null && contents.size() == 1) {
                 final Properties existing = new Properties();
                 try {
-                    existing.load(new StringReader(contents.get(0)));
+                    existing.load(new StringReader(contents.getFirst()));
                     if (log.isDebugEnabled()) {
                         log.debug("Found {} properties stored in the configuration service-based site configuration.", existing.stringPropertyNames().size());
                         for (final String property : existing.stringPropertyNames()) {
@@ -371,7 +371,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
             for (int i = 0; i < _configFilesLocations.size(); ++i) {
                 final File configFilesLocation = new File(_configFilesLocations.get(i));
                 if (!configFilesLocation.isAbsolute()) {
-                    _configFilesLocations.set(i, Paths.get(getConfigFilesLocationsRoot(), _configFilesLocations.get(i)).toString());
+                    _configFilesLocations.set(i, Path.of(getConfigFilesLocationsRoot(), _configFilesLocations.get(i)).toString());
                 }
             }
         }
@@ -419,27 +419,27 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
                 listenerClass = Class.forName(listenerClassName);
                 SiteConfigurationPropertyChangedListener listener;
                 try {
-                    listener = (SiteConfigurationPropertyChangedListener) listenerClass.newInstance();
+                    listener = (SiteConfigurationPropertyChangedListener) listenerClass.getDeclaredConstructor().newInstance();
                 } catch (IllegalAccessException e) {
-                    throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' did not have a public no-arg constructor to call.", listenerClassName), e);
+                    throw new InvalidSiteConfigurationPropertyChangedListenerException("Listener '%s' did not have a public no-arg constructor to call.".formatted(listenerClassName), e);
                 } catch (InstantiationException e) {
-                    throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' is not an instantiable type.", listenerClassName), e);
+                    throw new InvalidSiteConfigurationPropertyChangedListenerException("Listener '%s' is not an instantiable type.".formatted(listenerClassName), e);
                 } catch (Exception e) {
-                    throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' failed in the constructor.", listenerClassName), e);
+                    throw new InvalidSiteConfigurationPropertyChangedListenerException("Listener '%s' failed in the constructor.".formatted(listenerClassName), e);
                 }
 
                 try {
                     listener.siteConfigurationPropertyChanged(property, value);
                 } catch (Exception e) {
-                    throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Something went wrong while invoking listener '%s'.", listener.getClass().getName()), e);
+                    throw new InvalidSiteConfigurationPropertyChangedListenerException("Something went wrong while invoking listener '%s'.".formatted(listener.getClass().getName()), e);
                 }
             } catch (ClassNotFoundException e) {
-                throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' was not found.", listenerClassName), e);
+                throw new InvalidSiteConfigurationPropertyChangedListenerException("Listener '%s' was not found.".formatted(listenerClassName), e);
             } catch (ExceptionInInitializerError e) {
-                throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' failed in a static initializer.", listenerClassName), e);
+                throw new InvalidSiteConfigurationPropertyChangedListenerException("Listener '%s' failed in a static initializer.".formatted(listenerClassName), e);
             } catch (ClassCastException e) {
                 assert listenerClass != null;
-                throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' was not of type '%s'.", listenerClass.getName(), SiteConfigurationPropertyChangedListener.class.getName()), e);
+                throw new InvalidSiteConfigurationPropertyChangedListenerException("Listener '%s' was not of type '%s'.".formatted(listenerClass.getName(), SiteConfigurationPropertyChangedListener.class.getName()), e);
             }
         }
     }
@@ -554,7 +554,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
             final File potentialSiteConfigFile = new File(configFilesLocationPath, SITE_CONFIGURATION_PROPERTIES_FILENAME);
             if (potentialSiteConfigFile.exists()) {
                 if (siteConfigFiles.size() > 1) {
-                    throw new DuplicateConfigurationDetectedException(siteConfigFiles.get(0), potentialSiteConfigFile);
+                    throw new DuplicateConfigurationDetectedException(siteConfigFiles.getFirst(), potentialSiteConfigFile);
                 } else {
                     siteConfigFiles.add(potentialSiteConfigFile);
                 }
@@ -576,12 +576,12 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
                 if (resources.size() > 1) {
                     log.warn("I somehow managed to find more than one site configuration file, {} to be exact: {}", resources.size(), resources.stream().map(Object::toString).collect(Collectors.joining(", ")));
                 }
-                return resources.get(0).getInputStream();
+                return resources.getFirst().getInputStream();
             } catch (IOException e) {
                 throw new SiteConfigurationFileNotFoundException(SITE_CONFIGURATION_PROPERTIES_FILENAME, Collections.singletonList(SITE_CONFIGURATION_PROPERTIES_PACKAGE));
             }
         } else {
-            final File siteConfigFile = siteConfigFiles.get(0);
+            final File siteConfigFile = siteConfigFiles.getFirst();
             try {
                 return new FileInputStream(siteConfigFile);
             } catch (FileNotFoundException e) {

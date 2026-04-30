@@ -17,7 +17,7 @@ import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.CommonTreeNodeStream;
-import org.dcm4che2.io.DicomOutputStream;
+import org.dcm4che3.io.DicomOutputStream;
 import org.nrg.dcm.edit.fn.*;
 import org.nrg.dcm.edit.gen.UIDGenerator;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -122,7 +122,7 @@ public final class ScriptApplicator {
 
     public int getTopTag() {
         final SortedSet<Long> tags = getScriptTags();
-        return tags.last().intValue();
+        return tags.getLast().intValue();
     }
 
     public SortedSet<Long> getScriptTags() {
@@ -257,8 +257,8 @@ public final class ScriptApplicator {
             final File file = new File(args[i]);
             final File applied = mapper.apply(file);
             if (applied != null) {
-                try (final DicomOutputStream out = new DicomOutputStream(new FileOutputStream(applied))) {
-                    out.writeDicomFile(applicator.apply(file).getDcm4che2Object());
+                try (final DicomOutputStream out = new DicomOutputStream(applied)) {
+                    applicator.apply(file).write(out);
                 }
             }
         }

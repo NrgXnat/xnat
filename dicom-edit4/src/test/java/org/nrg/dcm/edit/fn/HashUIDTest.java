@@ -12,9 +12,9 @@ package org.nrg.dcm.edit.fn;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.data.UID;
-import org.dcm4che2.util.UIDUtils;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.util.UIDUtils;
 import org.junit.Test;
 import org.nrg.dicom.mizer.values.SingleTagValue;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -45,7 +45,7 @@ public class HashUIDTest {
         final Value  value    = new ConstantValue("foo");
         final Value  uidValue = new HashUID().apply(singletonList(value));
         final String uid      = uidValue.on(Collections.<Integer, String>emptyMap());
-        assertTrue(UIDUtils.isValidUID(uid));
+        assertTrue(UIDUtils.isValid(uid));
         assertTrue(uid.startsWith("2.25."));
     }
 
@@ -84,7 +84,7 @@ public class HashUIDTest {
         final Value  value    = new ConstantValue("");
         final Value  uidValue = new HashUID().apply(singletonList(value));
         final String uid      = uidValue.on(Collections.<Integer, String>emptyMap());
-        assertTrue(UIDUtils.isValidUID(uid));
+        assertTrue(UIDUtils.isValid(uid));
         assertTrue(uid.startsWith("2.25."));
     }
 
@@ -100,9 +100,9 @@ public class HashUIDTest {
         final String       uid1        = uidValue1.on(dicomObject);
         final String       uid2        = uidValue2.on(dicomObject);
         final String       uid3        = uidValue3.on(dicomObject);
-        assertTrue(UIDUtils.isValidUID(uid1));
-        assertTrue(UIDUtils.isValidUID(uid2));
-        assertTrue(UIDUtils.isValidUID(uid3));
+        assertTrue(UIDUtils.isValid(uid1));
+        assertTrue(UIDUtils.isValid(uid2));
+        assertTrue(UIDUtils.isValid(uid3));
         assertFalse(uid1.equals(uid2));
         assertFalse(uid2.equals(uid3));
         assertFalse(uid3.equals(uid1));

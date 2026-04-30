@@ -11,6 +11,7 @@ package org.nrg.xdat.om.base;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.Serial;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,6 +37,9 @@ import javax.annotation.Nullable;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatResource extends AutoXnatResource {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatResource(ItemI item)
 	{

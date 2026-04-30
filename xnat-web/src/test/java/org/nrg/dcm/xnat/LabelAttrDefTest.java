@@ -17,14 +17,11 @@ import org.nrg.attr.ExtAttrException;
 import org.nrg.attr.ExtAttrValue;
 import org.nrg.dcm.DicomAttributeIndex;
 
-import static org.nrg.dcm.Attributes.*;
+import static org.nrg.dcm.NamedAttributes.StudyDescription;
 
 import junit.framework.TestCase;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
+
 public class LabelAttrDefTest extends TestCase {
     private String getValText(final XnatAttrDef def, Map<DicomAttributeIndex,String> m) throws ExtAttrException {
         final Iterable<ExtAttrValue> vs = AbstractExtAttrDef.foldl(def, Collections.singletonList(m));

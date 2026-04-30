@@ -73,10 +73,10 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
         while (iter.hasNext())
         {
             SQLClause c = (SQLClause)iter.next();
-            if (c instanceof org.nrg.xft.search.CriteriaCollection)
+            if (c instanceof org.nrg.xft.search.CriteriaCollection collection)
             {
                 XdatCriteriaSet set = new XdatCriteriaSet();
-                set.populateCriteria((org.nrg.xft.search.CriteriaCollection)c);
+                set.populateCriteria(collection);
 
                 if (set.size()> 0)
                 {
@@ -95,8 +95,7 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
         if (this == anObject) {
             return true;
         }
-        if (anObject instanceof XdatCriteriaSet) {
-            XdatCriteriaSet other = (XdatCriteriaSet) anObject;
+        if (anObject instanceof XdatCriteriaSet other) {
             if(StringUtils.equals(this.getMethod(),other.getMethod())){
                 if(compareCriteriaSets(this.getChildSet(),other.getChildSet()) && compareCriteria(this.getCriteria(),other.getCriteria())){
                     return true;

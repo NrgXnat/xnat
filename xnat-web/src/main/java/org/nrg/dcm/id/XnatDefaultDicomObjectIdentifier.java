@@ -11,7 +11,7 @@ package org.nrg.dcm.id;
 
 import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.nrg.dcm.ContainedAssignmentExtractor;
 import org.nrg.dcm.Extractor;
 import org.nrg.dcm.TextExtractor;

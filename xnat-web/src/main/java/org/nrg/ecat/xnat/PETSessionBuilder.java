@@ -98,10 +98,10 @@ public final class PETSessionBuilder extends SessionBuilder {
 
     private static void report(final Object context, final Object subject, final Throwable e, final MicroLog log) {
         try {
-            if (e instanceof ConversionFailureException) {
-                report(context, subject, (ConversionFailureException) e, log);
-            } else if (e instanceof NoUniqueValueException) {
-                report(context, subject, (NoUniqueValueException) e, log);
+            if (e instanceof ConversionFailureException exception) {
+                report(context, subject, exception, log);
+            } else if (e instanceof NoUniqueValueException exception) {
+                report(context, subject, exception, log);
             } else {
                 final StringBuilder sb = startReport(context, subject);
                 sb.append(" could not be resolved :").append(e);
@@ -174,7 +174,7 @@ public final class PETSessionBuilder extends SessionBuilder {
             return null;
         }
 
-        final Date       studyDate = files.get(0).getScanStartTime();
+        final Date       studyDate = files.getFirst().getScanStartTime();
         final List<Date> scanDates = Lists.newArrayListWithExpectedSize(files.size());
 
         final Map<Variable.AcquisitionType, Date> doseStartTimes = new HashMap<>();
@@ -197,8 +197,7 @@ public final class PETSessionBuilder extends SessionBuilder {
             final List<ExtAttrValue>                   sessionValues = getValues(sessionAttrs, failures);
             for (final Map.Entry<ExtAttrDef<Variable>, Throwable> me : failures.entrySet()) {
                 final Throwable cause = me.getValue();
-                if (cause instanceof NoUniqueValueException) {
-                    final NoUniqueValueException nuve = (NoUniqueValueException) cause;
+                if (cause instanceof NoUniqueValueException nuve) {
                     if ("ID".equals(nuve.getAttribute())) {
                         throw new NoUniqueSessionException(nuve.getValues());
                     }

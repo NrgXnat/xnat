@@ -32,9 +32,13 @@ import java.util.Collections;
 @ComponentScan({"org.nrg.automation.services.impl.hibernate", "org.nrg.automation.repositories", "org.nrg.automation.daos"})
 @Import({SerializerConfig.class, OrmTestConfiguration.class})
 public class AutomationTestsConfiguration {
+    static {
+        System.setProperty("automation.enabled", "true");
+    }
+
     @Bean
-    public ScriptRunnerService scriptRunnerService(final ScriptService scriptService, final ScriptTriggerService triggerService) {
-        DefaultScriptRunnerService service = new DefaultScriptRunnerService(scriptService, triggerService);
+    public ScriptRunnerService scriptRunnerService(final AutomationService automationService, final ScriptService scriptService, final ScriptTriggerService triggerService) {
+        DefaultScriptRunnerService service = new DefaultScriptRunnerService(automationService, scriptService, triggerService);
         service.setRunnerPackages(Collections.singletonList("org.nrg.automation.runners"));
         return service;
     }

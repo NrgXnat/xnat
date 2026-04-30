@@ -64,7 +64,7 @@ public enum Scope {
         if (scope == Site) {
             return Site.code();
         }
-        return String.format("%s:%s", scope.code(), entityId);
+        return "%s:%s".formatted(scope.code(), entityId);
     }
 
     @SuppressWarnings("unused")

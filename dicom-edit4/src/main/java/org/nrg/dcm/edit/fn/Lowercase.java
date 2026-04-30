@@ -27,6 +27,6 @@ public final class Lowercase implements ScriptFunction {
         if (args == null || args.size() == 0) {
             throw new ScriptEvaluationException(name + " requires one argument");
         }
-        return new LowercaseValue(args.get(0));
+        return new LowercaseValue(args.getFirst());
     }
 }

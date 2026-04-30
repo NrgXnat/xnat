@@ -36,7 +36,7 @@ public class ConditionalAttrDefMatchesPatternRuleTest extends TestCase {
 	 */
 	public void testGetTag() {
 		final Rule rule = new MatchesPatternRule(I42, "(my-(?:\\d{4})).*", 1);
-		assertEquals(I42, rule.getTags().get(0));
+		assertEquals(I42, rule.getTags().getFirst());
 	}
 
 	/**

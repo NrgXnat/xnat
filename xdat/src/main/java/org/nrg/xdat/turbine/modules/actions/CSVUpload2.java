@@ -90,8 +90,8 @@ public class CSVUpload2 extends SecureAction {
             fi.write(temp);
 
             List<List<String>> rows = FileUtils.csvFileToArrayListUsingApacheCommons(temp);
-            if (rows.size() > 0 && rows.get(0).get(0).equals("ID")) {
-                rows.remove(0);
+            if (rows.size() > 0 && rows.getFirst().getFirst().equals("ID")) {
+                rows.removeFirst();
             }
             //This is required as CSV is parsed further downstream and strings need to conform to CSV encoding
             rows = XftStringUtils.toCsvEncodedListUsingApacheCommons(rows);
@@ -466,7 +466,7 @@ public class CSVUpload2 extends SecureAction {
                                 if (gwf!=null){
                                     ValidationResults vr = XFTValidator.ValidateValue(nValue, gwf.getRules(), "xs", gwf, xmlPath, gwf.getParentElement().getGenericXFTElement());
                                     if (!vr.isValid()){
-                                        sb.append("<A TITLE='" + vr.getResults().get(0)[1] +"'><FONT COLOR='red'><b>"+ escapeHTML(nValue) + "<</b></FONT></A>");
+                                        sb.append("<A TITLE='" + vr.getResults().getFirst()[1] +"'><FONT COLOR='red'><b>"+ escapeHTML(nValue) + "<</b></FONT></A>");
                                         rowSummary.add(sb.toString());
                                         continue;
                                     }
@@ -514,7 +514,7 @@ public class CSVUpload2 extends SecureAction {
                         if (gwf!=null){
                             ValidationResults vr = XFTValidator.ValidateValue(nValue, gwf.getRules(), "xs", gwf, xmlPath, gwf.getParentElement().getGenericXFTElement());
                             if (!vr.isValid()){
-                                sb.append("<A TITLE='").append(vr.getResults().get(0)[1]).append("'><FONT COLOR='red'><b>").append(escapeHTML(nValue)).append("</b></FONT></A>");
+                                sb.append("<A TITLE='").append(vr.getResults().getFirst()[1]).append("'><FONT COLOR='red'><b>").append(escapeHTML(nValue)).append("</b></FONT></A>");
                                 rowSummary.add(sb.toString());
                                 continue;
                             }
@@ -591,10 +591,10 @@ public class CSVUpload2 extends SecureAction {
         if (null == o) {
             return null;
         }
-        if (o instanceof String) {
-            return escapeHTML((String)o);
-        }else if (o instanceof PGobject) {
-            return escapeHTML(((PGobject)o).getValue());
+        if (o instanceof String string) {
+            return escapeHTML(string);
+        }else if (o instanceof PGobject gobject) {
+            return escapeHTML(gobject.getValue());
         }
         return o;
     }
@@ -648,7 +648,7 @@ public class CSVUpload2 extends SecureAction {
     }
 
     private String getCustomFieldsPath(final String dataType) {
-        return String.format("%s%s%s",dataType, XFT.PATH_SEPARATOR, CUSTOM_FIElDS_NAME);
+        return "%s%s%s".formatted(dataType, XFT.PATH_SEPARATOR, CUSTOM_FIElDS_NAME);
     }
 
     private int getIndexOfCustomField(final List fields, final String dataType) {

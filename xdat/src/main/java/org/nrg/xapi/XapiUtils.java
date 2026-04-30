@@ -11,13 +11,13 @@ public class XapiUtils {
 
     @Nonnull
     public static String getWwwAuthenticateBasicHeaderValue(final @Nonnull String realm) {
-        return String.format(WWW_AUTHENTICATE_BASIC_HEADER, realm);
+        return WWW_AUTHENTICATE_BASIC_HEADER.formatted(realm);
     }
 
     @Nonnull
     public static HttpHeaders getWwwAuthenticateBasicHeaders(final @Nonnull String realm) {
         final HttpHeaders headers = new HttpHeaders();
-        headers.add(WWW_AUTHENTICATE, String.format(WWW_AUTHENTICATE_BASIC_HEADER, realm));
+        headers.add(WWW_AUTHENTICATE, WWW_AUTHENTICATE_BASIC_HEADER.formatted(realm));
         return headers;
     }
 }

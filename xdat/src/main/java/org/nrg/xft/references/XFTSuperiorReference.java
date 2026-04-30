@@ -137,7 +137,7 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 				}
 			}
 		}else{
-			GenericWrapperField foreignKey = (GenericWrapperField)superiorFields.get(0);
+			GenericWrapperField foreignKey = (GenericWrapperField)superiorFields.getFirst();
 			if (! subordinateField.getXMLSqlNameValue().equalsIgnoreCase(""))
 			{
 				XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),subordinateField.getXMLSqlNameValue(),superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
@@ -210,7 +210,7 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 				}
 			}else
 			{
-				GenericWrapperField foreignKey = (GenericWrapperField)superiorKeysAL.get(0);
+				GenericWrapperField foreignKey = (GenericWrapperField)superiorKeysAL.getFirst();
 				if (! subordinateField.getXMLSqlNameValue().equalsIgnoreCase(""))
 				{
 					XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),subordinateField.getXMLSqlNameValue(),superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
@@ -258,7 +258,7 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 				}
 			}else
 			{
-				GenericWrapperField foreignKey = (GenericWrapperField)superiorKeysAL.get(0);
+				GenericWrapperField foreignKey = (GenericWrapperField)superiorKeysAL.getFirst();
 				if (! superiorField.getXMLSqlNameValue().equalsIgnoreCase("") && (! superiorField.isCreatedChild()))
 				{
 					XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),superiorField.getXMLSqlNameValue(),superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);

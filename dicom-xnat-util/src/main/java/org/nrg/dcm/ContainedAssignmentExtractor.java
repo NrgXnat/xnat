@@ -26,12 +26,10 @@ implements Extractor {
     public ContainedAssignmentExtractor(final int tag,
             final String id, final String op, final String valuePattern,
             int patternFlags) {
-        super(tag, Pattern.compile(new StringBuilder(START)
-        .append(id)
-        .append(OPTWS).append(op).append(OPTWS)
-        .append(START_GROUP).append(valuePattern).append(END_GROUP)
-        .append(END)
-        .toString(), patternFlags), 1);
+        super(tag, Pattern.compile(START + id +
+                OPTWS + op + OPTWS +
+                START_GROUP + valuePattern + END_GROUP +
+                END, patternFlags), 1);
     }
 
     public ContainedAssignmentExtractor(final int tag, final String id, final String op, final int patternFlags) {

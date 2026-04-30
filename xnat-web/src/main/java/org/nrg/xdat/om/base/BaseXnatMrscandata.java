@@ -18,6 +18,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.scanType.AbstractScanTypeMapping;
 import org.nrg.xnat.helpers.scanType.ScanTypeMappingI;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -25,6 +26,9 @@ import java.util.Map;
 
 @SuppressWarnings({"rawtypes"})
 public class BaseXnatMrscandata extends AutoXnatMrscandata {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatMrscandata(ItemI item) {
 		super(item);
@@ -58,7 +62,7 @@ public class BaseXnatMrscandata extends AutoXnatMrscandata {
         
         public String match(String desc,String imgtype,Integer frames){
             if(types.size()==1){
-                return types.get(0).getType();
+                return types.getFirst().getType();
             }
             //match by imgtype
             if(imgtype!=null && !imgtype.equals("")){
@@ -100,7 +104,7 @@ public class BaseXnatMrscandata extends AutoXnatMrscandata {
                 }
             }
             
-            return types.get(0).getType();
+            return types.getFirst().getType();
         }
     }
     

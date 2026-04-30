@@ -36,7 +36,7 @@ public class DefaultPropertiesService implements PropertiesService, ApplicationC
      * Initializes the service after the context has been initialized.
      */
     @PostConstruct
-    public void initialize() {
+    private void initialize() {
         List<String> repositories;
         try {
             repositories = GenericUtils.convertToTypedList(_context.getBean("propertiesRepositories", List.class), String.class);
@@ -200,7 +200,7 @@ public class DefaultPropertiesService implements PropertiesService, ApplicationC
     }
 
     private static String generateModulePropertiesKey(String module, String properties) {
-        return String.format("%s.%s", module, properties);
+        return "%s.%s".formatted(module, properties);
     }
 
     private List<File>          _repositories;

@@ -9,8 +9,7 @@
 
 package org.nrg.dcm.mizer;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -29,7 +28,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -41,13 +44,12 @@ public class TestScriptAggregation {
     @Test
     public void testMultiscriptResolution() throws MizerException {
         final DicomObjectI dicom          = DicomObjectFactory.newInstance(DICOM_TEST);
-        final DicomObject  dcm4che2Object = dicom.getDcm4che2Object();
 
-        assertEquals("head^DHead", dcm4che2Object.getString(Tag.StudyDescription));
-        assertEquals("Sample Patient", dcm4che2Object.getString(Tag.PatientName));
-        assertEquals("Sample ID", dcm4che2Object.getString(Tag.PatientID));
-        assertEquals("SIEMENS", dcm4che2Object.getString(Tag.Manufacturer));
-        assertEquals("Hospital", dcm4che2Object.getString(Tag.InstitutionName));
+        assertEquals("head^DHead", dicom.getString(Tag.StudyDescription));
+        assertEquals("Sample Patient", dicom.getString(Tag.PatientName));
+        assertEquals("Sample ID", dicom.getString(Tag.PatientID));
+        assertEquals("SIEMENS", dicom.getString(Tag.Manufacturer));
+        assertEquals("Hospital", dicom.getString(Tag.InstitutionName));
 
         final Map<String, Object> elements = new HashMap<>();
         elements.put("project", "XNAT_01");

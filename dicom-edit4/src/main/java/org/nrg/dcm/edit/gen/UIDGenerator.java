@@ -8,7 +8,7 @@
  */
 package org.nrg.dcm.edit.gen;
 
-import org.dcm4che2.util.UIDUtils;
+import org.dcm4che3.util.UIDUtils;
 import org.nrg.dcm.edit.ValueGenerator;
 
 /**

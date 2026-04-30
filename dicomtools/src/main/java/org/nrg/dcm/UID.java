@@ -71,7 +71,7 @@ public final class UID implements Serializable, Comparable<UID> {
      * {@inheritDoc}
      */
     public boolean equals(final Object object) {
-        return object != null && object instanceof UID && _uid.equals(((UID) object)._uid);
+        return object != null && object instanceof UID uid && _uid.equals(uid._uid);
     }
 
     /**

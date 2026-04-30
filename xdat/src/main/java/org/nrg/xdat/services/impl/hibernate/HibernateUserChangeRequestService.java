@@ -46,7 +46,7 @@ public class HibernateUserChangeRequestService extends AbstractHibernateEntitySe
             return null;
         }
         else{
-            return requests.get(0);//Since there is a unique constraint on username and field, there will be at most one
+            return requests.getFirst();//Since there is a unique constraint on username and field, there will be at most one
         }
     }
 
@@ -63,7 +63,7 @@ public class HibernateUserChangeRequestService extends AbstractHibernateEntitySe
             return null;
         }
         else{
-            return requests.get(0);//Since guid is globally unique, there will be at most one
+            return requests.getFirst();//Since guid is globally unique, there will be at most one
         }
     }
 

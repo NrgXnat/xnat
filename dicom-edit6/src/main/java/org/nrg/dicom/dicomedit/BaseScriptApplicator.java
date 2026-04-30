@@ -9,7 +9,6 @@
 
 package org.nrg.dicom.dicomedit;
 
-import org.dcm4che2.data.DicomObject;
 import org.nrg.dicom.mizer.exceptions.RejectedInstanceException;
 import org.nrg.dicom.mizer.objects.*;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -214,9 +213,8 @@ public class BaseScriptApplicator implements ScriptApplicatorI {
      * @throws MizerException When an error occurs creating a DICOM object from the submitted file.
      */
     @Override
-    public void apply(final File matchFile, final DicomObject dicomObject) throws MizerException {
-        DicomObjectI de_dobj = DicomObjectFactory.newInstance(matchFile, dicomObject);
-        apply(de_dobj);
+    public void apply(final File matchFile, final DicomObjectI dicomObject) throws MizerException {
+        apply(dicomObject);
     }
 
     /**

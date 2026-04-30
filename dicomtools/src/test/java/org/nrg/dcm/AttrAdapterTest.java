@@ -11,7 +11,7 @@ package org.nrg.dcm;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Before;
 import org.junit.Test;
 import org.nrg.attr.*;
@@ -45,7 +45,7 @@ public class AttrAdapterTest {
         fs.add(Collections.singleton(resource.toURI()));
     }
 
-        @Test
+    @Test
     public final void testAttrAdapter() {
         AttrAdapter aa = new AttrAdapter(fs);
         assertNotNull(aa);
@@ -58,7 +58,7 @@ public class AttrAdapterTest {
     }
 
     @Test
-    public final void testGetValuesGiven() throws ExtAttrException {
+    public final void testGetValuesGiven() {
         final Map<ExtAttrDef<DicomAttributeIndex>, Throwable> failures = Maps.newHashMap();
         final AttrAdapter adapter = new AttrAdapter(fs);
         adapter.add(new TestAttrDef.Abstract<String>("voxelRes",
@@ -90,7 +90,7 @@ public class AttrAdapterTest {
 
         assertNotNull(values);
         assertEquals(2, values.size());
-        final ExtAttrValue value = values.get(0);
+        final ExtAttrValue value = values.getFirst();
         assertEquals("voxelRes", value.getName());
         assertEquals("1, 1, 1", value.getText());
         assertEquals("empty", values.get(1).getName());
@@ -126,7 +126,7 @@ public class AttrAdapterTest {
 
         assertNotNull(values);
         assertEquals(2, values.size());
-        final ExtAttrValue value = values.get(0);
+        final ExtAttrValue value = values.getFirst();
         assertEquals("date-and-time", value.getName());
         assertEquals("20061214 at 091206.156000", value.getText());
         assertEquals("empty", values.get(1).getName());

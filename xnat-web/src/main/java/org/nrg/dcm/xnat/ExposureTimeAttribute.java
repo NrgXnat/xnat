@@ -12,7 +12,7 @@ package org.nrg.dcm.xnat;
 import java.util.Arrays;
 import java.util.Map;
 
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.nrg.attr.ConversionFailureException;
 import org.nrg.attr.ExtAttrException;
 import org.nrg.attr.ExtAttrValue;

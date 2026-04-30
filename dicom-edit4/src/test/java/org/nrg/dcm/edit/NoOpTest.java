@@ -9,8 +9,7 @@
 
 package org.nrg.dcm.edit;
 
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
@@ -31,7 +30,7 @@ public class NoOpTest {
     @Test
     public void testMakeAction() throws AttributeException, ScriptEvaluationException {
         final Operation noop = new NoOp();
-        final Action noa = noop.makeAction(DicomObjectFactory.newInstance(new BasicDicomObject()));
+        final Action noa = noop.makeAction(DicomObjectFactory.newInstance());
         noa.apply();    // TODO: make this a mock and verify zero interactions
     }
 

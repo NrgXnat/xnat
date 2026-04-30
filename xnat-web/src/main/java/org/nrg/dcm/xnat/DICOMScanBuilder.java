@@ -104,14 +104,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static org.nrg.dcm.Attributes.Modality;
-import static org.nrg.dcm.Attributes.SOPClassUID;
-import static org.nrg.dcm.Attributes.SeriesInstanceUID;
-import static org.nrg.dcm.Attributes.SeriesNumber;
+import static org.nrg.dcm.NamedAttributes.Modality;
+import static org.nrg.dcm.NamedAttributes.SOPClassUID;
+import static org.nrg.dcm.NamedAttributes.SeriesInstanceUID;
+import static org.nrg.dcm.NamedAttributes.SeriesNumber;
 import static org.nrg.dcm.xnat.CatalogBuilder.RESOURCE_LABEL_DICOM;
 
 /**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
+ * Builds an XNAT imageScanData object from a DICOM series
  */
 @Slf4j
 public class DICOMScanBuilder implements Callable<XnatImagescandataBean> {

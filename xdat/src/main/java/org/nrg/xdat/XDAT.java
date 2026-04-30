@@ -301,17 +301,17 @@ public class XDAT {
                     return null;
                 }
 
-                if (principal instanceof UserI) {
-					log.debug("Found authenticated user object for user {}", ((UserI) principal).getLogin());
-                    return (UserI) principal;
+                if (principal instanceof UserI userI) {
+					log.debug("Found authenticated user object for user {}", userI.getLogin());
+                    return userI;
                 }
 
-                if (principal instanceof String) {
-                    if (StringUtils.isBlank((String) principal)) {
+                if (principal instanceof String string) {
+                    if (StringUtils.isBlank(string)) {
 						log.debug("Found principal object of type String but it was empty.");
                         return null;
                     }
-                    final UserI user = Users.getUser((String) principal);
+                    final UserI user = Users.getUser(string);
 					log.debug("Found principal object of type String and successfully retrieved the user: {}", principal);
                     return user;
                 }
@@ -871,7 +871,7 @@ public class XDAT {
 
 		final List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
 		if (definitions != null && !definitions.isEmpty()) {
-			return definitions.get(0);
+			return definitions.getFirst();
 		}
 
 		final Definition definition = getNotificationService().getDefinitionService().newEntity();
@@ -952,7 +952,7 @@ public class XDAT {
 			getNotificationService().getDefinitionService().create(definition);
 			created = true;
 		} else {
-			definition = definitions.get(0);
+			definition = definitions.getFirst();
 		}
 
 		// If we created either the category or the definition, obviously there aren't any current subscribers, so we

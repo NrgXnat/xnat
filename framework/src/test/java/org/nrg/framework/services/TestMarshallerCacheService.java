@@ -9,6 +9,8 @@
 
 package org.nrg.framework.services;
 
+import org.assertj.core.api.Condition;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.nrg.framework.exceptions.NrgServiceException;
@@ -20,6 +22,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.List;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
@@ -57,21 +61,22 @@ public class TestMarshallerCacheService {
         thingy.setAddress("1313 Mockingbird Lane");
         thingy.setAge(42);
         thingy.setNotImportant("xxxxxxxx");
+
         final Document document = _service.marshalToDocument(thingy);
         assertThat(document).isNotNull();
 
         final NodeList elements1 = document.getElementsByTagName("address");
         assertThat(elements1).isNotNull()
-                             .hasFieldOrPropertyWithValue("length", 1);
+                             .satisfies(new Condition<>(list -> list.getLength() == 1, "The list should have exactly one element."));
 
         final Node address = elements1.item(0);
         assertThat(address).isNotNull()
-                           .hasFieldOrPropertyWithValue("nodeName", "address")
-                           .hasFieldOrPropertyWithValue("textContent", "1313 Mockingbird Lane");
+                           .satisfies(new Condition<>(node -> node.getNodeName().equals("address"), "The node should be named 'address'."))
+                           .satisfies(new Condition<>(node -> node.getTextContent().equals("1313 Mockingbird Lane"), "The node value should be '1313 Mockingbird Lane'."));
 
         final NodeList elements2 = document.getElementsByTagName("notImportant");
         assertThat(elements2).isNotNull()
-                             .hasFieldOrPropertyWithValue("length", 0);
+                             .satisfies(new Condition<>(list -> list.getLength() == 0, "The list should be empty."));
     }
 
     @Test

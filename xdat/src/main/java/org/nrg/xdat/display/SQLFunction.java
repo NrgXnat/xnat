@@ -15,7 +15,7 @@ import java.util.Comparator;
 /**
  * @author Tim
  */
-public class SQLFunction {
+public class SQLFunction implements SQLObjectI{
     private String _name = "";
     private String _content = "";
     private int _sortOrder = 0;

@@ -74,10 +74,10 @@ public class DisplayFieldWrapperCollection extends XFTCollection {
 
     public void addDisplayFields(Collection coll) {
         for (final Object o : coll) {
-            if (o instanceof DisplayFieldWrapper) {
-                addDisplayField((DisplayFieldWrapper) o);
-            } else if (o instanceof DisplayField) {
-                addDisplayField((DisplayField) o);
+            if (o instanceof DisplayFieldWrapper wrapper) {
+                addDisplayField(wrapper);
+            } else if (o instanceof DisplayField field) {
+                addDisplayField(field);
             }
         }
     }

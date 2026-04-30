@@ -73,7 +73,7 @@ public class AuditableEntityTests {
                           .isNotEmpty()
                           .hasSize(1);
 
-        final AuditableEntity retrieved = items1.get(0);
+        final AuditableEntity retrieved = items1.getFirst();
         assertThat(retrieved).isNotNull()
                              .hasFieldOrPropertyWithValue("field1", FIELD_1)
                              .hasFieldOrPropertyWithValue("field2", FIELD_2)

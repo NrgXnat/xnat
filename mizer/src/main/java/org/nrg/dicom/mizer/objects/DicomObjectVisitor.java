@@ -13,8 +13,8 @@ import org.nrg.dicom.mizer.tags.*;
 
 import java.util.Iterator;
 
-import static org.dcm4che2.util.TagUtils.isPrivateCreatorDataElement;
-import static org.dcm4che2.util.TagUtils.isPrivateDataElement;
+import static org.dcm4che3.util.TagUtils.isPrivateCreator;
+import static org.dcm4che3.util.TagUtils.isPrivateTag;
 
 /**
  * Created by drm on 7/29/16.
@@ -37,9 +37,9 @@ public abstract class DicomObjectVisitor {
         int t = dicomElement.tag();
 
         Tag tag;
-        if (isPrivateDataElement(t)) {
+        if (isPrivateTag(t) || isPrivateCreator(t)) {
             String pvtCreatorID;
-            if (isPrivateCreatorDataElement(t)) {
+            if (isPrivateCreator(t)) {
                 pvtCreatorID = parentDicomObject.getString(t);
                 tag = new TagPrivateCreator(t, pvtCreatorID);
             } else {

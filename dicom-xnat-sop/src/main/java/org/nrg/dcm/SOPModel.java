@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.UID;
+import org.dcm4che3.data.UID;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -48,10 +48,14 @@ public final class SOPModel {
             try {
                 return UID.forName(name);
             } catch (IllegalArgumentException e) {
-                if (StringUtils.startsWith(e.getMessage(), UNKNOWN_UID_NAME)) {
-                    return name;
+                try {
+                    return UID3Addition.forName(name);
+                } catch (IllegalArgumentException ex) {
+                    if (StringUtils.startsWith(e.getMessage(), UNKNOWN_UID_NAME)) {
+                        return name;
+                    }
+                    throw e;
                 }
-                throw e;
             }
         }
     };

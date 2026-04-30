@@ -9,7 +9,7 @@
 
 package org.nrg.dicom.dicomedit.functions;
 
-import org.dcm4che2.util.UIDUtils;
+import org.dcm4che3.util.UIDUtils;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.values.UIDValue;
 import org.nrg.dicom.mizer.values.Value;

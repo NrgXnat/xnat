@@ -87,21 +87,67 @@ public class XDATServlet extends HttpServlet {
 
         super.init(config);
 
-        try {
-            //stores some paths for convenient access later.
-            XDATServlet.WEBAPP_ROOT = getWebAppPath();
+        //stores some paths for convenient access later.
+        XDATServlet.WEBAPP_ROOT = getWebAppPath();
 
+        load();
+        initd = true;
+    }
+
+    private static boolean initd=false;
+    public static final String XDAT_INITIALIZATION_DELAY = "XDAT access attempt failed due to XDAT initialization delay";
+    public static final String WAITING_FOR_XDAT_INITIALIZATION = "XDAT access attempt waiting for XDAT initialization";
+    public static final String PROCEEDING_AFTER_XDAT_INITIALIZATION = "XDAT access attempt proceeding after XDAT initialization";
+    private static final int waitIterations = 120;
+    private static final int waitPeriod = 10000;
+
+    public static void waitForInit() {
+        if(initd) {
+            return;
+        }
+
+        int i = 0;
+
+        while(i < waitIterations){
+            if(initd){
+                System.out.println(PROCEEDING_AFTER_XDAT_INITIALIZATION);
+                break;
+            }
+
+            //wait 10s
+            try {
+                //this intentionally goes to System.out as that is what is monitored during server startup
+                System.out.println("("+i+") " +WAITING_FOR_XDAT_INITIALIZATION);
+                if(i==20){
+                    log.error(WAITING_FOR_XDAT_INITIALIZATION, new Exception());
+                }
+                Thread.sleep(waitPeriod);
+            } catch (InterruptedException e) {
+                break;
+                //ignore
+            }
+            i++;
+        }
+
+        if(i == waitIterations){
+            RuntimeException exception = new RuntimeException(XDAT_INITIALIZATION_DELAY);
+            throw exception;
+        }
+    }
+
+    public static void load(){
+        try {
             // Migration: Fix this to use NIO Paths.
-            XDAT.init(getWebAppPath("WEB-INF", "conf"), true);
+            XDAT.init(Paths.get(WEBAPP_ROOT,"WEB-INF", "conf").toString(), true);
 
             //store some  more convenience paths
-            XDAT.setScreenTemplatesFolder(getWebAppPath("templates", "screens"));
+            XDAT.setScreenTemplatesFolder(Paths.get(WEBAPP_ROOT,"templates", "screens").toString());
             for (final String path : CustomClasspathResourceLoader.TEMPLATE_PATHS) {
-                XDAT.addScreenTemplatesFolder(path, new File(getWebAppPath(path, "screens")));
+                XDAT.addScreenTemplatesFolder(path, new File(Paths.get(WEBAPP_ROOT,path, "screens").toString()));
             }
 
             //call the logic to check if the database is up to date.
-            if (updateDatabase(getWebAppPath("resources", "default-sql"))) {
+            if (updateDatabase(Paths.get(WEBAPP_ROOT,"resources", "default-sql").toString())) {
                 //reset loaded stuff, because database changed
                 ElementSecurity.refresh();
             }
@@ -111,7 +157,7 @@ public class XDATServlet extends HttpServlet {
     }
 
     private String getWebAppPath(final String... paths) {
-        return Paths.get(getServletContext().getRealPath(""), paths).toString();
+        return Path.of(getServletContext().getRealPath(""), paths).toString();
     }
 
     /**
@@ -124,13 +170,13 @@ public class XDATServlet extends HttpServlet {
      *
      * @throws Exception When an error occurs.
      */
-    private boolean updateDatabase(final String conf) throws Exception {
+    private static boolean updateDatabase(final String conf) throws Exception {
         final DatabaseHelper db        = new DatabaseHelper(XDAT.getDataSource());
         final Integer        userCount = !db.tablesExist("xdat_user") ? null : db.getJdbcTemplate().queryForObject("SELECT COUNT(*) FROM xdat_user", Integer.class);
 
         //this should use the config service.. but I couldn't get it to work because of servlet init issues.
         final Properties prop = new Properties();
-        final File       file = Paths.get(conf, "properties", "database.properties").toFile();
+        final File       file = Path.of(conf, "properties", "database.properties").toFile();
         if (file.exists()) {
             try (final InputStream input = Files.newInputStream(file.toPath())) {
                 prop.load(input);
@@ -168,7 +214,7 @@ public class XDATServlet extends HttpServlet {
                             }
                             final NamedParameterJdbcTemplate        template          = db.getParameterizedTemplate();
                             final Map<String, Pair<String, String>> oidsFunctions     = template.queryForList(QUERY_DROP_OID_FUNCTIONS, EmptySqlParameterSource.INSTANCE, String.class).stream().map(OID_FUNCTIONS_PATTERN::matcher).filter(Matcher::matches).collect(Collectors.toMap(matcher -> matcher.group("function"), matcher -> Pair.of(matcher.group("param1"), matcher.group("param2"))));
-                            final List<String>                      dropOidsFunctions = oidsFunctions.entrySet().stream().map(entry -> String.format("DROP FUNCTION IF EXISTS %s(%s, %s));", entry.getKey(), entry.getValue().getLeft(), entry.getValue().getRight())).collect(Collectors.toList());
+                            final List<String>                      dropOidsFunctions = oidsFunctions.entrySet().stream().map(entry -> "DROP FUNCTION IF EXISTS %s(%s, %s));".formatted(entry.getKey(), entry.getValue().getLeft(), entry.getValue().getRight())).collect(Collectors.toList());
                             if (log.isDebugEnabled()) {
                                 log.debug("Running the following {} commands to drop deprecated OID functions:\n\n{}", dropOidsFunctions.size(), String.join("\n", dropOidsFunctions));
                             }
@@ -284,7 +330,7 @@ public class XDATServlet extends HttpServlet {
      * necessary. The statements to create the tables are passed in via the addStatements method.
      */
     @SuppressWarnings("UnstableApiUsage")
-    public class DatabaseUpdater extends Thread {
+    public static class DatabaseUpdater extends Thread {
         /**
          * Creates a new instance of the updater class.
          *
@@ -455,7 +501,7 @@ public class XDATServlet extends HttpServlet {
         private final String[]     _generatedSqlLogHeaders;
     }
 
-    private List<String> getInitScripts(final Pattern filter, final Comparator<Resource> comparator) {
+    private static List<String> getInitScripts(final Pattern filter, final Comparator<Resource> comparator) {
         // Get the init prefs ordered properties from context and create a substitutor.
         final OrderedProperties properties  = XDAT.getContextService().getBeanSafely("initPrefs", OrderedProperties.class);
         final StringSubstitutor substitutor = new StringSubstitutor(new OrderedPropertiesLookup(properties), "${", "}", '\\');
@@ -500,7 +546,7 @@ public class XDATServlet extends HttpServlet {
      *
      * @return The list of resources after sorting and filtering.
      */
-    private List<Resource> filterAndSortInitSqlResources(final List<Resource> resources, final Pattern filter, final Comparator<Resource> comparator) {
+    private static List<Resource> filterAndSortInitSqlResources(final List<Resource> resources, final Pattern filter, final Comparator<Resource> comparator) {
         final List<Resource> filtered = new ArrayList<>();
         for (final Resource resource : resources) {
             try {
@@ -538,7 +584,7 @@ public class XDATServlet extends HttpServlet {
      *
      * @return The path to the log file for generated SQL if specified, null otherwise.
      */
-    private static Path getGeneratedSqlLogPath() {
+    public static Path getGeneratedSqlLogPath() {
         //noinspection unchecked
         final List<Path> configFiles = (List<Path>) XDAT.getContextService().getBean("configFiles");
         final Properties properties  = new Properties();
@@ -567,7 +613,7 @@ public class XDATServlet extends HttpServlet {
 
         final Path sqlLogFilePath;
         if (StringUtils.isNotBlank(sqlLogFile)) {
-            final Path path = Paths.get(sqlLogFile);
+            final Path path = Path.of(sqlLogFile);
             if (path.isAbsolute()) {
                 sqlLogFilePath = path;
             } else {
@@ -583,7 +629,7 @@ public class XDATServlet extends HttpServlet {
 
     private static Path getSqlLogFolder(final String configuredSqlLogFolder) {
         if (StringUtils.isNotBlank(configuredSqlLogFolder)) {
-            return Paths.get(configuredSqlLogFolder);
+            return Path.of(configuredSqlLogFolder);
         }
         return ((Path) XDAT.getContextService().getBean("xnatHome")).resolve("sql");
     }

@@ -1,5 +1,5 @@
 /*
- * dicom-xnat-util: org.nrg.xnat.DicomObjectIdentifier
+ * dicom-xnat-util: org.nrg.xnat.Attributesdentifier
  * XNAT http://www.xnat.org
  * Copyright (c) 2017, Washington University School of Medicine
  * All Rights Reserved
@@ -8,9 +8,9 @@
  */
 package org.nrg.xnat;
 
-import java.util.SortedSet;
+import org.dcm4che3.data.Attributes;
 
-import org.dcm4che2.data.DicomObject;
+import java.util.SortedSet;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -22,11 +22,11 @@ public interface DicomObjectIdentifier<ProjectT> {
      * @param o DicomObject
      * @return project object
      */
-    ProjectT getProject(DicomObject o);
+    ProjectT getProject(Attributes o);
     
-    String getSessionLabel(DicomObject o);
+    String getSessionLabel(Attributes o);
     
-    String getSubjectLabel(DicomObject o);
+    String getSubjectLabel(Attributes o);
 
     /**
      * What DICOM attributes does this identifier use?
@@ -41,7 +41,7 @@ public interface DicomObjectIdentifier<ProjectT> {
      * @return false if object requests no autoarchiving
      * @return null if object does not specify autoarchiving
      */
-    Boolean requestsAutoarchive(DicomObject o);
+    Boolean requestsAutoarchive(Attributes o);
 
     /**
      * Does this object support processing per-receiver routing expressions?

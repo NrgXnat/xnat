@@ -129,8 +129,8 @@ public class LoggingThreadPoolExecutor extends ThreadPoolExecutor {
         final String runnableClassName = runnable.getClass().getName();
         if (throwable == null) {
             try {
-                if (runnable instanceof Future<?>) {
-                    final Object result = ((Future<?>) runnable).get();
+                if (runnable instanceof Future<?> future) {
+                    final Object result = future.get();
                     if (result == null) {
                         log.debug("I seemed to get a normal result from a runnable object of type {}, but that result was null.", runnableClassName);
                     } else {
@@ -166,7 +166,7 @@ public class LoggingThreadPoolExecutor extends ThreadPoolExecutor {
             return false;
         }
         Optional<ExceptionHandler> optional = _handlers.stream().filter(handler -> handler.handles(throwable)).findFirst();
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
             return false;
         }
         optional.get().handle(throwable, log);

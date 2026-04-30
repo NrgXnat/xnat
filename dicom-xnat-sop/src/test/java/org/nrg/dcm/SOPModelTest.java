@@ -8,16 +8,18 @@
  */
 package org.nrg.dcm;
 
-import static org.junit.Assert.*;
+import com.google.common.collect.ImmutableSet;
+import org.dcm4che3.data.UID;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
-import org.dcm4che2.data.UID;
-import org.junit.Test;
-
-import com.google.common.collect.ImmutableSet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -59,7 +61,7 @@ public class SOPModelTest {
 		assertEquals("segScanData", SOPModel.getScanType(UID.SegmentationStorage));
 		assertEquals("srScanData", SOPModel.getScanType(UID.BasicTextSRStorage));
 		assertEquals("srScanData", SOPModel.getScanType(UID.EnhancedSRStorage));
-		assertEquals("otherDicomScanData", SOPModel.getScanType(UID.SiemensCSANonImageStorage));
+		assertEquals("otherDicomScanData", SOPModel.getScanType(UID3Addition.SiemensCSANonImageStorage));
 
 		assertEquals(null, SOPModel.getScanType("NoSuchSOPClass"));
 		

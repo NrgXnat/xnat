@@ -9,6 +9,7 @@
 
 package org.nrg.framework.net;
 
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -28,7 +29,7 @@ public class JSESSIONIDCookieTest {
     @SuppressWarnings("deprecation")
     @Test
     public void testSetInRequestHeader() throws Exception {
-        final URLConnection conn = new URL("https://nrg.wustl.edu").openConnection();
+        final URLConnection conn = URI.create("https://nrg.wustl.edu").toURL().openConnection();
         assertThat(conn.getRequestProperty("Cookie")).isNull();
         final JSESSIONIDCookie cookie = new JSESSIONIDCookie("abcdef");
         cookie.setInRequestHeader(conn);
@@ -42,7 +43,7 @@ public class JSESSIONIDCookieTest {
      */
     @Test
     public void testNullSetInRequestHeader() throws Exception {
-        final URLConnection conn = new URL("https://nrg.wustl.edu").openConnection();
+        final URLConnection conn = URI.create("https://nrg.wustl.edu").toURL().openConnection();
         assertThat(conn.getRequestProperty("Cookie")).isNull();
         final JSESSIONIDCookie cookie = new JSESSIONIDCookie(null);
         cookie.setInRequestHeader(conn);
@@ -54,7 +55,7 @@ public class JSESSIONIDCookieTest {
      */
     @Test
     public void testEmptySetInRequestHeader() throws Exception {
-        final URLConnection conn = new URL("https://nrg.wustl.edu").openConnection();
+        final URLConnection conn = URI.create("https://nrg.wustl.edu").toURL().openConnection();
         assertThat(conn.getRequestProperty("Cookie")).isNull();
         final JSESSIONIDCookie cookie = new JSESSIONIDCookie("");
         cookie.setInRequestHeader(conn);

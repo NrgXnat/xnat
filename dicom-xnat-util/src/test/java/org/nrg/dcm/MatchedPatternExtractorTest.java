@@ -8,15 +8,15 @@
  */
 package org.nrg.dcm;
 
-import static org.junit.Assert.*;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
+import org.junit.Test;
 
 import java.util.regex.Pattern;
 
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.data.VR;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -25,17 +25,17 @@ import org.junit.Test;
 public class MatchedPatternExtractorTest {
 
     /**
-     * Test method for {@link org.nrg.dcm.MatchedPatternExtractor#extract(org.dcm4che2.data.DicomObject)}.
+     * Test method for {@link org.nrg.dcm.MatchedPatternExtractor#extract(Attributes)}.
      */
     @Test
     public void testExtract() {
         final Extractor extractor = new MatchedPatternExtractor(Tag.PatientComments,
                 Pattern.compile("\\s*(\\w+)\\s*"), 1);
-        final DicomObject o = new BasicDicomObject();
-        assertNull(extractor.extract(o));
-        o.putString(Tag.PatientComments, VR.LO, "a b");
-        assertNull(extractor.extract(o));
-        o.putString(Tag.PatientComments, VR.LO, " ab");
-        assertEquals("ab", extractor.extract(o));
+        final Attributes a = new Attributes();
+        assertNull(extractor.extract(a));
+        a.setString(Tag.PatientComments, VR.LO, "a b");
+        assertNull(extractor.extract(a));
+        a.setString(Tag.PatientComments, VR.LO, " ab");
+        assertEquals("ab", extractor.extract(a));
     }
 }

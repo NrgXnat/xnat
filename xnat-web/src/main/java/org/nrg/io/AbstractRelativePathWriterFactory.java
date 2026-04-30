@@ -27,7 +27,7 @@ public abstract class AbstractRelativePathWriterFactory implements
    */
   public final RelativePathWriter getWriter(final File relativeDir, final Object...nameargs)
   throws IOException {
-    final String name = String.format(format, nameargs);
+    final String name = format.formatted(nameargs);
     final File item;
     if (null == relativeDir) {  // TODO: or working directory?
       item = new File(name);

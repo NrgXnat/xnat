@@ -18,13 +18,13 @@ public enum DisplayedUserIdentifierType {
     NAME_FIRST_SPACE_LAST {
         @Override
         public String format(UserI user) {
-            return String.format("%s %s", user.getFirstname(), user.getLastname());
+            return "%s %s".formatted(user.getFirstname(), user.getLastname());
         }
     },
     NAME_LAST_COMMA_FIRST {
         @Override
         public String format(UserI user) {
-            return String.format("%s, %s", user.getLastname(), user.getFirstname());
+            return "%s, %s".formatted(user.getLastname(), user.getFirstname());
         }
     };
 

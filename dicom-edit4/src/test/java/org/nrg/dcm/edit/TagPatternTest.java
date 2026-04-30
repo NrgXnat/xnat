@@ -9,19 +9,20 @@
 
 package org.nrg.dcm.edit;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.dcm4che2.data.DicomObject;
-import org.junit.Test;
-
 import com.google.common.collect.Lists;
-
+import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationException;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.test.workers.resources.ResourceManager;
 
-import static org.junit.Assert.*;
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -70,7 +71,7 @@ public class TagPatternTest {
 
     @Test
     public void testApplyDicomObject() throws ScriptEvaluationException, IOException {
-        final DicomObject o   = DicomUtils.read(_sample);
+        final DicomObjectI o   = new DicomObjectFactory.MizerDicomObject(DicomUtils.read(_sample));
         final TagPattern  tp1 = new TagPattern("0010,0020");    // extant tag
         assertEquals(Lists.newArrayList(0x00100020L), tp1.apply(o));
 

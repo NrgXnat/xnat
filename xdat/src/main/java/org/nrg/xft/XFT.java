@@ -22,10 +22,14 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
+import org.springframework.core.io.ByteArrayResource;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -185,12 +189,40 @@ public class XFT {
                     sb.append(s.getTargetNamespaceURI()).append(" ");
                     try {
                         final String path = s.getDataModel().getResource().getFile().getPath();
+                        logger.debug("Schema location for " + s.getTargetNamespaceURI() + " resolved to file path: " + path);
                         sb.append(path);
                     } catch (FileNotFoundException e) {
-                        sb.append(s.getDataModel().getResource().getURI().toString());
+                        try {
+                            final String uri = s.getDataModel().getResource().getURI().toString();
+                            logger.debug("Schema location for " + s.getTargetNamespaceURI() + " resolved to URI: " + uri);
+                            sb.append(uri);
+                        } catch (Exception ex) {
+                            // ByteArrayResource or other in-memory resources don't support getFile() or getURI()
+                            // Write the schema to a file in the schemas directory so that relative
+                            // import paths (e.g., ../xdat/xdat.xsd) resolve correctly.
+                            try {
+                                final String filePath = writeSchemaToFile(s);
+                                logger.info("Schema location for " + s.getTargetNamespaceURI()
+                                        + " (resource type: " + s.getDataModel().getResource().getClass().getSimpleName()
+                                        + ") written to file: " + filePath);
+                                sb.append(filePath);
+                            } catch (Exception fileEx) {
+                                logger.warn("Could not write schema file for " +
+                                            s.getTargetNamespaceURI() + ": " + fileEx.getMessage()
+                                            + "; using bare filename: " + s.getDataModel().getFileName());
+                                sb.append(s.getDataModel().getFileName());
+                            }
+                        }
                     }
                 }else{
-				    sb.append(s.getTargetNamespaceURI()).append(" ").append(XDAT.getSiteConfigPreferences().getSiteUrl()).append("/schemas/").append(s.getDataModel().getFileName());
+                    final String schemaUrl;
+                    if (s.getDataModel().getResource() instanceof ByteArrayResource) {
+                        schemaUrl = buildSchemaUrl(s);
+                    } else {
+                        schemaUrl = XDAT.getSiteConfigPreferences().getSiteUrl() + "/schemas/" + s.getDataModel().getFileName();
+                    }
+                    logger.debug("Schema location for " + s.getTargetNamespaceURI() + " using URL: " + schemaUrl);
+				    sb.append(s.getTargetNamespaceURI()).append(" ").append(schemaUrl);
                 }
 			} catch (IOException e) {
 				logger.error("",e);
@@ -198,6 +230,42 @@ public class XFT {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Builds a URL for a DB-backed schema using the XAPI schemas endpoint.
+     * The schema name (e.g., "prefix:complexType") is used as the path segment,
+     * which SchemaApi resolves via DB-backed schema name lookup.
+     */
+    private static String buildSchemaUrl(XFTSchema s) {
+        return XDAT.getSiteConfigPreferences().getSiteUrl()
+                + "/xapi/schemas/"
+                + s.getDataModel().getFileName();
+    }
+
+    /**
+     * Writes a DB-backed (in-memory) schema to a file in the schemas directory
+     * structure so that relative import paths (e.g., ../xdat/xdat.xsd) resolve
+     * correctly against sibling classpath schemas.
+     *
+     * The file is written to {schemasDir}/{prefix}/{prefix}.xsd, mirroring the
+     * directory layout used by classpath schemas.
+     *
+     * @return The absolute path to the written file.
+     */
+    private static String writeSchemaToFile(XFTSchema s) throws Exception {
+        final String prefix = s.getTargetNamespacePrefix();
+        final String sourceDir = XFTManager.GetInstance().getSourceDir();
+        final Path schemasDir = Path.of(sourceDir, "schemas", prefix);
+        Files.createDirectories(schemasDir);
+
+        final Path schemaFile = schemasDir.resolve(prefix + ".xsd");
+        final ByteArrayResource resource = (ByteArrayResource) s.getDataModel().getResource();
+        final String content = new String(resource.getByteArray(), StandardCharsets.UTF_8);
+        Files.writeString(schemaFile, content, StandardCharsets.UTF_8);
+
+        logger.debug("Wrote DB-backed schema " + s.getTargetNamespaceURI() + " to " + schemaFile);
+        return schemaFile.toAbsolutePath().toString();
     }
 
     public static String GetConfDir(){

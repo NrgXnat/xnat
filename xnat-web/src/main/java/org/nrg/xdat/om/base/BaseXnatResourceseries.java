@@ -21,10 +21,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -34,6 +31,9 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatResourceseries extends AutoXnatResourceseries {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatResourceseries(ItemI item)
 	{

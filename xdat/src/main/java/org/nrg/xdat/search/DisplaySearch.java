@@ -326,7 +326,7 @@ public class DisplaySearch implements TableSearchI {
         if ((sortBy == null || sortBy.equalsIgnoreCase("")) && (customSortBy.equalsIgnoreCase(""))) {
             if(XDAT.getBoolSiteConfigurationProperty("defaultToSortedListings",Boolean.TRUE)) {
                 if (dv == null) {
-                    DisplayFieldWrapper dfw = ((DisplayFieldWrapper) this.getFields().getSortedFields().get(0));
+                    DisplayFieldWrapper dfw = ((DisplayFieldWrapper) this.getFields().getSortedFields().getFirst());
                     sortBy = dfw.getId();
                 } else {
                     sortBy = dv.getDefaultOrderBy();
@@ -540,7 +540,7 @@ public class DisplaySearch implements TableSearchI {
         }
 
         if (this.addKeyColumn()) {
-            String keyCol = qo.getFieldAlias(qo.getKeys().get(0), "SEARCH");
+            String keyCol = qo.getFieldAlias(qo.getKeys().getFirst(), "SEARCH");
             select.append(", ");
             select.append(keyCol).append(" AS KEY ");
         }
@@ -1701,8 +1701,10 @@ public class DisplaySearch implements TableSearchI {
                     Iterator iter = dv.getDisplayFieldRefIterator();
                     while (iter.hasNext()) {
                         DisplayFieldRef ref = (DisplayFieldRef) iter.next();
+                        String id = (ref.getId().indexOf("=")>0)?StringUtils.substringBefore(ref.getId(),"="):ref.getId();
+                        String value = (ref.getId().indexOf("=")>0)?StringUtils.substringAfter(ref.getId(),"="):null;
                         try {
-                            if (ref.getDisplayField() != null) {
+                            if (ref.getParentElement().getDisplayField(id) != null) {
                                 XdatSearchField xsf = new XdatSearchField();
                                 if (ref.getElementName() != null) {
                                     xsf.setElementName(ref.getElementName());
@@ -1711,13 +1713,16 @@ public class DisplaySearch implements TableSearchI {
                                 }
                                 xsf.setFieldId(ref.getId());
                                 if (ref.getHeader() == null || ref.getHeader().equals(""))
-                                    xsf.setHeader("  ");
+                                    xsf.setHeader(DisplayManager.GetElementDisplay(xsf.getElementName()).getDisplayField(id).getHeader());
                                 else
                                     xsf.setHeader(ref.getHeader());
-                                xsf.setType(ref.getDisplayField().getDataType());
+                                xsf.setType(ref.getParentElement().getDisplayField(id).getDataType());
                                 xsf.setSequence(sequence++);
-                                if (ref.getValue() != null && !ref.getValue().equals(""))
+                                if (ref.getValue() != null && !ref.getValue().equals("")) {
                                     xsf.setValue(ref.getValue().toString());
+                                }else if(value!=null){
+                                    xsf.setValue(value);
+                                }
                                 if (!ref.isVisible()) {
                                     xsf.setVisible(false);
                                 }
@@ -1744,9 +1749,9 @@ public class DisplaySearch implements TableSearchI {
                     set.setMethod("AND");
                     for (Object o : this.getCriteria()) {
                         SQLClause c = (SQLClause) o;
-                        if (c instanceof org.nrg.xft.search.CriteriaCollection) {
+                        if (c instanceof org.nrg.xft.search.CriteriaCollection collection) {
                             XdatCriteriaSet subset = new XdatCriteriaSet();
-                            subset.populateCriteria((CriteriaCollection) c);
+                            subset.populateCriteria(collection);
 
                             if (subset.size() > 0) {
                                 set.setChildSet(subset);
@@ -1775,8 +1780,8 @@ public class DisplaySearch implements TableSearchI {
                 xss.setSearchWhere(set);
             }
         } catch (Exception e) {
-            if (e instanceof InvalidSearchException) {
-                throw (InvalidSearchException) e;
+            if (e instanceof InvalidSearchException exception) {
+                throw exception;
             }
             logger.error("", e);
         }

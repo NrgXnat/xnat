@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.nrg.dcm.Attributes.StudyInstanceUID;
+import static org.nrg.dcm.NamedAttributes.StudyInstanceUID;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;

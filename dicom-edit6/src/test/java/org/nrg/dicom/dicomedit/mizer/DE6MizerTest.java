@@ -1,7 +1,6 @@
 package org.nrg.dicom.dicomedit.mizer;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -17,7 +16,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.File;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -27,8 +31,7 @@ import static org.junit.Assert.assertNotNull;
 public class DE6MizerTest {
     @Test
     public void testMultiscriptResolution() throws MizerException {
-        final DicomObjectI dicom          = DicomObjectFactory.newInstance(DICOM_TEST);
-        final DicomObject dcm4che2Object = dicom.getDcm4che2Object();
+        final DicomObjectI dcm4che2Object = DicomObjectFactory.newInstance(DICOM_TEST);
 
         assertEquals("head^DHead", dcm4che2Object.getString(Tag.StudyDescription));
         assertEquals("Sample Patient", dcm4che2Object.getString(Tag.PatientName));
@@ -45,9 +48,9 @@ public class DE6MizerTest {
         assertNotNull(variables);
         assertEquals(4, variables.size());
 
-        _service.anonymize(dicom, contexts);
+        _service.anonymize(dcm4che2Object, contexts);
 
-        assertNotNull(dicom);
+        assertNotNull(dcm4che2Object);
     }
 
     @Test

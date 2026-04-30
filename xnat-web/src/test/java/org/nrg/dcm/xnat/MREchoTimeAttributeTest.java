@@ -22,16 +22,14 @@ import org.nrg.attr.ExtAttrException;
 import org.nrg.attr.ExtAttrValue;
 import org.nrg.dcm.DicomAttributeIndex;
 
-import static org.nrg.dcm.Attributes.*;
+import static org.nrg.dcm.NamedAttributes.EchoNumbers;
+import static org.nrg.dcm.NamedAttributes.EchoTime;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
+
 public class MREchoTimeAttributeTest {
     private List<ExtAttrValue> getValues(final XnatAttrDef def, Map<DicomAttributeIndex,String>...ms) throws ExtAttrException {
         final Iterable<ExtAttrValue> vs = AbstractExtAttrDef.foldl(def, Arrays.asList(ms));
@@ -53,7 +51,7 @@ public class MREchoTimeAttributeTest {
     @Test
     public void testConvertTextMapOfDicomAttributeIndexString() throws Exception {
         final XnatAttrDef tedef = new MREchoTimeAttribute();
-        final String text = getValues(tedef, ImmutableMap.of(EchoTime, "1500.0", EchoNumbers, "1")).get(0).getText();
+        final String text = getValues(tedef, ImmutableMap.of(EchoTime, "1500.0", EchoNumbers, "1")).getFirst().getText();
         assertEquals("1500.0", text);
     }
 
@@ -66,7 +64,7 @@ public class MREchoTimeAttributeTest {
         final List<ExtAttrValue> vs = getValues(tedef,
                 ImmutableMap.of(EchoTime, "1200.0", EchoNumbers, "1"),
                 ImmutableMap.of(EchoTime, "1600.0", EchoNumbers, "2"));
-        final ExtAttrValue v0 = vs.get(0);
+        final ExtAttrValue v0 = vs.getFirst();
         assertEquals("parameters/addParam", v0.getName());
         assertEquals("1200.0", v0.getText());
         assertEquals(ImmutableMap.of("name", "MultiEcho_TE1"), v0.getAttrs());

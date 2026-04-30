@@ -59,7 +59,7 @@ public class Features {
      */
     public static void setFeatureServiceImplementation(final String featureServiceImplementation) {
         try {
-            singleton = Class.forName(featureServiceImplementation).asSubclass(FeatureServiceI.class).newInstance();
+            singleton = Class.forName(featureServiceImplementation).asSubclass(FeatureServiceI.class).getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             log.error("Failed to set Feature Service.", e);
         }
@@ -83,7 +83,7 @@ public class Features {
      */
     public static void setFeatureRepositoryServiceImplementation(final String featureRepositoryServiceImplementation) {
         try {
-            repository = Class.forName(featureRepositoryServiceImplementation).asSubclass(FeatureRepositoryServiceI.class).newInstance();
+            repository = Class.forName(featureRepositoryServiceImplementation).asSubclass(FeatureRepositoryServiceI.class).getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             log.error("Failed to set Feature Service.", e);
         }

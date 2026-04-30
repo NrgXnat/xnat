@@ -1,7 +1,6 @@
 package org.nrg.dicom.mizer.service.impl;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,9 +19,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestMizerConfig.class)
@@ -33,8 +39,7 @@ public class AlterPixelsTest {
         try {
             final File testFile = File.createTempFile("mizer.", ".dcm");
             Files.copy(DICOM_TEST.toPath(), testFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            final DicomObjectI dicom = DicomObjectFactory.newInstance(testFile);
-            final DicomObject dcm4che2Object = dicom.getDcm4che2Object();
+            final DicomObjectI dcm4che2Object = DicomObjectFactory.newInstance(testFile);
 
             assertEquals("head^DHead", dcm4che2Object.getString(Tag.StudyDescription));
             assertEquals("Sample Patient", dcm4che2Object.getString(Tag.PatientName));
@@ -53,8 +58,6 @@ public class AlterPixelsTest {
             assertEquals(4, variables.size());
 
             _service.anonymize(testFile, contexts);
-
-            assertNotNull(dicom);
 
             System.out.println("Currently have to open file in image viewer to confirm pixel edits. " + testFile.getAbsolutePath());
             // TODO: currently have to open the tempFile in an image viewer and confirm the pixel edits.

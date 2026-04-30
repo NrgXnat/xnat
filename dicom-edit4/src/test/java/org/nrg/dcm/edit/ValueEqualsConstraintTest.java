@@ -9,9 +9,8 @@
 
 package org.nrg.dcm.edit;
 
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.data.VR;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
@@ -32,11 +31,11 @@ public class ValueEqualsConstraintTest {
      */
     @Test
     public void testMatchesDicomObject() throws ScriptEvaluationException {
-        final DicomObjectI o1 = DicomObjectFactory.newInstance(new BasicDicomObject());
-        o1.getDcm4che2Object().putString(Tag.StudyDescription, VR.LO, "foo");
+        final DicomObjectI o1 = DicomObjectFactory.newInstance();
+        o1.putString(Tag.StudyDescription, "LO", "foo");
 
-        final DicomObjectI o2 = DicomObjectFactory.newInstance(new BasicDicomObject());
-        o2.getDcm4che2Object().putString(Tag.StudyDescription, VR.LO, "bar");
+        final DicomObjectI o2 = DicomObjectFactory.newInstance();
+        o2.putString(Tag.StudyDescription, VR.LO.toString(), "bar");
 
         final Value           studyDesc = new SingleTagValue(Tag.StudyDescription);
         final ConstraintMatch m1        = new ValueEqualsConstraint(studyDesc, new ConstantValue("foo"));

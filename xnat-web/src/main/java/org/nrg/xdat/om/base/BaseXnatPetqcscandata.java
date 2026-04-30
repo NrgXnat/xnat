@@ -12,10 +12,13 @@ import org.nrg.xdat.om.base.auto.AutoXnatPetqcscandata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Hashtable;
 
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseXnatPetqcscandata extends AutoXnatPetqcscandata {
+    @Serial
+    private static final long serialVersionUID = 1;
 	public BaseXnatPetqcscandata(ItemI item) {
 		super(item);
 	}

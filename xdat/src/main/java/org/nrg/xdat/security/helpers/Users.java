@@ -60,7 +60,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -233,10 +232,10 @@ public class Users {
         if (principal == null) {
             return true;
         }
-        if (principal instanceof UserI) {
-            return ((UserI) principal).isGuest();
+        if (principal instanceof UserI userI) {
+            return userI.isGuest();
         }
-        return isGuest(principal instanceof String ? (String) principal : principal.toString());
+        return isGuest(principal instanceof String s ? s : principal.toString());
     }
 
     /**
@@ -249,14 +248,14 @@ public class Users {
      * @return The user object for the submitted principal.
      */
     public static UserI getUserPrincipal(final Object principal) {
-        if (principal instanceof UserI) {
-            log.debug("Found principal for user: {}", ((UserI) principal).getUsername());
-            return (UserI) principal;
+        if (principal instanceof UserI userI) {
+            log.debug("Found principal for user: {}", userI.getUsername());
+            return userI;
         }
         try {
-            if (principal instanceof String) {
+            if (principal instanceof String string) {
                 log.debug("Found principal for user: {}", principal);
-                return getUser((String) principal);
+                return getUser(string);
             }
             log.debug("Didn't find principal for user: {}, returning guest", principal);
             return Users.getGuest();
@@ -379,10 +378,10 @@ public class Users {
                 return getUserDataCache().getUserDataCache(user).toFile();
 
             case 1:
-                return getUserDataCache().getUserDataCacheFile(user, Paths.get(dirs[0]));
+                return getUserDataCache().getUserDataCacheFile(user, Path.of(dirs[0]));
 
             default:
-                return getUserDataCache().getUserDataCacheFile(user, Paths.get(dirs[0], ArrayUtils.remove(dirs, 0)));
+                return getUserDataCache().getUserDataCacheFile(user, Path.of(dirs[0], ArrayUtils.remove(dirs, 0)));
         }
     }
 
@@ -581,8 +580,8 @@ public class Users {
      * @return Returns the username for a given user ID
      */
     public static String getUsername(final Object xdatUserId) {
-        return xdatUserId instanceof Integer
-               ? getUsername((Integer) xdatUserId)
+        return xdatUserId instanceof Integer i
+               ? getUsername(i)
                : null;
     }
 
@@ -861,10 +860,10 @@ public class Users {
         if (Roles.isSiteAdmin(user)) {
             grantedAuthorities.addAll(AUTHORITIES_ADMIN);
         }
-        if (user instanceof XDATUser && ((XDATUser) user).isDataAdmin()) {
+        if (user instanceof XDATUser tUser && tUser.isDataAdmin()) {
             grantedAuthorities.addAll(AUTHORITIES_DATA_ADMIN);
         }
-        if (user instanceof XDATUser && ((XDATUser) user).isDataAccess()) {
+        if (user instanceof XDATUser tUser && tUser.isDataAccess()) {
             grantedAuthorities.addAll(AUTHORITIES_DATA_ACCESS);
         }
         if (grantedAuthorities.isEmpty()) {

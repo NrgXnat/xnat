@@ -1,6 +1,8 @@
 package org.nrg.automation.services;
 
 public interface AutomationService {
+    String AUTOMATION_ENABLED_PROPERTY = "${automation.enabled:false}";
+
     void incrementEventId(String projectId, String srcEventClass, String eventText);
 
     void addValueToStoredFilters(final String externalId, final String srcEventClass, final String field, final String value);

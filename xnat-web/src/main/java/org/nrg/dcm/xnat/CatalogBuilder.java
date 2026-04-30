@@ -129,9 +129,9 @@ public class CatalogBuilder implements Callable<Map<File, AbstractMap.SimpleEntr
         File secondaryCatalogLocation = null;
         synchronized (MUTEX) {
             for (final URI uri : fileValues.keySet()) {
-                final File               file    = new File(uri);
-                final List<ExtAttrValue> values  = fileValues.get(uri);
-                final ExtAttrValue       sopAttr = values.remove(0);
+                final File file = new File(uri);
+                final List<ExtAttrValue> values = fileValues.get(uri);
+                final ExtAttrValue sopAttr = values.removeFirst();
                 assert ImageFileAttributes.SOPClassUID.equals(sopAttr.getName()) : "expected SOP Class UID, found " + sopAttr;
                 final String fileSOPClass = sopAttr.getText();
                 if (!separateSecondaryDicomOnArchive || SOPModel.isPrimaryImagingSOP(fileSOPClass)) {

@@ -16,6 +16,7 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.sql.SQLException;
 import java.util.Hashtable;
 
@@ -25,6 +26,9 @@ import java.util.Hashtable;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseXnatExperimentdataShare extends AutoXnatExperimentdataShare {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatExperimentdataShare(ItemI item)
 	{
@@ -61,7 +65,7 @@ public abstract class BaseXnatExperimentdataShare extends AutoXnatExperimentdata
 
                 if (table.size()>0)
                 {
-                    Object[] row = (Object[])table.rows().get(0);
+                    Object[] row = (Object[])table.rows().getFirst();
                     name = (String)row[0];
                     description = (String)row[1];
                     secondaryID = (String)row[2];

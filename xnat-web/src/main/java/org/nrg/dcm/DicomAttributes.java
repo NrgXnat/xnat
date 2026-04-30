@@ -8,7 +8,7 @@
  */
 package org.nrg.dcm;
 
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;

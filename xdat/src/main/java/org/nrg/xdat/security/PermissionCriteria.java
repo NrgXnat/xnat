@@ -294,7 +294,7 @@ public class PermissionCriteria implements PermissionCriteriaI {
     }
 
     public void setFieldValue(Object o) {
-        value = (o instanceof String) ? ((String) o).intern() : o;
+        value = (o instanceof String s) ? s.intern() : o;
     }
 
     public void setComparisonType(String o) {

@@ -1,6 +1,6 @@
 package org.nrg.dcm.xnat;
 
-import static org.nrg.dcm.Attributes.SOPClassUID;
+import static org.nrg.dcm.NamedAttributes.SOPClassUID;
 import static org.nrg.dcm.SOPModel.LEAD_SOP_EXTRACTOR;
 
 import lombok.extern.slf4j.Slf4j;

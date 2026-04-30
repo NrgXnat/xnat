@@ -32,8 +32,8 @@ public class TestMapUIDFunction {
     public void testSimpleTags() throws MizerException {
 
         String script =
-                "(0020,000D) := mapUID[ (0020,000D), \"6.666\"]\n" +
-                        "(0020,000E) := mapUID[ (0020,000E), \"6.666\"]";
+                "(0020,000D) := mapUID[ (0020,000D), \"1.666\"]\n" +
+                        "(0020,000E) := mapUID[ (0020,000E), \"1.666\"]";
 
         final DicomObjectI src_dobj1 = createTestObject();
 
@@ -59,7 +59,7 @@ public class TestMapUIDFunction {
 
         assertNotEquals( "1.2.3.4", newStudyInstanceUID);
         assertNotEquals( "1.2.3.4.1", newSeriesInstanceUID);
-        assertTrue( newStudyInstanceUID.startsWith("6.666."));
+        assertTrue( newStudyInstanceUID.startsWith("1.666."));
 
         final DicomObjectI result_dobj2 = sa.apply(src_dobj2).getDicomObject();
 
@@ -100,13 +100,13 @@ public class TestMapUIDFunction {
         try {
             final DicomObjectI src_dobj = DicomObjectFactory.newInstance();
 
-            String script = "(0004,1511) := mapUID[ (0004,1511), \"6.666\"]\n" ;
+            String script = "(0004,1511) := mapUID[ (0004,1511), \"1.666\"]\n" ;
 
             assertNull(  src_dobj.getString(0x00041511));
 
             final BaseScriptApplicator sa = BaseScriptApplicator.getInstance( bytes(script));
             final DicomObjectI result_dobj = sa.apply(src_dobj).getDicomObject();
-            assertTrue( result_dobj.getString( 0x00041511).startsWith("6.666."));
+            assertTrue( result_dobj.getString( 0x00041511).startsWith("1.666."));
         }
         catch( Exception e) {
             fail( "Unexpected Exception: " + e.getMessage());
@@ -122,13 +122,13 @@ public class TestMapUIDFunction {
             final DicomObjectI src_dobj = DicomObjectFactory.newInstance();
             src_dobj.putString( 0x00041511, "");
 
-            String script = "(0004,1511) := mapUID[ (0004,1511), \"6.666\"]\n" ;
+            String script = "(0004,1511) := mapUID[ (0004,1511), \"1.666\"]\n" ;
 
             assertEquals(  "", src_dobj.getString(0x00041511));
 
             final BaseScriptApplicator sa = BaseScriptApplicator.getInstance( bytes(script));
             final DicomObjectI result_dobj = sa.apply(src_dobj).getDicomObject();
-            assertTrue( result_dobj.getString( 0x00041511).startsWith("6.666."));
+            assertTrue( result_dobj.getString( 0x00041511).startsWith("1.666."));
         }
         catch( Exception e) {
             fail( "Unexpected Exception: " + e.getMessage());

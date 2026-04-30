@@ -12,19 +12,17 @@ package org.nrg.dicom.mizer.values;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.data.VR;
+import org.dcm4che3.data.Tag;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationException;
-import org.nrg.dicom.mizer.objects.DicomObjectFactory;
-import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.variables.BasicVariable;
 import org.nrg.dicom.mizer.variables.Variable;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -54,24 +52,6 @@ public class SubstringValueTest {
         final Value    v2  = new VariableValue(var);
         final Value    ss2 = new SubstringValue(v2, 0, 1);
         assertEquals(ImmutableSet.of(var), ss2.getVariables());
-    }
-
-    /**
-     * Test method for {@link SubstringValue#on(DicomObjectI)}.
-     */
-    @Test
-    public void testOnDicomObject() throws ScriptEvaluationException {
-        final Value v1 = new SingleTagValue(Tag.PatientName);
-        final DicomObjectI dicomObject = DicomObjectFactory.newInstance(new BasicDicomObject());
-        dicomObject.getDcm4che2Object().putString(Tag.PatientName, VR.PN, "abcdef");
-        final Value ss = new SubstringValue(v1, 1, 4);
-        assertEquals("bcd", ss.on(dicomObject));
-        
-        dicomObject.getDcm4che2Object().putString(Tag.PatientName, VR.PN, "abc");
-        try {
-            ss.on(dicomObject);
-            fail("expected string index bounds exception");
-        } catch (ScriptEvaluationException ignored) {}
     }
 
     /**

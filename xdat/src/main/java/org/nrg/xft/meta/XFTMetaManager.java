@@ -55,20 +55,29 @@ public class XFTMetaManager {
      */
     private XFTMetaManager() throws XFTInitException {
         //logger.info("Initializing XFT Meta Data Manager");
+        load(null);
+    }
+
+    public void load(String schemaPrefix){
         Iterator schemas = XFTManager.GetSchemas().iterator();
         while (schemas.hasNext()) {
-            XFTSchema s        = (XFTSchema) schemas.next();
-            Iterator  elements = s.getSortedElements().iterator();
-            while (elements.hasNext()) {
-                XFTElement     e    = (XFTElement) elements.next();
-                XFTMetaElement meta = new XFTMetaElement(e);
-                sqlHash.put(meta.getSqlName().toLowerCase(), meta);
-                javaHash.put(meta.getJavaName().toLowerCase(), meta);
-                fullNameHash.put(e.getType().getFullLocalType().toLowerCase(), meta);
-                if (meta.getCode() != null) {
-                    codeHash.put(meta.getCode().toLowerCase(), meta);
+            XFTSchema s = (XFTSchema) schemas.next();
+            if(schemaPrefix==null || StringUtils.equals(s.getTargetNamespacePrefix(),schemaPrefix)){
+                Iterator  elements = s.getSortedElements().iterator();
+                while (elements.hasNext()) {
+                    XFTElement     e    = (XFTElement) elements.next();
+                    XFTMetaElement meta = new XFTMetaElement(e);
+                    sqlHash.put(meta.getSqlName().toLowerCase(), meta);
+                    javaHash.put(meta.getJavaName().toLowerCase(), meta);
+                    fullNameHash.put(e.getType().getFullLocalType().toLowerCase(), meta);
+                    if (meta.getCode() != null) {
+                        codeHash.put(meta.getCode().toLowerCase(), meta);
+                    }
+                    final String fullLocalType = e.getType().getFullLocalType().toLowerCase();
+                    if (!elementNames.contains(fullLocalType)) {
+                        elementNames.add(fullLocalType);
+                    }
                 }
-                elementNames.add(e.getType().getFullLocalType().toLowerCase());
             }
         }
     }

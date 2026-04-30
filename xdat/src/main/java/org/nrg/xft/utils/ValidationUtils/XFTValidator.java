@@ -124,12 +124,12 @@ public class XFTValidator {
 					while (iter.hasNext())
 					{
 						ArrayList refMapping = (ArrayList)iter.next();
-						if (item.getProperty(refMapping.get(0).toString().toLowerCase()) != null)
+						if (item.getProperty(refMapping.getFirst().toString().toLowerCase()) != null)
 						{
-							Object value = item.getProperty(refMapping.get(0).toString().toLowerCase());
+							Object value = item.getProperty(refMapping.getFirst().toString().toLowerCase());
 							if (! (value instanceof XFTItem))
 							{
-								checked.add(refMapping.get(0).toString().toLowerCase());
+								checked.add(refMapping.getFirst().toString().toLowerCase());
                                 results.addResults(ValidateValue(value, Collections.singletonList(new String[]{REQUIRED, "false", ((GenericWrapperField) refMapping.get(1)).getXMLType().getFullLocalType()}), prefix, field, field.getXMLPathString(xmlPath), element));
 							}
 						}

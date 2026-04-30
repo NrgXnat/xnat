@@ -69,7 +69,7 @@ public class EmailSearchAction extends SearchAction {
                 while (iter.hasNext())
                 {
                     ArrayList al = (ArrayList)iter.next();
-                    sb.append("/super_").append(al.get(0)).append("/").append(al.get(1));
+                    sb.append("/super_").append(al.getFirst()).append("/").append(al.get(1));
                 }
                 
                 Hashtable hash =ds.getWebFormValues();
@@ -127,7 +127,7 @@ public class EmailSearchAction extends SearchAction {
                 while (iter.hasNext())
                 {
                     ArrayList al = (ArrayList)iter.next();
-                    sb.append("/super_").append(al.get(0)).append("/").append(al.get(1));
+                    sb.append("/super_").append(al.getFirst()).append("/").append(al.get(1));
                 }
 
                 Hashtable hash =ds.getWebFormValues();

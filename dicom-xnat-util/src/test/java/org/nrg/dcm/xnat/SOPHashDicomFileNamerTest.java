@@ -8,16 +8,14 @@
  */
 package org.nrg.dcm.xnat;
 
-import static org.junit.Assert.*;
-
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.data.VR;
+import com.google.common.collect.ImmutableMap;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.junit.Test;
 import org.nrg.xnat.Files;
 
-import com.google.common.collect.ImmutableMap;
+import static org.junit.Assert.*;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -57,26 +55,26 @@ public class SOPHashDicomFileNamerTest {
 
     @Test
     public void shouldWorkWithFullyPopulatedObject() {
-        final DicomObject o = new BasicDicomObject();
+        final Attributes a = new Attributes();
         for (final Integer tag : values.keySet()) {
-            o.putString(tag, vrs.get(tag), values.get(tag));
+            a.setString(tag, vrs.get(tag), values.get(tag));
         }
         assertEquals("StudyID.OT.Study_Description.1.42.20101101.130130." + hashString + ".dcm",
-                new SOPHashDicomFileNamer().makeFileName(o));
+                new SOPHashDicomFileNamer().makeFileName(a));
     }
 
     @Test
     public void shouldWorkWithMissingTags() {
         for (final Integer missingTag : values.keySet()) {
-            final DicomObject o = new BasicDicomObject();
+            final Attributes o = new Attributes();
             for (final Integer tag : values.keySet()) {
                 if (!tag.equals(missingTag)) {
-                    o.putString(tag, vrs.get(tag), values.get(tag));
+                    o.setString(tag, vrs.get(tag), values.get(tag));
                 }
             }
             final String name = new SOPHashDicomFileNamer().makeFileName(o);
             assertNotNull(name);
-            assertFalse("".equals(name));
+            assertNotEquals("", name);
             assertEquals(name, Files.toFileNameChars(name));
         }
     }

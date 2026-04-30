@@ -8,15 +8,15 @@
  */
 package org.nrg.dcm;
 
-import static org.junit.Assert.*;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
+import org.junit.Test;
 
 import java.util.regex.Pattern;
 
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.data.VR;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -30,14 +30,14 @@ public class ContainedAssignmentExtractorTest {
     @Test
     public void testContainedAssignmentExtractorIntStringStringStringInt() {
         final Extractor extractor = new ContainedAssignmentExtractor(Tag.PatientComments, "foo", "=", Pattern.CASE_INSENSITIVE);
-        final DicomObject o = new BasicDicomObject();
-        assertNull(extractor.extract(o));
-        o.putString(Tag.PatientComments, VR.LO, "baz");
-        assertNull(extractor.extract(o));
-        o.putString(Tag.PatientComments, VR.LO, "foo=baz");
-        assertEquals("baz", extractor.extract(o));
-        o.putString(Tag.PatientComments, VR.LO, "baz=foo;foo=bar;");
-        assertEquals("bar", extractor.extract(o));
+        final Attributes a = new Attributes();
+        assertNull(extractor.extract(a));
+        a.setString(Tag.PatientComments, VR.LO, "baz");
+        assertNull(extractor.extract(a));
+        a.setString(Tag.PatientComments, VR.LO, "foo=baz");
+        assertEquals("baz", extractor.extract(a));
+        a.setString(Tag.PatientComments, VR.LO, "baz=foo;foo=bar;");
+        assertEquals("bar", extractor.extract(a));
     }
 
 }

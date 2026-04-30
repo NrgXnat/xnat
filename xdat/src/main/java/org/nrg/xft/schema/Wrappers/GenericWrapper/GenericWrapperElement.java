@@ -257,7 +257,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 							ArrayList ref = (ArrayList) refs.next();
 							Object[] sub =
 								{
-									(String) ref.get(0),
+									(String) ref.getFirst(),
 									((GenericWrapperField) ref.get(1))
 										.getXMLType()
 										.getFullLocalType(),
@@ -313,7 +313,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					Iterator refs = field.getLocalRefNames().iterator();
 					while (refs.hasNext()) {
 						ArrayList ref = (ArrayList) refs.next();
-						hash.put(((String) ref.get(0)).toLowerCase(),"DATA");
+						hash.put(((String) ref.getFirst()).toLowerCase(),"DATA");
 					}
 					hash.put(field.getId(),"SINGLE");
 				}else
@@ -507,7 +507,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	{
 	    try {
             ArrayList al = getAllPrimaryKeys();
-            GenericWrapperField field = (GenericWrapperField)al.get(0);
+            GenericWrapperField field = (GenericWrapperField)al.getFirst();
             String [] layers = GenericWrapperElement.TranslateXMLPathToTables(field.getXMLPathString(getFullXMLName()));
             return layers[0];
         } catch (FieldNotFoundException e) {
@@ -1600,7 +1600,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 					}else{
 						XFTSuperiorReference sup = (XFTSuperiorReference)ref;
-						XFTRelationSpecification spec = (XFTRelationSpecification)sup.getKeyRelations().get(0);
+						XFTRelationSpecification spec = (XFTRelationSpecification)sup.getKeyRelations().getFirst();
 						return xmlPath + XFT.PATH_SEPARATOR + spec.getLocalCol();
 					}
 				}
@@ -1629,7 +1629,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 					}else{
 						XFTSuperiorReference sup = (XFTSuperiorReference)ref;
-						XFTRelationSpecification spec = (XFTRelationSpecification)sup.getKeyRelations().get(0);
+						XFTRelationSpecification spec = (XFTRelationSpecification)sup.getKeyRelations().getFirst();
 						return xmlPath + XFT.PATH_SEPARATOR + spec.getLocalCol();
 					}
 				}
@@ -2773,7 +2773,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	    if (this.getMetaDataField() !=null){
 	        try {
 				XFTSuperiorReference sup = (XFTSuperiorReference)this.getMetaDataField().getXFTReference();
-				XFTRelationSpecification spec =sup.getKeyRelations().get(0);
+				XFTRelationSpecification spec =sup.getKeyRelations().getFirst();
 				return spec.getLocalCol();
 			} catch (XFTInitException e) {
                 logger.error("",e);
@@ -3621,7 +3621,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
             while (extensions.hasNext())
             {
                 ArrayList al = (ArrayList)extensions.next();
-                if (((SchemaElementI)al.get(0)).getFullXMLName().equals(foreign.getFullXMLName()))
+                if (((SchemaElementI)al.getFirst()).getFullXMLName().equals(foreign.getFullXMLName()))
                 {
                     localConnection = (String)al.get(1);
                     foreignConnection = foreign.getXSIType();
@@ -3634,7 +3634,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	            while (extensions.hasNext())
 	            {
 	                ArrayList al = (ArrayList)extensions.next();
-	                if (((SchemaElementI)al.get(0)).getFullXMLName().equals(this.getFullXMLName()))
+	                if (((SchemaElementI)al.getFirst()).getFullXMLName().equals(this.getFullXMLName()))
 	                {
 	                    localConnection = this.getFullXMLName();
 	                    foreignConnection = (String)al.get(1);
@@ -3648,7 +3648,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                 while(localRefs.hasNext())
                 {
                     ArrayList link = (ArrayList)localRefs.next();
-                    if (((SchemaElementI)link.get(0)).getFullXMLName().equalsIgnoreCase(foreign.getFullXMLName()))
+                    if (((SchemaElementI)link.getFirst()).getFullXMLName().equalsIgnoreCase(foreign.getFullXMLName()))
                     {
                         String temp = (String)link.get(1);
 
@@ -3665,9 +3665,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                     while(foreignExtensions.hasNext())
                     {
                         ArrayList extensionLink = (ArrayList)foreignExtensions.next();
-                        SchemaElementI foreignExtension = (SchemaElementI)extensionLink.get(0);
+                        SchemaElementI foreignExtension = (SchemaElementI)extensionLink.getFirst();
 
-                        if (((SchemaElementI)link.get(0)).getFullXMLName().equalsIgnoreCase(foreignExtension.getFullXMLName()))
+                        if (((SchemaElementI)link.getFirst()).getFullXMLName().equalsIgnoreCase(foreignExtension.getFullXMLName()))
                         {
                             String temp = (String)link.get(1);
                             String extensionTemp = (String)extensionLink.get(1);
@@ -3696,7 +3696,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	            while(foreignRefs.hasNext())
 	            {
 	                ArrayList link = (ArrayList)foreignRefs.next();
-	                if (((SchemaElementI)link.get(0)).getFullXMLName().equalsIgnoreCase(this.getFullXMLName()))
+	                if (((SchemaElementI)link.getFirst()).getFullXMLName().equalsIgnoreCase(this.getFullXMLName()))
 	                {
 	                    String temp = (String)link.get(1);
 
@@ -3713,9 +3713,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	                while(localExtensions.hasNext())
 	                {
 	                    ArrayList extensionLink = (ArrayList)localExtensions.next();
-	                    SchemaElementI localExtension = (SchemaElementI)extensionLink.get(0);
+	                    SchemaElementI localExtension = (SchemaElementI)extensionLink.getFirst();
 
-	                    if (((SchemaElementI)link.get(0)).getFullXMLName().equalsIgnoreCase(localExtension.getFullXMLName()))
+	                    if (((SchemaElementI)link.getFirst()).getFullXMLName().equalsIgnoreCase(localExtension.getFullXMLName()))
 	                    {
 	                        String temp = (String)link.get(1);
 	                        String extensionTemp = (String)extensionLink.get(1);
@@ -3825,7 +3825,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	public List<String> getExtendedXSITypes(){
 		List<String> s=new ArrayList<String>();
 		for(ArrayList a: getExtendedElements()){
-			s.add(((GenericWrapperElement)a.get(0)).getXSIType());
+			s.add(((GenericWrapperElement)a.getFirst()).getXSIType());
 		}
 		return s;
 	}
@@ -3911,7 +3911,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 
 	public boolean equals(Object e) {
-		return e instanceof GenericWrapperElement && ((GenericWrapperElement) e).getFullXMLName().equals(this.getFullXMLName());
+		return e instanceof GenericWrapperElement gwe && gwe.getFullXMLName().equals(this.getFullXMLName());
 	}
 
 	public int hashCode(){
@@ -3989,7 +3989,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                                 while (iter2.hasNext())
                                 {
                                     ArrayList child = (ArrayList)iter2.next();
-                                    SchemaElementI e = (SchemaElementI)child.get(0);
+                                    SchemaElementI e = (SchemaElementI)child.getFirst();
                                     if (e.getFullXMLName().equals(this.getFullXMLName()))
                                     {
                                         _possibleExtenders.add(gwe);
@@ -4018,7 +4018,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
             while (iter2.hasNext())
             {
                 ArrayList child = (ArrayList)iter2.next();
-                SchemaElementI e = (SchemaElementI)child.get(0);
+                SchemaElementI e = (SchemaElementI)child.getFirst();
                 if (e.getFullXMLName().equals(foreign.getFullXMLName()))
                 {
                    return true;
@@ -4038,7 +4038,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
             while (iter2.hasNext())
             {
                 ArrayList child = (ArrayList)iter2.next();
-                SchemaElementI e = (SchemaElementI)child.get(0);
+                SchemaElementI e = (SchemaElementI)child.getFirst();
                 String path = (String)child.get(1);
                 if (e.getFullXMLName().equals(foreign.getFullXMLName()))
                 {

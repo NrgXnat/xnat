@@ -31,7 +31,6 @@ import java.util.Map;
  *      equal to the value of a single DICOM attribute
  * AttributesOnly defines an element that has only attributes (no text),
  *      each equal to the value of a single DICOM attribute
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  */
 public interface XnatAttrDef extends ExtAttrDef<DicomAttributeIndex> {
     public abstract static class Abstract<A> extends AbstractExtAttrDef<DicomAttributeIndex,String,A>
@@ -41,7 +40,10 @@ public interface XnatAttrDef extends ExtAttrDef<DicomAttributeIndex> {
         }
 
         public Abstract(final String name, final Integer...attrs) {
-            this(name, FixedDicomAttributeIndex.makeIndices(attrs));
+            this(name, Arrays.stream(attrs)
+                    .map(i -> new int[]{i})
+                    .map(FixedDicomAttributeIndex::new)
+                    .toArray(DicomAttributeIndex[]::new));
         }
     }
 
@@ -65,7 +67,7 @@ public interface XnatAttrDef extends ExtAttrDef<DicomAttributeIndex> {
         @Nullable
         @Override
         public XnatAttrDef.Constant apply(final XnatAttrDef attribute) {
-            return attribute instanceof XnatAttrDef.Constant ? (XnatAttrDef.Constant) attribute : null;
+            return attribute instanceof XnatAttrDef.Constant c ? c : null;
         }
     };
 
@@ -252,12 +254,12 @@ public interface XnatAttrDef extends ExtAttrDef<DicomAttributeIndex> {
             final String xsddate;
             switch (a.length()) {
                 case 8: // DICOM v. 3.0 and later
-                    xsddate = String.format(DATE_FORMAT, a.substring(0, 4), a.substring(4, 6), a.substring(6, 8));
+                    xsddate = DATE_FORMAT.formatted(a.substring(0, 4), a.substring(4, 6), a.substring(6, 8));
                     break;
 
                 case 10:  // old DICOM
                     if (a.charAt(4) == '.' && a.charAt(7) == '.') {
-                        xsddate = String.format(DATE_FORMAT, a.substring(0, 4), a.substring(5, 7), a.substring(8, 10));
+                        xsddate = DATE_FORMAT.formatted(a.substring(0, 4), a.substring(5, 7), a.substring(8, 10));
                         break;
                     }
                     // else fall through to throw exception
@@ -370,7 +372,7 @@ public interface XnatAttrDef extends ExtAttrDef<DicomAttributeIndex> {
                     throw new ConversionFailureException(index, a, getName(), "invalid");
                 }
             } else if (a.length() >= 6) {
-                xsdtime = String.format(format, a.substring(0,2), a.substring(2,4), a.substring(4,6));
+                xsdtime = format.formatted(a.substring(0, 2), a.substring(2, 4), a.substring(4, 6));
             } else {
                 throw new ConversionFailureException(index, a, getName(), "invalid");
 
@@ -390,7 +392,10 @@ public interface XnatAttrDef extends ExtAttrDef<DicomAttributeIndex> {
         }
 
         public AttributesOnly(String name, String[] attrs, Integer[] tags) {
-            this(name, attrs, FixedDicomAttributeIndex.makeIndices(tags));
+            this(name, attrs, Arrays.stream(tags)
+                    .map(i -> new int[]{i})
+                    .map(FixedDicomAttributeIndex::new)
+                    .toArray(DicomAttributeIndex[]::new));
         }
 
         public AttributesOnly(String name, String attr, Integer tag) {
@@ -410,7 +415,10 @@ public interface XnatAttrDef extends ExtAttrDef<DicomAttributeIndex> {
         }
 
         public ValueWithAttributes(String name, Integer valuev, final String[] attrs, final Integer[] nattrs) {
-            this(name, new FixedDicomAttributeIndex(valuev), attrs, FixedDicomAttributeIndex.makeIndices(nattrs));
+            this(name, new FixedDicomAttributeIndex(valuev), attrs, Arrays.stream(nattrs)
+                    .map(i -> new int[]{i})
+                    .map(FixedDicomAttributeIndex::new)
+                    .toArray(DicomAttributeIndex[]::new));
         }
 
         public ValueWithAttributes(String name, Integer valuev, String attr, Integer...tags) {

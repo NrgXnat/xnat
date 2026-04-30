@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -165,7 +166,7 @@ public abstract class CommandPromptTool {
             
             boolean URLExists = true;
             try {
-                url =new URL(getServiceURL());
+                url =URI.create(getServiceURL()).toURL();
                 url.getContent();
             } catch (Exception e1) {
                 URLExists = false;
@@ -287,8 +288,8 @@ public abstract class CommandPromptTool {
                     }else{
                         Object o = arguments.get(arg);
                         ArrayList al = null;
-                        if (o instanceof ArrayList){
-                           al = ((ArrayList)o);
+                        if (o instanceof ArrayList<?> list){
+                           al = list;
                         }else{
                             al = new ArrayList();
                             al.add(o);
@@ -310,8 +311,8 @@ public abstract class CommandPromptTool {
                     }else{
                         Object o = arguments.get(arg);
                         ArrayList al = null;
-                        if (o instanceof ArrayList){
-                           al = ((ArrayList)o);
+                        if (o instanceof ArrayList<?> list){
+                           al = list;
                         }else{
                             al = new ArrayList();
                             al.add(o);
@@ -492,9 +493,9 @@ public abstract class CommandPromptTool {
                 }
             }else{
                 Object o = arguments.get(id);
-                if (o instanceof ArrayList)
+                if (o instanceof ArrayList<?> list)
                 {
-        			variables.put(cpv.getName(),((ArrayList)o).get(0));
+        			variables.put(cpv.getName(),list.getFirst());
         			return true;
                 }else{
         			variables.put(cpv.getName(),o);

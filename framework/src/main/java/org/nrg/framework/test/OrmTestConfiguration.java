@@ -66,7 +66,7 @@ public class OrmTestConfiguration extends JCacheConfigurerSupport {
     @Value("${jdbc.driver.class:org.h2.Driver}")
     private String  _jdbcDriverClass;
     // Note: if MODE=PostgreSQL is in the URL, the dialect must be a PostgreSQL dialect or some operations will fail.
-    @Value("${jdbc.url:jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}")
+    @Value("${jdbc.url:jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=authorization,key,value}")
     private String  _jdbcUrl;
     @Value("${jdbc.username:sa}")
     private String  _jdbcUsername;

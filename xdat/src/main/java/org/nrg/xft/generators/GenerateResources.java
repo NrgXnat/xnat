@@ -21,7 +21,7 @@ import org.springframework.core.io.FileSystemResource;
 
 import javax.annotation.Nullable;
 import java.io.File;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -191,7 +191,7 @@ public class GenerateResources {
             for (final XFTDataModel model : XFTManager.GetDataModels().values()) {
                 //only build resources for schema that are on the file system
                 if (model.getResource() instanceof FileSystemResource) {
-                    final String modelDisplayPath = Paths.get(beanPropsDir, "schemas", model.getResource().getFile().getParentFile().getName()).toFile().getAbsolutePath();
+                    final String modelDisplayPath = Path.of(beanPropsDir, "schemas", model.getResource().getFile().getParentFile().getName()).toFile().getAbsolutePath();
                     final List<String> qualifiedElementNames = Lists.transform(model.getSchema().getSortedElementNames(), new PrefixTransform(model.getSchemaAbbr()));
                     for (final String qualifiedElementName : qualifiedElementNames) {
                         final GenericWrapperElement element = GenericWrapperElement.GetElement(qualifiedElementName);

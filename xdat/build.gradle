@@ -78,7 +78,8 @@ dependencies {
     testImplementation libs.servlet.javax.servlet.api
     testImplementation project(':test')
     testImplementation libs.junit.junit
-    testImplementation libs.mockito.all
+    testImplementation libs.mockito.core
+    testImplementation libs.jakarta.inject.api
     testImplementation libs.spring.test
     testImplementation libs.assertj.core
     testImplementation libs.h2database.h2

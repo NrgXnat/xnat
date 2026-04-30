@@ -380,10 +380,10 @@ public class MailMessage {
         }
         if (value instanceof List) {
             return (List<String>) value;
-        } else if (value instanceof String[]) {
-            return Arrays.asList((String[]) value);
-        } else if (value instanceof String) {
-            return Collections.singletonList((String) value);
+        } else if (value instanceof String[] strings) {
+            return Arrays.asList(strings);
+        } else if (value instanceof String string) {
+            return Collections.singletonList(string);
         }
         return Collections.singletonList(value.toString());
     }

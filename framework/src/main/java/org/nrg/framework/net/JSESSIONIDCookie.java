@@ -43,7 +43,7 @@ public final class JSESSIONIDCookie {
      */
     @Override
     public String toString() {
-        return StringUtils.isNotBlank(_jsessionid) ? String.format("JSESSIONID=%s", _jsessionid) : "";
+        return StringUtils.isNotBlank(_jsessionid) ? "JSESSIONID=%s".formatted(_jsessionid) : "";
     }
 
     private final String _jsessionid;

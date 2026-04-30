@@ -23,6 +23,8 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 
 import javax.annotation.Nonnull;
+
+import java.io.Serial;
 import java.util.*;
 
 /**
@@ -31,6 +33,9 @@ import java.util.*;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseXnatDatatypeprotocol extends AutoXnatDatatypeprotocol {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatDatatypeprotocol(ItemI item)
 	{

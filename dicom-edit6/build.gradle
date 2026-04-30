@@ -34,7 +34,6 @@ dependencies {
         exclude group: 'org.slf4j', module: 'slf4j-simple'
     }
 
-    api libs.dcm4che.core
     api libs.spring.core
     api libs.spring.context
     api libs.spring.beans

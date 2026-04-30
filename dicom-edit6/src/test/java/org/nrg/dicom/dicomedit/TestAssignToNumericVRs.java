@@ -47,17 +47,17 @@ public class TestAssignToNumericVRs {
     public void testAssignVRFloat() throws Exception {
         final DicomObjectI src_dobj = DicomObjectFactory.newInstance( de11);
         assertTrue(src_dobj.contains(0x00189182));
-        assertEquals("26.080205656777398", src_dobj.getString( 0x00189182));
+        assertEquals("26.0802056567773", src_dobj.getString( 0x00189182));
         final BaseScriptApplicator applicator    = BaseScriptApplicator.getInstance( bytes( S_ASSIGN_FLOAT));
         final DicomObjectI result_dobj = applicator.apply(src_dobj).getDicomObject();
-        assertEquals("30.0", result_dobj.getString( 0x00189182));
+        assertEquals("30", result_dobj.getString( 0x00189182));
     }
 
     @Test
     public void testAssignVRFloatFromNonFloatString() throws Exception {
         final DicomObjectI src_dobj = DicomObjectFactory.newInstance(de11);
         assertTrue(src_dobj.contains(0x00189182));
-        assertEquals("26.080205656777398", src_dobj.getString(0x00189182));
+        assertEquals("26.0802056567773", src_dobj.getString(0x00189182));
         final BaseScriptApplicator applicator = BaseScriptApplicator.getInstance( bytes(S_ASSIGN_FLOAT_FROM_NONFLOAT));
         final AnonymizationResult result = applicator.apply(src_dobj);
 

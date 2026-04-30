@@ -138,14 +138,14 @@ abstract class AbstractHeader implements Header {
 				final StringBuilder sb = new StringBuilder();
 				final int length = Array.getLength(val);
 				for (int i = 0; i < length; i++) {
-					sb.append(String.format(arrayFormat, i, Array.get(val, i)));
+					sb.append(arrayFormat.formatted(i,Array.get(val,i)));
 				}
-				out.println(String.format(attrFormat, v.name, v.offset,
-						types.get(c.getComponentType().getName()),
-						" count=\"" + length + "\"", sb.toString()));
+				out.println(attrFormat.formatted(v.name,v.offset,
+              types.get(c.getComponentType().getName()),
+              " count=\"" + length + "\"",sb.toString()));
 			} else {
-				out.println(String.format(attrFormat, v.name, v.offset,
-						types.get(c.getName()), "", val));
+				out.println(attrFormat.formatted(v.name,v.offset,
+              types.get(c.getName()),"",val));
 			}
 		}
 		endXML(out);

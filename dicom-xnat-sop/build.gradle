@@ -3,7 +3,8 @@ plugins {
 }
 
 dependencies {
-    api libs.dcm4che.core
+    api libs.dcm4che5.dcm4che.core
+    api libs.dcm4che5.dcm4che.dict
     api libs.google.guava
 
     implementation libs.commons.lang3

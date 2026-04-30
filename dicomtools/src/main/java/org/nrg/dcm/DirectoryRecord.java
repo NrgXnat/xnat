@@ -8,22 +8,20 @@
  */
 package org.nrg.dcm;
 
-import java.lang.ClassCastException;
-import java.lang.Comparable;
+import org.dcm4che3.data.Tag;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListResourceBundle;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.TreeSet;
-
-import org.dcm4che2.data.Tag;
 
 /**
  * Corresponds roughly to DICOMDIR Directory Record.
@@ -77,7 +75,7 @@ public class DirectoryRecord implements Comparable<DirectoryRecord> {
     }
 
     @Override
-    public boolean equals(final Object o) { return o instanceof Type && type.equals(((Type)o).type); }
+    public boolean equals(final Object o) { return o instanceof Type t && type.equals(t.type); }
 
     @Override
     public int hashCode() { return type.hashCode(); }

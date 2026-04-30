@@ -10,15 +10,16 @@
 package org.nrg.dicomtools.filters;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * The series import filter is used to determine the appropriate study modality of a specific {@link DicomObject
+ * The series import filter is used to determine the appropriate study modality of a specific {@link DicomObjectI
  * DICOM object}. The study modality is often the same as the DICOM object modality, but not always. This can be
  * used to filter out particular series of a DICOM study&mdash;for example, a project may not want combined PET-MR
  * studies, but only want the MR series to create an MR study and the PET series <i>plus</i> a single MR series that
@@ -69,34 +70,34 @@ public interface SeriesImportFilter {
     void setMode(SeriesImportFilterMode mode);
 
     /**
-     * Gets the currently configured modality match. This is used to determine which expression {@link DicomObject
+     * Gets the currently configured modality match. This is used to determine which expression {@link DicomObjectI
      * DICOM objects} should be evaluated against.
      *
-     * @return The modality against which you want to match subsequent calls to {@link #shouldIncludeDicomObject(DicomObject)}.
+     * @return The modality against which you want to match subsequent calls to {@link #shouldIncludeDicomObject(DicomObjectI)}.
      */
     String getModality();
 
     /**
-     * Sets the modality match. This is used to determine which expression {@link DicomObject DICOM objects} should be
+     * Sets the modality match. This is used to determine which expression {@link DicomObjectI DICOM objects} should be
      * evaluated against.
      *
-     * @param modality The modality against which you want to match subsequent calls to {@link #shouldIncludeDicomObject(DicomObject)}.
+     * @param modality The modality against which you want to match subsequent calls to {@link #shouldIncludeDicomObject(DicomObjectI)}.
      */
     void setModality(String modality);
 
     /**
-     * Evaluates the incoming {@link DicomObject DICOM object} and returns the first modality that matches the corresponding
+     * Evaluates the incoming {@link DicomObjectI DICOM object} and returns the first modality that matches the corresponding
      * expression.
      *
      * @param dicomObject The DICOM object to evaluate.
      *
      * @return The modality key corresponding to the matching expression.
      */
-    String findModality(DicomObject dicomObject);
+    String findModality(Attributes attributes);
 
     /**
      * Evaluates the incoming headers and returns the first modality that matches the corresponding expression. This is
-     * functionally equivalent to {@link #findModality(DicomObject)}, but with the headers of the {@link DicomObject DICOM
+     * functionally equivalent to {@link #findModality(DicomObjectI)}, but with the headers of the {@link DicomObjectI DICOM
      * object} decomposed to a map of strings.
      *
      * @param headers The headers to evaluate.
@@ -106,14 +107,14 @@ public interface SeriesImportFilter {
     String findModality(Map<String, String> headers);
 
     /**
-     * Evaluates the expression associated with the {@link #getModality() specified modality} to see if this {@link DicomObject
+     * Evaluates the expression associated with the {@link #getModality() specified modality} to see if this {@link DicomObjectI
      * DICOM object} should be included in a study of the given modality.
      *
      * @param dicomObject The DICOM object to be evaluated.
      *
      * @return <b>true</b> if the DICOM object matches the expression parameters, <b>false</b> otherwise.
      */
-    boolean shouldIncludeDicomObject(DicomObject dicomObject);
+    boolean shouldIncludeDicomObject(Attributes attributes);
 
     /**
      * Evaluates the expression associated with the target modality parameter to see if an object with the incoming headers
@@ -125,7 +126,7 @@ public interface SeriesImportFilter {
      *
      * @return <b>true</b> if the DICOM object matches the expression parameters, <b>false</b> otherwise.
      */
-    boolean shouldIncludeDicomObject(DicomObject dicomObject, String targetModality);
+    boolean shouldIncludeDicomObject(Attributes dicomObject, String targetModality);
 
     /**
      * Evaluates the expression associated with the {@link #getModality() specified modality} to see if an object with the

@@ -59,15 +59,15 @@ public class DICOMSessionBuilderTest extends Scan4TestCase {
 
             final List<XnatImagescandataBean> scans = session.getScans_scan();
             assertEquals(3, scans.size());
-            assertTrue(scans.get(0) instanceof XnatMrscandataBean);
-            final XnatMrscandataBean scan4 = (XnatMrscandataBean) scans.get(0);
+            assertTrue(scans.getFirst() instanceof XnatMrscandataBean);
+            final XnatMrscandataBean scan4 = (XnatMrscandataBean) scans.getFirst();
             assertEquals("4", scan4.getId());
             assertEquals("1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0", scan4.getUid());
             assertEquals("t1_mpr_1mm_p2_pos50", scan4.getSeriesDescription());
             assertEquals("MR", scan4.getModality());
 
-            assertTrue(scan4.getFile().get(0) instanceof XnatResourcecatalogBean);
-            final XnatResourcecatalogBean s4_catalog = (XnatResourcecatalogBean) scan4.getFile().get(0);
+            assertTrue(scan4.getFile().getFirst() instanceof XnatResourcecatalogBean);
+            final XnatResourcecatalogBean s4_catalog = (XnatResourcecatalogBean) scan4.getFile().getFirst();
             assertEquals("RAW", s4_catalog.getContent());
             assertEquals("DICOM", s4_catalog.getFormat());
             assertEquals("DICOM", s4_catalog.getLabel());

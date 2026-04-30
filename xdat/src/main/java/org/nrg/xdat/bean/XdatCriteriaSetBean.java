@@ -76,8 +76,8 @@ public class XdatCriteriaSetBean extends BaseElement implements java.io.Serializ
 	 * @param v Value to Set.
 	 */
 	public void addCriteria(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatCriteriaBean)
-			_Criteria.add((org.nrg.xdat.bean.XdatCriteriaBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatCriteriaBean bean)
+			_Criteria.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatCriteriaBean");
 	}
@@ -120,8 +120,8 @@ public class XdatCriteriaSetBean extends BaseElement implements java.io.Serializ
 	 * @param v Value to Set.
 	 */
 	public void addChildSet(Object v){
-		if (v instanceof org.nrg.xdat.bean.XdatCriteriaSetBean)
-			_ChildSet.add((org.nrg.xdat.bean.XdatCriteriaSetBean)v);
+		if (v instanceof org.nrg.xdat.bean.XdatCriteriaSetBean bean)
+			_ChildSet.add(bean);
 		else
 			throw new IllegalArgumentException("Must be a valid org.nrg.xdat.bean.XdatCriteriaSetBean");
 	}

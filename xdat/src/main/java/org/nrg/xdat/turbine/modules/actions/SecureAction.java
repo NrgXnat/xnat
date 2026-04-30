@@ -326,7 +326,7 @@ public abstract class SecureAction extends VelocitySecureAction {
         final String              headerText  = headerNames != null && headerNames.hasMoreElements() ? StreamUtils.asStream(headerNames).map(name -> " * " + name + ": " + formatHeaderValues(name, request)).collect(Collectors.joining("\n")) : NO_HEADERS_OR_COOKIES;
         final Cookie[]            cookies     = request.getCookies();
         final String              cookieText  = cookies != null && cookies.length > 0 ? Arrays.stream(cookies).map(cookie -> " * " + String.join(" ", cookie.getName(), cookie.getValue(), Integer.toString(cookie.getMaxAge()), cookie.getDomain())).collect(Collectors.joining("\n")) : NO_HEADERS_OR_COOKIES;
-        return String.format(CSRF_MESSAGE_FORMAT, request.getMethod(), request.getRequestURL(), AccessLogger.GetRequestIp(request), headerText, cookieText);
+        return CSRF_MESSAGE_FORMAT.formatted(request.getMethod(), request.getRequestURL(), AccessLogger.GetRequestIp(request), headerText, cookieText);
     }
 
     private static String formatHeaderValues(final String name, final HttpServletRequest request) {

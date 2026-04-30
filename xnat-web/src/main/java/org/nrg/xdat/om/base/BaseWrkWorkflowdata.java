@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 
@@ -53,6 +54,9 @@ import java.util.*;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseWrkWorkflowdata extends AutoWrkWorkflowdata implements PersistentWorkflowI{
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public static final String AWAITING_ACTION = "AWAITING ACTION";
 	public static final String FAILED = "FAILED";
@@ -215,7 +219,7 @@ public class BaseWrkWorkflowdata extends AutoWrkWorkflowdata implements Persiste
 		final ArrayList wrkFlows = GetWorkFlowsOrderByLaunchTimeDesc(id,data_type,external_id,null, user);
 		String rtn = "";
 		if (wrkFlows != null && wrkFlows.size() > 0) {
-			rtn = ((WrkWorkflowdata)wrkFlows.get(0)).getStatus();
+			rtn = ((WrkWorkflowdata)wrkFlows.getFirst()).getStatus();
 		}
 		return rtn;
 	}
@@ -233,7 +237,7 @@ public class BaseWrkWorkflowdata extends AutoWrkWorkflowdata implements Persiste
 		final ArrayList wrkFlows = GetWorkFlowsOrderByLaunchTimeDesc(id,data_type,external_id,pipelineName,user);
 		String rtn = "";
 		if (wrkFlows != null && wrkFlows.size() > 0) {
-			rtn = ((WrkWorkflowdata)wrkFlows.get(0)).getStatus();
+			rtn = ((WrkWorkflowdata)wrkFlows.getFirst()).getStatus();
 		}
 		return rtn;
 	}
@@ -251,7 +255,7 @@ public class BaseWrkWorkflowdata extends AutoWrkWorkflowdata implements Persiste
 		final ArrayList wrkFlows = GetWorkFlowsOrderByLaunchTimeDesc(id,data_type,external_id, pipelineName,user);
 		String rtn = "";
 		if (wrkFlows != null && wrkFlows.size() > 0) {
-			rtn = ((WrkWorkflowdata)wrkFlows.get(0)).getStatus();
+			rtn = ((WrkWorkflowdata)wrkFlows.getFirst()).getStatus();
 		}
 		return rtn;
 	}
@@ -286,7 +290,8 @@ public class BaseWrkWorkflowdata extends AutoWrkWorkflowdata implements Persiste
 	}
 	
 	public class WorkflowEvent implements EventMetaI, Serializable {
-		private static final long serialVersionUID = 42L;
+        @Serial
+        private static final long serialVersionUID = 42L;
 		final String message;
 		final Date d;
 		final UserI user;
@@ -451,19 +456,19 @@ public class BaseWrkWorkflowdata extends AutoWrkWorkflowdata implements Persiste
 		if(requiresEnhancedSecurity()){
 			final XFTTable t;
 			if(this.getWrkWorkflowdataId()!=null){
-				t=XFTTable.Execute(String.format("SELECT UPPER(wrk.status), login, externalid, id FROM wrk_workflowdata wrk LEFT JOIN wrk_workflowData_meta_data meta ON wrk.workflowData_info=meta.meta_data_id LEFT JOIN xdat_user u ON meta.insert_user_xdat_user_id=u.xdat_user_id WHERE wrk_workflowdata_id=%1s;",this.getWrkWorkflowdataId()), null, null);
+				t=XFTTable.Execute("SELECT UPPER(wrk.status), login, externalid, id FROM wrk_workflowdata wrk LEFT JOIN wrk_workflowData_meta_data meta ON wrk.workflowData_info=meta.meta_data_id LEFT JOIN xdat_user u ON meta.insert_user_xdat_user_id=u.xdat_user_id WHERE wrk_workflowdata_id=%1s;".formatted(this.getWrkWorkflowdataId()), null, null);
 			}else if(this.getId()!=null && this.getPipelineName()!=null && this.getLaunchTime()!=null){
-				t=XFTTable.Execute(String.format("SELECT UPPER(wrk.status), login, externalid, id FROM wrk_workflowdata wrk LEFT JOIN wrk_workflowData_meta_data meta ON wrk.workflowData_info=meta.meta_data_id LEFT JOIN xdat_user u ON meta.insert_user_xdat_user_id=u.xdat_user_id WHERE pipeline_name='%1s' AND id='%2s' AND launch_time='%3s';",this.getPipelineName(), this.getId(), (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")).format(this.getLaunchTimeDate())), null, null);
+				t=XFTTable.Execute("SELECT UPPER(wrk.status), login, externalid, id FROM wrk_workflowdata wrk LEFT JOIN wrk_workflowData_meta_data meta ON wrk.workflowData_info=meta.meta_data_id LEFT JOIN xdat_user u ON meta.insert_user_xdat_user_id=u.xdat_user_id WHERE pipeline_name='%1s' AND id='%2s' AND launch_time='%3s';".formatted(this.getPipelineName(), this.getId(), (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")).format(this.getLaunchTimeDate())), null, null);
 			}else{
 				throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,"Missing required fields");
 			}
 			
 			if(t!=null && t.size()>0){
 				//modifying an existing entry
-				String oldStatus=(String)t.rows().get(0)[0];
-				String insertUser=(String)t.rows().get(0)[1];
-				String externalid=(String)t.rows().get(0)[2];
-				String id=(String)t.rows().get(0)[3];
+				String oldStatus=(String)t.rows().getFirst()[0];
+				String insertUser=(String)t.rows().getFirst()[1];
+				String externalid=(String)t.rows().getFirst()[2];
+				String id=(String)t.rows().getFirst()[3];
 				//Date launchTime=(Date)t.rows().get(0)[4];
 				//String pipelineName=(String)t.rows().get(0)[5];
 				

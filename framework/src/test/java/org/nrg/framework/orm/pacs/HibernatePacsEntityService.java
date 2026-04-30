@@ -28,6 +28,6 @@ public class HibernatePacsEntityService extends AbstractHibernateEntityService<P
         } else if (pacs.size() > 1) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Found multiple PACS with AE title " + aeTitle + ", but AE title is a unique attribute.");
         }
-        return pacs.get(0);
+        return pacs.getFirst();
     }
 }

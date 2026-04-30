@@ -36,7 +36,7 @@ public class DisplayFieldRefCollection extends XFTCollection {
 	{
 			return (DisplayFieldRef)this.getStoredItem(id);
 	}
-	
+
 	public void addDisplayField(DisplayFieldRef df) throws DuplicateDisplayFieldRefException
 	{
 			df.setSortOrder(fieldRefCounter++);
@@ -83,7 +83,7 @@ public class DisplayFieldRefCollection extends XFTCollection {
 	{
 		return getSortedDisplayFieldRefs().iterator();
 	}
-	
+
 	public java.util.Hashtable getDisplayFieldRefHash()
 	{
 		return new Hashtable(this.getItemHash());

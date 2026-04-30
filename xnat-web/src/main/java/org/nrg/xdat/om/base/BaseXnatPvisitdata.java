@@ -8,6 +8,7 @@
  */
 package org.nrg.xdat.om.base;
 
+import java.io.Serial;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -41,6 +42,9 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
 
 public class BaseXnatPvisitdata extends AutoXnatPvisitdata implements Comparable {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public ArrayList<ItemI> getVisits()
 	{
@@ -92,7 +96,7 @@ public class BaseXnatPvisitdata extends AutoXnatPvisitdata implements Comparable
         ArrayList al =  XnatPvisitdata.getXnatPvisitdatasByField(cc, user, preLoad);
         al = BaseElement.WrapItems(al);
         if (al.size()>0){
-           return (XnatPvisitdata)al.get(0);
+           return (XnatPvisitdata)al.getFirst();
         }else{
             return null;
         }
@@ -108,7 +112,7 @@ public class BaseXnatPvisitdata extends AutoXnatPvisitdata implements Comparable
              ArrayList al = XnatSubjectdata.getXnatSubjectdatasByField("xnat:subjectData/ID",this.getSubjectId(),this.getUser(),false);
              if (al.size()>0)
              {
-                 subject = (XnatSubjectdata)al.get(0);
+                 subject = (XnatSubjectdata)al.getFirst();
              }
          }
  	    

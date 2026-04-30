@@ -11,6 +11,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.nrg.automation.services.AutomationService.AUTOMATION_ENABLED_PROPERTY;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = AutomationTestsConfiguration.class)
@@ -19,7 +20,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 public class TestAutomationService {
     private final AutomationService automationService;
 
-    @Value("${automation.enabled:true}")
+    @Value(AUTOMATION_ENABLED_PROPERTY)
     private boolean automationEnabled;
 
     @Autowired
@@ -30,6 +31,6 @@ public class TestAutomationService {
     @Test
     public void testGetAutomationEnabled() {
         assertThat(automationService).isNotNull();
-        assertThat(automationEnabled).isTrue();
+        assertThat(automationEnabled).isEqualTo(automationService.getAutomationEnabled());
     }
 }

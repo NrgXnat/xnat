@@ -187,7 +187,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             try {
                 // Check readability
                 if (!canRead(user, item)) {
-                    final String message = String.format("User '%s' does not have read access to the %s instance with ID %s", user.getUsername(), xsiType, itemId);
+                    final String message = "User '%s' does not have read access to the %s instance with ID %s".formatted(user.getUsername(), xsiType, itemId);
                     log.error(message);
                     throw new IllegalAccessException("Access Denied: " + message);
                 }
@@ -197,7 +197,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 if (item.getProperty("meta") != null && !canActivate(user, item)) {
                     // Then check to see if it's not active. You can't access inactive things.
                     if (!item.isActive()) {
-                        final String message = String.format("The %s item with ID %s is in quarantine and the user %s does not have permission to activate this data type.", xsiType, itemId, user.getUsername());
+                        final String message = "The %s item with ID %s is in quarantine and the user %s does not have permission to activate this data type.".formatted(xsiType, itemId, user.getUsername());
                         log.error(message);
                         throw new IllegalAccessException("Access Denied: " + message);
                     }
@@ -531,7 +531,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     @Override
     public String getUserPermissionsSQL(final UserI user) {
-        return String.format(QUERY_USER_READABLE_ELEMENTS, user.getUsername());
+        return QUERY_USER_READABLE_ELEMENTS.formatted(user.getUsername());
     }
 
     @Override
@@ -655,7 +655,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             if (projectFieldMappingIds.isEmpty()) {
                 setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", projectId, false, true, false, false, true, true, ci);
             } else if (projectFieldMappingIds.size() == 1) {
-                _template.update(QUERY_MAKE_FIELD_MAPPING_PUBLIC, new MapSqlParameterSource("fieldMappingId", projectFieldMappingIds.get(0)));
+                _template.update(QUERY_MAKE_FIELD_MAPPING_PUBLIC, new MapSqlParameterSource("fieldMappingId", projectFieldMappingIds.getFirst()));
             } else {
                 log.warn("Found case where there's more than one field mapping for guest access to project ID {}", projectId);
             }
@@ -690,7 +690,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
                 if (projectFieldMappingIds.isEmpty()) {
                     setPermissionsInternal(false, guest, authenticatedUser, "xnat:projectData", "xnat:projectData/ID", projectId, false, true, false, false, false, true, ci);
                 } else if (projectFieldMappingIds.size() == 1) {
-                    _template.update(QUERY_MAKE_FIELD_MAPPING_PROTECTED, new MapSqlParameterSource("fieldMappingId", projectFieldMappingIds.get(0)));
+                    _template.update(QUERY_MAKE_FIELD_MAPPING_PROTECTED, new MapSqlParameterSource("fieldMappingId", projectFieldMappingIds.getFirst()));
                 } else {
                     log.warn("Found case where there's more than one field mapping for guest access to project ID {}", projectId);
                 }
@@ -849,10 +849,10 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
 
     private String getItemIId(final ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException, IllegalAccessException, InvocationTargetException {
         final String itemId;
-        if (item instanceof XFTItem) {
-            itemId = ((XFTItem) item).getIDValue();
-        } else if (item instanceof BaseElement) {
-            itemId = ((BaseElement) item).getStringProperty("ID");
+        if (item instanceof XFTItem tItem) {
+            itemId = tItem.getIDValue();
+        } else if (item instanceof BaseElement element) {
+            itemId = element.getStringProperty("ID");
         } else {
             final Method getId = Reflection.getMatchingMethod(item.getClass(), "getId", new Object[0]);
             if (getId != null) {

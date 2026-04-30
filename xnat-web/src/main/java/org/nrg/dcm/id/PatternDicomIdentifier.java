@@ -10,9 +10,8 @@
 package org.nrg.dcm.id;
 
 import com.google.common.base.Strings;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.util.TagUtils;
-import org.nrg.dcm.MatchedPatternExtractor;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.framework.utilities.SortedSets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,7 @@ import java.util.regex.Pattern;
 
 @Deprecated
 public final class PatternDicomIdentifier implements DicomDerivedString {
-    private final Logger logger = LoggerFactory.getLogger(MatchedPatternExtractor.class);
+    private final Logger logger = LoggerFactory.getLogger(PatternDicomIdentifier.class);
     private final int tag, group;
     private final Pattern pattern;
 
@@ -45,8 +44,8 @@ public final class PatternDicomIdentifier implements DicomDerivedString {
      * {@inheritDoc}
      */
     @Override
-    public String apply(final DicomObject dicomObject) {
-        final String v = dicomObject.getString(tag);
+    public String apply(final Attributes attributes) {
+        final String v = attributes.getString(tag);
         if (Strings.isNullOrEmpty(v)) {
             logger.trace("no match to {}: null or empty tag", this);
             return null;

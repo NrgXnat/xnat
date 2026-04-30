@@ -24,6 +24,7 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.security.validators.PasswordValidator;
 import org.nrg.xdat.services.XdatUserAuthService;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
@@ -49,12 +50,6 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
-
-    public static final String XFT_INITIALIZATION_DELAY = "User access attempt failed due to XFT initialization delay";
-    public static final String WAITING_FOR_XFT_INITIALIZATION = "User access attempt waiting for XFT initialization";
-    public static final String PROCEEDING_AFTER_XFT_INITIALIZATION = "User access attempt proceeding after XFT initialization";
-    private static final int waitIterations = 120;
-    private static final int waitPeriod = 10000;
 
     @Autowired
     public XDATUserMgmtServiceImpl(final NamedParameterJdbcTemplate template) {
@@ -168,8 +163,8 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
 
     @Override
     public void clearCache(UserI user) {
-        if (user instanceof XDATUser) {
-            ((XDATUser) user).clearLocalCache();
+        if (user instanceof XDATUser tUser) {
+            tUser.clearLocalCache();
         }
     }
 
@@ -362,8 +357,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
     private static List<UserI> convertXdatUsers(final List<XdatUser> users) {
         return users.stream()
                     .map(XDATUserMgmtServiceImpl::convertXdatUser)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .flatMap(Optional::stream)
                     .collect(Collectors.toList());
     }
 
@@ -376,35 +370,7 @@ public class XDATUserMgmtServiceImpl implements UserManagementServiceI {
     }
 
     private static void waitForInit() {
-        if(XFTManager.isComplete()) {
-            return;
-        }
-
-        int i = 0;
-
-        while(i < waitIterations){
-            if(XFTManager.isComplete()){
-                System.out.println(PROCEEDING_AFTER_XFT_INITIALIZATION);
-                break;
-            }
-
-            //wait 10s
-            try {
-                //this intentionally goes to System.out as that is what is monitored during server startup
-                System.out.println(WAITING_FOR_XFT_INITIALIZATION);
-                Thread.sleep(waitPeriod);
-            } catch (InterruptedException e) {
-                break;
-                //ignore
-            }
-            i++;
-        }
-
-        if(i == waitIterations){
-            RuntimeException exception = new RuntimeException(XFT_INITIALIZATION_DELAY);
-            log.error(XFT_INITIALIZATION_DELAY,exception);
-            throw exception;
-        }
+        XFTManager.waitForInit();
     }
 
 

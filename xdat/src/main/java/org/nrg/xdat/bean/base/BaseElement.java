@@ -405,25 +405,23 @@ public abstract class BaseElement{
                 return o.toString();
             }else if (type.equalsIgnoreCase("date"))
             {
-                if (o instanceof String)
+                if (o instanceof String string)
                 {
                     try {
-                        java.util.Date d = formatDate((String)o);
+                        java.util.Date d = formatDate(string);
                         o=d;
                     } catch (IllegalArgumentException e) {
                     }
                 }
 
-                if (o instanceof java.util.Date)
+                if (o instanceof java.util.Date d)
                 {
-                    java.util.Date d = (java.util.Date)o;
                     StringBuffer sb = new StringBuffer();
                     java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyy-MM-dd");
                     sb.append(formatter.format(d));
                     return sb.toString();
-                }else if (o instanceof java.sql.Date)
+                }else if (o instanceof java.sql.Date d)
                 {
-                    java.sql.Date d = (java.sql.Date)o;
                     StringBuffer sb = new StringBuffer();
                     sb.append(d.getYear());
                     sb.append("-");
@@ -431,9 +429,8 @@ public abstract class BaseElement{
                     sb.append("-");
                     sb.append(d.getDate());
                     return sb.toString();
-                }else if (o instanceof java.sql.Timestamp)
+                }else if (o instanceof java.sql.Timestamp d)
                 {
-                    java.util.Date d = (java.util.Date)o;
                     StringBuffer sb = new StringBuffer();
                     java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyy-MM-dd");
                     sb.append(formatter.format(d));
@@ -442,10 +439,10 @@ public abstract class BaseElement{
                 return o.toString();
             }else if (type.equalsIgnoreCase("dateTime"))
             {
-                if (o instanceof String)
+                if (o instanceof String string)
                 {
                     try {
-                        java.util.Date d = formatDateTime((String)o);
+                        java.util.Date d = formatDateTime(string);
                         o=d;
                     } catch (IllegalArgumentException e) {
                     }

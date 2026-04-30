@@ -33,7 +33,7 @@ public class NameUtils {
     @SuppressWarnings("unused")
     public static String convertClassNameToBeanId(final String className) {
         final List<String> atoms = Arrays.asList(className.split("\\."));
-        return StringUtils.uncapitalize(atoms.get(atoms.size() - 1));
+        return StringUtils.uncapitalize(atoms.getLast());
     }
 
     /**

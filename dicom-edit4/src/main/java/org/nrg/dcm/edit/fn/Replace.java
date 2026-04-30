@@ -35,6 +35,6 @@ public final class Replace implements ScriptFunction {
             throw new ScriptEvaluationException(name + " takes three arguments [original, pre, post]");
         }
 
-        return new ReplaceValue(args.get(0), args.get(1), args.get(2));
+        return new ReplaceValue(args.getFirst(), args.get(1), args.get(2));
     }
 }

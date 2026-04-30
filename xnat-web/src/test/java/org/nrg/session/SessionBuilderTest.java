@@ -97,8 +97,8 @@ public class SessionBuilderTest {
         }
 
         assertEquals(1, skipped.size());
-        assertEquals(1, skipped.get(0).size());
-        for (final ExtAttrValue val : skipped.get(0)) {
+        assertEquals(1, skipped.getFirst().size());
+        for (final ExtAttrValue val : skipped.getFirst()) {
             assertEquals("skipme", val.getName());
             assertEquals("please", val.getText());
         }

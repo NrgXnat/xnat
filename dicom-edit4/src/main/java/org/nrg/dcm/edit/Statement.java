@@ -49,7 +49,7 @@ public class Statement {
     }
 
     public long getTopTag() {
-       return getScriptTags().last();
+       return getScriptTags().getLast();
     }
     
     public boolean isConstrained() { return null != c; }

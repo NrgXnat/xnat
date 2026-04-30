@@ -9,16 +9,18 @@
 
 package org.nrg.dcm;
 
-import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
+import org.nrg.dicomtools.utilities.DicomUtils;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
 public final class RequiredAttributeUnsetException extends DicomContentException {
-  private final static long serialVersionUID = 1L;
-  
-  public RequiredAttributeUnsetException(final DicomObject o, final int tag) {
-    super("Required DICOM attribute " + o.nameOf(tag) + " is unset or empty");
-  }
+    private final static long serialVersionUID = 1L;
+
+    public RequiredAttributeUnsetException(final DicomObjectI doi, final int tag) {
+        super("Required DICOM attribute " + DicomUtils.getAttributeName(doi, tag) + " is unset or empty");
+    }
+
+    public RequiredAttributeUnsetException(final Attributes attributes, final int tag) {
+        super("Required DICOM attribute " + DicomUtils.getAttributeName(attributes, tag) + " is unset or empty");
+    }
 }

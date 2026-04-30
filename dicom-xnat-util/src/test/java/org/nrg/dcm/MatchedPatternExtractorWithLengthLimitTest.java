@@ -8,10 +8,9 @@
  */
 package org.nrg.dcm;
 
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.data.VR;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.junit.Test;
 
 import java.util.regex.Pattern;
@@ -26,21 +25,21 @@ import static org.junit.Assert.assertNull;
 public class MatchedPatternExtractorWithLengthLimitTest {
 
     /**
-     * Test method for {@link MatchedPatternExtractor#extract(DicomObject)}.
+     * Test method for {@link MatchedPatternExtractor#extract(Attributes)}.
      */
     @Test
     public void testExtract() {
         final Extractor extractor = new MatchedPatternExtractorWithLengthLimit(Tag.PatientComments,
                 Pattern.compile(".*"), 0, 5);
-        final DicomObject o = new BasicDicomObject();
-        assertNull(extractor.extract(o));
-        o.putString( Tag.PatientComments, VR.LO, "123456789");
-        assertEquals("12345", extractor.extract(o));
-        o.putString( Tag.PatientComments, VR.LO, "12345");
-        assertEquals("12345", extractor.extract(o));
-        o.putString( Tag.PatientComments, VR.LO, "123");
-        assertEquals("123", extractor.extract(o));
-        o.putString(Tag.PatientComments, VR.LO, "");
-        assertNull( extractor.extract(o));
+        final Attributes a = new Attributes();
+        assertNull(extractor.extract(a));
+        a.setString( Tag.PatientComments, VR.LO, "123456789");
+        assertEquals("12345", extractor.extract(a));
+        a.setString( Tag.PatientComments, VR.LO, "12345");
+        assertEquals("12345", extractor.extract(a));
+        a.setString( Tag.PatientComments, VR.LO, "123");
+        assertEquals("123", extractor.extract(a));
+        a.setString(Tag.PatientComments, VR.LO, "");
+        assertNull( extractor.extract(a));
     }
 }

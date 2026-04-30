@@ -10,16 +10,11 @@ package org.nrg.dcm.xnat;
 
 import com.google.common.base.Function;
 import org.nrg.dcm.SOPModel;
-import org.slf4j.Logger;
 
 import java.util.Set;
 
-import static org.nrg.dcm.Attributes.Modality;
+import static org.nrg.dcm.NamedAttributes.Modality;
 
-/**
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
 public class ModalityMapXnatImagesessiondataBeanFactory extends AttributeMapXnatImagesessiondataBeanFactory {
     private final static Function<Set<String>,String> LEAD_MODALITY = new Function<Set<String>,String>() {
         public String apply(final Set<String> modalities) {

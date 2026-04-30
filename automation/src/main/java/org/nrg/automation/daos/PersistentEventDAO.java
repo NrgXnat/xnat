@@ -37,7 +37,7 @@ public class PersistentEventDAO extends AbstractHibernateDAO<PersistentEvent> {
      * @return the distinct values
      */
     public List<Object[]> getDistinctValues(Class<AutomationEventImplementerI> clazz, String column, String projectId) {
-        Query query = createQuery(String.format(QUERY_DISTINCT_VALUES, column, clazz.getName())).setParameter("projectId", projectId);
+        Query query = createQuery(QUERY_DISTINCT_VALUES.formatted(column, clazz.getName())).setParameter("projectId", projectId);
         //noinspection unchecked
         return (List<Object[]>) query.getResultList();
     }

@@ -67,7 +67,7 @@ public class DefaultUserConfigurationService implements UserConfigurationService
     }
 
     private String calculateConfigurationPath(String username, String configId, String... pathElements) {
-        return String.format("/%s/%s/%s", username, configId, StringUtils.join(pathElements, '/'));
+        return "/%s/%s/%s".formatted(username, configId, StringUtils.join(pathElements, '/'));
     }
 
     private static final String NULL_DISPLAY     = "NULL";

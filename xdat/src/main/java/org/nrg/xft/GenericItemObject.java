@@ -89,9 +89,9 @@ public abstract class GenericItemObject implements ItemI {
 		ArrayList<XFTItem> al = new ArrayList<XFTItem>();
 		for (Object o:this.props.values())
 		{
-			if (o instanceof XFTItem)
+			if (o instanceof XFTItem item)
 			{
-				al.add((XFTItem)o);
+				al.add(item);
 			}
 		}
 				
@@ -281,8 +281,7 @@ public abstract class GenericItemObject implements ItemI {
 	}
 	
 	private Object validate(Object o){
-		if(o instanceof String){
-			String s = (String)o;
+		if(o instanceof String s){
 			if(s.indexOf("<script")>-1 || s.indexOf("<SCRIPT")>-1){
 				s=s.replaceAll(">", "&gt;");
 				s=s.replaceAll("<", "&lt;");
@@ -407,8 +406,8 @@ public abstract class GenericItemObject implements ItemI {
         {
             return null;
         }else{
-            if (o instanceof java.util.Date){
-                return (java.util.Date)o;
+            if (o instanceof java.util.Date date){
+                return date;
             }else{
                 return org.nrg.xft.utils.DateUtils.parseDate(o.toString());
             }

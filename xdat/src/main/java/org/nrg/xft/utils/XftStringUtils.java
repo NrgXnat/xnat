@@ -547,7 +547,7 @@ public class XftStringUtils {
 		}
 
 		String s = next.substring(index+1);
-		Integer i = new Integer(s);
+		Integer i = Integer.valueOf(s);
 		return i.intValue();
 	}
 

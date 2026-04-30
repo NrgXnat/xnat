@@ -16,6 +16,7 @@ import org.nrg.xdat.om.base.auto.AutoXnatPetsessiondata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
@@ -25,6 +26,8 @@ import java.util.Map;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatPetsessiondata extends AutoXnatPetsessiondata {
+    @Serial
+    private static final long serialVersionUID = 1;
 	public BaseXnatPetsessiondata(ItemI item)
 	{
 		super(item);
@@ -38,6 +41,7 @@ public class BaseXnatPetsessiondata extends AutoXnatPetsessiondata {
 	/**
 	 * @deprecated Use BaseXnatPetsessiondata(UserI user)
 	 **/
+	@Deprecated
 	public BaseXnatPetsessiondata()
 	{}
 
@@ -53,7 +57,7 @@ public class BaseXnatPetsessiondata extends AutoXnatPetsessiondata {
 
         if (scans.size()>0)
         {
-            return (XnatPetscandataI)scans.get(0);
+            return (XnatPetscandataI)scans.getFirst();
         }else{
             return null;
         }
@@ -66,7 +70,7 @@ public class BaseXnatPetsessiondata extends AutoXnatPetsessiondata {
 
         if (scans.size()>0)
         {
-            return (XnatPetscandataI)scans.get(0);
+            return (XnatPetscandataI)scans.getFirst();
         }else{
             return null;
         }
@@ -81,8 +85,7 @@ public class BaseXnatPetsessiondata extends AutoXnatPetsessiondata {
 
     public void copyValuesFrom(XnatImagesessiondata otherImage) throws Exception {
     	super.copyValuesFrom(otherImage);
-    	if(otherImage instanceof XnatPetsessiondata){
-		final XnatPetsessiondata tempPET = (XnatPetsessiondata)otherImage;
+    	if(otherImage instanceof XnatPetsessiondata tempPET){
 		if (null != tempPET.getTracer_dose())
 		    this.setTracer_dose(tempPET.getTracer_dose());
 		if (null != tempPET.getTracer_dose_units())
@@ -218,6 +221,6 @@ public class BaseXnatPetsessiondata extends AutoXnatPetsessiondata {
     }
 
     public ArrayList getUnionOfScansByType(String csvType, String chronological) {
-        return getUnionOfScansByType(csvType, new Boolean(chronological).booleanValue());
+        return getUnionOfScansByType(csvType, Boolean.valueOf(chronological).booleanValue());
     }
 }

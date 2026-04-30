@@ -14,6 +14,7 @@ dependencies {
     api libs.hibernate.core
     api libs.hibernate.validator
     api libs.glassfish.javax.el
+    api libs.annotation.javax.annotation.api
     api libs.hibernate.envers
     api libs.hibernate.jcache
     api libs.cache.api

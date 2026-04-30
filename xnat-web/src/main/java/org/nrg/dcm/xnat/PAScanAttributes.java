@@ -8,7 +8,6 @@
  */
 package org.nrg.dcm.xnat;
 
-import org.dcm4che2.data.Tag;
 import org.nrg.dcm.AttrDefs;
 import org.nrg.dcm.MutableAttrDefs;
 

@@ -6,10 +6,10 @@ dependencies {
     api(project(':config')) { transitive = false }
     api project(':framework')
     api project(':extattr')
+    api project(':mizer')
 
-    api libs.dcm4che.core
-    api libs.dcm4che.net
-    api libs.dcm4che.iod
+    api libs.dcm4che5.dcm4che.core
+    api libs.dcm4che5.dcm4che.net
     implementation libs.hsqldb.hsqldb
     implementation libs.commons.io
 
@@ -20,6 +20,7 @@ dependencies {
         exclude group: 'org.python', module: 'jython-standalone'
     }
     testImplementation libs.inject.javax.inject
+    testImplementation libs.jakarta.inject.api
     testImplementation libs.assertj.core
     testImplementation libs.apache.ant
     testImplementation libs.junit.junit

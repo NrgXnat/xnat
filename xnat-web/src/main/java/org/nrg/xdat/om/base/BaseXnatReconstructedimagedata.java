@@ -23,6 +23,7 @@ import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 
 import java.io.File;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -33,6 +34,9 @@ import java.util.List;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatReconstructedimagedata extends AutoXnatReconstructedimagedata {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatReconstructedimagedata(ItemI item)
 	{
@@ -61,7 +65,7 @@ public class BaseXnatReconstructedimagedata extends AutoXnatReconstructedimageda
             ArrayList al = XnatImagesessiondata.getXnatImagesessiondatasByField("xnat:imageSessionData/ID",this.getImageSessionId(),this.getUser(),false);
             if (al.size()>0)
             {
-                mr = (XnatImagesessiondata)al.get(0);
+                mr = (XnatImagesessiondata)al.getFirst();
             }
         }
 

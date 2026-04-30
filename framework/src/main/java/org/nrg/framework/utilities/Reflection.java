@@ -119,8 +119,8 @@ public class Reflection {
             if (superclass == null) {
                 throw new RuntimeException("Can't find superclass as parameterized type!");
             }
-            if (superclass instanceof ParameterizedType) {
-                parameterizedType = (ParameterizedType) superclass;
+            if (superclass instanceof ParameterizedType type) {
+                parameterizedType = type;
                 if (parameterizedType.getActualTypeArguments()[0] instanceof TypeVariable) {
                     throw new InvalidDirectParameterizedClassUsageException("When using a parameterized worker directly (i.e. with a generic subclass), you must call the AbstractParameterizedWorker constructor that takes the parameterized type directly.");
                 }
@@ -145,8 +145,8 @@ public class Reflection {
         }
         List<Type> types = new ArrayList<>();
         Class<?>   clazz;
-        if (type instanceof Class) {
-            clazz = (Class<?>) type;
+        if (type instanceof Class<?> class1) {
+            clazz = class1;
         } else {
             clazz = (Class<?>) ((ParameterizedType) type).getRawType();
         }
@@ -242,7 +242,7 @@ public class Reflection {
             for (final Class<?> clazz : classes) {
                 try {
                     if (InjectableI.class.isAssignableFrom(clazz)) {
-                        ((InjectableI) clazz.newInstance()).execute(ObjectUtils.defaultIfNull(params, new HashMap<>()));
+                        ((InjectableI) clazz.getDeclaredConstructor().newInstance()).execute(ObjectUtils.defaultIfNull(params, new HashMap<>()));
                     } else {
                         log.error("Reflection: {}.{} is NOT an implementation of InjectableI", _package, clazz.getName());
                     }
@@ -306,7 +306,7 @@ public class Reflection {
         if (methods.size() == 0) {
             return null;
         }
-        return methods.get(0);
+        return methods.getFirst();
     }
 
     @SuppressWarnings("unused")
@@ -321,7 +321,7 @@ public class Reflection {
         if (methods.size() == 0) {
             return null;
         }
-        return methods.get(0);
+        return methods.getFirst();
     }
 
     @SafeVarargs
@@ -735,7 +735,7 @@ public class Reflection {
 
     private static List<Predicate<? super Method>> getPredicate(final String property, final boolean isGetter, final List<Predicate<? super Method>> added) {
         final List<Predicate<? super Method>> predicates = new ArrayList<>();
-        predicates.add(withPattern(String.format(isGetter ? REGEX_REFL_GETTER : REGEX_REFL_SETTER, StringUtils.isBlank(property) ? CAPITALIZED_NAME : StringUtils.capitalize(property))));
+        predicates.add(withPattern((isGetter ? REGEX_REFL_GETTER : REGEX_REFL_SETTER).formatted(StringUtils.isBlank(property) ? CAPITALIZED_NAME : StringUtils.capitalize(property))));
         if (isGetter) {
             predicates.add(withParametersCount(0));
         } else {

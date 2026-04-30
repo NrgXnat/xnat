@@ -27,11 +27,11 @@ public class UIDUtils {
     }
 
     protected static String createUID() {
-        return org.dcm4che2.util.UIDUtils.createUID();
+        return org.dcm4che3.util.UIDUtils.createUID();
     }
 
     protected static String createUID( String root) {
-        return org.dcm4che2.util.UIDUtils.createUID(root);
+        return org.dcm4che3.util.UIDUtils.createUID(root);
     }
 
 }

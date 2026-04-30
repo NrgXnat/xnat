@@ -49,7 +49,7 @@ implements Iterable<AbstractConditionalAttrDef.Rule>,XnatAttrDef {
 
         @Override
         public String toString() {
-            return super.toString() + getTags().get(0);
+            return super.toString() + getTags().getFirst();
         }
     }
 
@@ -69,7 +69,7 @@ implements Iterable<AbstractConditionalAttrDef.Rule>,XnatAttrDef {
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder(super.toString());
-            sb.append(getTags().get(0)).append(" from ").append(map);
+            sb.append(getTags().getFirst()).append(" from ").append(map);
             return sb.toString();
         }
     }

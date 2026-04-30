@@ -41,7 +41,7 @@ public class TestMixedPrivateStandardSequence {
 
             TestUtils.TestTag    p1 = new TestUtils.TestTag( 0x20010010, "Philips Imaging DD 001");
             TestUtils.TestSeqTag p2 = new TestUtils.TestSeqTag(new int[]{0x2001105f, 0, 0x20010010},  "Philips Imaging DD 001");
-            TestUtils.TestSeqTag p3 = new TestUtils.TestSeqTag(new int[]{0x2001105f, 0, 0x20011032},  "0.0");
+            TestUtils.TestSeqTag p3 = new TestUtils.TestSeqTag(new int[]{0x2001105f, 0, 0x20011032},  "0");
             TestUtils.TestSeqTag p4 = new TestUtils.TestSeqTag(new int[]{0x2001105f, 0, 0x20050014},  "Philips MR Imaging DD 005");
             TestUtils.TestSeqTag p5 = new TestUtils.TestSeqTag(new int[]{0x2001105f, 0, 0x2005143e},  "1.7E38");
             TestUtils.TestSeqTag s0 = new TestUtils.TestSeqTag(new int[]{0x52009230, 0, 0x20050014},  "Philips MR Imaging DD 005");

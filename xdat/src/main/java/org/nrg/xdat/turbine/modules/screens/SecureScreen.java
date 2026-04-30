@@ -557,8 +557,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     }
 
     private void attemptToPreventBrowserCachingOfHTML(ServletResponse resp) {
-        if (resp != null && resp instanceof HttpServletResponse) {
-            HttpServletResponse response = (HttpServletResponse) resp;
+        if (resp != null && resp instanceof HttpServletResponse response) {
             response.setHeader("Expires", "Tue, 03 Jul 2001 06:00:00 GMT");
             response.setHeader("Last-Modified", new Date().toString());
             response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0");

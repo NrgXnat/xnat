@@ -8,21 +8,19 @@
  */
 package org.nrg.dcm;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.nrg.attr.ConversionFailureException;
+import org.nrg.dicomtools.utilities.DicomUtils;
+import org.nrg.util.Opener;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
-
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.nrg.attr.ConversionFailureException;
-import org.nrg.dicomtools.utilities.DicomUtils;
-import org.nrg.util.Opener;
-
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 
 /**
  * Manages reading DICOM files and retrieving attribute values.
@@ -31,11 +29,11 @@ import com.google.common.collect.Sets;
  */
 public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
     private static final Comparator<DicomAttributeIndex> comparator = new DicomAttributeIndex.Comparator();
-    private final DicomObject                    o;
+    private final Attributes attributes;
     private final SortedSet<DicomAttributeIndex> tagSet;
 
-    DataSetAttrs(final DicomObject o, final Collection<DicomAttributeIndex> indices) {
-        this.o = o;
+    DataSetAttrs(final Attributes attributes, final Collection<DicomAttributeIndex> indices) {
+        this.attributes = attributes;
         this.tagSet = Sets.newTreeSet(comparator);
         tagSet.addAll(indices);
     }
@@ -52,11 +50,7 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
      */
     public String toString() {
         return super.toString() + Iterables.transform(tagSet,
-                                                      new Function<DicomAttributeIndex, String>() {
-                                                          public String apply(final DicomAttributeIndex i) {
-                                                              return i.getAttributeName(o);
-                                                          }
-                                                      });
+                dai -> dai.getAttributeName(attributes));
     }
 
     /**
@@ -70,7 +64,7 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
      * @throws ConversionFailureException If the value of the attribute can't be converted.
      */
     public String get(final DicomAttributeIndex index) throws ConversionFailureException {
-        return index.getString(o);
+        return index.getString(attributes);
     }
 
     /*

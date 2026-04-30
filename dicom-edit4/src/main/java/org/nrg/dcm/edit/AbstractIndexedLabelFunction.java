@@ -35,7 +35,7 @@ public abstract class AbstractIndexedLabelFunction implements ScriptFunction {
     private Value getFormat(final List<? extends Value> values)
             throws ScriptEvaluationException {
         try {
-            return values.get(0);
+            return values.getFirst();
         } catch (IndexOutOfBoundsException e) {
             try {
                 throw new ScriptEvaluationException(getClass().getField("name").get(null) + " requires format argument");

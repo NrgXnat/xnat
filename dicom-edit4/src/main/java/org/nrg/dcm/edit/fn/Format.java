@@ -26,6 +26,6 @@ public final class Format implements ScriptFunction {
      * @see org.nrg.dicom.mizer.scripts.ScriptFunction#apply(java.util.List)
      */
     public Value apply(final List<? extends Value> args) throws ScriptEvaluationException {
-        return new MessageFormatValue(args.get(0), args.subList(1, args.size()));
+        return new MessageFormatValue(args.getFirst(), args.subList(1, args.size()));
     }
 }

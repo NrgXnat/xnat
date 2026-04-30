@@ -82,35 +82,37 @@ public class SimpleEntityResolver implements EntityResolver<Wired> {
         return _results.get(start).equals(finish);
     }
 
-    private static final String SITE_MAP = "{\n" +
-            "    \"wired\": true,\n" +
-            "    \"projects\": [\n" +
-            "        {\n" +
-            "            \"id\": \"project1\",\n" +
-            "            \"wired\": true,\n" +
-            "            \"subjects\": [\n" +
-            "                { \"id\": \"p1s1\", \"wired\": false },\n" +
-            "                { \"id\": \"p1s2\", \"wired\": true },\n" +
-            "                { \"id\": \"p1s3\", \"wired\": false },\n" +
-            "                { \"id\": \"p1s4\", \"wired\": true },\n" +
-            "                { \"id\": \"p1s5\", \"wired\": false },\n" +
-            "                { \"id\": \"p1s6\", \"wired\": true }\n" +
-            "            ]\n" +
-            "        },\n" +
-            "        {\n" +
-            "            \"id\": \"project2\",\n" +
-            "            \"wired\": false,\n" +
-            "            \"subjects\": [\n" +
-            "                { \"id\": \"p2s1\", \"wired\": true },\n" +
-            "                { \"id\": \"p2s2\", \"wired\": false },\n" +
-            "                { \"id\": \"p2s3\", \"wired\": true },\n" +
-            "                { \"id\": \"p2s4\", \"wired\": false },\n" +
-            "                { \"id\": \"p2s5\", \"wired\": true },\n" +
-            "                { \"id\": \"p2s6\", \"wired\": false }\n" +
-            "            ]\n" +
-            "        }\n" +
-            "    ]\n" +
-            "}";
+    private static final String SITE_MAP = """
+            {
+                "wired": true,
+                "projects": [
+                    {
+                        "id": "project1",
+                        "wired": true,
+                        "subjects": [
+                            { "id": "p1s1", "wired": false },
+                            { "id": "p1s2", "wired": true },
+                            { "id": "p1s3", "wired": false },
+                            { "id": "p1s4", "wired": true },
+                            { "id": "p1s5", "wired": false },
+                            { "id": "p1s6", "wired": true }
+                        ]
+                    },
+                    {
+                        "id": "project2",
+                        "wired": false,
+                        "subjects": [
+                            { "id": "p2s1", "wired": true },
+                            { "id": "p2s2", "wired": false },
+                            { "id": "p2s3", "wired": true },
+                            { "id": "p2s4", "wired": false },
+                            { "id": "p2s5", "wired": true },
+                            { "id": "p2s6", "wired": false }
+                        ]
+                    }
+                ]
+            }\
+            """;
 
     private final Map<EntityId, Wired> _registry = new HashMap<>();
     private final Map<EntityId, EntityId> _results  = new HashMap<>();

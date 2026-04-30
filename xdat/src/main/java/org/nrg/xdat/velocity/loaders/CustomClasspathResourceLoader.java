@@ -28,7 +28,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import java.io.*;
 import java.net.URL;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -91,7 +91,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             for (final String path : TEMPLATE_PATHS) {
                 //iterate through potential sub-directories (templates, xnat-templates, etc) looking for a match.
                 //ordering of the paths is significant as it enforces the VM overwriting model
-                final String possible = Paths.get(path, name).toString();
+                final String possible = Path.of(path, name).toString();
                 try {
                     final InputStream result = findMatch(name, possible);
                     if (result != null) {
@@ -114,7 +114,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             throw new ResourceNotFoundException(e.getMessage());
         }
 
-        throw new ResourceNotFoundException(String.format("CustomClasspathResourceLoader: cannot find resource %s", name));
+        throw new ResourceNotFoundException("CustomClasspathResourceLoader: cannot find resource %s".formatted(name));
     }
 
     /**
@@ -143,7 +143,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             }
         }
 
-        final URL found = getClass().getClassLoader().getResource(Paths.get(META_INF_RESOURCES, possible).toString());
+        final URL found = getClass().getClassLoader().getResource(Path.of(META_INF_RESOURCES, possible).toString());
         if (found != null) {
             try {
                 final InputStream stream = found.openStream();

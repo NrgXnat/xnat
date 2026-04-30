@@ -68,7 +68,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -124,7 +124,7 @@ public class TurbineUtils {
         if (_security == null) {
             final List<XdatSecurity> al = XdatSecurity.getAllXdatSecuritys(null, false);
             if (al.size() > 0) {
-                _security = al.get(0);
+                _security = al.getFirst();
             }
         }
 
@@ -468,7 +468,7 @@ public class TurbineUtils {
         }
 
         if (server == null) {
-            final String port = (new Integer(req.getServerPort())).toString();
+            final String port = (Integer.valueOf(req.getServerPort())).toString();
             if (s.contains(port)) {
                 final int breakIndex = s.indexOf(port) + port.length();
                 server = s.substring(0, breakIndex);
@@ -663,7 +663,7 @@ public class TurbineUtils {
         data.getParameters().setString("search_element", item.getXSIType());
         try {
             final SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
-            final SchemaField    sf = (SchemaField) se.getAllPrimaryKeys().get(0);
+            final SchemaField    sf = (SchemaField) se.getAllPrimaryKeys().getFirst();
             data.getParameters().setString("search_field", StringUtils.replace(StringUtils.replace(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
             final Object o = item.getProperty(sf.getId());
             data.getParameters().setString("search_value", o.toString());
@@ -677,7 +677,7 @@ public class TurbineUtils {
         context.put("search_element", item.getXSIType());
         try {
             final SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
-            final SchemaField    sf = (SchemaField) se.getAllPrimaryKeys().get(0);
+            final SchemaField    sf = (SchemaField) se.getAllPrimaryKeys().getFirst();
             context.put("search_field", StringUtils.replace(StringUtils.replace(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
             final Object o = item.getProperty(sf.getId());
             context.put("search_value", o.toString());
@@ -699,13 +699,13 @@ public class TurbineUtils {
     }
 
     public static ItemI getDataItem(RunData data) {
-        final ItemI item = (ItemI) data.getSession().getAttribute("data_item");
-        data.getSession().removeAttribute("data_item");
+        final ItemI item = (ItemI) data.getRequest().getAttribute("data_item");
+        data.getRequest().removeAttribute("data_item");
         return item;
     }
 
     public static RunData setDataItem(RunData data, ItemI item) {
-        data.getSession().setAttribute("data_item", item);
+        data.getRequest().setAttribute("data_item", item);
         return data;
     }
 
@@ -1220,13 +1220,13 @@ public class TurbineUtils {
             }
 
             for (ArrayList primary : root.getExtendedElements()) {
-                GenericWrapperElement p = ((SchemaElementI) primary.get(0)).getGenericXFTElement();
-                temp = validateTemplate(Paths.get("/screens", p.getSQLName(), p.getSQLName() + module).toString(), project);
+                GenericWrapperElement p = ((SchemaElementI) primary.getFirst()).getGenericXFTElement();
+                temp = validateTemplate(Path.of("/screens", p.getSQLName(), p.getSQLName() + module).toString(), project);
                 if (temp != null) {
                     return temp;
                 }
 
-                temp = validateTemplate(Paths.get("/screens", p.getSQLName(), module).toString(), project);
+                temp = validateTemplate(Path.of("/screens", p.getSQLName(), module).toString(), project);
                 if (temp != null) {
                     return temp;
                 }
@@ -1289,7 +1289,7 @@ public class TurbineUtils {
 
                             if (files != null) {
                                 for (File f : files) {
-                                    String subpath             = Paths.get(subFolder, f.getName()).toString();
+                                    String subpath             = Path.of(subFolder, f.getName()).toString();
                                     String forwardSlashSubPath = subpath;
                                     if (forwardSlashSubPath != null) {
                                         forwardSlashSubPath = subpath.replace("\\", "/");
@@ -1348,7 +1348,7 @@ public class TurbineUtils {
             mergePropsNoOverwrite(props, templates, "fileName");
 
             for (final List<Object> primary : root.getExtendedElements()) {
-                final GenericWrapperElement p = ((SchemaElementI) primary.get(0)).getGenericXFTElement();
+                final GenericWrapperElement p = ((SchemaElementI) primary.getFirst()).getGenericXFTElement();
                 mergePropsNoOverwrite(props, getTemplates(safeJoin(p.getSQLName(), subFolder)), "fileName");
             }
 
@@ -1386,7 +1386,7 @@ public class TurbineUtils {
             }
 
             for (List<Object> primary : root.getExtendedElements()) {
-                final GenericWrapperElement p = ((SchemaElementI) primary.get(0)).getGenericXFTElement();
+                final GenericWrapperElement p = ((SchemaElementI) primary.getFirst()).getGenericXFTElement();
                 temp = validateTemplate(safeJoin("/screens", p.getSQLName(), subFolder, p.getSQLName() + module), project);
                 if (temp != null) {
                     return temp;
@@ -1414,17 +1414,16 @@ public class TurbineUtils {
         if (o == null) {
             return "";
         }
-        if (o instanceof String) {
+        if (o instanceof String string) {
             try {
-                o = formatter.parse((String) o);
+                o = formatter.parse(string);
             } catch (ParseException e) {
                 logger.error("", e);
                 return o.toString();
             }
         }
 
-        if (o instanceof Number) {
-            final Number n = (Number) o;
+        if (o instanceof Number n) {
             formatter.setGroupingUsed(false);
             formatter.setMaximumFractionDigits(roundTo);
             formatter.setMinimumFractionDigits(roundTo);
@@ -1439,8 +1438,8 @@ public class TurbineUtils {
     }
 
     public static Object escapeParam(Object o) {
-        if (o instanceof String) {
-            return escapeParam((String) o);
+        if (o instanceof String string) {
+            return escapeParam(string);
         } else {
             return o;
         }
@@ -1461,8 +1460,8 @@ public class TurbineUtils {
      * @return The input string, with any XML entities decoded.
      */
     public static Object unescapeParam(Object param) {
-        if (param instanceof String) {
-            return unescapeParam((String) param);
+        if (param instanceof String string) {
+            return unescapeParam(string);
         } else {
             return param;
         }
@@ -1541,7 +1540,7 @@ public class TurbineUtils {
      * @return The value to be set for the content disposition header.
      */
     public static String createContentDispositionValue(final String filename, final boolean isAttachment) {
-        return String.format("%s; filename=\"%s\";", isAttachment ? "attachment" : "inline", filename);
+        return "%s; filename=\"%s\";".formatted(isAttachment ? "attachment" : "inline", filename);
     }
 
     public static boolean isAuthorized(final RunData data, final UserI user, final boolean allowGuestAccess) throws Exception {

@@ -20,6 +20,7 @@ import org.nrg.dicom.mizer.variables.Variable;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class GetURL implements ScriptFunction {
     public static final String name = "getURL";
 
     public Value apply(List<? extends Value> args) throws ScriptEvaluationException {
-        final Value value = args.get(0);
+        final Value value = args.getFirst();
         return new AbstractMizerValue(value) {
             @Override
             public SortedSet<Long> getTags() {
@@ -64,7 +65,7 @@ public class GetURL implements ScriptFunction {
 
     private String request(final String url) throws ScriptEvaluationException {
         try {
-            final String response = getHttpClient().request(new URL(url));
+            final String response = getHttpClient().request(URI.create(url).toURL());
             if (response == null) {
                 throw new ScriptEvaluationException("Empty response from external webservice, " + url);
             }

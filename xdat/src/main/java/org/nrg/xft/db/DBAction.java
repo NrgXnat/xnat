@@ -284,7 +284,7 @@ public class DBAction {
             boolean hasOneColumnTable = StoreSingleRefs(item, false, user, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, true);
 
             if (item.getPossibleFieldNames().size() == 1) {
-                String keyName = (String) item.getPossibleFieldNames().get(0)[0];
+                String keyName = (String) item.getPossibleFieldNames().getFirst()[0];
                 if (item.getProperty(keyName) == null) {
                     PoolDBUtils con;
                     try {
@@ -421,7 +421,7 @@ public class DBAction {
 
                                         for (final Object o : ref.getLocalRefNames()) {
                                             ArrayList           refName    = (ArrayList) o;
-                                            String              localKey   = (String) refName.get(0);
+                                            String              localKey   = (String) refName.getFirst();
                                             GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
                                             Object              value      = meta.getProperty(foreignKey.getId());
                                             if (value != null) {
@@ -459,7 +459,7 @@ public class DBAction {
 
                                     for (final Object o : ref.getLocalRefNames()) {
                                         ArrayList           refName    = (ArrayList) o;
-                                        String              localKey   = (String) refName.get(0);
+                                        String              localKey   = (String) refName.getFirst();
                                         GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
                                         Object              value      = meta.getProperty(foreignKey.getId());
                                         if (value != null) {
@@ -549,7 +549,7 @@ public class DBAction {
 
                                     for (final Object o : ref.getLocalRefNames()) {
                                         ArrayList           refName    = (ArrayList) o;
-                                        String              localKey   = (String) refName.get(0);
+                                        String              localKey   = (String) refName.getFirst();
                                         GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
                                         Object              value      = meta.getProperty(foreignKey.getId());
                                         if (value != null) {
@@ -636,7 +636,7 @@ public class DBAction {
 
                                 for (final Object o : ref.getLocalRefNames()) {
                                     ArrayList           refName    = (ArrayList) o;
-                                    String              localKey   = (String) refName.get(0);
+                                    String              localKey   = (String) refName.getFirst();
                                     GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
                                     Object              value      = meta.getProperty(foreignKey.getId());
                                     if (value != null) {
@@ -672,7 +672,7 @@ public class DBAction {
 
                             for (final Object o : ref.getLocalRefNames()) {
                                 ArrayList           refName    = (ArrayList) o;
-                                String              localKey   = (String) refName.get(0);
+                                String              localKey   = (String) refName.getFirst();
                                 GenericWrapperField foreignKey = (GenericWrapperField) refName.get(1);
                                 Object              value      = meta.getProperty(foreignKey.getId());
                                 if (value != null) {
@@ -1114,14 +1114,13 @@ public class DBAction {
                     try {
                         Object o = item.getProperty(ref.getId());
 
-                        if (o instanceof XFTItem) {
-                            XFTItem temp = (XFTItem) o;
+                        if (o instanceof XFTItem temp) {
 
                             //check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
                             // a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
                             String keyName;
                             if (temp.getPossibleFieldNames().size() == 1) {
-                                keyName = (String) temp.getPossibleFieldNames().get(0)[0];
+                                keyName = (String) temp.getPossibleFieldNames().getFirst()[0];
                                 try {
                                     if (temp.getProperty(keyName) == null) {
                                         isNoIdentifierTable = true;
@@ -1192,15 +1191,14 @@ public class DBAction {
             if (!item.getGenericSchemaElement().getExtensionFieldName().equalsIgnoreCase(ref.getName())) {
                 Object o = item.getProperty(ref.getId());
 
-                if (o instanceof XFTItem) {
-                    XFTItem temp = (XFTItem) o;
+                if (o instanceof XFTItem temp) {
 
                     //check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
                     // a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
                     boolean isNoIdentifierTable = false;
                     String  keyName             = StringUtils.EMPTY;
                     if (temp.getPossibleFieldNames().size() == 1) {
-                        keyName = (String) temp.getPossibleFieldNames().get(0)[0];
+                        keyName = (String) temp.getPossibleFieldNames().getFirst()[0];
                         if (temp.getProperty(keyName) == null) {
                             isNoIdentifierTable = true;
                             hasNoIdentifier = true;
@@ -1238,8 +1236,8 @@ public class DBAction {
                             item.child_modified = true;
                         }
                     } else if ((isNoIdentifierTable) && (storeSubItems)) {
-                        ArrayList           refName     = (ArrayList) ref.getLocalRefNames().get(0);
-                        String              localKey    = (String) refName.get(0);
+                        ArrayList           refName     = (ArrayList) ref.getLocalRefNames().getFirst();
+                        String              localKey    = (String) refName.getFirst();
                         GenericWrapperField foreignKey  = (GenericWrapperField) refName.get(1);
                         Object              rootFKValue = item.getProperty(localKey);
 
@@ -1296,15 +1294,14 @@ public class DBAction {
         if (ext != null) {
             Object o = item.getProperty(ext.getId());
 
-            if (o instanceof XFTItem) {
-                XFTItem temp = (XFTItem) o;
+            if (o instanceof XFTItem temp) {
 
                 //check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
                 // a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
                 boolean isNoIdentifierTable = false;
                 String  keyName             = StringUtils.EMPTY;
                 if (temp.getPossibleFieldNames().size() == 1) {
-                    keyName = (String) temp.getPossibleFieldNames().get(0)[0];
+                    keyName = (String) temp.getPossibleFieldNames().getFirst()[0];
                     if (temp.getProperty(keyName) == null) {
                         isNoIdentifierTable = true;
                         hasNoIdentifier = true;
@@ -1338,8 +1335,8 @@ public class DBAction {
                         item.modified = true;
                     }
                 } else if ((isNoIdentifierTable) && (storeSubItems)) {
-                    ArrayList           refName     = (ArrayList) ext.getLocalRefNames().get(0);
-                    String              localKey    = (String) refName.get(0);
+                    ArrayList           refName     = (ArrayList) ext.getLocalRefNames().getFirst();
+                    String              localKey    = (String) refName.getFirst();
                     GenericWrapperField foreignKey  = (GenericWrapperField) refName.get(1);
                     Object              rootFKValue = item.getProperty(localKey);
 
@@ -1732,9 +1729,9 @@ public class DBAction {
         final PoolDBUtils           con     = new PoolDBUtils();
         if (element.isAutoIncrement()) {
             if (!item.hasPK()) {
-                Object key = con.getNextID(element.getDbName(), element.getSQLName(), item.getPkNames().get(0), element.getSequenceName());
+                Object key = con.getNextID(element.getDbName(), element.getSQLName(), item.getPkNames().getFirst(), element.getSequenceName());
                 if (key != null) {
-                    item.setFieldValue(item.getPkNames().get(0), key);
+                    item.setFieldValue(item.getPkNames().getFirst(), key);
                 }
             }
         }
@@ -1781,9 +1778,9 @@ public class DBAction {
         cache.getSaved().add(item);
         if (element.isAutoIncrement()) {
             if (!item.hasPK()) {
-                Object key = con.insertNativeItem(query, element.getDbName(), element.getSQLName(), item.getPkNames().get(0), element.getSequenceName());
+                Object key = con.insertNativeItem(query, element.getDbName(), element.getSQLName(), item.getPkNames().getFirst(), element.getSequenceName());
                 if (key != null) {
-                    item.setFieldValue(item.getPkNames().get(0), key);
+                    item.setFieldValue(item.getPkNames().getFirst(), key);
                 }
             } else {
                 con.insertItem(query, element.getDbName(), login, cache);
@@ -1809,7 +1806,7 @@ public class DBAction {
         if (SEQUENCES.get(e.getSQLName().toLowerCase()) == null) {
             String col_name;
 
-            GenericWrapperField key = e.getAllPrimaryKeys().get(0);
+            GenericWrapperField key = e.getAllPrimaryKeys().getFirst();
 
             String newQuery = "SELECT pg_get_serial_sequence('" + e.getSQLName() + "', '" + StringUtils.lowerCase(key.getSQLName()) + "') AS col_name";
             try {
@@ -2128,7 +2125,7 @@ public class DBAction {
             if (field.isReference()) {
                 try {
                     GenericWrapperElement foreign    = (GenericWrapperElement) field.getReferenceElement();
-                    GenericWrapperField   foreignKey = foreign.getAllPrimaryKeys().get(0);
+                    GenericWrapperField   foreignKey = foreign.getAllPrimaryKeys().getFirst();
                     return ValueParser(object, foreignKey, allowInvalidValues);
                 } catch (Exception e) {
                     return object.toString();
@@ -2227,7 +2224,7 @@ public class DBAction {
     }
 
     private static String toStringWrap(final Object o){
-        return String.format("'%s'",o);
+        return "'%s'".formatted(o);
     }
 
     private static String numericValueParser(final String object){
@@ -2345,8 +2342,8 @@ public class DBAction {
             return toStringWrap(XftStringUtils.CleanForSQLValue(object.toString()));
         } else if (type.equalsIgnoreCase(DATE_TIME)) {
             Date d;
-            if (object instanceof Date) {
-                d = (Date) object;
+            if (object instanceof Date date) {
+                d = date;
             } else {
                 try {
                     d = DateUtils.parseDateTime(object.toString());
@@ -2802,7 +2799,7 @@ public class DBAction {
                         if (counter++ != 0) {
                             query.append(", ");
                         }
-                        query.append(key.get(0));
+                        query.append(key.getFirst());
                     }
                     query.append(") VALUES (");
 
@@ -2831,7 +2828,7 @@ public class DBAction {
                     if (counter++ != 0) {
                         query.append(" AND ");
                     }
-                    query.append(key.get(0)).append("=").append(key.get(1));
+                    query.append(key.getFirst()).append("=").append(key.get(1));
                 }
 
                 log.debug(query.toString());
@@ -3111,19 +3108,19 @@ public class DBAction {
             if (tables.size() > 0) {
                 for (Object table : tables.convertColumnToArrayList("table_name")) {
                     log.error("Preparing to convert table '{}' to use sequence for default value.", table);
-                    final List<String> queries = Arrays.asList(String.format(QUERY_CREATE_SEQUENCE, table),
-                                                               String.format(QUERY_SET_ID_DEFAULT, table, table),
-                                                               String.format(QUERY_SET_ID_NOT_NULL, table),
-                                                               String.format(QUERY_SET_SEQUENCE_OWNER, table, table));
+                    final List<String> queries = Arrays.asList(QUERY_CREATE_SEQUENCE.formatted(table),
+                            QUERY_SET_ID_DEFAULT.formatted(table, table),
+                            QUERY_SET_ID_NOT_NULL.formatted(table),
+                            QUERY_SET_SEQUENCE_OWNER.formatted(table, table));
                     log.error("Queries prepared for conversion:");
                     for (final String query : queries) {
                         log.error(" *** {}", query);
                     }
                     PoolDBUtils.ExecuteBatch(queries, defaultDBName, null);
 
-                    final String querySequenceStart = String.format(QUERY_GET_SEQUENCE_START, table);
+                    final String querySequenceStart = QUERY_GET_SEQUENCE_START.formatted(table);
                     final long   start              = ObjectUtils.defaultIfNull((Long) PoolDBUtils.ReturnStatisticQuery(querySequenceStart, "value", defaultDBName, null), 1L);
-                    final String querySequenceValue = String.format(QUERY_SET_SEQUENCE_VALUE, table, start);
+                    final String querySequenceValue = QUERY_SET_SEQUENCE_VALUE.formatted(table, start);
                     log.error("Ran the query '{}' and got the value {}. Now preparing to run the query: {}", querySequenceStart, start, querySequenceValue);
                     PoolDBUtils.ReturnStatisticQuery(querySequenceValue, "value", defaultDBName, null);
                 }
@@ -3133,7 +3130,7 @@ public class DBAction {
                 try {
                     GenericWrapperElement input = (GenericWrapperElement) o1;
                     if (input.isAutoIncrement() && !input.getSQLName().equalsIgnoreCase("xdat_history") && !input.getSQLName().equalsIgnoreCase("xdat_meta_data")) {
-                        adjustSequence(input.getSequenceName(), input.getAllPrimaryKeys().get(0).getSQLName(), input.getSQLName(), input.getDbName());
+                        adjustSequence(input.getSequenceName(), input.getAllPrimaryKeys().getFirst().getSQLName(), input.getSQLName(), input.getDbName());
                     }
                 } catch (Exception e) {
                     log.error(StringUtils.EMPTY, e);
@@ -3175,7 +3172,7 @@ public class DBAction {
 
     private static String getSequenceQuery(final String sequenceName) throws SQLException {
         if (PoolDBUtils.getDatabaseVersion() < 10.0) {
-            return String.format(QUERY_PRE_PG10_SEQUENCE, sequenceName);
+            return QUERY_PRE_PG10_SEQUENCE.formatted(sequenceName);
         }
         final String[] atoms = StringUtils.split(sequenceName, ".");
         switch (atoms.length) {
@@ -3183,10 +3180,10 @@ public class DBAction {
                 throw new SQLException("Invalid sequence name, empty!");
 
             case 1:
-                return String.format(QUERY_POST_PG10_SEQUENCE, "public", atoms[0]);
+                return QUERY_POST_PG10_SEQUENCE.formatted("public", atoms[0]);
 
             case 2:
-                return String.format(QUERY_POST_PG10_SEQUENCE, atoms[0], atoms[1]);
+                return QUERY_POST_PG10_SEQUENCE.formatted(atoms[0], atoms[1]);
 
             default:
                 throw new SQLException("Invalid sequence name: cross-database references are not supported, so the sequence name \"" + sequenceName + " is invalid");
@@ -3259,7 +3256,7 @@ public class DBAction {
                 }), Predicates.notNull()), ", ");
 
                 PoolDBUtils.CreateCache(dbname = item.getDBName(), username);
-                commands.add(String.format("SELECT update_ls_%s(%s,%s)", schemaElement.getFormattedName(), ids, ObjectUtils.defaultIfNull(userId, NULL).toString()));
+                commands.add("SELECT update_ls_%s(%s,%s)".formatted(schemaElement.getFormattedName(), ids, ObjectUtils.defaultIfNull(userId, NULL).toString()));
             } catch (ElementNotFoundException e) {
                 log.error("Element not found while trying to process item of type {}", e.ELEMENT, e);
             }

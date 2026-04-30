@@ -48,20 +48,29 @@ public class TestScriptRunnerService {
     public static final String                    GROOVY_HELLO_PAYLOAD = "hi there";
     public static final String                    GROOVY_HELLO_WORLD   = "println \"" + GROOVY_HELLO_PAYLOAD + "\"\n" +
                                                                          "\"" + GROOVY_HELLO_PAYLOAD + "\"";
-    public static final String                    GROOVY_HELLO_PROJECT = "def message = \"hi there ${scope} ${entityId}\"\n" +
-                                                                         "println message\n" +
-                                                                         "message.toString()";
-    public static final String                    GROOVY_IMPORT        = "import org.apache.commons.lang3.StringUtils\n" +
-                                                                         "def isBlank = StringUtils.isBlank(\"hi there\")\n" +
-                                                                         "def sentence = \"'hi there' \" + (isBlank ? \"is\" : \"is not\") + \" blank\"\nsentence";
-    public static final String                    GROOVY_VARIABLE      = "println \"I found this variable: ${variable}\"\n" +
-                                                                         "variable";
-    public static final String                    GROOVY_OBJECT        = "def map = [\"one\" : 1, \"two\" : 2, \"three\" : 3]\n" +
-                                                                         "map << [\"four\" : submit]\n" +
-                                                                         "map.each { key, value ->\n" +
-                                                                         "    println \"${key}: ${value}\"\n" +
-                                                                         "}\n" +
-                                                                         "map\n";
+    public static final String                    GROOVY_HELLO_PROJECT = """
+                                                                         def message = "hi there ${scope} ${entityId}"
+                                                                         println message
+                                                                         message.toString()\
+                                                                         """;
+    public static final String                    GROOVY_IMPORT        = """
+                                                                         import org.apache.commons.lang3.StringUtils
+                                                                         def isBlank = StringUtils.isBlank("hi there")
+                                                                         def sentence = "'hi there' " + (isBlank ? "is" : "is not") + " blank"
+                                                                         sentence\
+                                                                         """;
+    public static final String                    GROOVY_VARIABLE      = """
+                                                                         println "I found this variable: ${variable}"
+                                                                         variable\
+                                                                         """;
+    public static final String                    GROOVY_OBJECT        = """
+                                                                         def map = ["one" : 1, "two" : 2, "three" : 3]
+                                                                         map << ["four" : submit]
+                                                                         map.each { key, value ->
+                                                                             println "${key}: ${value}"
+                                                                         }
+                                                                         map
+                                                                         """;
     public static final String                    JS_HELLO_PAYLOAD     = "Hello there from Javascript";
     public static final String                    JS_HELLO_WORLD       = "print('" + JS_HELLO_PAYLOAD + "');\n'" + JS_HELLO_PAYLOAD + "';";
     public static final String                    PYTHON_HELLO_PAYLOAD = "Hello there from Python";
@@ -130,7 +139,7 @@ public class TestScriptRunnerService {
         parameters.put("entityId", ID_PROJECT_1);
         parameters.put("event", ScriptTrigger.DEFAULT_EVENT);
         //parameters.put("scriptVersion", "1");
-        final ScriptOutput output = _runnerService.runScript(scripts.get(0), parameters);
+        final ScriptOutput output = _runnerService.runScript(scripts.getFirst(), parameters);
         assertThat(output).isNotNull()
                           .extracting(ScriptOutput::getOutput)
                           .isInstanceOf(String.class)

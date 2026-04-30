@@ -9,12 +9,11 @@
 package org.nrg.dicom.mizer.values;
 
 import com.google.common.collect.ImmutableSortedSet;
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.util.TagUtils;
+import org.dcm4che3.data.Attributes;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationException;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.variables.Variable;
-import org.nrg.dicomtools.exceptions.AttributeVRMismatchException;
-import org.nrg.dicomtools.utilities.DicomUtils;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -55,8 +54,10 @@ public final class SingleTagValue extends AbstractMizerValue {
     public String on(final DicomObjectI dicomObject)
             throws ScriptEvaluationException {
         try {
-            return DicomUtils.getString(dicomObject.getDcm4che2Object(), (int) _tag);
-        } catch (AttributeVRMismatchException e) {
+            Attributes attrs = dicomObject.getAttributes();
+            String value = attrs.getString((int)_tag); 
+            return value;
+        } catch (Exception e) {
             throw new ScriptEvaluationException(e);
         }
     }

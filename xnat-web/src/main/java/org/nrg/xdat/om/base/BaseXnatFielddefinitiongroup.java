@@ -12,6 +12,7 @@ import org.nrg.xdat.om.base.auto.AutoXnatFielddefinitiongroup;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -21,6 +22,9 @@ import java.util.Hashtable;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseXnatFielddefinitiongroup extends AutoXnatFielddefinitiongroup {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatFielddefinitiongroup(ItemI item)
 	{

@@ -36,6 +36,7 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.nio.file.Path;
 import javax.validation.constraints.NotNull;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -295,7 +296,7 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     @NrgPreference
     public String getTriagePath() {
         return StringUtils.defaultIfBlank(getValue("triagePath"),
-                Paths.get(getCachePath(), "TRIAGE").toString());
+                Path.of(getCachePath(), "TRIAGE").toString());
     }
 
     public void setTriagePath(final String triagePath) {
@@ -384,11 +385,13 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
-    @NrgPreference(defaultValue = "Dear FULL_NAME,\n" +
-                                  "<br><br>We received a request to register an account for you on SITE_NAME. If you would like to register, please confirm your email address by clicking this link: <a href=\"VERIFICATION_URL\">Verify Email</a>\n" +
-                                  " (This link will expire in 24 hours.)" +
-                                  "AUTO_ENABLE_TEXT" +
-                                  "<br><br>If you did not initiate this request, you can safely ignore this email.")
+    @NrgPreference(defaultValue = """
+                                  Dear FULL_NAME,
+                                  <br><br>We received a request to register an account for you on SITE_NAME. If you would like to register, please confirm your email address by clicking this link: <a href="VERIFICATION_URL">Verify Email</a>
+                                   (This link will expire in 24 hours.)\
+                                  AUTO_ENABLE_TEXT\
+                                  <br><br>If you did not initiate this request, you can safely ignore this email.\
+                                  """)
     public String getEmailVerificationMessage() {
         return getValue("emailVerificationMessage");
     }
@@ -585,6 +588,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             set(passwordExpirationDate, "passwordExpirationDate");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'passwordExpirationDate': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getEnableNativeDicomPreCompression() {
+        return getBooleanValue("enableNativeDicomPreCompression");
+    }
+
+    public void setEnableNativeDicomPreCompression(final boolean enableNativeDicomPreCompression) {
+        try {
+            setBooleanValue(enableNativeDicomPreCompression, "enableNativeDicomPreCompression");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'enableNativeDicomPreCompression': something is very wrong here.", e);
         }
     }
 
@@ -1319,6 +1335,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    @NrgPreference(defaultValue = "false")
+    public boolean getEnableDirectArchiveAppend() {
+        return getBooleanValue("enableDirectArchiveAppend");
+    }
+
+    public void setEnableDirectArchiveAppend(final boolean enableDirectArchiveAppend) {
+        try {
+            setBooleanValue(enableDirectArchiveAppend, "enableDirectArchiveAppend");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'enableDirectArchiveAppend': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "true", aliases = "project.allow-auto-archive")
     public boolean getProjectAllowAutoArchive() {
         return getBooleanValue("projectAllowAutoArchive");
@@ -1770,7 +1799,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     public void setAliasTokenTimeout(final String aliasTokenTimeout) {
         try {
             set(aliasTokenTimeout, "aliasTokenTimeout");
-
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'aliasTokenTimeout': something is very wrong here.", e);
         }

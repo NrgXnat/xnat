@@ -33,7 +33,6 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -968,7 +967,7 @@ public  class FileUtils {
 
     public static void MoveToCache(final File file, final String timestamp) throws FileNotFoundException, IOException {
         if (XDAT.getBoolSiteConfigurationProperty("backupDeletedToCache", false)) {
-            final Path   cacheRoot   = Paths.get(StringUtils.defaultIfBlank(XDAT.getSiteConfigPreferences().getCachePath(), "/cache"), "DELETED");
+            final Path   cacheRoot   = Path.of(StringUtils.defaultIfBlank(XDAT.getSiteConfigPreferences().getCachePath(), "/cache"), "DELETED");
             final String subpath     = StringUtils.stripStart(file.getAbsolutePath(), "/");
             final Path   destination = (StringUtils.isNotBlank(timestamp) ? cacheRoot.resolve(timestamp.replace("_", "/")) : getUniqueCacheFolder(cacheRoot, getMsTimestamp())).resolve(subpath);
             if (file.isDirectory()) {

@@ -9,9 +9,10 @@
 
 package org.nrg.dcm;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.io.DicomOutputStream;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.io.DicomOutputStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,9 +32,10 @@ public class DicomDirTest extends TestFiles {
         _sampleHeaderless = File.createTempFile("sample_headerless", ".dcm");
         _sampleHeaderless.deleteOnExit();
 
-        final DicomObject dicomObject = DicomUtils.read(_sample);
+        final Attributes dataset = DicomUtils.read(_sample);
+        final Attributes fmi = dataset.createFileMetaInformation(dataset.getString(Tag.TransferSyntaxUID, UID.ExplicitVRLittleEndian));
         try (final DicomOutputStream output = new DicomOutputStream(_sampleHeaderless)) {
-            output.writeDataset(dicomObject, dicomObject.getString(Tag.TransferSyntaxUID));
+            output.writeDataset(fmi, dataset);
         }
     }
 

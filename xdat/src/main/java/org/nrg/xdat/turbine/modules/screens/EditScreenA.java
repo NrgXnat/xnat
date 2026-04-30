@@ -79,7 +79,7 @@ public abstract class EditScreenA extends SecureScreen {
             }
 
             if (item != null) {
-                if ((!item.getXSIType().equals(getElementName())) && (!(item.getItem()).getGenericSchemaElement().isExtensionOf(GenericWrapperElement.GetElement(getElementName())))) {
+                if (getElementName()!=null && (!item.getXSIType().equals(getElementName())) && (!(item.getItem()).getGenericSchemaElement().isExtensionOf(GenericWrapperElement.GetElement(getElementName())))) {
                     item = null;
                 }
             }
@@ -99,7 +99,6 @@ public abstract class EditScreenA extends SecureScreen {
             context.put("edit_screen", XftStringUtils.getLocalClassName(this.getClass()) + ".vm");
             if (item == null) {
                 try {
-                    String s = getElementName();
                     item = getEmptyItem(data);
 
                     log.info("No passed item found. Created new item of type {}", item.getXSIType());
@@ -107,7 +106,7 @@ public abstract class EditScreenA extends SecureScreen {
 
                     context.put("item", item);
                     context.put("element", se);
-                    context.put("search_element", s);
+                    context.put("search_element", se.getFullXMLName());
 
                     context.put("om", BaseElement.GetGeneratedItem(item));
                     finalProcessing(data, context);

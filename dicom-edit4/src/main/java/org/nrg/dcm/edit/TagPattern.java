@@ -8,22 +8,21 @@
  */
 package org.nrg.dcm.edit;
 
-import java.util.Iterator;
-import java.util.List;
-
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
-
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationException;
+import org.nrg.dicom.mizer.objects.DicomElementI;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
+
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
-public class TagPattern implements Function<DicomObject,Iterable<Long>> {
+public class TagPattern implements Function<DicomObjectI,Iterable<Long>> {
     public static final Character ANY_DIGIT = 'X';
     public static final Character EVEN_DIGIT = '@';
     public static final Character ODD_DIGIT = '#';
@@ -55,7 +54,7 @@ public class TagPattern implements Function<DicomObject,Iterable<Long>> {
         exactMask = MASK_ALL;
         anyMask = evenMask = oddMask = 0L;
         exactPart = exact;
-        this.pattern = String.format("0x%08x", exact);
+        this.pattern = "0x%08x".formatted(exact);
     }
 
     /**
@@ -118,9 +117,9 @@ public class TagPattern implements Function<DicomObject,Iterable<Long>> {
      * (non-Javadoc)
      * @see com.google.common.base.Function#apply(java.lang.Object)
      */
-    public Iterable<Long> apply(final DicomObject o) {
+    public Iterable<Long> apply(final DicomObjectI o) {
         final List<Long> tags = Lists.newArrayList();
-        for (final Iterator<DicomElement> ei = o.datasetIterator(); ei.hasNext(); ) {
+        for (final Iterator<DicomElementI> ei = o.iterator(); ei.hasNext(); ) {
             final Integer tag = ei.next().tag();
             if (apply(tag)) {
                 tags.add(0xffffffffL & tag);

@@ -45,7 +45,7 @@ public class HibernateSimpleEntityService extends AbstractHibernateEntityService
         if (pacs.size() > 1) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Found multiple entities with name " + name + ", but name is a unique attribute.");
         }
-        return pacs.get(0);
+        return pacs.getFirst();
     }
 
     @Override

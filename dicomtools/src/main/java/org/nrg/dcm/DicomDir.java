@@ -1,149 +1,146 @@
-/*
- * dicomtools: org.nrg.dcm.DicomDir
- * XNAT http://www.xnat.org
- * Copyright (c) 2017, Washington University School of Medicine
- * All Rights Reserved
- *
- * Released under the Simplified BSD.
- */
-
 package org.nrg.dcm;
+
+import lombok.extern.slf4j.Slf4j;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.DicomStreamException;
+import org.dcm4che3.media.DicomDirReader;
+import org.dcm4che3.media.DicomDirWriter;
+import org.dcm4che3.media.RecordFactory;
+import org.dcm4che3.media.RecordType;
+import org.dcm4che3.util.UIDUtils;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.dcm4che2.data.BasicDicomObject;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.io.DicomInputStream;
-import org.dcm4che2.io.StopTagInputHandler;
-import org.dcm4che2.media.ApplicationProfile;
-import org.dcm4che2.media.DicomDirReader;
-import org.dcm4che2.media.DicomDirWriter;
-import org.dcm4che2.media.StdGenJPEGApplicationProfile;
-import org.dcm4che2.media.FileSetInformation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Creates a DICOMDIR, given a DICOM file on the filesystem.
- * Essentially a pared down version of dcm4che's DcmDir tool
- * found at ../dcm4che-tool/dcm4che-tool-dcmdir of the dcm4che 2.0.22
- * distribution
+ * Upgraded from dcm4che2 to dcm4che3/5.
  */
-
+@Slf4j
 public class DicomDir {
     private final File file;
-    private DicomDirReader dicomdir;
-    private FileSetInformation fsinfo;
-    private ApplicationProfile ap = new StdGenJPEGApplicationProfile();
+    private DicomDirReader dicomDirReader;
+    private Attributes fsInfo;
+    private final RecordFactory recordFactory = new RecordFactory();
     private boolean checkDuplicate = false;
-    private final Logger logger = LoggerFactory.getLogger(DicomDir.class);
 
     public DicomDir(File file) throws IOException {
         this.file = file.getCanonicalFile();
     }
 
     private DicomDirWriter writer() {
-	return ((DicomDirWriter) dicomdir);
+        return (DicomDirWriter) dicomDirReader;
     }
-    
-    public final void fsinfo(FileSetInformation fsinfo) {
-	BasicDicomObject dest = new BasicDicomObject();
-	fsinfo.getDicomObject().copyTo(dest);
-	this.fsinfo = new FileSetInformation(dest);
+
+    public final void fsinfo(Attributes fsinfo) {
+        this.fsInfo = new Attributes(fsinfo);
     }
-    
-    public FileSetInformation fsinfo() {
-        if (fsinfo == null) {
-            fsinfo = new FileSetInformation();
-            fsinfo.init();
+
+    public Attributes fsinfo() {
+        if (fsInfo == null) {
+            fsInfo = new Attributes();
+            fsInfo.setString(Tag.FileSetID, VR.CS, "DICOMDIR");
         }
-        return fsinfo;
+        return fsInfo;
     }
 
     public void create() throws IOException {
-        dicomdir = new DicomDirWriter(file, fsinfo());        
+        if (!file.exists()) {
+            createEmptyDirectory();
+        }
+        try {
+            dicomDirReader = DicomDirWriter.open(file);
+        } catch (DicomStreamException e) {
+            createEmptyDirectory();
+            dicomDirReader = DicomDirWriter.open(file);
+        }
+    }
+
+    private void createEmptyDirectory() throws IOException {
+        String fsUID = UIDUtils.createUID();
+        String fileSetID = fsinfo().getString(Tag.FileSetID, "DICOMDIR");
+        File descFile = null;
+        String charset = null;
+
+        DicomDirWriter.createEmptyDirectory(file, fsUID, fileSetID, descFile, charset);
     }
 
     public int purge() throws IOException {
-	return writer().purge();
+        return writer().purge();
     }
 
-    // Adds a DICOM file to the DICOMDIR. Given a directory it searches
-    // the tree for DICOM files and adds them to the DICOMDIR.
-    // Returns the number of files added to the DICOMDIR
+    // Adds a DICOM file (or directory tree) to the DICOMDIR.
     public int addFile(File f) throws IOException {
         f = f.getCanonicalFile();
-        // skip adding DICOMDIR
-        if (f.equals(file)) return 0;
+        if (f.equals(file)) return 0; // skip the DICOMDIR file itself
         int n = 0;
 
-	// If the file is a directory recurse through it's contents
         if (f.isDirectory()) {
             File[] fs = f.listFiles();
-            for (int i = 0; i < fs.length; i++) {
-                n += addFile(fs[i]);
+            if (fs != null) {
+                for (File child : fs) {
+                    n += addFile(child);
+                }
             }
             return n;
         }
 
-	// read just the header information from the DICOM file
-        final DicomInputStream in = new DicomInputStream(f);
-        boolean successful = false;
-        try {
-            in.setHandler(new StopTagInputHandler(Tag.PixelData));
-            final DicomObject dcmobj = in.readDicomObject();
+        return addFile(f, n);
+    }
 
-            // If the Media Storage SOP Instance UID is null set it to the SOP Instance UID.
-            if(dcmobj.getString(Tag.MediaStorageSOPInstanceUID) == null){
-               dcmobj.putString(Tag.MediaStorageSOPInstanceUID, org.dcm4che2.data.VR.UI, dcmobj.getString(Tag.SOPInstanceUID));
+    private int addFile(File f, int n) throws IOException {
+        try (DicomInputStream in = new DicomInputStream(f)) {
+            in.setIncludeBulkData(DicomInputStream.IncludeBulkData.NO);
+            Attributes fmi = in.getFileMetaInformation(); // 可能为 null
+            final Attributes ds  = in.readDatasetUntilPixelData();
+
+            if (fmi == null) {
+                fmi = new Attributes();
             }
-            
-            // If the Media Storage SOP Class UID is null, set it to the SOP Class UID.
-            if(dcmobj.getString(Tag.MediaStorageSOPClassUID) == null){
-               dcmobj.putString(Tag.MediaStorageSOPClassUID, org.dcm4che2.data.VR.UI, dcmobj.getString(Tag.SOPClassUID));
+            if (fmi.getString(Tag.MediaStorageSOPInstanceUID) == null) {
+                String iuid = ds.getString(Tag.SOPInstanceUID);
+                if (iuid != null) fmi.setString(Tag.MediaStorageSOPInstanceUID, VR.UI, iuid);
+            }
+            if (fmi.getString(Tag.MediaStorageSOPClassUID) == null) {
+                String cuid = ds.getString(Tag.SOPClassUID);
+                if (cuid != null) fmi.setString(Tag.MediaStorageSOPClassUID, VR.UI, cuid);
             }
 
-            // create the record hierarchy - each patient folder has a study folder, each
-            // study has a series and each series has a set of instances (in this case images).
-            final DicomObject patrec = ap.makePatientDirectoryRecord(dcmobj);
-            final DicomObject styrec = ap.makeStudyDirectoryRecord(dcmobj);
-            final DicomObject serrec = ap.makeSeriesDirectoryRecord(dcmobj);
-            final DicomObject instrec = ap.makeInstanceDirectoryRecord(dcmobj, dicomdir.toFileID(f));
+            Attributes patrec = recordFactory.createRecord(RecordType.PATIENT, null, ds, fmi, null);
+            Attributes styrec = recordFactory.createRecord(RecordType.STUDY,   null, ds, fmi, null);
+            Attributes serrec = recordFactory.createRecord(RecordType.SERIES,  null, ds, fmi, null);
+            Attributes instrec = recordFactory.createRecord(RecordType.IMAGE,  null, ds, fmi, writer().toFileIDs(f));
 
-            DicomObject rec = writer().addPatientRecord(patrec);
-            if (rec == patrec) {
-                ++n;
-            }
-            rec = writer().addStudyRecord(rec, styrec);
-            if (rec == styrec) {
-                ++n;
-            }
-            rec = writer().addSeriesRecord(rec, serrec);
-            if (rec == serrec) {
-                ++n;
-            }
+            Attributes patAdded = writer().findOrAddPatientRecord(patrec);
+            if (patAdded == patrec) ++n;
+
+            Attributes studyAdded = writer().findOrAddStudyRecord(patAdded, styrec);
+            if (studyAdded == styrec) ++n;
+
+            Attributes seriesAdded = writer().findOrAddSeriesRecord(studyAdded, serrec);
+            if (seriesAdded == serrec) ++n;
+
             if (n == 0 && checkDuplicate) {
-                String iuid = dcmobj.getString(Tag.MediaStorageSOPInstanceUID);
-                if (dicomdir.findInstanceRecord(rec, iuid) != null) {
+                String iuid = fmi.getString(Tag.MediaStorageSOPInstanceUID, ds.getString(Tag.SOPInstanceUID));
+                if (iuid != null && writer().findLowerInstanceRecord(seriesAdded, false, iuid) != null) {
                     return 0;
                 }
             }
-            writer().addChildRecord(rec, instrec);
-            successful = true;
-            // add the instance record
+
+            writer().addLowerDirectoryRecord(seriesAdded, instrec);
+
             return n + 1;
-        }
-        finally {
-            try {in.close();} catch (IOException e) {
-                if (successful) throw e;
-                else logger.error("Unable to add file to DICOMDIR", e);
-            }
+        } catch (Exception e) {
+            log.error("Unable to add file to DICOMDIR: {}", f, e);
+            if (e instanceof IOException ioe) throw ioe;
+            throw new IOException(e);
         }
     }
-    
+
     public void close() throws IOException {
-        dicomdir.close();
+        dicomDirReader.close();
     }
 }

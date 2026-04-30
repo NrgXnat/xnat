@@ -159,7 +159,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
             ResponseEntity<String> response = template.postForEntity(_address, parameters, String.class);
 
             if (_log.isInfoEnabled()) {
-                _log.info(String.format("Found the following response from %s: [%s] %s", _address, response.getStatusCode(), response.getBody()));
+                _log.info("Found the following response from %s: [%s] %s".formatted(_address, response.getStatusCode(), response.getBody()));
                 if (_log.isDebugEnabled()) {
                     for (Entry<String, List<String>> header : response.getHeaders().entrySet()) {
                         _log.info("Found header: " + header.getKey() + " with values: " + header.getValue());
@@ -168,7 +168,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
             }
 
             if (response.getStatusCode() != HttpStatus.OK) {
-                throw new MessagingException(String.format("Got a non-HTTP OK response from the server: [%s] %s", response.getStatusCode(), response.getBody()));
+                throw new MessagingException("Got a non-HTTP OK response from the server: [%s] %s".formatted(response.getStatusCode(), response.getBody()));
             }
         }
     }

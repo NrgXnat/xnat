@@ -13,15 +13,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.DicomElement;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.util.TagUtils;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -69,8 +75,8 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
     }
 
     @Override
-    public String findModality(final DicomObject dicomObject) {
-        return findModality(convertDicomObjectToMap(dicomObject));
+    public String findModality(final Attributes attributes) {
+        return findModality(convertAttributesToMap(attributes));
     }
 
     @Override
@@ -92,13 +98,13 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
     }
 
     @Override
-    public boolean shouldIncludeDicomObject(final DicomObject dicomObject) {
-        return shouldIncludeDicomObject(convertDicomObjectToMap(dicomObject), null);
+    public boolean shouldIncludeDicomObject(final Attributes attributes) {
+        return shouldIncludeDicomObject(convertAttributesToMap(attributes), null);
     }
 
     @Override
-    public boolean shouldIncludeDicomObject(final DicomObject dicomObject, final String targetModality) {
-        return shouldIncludeDicomObject(convertDicomObjectToMap(dicomObject), targetModality);
+    public boolean shouldIncludeDicomObject(final Attributes attributes, final String targetModality) {
+        return shouldIncludeDicomObject(convertAttributesToMap(attributes), targetModality);
     }
 
     @Override
@@ -153,7 +159,7 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
 
     /**
      * Indicates whether the filter has strict parameter representation requirements. When strict parameter representation is active,
-     * any parameters referenced in a script <i>must</i> be present in the submitted {@link DicomObject DICOM object} or value map.
+     * any parameters referenced in a script <i>must</i> be present in the submitted {@link Attributes DICOM object} or value map.
      * If any values are missing during evaluation, an exception will be thrown. If strict parameter representation is inactive, any
      * missing parameter values are simply represented as blanks.
      *
@@ -250,7 +256,7 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
      */
     @Override
     protected Collection<Integer> getFilterTagsImpl() {
-        return _modalityMap.values().stream().map(this::getScriptParameters).flatMap(Collection::stream).distinct().map(Tag::toTag).collect(Collectors.toList());
+        return _modalityMap.values().stream().map(this::getScriptParameters).flatMap(Collection::stream).distinct().map(TagUtils::forName).collect(Collectors.toList());
     }
 
     /**
@@ -295,29 +301,6 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
         return StringUtils.isNotBlank(key) && RESERVED_KEYS.contains(key.toLowerCase());
     }
 
-    private Map<String, String> getDicomHeadersAsMap(final Set<String> parameters, final DicomObject dicomObject) {
-        final Map<String, String> values = new HashMap<>();
-        for (final String parameter : parameters) {
-            final int tag = Tag.forName(parameter);
-            if (dicomObject.contains(tag)) {
-                final DicomElement element = dicomObject.get(tag);
-                if (!element.hasItems()) {
-                    final String value = element.getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
-                    if (StringUtils.isNotBlank(value)) {
-                        values.put(parameter, value);
-                    }
-                } else {
-                    if (isStrict()) {
-                        throw new RuntimeException("You are trying to run a script, but the specified DICOM header " + parameter + " specifies a sequence or embedded DICOM object.");
-                    }
-                }
-            } else {
-                values.put(parameter, "");
-            }
-        }
-        return values;
-    }
-
     private boolean evaluate(final String script, final Set<String> parameters, final Map<String, String> values) {
         final String processed = instantiate(script, parameters, values);
         log.debug("Processing script: {}", processed);
@@ -327,15 +310,10 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
         } catch (ScriptException e) {
             throw new RuntimeException("An error occurred trying to process the DICOM object", e);
         }
-        if (_return instanceof Boolean) {
-            return (boolean) _return;
+        if (_return instanceof Boolean boolean1) {
+            return boolean1;
         }
         throw new RuntimeException("Your script did not return a boolean value, but instead returned a " + (_return != null ? _return.getClass().getName() : "null") + ". The processed script was: " + processed);
-    }
-
-    @SuppressWarnings("unused")
-    private boolean isExcluded(final DicomObject dicomObject) {
-        return _modalityMap.containsKey(KEY_EXCLUDE) && isExcluded(getDicomHeadersAsMap(getScriptParameters(_modalityMap.get(KEY_EXCLUDE)), dicomObject));
     }
 
     private boolean isExcluded(final Map<String, String> headers) {

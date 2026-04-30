@@ -46,7 +46,7 @@ public final class HashUID implements ScriptFunction {
             throw new ScriptEvaluationException("usage: hashUID[string-to-hash {, optional algorithm-name} ]");
         }
 
-        final Value value = values.get(0);
+        final Value value = values.getFirst();
         return new AbstractMizerValue() {
             public Set<Variable> getVariables() {
                 return value.getVariables();

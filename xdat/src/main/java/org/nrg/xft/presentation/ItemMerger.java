@@ -144,7 +144,7 @@ public class ItemMerger {
 			boolean matched=false;
 			for(List<FlattenedItemI> list:itemsByLike){
 				if(list.size()>0){
-					if(FlattenedItemA.isLike(item,list.get(0)))
+					if(FlattenedItemA.isLike(item,list.getFirst()))
 					{
 						list.add(item);
 						

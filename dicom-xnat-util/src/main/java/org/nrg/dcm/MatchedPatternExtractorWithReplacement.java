@@ -8,22 +8,11 @@
  */
 package org.nrg.dcm;
 
-import com.google.common.base.Strings;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.util.TagUtils;
-import org.nrg.framework.utilities.SortedSets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcm4che3.data.Attributes;
 
-import java.util.SortedSet;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * 
- * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
- *
- */
+
 public class MatchedPatternExtractorWithReplacement extends MatchedPatternExtractor {
     private final String target;
     private final String repl;
@@ -35,12 +24,12 @@ public class MatchedPatternExtractorWithReplacement extends MatchedPatternExtrac
         this.repl = repl;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.Extractor#extract(org.dcm4che2.data.DicomObject)
+    /**
+     * {@inheritDoc}
      */
-    public String extract(final DicomObject o) {
-        String origVal = super.extract(o);
+    @Override
+    public String extract(final Attributes attributes) {
+        String origVal = super.extract(attributes);
         if (origVal == null) {
             return null;
         }
@@ -50,9 +39,8 @@ public class MatchedPatternExtractorWithReplacement extends MatchedPatternExtrac
         return origVal.replaceAll(target, repl);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#toString()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public String toString() {

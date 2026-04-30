@@ -9,7 +9,7 @@
 
 package org.nrg.dicom.dicomedit;
 
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.util.TagUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
@@ -19,6 +19,7 @@ import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 
 import java.io.*;
+import java.nio.file.Files;
 
 import static org.junit.Assert.*;
 
@@ -43,7 +44,7 @@ public class TestVRs {
 
     public static final int TAG_IS = 0x00183105;   public static final String IS_VALUE  = "-666"; // Lesion Number
                                                    public static final int    IS_NUMBER = -666;
-                                                   public static final String IS_VALUE_AS_FLOAT = "-666.0";
+                                                   public static final String IS_VALUE_AS_FLOAT = "-666";
     public static final int TAG_LO = 0x300A033A;   public static final String LO_VALUE = "Long string."; // LateralSpreadingDeviceDescription
     public static final int TAG_LT = 0x00184000;   public static final String LT_VALUE = "Looooong text."; // AcquistionComments
     public static final int TAG_OB = 0x04000520;   public static final String OB_VALUE = "New Institute"; // Encrypted content
@@ -138,7 +139,7 @@ public class TestVRs {
     }
     @Test
     public void testAssignToFDFromFLString2() throws MizerException {
-        assignFromString( 0x00189182, "30.0");
+        assignFromString( 0x00189182, "30");
     }
 
     @Test
@@ -173,7 +174,7 @@ public class TestVRs {
 
     @Test
     public void testAssignToOBFromString() throws MizerException {
-        assignFromString(TAG_OB, OB_VALUE, OB_EXPECTED_VALUE);
+        assignFromString(TAG_OB, OB_VALUE, OB_VALUE);
     }
 
     @Test
@@ -247,7 +248,7 @@ public class TestVRs {
      */
     @Test
     public void testAssignToUNFromString() throws MizerException {
-        assignFromString( TAG_UN, UN_VALUE, UN_EXPECTED_VALUE);
+        assignFromString( TAG_UN, UN_VALUE);
     }
 
     @Test
@@ -270,17 +271,16 @@ public class TestVRs {
 
         final BaseScriptApplicator sa          = BaseScriptApplicator.getInstance( bytes(assignmentStatementString(tag, value)));
         final DicomObjectI result_dobj = sa.apply(src_dobj).getDicomObject();
-
         result_dobj.addMetaHeader();
         try {
             final File file = File.createTempFile("dcmTest", "dcm");
-            try (final OutputStream os = new FileOutputStream(file)) {
+            try (final OutputStream os = Files.newOutputStream(file.toPath())) {
                 result_dobj.write(os);
             }
 
             try ( FileInputStream is = new FileInputStream( file)) {
                 final DicomObjectI dicomObject = DicomObjectFactory.newInstance(is);
-                assertEquals( expectedValue, dicomObject.getString(tag));
+                assertEquals(expectedValue, dicomObject.getString(tag));
             }
         } catch (IOException e) {
             throw new MizerException(e);

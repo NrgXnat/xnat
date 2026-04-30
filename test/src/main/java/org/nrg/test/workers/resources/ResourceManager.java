@@ -21,7 +21,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 /**
  * Provides convenience methods for retrieving resources on the classpath in unit and functional tests.
@@ -47,7 +47,7 @@ public class ResourceManager {
     public File getTestResourceFile(final String resourcePath) throws ResourceNotFoundException {
         final URL resource = getClass().getClassLoader().getResource(resourcePath);
         if (resource == null) {
-            throw new ResourceNotFoundException("Unable to find the resource '" + resourcePath + "' from the current working directory: " + Paths.get("").toAbsolutePath());
+            throw new ResourceNotFoundException("Unable to find the resource '" + resourcePath + "' from the current working directory: " + Path.of("").toAbsolutePath());
         }
         return getTestResourceFile(resource);
     }
@@ -60,7 +60,7 @@ public class ResourceManager {
                 switch (resource.getProtocol()) {
                     case "file":
                         final String path = URLDecoder.decode(resource.getFile(), Charset.defaultCharset().name());
-                        return Paths.get(path).toFile();
+                        return Path.of(path).toFile();
                     default:
                         throw new ResourceNotFoundException("The protocol for the URL " + resource.toString() + " is not yet supported.");
                 }
@@ -74,7 +74,7 @@ public class ResourceManager {
     public InputStream getTestResourceInputStream(final String resourcePath) throws ResourceNotFoundException {
         final URL resource = getClass().getClassLoader().getResource(resourcePath);
         if (resource == null) {
-            throw new ResourceNotFoundException("Unable to find the resource '" + resourcePath + "' from the current working directory: " + Paths.get("").toAbsolutePath());
+            throw new ResourceNotFoundException("Unable to find the resource '" + resourcePath + "' from the current working directory: " + Path.of("").toAbsolutePath());
         }
         return getTestResourceInputStream(resource);
     }

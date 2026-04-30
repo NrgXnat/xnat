@@ -137,8 +137,7 @@ public class MatrixDataFile implements Comparable<MatrixDataFile> {
      */
     @Override
     public boolean equals(final Object o) {
-        if (o instanceof MatrixDataFile) {
-            final MatrixDataFile other = (MatrixDataFile)o;
+        if (o instanceof MatrixDataFile other) {
             return getScanStartTime().equals(other.getScanStartTime()) && file.equals(other.file);
         } else {
             return false;
@@ -174,7 +173,7 @@ public class MatrixDataFile implements Comparable<MatrixDataFile> {
         for (final String arg : args) {
             final MatrixDataFile ef = new MatrixDataFile(new File(arg), Variable.getVars());
 
-            System.out.println(String.format("<ecatfile xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" name=\"%1$s\">", arg));
+            System.out.println("<ecatfile xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" name=\"%1$s\">".formatted(arg));
             ef.mainHeader.emitXML(System.out);
             for (final Header header : ef.getSubheaders()) {
                 header.emitXML(System.out);

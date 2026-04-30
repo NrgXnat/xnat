@@ -5,12 +5,13 @@ plugins {
 group = 'org.nrg.dicom'
 
 dependencies {
-    api(project(':dicomtools')) { transitive = false }
     api project(':framework')
     api project(':transaction')
 
-    implementation libs.dcm4che.core
-    implementation libs.dcm4che.iod
+    api libs.dcm4che.core
+    api libs.dcm4che.iod
+    api libs.dcm4che5.dcm4che.core
+    api libs.dcm4che5.dcm4che.imageio
     implementation libs.spring.orm
     implementation libs.spring.context
     implementation libs.commons.codec

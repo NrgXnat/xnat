@@ -89,7 +89,7 @@ public class ExtractorFromRuleProvider implements ExtractorProvider {
             final String repl     = matcher.group(6);
             return new DicomPatternRuleMetaData(tag, regexp, group, target, repl);
         } else {
-            String msg = String.format("Failed to parse routing expression '%s'", expression);
+            String msg = "Failed to parse routing expression '%s'".formatted(expression);
             log.error(msg);
             throw new IllegalArgumentException(msg);
         }

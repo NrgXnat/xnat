@@ -76,7 +76,7 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
     {
     	try {
 			ArrayList<XdatStoredSearch> matches= GetSearches("xdat:stored_search/ID",id, withChildren);
-			if (matches.size()>0)return matches.get(0);
+			if (matches.size()>0)return matches.getFirst();
 		} catch (Exception e) {
 			logger.error(e);
 		}

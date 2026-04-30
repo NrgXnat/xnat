@@ -1490,8 +1490,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         if (resolver == null) {
             return null;
         }
-        if (resolver instanceof Method) {
-            _methods.put(preference, (Method) resolver);
+        if (resolver instanceof Method method) {
+            _methods.put(preference, method);
         } else {
             storeToCache(preference, resolver);
         }
@@ -1567,7 +1567,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     private static Pattern getNamespacePattern(final String namespace) {
-        return Pattern.compile(String.format(PREFERENCE_PATTERN_FORMAT, namespace));
+        return Pattern.compile(PREFERENCE_PATTERN_FORMAT.formatted(namespace));
     }
 
     private ObjectMapper _mapper;

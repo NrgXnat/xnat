@@ -10,8 +10,8 @@
 package org.nrg.dcm.id;
 
 import com.google.common.base.Function;
-import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
 
 @Deprecated
-public interface DicomDerivedString extends DicomObjectFunction,Function<DicomObject,String> {
+public interface DicomDerivedString extends DicomObjectFunction,Function<Attributes,String> {
 }

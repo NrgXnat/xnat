@@ -46,7 +46,7 @@ public class SQLUpdateGenerator {
      * @return A list of strings containing the SQL statements to be executed.
      */
     public static List<String> getViewDropSql(final String username) {
-        return Arrays.asList(QUERY_FIND_USER_VIEWS, QUERY_DROP_USER_VIEWS, String.format(QUERY_EXEC_DROP_USER_VIEWS, username));
+        return Arrays.asList(QUERY_FIND_USER_VIEWS, QUERY_DROP_USER_VIEWS, QUERY_EXEC_DROP_USER_VIEWS.formatted(username));
     }
 
     /**
@@ -329,14 +329,14 @@ public class SQLUpdateGenerator {
                             if (!t.equalsIgnoreCase(exptType)) {
                                 //COLUMN TYPE MIS-MATCH
                                 try {
-                                    final int dependencies = ((Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_FIND_TABLE_DEPENDENCIES, elementSqlName), "dependent_count", e.getDbName(), "system"), 0)).intValue();
+                                    final int dependencies = ((Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery(QUERY_FIND_TABLE_DEPENDENCIES.formatted(elementSqlName), "dependent_count", e.getDbName(), "system"), 0)).intValue();
                                     if (dependencies > 0) {
                                         requiresViewDrop.set(true);
                                     }
                                     final boolean isTextColumn = StringUtils.equalsAnyIgnoreCase(t, "text", "varchar", "bytea");
-                                    final String  query        = String.format(isTextColumn ? QUERY_FIND_TABLE_TEXT_VALUE_COUNT : QUERY_FIND_TABLE_NONTEXT_VALUE_COUNT, elementSqlName, fieldSQLName);
+                                    final String  query        = (isTextColumn ? QUERY_FIND_TABLE_TEXT_VALUE_COUNT : QUERY_FIND_TABLE_NONTEXT_VALUE_COUNT).formatted(elementSqlName, fieldSQLName);
                                     final Number  values       = (Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery(query, "value_count", e.getDbName(), "system"), 0);
-                                    final Number  constraints  = (Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_FIND_TABLE_CONSTRAINTS, elementSqlName, fieldSQLName), "value_count", e.getDbName(), "system"), 0);
+                                    final Number  constraints  = (Number) ObjectUtils.defaultIfNull(PoolDBUtils.ReturnStatisticQuery(QUERY_FIND_TABLE_CONSTRAINTS.formatted(elementSqlName, fieldSQLName), "value_count", e.getDbName(), "system"), 0);
 
                                     optional.add("\n--Database column " + elementSqlName + "." + fieldSQLName + " type mis-match ('" + exptType + "'!='" + t + "').\n");
 
@@ -468,7 +468,7 @@ public class SQLUpdateGenerator {
         }
 
         if (requiresViewDrop.get()) {
-            statements.add(0, "SELECT dependencies_save_and_drop('" + elementSqlName + "');");
+            statements.addFirst("SELECT dependencies_save_and_drop('" + elementSqlName + "');");
             statements.add("SELECT dependencies_restore('" + elementSqlName + "');");
         }
 

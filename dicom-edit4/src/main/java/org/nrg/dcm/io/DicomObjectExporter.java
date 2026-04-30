@@ -8,9 +8,9 @@
  */
 package org.nrg.dcm.io;
 
-import java.io.File;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 
-import org.dcm4che2.data.DicomObject;
+import java.io.File;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -18,5 +18,5 @@ import org.dcm4che2.data.DicomObject;
  */
 public interface DicomObjectExporter {
     void close();
-    void export(DicomObject o, File source) throws Exception;
+    void export(DicomObjectI o, File source) throws Exception;
 }

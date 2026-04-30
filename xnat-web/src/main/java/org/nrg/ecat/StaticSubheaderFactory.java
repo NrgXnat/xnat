@@ -33,7 +33,7 @@ public class StaticSubheaderFactory implements SubheaderFactory {
 		}
 		
 		protected void startXML(final PrintStream out) {
-			out.println(String.format("<subheader type=\"%1$s\">", getType()));
+			out.println("<subheader type=\"%1$s\">".formatted(getType()));
 		}
 		
 		protected void endXML(final PrintStream out) {

@@ -1,6 +1,5 @@
 package org.nrg.dicom.dicomedit.mizer;
 
-import org.dcm4che2.data.DicomObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -22,7 +21,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestMizerConfig.class)
@@ -31,25 +33,19 @@ public class VersionStringTest {
     @Test
     public void testKnownVersion() throws MizerException {
         final DicomObjectI dicom          = DicomObjectFactory.newInstance(DICOM_TEST);
-        final DicomObject dobj = dicom.getDcm4che2Object();
-
-        assertNull( dobj.getString( 0x00100666));
-
         final Map<String, Object> elements = new HashMap<>();
         final List<MizerContext> contexts  = Arrays.<MizerContext>asList(new MizerContextWithScript(0L, SCRIPT_V1, elements));
 
         final AnonymizationResult result = _service.anonymize(dicom, contexts);
 
-        assertEquals( "fubar", dobj.getString( 0x00100666));
+        assertEquals( "fubar", dicom.getString( 0x00100666));
     }
 
     @Test
     public void testUnKnownVersion() {
         try {
             final DicomObjectI dicom = DicomObjectFactory.newInstance(DICOM_TEST);
-            final DicomObject dobj = dicom.getDcm4che2Object();
-
-            assertNull(dobj.getString(0x00100666));
+            assertNull(dicom.getString(0x00100666));
 
             final Map<String, Object> elements = new HashMap<>();
             final List<MizerContext> contexts = Arrays.<MizerContext>asList(new MizerContextWithScript(0L, SCRIPT_VUNK, elements));

@@ -75,7 +75,7 @@ public abstract class AbstractXftItemEventHandlerMethod implements XftItemEventH
     @Override
     public boolean matches(final XftItemEventI event) {
         final Optional<XftItemEventCriteria> match = getCriteria().stream().filter(criteria -> criteria.matches(event)).findAny();
-        if (!match.isPresent()) {
+        if (match.isEmpty()) {
             log.info("No current XFT item event criteria matches event {}", event);
             return false;
         }

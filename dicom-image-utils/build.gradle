@@ -12,11 +12,10 @@ publishing {
 }
 
 dependencies {
-    api libs.dcm4che.core
-    api libs.dcm4che.image
-    api libs.dcm4che.net
-    api libs.dcm4che.imageio
-    api libs.dcm4che.imageio.rle
+    api project(':mizer')
+    api libs.dcm4che5.dcm4che.core
+    api libs.dcm4che5.dcm4che.image
+    api libs.dcm4che5.dcm4che.imageio
 
     implementation libs.commons.lang3
     implementation libs.slf4j.api

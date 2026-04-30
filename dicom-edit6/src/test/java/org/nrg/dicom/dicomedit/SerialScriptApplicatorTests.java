@@ -13,7 +13,6 @@ import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResultSeverity;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
-import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.dicom.mizer.variables.BasicVariable;
 import org.nrg.dicom.mizer.variables.Variable;
 import org.nrg.test.workers.resources.ResourceManager;
@@ -27,7 +26,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.nrg.dicom.dicomedit.TestUtils.bytes;
 
 /**
  * Run tests of BaseScriptApplicator methods.
@@ -56,7 +54,7 @@ public class SerialScriptApplicatorTests {
         assertEquals(AnonymizationResultSeverity.SUCCESS, applicator.apply(new BufferedInputStream(Files.newInputStream(DICOM_FILE.toPath()))).getSeverity());
         assertEquals(AnonymizationResultSeverity.SUCCESS, applicator.apply(DicomObjectFactory.newInstance()).getSeverity());
         // returns void
-        applicator.apply(new File("matchfile"), DicomObjectFactory.newInstance().getDcm4che2Object());
+        applicator.apply(new File("matchfile"), DicomObjectFactory.newInstance());
 
         Variable scriptVariable1 = new BasicVariable("scriptVariableName1", "scriptVariableValue1");
         Variable scriptVariable2 = new BasicVariable("scriptVariableName2", "scriptVariableValue2");

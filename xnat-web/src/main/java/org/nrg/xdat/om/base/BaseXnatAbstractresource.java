@@ -31,6 +31,7 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -40,6 +41,9 @@ import javax.annotation.Nullable;
  */
 @SuppressWarnings({"rawtypes", "unused"})
 public abstract class BaseXnatAbstractresource extends AutoXnatAbstractresource {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public BaseXnatAbstractresource(ItemI item) {
         super(item);

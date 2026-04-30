@@ -8,23 +8,22 @@
  */
 package org.nrg.dcm.io;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.net.TransferCapability;
-
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.TransferCapability;
 import org.nrg.dicomtools.utilities.DicomUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -38,7 +37,7 @@ public final class TransferCapabilityExtractor {
         while (files.hasNext()) {
             final File f = files.next();
             try {
-                final DicomObject o = DicomUtils.read(f, Tag.SOPClassUID);
+                final Attributes o = DicomUtils.read(f, Tag.SOPClassUID);
                 tcElements.put(o.getString(Tag.SOPClassUID), DicomUtils.getTransferSyntaxUID(o));
             } catch (IOException ignored) {}
         }
@@ -65,7 +64,11 @@ public final class TransferCapabilityExtractor {
         for (final String sop : sopToTS.keySet()) {
             final Set<String> tsuids = Sets.filter(sopToTS.get(sop), notNull);
             if (!tsuids.isEmpty()) {
-                tcs.add(new TransferCapability(sop, tsuids.toArray(EMPTY_STRING_ARRAY), role));
+                TransferCapability tc = new TransferCapability();
+                tc.setSopClass(sop);
+                tc.setRole(DicomUtils.parseRole(role));
+                tc.setTransferSyntaxes(tsuids.toArray(new String[0]));
+                tcs.add(tc);
             }
         }
         return tcs.toArray(EMPTY_TC_ARRAY);

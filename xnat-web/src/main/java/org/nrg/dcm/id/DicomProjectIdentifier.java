@@ -9,12 +9,12 @@
 
 package org.nrg.dcm.id;
 
-import org.dcm4che2.data.DicomObject;
+import org.dcm4che3.data.Attributes;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 
 public interface DicomProjectIdentifier extends DicomObjectFunction {
-    XnatProjectdata apply(UserI user, DicomObject o);
+    XnatProjectdata apply(UserI user, Attributes o);
 
     void reset();
 }

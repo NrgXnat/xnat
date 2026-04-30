@@ -176,10 +176,10 @@ public class XdatSearchFieldBean extends BaseElement implements java.io.Serializ
 	 * @param v Value to Set.
 	 */
 	public void setVisible(Object v){
-		if(v instanceof Boolean){
-			_Visible=(Boolean)v;
-		}else if(v instanceof String){
-			_Visible=formatBoolean((String)v);
+		if(v instanceof Boolean boolean1){
+			_Visible=boolean1;
+		}else if(v instanceof String string){
+			_Visible=formatBoolean(string);
 		}else if(v!=null){
 			throw new IllegalArgumentException();
 		}

@@ -37,7 +37,7 @@ public abstract class SqlPaginatedRequest extends PaginatedRequest {
         //add sort
         String sortColumnDb = getDbColumnFromMapping(repoMapping, getSortColumn());
         if (allowableSortCols.contains(sortColumnDb)) {
-            suffix.append(String.format(" ORDER BY %s ", sortColumnDb));
+            suffix.append(" ORDER BY %s ".formatted(sortColumnDb));
             suffix.append(sortDir.getDirection());
         } else {
             throw new SortOrFilterException("Sorting on column " + sortColumnDb + " is not allowed");
@@ -45,11 +45,11 @@ public abstract class SqlPaginatedRequest extends PaginatedRequest {
 
         //add pagination
         if (pageSize > 0) {
-            suffix.append(String.format(" LIMIT %d", pageSize));
+            suffix.append(" LIMIT %d".formatted(pageSize));
         }
         int offset = getOffset();
         if (offset > 0) {
-            suffix.append(String.format(" OFFSET %d", offset));
+            suffix.append(" OFFSET %d".formatted(offset));
         }
 
         return suffix.toString();

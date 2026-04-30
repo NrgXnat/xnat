@@ -9,6 +9,7 @@
 package org.nrg.xdat.om.base;
 
 import java.io.File;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -51,6 +52,9 @@ import org.nrg.xnat.utils.WorkflowUtils;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatImagescandata extends AutoXnatImagescandata {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatImagescandata(ItemI item) {
 		super(item);
@@ -119,7 +123,7 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
             {
                 return 0;
             }else{
-                return new Integer(s);
+                return Integer.valueOf(s);
             }
         } catch (NumberFormatException e) {
             return 0;
@@ -134,7 +138,7 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
             {
                 return 0;
             }else{
-                return new Integer(s);
+                return Integer.valueOf(s);
             }
         } catch (NumberFormatException e) {
             return 0;
@@ -225,8 +229,7 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
 			}
             String last_dir = null;
             for (XnatAbstractresourceI xnatFile : this.getFile()) {
-                    if (xnatFile instanceof org.nrg.xdat.om.XnatResource){
-                        XnatResource resource = (XnatResource)xnatFile;
+                    if (xnatFile instanceof org.nrg.xdat.om.XnatResource resource){
                         String uri =resource.getFullPath(rootPath);
                         if (last_dir==null){
                             last_dir= uri;
@@ -250,8 +253,7 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
                                 }
                             }
                         }
-                    }else if(xnatFile instanceof org.nrg.xdat.om.XnatDicomseries){
-                        XnatDicomseries resource = (XnatDicomseries)xnatFile;
+                    }else if(xnatFile instanceof org.nrg.xdat.om.XnatDicomseries resource){
                         String uri =resource.getFullPath(rootPath);
                         if (last_dir==null){
                             last_dir= uri;
@@ -275,8 +277,7 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
                                 }
                             }
                         }
-                    }else if(xnatFile instanceof org.nrg.xdat.om.XnatResourceseries){
-                        XnatResourceseries resource = (XnatResourceseries)xnatFile;
+                    }else if(xnatFile instanceof org.nrg.xdat.om.XnatResourceseries resource){
                         String uri =resource.getFullPath(rootPath);
                         if (last_dir==null){
                             last_dir= uri;
@@ -321,7 +322,7 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
             ArrayList al = XnatImagesessiondata.getXnatImagesessiondatasByField("xnat:imageSessionData/ID",this.getImageSessionId(),this.getUser(),false);
             if (al.size()>0)
             {
-                mr = (XnatImagesessiondata)al.get(0);
+                mr = (XnatImagesessiondata)al.getFirst();
             }
         }
 
@@ -350,10 +351,10 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
 		    for(XnatAbstractresourceI res: this.getFile()){
 				if(res.getLabel()!=null && res.getLabel().equalsIgnoreCase("SNAPSHOTS")){
 				    path="/data/experiments/"+ses.getId() + "/scans/"+this.getId() + "/resources/SNAPSHOTS/files/";
-				    if(res instanceof XnatResourcecatalog){
+				    if(res instanceof XnatResourcecatalog resourcecatalog){
 						final CatalogUtils.CatalogData catalogData;
 						try {
-							catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(archivePath, (XnatResourcecatalog) res, false, project);
+							catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(archivePath, resourcecatalog, false, project);
 							final List<CatEntryI> entries = catalogData.catBean.getEntries_entry();
 							if (entries != null) {
 								for(final CatEntryI entry : entries){
@@ -457,10 +458,10 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
 		
 		for(final XnatAbstractresourceI res: this.getFile()){
 			final String uri;
-			if(res instanceof XnatResource){
-				uri=((XnatResource)res).getUri();
-			}else if(res instanceof XnatResourceseries){
-				uri=((XnatResourceseries)res).getPath();
+			if(res instanceof XnatResource resource){
+				uri=resource.getUri();
+			}else if(res instanceof XnatResourceseries resourceseries){
+				uri=resourceseries.getPath();
 			}else{
 				continue;
 			}
@@ -545,11 +546,11 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
 	               continue;
 	            }
 	               
-	            if(resource instanceof XnatResourcecatalogI){
+	            if(resource instanceof XnatResourcecatalogI resourcecatalogI){
 	               // Get the rootPath and FileStats
 					try {
 						final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(prearcPath,
-								(XnatResourcecatalogI) resource, false, this.getProject());
+								resourcecatalogI, false, this.getProject());
 						CatalogUtils.Stats c_stats = CatalogUtils.getFileStats(catalogData.catBean, catalogData.catPath,
 								catalogData.project);
 						totalSize += c_stats.size;
@@ -595,10 +596,10 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
               Object rawFileSize = resource.getFileSize();
               
               if (rawFileSize != null) {
-                 if (rawFileSize instanceof Integer) {
-                    size = (Integer) rawFileSize;
-                 } else if (rawFileSize instanceof Long) {
-                    size = (Long) rawFileSize;
+                 if (rawFileSize instanceof Integer integer) {
+                    size = integer;
+                 } else if (rawFileSize instanceof Long long1) {
+                    size = long1;
                  } else {
                     size = Long.parseLong(rawFileSize.toString());
                  }
@@ -610,7 +611,7 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
               stats.add(CatalogUtils.formatFileStats(label, count, size));
            }
            // Add totalCount and totalSize to the stats list
-           stats.add(0, CatalogUtils.formatFileStats("TOTAL", totalCount, totalSize));
+           stats.addFirst(CatalogUtils.formatFileStats("TOTAL", totalCount, totalSize));
         }
 
         return stats;
@@ -624,10 +625,10 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
     public String getFormattedReadableFileStats(UserI user) throws Exception {
         if (getFile().size() > 0) {
             List<String> stats = getReadableFileStats();
-            if(stats == null || stats.size() == 0 || stats.get(0) == null || stats.get(0).equals("") || stats.get(0).equals("0 B in 0 files")) {
+            if(stats == null || stats.size() == 0 || stats.getFirst() == null || stats.getFirst().equals("") || stats.getFirst().equals("0 B in 0 files")) {
                 return getEmptyResourceCount(user);
             } else if (stats.size() == 1) {
-                return stats.get(0);
+                return stats.getFirst();
             } else {
                 return getListAsTipText(stats);
            }
@@ -644,10 +645,10 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
     }
 
     static public String getListAsTipText(List<String> list) {
-        if (list == null || list.size() == 0 || list.get(0) == null || list.get(0).trim().equals("")) {
+        if (list == null || list.size() == 0 || list.getFirst() == null || list.getFirst().trim().equals("")) {
             return "<span class=\"tip_text\">No items found.<span style=\"top:20px;white-space:nowrap;left:-10;width:auto;\" class=\"tip shadowed\">No items were found: Check your data to be sure you specified a valid system object.</span></span>";
         }
-        StringBuilder buffer = new StringBuilder("<span class=\"tip_text\">").append(list.get(0)).append("<span style=\"top:20px;white-space:nowrap;left:-10;width:auto;\" class=\"tip shadowed\">");
+        StringBuilder buffer = new StringBuilder("<span class=\"tip_text\">").append(list.getFirst()).append("<span style=\"top:20px;white-space:nowrap;left:-10;width:auto;\" class=\"tip shadowed\">");
         for (int index = 1; index < list.size(); index++) {
             buffer.append(list.get(index));
             if (index < list.size() - 1) {

@@ -38,7 +38,7 @@ public class LapStopWatchTest {
         assertThat(lapTimes4).isNotNull().isNotEmpty().hasSize(3);
 
         final long totalTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        final long lapTime1  = lapTimes4.get(0);
+        final long lapTime1  = lapTimes4.getFirst();
         final long lapTime2  = lapTimes4.get(1);
         final long lapTime3  = lapTimes4.get(2);
         assertThat(lapTime1).isGreaterThan(0).isLessThan(totalTime);
@@ -47,7 +47,7 @@ public class LapStopWatchTest {
         assertThat(totalTime).isGreaterThanOrEqualTo(lapTime1 + lapTime2 + lapTime3);
 
         final List<LapStopWatch.Lap> laps = stopWatch.getLaps();
-        final LapStopWatch.Lap       lap1 = laps.get(0);
+        final LapStopWatch.Lap       lap1 = laps.getFirst();
         final LapStopWatch.Lap       lap2 = laps.get(1);
         final LapStopWatch.Lap       lap3 = laps.get(2);
 

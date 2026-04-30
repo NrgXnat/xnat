@@ -25,7 +25,7 @@ public final class Substring implements ScriptFunction {
     @Override
     public Value apply(final List<? extends Value> args) throws ScriptEvaluationException {
         try {
-            final Value value = args.get(0);
+            final Value value = args.getFirst();
             final int   start = ((IntegerValue) args.get(1)).getValue();
             final int   end   = ((IntegerValue) args.get(2)).getValue();
             return new SubstringValue(value, start, end);

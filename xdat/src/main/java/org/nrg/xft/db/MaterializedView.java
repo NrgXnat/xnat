@@ -97,7 +97,7 @@ public class MaterializedView {
 	public static void deleteByUser(UserI user)throws Exception{
         getServices();
 		for(Class<?> serviceC : services.values()){
-			MaterializedViewServiceI service=(MaterializedViewServiceI)serviceC.newInstance();
+			MaterializedViewServiceI service=(MaterializedViewServiceI)serviceC.getDeclaredConstructor().newInstance();
 			service.deleteViewsByUser(user);
 		}
 	}

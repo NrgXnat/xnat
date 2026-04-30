@@ -8,30 +8,46 @@
  */
 package org.nrg.dcm.xnat;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.gs.collections.impl.tuple.AbstractImmutableEntry;
-import org.apache.commons.lang.StringUtils;
-import org.dcm4che2.data.Tag;
+import org.apache.commons.lang3.StringUtils;
+import org.dcm4che3.data.Tag;
 import org.nrg.attr.ConversionFailureException;
 import org.nrg.attr.ExtAttrValue;
 import org.nrg.attr.TransformingExtAttrDef;
 import org.nrg.dcm.AttrDefs;
 import org.nrg.dcm.MutableAttrDefs;
-import org.nrg.dcm.xnat.XnatAttrDef;
 import org.nrg.session.BeanBuilder;
 import org.nrg.xdat.bean.XnatContrastbolusv2Bean;
 import org.nrg.xdat.bean.XnatCtscandataFocalspotBean;
 import org.nrg.xdat.bean.base.BaseElement;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
-import static org.nrg.dcm.DicomAttributes.*;
+import static org.nrg.dcm.DicomAttributes.CONTRAST_BOLUS_SEQUENCE;
+import static org.nrg.dcm.DicomAttributes.CT_CONVOLUTION_KERNEL;
+import static org.nrg.dcm.DicomAttributes.CT_DATA_COLLECTION_DIAMETER;
+import static org.nrg.dcm.DicomAttributes.CT_DISTANCE_SOURCE_TO_DETECTOR;
+import static org.nrg.dcm.DicomAttributes.CT_DIVOL;
+import static org.nrg.dcm.DicomAttributes.CT_ESTIMATED_DOSE_SAVING;
+import static org.nrg.dcm.DicomAttributes.CT_EXPOSURE_MODULATION_TYPE;
+import static org.nrg.dcm.DicomAttributes.CT_FILTER_TYPE;
+import static org.nrg.dcm.DicomAttributes.CT_FOCAL_SPOTS;
+import static org.nrg.dcm.DicomAttributes.CT_GANTRY_DETECTOR_TILT;
+import static org.nrg.dcm.DicomAttributes.CT_KVP;
+import static org.nrg.dcm.DicomAttributes.CT_ROTATION_DIRECTION;
+import static org.nrg.dcm.DicomAttributes.CT_SINGLE_COLLIMATION_WIDTH;
+import static org.nrg.dcm.DicomAttributes.CT_SPIRAL_PITCH_FACTOR;
+import static org.nrg.dcm.DicomAttributes.CT_TABLE_FEED_PER_ROTATION;
+import static org.nrg.dcm.DicomAttributes.CT_TABLE_HEIGHT;
+import static org.nrg.dcm.DicomAttributes.CT_TABLE_SPEED;
+import static org.nrg.dcm.DicomAttributes.CT_TOTAL_COLLIMATION_WIDTH;
+import static org.nrg.dcm.DicomAttributes.RESCALE_INTERCEPT;
+import static org.nrg.dcm.DicomAttributes.RESCALE_SLOPE;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -88,7 +104,7 @@ final class CTScanAttributes {
         private final static String FOCAL_SPOT_SEPARATOR = "\\\\";
         public Collection<BaseElement> buildBeans(final ExtAttrValue focalSpotsValue)
         throws ConversionFailureException {
-            final Collection<BaseElement> beans = Lists.newArrayList();
+            final Collection<BaseElement> beans = new ArrayList<>();
             final String focalSpots = focalSpotsValue.getText();
             if (null == focalSpots || nullValues.contains(focalSpots)) {
                 return beans;

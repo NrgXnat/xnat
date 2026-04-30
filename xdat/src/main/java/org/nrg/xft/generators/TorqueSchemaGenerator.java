@@ -335,7 +335,7 @@ public class TorqueSchemaGenerator {
 
 					node.setAttribute("foreignTable",(String)field.get(2));
 					node.setAttribute("onDelete","cascade");
-					subCol.setAttribute("local",(String)field.get(0));
+					subCol.setAttribute("local",(String)field.getFirst());
 					subCol.setAttribute("foreign",(String)field.get(3));
 					node.appendChild(subCol);
 					main.appendChild(node);

@@ -32,7 +32,8 @@ public class DisplayFieldRef extends Sortable implements Identifier, DisplayFiel
 	private String header = null;
     @JsonIgnore
 	private DisplayField df = null;
-	private String elementName = null;
+
+    private String elementName = null;
 
 	private Boolean visible = null;
     @JsonIgnore
@@ -357,6 +358,10 @@ public class DisplayFieldRef extends Sortable implements Identifier, DisplayFiel
         } else {
     		return visible;
     	}
+    }
+
+    public Boolean getVisible(){
+        return visible;
     }
 }
 

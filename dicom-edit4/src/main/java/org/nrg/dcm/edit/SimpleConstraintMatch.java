@@ -8,15 +8,13 @@
  */
 package org.nrg.dcm.edit;
 
-import java.util.SortedSet;
-
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.VR;
-import org.dcm4che2.util.StringUtils;
-import org.dcm4che2.util.TagUtils;
-
 import com.google.common.collect.ImmutableSortedSet;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.util.StringUtils;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
+
+import java.util.SortedSet;
 
 /**
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
@@ -47,15 +45,14 @@ class SimpleConstraintMatch implements ConstraintMatch {
 
     public boolean matches(final DicomObjectI dicomObject) {
         if (dicomObject.contains(tag)) {
-            final DicomObject dcm4che2Object = dicomObject.getDcm4che2Object();
-            final VR vr = dcm4che2Object.vrOf(tag);
+            final VR vr = VR.valueOf(dicomObject.getVR(tag));
             final String value;
             if (VR.SQ == vr) { 
                 throw new RuntimeException("can't use SQ type attribute for constraint");
             } else if (VR.UN == vr) {
                 value = dicomObject.getString(tag);
             } else {
-                value = StringUtils.join(dcm4che2Object.getStrings(tag), '\\');
+                value = StringUtils.concat(dicomObject.getStrings(tag), '\\');
             }
             return matches(value);
         } else

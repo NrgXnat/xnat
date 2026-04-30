@@ -46,7 +46,7 @@ public class ContainedAssignmentDicomIdentifier extends DelegateDicomIdentifier 
 
     @Nonnull
     private static Pattern getPattern(final String id, final String op, final String valuePattern, final int patternFlags) {
-        return Pattern.compile(String.format(PATTERN, id, op, valuePattern), patternFlags);
+        return Pattern.compile(PATTERN.formatted(id, op, valuePattern), patternFlags);
     }
 
     private final static String PATTERN = "(?:\\A|(?:.*[\\s,;]))%s\\s*%s\\s*(%s)(?:(?:[\\s,;].*\\Z)|\\Z)";

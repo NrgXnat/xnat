@@ -179,12 +179,12 @@ public abstract class TestAttrDef implements ExtAttrDef<DicomAttributeIndex> {
             final String v;
             switch (dcm.length()) {
             case 8: // DICOM v. 3.0 and later
-                v = String.format(format, dcm.substring(0,4), dcm.substring(4,6), dcm.substring(6,8));
+                v = format.formatted(dcm.substring(0, 4), dcm.substring(4, 6), dcm.substring(6, 8));
                 break;
 
             case 10:  // old DICOM
                 if (dcm.charAt(4) == '.' && dcm.charAt(7) == '.') {
-                    v = String.format(format, dcm.substring(0,4), dcm.substring(5,7), dcm.substring(8,10));
+                    v = format.formatted(dcm.substring(0, 4), dcm.substring(5, 7), dcm.substring(8, 10));
                     break;
                 }
                 // else fall through to throw exception
@@ -234,7 +234,7 @@ public abstract class TestAttrDef implements ExtAttrDef<DicomAttributeIndex> {
                     throw new ConversionFailureException(attr, dcm, getName(), "invalid"); 
                 }
             } else if (dcm.length() >= 6) {
-                v = String.format(format, dcm.substring(0,2), dcm.substring(2,4), dcm.substring(4,6));
+                v = format.formatted(dcm.substring(0, 2), dcm.substring(2, 4), dcm.substring(4, 6));
             } else {
                 throw new ConversionFailureException(attr, dcm, getName(), "invalid");
 

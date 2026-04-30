@@ -17,6 +17,7 @@ import org.nrg.xft.utils.FileUtils;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Hashtable;
 
 /**
@@ -25,6 +26,9 @@ import java.util.Hashtable;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class BaseXnatDicomseriesImage extends AutoXnatDicomseriesImage {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
 	public BaseXnatDicomseriesImage(ItemI item)
 	{

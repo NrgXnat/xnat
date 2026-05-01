@@ -26,8 +26,8 @@ public abstract class AbstractExperimentXapiRestController<E extends XnatExperim
         _parameterizedType = getParameterizedTypeForClass(getClass());
         _xsiType = (String) _parameterizedType.getField("SCHEMA_ELEMENT_NAME").get(null);
         final String tableName = StringUtils.replaceOnce(_xsiType, ":", "_").toLowerCase();
-        _queryGetExperimentIdFromProjectAndIdOrLabel = String.format(QUERY_GET_EXPERIMENT_ID_FROM_PROJECT_AND_ID_OR_LABEL_TEMPLATE, tableName);
-        _queryVerifyExperimentIdExists = String.format(QUERY_EXPERIMENT_BY_ID_EXISTS_TEMPLATE, tableName);
+        _queryGetExperimentIdFromProjectAndIdOrLabel = QUERY_GET_EXPERIMENT_ID_FROM_PROJECT_AND_ID_OR_LABEL_TEMPLATE.formatted(tableName);
+        _queryVerifyExperimentIdExists = QUERY_EXPERIMENT_BY_ID_EXISTS_TEMPLATE.formatted(tableName);
         log.debug("Creating API controller for XSI type {}, with table name {}", _xsiType, tableName);
     }
 

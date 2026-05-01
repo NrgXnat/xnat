@@ -7,6 +7,8 @@ import org.nrg.xnat.entities.CustomVariableAppliesTo;
 import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 
 import javax.validation.constraints.NotNull;
+
+import java.io.Serial;
 import java.io.Serializable;
 
 @Getter
@@ -14,6 +16,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class FormAppliesToPoJo implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
     private String entityId;
     private String idCustomVariableFormAppliesTo;

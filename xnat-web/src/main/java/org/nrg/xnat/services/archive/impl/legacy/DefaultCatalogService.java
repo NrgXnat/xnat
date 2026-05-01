@@ -104,7 +104,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -143,7 +142,7 @@ public class DefaultCatalogService implements CatalogService {
             throw new InsufficientPrivilegesException(user == null ? "No user found" : user.getUsername());
         }
 
-        catalog.setId(String.format(CATALOG_FORMAT, resolvedUser.getLogin(), getPrearchiveTimestamp()));
+        catalog.setId(CATALOG_FORMAT.formatted(resolvedUser.getLogin(), getPrearchiveTimestamp()));
 
         final DownloadArchiveOptions options = DownloadArchiveOptions.getOptions(resourceMap.get("options"));
         catalog.setDescription(options.getDescription());
@@ -312,8 +311,8 @@ public class DefaultCatalogService implements CatalogService {
             throw new InsufficientPrivilegesException(user.getUsername());
         }
         final StringWriter writer = new StringWriter();
-        if (catalog instanceof CatCatalogBean) {
-            ((CatCatalogBean) catalog).toXML(writer, true);
+        if (catalog instanceof CatCatalogBean bean) {
+            bean.toXML(writer, true);
         } else {
             try {
                 catalog.toXML(writer);
@@ -783,9 +782,9 @@ public class DefaultCatalogService implements CatalogService {
         // Is it a catalog resource?
         XnatResourcecatalog catRes           = null;
         String              resourceFilePath = null;
-        if (xnatUri instanceof ResourceURII) {
+        if (xnatUri instanceof ResourceURII iI) {
             // Do we have the path to a file?
-            resourceFilePath = ((ResourceURII) xnatUri).getResourceFilePath();
+            resourceFilePath = iI.getResourceFilePath();
 
             if (StringUtils.isNotEmpty(resourceFilePath) && !resourceFilePath.equals("/")) {
                 if (!acceptFileUri) {
@@ -796,11 +795,11 @@ public class DefaultCatalogService implements CatalogService {
                 resourceFilePath = null;
             }
 
-            XnatAbstractresourceI resource = ((ResourceURII) xnatUri).getXnatResource();
+            XnatAbstractresourceI resource = iI.getXnatResource();
             // Allow a null resource; throw exception if we have a resource file path and we have a non-catalog resource
             if (resource != null) {
-                if (resource instanceof XnatResourcecatalog) {
-                    catRes = (XnatResourcecatalog) resource;
+                if (resource instanceof XnatResourcecatalog resourcecatalog) {
+                    catRes = resourcecatalog;
                 }
             }
 
@@ -917,7 +916,7 @@ public class DefaultCatalogService implements CatalogService {
         try (final FileInputStream validatorInput = new FileInputStream(inputFile)) {
             final ValidationHandler handler = new XMLValidator().validateInputStream(validatorInput);
             if (!handler.assertValid()) {
-                throw handler.getErrors().get(0);
+                throw handler.getErrors().getFirst();
             }
         }
 
@@ -1140,10 +1139,9 @@ public class DefaultCatalogService implements CatalogService {
             final XnatResourceInfo  descriptor   = entry.getValue();
             final boolean           extract      = BooleanUtils.toBooleanDefaultIfNull(descriptor.getExtract(), extractByDefault);
             final InputStreamSource source       = descriptor.getSource();
-            if (source instanceof ByteArrayResource) {
-                FileUtils.copyInputStreamToFile(new ByteArrayInputStream(((ByteArrayResource) source).getByteArray()), destination.toPath().resolve(resourceName).toFile());
-            } else if (source instanceof Resource) {
-                final Resource resource = (Resource) source;
+            if (source instanceof ByteArrayResource resource) {
+                FileUtils.copyInputStreamToFile(new ByteArrayInputStream(resource.getByteArray()), destination.toPath().resolve(resourceName).toFile());
+            } else if (source instanceof Resource resource) {
                 try {
                     final File    file        = resource.getFile();
                     final boolean isDirectory = file.isDirectory();
@@ -1161,8 +1159,7 @@ public class DefaultCatalogService implements CatalogService {
                             destination, e);
                     FileUtils.copyInputStreamToFile(source.getInputStream(), destination.toPath().resolve(resourceName).toFile());
                 }
-            } else if (source instanceof MultipartFile) {
-                final MultipartFile multipartFile    = (MultipartFile) source;
+            } else if (source instanceof MultipartFile multipartFile) {
                 final String        originalFilename = multipartFile.getOriginalFilename();
                 if (ZipUtils.isCompressedFile(originalFilename) && extract) {
                     final File tempDirectory = Files.createTempDirectory(Long.toString(Calendar.getInstance().getTimeInMillis())).toFile();
@@ -1374,9 +1371,9 @@ public class DefaultCatalogService implements CatalogService {
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(uploadId);
 
-        final Path path = Paths.get(working.getRootArchivePath(), "resources");
+        final Path path = Path.of(working.getRootArchivePath(), "resources");
         final File destination = resourceFolder != null
-                                 ? path.resolve(Paths.get(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
+                                 ? path.resolve(Path.of(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
                                  : path.resolve(catalog.getId() + "_catalog.xml").toFile();
 
         destination.getParentFile().mkdirs();
@@ -1406,9 +1403,9 @@ public class DefaultCatalogService implements CatalogService {
         CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(uploadId);
 
-        final Path path = Paths.get(project.getRootArchivePath(), "subjects", subject.getArchiveDirectoryName());
+        final Path path = Path.of(project.getRootArchivePath(), "subjects", subject.getArchiveDirectoryName());
         final File destination = resourceFolder != null
-                                 ? path.resolve(Paths.get(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
+                                 ? path.resolve(Path.of(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
                                  : path.resolve(catalog.getId() + "_catalog.xml").toFile();
 
         destination.getParentFile().mkdirs();
@@ -1438,16 +1435,16 @@ public class DefaultCatalogService implements CatalogService {
         final Path path;
         if (isImageAssessor) {
             final XnatImagesessiondata parent = ((XnatImageassessordata) experiment).getImageSessionData();
-            path = Paths.get(parent.getCurrentSessionFolder(true), "ASSESSORS", experiment.getArchiveDirectoryName());
+            path = Path.of(parent.getCurrentSessionFolder(true), "ASSESSORS", experiment.getArchiveDirectoryName());
         } else {
-            path = Paths.get(experiment.getCurrentSessionFolder(true), "RESOURCES");
+            path = Path.of(experiment.getCurrentSessionFolder(true), "RESOURCES");
         }
 
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(uploadId);
 
         final File destination = resourceFolder != null
-                                 ? path.resolve(Paths.get(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
+                                 ? path.resolve(Path.of(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
                                  : path.resolve(catalog.getId() + "_catalog.xml").toFile();
 
         destination.getParentFile().mkdirs();
@@ -1491,9 +1488,9 @@ public class DefaultCatalogService implements CatalogService {
 
         final XnatImagesessiondata session = scan.getImageSessionData();
 
-        final Path path = Paths.get(session.getCurrentSessionFolder(true), "SCANS", scan.getId());
+        final Path path = Path.of(session.getCurrentSessionFolder(true), "SCANS", scan.getId());
         final File destination = resourceFolder != null
-                                 ? path.resolve(Paths.get(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
+                                 ? path.resolve(Path.of(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
                                  : path.resolve(catalog.getId() + "_catalog.xml").toFile();
 
         destination.getParentFile().mkdirs();
@@ -1523,13 +1520,13 @@ public class DefaultCatalogService implements CatalogService {
     private void insertReconstructionResourceCatalog(final UserI user, final XnatReconstructedimagedata reconstruction, final XnatResourcecatalog resourceCatalog, final String uploadId, final EventMetaI ci, final Map<String, String> parameters) throws Exception {
         final String               resourceFolder = resourceCatalog.getLabel();
         final XnatImagesessiondata session        = reconstruction.getImageSessionData();
-        final Path                 path           = Paths.get(session.getCurrentSessionFolder(true), "ASSESSORS", "PROCESSED", uploadId);
+        final Path                 path           = Path.of(session.getCurrentSessionFolder(true), "ASSESSORS", "PROCESSED", uploadId);
 
         final CatCatalogBean catalog = new CatCatalogBean();
         catalog.setId(uploadId);
 
         final File destination = resourceFolder != null
-                                 ? path.resolve(Paths.get(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
+                                 ? path.resolve(Path.of(resourceFolder, catalog.getId() + "_catalog.xml")).toFile()
                                  : path.resolve(catalog.getId() + "_catalog.xml").toFile();
 
         destination.getParentFile().mkdirs();
@@ -1560,14 +1557,14 @@ public class DefaultCatalogService implements CatalogService {
                                         final UserI user, final EventMetaI now) throws ServerException {
         long startTime = Calendar.getInstance().getTimeInMillis();
 
-        if (resource instanceof XnatResourcecatalog) {
-            File lockFile = new File(((XnatResourcecatalog) resource).getUri() + ".refresh");
+        if (resource instanceof XnatResourcecatalog resourcecatalog) {
+            File lockFile = new File(resourcecatalog.getUri() + ".refresh");
             try {
                 final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile,
                                                                                                          false);
                 fl.tryLock(30L, TimeUnit.SECONDS);
                 final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
-                        (XnatResourcecatalog) resource, projectId);
+                        resourcecatalog, projectId);
                 try {
                     CatalogUtils.refreshAndWriteCatalog(catalogData, user, resourceMap, now, addUnreferencedFiles,
                             removeMissingFiles, populateStats, checksums);
@@ -1599,10 +1596,10 @@ public class DefaultCatalogService implements CatalogService {
     }
 
     private CatCatalogI getFromCache(final UserI user, final String catalogId) {
-        final File file = _cache.get(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId));
+        final File file = _cache.get(CATALOG_CACHE_KEY_FORMAT.formatted(user.getUsername(), catalogId));
         try {
             if (file == null) {
-                final File cacheFile = _userDataCache.getUserDataCacheFile(user, Paths.get("catalogs", catalogId + ".xml"));
+                final File cacheFile = _userDataCache.getUserDataCacheFile(user, Path.of("catalogs", catalogId + ".xml"));
                 if (cacheFile.exists()) {
                     final CatCatalogBean catalog = new CatalogUtils.CatalogData(cacheFile, null).catBean;
                     storeToCache(user, catalog);
@@ -1621,14 +1618,14 @@ public class DefaultCatalogService implements CatalogService {
 
     private void storeToCache(final UserI user, final CatCatalogBean catalog) {
         final String catalogId = catalog.getId();
-        final File   file      = _userDataCache.getUserDataCacheFile(user, Paths.get("catalogs", catalogId + ".xml"));
+        final File   file      = _userDataCache.getUserDataCacheFile(user, Path.of("catalogs", catalogId + ".xml"));
         file.getParentFile().mkdirs();
 
         try {
             try (final FileWriter writer = new FileWriter(file)) {
                 catalog.toXML(writer, true);
             }
-            _cache.put(String.format(CATALOG_CACHE_KEY_FORMAT, user.getUsername(), catalogId), file);
+            _cache.put(CATALOG_CACHE_KEY_FORMAT.formatted(user.getUsername(), catalogId), file);
         } catch (IOException e) {
             log.error("An error occurred writing the catalog " + catalogId + " for user " + user.getLogin(), e);
         }
@@ -1964,14 +1961,14 @@ public class DefaultCatalogService implements CatalogService {
             for (int index = 1; index < elements.length; index += 2) {
                 reduced[(index - 1) / 2] = elements[index];
             }
-            base = Paths.get(element, reduced);
+            base = Path.of(element, reduced);
         } else {
-            base = Paths.get(element, elements);
+            base = Path.of(element, elements);
         }
         if (options.isProjectIncludedInPath()) {
-            return Paths.get(project, subject).resolve(base).toString();
+            return Path.of(project, subject).resolve(base).toString();
         } else if (options.isSubjectIncludedInPath()) {
-            return Paths.get(subject).resolve(base).toString();
+            return Path.of(subject).resolve(base).toString();
         } else {
             return base.toString();
         }

@@ -541,9 +541,9 @@ public class RESTHTMLPresenter extends PresentationA {
 					    {
 					       // String s = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ENGLISH).format(DateUtils.parseDateTime(v.toString()));
 							sb.append(v.toString());
-					    }else if (v instanceof Time)
+					    }else if (v instanceof Time time)
 							{
-								java.util.Date d = new java.util.Date(((Time)v).getTime());
+								java.util.Date d = new java.util.Date(time.getTime());
 								sb.append(DateUtils.format(d,"HH:mm:ss.SSS"));
 							}else{
                             String vS = v.toString();

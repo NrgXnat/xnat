@@ -164,9 +164,9 @@ public class ResourceSurveyRequestRepository extends AbstractHibernateDAO<Resour
                 break;
             case 1:
                 if (log.isDebugEnabled()) {
-                    log.debug("Returning {} requests with status {}  where {} == {}", openOnly ? "all open" : "all", statuses.get(0), property, objectId);
+                    log.debug("Returning {} requests with status {}  where {} == {}", openOnly ? "all open" : "all", statuses.getFirst(), property, objectId);
                 }
-                predicates.add(builder.eq(PROPERTY_STATUS, statuses.get(0)));
+                predicates.add(builder.eq(PROPERTY_STATUS, statuses.getFirst()));
                 break;
             default:
                 if (log.isDebugEnabled()) {

@@ -1162,6 +1162,14 @@ var XNAT = getObject(XNAT || {});
         ]);
     }
 
+    function showDatatype(itemObj, text){
+        return spawn('!',[
+            spawn('strong',text.replace(/\(.+?\)/,'')),
+            spawn('br'),
+            spawn('small',{style: {color: "#a0a0a0" }},itemObj['path'].replace('datatype/',''))
+        ]);
+    }
+
     function editButton(itemObj,formTitle) {
         return spawn('button.btn.btn-sm.edit', {
             onclick: function (e) {
@@ -1373,7 +1381,7 @@ var XNAT = getObject(XNAT || {});
                 }
             },
             apply: function (datatype) {
-                return truncCell.call(this, datatype, '');
+                return showDatatype(this.actions, datatype);
             }
         },
         project: {

@@ -5,12 +5,16 @@ import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @XnatEventServiceEvent(name="ProjectEvent")
 public class ProjectEvent extends AbstractEventServiceEvent<XnatProjectdataI> {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public enum Status {CREATED, DELETED};
 

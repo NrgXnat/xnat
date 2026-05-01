@@ -58,7 +58,7 @@ public class ThumbnailGenerator extends DicomImageRenderer {
     }
 
     public String scale( int ow, int oh, int r, int c, float sy) {
-        String s =  String.format("ow: %d  oh: %d  r: %d  c: %d  sy: %f", ow, oh, r, c, sy);
+        String s =  "ow: %d  oh: %d  r: %d  c: %d  sy: %f".formatted(ow, oh, r, c, sy);
         float sx = 1f;
         if (r != 0 || c != 0) {
             if (r != 0 && c != 0)
@@ -69,7 +69,7 @@ public class ThumbnailGenerator extends DicomImageRenderer {
             sx = r != 0 ? r / (oh * sy) : c / (float)ow;
             sy *= sx;
         }
-        return s + "\n" +  String.format("ow: %d  oh: %d  r: %d  c: %d  sy: %f  sx: %f", ow, oh, r, c, sy, sx);
+        return s + "\n" +  "ow: %d  oh: %d  r: %d  c: %d  sy: %f  sx: %f".formatted(ow, oh, r, c, sy, sx);
     }
 
 }

@@ -53,7 +53,7 @@ public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
             return hostNumber;
         }
         final long   hostNumber = info.getId();
-        final String formatted  = String.format("%02d", hostNumber);
+        final String formatted  = "%02d".formatted(hostNumber);
         log.debug("Found host {}, returning ID {} from first entry, formatted that will be: {} (note that I think the host name is {})", hostName, hostNumber, formatted, _hostName);
         return formatted;
     }

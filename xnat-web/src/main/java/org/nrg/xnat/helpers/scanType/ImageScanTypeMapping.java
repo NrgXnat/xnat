@@ -63,7 +63,7 @@ public class ImageScanTypeMapping extends AbstractScanTypeMapping<ImageScanTypeM
 
         public String match(final String desc, final Integer frames){
             if(types.size()==1){
-                return types.get(0).getType();
+                return types.getFirst().getType();
             }
 
             //match by frames
@@ -81,7 +81,7 @@ public class ImageScanTypeMapping extends AbstractScanTypeMapping<ImageScanTypeM
                 }
             }
 
-            return types.get(0).getType();
+            return types.getFirst().getType();
         }
     }
 

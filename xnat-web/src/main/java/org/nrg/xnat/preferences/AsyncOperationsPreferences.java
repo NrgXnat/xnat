@@ -11,14 +11,16 @@ import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.NrgPreferenceService;
 
+import java.io.Serial;
+
 @NrgPreferenceBean(toolId = AsyncOperationsPreferences.ASYNC_OPS_TOOL_ID,
                    toolName = "XNAT Async Operations Preferences",
                    description = "Manages preferences and settings for XNAT asynchronous services and workers.")
 @XnatMixIn(ProxiedBeanMixIn.class)
 @Slf4j
 public class AsyncOperationsPreferences extends AbstractPreferenceBean {
+    @Serial
     private static final long serialVersionUID = 6172806826130883716L;
-
     public static final String ASYNC_OPS_TOOL_ID = "asyncOps";
     public static final String CLEANUP_FREQUENCY = "eventTrackingDataCleanupFrequency";
     public static final String CLEANUP_TTL = "eventTrackingDataCleanupTtl";

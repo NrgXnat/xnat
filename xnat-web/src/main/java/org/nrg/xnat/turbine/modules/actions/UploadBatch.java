@@ -39,7 +39,7 @@ public class UploadBatch extends SecureAction {
         String uploadID= null;
         if (params.get("ID")!=null && !params.get("ID").equals("")){
             uploadID=params.get("ID");
-            session.setAttribute(uploadID + "Upload", new Integer(0));
+            session.setAttribute(uploadID + "Upload", Integer.valueOf(0));
         }
         UserI user = TurbineUtils.getUser(data);
         String cachepath= ArcSpecManager.GetInstance().getGlobalCachePath();
@@ -72,26 +72,26 @@ public class UploadBatch extends SecureAction {
                     fi.write(f);
                     System.out.println("Write: " + ((Calendar.getInstance().getTimeInMillis()-startTime)) + " ms");
                     
-                    if (uploadID!=null)session.setAttribute(uploadID + "Upload", new Long(100));
+                    if (uploadID!=null)session.setAttribute(uploadID + "Upload", Long.valueOf(100));
 
                     data.setMessage("File Uploaded.");
                     data.setScreenTemplate("BatchUploadSummary.vm");
                     return;
                 }
             } catch (FileNotFoundException e) {
-                session.setAttribute(uploadID + "Upload", new Integer(-1));
+                session.setAttribute(uploadID + "Upload", Integer.valueOf(-1));
                 logger.error("",e);
                 data.setMessage("Error. Upload Failed.");
                 data.setScreenTemplate("BatchUploadSummary.vm");
                 return;
             } catch (IOException e) {
-                session.setAttribute(uploadID + "Upload", new Integer(-1));
+                session.setAttribute(uploadID + "Upload", Integer.valueOf(-1));
                 logger.error("",e);
                 data.setMessage("Error. Upload Failed.");
                 data.setScreenTemplate("BatchUploadSummary.vm");
                 return;
             } catch (Throwable e) {
-                session.setAttribute(uploadID + "Upload", new Integer(-1));
+                session.setAttribute(uploadID + "Upload", Integer.valueOf(-1));
                 logger.error("",e);
                 data.setMessage("Error. Upload Failed.");
                 data.setScreenTemplate("BatchUploadSummary.vm");

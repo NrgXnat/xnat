@@ -46,7 +46,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -83,7 +82,7 @@ public class FileUtils {
     }
 
     public static File buildCachepath(final String project, final String subDir, final String destName) {
-        final Path root = Paths.get(XDAT.getSiteConfigPreferences().getCachePath(), StringUtils.defaultIfBlank(project, "Unknown"));
+        final Path root = Path.of(XDAT.getSiteConfigPreferences().getCachePath(), StringUtils.defaultIfBlank(project, "Unknown"));
         return (StringUtils.isEmpty(subDir) ? root : root.resolve(subDir)).resolve(renameWTimestamp(destName)).toFile();
     }
 
@@ -106,7 +105,7 @@ public class FileUtils {
                 }
 
                 // First try to get the tags file at the indicated location.
-                final File tags = Paths.get(location, "tags").toFile();
+                final File tags = Path.of(location, "tags").toFile();
                 // If that doesn't exist...
                 if (!tags.exists()) {
                     // Get the value from the VERSION file
@@ -141,7 +140,7 @@ public class FileUtils {
                         final File tip = new File(location + File.separator + "tip.txt");
                         if (tip.exists()) {
                             final Pair<String, String> changesetAndDate = getChangesetAndDate(tip);
-                            VERSION = String.format("%s-%s %s", tag, changesetAndDate.getKey(), new SimpleDateFormat("yyyyMMddHHmmss").format(new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy Z").parse(changesetAndDate.getValue())));
+                            VERSION = "%s-%s %s".formatted(tag, changesetAndDate.getKey(), new SimpleDateFormat("yyyyMMddHHmmss").format(new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy Z").parse(changesetAndDate.getValue())));
                         }
                     }
                 } catch (Exception e) {
@@ -156,7 +155,7 @@ public class FileUtils {
 
     @SafeVarargs
     public static <T extends String> File buildCacheSubDir(T... directories) {
-        final File subDir = Paths.get(XDAT.getSiteConfigPreferences().getCachePath(), directories).toFile();
+        final File subDir = Path.of(XDAT.getSiteConfigPreferences().getCachePath(), directories).toFile();
         if (log.isDebugEnabled()) {
             log.debug("Found cache sub-directory: {}", subDir.getAbsolutePath());
         }
@@ -164,14 +163,14 @@ public class FileUtils {
     }
 
     private static String getSimpleVersion() throws IOException {
-        final File version = Paths.get(XFT.GetConfDir(), "VERSION").toFile();
+        final File version = Path.of(XFT.GetConfDir(), "VERSION").toFile();
         if (!version.exists()) {
             log.error("Can't find the VERSION file at the indicated location: {}", XFT.GetConfDir());
             return "Unknown";
         }
         // It's pretty simple, just read it and spit it back out.
         final List<String> lines = IOUtils.readLines(new BufferedReader(new FileReader(version)));
-        return lines.isEmpty() ? "" : lines.get(0);
+        return lines.isEmpty() ? "" : lines.getFirst();
     }
 
     private static Pair<String, String> getChangesetAndDate(final File file) {
@@ -205,11 +204,11 @@ public class FileUtils {
     }
 
     private static Path getExperimentFullPath(final String projectId, final String experimentLabel) {
-        return Paths.get(XDAT.getSiteConfigPreferences().getArchivePath(), projectId, getCurrentArc(projectId), experimentLabel);
+        return Path.of(XDAT.getSiteConfigPreferences().getArchivePath(), projectId, getCurrentArc(projectId), experimentLabel);
     }
 
     private static Path getSubjectFullPath(final String projectId, final String subjectLabel) {
-        return Paths.get(XDAT.getSiteConfigPreferences().getArchivePath(), projectId, "subjects", subjectLabel);
+        return Path.of(XDAT.getSiteConfigPreferences().getArchivePath(), projectId, "subjects", subjectLabel);
     }
 
     /**
@@ -314,7 +313,7 @@ public class FileUtils {
         final Set<String> permissionGranted = new HashSet<>();
         final Set<String> permissionDenied = new HashSet<>();
 
-        Path archivePath = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath());
+        Path archivePath = Path.of(XDAT.getSiteConfigPreferences().getArchivePath());
         int totalSessions = 0;
         for (Map.Entry<String, List<String>> entry : allExperimentsForProject.entrySet()) {
             String origProject = entry.getKey();
@@ -372,16 +371,16 @@ public class FileUtils {
                         //which is found within the else if statement below.
                         String sessionNameWithinAssessorPath = newPath.getName(1).toString();
                         if (experimentNewLabelToOriginal.containsKey(experiment)) {
-                            newPath = Paths.get(newPath.toString().replaceFirst(Objects.requireNonNull(experimentNewLabelToOriginal.get(experiment)), experiment));
+                            newPath = Path.of(newPath.toString().replaceFirst(Objects.requireNonNull(experimentNewLabelToOriginal.get(experiment)), experiment));
                         }
                         if (isAssessor && experimentNewLabelToOriginal.inverse().containsKey(sessionNameWithinAssessorPath)) {
                             String replacementAssessorPath = experimentNewLabelToOriginal.inverse().get(sessionNameWithinAssessorPath);
-                            newPath = Paths.get(newPath.toString().replaceFirst(sessionNameWithinAssessorPath, replacementAssessorPath));
+                            newPath = Path.of(newPath.toString().replaceFirst(sessionNameWithinAssessorPath, replacementAssessorPath));
                         }
                         if (removeArcs) {
                             newPath = newPath.getName(0).relativize(newPath);
                             if(addExperimentLabel) {
-                                newPath = Paths.get("experiments").resolve(newPath);
+                                newPath = Path.of("experiments").resolve(newPath);
                             }
                         }
                         allPathsMap.put(path, newPath);
@@ -416,7 +415,7 @@ public class FileUtils {
                         for (Path path : collectedSubjectFiles) {
                             Path newPath = pathTranslationPath.relativize(path);
                             if (subjectLabelChanges.containsKey(subject)) {
-                                newPath = Paths.get(newPath.toString().replaceFirst(subjectLabelChanges.get(subject), subject));
+                                newPath = Path.of(newPath.toString().replaceFirst(subjectLabelChanges.get(subject), subject));
                             }
                             allPathsMap.put(path, newPath);
                         }
@@ -428,7 +427,7 @@ public class FileUtils {
         }
 
         if (includeProjectResources) {
-            Path resourcesPath = Paths.get(projectData.getArchiveRootPath(), "resources");
+            Path resourcesPath = Path.of(projectData.getArchiveRootPath(), "resources");
             try (Stream<Path> walk = Files.walk(resourcesPath)) {
                 List<Path> collectedResourceFiles = walk.filter(Files::isRegularFile).collect(Collectors.toList());
                 for (Path resourcePath : collectedResourceFiles) {
@@ -461,7 +460,7 @@ public class FileUtils {
 
     public static Path createDirectoryForSharedData(Map<Path, Path> pathsMap, final Path inputLinksDirectory, final IntConsumer progressCallback) throws IOException {
         final long startTime = log.isDebugEnabled() ? System.nanoTime() : 0;
-        Path destinationBaseDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath()).resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(inputLinksDirectory);
+        Path destinationBaseDirectory = Path.of(XDAT.getSiteConfigPreferences().getArchivePath()).resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(inputLinksDirectory);
         final boolean useHardLink = "hard_link".equals(XDAT.getSiteConfigPreferences().getFileOperationUsedForJobsWithSharedData());
         final AtomicInteger processedCount = new AtomicInteger(0);
         final int reportInterval = Math.max(pathsMap.size() / 20, 100);
@@ -500,7 +499,7 @@ public class FileUtils {
     }
 
     public static void removeCombinedFolder(final Path baseLinksDirectory) throws IOException {
-        Path baseArchiveDirectory = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath());
+        Path baseArchiveDirectory = Path.of(XDAT.getSiteConfigPreferences().getArchivePath());
         Path directoryToRemove = baseArchiveDirectory.resolve(SHARED_PROJECT_DIRECTORY_STRING).resolve(baseLinksDirectory);
         org.apache.commons.io.FileUtils.deleteDirectory(new File(directoryToRemove.toUri()));
     }

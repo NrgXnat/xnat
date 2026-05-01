@@ -16,6 +16,7 @@ import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -38,7 +39,7 @@ public class ImageUpload extends SecureScreen {
 
         final ArcArchivespecification arc = ArcSpecManager.GetInstance();
         context.put("arc", arc);
-        final URL url = new URL(arc.getSiteUrl());
+        final URL url = URI.create(arc.getSiteUrl()).toURL();
         context.put("hostname", url.getHost());
     }
 }

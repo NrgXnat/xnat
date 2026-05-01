@@ -1,6 +1,6 @@
 $navigation.setTemplate("/htmlOpen.vm")
 <style type="text/css">
-    html body.popup { margin: 20px; background: #fff !important ; }
+    html body.popup { margin: 20px; }
     body.popup #page_wrapper { margin: 30px ; }
     body.popup #xnat_power {
         /*margin: 30px; */

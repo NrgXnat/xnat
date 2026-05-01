@@ -74,8 +74,8 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 
         PrintWriter writer= new PrintWriter(out);
 
-        if(data instanceof RestletRunData){
-			((RestletRunData)data).hijackOutput(writer);
+        if(data instanceof RestletRunData runData){
+			runData.hijackOutput(writer);
 		}else{
 			throw new RestletTurbineConfigurationException("Inproper Turbine configuration for RESTLET support.");
 		}

@@ -180,97 +180,105 @@ public class EventServiceTest {
 
 
     // ** JSONPath Filter Tests ** //
-    final String projectJson = "{\n" +
-            "    \"type\": \"Project\",\n" +
-            "    \"id\": \"TheProjectID\",\n" +
-            "    \"label\": \"TheProjectTitle\",\n" +
-            "    \"xsiType\": \"xnat:projectData\",\n" +
-            "    \"uri\": \"/archive/projects/TheProjectID\",\n" +
-            "    \"resources\": [],\n" +
-            "    \"subjects\": [],\n" +
-            "    \"directory\": \"/data/xnat/archive/TheProjectID/arc001\"\n" +
-            "}";
+    final String projectJson = """
+            {
+                "type": "Project",
+                "id": "TheProjectID",
+                "label": "TheProjectTitle",
+                "xsiType": "xnat:projectData",
+                "uri": "/archive/projects/TheProjectID",
+                "resources": [],
+                "subjects": [],
+                "directory": "/data/xnat/archive/TheProjectID/arc001"
+            }\
+            """;
 
-    final String subjectJson = "{\n" +
-            "    \"type\": \"Subject\",\n" +
-            "    \"id\": \"XNAT_S00003\",\n" +
-            "    \"label\": \"SubjectsID\",\n" +
-            "    \"xsiType\": \"xnat:subjectData\",\n" +
-            "    \"uri\": \"/archive/subjects/XNAT_S00003\",\n" +
-            "    \"sessions\": [],\n" +
-            "    \"resources\": [],\n" +
-            "    \"project-id\": \"TheProjectID\"\n" +
-            "}";
+    final String subjectJson = """
+            {
+                "type": "Subject",
+                "id": "XNAT_S00003",
+                "label": "SubjectsID",
+                "xsiType": "xnat:subjectData",
+                "uri": "/archive/subjects/XNAT_S00003",
+                "sessions": [],
+                "resources": [],
+                "project-id": "TheProjectID"
+            }\
+            """;
 
-    final String scanWoFilesJson = "{\n" +
-            "    \"type\": \"Scan\",\n" +
-            "    \"id\": \"4\",\n" +
-            "    \"label\": \"4 - t1_mpr_1mm_p2_pos50\",\n" +
-            "    \"xsiType\": \"xnat:mrScanData\",\n" +
-            "    \"uri\": \"/archive/experiments/XNAT_E00003/scans/4\",\n" +
-            "    \"resources\": [{\n" +
-            "        \"type\": \"Resource\",\n" +
-            "        \"id\": \"DICOM\",\n" +
-            "        \"label\": \"DICOM\",\n" +
-            "        \"xsiType\": \"xnat:resourceCatalog\",\n" +
-            "        \"uri\": \"/archive/experiments/XNAT_E00003/scans/4/resources/DICOM\",\n" +
-            "        \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4/DICOM\",\n" +
-            "        \"integer-id\": 4\n" +
-            "    }],\n" +
-            "    \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4\",\n" +
-            "    \"frames\": 176,\n" +
-            "    \"modality\": \"MR\",\n" +
-            "    \"quality\": \"usable\",\n" +
-            "    \"scanner\": \"MEDPC\",\n" +
-            "    \"uid\": \"1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0\",\n" +
-            "    \"integer-id\": 4,\n" +
-            "    \"scan-type\": \"t1_mpr_1mm_p2_pos50\",\n" +
-            "    \"scanner-manufacturer\": \"SIEMENS\",\n" +
-            "    \"scanner-model\": \"TrioTim\",\n" +
-            "    \"series-description\": \"t1_mpr_1mm_p2_pos50\",\n" +
-            "    \"start-time\": \"09:37:11\"\n" +
-            "}";
+    final String scanWoFilesJson = """
+            {
+                "type": "Scan",
+                "id": "4",
+                "label": "4 - t1_mpr_1mm_p2_pos50",
+                "xsiType": "xnat:mrScanData",
+                "uri": "/archive/experiments/XNAT_E00003/scans/4",
+                "resources": [{
+                    "type": "Resource",
+                    "id": "DICOM",
+                    "label": "DICOM",
+                    "xsiType": "xnat:resourceCatalog",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM",
+                    "directory": "/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4/DICOM",
+                    "integer-id": 4
+                }],
+                "directory": "/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4",
+                "frames": 176,
+                "modality": "MR",
+                "quality": "usable",
+                "scanner": "MEDPC",
+                "uid": "1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0",
+                "integer-id": 4,
+                "scan-type": "t1_mpr_1mm_p2_pos50",
+                "scanner-manufacturer": "SIEMENS",
+                "scanner-model": "TrioTim",
+                "series-description": "t1_mpr_1mm_p2_pos50",
+                "start-time": "09:37:11"
+            }\
+            """;
 
-    final String sessionWoFilesJson = "{\n" +
-            "    \"type\": \"Session\",\n" +
-            "    \"id\": \"XNAT_E00003\",\n" +
-            "    \"label\": \"TeamGo_MR3\",\n" +
-            "    \"xsiType\": \"xnat:mrSessionData\",\n" +
-            "    \"uri\": \"/archive/experiments/XNAT_E00003\",\n" +
-            "    \"scans\": [{\n" +
-            "        \"type\": \"Scan\",\n" +
-            "        \"id\": \"4\",\n" +
-            "        \"label\": \"4 - t1_mpr_1mm_p2_pos50\",\n" +
-            "        \"xsiType\": \"xnat:mrScanData\",\n" +
-            "        \"uri\": \"/archive/experiments/XNAT_E00003/scans/4\",\n" +
-            "        \"resources\": [{\n" +
-            "            \"type\": \"Resource\",\n" +
-            "            \"id\": \"DICOM\",\n" +
-            "            \"label\": \"DICOM\",\n" +
-            "            \"xsiType\": \"xnat:resourceCatalog\",\n" +
-            "            \"uri\": \"/archive/experiments/XNAT_E00003/scans/4/resources/DICOM\",\n" +
-            "            \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4/DICOM\",\n" +
-            "            \"integer-id\": 4\n" +
-            "        }],\n" +
-            "        \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4\",\n" +
-            "        \"frames\": 176,\n" +
-            "        \"modality\": \"MR\",\n" +
-            "        \"quality\": \"usable\",\n" +
-            "        \"scanner\": \"MEDPC\",\n" +
-            "        \"uid\": \"1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0\",\n" +
-            "        \"integer-id\": 4,\n" +
-            "        \"scan-type\": \"t1_mpr_1mm_p2_pos50\",\n" +
-            "        \"scanner-manufacturer\": \"SIEMENS\",\n" +
-            "        \"scanner-model\": \"TrioTim\",\n" +
-            "        \"series-description\": \"t1_mpr_1mm_p2_pos50\",\n" +
-            "        \"start-time\": \"09:37:11\"\n" +
-            "    }],\n" +
-            "    \"assessors\": [],\n" +
-            "    \"resources\": [],\n" +
-            "    \"directory\": \"/data/xnat/archive/ABC123/arc001/TeamGo_MR3/\",\n" +
-            "    \"project-id\": \"ABC123\",\n" +
-            "    \"subject-id\": \"XNAT_S00001\",\n" +
-            "    \"modality\": \"MR\"\n" +
-            "}";
+    final String sessionWoFilesJson = """
+            {
+                "type": "Session",
+                "id": "XNAT_E00003",
+                "label": "TeamGo_MR3",
+                "xsiType": "xnat:mrSessionData",
+                "uri": "/archive/experiments/XNAT_E00003",
+                "scans": [{
+                    "type": "Scan",
+                    "id": "4",
+                    "label": "4 - t1_mpr_1mm_p2_pos50",
+                    "xsiType": "xnat:mrScanData",
+                    "uri": "/archive/experiments/XNAT_E00003/scans/4",
+                    "resources": [{
+                        "type": "Resource",
+                        "id": "DICOM",
+                        "label": "DICOM",
+                        "xsiType": "xnat:resourceCatalog",
+                        "uri": "/archive/experiments/XNAT_E00003/scans/4/resources/DICOM",
+                        "directory": "/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4/DICOM",
+                        "integer-id": 4
+                    }],
+                    "directory": "/data/xnat/archive/ABC123/arc001/TeamGo_MR3/SCANS/4",
+                    "frames": 176,
+                    "modality": "MR",
+                    "quality": "usable",
+                    "scanner": "MEDPC",
+                    "uid": "1.3.12.2.1107.5.2.32.35177.3.2006121409284535196417894.0.0.0",
+                    "integer-id": 4,
+                    "scan-type": "t1_mpr_1mm_p2_pos50",
+                    "scanner-manufacturer": "SIEMENS",
+                    "scanner-model": "TrioTim",
+                    "series-description": "t1_mpr_1mm_p2_pos50",
+                    "start-time": "09:37:11"
+                }],
+                "assessors": [],
+                "resources": [],
+                "directory": "/data/xnat/archive/ABC123/arc001/TeamGo_MR3/",
+                "project-id": "ABC123",
+                "subject-id": "XNAT_S00001",
+                "modality": "MR"
+            }\
+            """;
 
 }

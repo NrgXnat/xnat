@@ -248,7 +248,7 @@ public class Importer extends SecureResource {
                 }
             }
             try {
-                importer = ImporterHandlerA.buildImporter(handler, listenerControl, user, fw.get(0), params);
+                importer = ImporterHandlerA.buildImporter(handler, listenerControl, user, fw.getFirst(), params);
             } catch (SecurityException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
                 logger.error("", e);
                 throw new ServerException(e.getMessage(), e);
@@ -307,8 +307,7 @@ public class Importer extends SecureResource {
 
     protected void respondToException(Exception e, Status status) {
         final Throwable cause = e.getCause();
-        if (cause instanceof ExceptionInInitializerError && ((ExceptionInInitializerError) cause).getException() != null) {
-            final ExceptionInInitializerError error = (ExceptionInInitializerError) cause;
+        if (cause instanceof ExceptionInInitializerError error && error.getException() != null) {
             final StringBuilder buffer = new StringBuilder("An error occurred initializing an object during the import operation: ");
             buffer.append(error.getException().getMessage());
             final StackTraceElement[] stackTrace = error.getException().getStackTrace();
@@ -343,7 +342,7 @@ public class Importer extends SecureResource {
             return buildHtmlResponse(response);
         } else if (mt.equals(MediaType.TEXT_PLAIN)) {
             if (response != null && response.size() == 1) {
-                return new StringRepresentation((wrapURI) ? wrapPartialDataURI(response.get(0)) : response.get(0), MediaType.TEXT_PLAIN);
+                return new StringRepresentation((wrapURI) ? wrapPartialDataURI(response.getFirst()) : response.getFirst(), MediaType.TEXT_PLAIN);
             } else {
                 return new StringRepresentation(convertListToString(response, wrapURI), MediaType.TEXT_PLAIN);
             }

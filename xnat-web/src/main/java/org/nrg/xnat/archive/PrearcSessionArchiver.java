@@ -13,15 +13,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
-import org.dcm4che2.io.DicomInputStream;
-import org.dcm4che2.io.StopTagInputHandler;
-import org.dcm4che2.util.TagUtils;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
+import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -77,13 +76,13 @@ import org.xml.sax.SAXException;
 import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -166,6 +165,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
              overwriteFiles);
     }
 
+    @SuppressWarnings("LombokGetterMayBeUsed")
     public XnatImagesessiondata getSrc() {
         return src;
     }
@@ -213,8 +213,8 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             label = getApplyPluginLabelingService().label(src, params, user);
         }
 
-        //the previous code allows the value in the session xml to be overridden by passed parameters.
-        //if they aren't there, then it should default to the xml label
+        //the previous code allows the value in the session XML to be overridden by passed parameters.
+        //if they aren't there, then it should default to the XML label
         if (StringUtils.isEmpty(label) && !StringUtils.isEmpty(src.getLabel())) {
             label = src.getLabel();
         }
@@ -228,6 +228,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         }
 
         if (StringUtils.isNotEmpty(label)) {
+            //noinspection deprecation
             src.setLabel(XnatImagesessiondata.cleanValue(label));
         }
 
@@ -239,7 +240,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
 
     public static XnatSubjectdata retrieveMatchingSubject(final String id, final String project, final UserI user) {
         if (StringUtils.isNotBlank(project)) {
-            // XNAT-2865 - Perform case insensitive search for subject
+            // XNAT-2865 - Perform case-insensitive search for subject
             final XnatSubjectdata subject = XnatSubjectdata.GetSubjectByProjectIdentifierCaseInsensitive(project, id, user, false);
             if (subject != null) {
                 return subject;
@@ -263,6 +264,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             throw new ClientException("Unable to identify subject.");
         }
 
+        //noinspection deprecation
         final String subjectId = XnatImagesessiondata.cleanValue(rawSubjectId);
         processing("looking for subject " + subjectId);
 
@@ -316,16 +318,16 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     }
 
     /**
-     * This method will allow users to pass xml path as parameters.  The values supplied will be copied into the loaded session.
+     * This method will allow users to pass XML path as parameters.  The values supplied will be copied into the loaded session.
      *
      * @throws ClientException When an error occurs on the client side.
      */
     protected void populateAdditionalFields() throws ClientException {
-        //prepare params by removing non xml path names
+        //prepare params by removing non-XML path names
         final Map<String, Object> cleaned = XMLPathShortcuts.identifyUsableFields(params, XMLPathShortcuts.EXPERIMENT_DATA, false);
         XFTItem                   i       = src.getItem();
 
-        if (cleaned.size() > 0) {
+        if (!cleaned.isEmpty()) {
             try {
                 i.setProperties(cleaned, true);
                 i.removeEmptyItems();
@@ -385,6 +387,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             }
         }
 
+        //noinspection ConstantValue
         scanIdValidator = new ScanIdValidator(control, existing, src, prearcSession, allowSessionMerge, overrideExceptions);
     }
 
@@ -568,7 +571,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                     };
 
                     mergePrearcToArchiveSession = new MergePrearcToArchiveSession(src.getPrearchivePath(),
-                                                                                  prearcSession,
+                                                                                  this.prearcSession,
                                                                                   src,
                                                                                   src.getPrearchivepath(),
                                                                                   arcSessionDir,
@@ -577,7 +580,9 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                                                                                   allowSessionMerge,
                                                                                   overrideExceptions || overwriteFiles,
                                                                                   saveImpl, user, workflow.buildEvent());
+
                     ListenerUtils.addListeners(this, mergePrearcToArchiveSession).call();
+
                 } catch (Exception e) {
                     if (existing != null) {
                         Stream.of(workflow, workflow2).filter(Objects::nonNull)
@@ -693,14 +698,13 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         if (filterTags.isEmpty()) {
             return;
         }
-        final int lastTag = Math.max(filterTags.get(filterTags.size() - 1), Tag.SeriesDescription) + 1;
+        final int lastTag = Math.max(filterTags.getLast(), Tag.SeriesDescription) + 1;
         log.trace("reading object into memory up to {}", TagUtils.toString(lastTag));
         for (final XnatImagescandataI scan : src.getScans_scan()) {
-            for (File file: getAllDicomFile(scan)) {
-                try (DicomInputStream dis = new DicomInputStream(file)) {
-                    dis.setHandler(new StopTagInputHandler(lastTag));
-                    DicomObject dio = dis.readDicomObject();
-                    if (!projectSpecific.shouldIncludeDicomObject(dio)) {
+            for (final File file: getAllDicomFile(scan)) {
+                try {
+                    final Attributes attributes = DicomUtils.read(file, lastTag);
+                    if (!projectSpecific.shouldIncludeDicomObject(attributes)) {
                         fail(22, String.format("Scan %1$s is non-compliant with this project's DICOM whitelist/blacklist.", scan.getId()));
                         break;
                     }
@@ -722,28 +726,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         return dicomFiles;
     }
 
-    private Map<String, String> convertScanToMap(final XnatImagescandataI scan) {
-        final Map<String, String> map = new HashMap<>();
-        map.put("SeriesDescription", scan.getSeriesDescription());
-        map.put("Modality", scan.getModality());
-        map.put("Manufacturer", scan.getScanner_manufacturer());
-        map.put("ManufacturerModelName", scan.getScanner_model());
-        map.put("StationName", scan.getScanner());
-        map.put("AcquisitionStartCondition", scan.getCondition());
-        map.put("EncapsulatedDocument", scan.getDocumentation());
-        map.put("TextComments", scan.getNote());
-        map.put("OperatorsName", scan.getOperator());
-        map.put("QualityControlImage", scan.getQuality());
-        map.put("DataType", scan.getType());
-        map.put("StartAcquisitionDateTime", safeToString(scan.getStarttime()));
-        map.put("SeriesNumber", safeToString(scan.getXnatImagescandataId()));
-        return map;
-    }
-
-    private String safeToString(final Object object) {
-        return object == null ? "" : object.toString();
-    }
-
     /**
      * This code is used by this class and PrearcSessionValidator to confirm that there are no un-referenced or unexpected files in the prearchive content
      *
@@ -753,28 +735,28 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         //validate files to confirm DICOM contents
         for (final XnatImagescandataI scan : src.getScans_scan()) {
             for (final XnatAbstractresourceI resource : scan.getFile()) {
-                if (resource instanceof XnatResourcecatalogI) {
+                if (resource instanceof XnatResourcecatalogI resourcecatalogI) {
                     final CatalogUtils.CatalogData catalogData;
                     try {
                         catalogData = CatalogUtils.CatalogData.getOrCreate(src.getPrearchivepath(),
-                                                                           (XnatResourcecatalogI) resource, project);
+                                                                           resourcecatalogI, project);
                     } catch (ServerException e) {
                         warn(21, "Expected a catalog file, however it was missing.");
                         continue;
                     }
 
                     final List<String> unreferenced = CatalogUtils.getUnreferencedFiles(new File(catalogData.catPath), project);
-                    if (unreferenced.size() > 0) {
-                        warn(20, String.format("Scan %1$s has %2$s non-%3$s (or non-parsable %3$s) files", scan.getId(), unreferenced.size(), resource.getLabel()));
+                    if (!unreferenced.isEmpty()) {
+                        warn(20, "Scan %1$s has %2$s non-%3$s (or non-parsable %3$s) files".formatted(scan.getId(), unreferenced.size(), resource.getLabel()));
                     }
 
-                    if (StringUtils.equals(((XnatResourcecatalogI) resource).getFormat(), RESOURCE_FORMAT)) {
+                    if (StringUtils.equals(resourcecatalogI.getFormat(), RESOURCE_FORMAT)) {
                         //check for entries that aren't DICOM entries or don't have a UID stored
                         final CatCatalogI           catalog  = catalogData.catBean;
                         final Collection<CatEntryI> nonDicom = CatalogUtils.getEntriesByFilter(catalog, entry -> ((!(entry instanceof CatDcmentryI)) || StringUtils.isEmpty(((CatDcmentryI) entry).getUid())));
 
                         if (!nonDicom.isEmpty()) {
-                            warn(20, String.format("Scan %1$s has %2$s non-DICOM (or non-parsable DICOM) files", scan.getId(), nonDicom.size()));
+                            warn(20, "Scan %1$s has %2$s non-DICOM (or non-parsable DICOM) files".formatted(scan.getId(), nonDicom.size()));
                         }
 
                         if (XDAT.getSiteConfigPreferences().getUseSopInstanceUidToUniquelyIdentifyDicom()) {
@@ -788,8 +770,8 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                                     .map(Map.Entry::getKey)
                                     .collect(Collectors.joining(", "));
                             if (StringUtils.isNotBlank(duplicateUids)) {
-                                warn(22, String.format("Scan %s %s catalog contains duplicated SOP instance " +
-                                        "UIDs: %3$s", scan.getId(), resource.getLabel(), duplicateUids));
+                                warn(22, ("Scan %s %s catalog contains duplicated SOP instance " +
+                                        "UIDs: %3$s").formatted(scan.getId(), resource.getLabel(), duplicateUids));
                             }
                         }
                     }
@@ -810,10 +792,10 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         try {
             List<Class<?>> classes = Reflection.getClassesForPackage("org.nrg.xnat.actions.postArchive");
 
-            if (classes != null && classes.size() > 0) {
+            if (CollectionUtils.isNotEmpty(classes)) {
                 for (Class<?> clazz : classes) {
                     if (PostArchiveAction.class.isAssignableFrom(clazz)) {
-                        PostArchiveAction action = (PostArchiveAction) clazz.newInstance();
+                        PostArchiveAction action = (PostArchiveAction) clazz.getDeclaredConstructor().newInstance();
                         Boolean           result = action.execute(user, src, params);
                         log.debug("Ran post-archive action class: {}. Result was {}", clazz.getSimpleName(), result == null ? "false" : result.toString());
                     } else {
@@ -831,9 +813,9 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         try {
             classes = Reflection.getClassesForPackage("org.nrg.xnat.actions.preArchive");
 
-            if (classes != null && classes.size() > 0) {
+            if (CollectionUtils.isNotEmpty(classes)) {
                 for (Class<?> clazz : classes) {
-                    PreArchiveAction action = (PreArchiveAction) clazz.newInstance();
+                    PreArchiveAction action = (PreArchiveAction) clazz.getDeclaredConstructor().newInstance();
                     action.execute(user, src, params, existing);
                 }
             }
@@ -945,13 +927,13 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
      * We did so by saving the workflow entry towards the beginning of the archive process (the call method), and checking to see
      * if there were any others open.
      * However, Dan (and Jenny) requested that we only save the workflow entry if the job completes. So, that approach won't work anymore.
-     *
+     * <p>
      * We should prevent multiple processes from archiving the same prearchive session at the same time.
      * And, we should prevent multiple sessions from being merged into a single archived session at the same time.
-     *
+     * <p>
      * So, for now, I'll add a static List to track locked prearchive sessions and archived sessions.
      */
-    //tracks all the strings locked by any archiver
+    // Tracks all the strings locked by any archiver
     private static final List<String> GLOBAL_LOCKS = new ArrayList<>();
 
     @NotNull
@@ -1003,16 +985,17 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     }
 
     private static class LockedItemException extends Exception {
-        private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = -7272508698289053675L;
     }
 
-    //the following methods are overridden in PrearcSessionValidator
-    //PrearcSessionValidator tries to validate whether the PrearcSessionArchiver would work (and if not what would break it)
-    //ideally, the PrearcSessionValidator would use the exact same code as the Archiver.  But, the Archiver code is sometimes incompatible
-    //with the validator (validator wants to collect all failure reasons, archiver fails on first one).
-    //however, were possible, they should use the same code.  In those situations the Archiver should use these methods to trigger its exceptions.
-    //then Validator can just change the way those exceptions are handled, by changing the implementation of these methods.
-    //ideally all the Validator would work this way, but that requires large scale refactoring of PrearcSessionArchiver (which predated the Validator by several years).
+    // The following methods are overridden in PrearcSessionValidator: it tries to validate whether the PrearcSessionArchiver would work
+    // (and if not what would break it). Ideally, the PrearcSessionValidator would use the exact same code as the Archiver.  But the
+    // Archiver code is sometimes incompatible with the validator (validator wants to collect all failure reasons, archiver fails on first
+    // one). However, where possible, they should use the same code.  In those situations the Archiver should use these methods to trigger
+    // its exceptions, then Validator can just change the way those exceptions are handled, by changing the implementation of these methods.
+    // Ideally all the Validator would work this way, but that requires large scale refactoring of PrearcSessionArchiver (which predated the
+    // Validator by several years).
 
     protected void fail(int code, String msg) throws ClientException {
         failed(msg);
@@ -1028,7 +1011,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         failed(msg);
         throw new ClientException(Status.CLIENT_ERROR_CONFLICT, msg, new Exception());
     }
-
 
     private DicomFilterService getDicomFilterService() {
         if (filterService == null) {

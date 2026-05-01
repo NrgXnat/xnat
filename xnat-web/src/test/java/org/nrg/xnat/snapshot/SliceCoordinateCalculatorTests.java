@@ -26,45 +26,45 @@ public class SliceCoordinateCalculatorTests {
 
         slices = calculator.selecctSliceIndices( 1, 1);
         assertEquals( 1, slices.size());
-        assertEquals( 0, (int) slices.get(0));
+        assertEquals( 0, (int) slices.getFirst());
 
         slices = calculator.selecctSliceIndices( 2,1);
         assertEquals( 1, slices.size());
-        assertEquals( 0, (int) slices.get(0));
+        assertEquals( 0, (int) slices.getFirst());
 
         slices = calculator.selecctSliceIndices( 1,2);
         assertEquals( 1, slices.size());
-        assertEquals( 1, (int) slices.get(0));
+        assertEquals( 1, (int) slices.getFirst());
 
         slices = calculator.selecctSliceIndices( 1,3);
         assertEquals( 1, slices.size());
-        assertEquals( 1, (int) slices.get(0));
+        assertEquals( 1, (int) slices.getFirst());
 
         slices = calculator.selecctSliceIndices( 1, 4);
         assertEquals( 1, slices.size());
-        assertEquals( 2, (int) slices.get(0));
+        assertEquals( 2, (int) slices.getFirst());
 
         slices = calculator.selecctSliceIndices( 1, 5);
         assertEquals( 1, slices.size());
-        assertEquals( 2, (int) slices.get(0));
+        assertEquals( 2, (int) slices.getFirst());
 
         slices = calculator.selecctSliceIndices( 1, 6);
         assertEquals( 1, slices.size());
-        assertEquals( 3, (int) slices.get(0));
+        assertEquals( 3, (int) slices.getFirst());
 
         slices = calculator.selecctSliceIndices( 2, 5);
         assertEquals( 2, slices.size());
-        assertEquals( 1, (int) slices.get(0));
+        assertEquals( 1, (int) slices.getFirst());
         assertEquals( 3, (int) slices.get(1));
 
         slices = calculator.selecctSliceIndices( 2, 6);
         assertEquals( 2, slices.size());
-        assertEquals( 1, (int) slices.get(0));
+        assertEquals( 1, (int) slices.getFirst());
         assertEquals( 4, (int) slices.get(1));
 
         slices = calculator.selecctSliceIndices( 6, 2);
         assertEquals( 2, slices.size());
-        assertEquals( 0, (int) slices.get(0));
+        assertEquals( 0, (int) slices.getFirst());
         assertEquals( 1, (int) slices.get(1));
     }
 
@@ -85,19 +85,19 @@ public class SliceCoordinateCalculatorTests {
 
             coordinates = calculator.getSliceCoordinates(1, 1, Arrays.asList( "foo"));
             assertEquals( 1, coordinates.size());
-            assertEquals( new SliceCoordinate(0,0), coordinates.get(0));
+            assertEquals( new SliceCoordinate(0,0), coordinates.getFirst());
 
             coordinates = calculator.getSliceCoordinates(2, 1, Arrays.asList( "foo"));
             assertEquals( 1, coordinates.size());
-            assertEquals( new SliceCoordinate(0,0), coordinates.get(0));
+            assertEquals( new SliceCoordinate(0,0), coordinates.getFirst());
 
             coordinates = calculator.getSliceCoordinates(1, 2, Arrays.asList( "foo", "bar"));
             assertEquals( 1, coordinates.size());
-            assertEquals( new SliceCoordinate(1,0), coordinates.get(0));
+            assertEquals( new SliceCoordinate(1,0), coordinates.getFirst());
 
             coordinates = calculator.getSliceCoordinates(1, 2, Arrays.asList( "foo"));
             assertEquals( 1, coordinates.size());
-            assertEquals( new SliceCoordinate(0,1), coordinates.get(0));
+            assertEquals( new SliceCoordinate(0,1), coordinates.getFirst());
 
         }
         catch( Exception e) {

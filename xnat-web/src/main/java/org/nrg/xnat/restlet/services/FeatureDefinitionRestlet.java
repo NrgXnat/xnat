@@ -88,7 +88,7 @@ public class FeatureDefinitionRestlet extends SecureResource {
 					List<JSONObject> groups=Lists.newArrayList();
 					
 					for(List gID:proj.getGroupIDs()){
-						UserGroupI ug=Groups.getGroup((String)gID.get(0));
+						UserGroupI ug=Groups.getGroup((String)gID.getFirst());
 						
 						JSONObject group = new JSONObject();
 						group.put("id",ug.getId());

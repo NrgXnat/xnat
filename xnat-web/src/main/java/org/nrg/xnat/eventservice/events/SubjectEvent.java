@@ -5,12 +5,16 @@ import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @XnatEventServiceEvent(name="SubjectEvent")
 public class SubjectEvent extends AbstractEventServiceEvent<XnatSubjectdataI> {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public enum Status {CREATED, DELETED};
 

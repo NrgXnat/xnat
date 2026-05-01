@@ -5,12 +5,15 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Condition;
-import org.dcm4che2.io.StopTagInputHandler;
+import org.dcm4che3.data.Tag;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.framework.services.ContextService;
@@ -31,10 +34,6 @@ import org.nrg.xnat.services.archive.ResourceMitigationReport;
 import org.nrg.xnat.services.archive.ResourceSurveyReport;
 import org.nrg.xnat.services.archive.ResourceSurveyRequestEntityService;
 import org.nrg.xnat.utils.CatalogUtils;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -47,17 +46,15 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
-@PrepareForTest({ResourceMitigationHelper.class, XDAT.class, SaveItemHelper.class, CatalogUtils.class})
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestResourceSurveyAndMitigationHelperConfig.class)
 @Slf4j
 public class TestResourceSurveyAndMitigationHelper {
+    private MockedStatic<CatalogUtils> mockedCatalogUtils;
+    private MockedStatic<SaveItemHelper> mockedSaveItemHelper;
+    private MockedStatic<XDAT> mockedXDAT;
     private static final String            RESOURCE_CATALOG_FILE = "scan_5_catalog.xml";
     private static final String            RESOURCE_CATALOG_URI  = "classpath:dicom-web/duplicates/" + RESOURCE_CATALOG_FILE;
     private static final String            SERIES_DESCRIPTION    = "3D SPGR VOLUME 1";
@@ -97,7 +94,7 @@ public class TestResourceSurveyAndMitigationHelper {
 
     private SerializerService   _serializer;
     private DicomFileNamer      _dicomFileNamer;
-    private StopTagInputHandler _stopTagInputHandler;
+    private int stopTag = Tag.PixelData;
 
     public TestResourceSurveyAndMitigationHelper() throws IOException {
         final Path tempDirectory = Files.createTempDirectory("TestResourceSurveyAndMitigationHelper-");
@@ -123,16 +120,29 @@ public class TestResourceSurveyAndMitigationHelper {
         _dicomFileNamer = dicomFileNamer;
     }
 
-    @Autowired
-    public void setStopTagInputHandler(final StopTagInputHandler stopTagInputHandler) {
-        _stopTagInputHandler = stopTagInputHandler;
+    public void setStopTagInputHandler(int stopTag) {
+        this.stopTag = stopTag;
+    }
+
+    @Before
+    public void setUpStaticMocks() {
+        mockedCatalogUtils = Mockito.mockStatic(CatalogUtils.class);
+        mockedSaveItemHelper = Mockito.mockStatic(SaveItemHelper.class);
+        mockedXDAT = Mockito.mockStatic(XDAT.class);
+    }
+
+    @After
+    public void tearDownStaticMocks() {
+        mockedXDAT.closeOnDemand();
+        mockedSaveItemHelper.closeOnDemand();
+        mockedCatalogUtils.closeOnDemand();
     }
 
     @Test
     @Ignore("Changes to workflow updates have made this difficult to get working, revisit later.")
     public void testSurveyReport() throws Exception {
         final ResourceSurveyRequest request      = getSurveyRequest();
-        final ResourceSurveyHelper  surveyHelper = new ResourceSurveyHelper(_mockEntityService, request, _serializer, _dicomFileNamer, _stopTagInputHandler);
+        final ResourceSurveyHelper  surveyHelper = new ResourceSurveyHelper(_mockEntityService, request, _serializer, _dicomFileNamer, stopTag);
         final ResourceSurveyReport  report       = surveyHelper.call();
 
         assertThat(report).isNotNull();
@@ -144,24 +154,19 @@ public class TestResourceSurveyAndMitigationHelper {
         assertThat(report.getMismatchedFiles()).isNotNull().isNotEmpty().hasSize(26);
 
         request.setSurveyReport(report);
-
-        // CatalogUtils leverages these methods
-        PowerMockito.mockStatic(XDAT.class);
-        PowerMockito.when(XDAT.getSiteConfigurationProperty("checksums")).thenReturn("false");
-        PowerMockito.when(XDAT.getBoolSiteConfigurationProperty("maintainFileHistory", false)).thenReturn(true);
-        PowerMockito.when(XDAT.getSerializerService()).thenReturn(_serializer);
-        PowerMockito.when(XDAT.getContextService()).thenReturn(_mockContextService);
+        mockedXDAT.when(() -> XDAT.getSiteConfigurationProperty("checksums")).thenReturn("false");
+        mockedXDAT.when(() -> XDAT.getBoolSiteConfigurationProperty("maintainFileHistory", false)).thenReturn(true);
+        mockedXDAT.when(XDAT::getSerializerService).thenReturn(_serializer);
+        mockedXDAT.when(XDAT::getContextService).thenReturn(_mockContextService);
         Mockito.when(_mockContextService.getBeanSafely(RemoteFilesService.class)).thenReturn(null);
-        PowerMockito.when(XDAT.getSiteConfigPreferences()).thenReturn(_mockPreferences);
+        mockedXDAT.when(XDAT::getSiteConfigPreferences).thenReturn(_mockPreferences);
         Mockito.when(_mockPreferences.getCachePath()).thenReturn(_cachePath.toAbsolutePath().toString());
-        PowerMockito.mockStatic(SaveItemHelper.class);
-        PowerMockito.when(SaveItemHelper.authorizedSave(eq(_mockResource), eq(_mockUser), anyBoolean(), anyBoolean(), any(EventMetaI.class))).thenReturn(true);
-        PowerMockito.mockStatic(CatalogUtils.class);
+        mockedSaveItemHelper.when(() -> SaveItemHelper.authorizedSave(eq(_mockResource), eq(_mockUser), anyBoolean(), anyBoolean(), any(EventMetaI.class))).thenReturn(true);
         // PowerMockito.doNothing().when(CatalogUtils.class, "updateModificationEvent", any(CatEntryBean.class), any(EventMetaI.class));
 
         // Gross private method mock bc XFT :(
-        final ResourceMitigationHelper mitigationHelper = PowerMockito.spy(new ResourceMitigationHelper(request, _mockWorkflow, _mockUser, _mockPreferences));
-        PowerMockito.doReturn(_mockResource).when(mitigationHelper, "getCatalogResource");
+        final ResourceMitigationHelper mitigationHelper = Mockito.spy(new ResourceMitigationHelper(request, _mockWorkflow, _mockUser, _mockPreferences));
+        Mockito.doReturn(_mockResource).when(mitigationHelper);
         Mockito.when(_mockResource.getUri()).thenReturn(_resourcePath.toString());
 
         // This shouldn't matter too much: only gets called when there's an error.

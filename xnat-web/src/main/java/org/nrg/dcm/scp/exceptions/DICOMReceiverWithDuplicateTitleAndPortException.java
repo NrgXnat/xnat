@@ -57,11 +57,11 @@ public class DICOMReceiverWithDuplicateTitleAndPortException extends DICOMReceiv
     }
 
     public String getAeTitle() {
-        return _duplicates.isEmpty() ? null : _duplicates.get(0).getLeft();
+        return _duplicates.isEmpty() ? null : _duplicates.getFirst().getLeft();
     }
 
     public int getPort() {
-        return _duplicates.isEmpty() ? 0 : _duplicates.get(0).getRight();
+        return _duplicates.isEmpty() ? 0 : _duplicates.getFirst().getRight();
     }
 
     @Override

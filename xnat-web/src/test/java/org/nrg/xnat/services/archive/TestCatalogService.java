@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.nrg.action.ClientException;
 import org.nrg.test.workers.resources.ResourceManager;
@@ -22,18 +23,13 @@ import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
 import org.nrg.xnat.helpers.uri.archive.impl.ResourcesExptURI;
 import org.nrg.xnat.services.archive.impl.legacy.DefaultCatalogService;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 
@@ -46,12 +42,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @Slf4j
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
-@PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*", "org.xml.sax.*"})
-@PrepareForTest({UriParserUtils.class})
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestCatalogServiceConfig.class)
 public class TestCatalogService {
+    private MockedStatic<UriParserUtils> mockedUriParserUtils;
     @Autowired private PermissionsServiceI mockPermissionsService;
     @Autowired private CatalogService catalogService;
     @Autowired private DefaultCatalogService catalogServiceNoRemote;
@@ -77,7 +71,7 @@ public class TestCatalogService {
     public void setup() throws Exception {
         catalogServiceNoRemote.setRemoteFilesService(null);
 
-        Files.createDirectories(Paths.get(writableArchivePath));
+        Files.createDirectories(Path.of(writableArchivePath));
 
         mockUser = Mockito.mock(UserI.class);
         when(mockUser.getLogin()).thenReturn("mockUser");
@@ -104,9 +98,9 @@ public class TestCatalogService {
         mockCatResUriObj = Mockito.mock(ResourcesExptURI.class);
         mockSesUri = "/archive/experiments/" + session.getId();
         mockCatResUri = mockSesUri + "/resources/" + catRes.getLabel();
-        PowerMockito.mockStatic(UriParserUtils.class);
-        PowerMockito.when(UriParserUtils.parseURI(mockSesUri)).thenReturn(mockSesUriObj);
-        PowerMockito.when(UriParserUtils.parseURI(mockCatResUri)).thenReturn(mockCatResUriObj);
+        mockedUriParserUtils = Mockito.mockStatic(UriParserUtils.class);
+        mockedUriParserUtils.when(() -> UriParserUtils.parseURI(mockSesUri)).thenReturn(mockSesUriObj);
+        mockedUriParserUtils.when(() -> UriParserUtils.parseURI(mockCatResUri)).thenReturn(mockCatResUriObj);
         Mockito.when(mockSesUriObj.getSecurityItem()).thenReturn(session);
         Mockito.when(mockCatResUriObj.getSecurityItem()).thenReturn(session);
         Mockito.when(mockSesUriObj.getResources(anyBoolean()))
@@ -118,6 +112,7 @@ public class TestCatalogService {
     @After
     public void cleanup() throws Exception {
         FileUtils.deleteDirectory(new File(writableArchivePath));
+        mockedUriParserUtils.closeOnDemand();
     }
 
     @Test
@@ -145,8 +140,8 @@ public class TestCatalogService {
     @Test
     @Ignore("The mock framework seems to break loading the resource files here.")
     public void testPullResourceCatalogsToDestinationFile() throws Exception {
-        File permFile = ResourceManager.getInstance().getTestResourceFile(Paths.get("catalogs", "DEBUG_OUTPUT_catalog.xml").toString());
-        File catFile = Paths.get(writableArchivePath, "RESOURCES", catRes.getLabel(), catRes.getLabel() + "_catalog.xml").toFile();
+        File permFile = ResourceManager.getInstance().getTestResourceFile(Path.of("catalogs", "DEBUG_OUTPUT_catalog.xml").toString());
+        File catFile = Path.of(writableArchivePath, "RESOURCES", catRes.getLabel(), catRes.getLabel() + "_catalog.xml").toFile();
         Mockito.when(catRes.getUri()).thenReturn(catFile.getAbsolutePath());
         Mockito.when(session.getArchiveRootPath()).thenReturn(writableArchivePath);
         catFile.getParentFile().mkdirs();
@@ -160,7 +155,7 @@ public class TestCatalogService {
         Mockito.when(uriObj.getSecurityItem()).thenReturn(session);
         Mockito.when(uriObj.getXnatResource()).thenReturn(catRes);
         Mockito.when(uriObj.getResourceFilePath()).thenReturn(filePath);
-        PowerMockito.when(UriParserUtils.parseURI(uri)).thenReturn(uriObj);
+        mockedUriParserUtils.when(() -> UriParserUtils.parseURI(uri)).thenReturn(uriObj);
         catalogService.pullResourceCatalogsToDestination(mockUser, uri,
                 dummyLoc,null);
         Mockito.verify(remoteFilesService, times(1)).pullFile(filePath, dummyLoc, project);
@@ -194,7 +189,7 @@ public class TestCatalogService {
     public void testGetResourceDataFromUriNoItem() throws Exception {
         ExptURI mockBadExptUri = Mockito.mock(ExptURI.class);
         String uriString = "/archive/experiments/badid";
-        PowerMockito.when(UriParserUtils.parseURI(uriString)).thenReturn(mockBadExptUri);
+        mockedUriParserUtils.when(() -> UriParserUtils.parseURI(uriString)).thenReturn(mockBadExptUri);
         Mockito.when(mockBadExptUri.getSecurityItem()).thenReturn(null);
         exceptionRule.expect(ClientException.class);
         exceptionRule.expectMessage("Cannot locate archivable item securing " + uriString);
@@ -205,7 +200,7 @@ public class TestCatalogService {
     public void testGetResourceDataFromCatalogFileUri() throws Exception {
         ResourcesExptURI mockResUriObj = Mockito.mock(ResourcesExptURI.class);
         String uriString = "/archive/experiments/id/resources/label/label_catalog.xml";
-        PowerMockito.when(UriParserUtils.parseURI(uriString)).thenReturn(mockResUriObj);
+        mockedUriParserUtils.when(() -> UriParserUtils.parseURI(uriString)).thenReturn(mockResUriObj);
         Mockito.when(mockResUriObj.getSecurityItem()).thenReturn(session);
         Mockito.when(mockResUriObj.getResourceFilePath()).thenReturn("label_catalog.xml");
         exceptionRule.expect(ClientException.class);
@@ -218,7 +213,7 @@ public class TestCatalogService {
     public void testGetResourceDataFromUriFilePath() throws Exception {
         ResourcesExptURI mockFileUriObj = Mockito.mock(ResourcesExptURI.class);
         String uriString = "/archive/experiments/id/resources/label/files/file.txt";
-        PowerMockito.when(UriParserUtils.parseURI(uriString)).thenReturn(mockFileUriObj);
+        mockedUriParserUtils.when(() -> UriParserUtils.parseURI(uriString)).thenReturn(mockFileUriObj);
         Mockito.when(mockFileUriObj.getXnatResource()).thenReturn(catRes);
         Mockito.when(mockFileUriObj.getSecurityItem()).thenReturn(session);
         Mockito.when(mockFileUriObj.getResourceFilePath()).thenReturn("file.txt");
@@ -255,7 +250,7 @@ public class TestCatalogService {
     public void testGetResourceDataFromUriResource() throws Exception {
         ResourcesExptURI mockResUriObj = Mockito.mock(ResourcesExptURI.class);
         String uriString = "/archive/experiments/id/resources/label";
-        PowerMockito.when(UriParserUtils.parseURI(uriString)).thenReturn(mockResUriObj);
+        mockedUriParserUtils.when(() -> UriParserUtils.parseURI(uriString)).thenReturn(mockResUriObj);
         Mockito.when(mockResUriObj.getSecurityItem()).thenReturn(session);
         Mockito.when(mockResUriObj.getResourceFilePath()).thenReturn("");
         XnatAbstractresourceI abstRes = Mockito.mock(XnatAbstractresourceI.class);

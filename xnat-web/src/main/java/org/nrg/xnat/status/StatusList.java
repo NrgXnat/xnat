@@ -12,6 +12,7 @@ package org.nrg.xnat.status;
 import org.nrg.framework.status.StatusListenerI;
 import org.nrg.framework.status.StatusMessage;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,5 +45,6 @@ public class StatusList implements StatusListenerI, Serializable {
 
     private List<StatusMessage> messages = new ArrayList<>();
     private final static String LINE_SEPARATOR = System.getProperty("line.separator");
+    @Serial
     private static final long serialVersionUID = 7022501869703068172L;
 }

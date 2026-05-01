@@ -81,13 +81,12 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
 
         try {
             final Object contextCandidate = event.getSession().getAttribute(SPRING_SECURITY_CONTEXT_KEY);
-            if (contextCandidate instanceof SecurityContext) {
-                final SecurityContext context        = (SecurityContext) contextCandidate;
+            if (contextCandidate instanceof SecurityContext context) {
                 final Authentication  authentication = context.getAuthentication();
                 if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
                     final Object userCandidate = authentication.getPrincipal();
-                    if (userCandidate instanceof UserI) {
-                        final Integer userId = ((UserI) userCandidate).getID();
+                    if (userCandidate instanceof UserI userI) {
+                        final Integer userId = userI.getID();
                         if (userId == null) {
                             log.info("Got a session destroyed event for an empty user ID");
                         } else if (ObjectUtils.compare(getGuestUserId(), userId) == 0) {

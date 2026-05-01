@@ -4,11 +4,16 @@ import com.google.common.base.MoreObjects;
 import org.nrg.xnat.eventservice.model.TriggeringEvent;
 
 import javax.persistence.*;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
 public class TriggeringEventEntity implements Serializable{
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     private long id;
     private String eventName;

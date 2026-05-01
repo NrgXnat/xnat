@@ -22,7 +22,7 @@ public class XnatObjectIntrospectionDao extends AbstractHibernateDAO<Subscriptio
                 .createQuery("SELECT A.modified FROM xnat_experimentData_meta_data A WHERE A.meta_data_id in (SELECT B.experimentdata_info FROM xnat_experimentData B WHERE B.id = :experimentId)")
                 .setString("experimentId", experimentId)
                 .list();
-        return (modified == null || modified.isEmpty()) ? false : modified.get(0) == 1;
+        return (modified == null || modified.isEmpty()) ? false : modified.getFirst() == 1;
     }
 
 }

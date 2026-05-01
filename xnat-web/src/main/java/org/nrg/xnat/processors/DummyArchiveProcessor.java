@@ -1,9 +1,8 @@
 package org.nrg.xnat.processors;
 
 import lombok.extern.slf4j.Slf4j;
-import org.dcm4che2.data.DicomObject;
 import org.nrg.action.ServerException;
-import org.nrg.config.entities.Configuration;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -16,7 +15,7 @@ import java.util.Map;
 public class DummyArchiveProcessor extends AbstractArchiveProcessor {
 
     @Override
-    public boolean process(final DicomObject dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
+    public boolean process(final DicomObjectI dicomData, final SessionData sessionData, final MizerService mizer, ArchiveProcessorInstance instance, Map<String, Object> aeParameters) throws ServerException{
         return true;
     }
 }

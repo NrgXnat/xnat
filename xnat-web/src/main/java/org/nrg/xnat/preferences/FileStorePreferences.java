@@ -20,11 +20,15 @@ import org.nrg.xdat.preferences.EventTriggeringAbstractPreferenceBean;
 import org.nrg.xdat.services.DataTypeAwareEventService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.Serial;
+
 @NrgPreferenceBean(toolId = FileStorePreferences.TOOL_ID,
                    toolName = "XNAT File Store Service Preferences",
                    description = "Manages preferences and settings for the XNAT file-store service.")
 @Slf4j
 public class FileStorePreferences extends EventTriggeringAbstractPreferenceBean {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String TOOL_ID = "fileStore";
 
     @Autowired

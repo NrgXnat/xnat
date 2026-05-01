@@ -79,6 +79,18 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
+    public void setOverwriteMode(long id, String overwriteMode) throws NotFoundException {
+        DirectArchiveSession das = get(id);
+        das.setOverwriteMode(overwriteMode);
+        update(das);
+    }
+
+    @Override
+    public String getOverwriteMode(long id) throws NotFoundException {
+        return get(id).getOverwriteMode();
+    }
+
+    @Override
     public SessionData setStatusToBuildingAndReturn(long id) throws NotFoundException, ArchivingException {
         return setStatusAndReturn(id, PrearcUtils.PrearcStatus.QUEUED_BUILDING, PrearcUtils.PrearcStatus.BUILDING,
                 "buildable");

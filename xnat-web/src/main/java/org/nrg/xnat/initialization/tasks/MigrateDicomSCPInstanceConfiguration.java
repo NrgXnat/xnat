@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -85,7 +86,7 @@ public class MigrateDicomSCPInstanceConfiguration extends AbstractInitializingTa
         }
     }
 
-    private void processProperties( Properties properties) throws IOException, NrgServiceException {
+    private void processProperties( Properties properties) throws IOException, NrgServiceException, GeneralSecurityException {
         for( String key: properties.stringPropertyNames()) {
             if( key.startsWith( PREF_ID)) {
                 String value = properties.getProperty( key);

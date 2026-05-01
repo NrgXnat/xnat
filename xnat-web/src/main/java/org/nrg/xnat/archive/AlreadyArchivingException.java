@@ -11,8 +11,11 @@ package org.nrg.xnat.archive;
 
 import org.restlet.data.Status;
 
+import java.io.Serial;
+
 public class AlreadyArchivingException extends ArchivingException {
-	private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 	private static final Status status = Status.CLIENT_ERROR_FORBIDDEN;
 	private static final String message = "Session archiving already in progress";
 	

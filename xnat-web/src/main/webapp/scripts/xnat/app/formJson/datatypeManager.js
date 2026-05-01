@@ -40,7 +40,7 @@ var XNAT = getObject(XNAT || {});
                 data.forEach(function(item) {
                     if (item['imageAssessor'] === true || item['imageSession'] === true || item['subjectAssessor'] === true || item['elementName'] === "xnat:subjectData" || item['elementName'] === "xnat:projectData" ) {
                         var o = {};
-                        o['label'] = item.singular;
+                        o['label'] = item.singular + ' (' + item.elementName + ')';
                         o['value'] = item.elementName;
                         XNAT.customFormManager.datatypeManager.createableElements.push(o);
                     }

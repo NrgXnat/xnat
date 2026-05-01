@@ -47,17 +47,17 @@ public class MoverMaker {
         current.setId(m.getId());
 		current.setProject(newProject.getId());
 		current.setLabel(newLabel);
-		if (m instanceof XnatImagesessiondata) {
-			for (XnatImagescandataI scan : ((XnatImagesessiondata) m).getScans_scan()) {
+		if (m instanceof XnatImagesessiondata imagesessiondata) {
+			for (XnatImagescandataI scan : imagesessiondata.getScans_scan()) {
 				scan.setProject(newProject.getId());
 				((XnatImagesessiondata) current).addScans_scan(scan);
 			}
 		}
 
-        if (m instanceof XnatSubjectassessordata) {
-            ((XnatSubjectassessordata) current).setSubjectId(((XnatSubjectassessordata) m).getSubjectId());
-        } else if (m instanceof XnatImageassessordata) {
-            ((XnatImageassessordata) current).setImagesessionId(((XnatImageassessordata) m).getImagesessionId());
+        if (m instanceof XnatSubjectassessordata subjectassessordata) {
+            ((XnatSubjectassessordata) current).setSubjectId(subjectassessordata.getSubjectId());
+        } else if (m instanceof XnatImageassessordata imageassessordata) {
+            ((XnatImageassessordata) current).setImagesessionId(imageassessordata.getImagesessionId());
 		}
 		SaveItemHelper.authorizedSave(current.getItem(), u, false, false, c);
 	}
@@ -103,9 +103,9 @@ public class MoverMaker {
 									 String existingRootPath, @Nullable String destinationProject, UserI u, EventMetaI c)
 			throws IOException, Exception {
 		String uri= null;
-		if(r instanceof XnatResource){
-			uri=((XnatResource)r).getUri();
-			((XnatResource)r).getParent();
+		if(r instanceof XnatResource resource){
+			uri=resource.getUri();
+			resource.getParent();
 		}else{
 			uri=((XnatResourceseries)r).getPath();
 		}

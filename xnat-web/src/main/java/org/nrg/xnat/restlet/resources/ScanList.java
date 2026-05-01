@@ -228,7 +228,7 @@ public class ScanList extends QueryOrganizerResource {
 					cc.addClause("xnat:imageScanData/image_session_ID", scan.getImageSessionId());
 					ArrayList<XnatImagescandata> scans=XnatImagescandata.getXnatImagescandatasByField(cc, user, completeDocument);
 					if(scans.size()>0){
-						existing=scans.get(0);
+						existing=scans.getFirst();
 					}
 				}
 
@@ -344,7 +344,7 @@ public class ScanList extends QueryOrganizerResource {
 					table=XFTTable.Execute(query, user.getDBName(), userName);
 
 				table = formatHeaders(table, qo, "xnat:imageScanData/ID",
-						String.format("/data/experiments/%s/scans/",session.getId()));
+                        "/data/experiments/%s/scans/".formatted(session.getId()));
 			} catch (Exception e) {
 				logger.error("",e);
 				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);

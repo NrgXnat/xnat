@@ -37,7 +37,7 @@ public class UserCacheAction extends SecureAction {
 
     public void doPerform(RunData data, Context context) throws Exception {
     	String folder = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("folder",data));
-    	Boolean delete = new Boolean(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("delete",data)));
+    	Boolean delete = Boolean.valueOf(((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("delete", data)));
     	if (folder != null) {
 	    	if (delete.booleanValue()) {
 	    		//doDelete(data,context);
@@ -113,7 +113,7 @@ public class UserCacheAction extends SecureAction {
     
     public void doDelete(RunData data, Context context) throws Exception {
     	String folder = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("folder",data));
-    	Boolean delete = new Boolean(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("delete",data)));
+    	Boolean delete = Boolean.valueOf(((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("delete", data)));
     	if (folder != null && delete != null) {
         	folder = folder.trim();
     		UserI user = TurbineUtils.getUser(data);

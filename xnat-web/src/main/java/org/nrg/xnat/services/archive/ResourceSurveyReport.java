@@ -12,6 +12,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xnat.entities.ResourceSurveyRequest;
 
 import java.io.File;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 import java.util.function.Function;
@@ -21,6 +22,7 @@ import java.util.function.Function;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @Slf4j
 public class ResourceSurveyReport implements Serializable {
+    @Serial
     private static final long serialVersionUID = -2066472029149661423L;
 
     private static final Function<Map<String, Map<String, Map<File, String>>>, Integer> COUNT_DUPLICATES          = map -> map.values().stream().mapToInt(Map::size).sum();

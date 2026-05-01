@@ -44,7 +44,7 @@ public abstract class SingleActionProvider implements  EventServiceActionProvide
     @Override
     public Boolean isActionAvailable(String actionKey, String projectId, UserI user) {
         final List<Action> actions = getActions(projectId, null, user);
-        return actions != null && !actions.isEmpty() && actions.get(0).actionKey().contentEquals(actionKey);
+        return actions != null && !actions.isEmpty() && actions.getFirst().actionKey().contentEquals(actionKey);
     }
 
     public String getActionKey() {
@@ -53,7 +53,7 @@ public abstract class SingleActionProvider implements  EventServiceActionProvide
 
     @Override
     public String actionKeyToActionId(String actionKey) {
-        return Splitter.on(':').splitToList(actionKey).get(0);
+        return Splitter.on(':').splitToList(actionKey).getFirst();
     }
 
     @Override

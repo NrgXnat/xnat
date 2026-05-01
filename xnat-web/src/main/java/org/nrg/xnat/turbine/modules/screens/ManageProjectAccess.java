@@ -69,7 +69,7 @@ public class ManageProjectAccess  extends SecureReport {
                 userInfo.add((Integer)userHash[5]);
                 userInfo.add((Integer)userHash[6]);
                 
-                if (!userInfo.get(0).equals(user.getLogin()))
+                if (!userInfo.getFirst().equals(user.getLogin()))
                 {
                     String query = "SELECT element_name, create_element, read_element, edit_element, delete_element, active_element, xdat_field_mapping_id FROM xdat_element_access ea LEFT JOIN xdat_field_mapping_set fms ON ea.xdat_element_access_id=fms.permissions_allow_set_xdat_elem_xdat_element_access_id LEFT JOIN xdat_field_mapping fm ON fms.xdat_field_mapping_set_id=fm.xdat_field_mapping_set_xdat_field_mapping_set_id" +
                         " WHERE xdat_user_xdat_user_id=" + userInfo.get(5) + " " +
@@ -95,11 +95,11 @@ public class ManageProjectAccess  extends SecureReport {
                         if (!matched){
                             ArrayList newRow = new ArrayList();
                             newRow.add(protocolDataTypes.keySet().toArray()[i]);
-                            newRow.add(new Integer(0));
-                            newRow.add(new Integer(0));
-                            newRow.add(new Integer(0));
-                            newRow.add(new Integer(0));
-                            newRow.add(new Integer(0));
+                            newRow.add(Integer.valueOf(0));
+                            newRow.add(Integer.valueOf(0));
+                            newRow.add(Integer.valueOf(0));
+                            newRow.add(Integer.valueOf(0));
+                            newRow.add(Integer.valueOf(0));
                             newRow.add("");
                             permissionAL.add(newRow);
                         }

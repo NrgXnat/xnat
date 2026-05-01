@@ -123,7 +123,7 @@ public class RequestSearchData {
                     {
                         numToDisplay = cp.getIntObject("numToDisplay");
                     }else{
-                        numToDisplay = new Integer(40);
+                        numToDisplay = Integer.valueOf(40);
                     }
                 }
 
@@ -178,7 +178,7 @@ public class RequestSearchData {
             page = Integer.parseInt(pageS);
         } catch (NumberFormatException e1) {
             logger.error("",e1);
-            page=new Integer(0);
+            page=Integer.valueOf(0);
         }
         
         

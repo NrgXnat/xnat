@@ -61,8 +61,7 @@ public class ResourceSurveyRequestListener implements JmsRequestListener<Resourc
         if (exception instanceof InsufficientPrivilegesException) {
             log.error("Tried to handle resource survey request {} for resource {} with status {} but the referenced user \"{}\" doesn't have sufficient privileges on the project {}", request.getId(), request.getResourceId(), request.getRsnStatus(), request.getRequester(), request.getProjectId());
             status = ResourceSurveyRequest.Status.ERROR;
-        } else if (exception instanceof NotFoundException) {
-            final NotFoundException notFoundException = (NotFoundException) exception;
+        } else if (exception instanceof NotFoundException notFoundException) {
             if (notFoundException.getMessage().startsWith(MESSAGE_NOT_FOUND)) {
                 log.warn("It looks like resource {} was deleted, sorry about that", request.getResourceId());
                 status = ResourceSurveyRequest.Status.RESOURCE_DELETED;

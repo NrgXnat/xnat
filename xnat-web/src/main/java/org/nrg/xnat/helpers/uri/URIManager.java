@@ -197,7 +197,7 @@ public class URIManager {
 
                 final List<XnatImagescandata> scans = XnatImagescandata.getXnatImagescandatasByField(criteria, null, false);
                 if (!scans.isEmpty()) {
-                    return scans.get(0);
+                    return scans.getFirst();
                 }
             }
             return null;

@@ -558,7 +558,7 @@ public class FileList extends XNATCatalogTemplate {
 
 
                     if (entries.size() == 1) {
-                        file = CatalogUtils.getFile(entries.get(0), parentPath, projectId);
+                        file = CatalogUtils.getFile(entries.getFirst(), parentPath, projectId);
                         if (file != null && file.exists()) {
                             break;
                         }
@@ -1072,7 +1072,7 @@ public class FileList extends XNATCatalogTemplate {
         if (!assesseds.isEmpty()) {
             // Check if the session containing the assessor has an "ASSESSORS" directory.
             // This signifies that the directory structure is based on a "modern" version of XNAT.
-            if (!expts.isEmpty() && new File(assesseds.get(0).getSessionDir(), "ASSESSORS").isDirectory()) {
+            if (!expts.isEmpty() && new File(assesseds.getFirst().getSessionDir(), "ASSESSORS").isDirectory()) {
                 for (final XnatExperimentdata session : expts) {
                     sessionIds.put(session.getId(), session.getArchiveDirectoryName());
                 }
@@ -1087,8 +1087,8 @@ public class FileList extends XNATCatalogTemplate {
                     sessionUri.append(session.getProject()).append("/");
                 }
                 if (subjectIncludedInPath) {
-                    if (session instanceof XnatImagesessiondata) {
-                        final XnatSubjectdata subject = XnatSubjectdata.getXnatSubjectdatasById(((XnatImagesessiondata) session).getSubjectId(), getUser(), false);
+                    if (session instanceof XnatImagesessiondata imagesessiondata) {
+                        final XnatSubjectdata subject = XnatSubjectdata.getXnatSubjectdatasById(imagesessiondata.getSubjectId(), getUser(), false);
                         sessionUri.append(subject.getLabel()).append("/");
                     }
                 }

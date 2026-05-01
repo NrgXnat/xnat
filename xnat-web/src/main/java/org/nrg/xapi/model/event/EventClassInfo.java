@@ -68,12 +68,12 @@ public class EventClassInfo {
 				_description = (annoDescriptionObj != null && annoDescriptionObj instanceof String) ? annoDescriptionObj.toString() : _description;
 				
 				final Object annoEventIdsObj = AnnotationUtils.getValue(anno, "defaultEventIds");
-				String[] annoEventIds = (annoEventIdsObj != null && annoEventIdsObj instanceof String[]) ? (String[])annoEventIdsObj : new String[] {};
+				String[] annoEventIds = (annoEventIdsObj != null && annoEventIdsObj instanceof String[] ss) ? ss : new String[] {};
 				_eventIds.addAll(Arrays.asList(annoEventIds));
 				
 				final Object annoIncludeValuesFromDatabase = AnnotationUtils.getValue(anno, "includeValuesFromDatabase");
-				if (annoIncludeValuesFromDatabase != null && annoIncludeValuesFromDatabase instanceof Boolean) {
-					_includeEventIdsFromDatabase = (boolean)annoIncludeValuesFromDatabase;
+				if (annoIncludeValuesFromDatabase != null && annoIncludeValuesFromDatabase instanceof Boolean boolean1) {
+					_includeEventIdsFromDatabase = boolean1;
 				}
 				
 			} else {

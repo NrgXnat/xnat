@@ -11,8 +11,11 @@ package org.nrg.action;
 
 import org.restlet.data.Status;
 
+import java.io.Serial;
+
 public abstract class ActionException extends Exception {
-	private static final long serialVersionUID = -2423585253188531015L;
+    @Serial
+    private static final long serialVersionUID = -2423585253188531015L;
 	public Status status = null;
 
 	public ActionException() {

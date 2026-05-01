@@ -56,8 +56,8 @@ public class XDATScreen_delete_xnat_projectData extends SecureReport {
                                          subject.getExperiments_experiment().stream()
                                                 .filter(experiment -> StringUtils.equals(projectId, experiment.getProject()) || experiment.getSharing_share().stream().anyMatch(shared -> StringUtils.equals(projectId, shared.getProject())))
                                                 .collect(Collectors.toMap(Function.identity(), experiment ->
-                                                        experiment instanceof XnatImagesessiondata
-                                                        ? ((XnatImagesessiondata) experiment).getAssessors_assessor().stream()
+                                                        experiment instanceof XnatImagesessiondata xi
+                                                        ? xi.getAssessors_assessor().stream()
                                                                                              .filter(assessor -> StringUtils.equals(projectId, assessor.getProject()) || assessor.getSharing_share().stream().anyMatch(shared -> StringUtils.equals(projectId, shared.getProject())))
                                                                                              .collect(Collectors.toList())
                                                         : Collections.emptyList(), (e1, e2) -> e1, LinkedHashMap::new)), (e1, e2) -> e1, LinkedHashMap::new));

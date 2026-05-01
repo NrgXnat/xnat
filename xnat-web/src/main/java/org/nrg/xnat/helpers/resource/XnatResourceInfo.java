@@ -18,6 +18,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamSource;
 
 import java.io.File;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -30,6 +31,8 @@ import java.util.Map;
 @Data
 @Builder
 public class XnatResourceInfo implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static class XnatResourceInfoBuilder {
         public XnatResourceInfo.XnatResourceInfoBuilder file(final File file) {
             if (StringUtils.isBlank(name)) {

@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.task.entities;
 
+import java.io.Serial;
 import java.util.Date;
 
 import javax.persistence.Cacheable;
@@ -29,9 +30,10 @@ import org.nrg.xnat.node.entities.XnatNodeInfo;
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"taskId", "xnatNodeInfoId"}))
 @Cacheable
 public class XnatTaskInfo extends AbstractHibernateEntity {
-	
-	/** The Constant serialVersionUID. */
-	private static final long serialVersionUID = -7040159962774846865L;
+
+    /** The Constant serialVersionUID. */
+    @Serial
+    private static final long serialVersionUID = -7040159962774846865L;
 
 	/** The task id. */
 	private String taskId;

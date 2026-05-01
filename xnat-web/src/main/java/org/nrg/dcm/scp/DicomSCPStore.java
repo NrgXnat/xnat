@@ -9,6 +9,7 @@ import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 
 import javax.annotation.Nonnull;
+import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,7 +31,7 @@ public class DicomSCPStore {
         return _dicomSCPs.values();
     }
 
-    public List<Triple<String, Integer, Boolean>> start(final Integer port) throws DicomNetworkException, UnknownDicomHelperInstanceException {
+    public List<Triple<String, Integer, Boolean>> start(final Integer port) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         if (_dicomSCPs.containsKey(port)) {
             log.debug("Request to start DICOM SCP on port {}, but that already exists. Removing and stopping existing instance.", port);
             final DicomSCP dicomSCP = _dicomSCPs.remove(port);
@@ -66,7 +67,7 @@ public class DicomSCPStore {
         return isStarted ? convertReceivers(aeTitles, port, false) : Collections.emptyList();
     }
 
-    public List<Triple<String, Integer, Boolean>> cycle(final Set<Integer> updated) throws DicomNetworkException, UnknownDicomHelperInstanceException {
+    public List<Triple<String, Integer, Boolean>> cycle(final Set<Integer> updated) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         final List<Triple<String, Integer, Boolean>> results = new ArrayList<>();
 
         final Set<Integer> disabled = new HashSet<>(Sets.difference(ports(), _manager.getPortsWithEnabledInstances()));
@@ -80,22 +81,22 @@ public class DicomSCPStore {
         return results;
     }
 
-    public List<Triple<String, Integer, Boolean>> stopAll() throws DicomNetworkException, UnknownDicomHelperInstanceException {
+    public List<Triple<String, Integer, Boolean>> stopAll() throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         return stop(ports());
     }
 
     @Nonnull
-    private List<Triple<String, Integer, Boolean>> start(final Set<Integer> ports) throws DicomNetworkException, UnknownDicomHelperInstanceException {
+    private List<Triple<String, Integer, Boolean>> start(final Set<Integer> ports) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         return toggle(ports, true);
     }
 
     @Nonnull
-    private List<Triple<String, Integer, Boolean>> stop(final Set<Integer> ports) throws DicomNetworkException, UnknownDicomHelperInstanceException {
+    private List<Triple<String, Integer, Boolean>> stop(final Set<Integer> ports) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         return toggle(ports, false);
     }
 
     @Nonnull
-    private List<Triple<String, Integer, Boolean>> toggle(final Set<Integer> ports, final boolean enable) throws DicomNetworkException, UnknownDicomHelperInstanceException {
+    private List<Triple<String, Integer, Boolean>> toggle(final Set<Integer> ports, final boolean enable) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         log.debug("Got request to {} operations on {} ports: {}", enable ? "start" : "stop", ports.size(), StringUtils.join(ports, ", "));
         final List<Triple<String, Integer, Boolean>> results = new ArrayList<>();
         for (final int port : ports) {

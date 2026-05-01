@@ -10,6 +10,8 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
+
+import java.io.Serial;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +26,8 @@ import static org.nrg.xnat.services.archive.impl.hibernate.HibernateFileStoreSer
 @Audited
 @Slf4j
 public class FileStoreInfo extends AbstractHibernateEntity {
+    @Serial
+    private static final long serialVersionUID = 1;
     public FileStoreInfo() {
         log.info("Creating empty file-store info");
     }

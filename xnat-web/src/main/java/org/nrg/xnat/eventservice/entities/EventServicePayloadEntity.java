@@ -12,6 +12,7 @@ import javax.persistence.Lob;
 import javax.persistence.OneToOne;
 import javax.persistence.Transient;
 import java.io.ByteArrayOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -19,6 +20,9 @@ import java.util.zip.Inflater;
 @Slf4j
 @Entity
 public class EventServicePayloadEntity implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     private long id;
     private byte[] payload;

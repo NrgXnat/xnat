@@ -15,6 +15,7 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import java.io.*;
 
 public class StoredFile implements FileWriterWrapperI, Serializable {
+    @Serial
     private static final long serialVersionUID = 43L;
     private final File stored;
     private final boolean overwrite;

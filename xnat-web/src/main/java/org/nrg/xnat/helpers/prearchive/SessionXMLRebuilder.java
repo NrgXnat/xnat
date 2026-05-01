@@ -106,13 +106,13 @@ public class SessionXMLRebuilder extends AbstractXnatTask {
                                 log.debug("Prearchive session {} is {} minutes old, less than configured interval {}, remaining in RECEIVING status", sessionData, diff, _interval);
                             }
                         } catch (IOException e) {
-                            final String message = String.format("An error occurred trying to write the session %s %s %s.", sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                            final String message = "An error occurred trying to write the session %s %s %s.".formatted(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
                             log.error(message, e);
                         } catch (InvalidPermissionException e) {
-                            final String message = String.format("A permissions error occurred trying to write the session %s %s %s.", sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                            final String message = "A permissions error occurred trying to write the session %s %s %s.".formatted(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
                             log.error(message, e);
                         } catch (Exception e) {
-                            final String message = String.format("An unknown error occurred trying to write the session %s %s %s.", sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
+                            final String message = "An unknown error occurred trying to write the session %s %s %s.".formatted(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject());
                             log.error(message, e);
                         }
                     }

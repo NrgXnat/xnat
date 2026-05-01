@@ -11,6 +11,7 @@ import org.nrg.xdat.om.XnatInvestigatordata;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.io.Writer;
 import java.sql.Array;
 import java.sql.ResultSet;
@@ -27,6 +28,8 @@ import java.util.stream.Stream;
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Investigator extends XnatModelObject implements XnatInvestigatordataI {
+    @Serial
+    private static final long serialVersionUID = 1;
     public Investigator(final XnatInvestigatordataI investigator) {
         try {
             if (investigator != null) {
@@ -72,7 +75,7 @@ public class Investigator extends XnatModelObject implements XnatInvestigatordat
 
     @Override
     public String toString() {
-        return String.format(FORMAT_TO_STRING, department, email, firstname, lastname, institution, phone, title, id, label, xsiType);
+        return FORMAT_TO_STRING.formatted(department, email, firstname, lastname, institution, phone, title, id, label, xsiType);
     }
 
     @Override

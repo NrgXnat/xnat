@@ -91,7 +91,7 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
             if (sessionXml.exists()) {
                 log.debug("Found the session XML in the file {}, processing.", sessionXml.getAbsolutePath());
                 final XnatImagesessiondataBean bean = (XnatImagesessiondataBean) new XDATXMLReader().parse(sessionXml);
-                if (bean instanceof XnatPetmrsessiondataBean) {
+                if (bean instanceof XnatPetmrsessiondataBean petmrsessiondataBean) {
                     // XNAT-6106: HACKITY HACKITY HACK HACK HACK!! If the subject for these sessions doesn't
                     // already exist, create it now to prevent race condition where the two separate operations
                     // both try to create the subject with the "next" available subject ID (only it's not "next"
@@ -102,7 +102,7 @@ public class PrearchiveSeparatePetMrHandler extends AbstractPrearchiveOperationH
                     }
 
                     log.debug("Found a PET/MR session XML in the file {} with the separate PET/MR flag set to true for the site or project, creating a new request to separate the session.", sessionXml.getAbsolutePath());
-                    final Map<String, SessionData> sessions = PrearcDatabase.separatePetMrSession(folderName, timestamp, project, (XnatPetmrsessiondataBean) bean);
+                    final Map<String, SessionData> sessions = PrearcDatabase.separatePetMrSession(folderName, timestamp, project, petmrsessiondataBean);
                     if (sessions == null) {
                         log.warn("No sessions returned from separate PET/MR session operation, check your logs for errors.");
                         return requestList;

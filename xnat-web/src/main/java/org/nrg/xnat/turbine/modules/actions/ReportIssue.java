@@ -29,7 +29,6 @@ import org.nrg.xnat.utils.FileUtils;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -83,7 +82,7 @@ public class ReportIssue extends SecureAction {
             return Collections.emptyMap();
         }
 
-        final Path cachePath = Paths.get(ArcSpecManager.GetInstance().getGlobalCachePath(), "issuereports", sessionId);
+        final Path cachePath = Path.of(ArcSpecManager.GetInstance().getGlobalCachePath(), "issuereports", sessionId);
         checkFolder(cachePath);
 
         final Map<String, File> attachments = new HashMap<>();
@@ -137,6 +136,6 @@ public class ReportIssue extends SecureAction {
     }
 
     private static String getSubject(final UserI user) {
-        return String.format(SUBJECT_FORMAT, TurbineUtils.GetSystemName(), user.getUsername());
+        return SUBJECT_FORMAT.formatted(TurbineUtils.GetSystemName(), user.getUsername());
     }
 }

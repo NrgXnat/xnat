@@ -310,10 +310,11 @@ public class EventServiceEmailAction extends SingleActionProvider {
     private List<User> getAllowedRecipients(String projectId) {
         String QUERY;
         if (Strings.isNullOrEmpty(projectId)) {
-            QUERY = "select * from xdat_user where xdat_user_id IN\n" +
-                    "            (select groups_groupid_xdat_user_xdat_user_id from xdat_user_groupid where groupid IN\n" +
-                    "                (select id from xdat_usergroup where xdat_usergroup_id IN\n" +
-                    "                    (select xdat_usergroup_id from xdat_usergroup)))";
+            QUERY = """
+                    select * from xdat_user where xdat_user_id IN
+                                (select groups_groupid_xdat_user_xdat_user_id from xdat_user_groupid where groupid IN
+                                    (select id from xdat_usergroup where xdat_usergroup_id IN
+                                        (select xdat_usergroup_id from xdat_usergroup)))""";
         } else {
             QUERY = "select * from xdat_user where xdat_user_id IN\n" +
                     "            (select groups_groupid_xdat_user_xdat_user_id from xdat_user_groupid where groupid IN\n" +

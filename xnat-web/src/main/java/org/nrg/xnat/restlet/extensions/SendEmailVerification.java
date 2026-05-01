@@ -73,7 +73,7 @@ public class SendEmailVerification extends Resource {
        if(users.size()==0){ throw new EmailNotFoundException("No Such Email Exists."); }
        
        // Otherwise return the first user in the list.
-       return users.get(0);
+       return users.getFirst();
     }
     
     public class ExceededRequestsException extends Exception{

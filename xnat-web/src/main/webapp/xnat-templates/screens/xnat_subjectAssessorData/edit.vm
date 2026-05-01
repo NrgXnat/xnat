@@ -1,0 +1,122 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#macro (dateEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatDateBox($field $item $vr $years)</td>
+</tr>
+#end
+
+#macro (textEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatTextBox($field $item "" $vr)</td>
+</tr>
+#end
+
+#macro (textEditNColsRow $names $fields)
+<tr>
+  #foreach ($name in $names)
+	  #set ($index = $velocityCount - 1)
+		<td>$name</td>
+		<td>#xdatTextBox("$fields.get($index)" $item "" $vr)</td>
+  #end
+</tr>
+#end
+
+#macro (boolRadioEditRow $name $field $isTrue)
+<tr>
+	<td>$name</td>
+	<td>#xdatBooleanRadio($field $item $isTrue $vr)</td>
+</tr>
+#end
+
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#set($years = [ $!turbineUtils.getYear()..1990])
+
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+
+
+<script type="text/javascript">
+    var elementName = "$!item.getXSIType()";
+    window.currentID = "$!om.getId()";
+#if($om.getProject())
+    #if($om.getProject().equals(""))
+    window.currentProject = "$!project";
+    #else
+    window.currentProject = "$!om.getProject()";
+    #end
+#else
+    window.currentProject = "$!project";
+#end
+    window.currentSubject = "$!om.getSubjectId()";
+#if($om.getSubjectData())
+    window.currentSubjectLabel = "$!om.getSubjectData().getLabel()";
+#end
+    window.currentLabel = "$!om.getLabel()";
+</script>
+
+
+
+#parse($turbineUtils.getTemplateName("validate.vm","xnat:subjectAssessorData",$project,"edit"))
+
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")" onsubmit="return validateForm();">
+	<input type="hidden" id="$!item.getXSIType()/ID" name="$!item.getXSIType()/ID" value="$!om.getId()">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+
+<br>
+<div class="edit_title">$item.getGenericSchemaElement().getName() Edit Page</div>
+
+	#if($om.getId())
+		#parse($turbineUtils.getTemplateName("psl.vm",$om.getXSIType(),$project,"edit"))
+	#else
+		<div class="withColor withThinBorder">
+			<table id="project_subject_form">
+
+				<!-- screens/xnat_subjectAssessorData/upload/xnat_subjectAssessorData_projSubj.vm -->
+				## screens/xnat_subjectAssessorData/upload/xnat_subjectAssessorData_projSubj.vm
+				#parse($turbineUtils.getTemplateName("_projSubj.vm",$om.getXSIType(),$project,"upload"))
+				<!-- end screens/xnat_subjectAssessorData/upload/xnat_subjectAssessorData_projSubj.vm -->
+
+			</table>
+		</div>
+	#end
+
+<br>
+<table class="session_info_edit">
+	#dateEditRow("Date" "$item.getXSIType()/date")
+	#textEditRow("Time" "$item.getXSIType()/time")
+	#textEditRow("Visit ID" "$item.getXSIType()/visit_id")
+	#textEditRow("Age" "$item.getXSIType()/age")
+
+</table>
+
+	<div>
+		<!-- EditProjectSpecificFields -->
+		#parse("/screens/EditProjectSpecificFields.vm")
+	</div>
+
+<br>
+<div class="edit_header2">Notes</div>
+<br>
+<textarea name="$item.getXSIType()/note" rows="4" cols="50" style="text-align:left;">$!item.getProperty("note")</textarea>
+
+<hr>
+#auditTable("" "")
+
+#xdatEditProps($item $edit_screen)
+<input type="button" onclick="javascript:history.go(-1)" value="Back"/>
+&nbsp;&nbsp;&nbsp;
+<input type="submit" onclick="" name="eventSubmit_doInsert" value="Submit"/>
+
+</form>
+

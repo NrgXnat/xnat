@@ -24,6 +24,7 @@ import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -36,6 +37,8 @@ import java.util.stream.Stream;
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Assessor extends XnatModelObject {
+    @Serial
+    private static final long serialVersionUID = 1;
     @JsonIgnore private XnatImageassessordataI xnatImageassessordataI;
     @JsonIgnore private XnatImagesessiondata parent;
     private List<Resource> resources;
@@ -99,9 +102,10 @@ public class Assessor extends XnatModelObject {
         this.resources = Lists.newArrayList();
         // Image assessor resources are stored as out files rather that generic resources by default
         // Query both to be safe & consistent with legacy code
+        // Copy lists before streaming to avoid ConcurrentModificationException
         resources = Stream.concat(
-                xnatImageassessordataI.getResources_resource().stream(),
-                xnatImageassessordataI.getOut_file().stream()
+                Lists.newArrayList(xnatImageassessordataI.getResources_resource()).stream(),
+                Lists.newArrayList(xnatImageassessordataI.getOut_file()).stream()
         )
                           .filter(r -> r instanceof XnatResourcecatalog)
                           .map(r -> new Resource((XnatResourcecatalog) r, this.uri, rootArchivePath))

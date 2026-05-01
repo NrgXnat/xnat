@@ -109,7 +109,7 @@ public class ProjectMemberResource extends SecureResource {
             if (Permissions.canDelete(user, _project)) {
                 if (_users.size() == 1) {
                     // This provides a cleaner audit as workflow can be on user rather than group
-                    Groups.removeUserFromGroup(_users.get(0), user, _groupId,null);
+                    Groups.removeUserFromGroup(_users.getFirst(), user, _groupId,null);
                 } else {
                     Groups.removeUsersFromGroup(_groupId, user, _users, null);
                 }

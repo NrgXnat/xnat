@@ -145,7 +145,7 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
     @PostConstruct
     public void initUpdateTables() {
         /** Update script trigger table for XNAT 1.7.  Drop constraints on any columns other than id and trigger_id */
-        if (_scriptTriggerService instanceof HibernateScriptTriggerService) {
+        if (_scriptTriggerService instanceof HibernateScriptTriggerService service) {
 
             final List<String> cleanUpQuery = (new JdbcTemplate(_dataSource)).query(
                     "SELECT DISTINCT 'ALTER TABLE '||tc.table_name||' DROP CONSTRAINT '||tc.constraint_name||';'" +
@@ -168,7 +168,7 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
                 }
             }
             /** Update table rows for pre-XNAT 1.7 tables to fill in missing column values with defaults */
-            ((HibernateScriptTriggerService) _scriptTriggerService).updateOldStyleScriptTriggers();
+            service.updateOldStyleScriptTriggers();
         }
     }
 

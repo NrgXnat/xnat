@@ -36,8 +36,8 @@ public abstract class CustomTableScreen extends SecureScreen {
 			
 			context.put("table", t);
 			data.getSession().removeAttribute(tag);
-		}else if(data instanceof RestletRunData){
-			t=(XFTTable)((RestletRunData)data).retrieveObject("table");
+		}else if(data instanceof RestletRunData runData){
+			t=(XFTTable)runData.retrieveObject("table");
 			context.put("table", t);
 		}
 		

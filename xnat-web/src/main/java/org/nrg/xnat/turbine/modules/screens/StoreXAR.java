@@ -235,7 +235,7 @@ public class StoreXAR extends RawScreen {
 
                     if (itemsByType.containsKey("SESSION")){
                         if (items.size()==1){
-                            session =(XnatImagesessiondata)items.get(0);
+                            session =(XnatImagesessiondata)items.getFirst();
                             this.populateSession(session);
                             if (session.getProject()==null){
                                 pw.println("<UploadResponse status=\"ERROR\" CODE=\"105\">");
@@ -360,7 +360,7 @@ public class StoreXAR extends RawScreen {
 
                         if (dirs.size()==1 && extraFiles.size()==0){
                             //CONTAINER FOLDER
-                        	File[] children = dirs.get(0).listFiles();
+                        	File[] children = dirs.getFirst().listFiles();
                         	if (children!=null){
                             	for(File child : children){
                             		if (child.isDirectory())

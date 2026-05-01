@@ -104,7 +104,7 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
         final GridviewDimensions     dimensions   = new GridviewDimensions(view);
         final Optional<FileResource> fileResource = _snapshotService.getSnapshot(session, scanId, dimensions.rows, dimensions.columns);
 
-        final File resource = fileResource.orElseThrow(() -> new NotFoundException("snapshot", String.format("SessionId: %s, ScanId: %s", sessionId, scanId))).getFile();
+        final File resource = fileResource.orElseThrow(() -> new NotFoundException("snapshot", "SessionId: %s, ScanId: %s".formatted(sessionId, scanId))).getFile();
         log.debug("Snapshot path for scan {} of session {} with grid view {} found at path {}", scanId, sessionId, StringUtils.defaultIfBlank(view, "none"), fileResource.get().getRoot());
         return resource;
     }
@@ -118,7 +118,7 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
         final GridviewDimensions     dimensions   = new GridviewDimensions(view);
         final Optional<FileResource> fileResource = _snapshotService.getThumbnail(session, scanId, dimensions.rows, dimensions.columns, 0.5f, 0.5f);
 
-        File resource = fileResource.orElseThrow(() -> new NotFoundException("thumbnail", String.format("SessionId: %s, ScanId: %s", sessionId, scanId))).getFile();
+        File resource = fileResource.orElseThrow(() -> new NotFoundException("thumbnail", "SessionId: %s, ScanId: %s".formatted(sessionId, scanId))).getFile();
         log.debug("Thumbnail path for scan {} of session {} with grid view {} found at path {}", scanId, sessionId, StringUtils.defaultIfBlank(view, "none"), fileResource.get().getRoot());
         return resource;
     }

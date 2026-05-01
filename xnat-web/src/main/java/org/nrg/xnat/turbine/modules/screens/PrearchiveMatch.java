@@ -110,7 +110,7 @@ public class PrearchiveMatch extends SecureScreen {
                                                     ArrayList<XnatMrsessiondata> matched= XnatMrsessiondata.getXnatMrsessiondatasByField(cc, null, false);
                                                     
                                                     if (matched.size() >0){
-                                                        match=matched.get(0);
+                                                        match=matched.getFirst();
                                                     }
                                                     
                                                     ArrayList field = new ArrayList();
@@ -256,7 +256,7 @@ public class PrearchiveMatch extends SecureScreen {
                                                     ArrayList<XnatPetsessiondata> matched= XnatPetsessiondata.getXnatPetsessiondatasByField(cc, null, false);
                                                     
                                                     if (matched.size() >0){
-                                                        match=matched.get(0);
+                                                        match=matched.getFirst();
                                                     }
                                                     
                                                     ArrayList field = new ArrayList();

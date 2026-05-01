@@ -15,6 +15,8 @@ import org.nrg.xnat.customforms.pojo.formio.RowIdentifier;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
@@ -28,6 +30,7 @@ import java.util.Objects;
 @AllArgsConstructor
 @IdClass(CustomVariableFormAppliesToId.class)
 public class CustomVariableFormAppliesTo implements BaseHibernateEntity, Serializable {
+    @Serial
     private static final long serialVersionUID = -1264374836830855705L;
 
     private long                    _id;

@@ -22,8 +22,8 @@ public class ScanSecurityServiceImpl implements ScanSecurityService {
         final XnatImagescandata scanItem;
         if (item instanceof XFTItem && item.getItem().instanceOf(XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
             scanItem = (XnatImagescandata) BaseElement.GetGeneratedItem(item);
-        } else if (item instanceof XnatImagescandata) {
-            scanItem = (XnatImagescandata) item;
+        } else if (item instanceof XnatImagescandata imagescandata) {
+            scanItem = imagescandata;
         } else {
             // Not a scan
             return null;

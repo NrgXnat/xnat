@@ -49,7 +49,7 @@ public class XnatHttpUtils {
     public static String getServerRoot(final HttpServletRequest request) {
         final String port        = request.getServerPort() == 80 ? "" : ":" + request.getServerPort();
         final String servletPath = StringUtils.defaultIfBlank(request.getContextPath(), "");
-        return String.format("%s://%s%s%s", request.getScheme(), request.getServerName(), port, servletPath);
+        return "%s://%s%s%s".formatted(request.getScheme(), request.getServerName(), port, servletPath);
     }
 
     /**
@@ -205,7 +205,10 @@ public class XnatHttpUtils {
      * @param template JDBC template for query executions
      */
     private static void checkAccountUpgrades(final HttpServletRequest request, final NamedParameterJdbcTemplate template) {
-        // The login method may be null in some cases, specifically basic auth, but that indicates localdb or alias token auth.
+//        if (request.getContentType() != null && request.getContentType().toLowerCase().contains("multipart/form-data")) {
+//            return;
+//        }
+            // The login method may be null in some cases, specifically basic auth, but that indicates localdb or alias token auth.
         final String loginMethod = StringUtils.defaultIfBlank(request.getParameter(PARAM_LOGIN_METHOD), XdatUserAuthService.LOCALDB);
         final String username = getCredentialsNoExceptions(request).getLeft();
 
@@ -240,7 +243,7 @@ public class XnatHttpUtils {
                     } else {
                         log.info("I upgraded password encoding for user {}", username);
                     }
-                    final int deleted = template.update(String.format(QUERY_CLEAR_CACHE_ENTRY, username), EmptySqlParameterSource.INSTANCE);
+                    final int deleted = template.update(QUERY_CLEAR_CACHE_ENTRY.formatted(username), EmptySqlParameterSource.INSTANCE);
                     log.debug("Deleted {} cache entries for user {}", deleted, username);
                 }
             }

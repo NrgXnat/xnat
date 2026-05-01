@@ -76,7 +76,7 @@ public class EventTrackingDataHibernateServiceImpl extends AbstractHibernateEnti
         if (eventTrackingDataList.size() > 1) {
             throw new RuntimeException("The specified key is not a unique constraint!");
         }
-        return eventTrackingDataList.get(0);
+        return eventTrackingDataList.getFirst();
     }
 
     /**

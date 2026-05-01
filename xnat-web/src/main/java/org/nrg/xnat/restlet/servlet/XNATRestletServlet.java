@@ -20,6 +20,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import java.security.GeneralSecurityException;
+
+import java.io.Serial;
 
 public class XNATRestletServlet extends ServerServlet {
     public static ServletConfig REST_CONFIG = null;
@@ -38,7 +41,7 @@ public class XNATRestletServlet extends ServerServlet {
 
         try {
             XDAT.getContextService().getBean(DicomSCPManager.class).start();
-        } catch (UnknownDicomHelperInstanceException | DicomNetworkException e) {
+        } catch (UnknownDicomHelperInstanceException | DicomNetworkException | GeneralSecurityException e) {
             throw new ServletException(e);
         }
     }
@@ -48,6 +51,7 @@ public class XNATRestletServlet extends ServerServlet {
         XDAT.getContextService().getBean(DicomSCPManager.class).shutdown();
     }
 
+    @Serial
     private static final long serialVersionUID = -4149339105144231596L;
 
     private final Logger logger = LoggerFactory.getLogger(XNATRestletServlet.class);

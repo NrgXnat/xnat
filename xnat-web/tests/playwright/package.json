@@ -1,0 +1,15 @@
+{
+  "name": "xnat-web-playwright-tests",
+  "version": "1.0.0",
+  "description": "Playwright E2E tests for XNAT web application",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --ui",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "dotenv": "^17.4.2"
+  }
+}

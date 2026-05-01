@@ -88,8 +88,8 @@ public class MoveFiles extends SecureResource {
 		try {
 			URIManager.DataURIA uri=UriParserUtils.parseURI(key);
 			
-			if(uri instanceof URIManager.UserCacheURI){
-				return (URIManager.UserCacheURI)uri;
+			if(uri instanceof URIManager.UserCacheURI rI){
+				return rI;
 			}else{
 				throw new ClientException("Invalid Source:"+ key);
 			}
@@ -102,8 +102,8 @@ public class MoveFiles extends SecureResource {
 		try {
 			URIManager.DataURIA uri=UriParserUtils.parseURI(key);
 			
-			if(uri instanceof ResourceURII){
-				return (ResourceURII)uri;
+			if(uri instanceof ResourceURII iI){
+				return iI;
 			}else{
 				throw new ClientException("Invalid Destination:"+ key);
 			}

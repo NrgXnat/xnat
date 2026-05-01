@@ -46,16 +46,15 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.zip.ZipOutputStream;
 
 @SuppressWarnings("serial")
 @Slf4j
 public class ArchiveServlet extends HttpServlet {
+    @Serial
+    private static final long serialVersionUID = 1;
     /* (non-Javadoc)
      * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
@@ -187,12 +186,12 @@ public class ArchiveServlet extends HttpServlet {
     }
 
     protected String getRootPath(ItemI i) {
-        if (i instanceof XnatProjectdata) {
-            return ((XnatProjectdata) i).getRootArchivePath();
-        } else if (i instanceof XnatSubjectdata) {
-            return ((XnatSubjectdata) i).getPrimaryProject(false).getRootArchivePath();
-        } else if (i instanceof XnatExperimentdata) {
-            return ((XnatExperimentdata) i).getPrimaryProject(false).getRootArchivePath();
+        if (i instanceof XnatProjectdata projectdata) {
+            return projectdata.getRootArchivePath();
+        } else if (i instanceof XnatSubjectdata subjectdata) {
+            return subjectdata.getPrimaryProject(false).getRootArchivePath();
+        } else if (i instanceof XnatExperimentdata experimentdata) {
+            return experimentdata.getPrimaryProject(false).getRootArchivePath();
         }
         return null;
     }
@@ -302,7 +301,7 @@ public class ArchiveServlet extends HttpServlet {
                     project = img.getPrimaryProject(false).getItem();
                 } else {
                     ArrayList<XFTItem> parents = i.getParents("xnat:projectData");
-                    project = parents.get(0);
+                    project = parents.getFirst();
                 }
             }
 

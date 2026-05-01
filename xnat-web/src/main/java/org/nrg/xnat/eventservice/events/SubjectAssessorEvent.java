@@ -8,6 +8,7 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,6 +16,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @XnatEventServiceEvent(name="SubjectAssessorEvent")
 public class SubjectAssessorEvent extends AbstractEventServiceEvent<XnatSubjectassessordataI> {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public enum Status {CREATED, DELETED};
 
@@ -44,8 +48,8 @@ public class SubjectAssessorEvent extends AbstractEventServiceEvent<XnatSubjecta
         }
 
         XnatExperimentdata xnatExperimentdata = XnatExperimentdata.getXnatExperimentdatasById(payloadId, user, false);
-        return xnatExperimentdata instanceof XnatSubjectassessordataI ?
-                (XnatSubjectassessordataI) xnatExperimentdata :
+        return xnatExperimentdata instanceof XnatSubjectassessordataI xsi ?
+                xsi :
                 null;
     }
 

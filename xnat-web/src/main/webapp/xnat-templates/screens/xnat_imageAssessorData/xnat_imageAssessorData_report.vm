@@ -11,6 +11,7 @@ document.title = "EXPT: $!item.getProperty('label')";
 			#if($item.needsActivation())
 			<div id="quarantine_div" class="error" style="background-color:#FFCC33;">This experiment is in quarantine.&nbsp;&nbsp;&nbsp;&nbsp;<a onclick="toggleQuarantine();">Activate</a></div><br>
 			#end
+#addCustomScreens($om.getXSIType() "report/errors")
 			#parse($turbineUtils.getTemplateName("_title",$om.getXSIType(),$project))
 					#if($project)
 					
@@ -18,22 +19,34 @@ document.title = "EXPT: $!item.getProperty('label')";
 					#set($project=$om.getProject())
 					#end
 <BR>
+#addCustomScreens($om.getXSIType() "report/warnings")
+#addCustomScreens($om.getXSIType() "report/alert")
+#parse("/screens/workflow_alert.vm")
 <table width="100%" border="0">
 				<tr>
 		  <td align=left>
 			#parse($turbineUtils.getTemplateName("details",$om.getXSIType(),$project))
 	    </td>
   				</tr>
+	#addCustomScreens($om.getXSIType() "report/postDetails")
   				<tr>
   					 <td colspan=2>
 			#parse("/screens/ReportProjectSpecificFields.vm")
 	  </td>
-	 </tr> 
+	 </tr>
+	#addCustomScreens($om.getXSIType() "report/postFields")
 			</table>
 				<script type="text/javascript">
 var image_session_id="$om.getId()";
 </script>
+<div name="workflow-summary" class="report-section">
+	#set ($scanCounter = 202)
+    #parse("/screens/workflow_summary.vm")
+</div>
 
+<div name="custom-post-workflow" class="report-section hidden">
+	#addCustomScreens($om.getXSIType() "report/postWorkflowSummary")
+</div>
 	<script type="text/javascript">
 
 function  toggleQuarantine(){

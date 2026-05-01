@@ -15,142 +15,799 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 
 <div id="data-type-list" class="admin-content">
 
-    <div class="header">
-        <b>Data Types</b>
-        <i>|</i>
-        <button id="setup-data-type" type="button"
-            ##data-url="$url"
-            ##onclick="return popupCentered('$url','Edit',960,720,3);"
-            onclick="XNAT.app.adminPopupDialog('$url')"
-            class="btn1 btn-sm">Setup Additional Data Type</button>
-    </div>
+    <div id="data-types-tabs" class="yui-navset">
+        <ul class="yui-nav">
+            <li class="selected"><a href="#registered-types-tab"><em>Registered Data Types</em></a></li>
+            <li><a href="#search-fields-tab"><em>Search Fields</em></a></li>
+            <li><a href="#listing-config-tab"><em>Listing Configuration</em></a></li>
+            <li><a href="#xft-elements-tab"><em>All XFT Elements</em></a></li>
+            <li><a href="#dynamic-datatypes-tab"><em>Dynamic Data Types</em></a></li>
+            <li><a href="#db-display-docs-tab"><em>Dynamic Display Docs</em></a></li>
+        </ul>
 
-    <form name="form1" method="post" action="$link.setAction("ManageDataTypes")">
+        <div class="yui-content">
+            <div id="registered-types-tab">
+                <div class="header">
+                    <b>Data Types</b>
+                    <i>|</i>
+                    <button id="setup-data-type" type="button"
+                        ##data-url="$url"
+                        ##onclick="return popupCentered('$url','Edit',960,720,3);"
+                        onclick="XNAT.app.adminPopupDialog('$url')"
+                        class="btn btn-sm">Setup Additional Data Type</button>
+                    <button id="create-data-type" type="button"
+                        onclick="showCreateDataTypeDialog()"
+                        class="btn btn-sm">Create Datatype</button>
+                </div>
 
-        <div class="data-table" style="margin-bottom:15px;">
-        <table id="data-type-table" class="xnat-table clean sortable">
-            <thead>
-            <tr>
-                <th class="sort"><b>Element</b></th>
-                <th class="sort name-singular">
-                    <span title="Term used to describe one instance of this data.">Singular</span>
-                </th>
-                <th class="sort name-plural">
-                    <span title="Term used to describe more than one occurrence of this data.">Plural</span>
-                </th>
-                <th class="sort">
-                    <span title="Short code used in the creation of IDs">Code</span>
-                </th>
-                <th class="sort">
-                    <span title="Whether or not unspecified users can use this data-type in its $displayManager.getPluralDisplayNameForProject().toLowerCase().">Accessible</span>
-                </th>
-                <th class="sort">
-                    <span title="Whether or not access to data of this type should be restricted.">Secured</span>
-                </th>
-                <th class="sort">
-                    <span title="Whether or not data of this type should be searchable.">Searchable</span>
-                </th>
-                <th class="sort">
-                    <span title="Whether or not data of this type should be browseable.">Browseable</span>
-                </th>
-                <th class="sort">
-                    <span title="The order in which data types will show up in listings.">Sequence</span>
-                </th>
-            </tr>
-            </thead>
-            <tbody>
-            #set($dt_count=0)
-            #set($row=0)
-            #foreach($data_type in $data_types)
-                #if($row==0)
-                <tr>
-                    #set($row=1)
-                #else
-                <tr>
-                    #set($row=0)
-                #end
+                <form name="form1" method="post" action="$link.setAction("ManageDataTypes")">
 
-                #set ( $url = $link.setAction("DisplayItemAction").addPathInfo("search_element","xdat:element_security").addPathInfo("search_field","xdat:element_security.element_name").addPathInfo("search_value","$!data_type.getProperty('element_name')").addPathInfo("popup","true")  )
+                    <div class="data-table" style="margin-bottom:15px; overflow-x: auto;">
+                    <table id="data-type-table" class="xnat-table clean sortable">
+                        <thead>
+                        <tr>
+                            <th class="sort"><b>Element</b></th>
+                            <th class="sort name-singular">
+                                <span title="Term used to describe one instance of this data.">Singular</span>
+                            </th>
+                            <th class="sort name-plural">
+                                <span title="Term used to describe more than one occurrence of this data.">Plural</span>
+                            </th>
+                            <th class="sort">
+                                <span title="Short code used in the creation of IDs">Code</span>
+                            </th>
+                            <th class="sort">
+                                <span title="Whether or not unspecified users can use this data-type in its $displayManager.getPluralDisplayNameForProject().toLowerCase().">Accessible</span>
+                            </th>
+                            <th class="sort">
+                                <span title="Whether or not access to data of this type should be restricted.">Secured</span>
+                            </th>
+                            <th class="sort">
+                                <span title="Whether or not data of this type should be searchable.">Searchable</span>
+                            </th>
+                            <th class="sort">
+                                <span title="Whether or not data of this type should be browseable.">Browseable</span>
+                            </th>
+                            <th class="sort">
+                                <span title="The order in which data types will show up in listings.">Sequence</span>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        #set($dt_count=0)
+                        #set($row=0)
+                        #foreach($data_type in $data_types)
+                            #if($row==0)
+                            <tr>
+                                #set($row=1)
+                            #else
+                            <tr>
+                                #set($row=0)
+                            #end
 
-                <td>
-                    <a class="data-type-link" target="_blank" href="$url">$!data_type.getProperty("element_name")</a>
-                </td>
-                <td class="name-singular">
-                    <i class="hidden">$!data_type.getProperty("singular")</i>
-                    <input type="text" value="$!data_type.getProperty("singular")"
-                            id="xdat:security/element_security_set/element_security[$dt_count]/singular"
-                            name="xdat:security/element_security_set/element_security[$dt_count]/singular"
-                            size="25">
-                </td>
-                <td class="name-plural">
-                    <i class="hidden">$!data_type.getProperty("plural")</i>
-                    <input type="text" value="$!data_type.getProperty("plural")"
-                            id="xdat:security/element_security_set/element_security[$dt_count]/plural"
-                            name="xdat:security/element_security_set/element_security[$dt_count]/plural"
-                            size="25">
-                </td>
-                <td class="center">
-                    <i class="hidden">$!data_type.getProperty("code")</i>
-                    <input type="text" value="$!data_type.getProperty("code")"
-                            id="xdat:security/element_security_set/element_security[$dt_count]/code"
-                            name="xdat:security/element_security_set/element_security[$dt_count]/code"
-                            size="5" maxlength="5">
-                </td>
-                <td class="center">
-                    <i class="hidden">#if($!data_type.getBooleanProperty("accessible")) 1 #else 2 #end</i>
-                    <input type="checkbox" #if($!data_type.getBooleanProperty("accessible"))checked#end
-                            id="xdat:security/element_security_set/element_security[$dt_count]/accessible"
-                            name="xdat:security/element_security_set/element_security[$dt_count]/accessible"
-                            value="true">
-                </td>
-                <td class="center">
-                    <i class="hidden">#if($!data_type.getBooleanProperty("secure")) 1 #else 2 #end</i>
-                    <input type="checkbox" #if($!data_type.getBooleanProperty("secure"))checked#end
-                            id="xdat:security/element_security_set/element_security[$dt_count]/secure"
-                            name="xdat:security/element_security_set/element_security[$dt_count]/secure"
-                            value="true">
-                </td>
-                <td class="center">
-                    <i class="hidden">#if($!data_type.getBooleanProperty("searchable")) 1 #else 2 #end</i>
-                    <input type="checkbox" #if($!data_type.getBooleanProperty("searchable"))checked#end
-                            id="xdat:security/element_security_set/element_security[$dt_count]/searchable"
-                            name="xdat:security/element_security_set/element_security[$dt_count]/searchable"
-                            value="true">
-                </td>
-                <td class="center">
-                    <i class="hidden">#if($!data_type.getBooleanProperty("browse")) 1 #else 2 #end</i>
-                    <input type="checkbox" #if($!data_type.getBooleanProperty("browse"))checked#end
-                            id="xdat:security/element_security_set/element_security[$dt_count]/browse"
-                            name="xdat:security/element_security_set/element_security[$dt_count]/browse"
-                            value="true">
-                </td>
-                <td class="center">
-                    <i class="hidden">$!data_type.getProperty("sequence")</i>
-                    <input type="text" value="$!data_type.getProperty("sequence")"
-                            id="xdat:security/element_security_set/element_security[$dt_count]/sequence"
-                            name="xdat:security/element_security_set/element_security[$dt_count]/sequence"
-                            size="2" maxlength="2">
-                    <input type="hidden" value="$!data_type.getProperty("element_name")"
-                            id="xdat:security/element_security_set/element_security[$dt_count]/element_name"
-                            name="xdat:security/element_security_set/element_security[$dt_count]/element_name">
-                    #set($dt_count=$dt_count + 1)
-                </td>
-            </tr>
-            #end
-            </tbody>
-        </table>
+                            #set ( $url = $link.setAction("DisplayItemAction").addPathInfo("search_element","xdat:element_security").addPathInfo("search_field","xdat:element_security.element_name").addPathInfo("search_value","$!data_type.getProperty('element_name')").addPathInfo("popup","true")  )
 
+                            <td>
+                                <a class="data-type-link" target="_blank" href="$url">$!data_type.getProperty("element_name")</a>
+                            </td>
+                            <td class="name-singular">
+                                <i class="hidden">$!data_type.getProperty("singular")</i>
+                                <input type="text" value="$!data_type.getProperty("singular")"
+                                        id="xdat:security/element_security_set/element_security[$dt_count]/singular"
+                                        name="xdat:security/element_security_set/element_security[$dt_count]/singular"
+                                        size="20">
+                            </td>
+                            <td class="name-plural">
+                                <i class="hidden">$!data_type.getProperty("plural")</i>
+                                <input type="text" value="$!data_type.getProperty("plural")"
+                                        id="xdat:security/element_security_set/element_security[$dt_count]/plural"
+                                        name="xdat:security/element_security_set/element_security[$dt_count]/plural"
+                                        size="20">
+                            </td>
+                            <td class="center">
+                                <i class="hidden">$!data_type.getProperty("code")</i>
+                                <input type="text" value="$!data_type.getProperty("code")"
+                                        id="xdat:security/element_security_set/element_security[$dt_count]/code"
+                                        name="xdat:security/element_security_set/element_security[$dt_count]/code"
+                                        size="4" maxlength="5">
+                            </td>
+                            <td class="center">
+                                <i class="hidden">#if($!data_type.getBooleanProperty("accessible")) 1 #else 2 #end</i>
+                                <input type="checkbox" #if($!data_type.getBooleanProperty("accessible"))checked#end
+                                        id="xdat:security/element_security_set/element_security[$dt_count]/accessible"
+                                        name="xdat:security/element_security_set/element_security[$dt_count]/accessible"
+                                        value="true">
+                            </td>
+                            <td class="center">
+                                <i class="hidden">#if($!data_type.getBooleanProperty("secure")) 1 #else 2 #end</i>
+                                <input type="checkbox" #if($!data_type.getBooleanProperty("secure"))checked#end
+                                        id="xdat:security/element_security_set/element_security[$dt_count]/secure"
+                                        name="xdat:security/element_security_set/element_security[$dt_count]/secure"
+                                        value="true">
+                            </td>
+                            <td class="center">
+                                <i class="hidden">#if($!data_type.getBooleanProperty("searchable")) 1 #else 2 #end</i>
+                                <input type="checkbox" #if($!data_type.getBooleanProperty("searchable"))checked#end
+                                        id="xdat:security/element_security_set/element_security[$dt_count]/searchable"
+                                        name="xdat:security/element_security_set/element_security[$dt_count]/searchable"
+                                        value="true">
+                            </td>
+                            <td class="center">
+                                <i class="hidden">#if($!data_type.getBooleanProperty("browse")) 1 #else 2 #end</i>
+                                <input type="checkbox" #if($!data_type.getBooleanProperty("browse"))checked#end
+                                        id="xdat:security/element_security_set/element_security[$dt_count]/browse"
+                                        name="xdat:security/element_security_set/element_security[$dt_count]/browse"
+                                        value="true">
+                            </td>
+                            <td class="center">
+                                <i class="hidden">$!data_type.getProperty("sequence")</i>
+                                <input type="text" value="$!data_type.getProperty("sequence")"
+                                        id="xdat:security/element_security_set/element_security[$dt_count]/sequence"
+                                        name="xdat:security/element_security_set/element_security[$dt_count]/sequence"
+                                        size="2" maxlength="2">
+                                <input type="hidden" value="$!data_type.getProperty("element_name")"
+                                        id="xdat:security/element_security_set/element_security[$dt_count]/element_name"
+                                        name="xdat:security/element_security_set/element_security[$dt_count]/element_name">
+                                #set($dt_count=$dt_count + 1)
+                            </td>
+                        </tr>
+                        #end
+                        </tbody>
+                    </table>
+
+                    </div>
+
+                    <input type="submit" class="btn1" style="float:right;" value="Save">
+
+                    <div class="clear"></div>
+
+                </form>
+            </div>
+
+            <div id="search-fields-tab">
+                <div style="padding: 10px 0;">
+                    <select id="selectElementsFields">
+                        <option value="">(SELECT)</option>
+                    </select> <input type="button" onclick="manager.loadFields()" value="Load" class="btn btn-sm"/>
+                    <p>NOTE: Changing header values here will not impact existing stored searches or Display Versions.</p>
+                </div>
+                <div class="data-table" style="margin-bottom:15px; overflow-x: auto;" id="tableOfElementsFields">
+                    <table class="xnat-table clean sortable">
+                        <thead>
+                        <tr>
+                            <th>Field ID</th>
+                            <th>Header</th>
+                            <th>Description</th>
+                            <th>Searchable</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="listOfFieldsFields">
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+
+            <div id="listing-config-tab">
+                <div style="padding: 10px 0;">
+                    <div style="margin-bottom: 15px;">
+                        <select id="selectElementsViews">
+                            <option value="">(SELECT)</option>
+                        </select>
+                        <input type="button" id="loadViewsButton" onclick="manager.loadViewButtons()" value="Load" class="btn btn-sm"/>
+                    </div>
+
+                    <div id="viewButtonsContainer" style="display: none; margin-bottom: 15px;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Primary Listings:</label>
+                            <div id="primaryViewButtons" style="margin-bottom: 10px;">
+                            </div>
+                        </div>
+
+                        <div id="otherViewsContainer" style="display: none;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Advanced Search Options:</label>
+                            <div id="otherViewButtons" style="margin-bottom: 10px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <p id="dragDropHint" style="color: #666; font-style: italic; margin-top: 10px; display: none;">Drag and drop rows to reorder fields</p>
+                </div>
+                <div id="noTableMessage" style="padding: 40px; text-align: center; color: #999; font-size: 14px; font-style: italic; background-color: #f9f9f9; border: 1px dashed #ddd; border-radius: 4px; margin-bottom: 15px;">
+                    Click a listing above to configure the columns for it
+                </div>
+                <div class="data-table" style="margin-bottom:15px; overflow-x: auto; display: none;" id="tableOfElementsViews">
+                    <table class="xnat-table clean" id="sortableViewsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>&nbsp;</th>
+                                <th>Element</th>
+                                <th>Field ID</th>
+                                <th>Header</th>
+                                <th>Value</th>
+                                <th>Order</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listOfFieldsViews">
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display: none; margin-top: 15px;" id="newFieldContainerViews">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span>Add field</span>
+                        <select id="addFieldElementViews">
+                            <option value="">(SELECT)</option>
+                        </select>
+                        <select id="addFieldIdViews">
+                            <option value="">(SELECT)</option>
+                        </select>
+                        <input id="addFieldButtonViews" type="button" value="Add" class="btn btn-sm"/>
+                        <div style="flex: 1;"></div>
+                        <input id="saveFieldsButtonViews" type="button" value="Save" class="btn1 btn-sm" onclick="manager.update();" disabled style="opacity: 0.5; cursor: not-allowed;"/>
+                    </div>
+                </div>
+            </div>
+
+            <div id="xft-elements-tab">
+                <div style="padding: 10px 0;">
+                    <button type="button" onclick="loadXFTElements()" class="btn btn-sm">Load XFT Elements</button>
+                    <label style="margin-left: 15px;">
+                        <input type="checkbox" id="showMetaElements" onchange="loadXFTElements()" /> Show Metadata Elements
+                    </label>
+                    <label style="margin-left: 10px;">
+                        <input type="checkbox" id="showHistoryElements" onchange="loadXFTElements()" /> Show History Elements
+                    </label>
+                    <p>This table displays all XFT element names registered in the system. By default, metadata and history elements are hidden.</p>
+                </div>
+                <div style="display: flex; gap: 10px; height: calc(100vh - 300px);">
+                    <div style="flex: 0 0 400px; overflow-y: auto; border: 1px solid #ddd;">
+                        <table id="xft-elements-table" class="xnat-table clean" style="margin: 0;">
+                            <thead>
+                            <tr>
+                                <th>Element Name</th>
+                            </tr>
+                            </thead>
+                            <tbody id="xftElementsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="element-details-panel" style="flex: 1; overflow-y: auto; border: 1px solid #ddd; padding: 15px; background-color: #f9f9f9;">
+                        <div style="color: #999; text-align: center; padding: 40px;">
+                            Select an element to view its details
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="dynamic-datatypes-tab">
+                <div style="padding: 10px 0;">
+                    <button type="button" onclick="loadDynamicDataTypes()" class="btn btn-sm">Load Dynamic Data Types</button>
+                    <p>This table displays all dynamic database-backed data types. Each schema can contain multiple custom data type elements.</p>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="dynamic-datatypes-table" class="xnat-table clean">
+                        <thead>
+                        <tr>
+                            <th>Schema Name</th>
+                            <th>Path</th>
+                            <th>Elements</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="dynamicDatatypesTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="db-display-docs-tab">
+                <div style="padding: 10px 0;">
+                    <button type="button" onclick="loadDisplayDocs()" class="btn btn-sm">Load Display Docs</button>
+                    <p>This table displays all database-backed element display configurations. Click an entry to view its details.</p>
+                </div>
+                <div style="display: flex; gap: 10px; height: calc(100vh - 300px);">
+                    <div style="flex: 0 0 400px; overflow-y: auto; border: 1px solid #ddd;">
+                        <table id="display-docs-table" class="xnat-table clean" style="margin: 0;">
+                            <thead>
+                            <tr>
+                                <th class="sort">Element Name</th>
+                                <th class="sort">Display Label</th>
+                            </tr>
+                            </thead>
+                            <tbody id="displayDocsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="display-doc-details-panel" style="flex: 1; overflow-y: auto; border: 1px solid #ddd; padding: 15px; background-color: #f9f9f9;">
+                        <div style="color: #999; text-align: center; padding: 40px;">
+                            Select an element display to view its details
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <input type="submit" class="btn1" style="float:right;" value="Save">
-
-        <div class="clear"></div>
-
-    </form>
+    </div>
 
 </div>
 
+<div id="create-datatype-dialog" style="display:none;">
+    <div style="background-color: #e8f4f8; border: 1px solid #b8d4e3; border-radius: 4px; padding: 10px 14px; margin-bottom: 15px;">
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 130px; white-space: nowrap; font-weight: bold; padding: 3px 0;"><label>Element Name:</label></td>
+                <td style="padding: 3px 0;"><span id="preview-element-name">--</span></td>
+            </tr>
+            <tr>
+                <td style="white-space: nowrap; font-weight: bold; padding: 3px 0;"><label>Complex Type:</label></td>
+                <td style="padding: 3px 0;"><span id="preview-complex-type">--</span></td>
+            </tr>
+        </table>
+    </div>
+    <div id="name-warning" class="warning" style="display: none; margin-bottom: 15px; font-size: 12px;">
+        This name is very generic and may conflict with existing or future XNAT types. Consider making it more specific (e.g. add a project abbreviation or number).
+    </div>
+    <h3>Enter the details of the new data type to be created.</h3>
+    <form id="create-datatype-form" class="panel">
+        <div class="panel-element">
+            <label class="element-label" for="extends">Extends</label>
+            <div class="element-wrapper">
+                <select id="datatype-extends" name="extends" required>
+                    <option value="">(SELECT)</option>
+                    <option value="subjectAssessorData">subjectAssessorData (Subject Assessment)</option>
+                    <option value="imageAssessorData">imageAssessorData (Image Assessment)</option>
+                    <option value="abstractProjectAsset">abstractProjectAsset (Project Asset)</option>
+                </select>
+            </div>
+            <div class="clear"></div>
+        </div>
+        <div class="panel-element">
+            <label class="element-label" for="name">Name</label>
+            <div class="element-wrapper">
+                <input type="text" id="datatype-name" name="name"
+                   pattern="[A-Za-z0-9_]{2,24}"
+                   minlength="2"
+                   maxlength="24"
+                   title="Only letters, numbers, and underscores allowed (2-24 characters)"
+                   oninput="this.value = this.value.replace(/[^A-Za-z0-9_]/g, ''); updateDatatypePreview();"
+                   required />
+               <div class="description">Technical identifier used internally (2-24 characters, letters/numbers/underscores only)</div>
+            </div>
+            <div class="clear"></div>
+        </div>
+        <div class="panel-element">
+            <label class="element-label" for="singular">Singular Name</label>
+            <div class="element-wrapper">
+                <input type="text" id="datatype-singular" name="singular"
+                   pattern="[A-Za-z0-9_\s]{2,24}"
+                   minlength="2"
+                   maxlength="24"
+                   title="Only letters, numbers, underscores, and spaces allowed (2-24 characters)"
+                   oninput="this.value = this.value.replace(/[^A-Za-z0-9_\s]/g, '')"
+                   required />
+               <div class="description">Display name for one item (2-24 characters)</div>
+            </div>
+            <div class="clear"></div>
+        </div>
+        <div class="panel-element">
+            <label class="element-label" for="plural">Plural Name</label>
+            <div class="element-wrapper">
+                <input type="text" id="datatype-plural" name="plural"
+                   pattern="[A-Za-z0-9_\s]{2,24}"
+                   minlength="2"
+                   maxlength="24"
+                   title="Only letters, numbers, underscores, and spaces allowed (2-24 characters)"
+                   oninput="this.value = this.value.replace(/[^A-Za-z0-9_\s]/g, '')"
+                   required />
+               <div class="description">Display name for multiple items (2-24 characters)</div>
+            </div>
+            <div class="clear"></div>
+        </div>
+        <p>
+            <a href="#" id="advanced-settings-toggle" onclick="toggleAdvancedSettings(); return false;" style="color: #666; text-decoration: none;">
+                <span id="advanced-settings-icon">+</span> Advanced Settings
+            </a>
+        </p>
+        <div id="advanced-settings-section" style="display: none; margin-top: 10px; background-color: #f5f5f5; padding: 10px;">
+            <div class="panel-element">
+                <label class="element-label" for="prefix">Prefix</label>
+                <div class="element-wrapper">
+                    <input type="text" id="datatype-prefix" name="prefix"
+                       pattern="[A-Za-z0-9]{2,6}"
+                       minlength="2"
+                       maxlength="6"
+                       title="Only letters and numbers allowed (2-6 characters)"
+                       oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g, ''); updateDatatypePreview();" />
+                   <div class="description">Schema prefix (2-6 characters, letters/numbers only). Leave blank for auto-generation.</div>
+                </div>
+                <div class="clear"></div>
+            </div>
+            <div class="panel-element">
+                <label class="element-label" for="complexType">Complex Type</label>
+                <div class="element-wrapper">
+                    <input type="text" id="datatype-complexType" name="complexType"
+                       pattern="[A-Za-z0-9_]{4,24}"
+                       minlength="4"
+                       maxlength="24"
+                       title="Only letters, numbers, and underscores allowed (4-24 characters)"
+                       oninput="this.value = this.value.replace(/[^A-Za-z0-9_]/g, ''); updateDatatypePreview();" />
+                   <div class="description">Complex type name (4-24 characters, letters/numbers/underscores). Leave blank for auto-generation.</div>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #ccc;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4CAF50, #45a049);
+        width: 0%;
+        border-radius: 10px;
+        animation: progress 2s ease-in-out infinite;
+    }
+    @keyframes progress {
+        0% { width: 0%; }
+        50% { width: 70%; }
+        100% { width: 0%; }
+    }
+
+    /* Table grid lines */
+    #data-type-table,
+    #tableOfElements table,
+    #tableOfElementsFields table,
+    #tableOfElementsViews table,
+    #xft-elements-table,
+    #dynamic-datatypes-table,
+    #display-docs-table {
+        border-collapse: collapse;
+    }
+
+    #data-type-table th,
+    #data-type-table td,
+    #tableOfElements table th,
+    #tableOfElements table td,
+    #tableOfElementsFields table th,
+    #tableOfElementsFields table td,
+    #tableOfElementsViews table th,
+    #tableOfElementsViews table td,
+    #xft-elements-table th,
+    #xft-elements-table td,
+    #dynamic-datatypes-table th,
+    #dynamic-datatypes-table td,
+    #display-docs-table th,
+    #display-docs-table td {
+        border: 1px solid #ddd;
+    }
+
+    /* Element clickable links */
+    .element-link {
+        color: #0066cc;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .element-link:hover {
+        color: #003d7a;
+    }
+
+    /* Search Fields styles */
+    div.content-wrapper {
+        min-width: 300px;
+        max-width: 100%;
+        margin: 0 10px;
+        position: relative;
+        top: 0; bottom: 10px; left: 0; right: 0;
+        font-family: Helvetica, Arial, sans-serif
+    }
+
+    .mono {
+        font-family: Courier, monospace;
+        font-size: 13px;
+    }
+
+    .dump {
+        border-collapse: collapse;
+    }
+
+    .dump .info {
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+
+    .dump thead {
+        border-bottom: 1px solid #a0a0a0;
+    }
+
+    .dump th {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .dump td {
+        padding: 3px 8px;
+        vertical-align: top;
+    }
+
+    .dump td.tag,
+    .dump td.desc {
+        white-space: nowrap;
+    }
+
+    .dump tbody tr:hover {
+        background: #e5f2ff;
+    }
+
+    .dump .center {
+        text-align: center;
+    }
+
+    .dump .left {
+        text-align: left;
+    }
+
+    #preview-element-name,
+    #preview-complex-type { font-family: monospace; color: #333; }
+    #preview-element-name.error,
+    #preview-complex-type.error { color: #c33; }
+    #preview-element-name.error:after {
+        background: #c33;
+        content: "This element name is already in use";
+        color: #fff;
+        font-size: 9px;
+        margin-left: 5px;
+        padding: 0 4px;
+        border-radius: 4px;
+    }
+    #preview-complex-type.error:after {
+        background: #c33;
+        content: "This complexType value is already in use";
+        color: #fff;
+        font-size: 9px;
+        margin-left: 5px;
+        padding: 0 4px;
+        border-radius: 4px;
+    }
+
+    /* Drag and drop styles */
+    #listOfFieldsViews tr {
+        cursor: move;
+        transition: background-color 0.2s;
+    }
+
+    #listOfFieldsViews tr:hover {
+        background-color: #f0f0f0;
+    }
+
+    #listOfFieldsViews tr.dragging {
+        opacity: 0.5;
+        background-color: #e3f2fd;
+    }
+
+    #listOfFieldsViews tr.drag-over {
+        border-top: 2px solid #2196F3;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        text-align: center;
+        user-select: none;
+        padding: 8px;
+        position: relative;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .drag-handle::before {
+        content: '';
+        display: inline-block;
+        width: 20px;
+        height: 12px;
+        background-image: linear-gradient(to bottom,
+            transparent 0%, transparent 20%,
+            #999 20%, #999 40%,
+            transparent 40%, transparent 60%,
+            #999 60%, #999 80%,
+            transparent 80%, transparent 100%);
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+    }
+
+    /* View button styles */
+    .view-button {
+        margin-right: 8px;
+        margin-bottom: 5px;
+    }
+
+    .view-button.active {
+        background: #0D47A1;
+        color: white;
+        border-color: #0D47A1;
+    }
+
+    /* Element tree styles */
+    .element-tree {
+        font-family: monospace;
+        line-height: 1.6;
+    }
+
+    .tree-node {
+        margin-left: 0;
+        padding-left: 0;
+    }
+
+    .tree-node.child {
+        margin-left: 20px;
+    }
+
+    .tree-field {
+        padding: 3px 0;
+        cursor: default;
+    }
+
+    .tree-field-name {
+        font-weight: bold;
+        color: #0066cc;
+    }
+
+    .tree-field-type {
+        color: #666;
+        margin-left: 10px;
+    }
+
+    .tree-expand-icon {
+        cursor: pointer;
+        font-weight: bold;
+        user-select: none;
+        display: inline-block;
+        width: 20px;
+        text-align: center;
+        color: #0066cc;
+    }
+
+    .tree-expand-icon:before {
+        content: '+';
+    }
+
+    .tree-expand-icon.expanded:before {
+        content: '−';
+    }
+
+    .tree-expand-icon:hover {
+        color: #003d7a;
+    }
+
+    .tree-reference-type {
+        color: #d14;
+        font-style: italic;
+        text-decoration: underline;
+    }
+
+    .tree-reference-type:hover {
+        color: #a00;
+    }
+
+    .tree-children {
+        display: none;
+        margin-left: 20px;
+        border-left: 1px dashed #ccc;
+        padding-left: 10px;
+    }
+
+    .tree-children.expanded {
+        display: block;
+    }
+
+    .tree-field-info {
+        color: #888;
+        font-size: 0.9em;
+        margin-left: 5px;
+    }
+
+    /* Selected element highlight */
+    #xft-elements-table tbody tr.selected {
+        background-color: #e3f2fd !important;
+    }
+
+    #xft-elements-table tbody tr {
+        cursor: pointer;
+    }
+
+    #xft-elements-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    /* Display docs table styles */
+    #display-docs-table tbody tr.selected {
+        background-color: #e3f2fd !important;
+    }
+
+    #display-docs-table tbody tr {
+        cursor: pointer;
+    }
+
+    #display-docs-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .display-doc-section {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #fff;
+    }
+
+    .display-doc-section-header {
+        padding: 8px 12px;
+        background-color: #f0f0f0;
+        font-weight: bold;
+        border-bottom: 1px solid #ddd;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .display-doc-section-header:hover {
+        background-color: #e8e8e8;
+    }
+
+    .display-doc-section-body {
+        padding: 10px 12px;
+    }
+
+    .display-doc-prop {
+        margin-bottom: 6px;
+    }
+
+    .display-doc-prop-label {
+        font-weight: bold;
+        color: #555;
+        display: inline-block;
+        min-width: 140px;
+    }
+
+    .display-doc-child-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .display-doc-child-table th,
+    .display-doc-child-table td {
+        border: 1px solid #ddd;
+        padding: 4px 8px;
+        text-align: left;
+    }
+
+    .display-doc-child-table th {
+        background-color: #f5f5f5;
+    }
+
+    /* Create Data Type Dialog height management */
+    .ui-dialog.create-datatype-dialog {
+        height: 450px !important;
+    }
+
+    .ui-dialog.create-datatype-dialog.expanded {
+        height: 600px !important;
+    }
+</style>
+
 <script type="text/javascript">
+
+    // Initialize tabs
+    var dataTypesTabView = new YAHOO.widget.TabView('data-types-tabs');
 
     jq('a.data-type-link').click(function(e){
         e.preventDefault();
@@ -158,8 +815,1506 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
         //popupCentered(this.href,' ',960,720,3)
     });
 
+    function updateDatatypePreview() {
+        var dialog = jq('.xnat-dialog:visible');
+        var name = dialog.find('input[name="name"]').val().trim();
+        var prefix = dialog.find('input[name="prefix"]').val().trim();
+        var complexTypeInput = dialog.find('input[name="complexType"]').val().trim();
+        var previewElement = dialog.find('#preview-element-name');
+        var previewComplex = dialog.find('#preview-complex-type');
+
+        if (!name) {
+            previewElement.text('--');
+            previewComplex.text('--');
+            dialog.find('#name-warning').hide();
+            return;
+        }
+
+        var elementName;
+        var complexType;
+
+        // set backend name and complex type to match, minus the "Data" suffix on complexType
+        if (complexTypeInput) {
+            // User explicitly set the complexType
+            complexType = complexTypeInput;
+            // Derive element name by stripping trailing "Data" (case-sensitive) if present
+            if (complexType.length > 4 && complexType.substring(complexType.length - 4) === 'Data') {
+                elementName = complexType.substring(0, complexType.length - 4);
+            } else {
+                elementName = complexType;
+            }
+            // Capitalize first letter for element name
+            elementName = elementName.substring(0, 1).toUpperCase() + elementName.substring(1);
+        } else {
+            // Auto-derive from the Name field, mirroring CreateDataTypeCallable logic
+            if (name.length > 4 && name.substring(name.length - 4) === 'Data') {
+                // User already included "Data" suffix — use as-is for complexType
+                complexType = name.substring(0, 1).toLowerCase() + name.substring(1);
+                elementName = name.substring(0, name.length - 4);
+                elementName = elementName.substring(0, 1).toUpperCase() + elementName.substring(1);
+            } else {
+                // Append "Data" to form complexType
+                complexType = name.substring(0, 1).toLowerCase() + name.substring(1) + 'Data';
+                elementName = name.substring(0, 1).toUpperCase() + name.substring(1);
+            }
+        }
+
+        var prefixDisplay = prefix || 'x{N}';
+        previewElement.text(elementName);
+        previewComplex.text(prefixDisplay + ':' + complexType);
+
+        // Warn on overly generic names
+        var genericNames = ['test', 'data', 'session', 'experiment', 'scan', 'subject',
+                            'project', 'image', 'assessment', 'assessor', 'sample', 'type',
+                            'custom', 'new', 'temp', 'demo', 'example', 'default'];
+        var baseName = name.replace(/Data$/i, '').toLowerCase();
+        var warning = dialog.find('#name-warning');
+        if (genericNames.indexOf(baseName) !== -1) {
+            warning.show();
+        } else {
+            warning.hide();
+        }
+    }
+
+    function toggleAdvancedSettings() {
+        var dialog = jq('.xnat-dialog:visible');
+        var section = dialog.find('#advanced-settings-section');
+        var icon = dialog.find('#advanced-settings-icon');
+        var dialogElement = dialog.closest('.ui-dialog');
+
+        if (section.is(':visible')) {
+            section.hide();
+            icon.html('+');
+            dialogElement.removeClass('expanded');
+        } else {
+            section.show();
+            icon.html('&ndash;');
+            dialogElement.addClass('expanded');
+        }
+    }
+
+    function submitCreateDataType() {
+        var dialog = jq('.xnat-dialog:visible');
+        var name = dialog.find('input[name="name"]').val().trim();
+        var extendsValue = dialog.find('select[name="extends"]').val();
+        var singular = dialog.find('input[name="singular"]').val().trim();
+        var plural = dialog.find('input[name="plural"]').val().trim();
+        var prefix = dialog.find('input[name="prefix"]').val().trim();
+        var complexType = dialog.find('input[name="complexType"]').val().trim();
+
+        var knownPrefixes = [],
+            knownElements = [],
+            knownNames = [],
+            restrictedPrefixes = ['cat','prov','icr','scr','wrk','xnat','xnat_a'];
+        XNAT.data.xftElements.forEach(function(el){
+            var thisPrefix = el['ELEMENT_NAME'].split(':')[0];
+            var thisElement = el['ELEMENT_NAME'].split(':')[1]
+            var thisName = thisElement.replace('Data','');
+            if (knownPrefixes.indexOf(thisPrefix <0 ))  knownPrefixes.push(thisPrefix);
+            if (knownElements.indexOf(thisElement <0 ))  knownElements.push(thisElement);
+            if (knownNames.indexOf(thisName <0 ))  knownNames.push(thisName);
+        });
+
+        if (!name || !extendsValue || !singular || !plural) {
+            alert('All fields are required');
+            return;
+        }
+
+        if (knownNames.indexOf(name) >= 0) {
+            alert('This backend name is already being used in another datatype definition');
+            return;
+        }
+
+        // Validate advanced settings if provided
+        if (prefix) {
+            if (prefix.length < 2 || prefix.length > 6 || !/^[A-Za-z0-9]+$/.test(prefix)) {
+                alert('Prefix must be 2-6 alphanumeric characters');
+                return;
+            }
+
+            // if (knownPrefixes.indexOf(prefix) >= 0) {
+            //    alert('This prefix is already being used in another datatype definition');
+            //    return;
+            // }
+
+            if (restrictedPrefixes.indexOf(prefix) >= 0) {
+                alert('This prefix is reserved by the XNAT application and cannot be used here');
+                return;
+            }
+        }
+
+        if (complexType) {
+            if (complexType.length < 4 || complexType.length > 24 || !/^[A-Za-z0-9_]+$/.test(complexType)) {
+                alert('Complex type must be 4-24 characters (letters, numbers, underscores only)');
+                return;
+            }
+
+            if (knownElements.indexOf(complexType) >= 0) {
+                alert('This complexType value is already being used in another datatype definition');
+                return;
+            }
+        }
+
+        if (!confirm('WARNING: Data Types in XNAT are generally permanent and can be difficult (though not impossible) to remove. This operation will also make structural modifications to your database and may take several seconds to complete.\n\nDo you want to continue?')) {
+            return;
+        }
+
+        XNAT.dialog.loading.open();
+
+        var url = '/data/search/elements?task=create&name=' +
+                 encodeURIComponent(name) + '&extends=' +
+                 encodeURIComponent(extendsValue) + '&singular=' +
+                 encodeURIComponent(singular) + '&plural=' +
+                 encodeURIComponent(plural);
+
+        // Add optional advanced settings if provided
+        if (prefix) {
+            url += '&prefix=' + encodeURIComponent(prefix);
+        }
+        if (complexType) {
+            url += '&complexType=' + encodeURIComponent(complexType);
+        }
+
+        url = XNAT.url.csrfUrl(url);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        }).then(function(response) {
+            XNAT.dialog.loading.close();
+            if (response.ok) {
+                XNAT.dialog.closeAll();
+                // Parse the response to get the complexType
+                response.json().then(function(data) {
+                    // Store the data type info for later dialogs
+                    window.newDataTypeInfo = {
+                        name: name,
+                        extendsValue: extendsValue,
+                        singular: singular,
+                        plural: plural,
+                        complexType: data.complexType
+                    };
+
+                    // Check if this is an imageAssessorData type
+                    if (extendsValue === 'imageAssessorData') {
+                        showActionBoxEntriesPrompt();
+                    } else if (extendsValue === 'abstractProjectAsset') {
+                        window.location.reload();
+                    } else {
+                        showCustomFormPrompt(singular,data.complexType);
+                    }
+                }).catch(function(error) {
+                    console.error('Error parsing response:', error);
+                    // Still proceed even if parsing fails
+                    window.newDataTypeInfo = {
+                        name: name,
+                        extendsValue: extendsValue,
+                        singular: singular,
+                        plural: plural
+                    };
+                    if (extendsValue === 'imageAssessorData') {
+                        showActionBoxEntriesPrompt();
+                    } else {
+                        showCustomFormPrompt(singular);
+                    }
+                });
+            } else if (response.status === 409) {
+                alert('The selected data type already exists');
+            } else {
+                XNAT.dialog.message({
+                    title: 'Error Found',
+                    content: 'Error creating data type: ' + response.statusText
+                });
+            }
+        }).catch(function(error) {
+//            XNAT.dialog.closeAll();
+            XNAT.dialog.message({
+                title: 'Error Found',
+                content: 'Error creating data type: ' + response.statusText
+            });
+        });
+    }
+
+    function showCreateDataTypeDialog() {
+        XNAT.dialog.open({
+            title: 'Create Data Type',
+            content: document.getElementById('create-datatype-dialog').innerHTML,
+            width: 600,
+            height: 720,
+            beforeShow: function(){
+                XNAT.xhr.getJSON({
+                    url: XNAT.url.restUrl('/data/search/elements'),
+                    success: function(data){ XNAT.data.xftElements = data.ResultSet.Result }
+                });
+            },
+            buttons: [
+                {
+                    label: 'Save',
+                    isDefault: true,
+                    close: false,
+                    action: function() {
+                        submitCreateDataType();
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
+                }
+            ]
+        });
+
+        // Add CSS class to dialog for height management
+        jq('.ui-dialog:visible').addClass('create-datatype-dialog');
+    }
+
+    function showActionBoxEntriesPrompt() {
+        XNAT.dialog.open({
+            title: 'Add Action Box Entries',
+            content: '<div style="padding: 20px;">' +
+                     '<p>Would you like to add Action Box Entries for the new data type to existing image session data types?</p>' +
+                     '</div>',
+            width: 450,
+            height: 200,
+            buttons: [
+                {
+                    label: 'Yes',
+                    isDefault: true,
+                    close: false,
+                    action: function() {
+                        XNAT.dialog.closeAll();
+                        showImageSessionSelection();
+                    }
+                },
+                {
+                    label: 'No',
+                    close: false,
+                    action: function() {
+                        XNAT.dialog.closeAll();
+                        showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
+                    }
+                }
+            ]
+        });
+    }
+
+    function showImageSessionSelection() {
+        var singular = window.newDataTypeInfo.singular;
+
+        // Filter available_elements to get only image sessions
+        var imageSessions = (window.available_elements || []).filter(function(element) {
+            return element.isImageSession === true;
+        });
+
+        if (imageSessions.length === 0) {
+            alert('No image session data types found.');
+            showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
+            return;
+        }
+
+        // Build checkbox list HTML
+        var checkboxesHtml = '<div style="padding: 20px;">' +
+                            '<p style="margin-bottom: 15px;">Which data types do you want to create new <strong>' + singular + '</strong> entries from?</p>' +
+                            '<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background-color: #f9f9f9;">';
+
+        imageSessions.forEach(function(session, index) {
+            checkboxesHtml += '<div style="margin-bottom: 8px;">' +
+                             '<label style="cursor: pointer;">' +
+                             '<input type="checkbox" class="image-session-checkbox" value="' + session.elementName + '" data-plural="' + session.plural + '" style="margin-right: 8px;">' +
+                             session.plural +
+                             '</label>' +
+                             '</div>';
+        });
+
+        checkboxesHtml += '</div></div>';
+
+        XNAT.dialog.open({
+            title: 'Select Image Session Data Types',
+            content: checkboxesHtml,
+            width: 500,
+            height: 450,
+            buttons: [
+                {
+                    label: 'Continue',
+                    isDefault: true,
+                    close: false,
+                    action: function() {
+                        var selectedSessions = [];
+                        jq('.image-session-checkbox:checked').each(function() {
+                            selectedSessions.push({
+                                elementName: jq(this).val(),
+                                plural: jq(this).data('plural')
+                            });
+                        });
+
+                        // Store selected sessions for later processing
+                        window.selectedImageSessions = selectedSessions;
+
+                        // Add actions to each selected image session type
+                        if (selectedSessions.length > 0) {
+                            XNAT.dialog.closeAll();
+
+                            // Show progress dialog
+                            XNAT.dialog.open({
+                                title: 'Adding Action Box Entries',
+                                content: '<div style="padding: 20px; text-align: center;"><div style="margin-bottom: 15px;">Adding action box entries to ' + selectedSessions.length + ' image session type(s)...</div><div class="progress-bar"><div class="progress-bar-fill"></div></div></div>',
+                                width: 400,
+                                height: 150,
+                                buttons: [],
+                                closable: false
+                            });
+
+                            var promises = [];
+
+                            selectedSessions.forEach(function(session) {
+                                var actionData = [{
+                                    "popup": "never",
+                                    "displayName": "Add " + window.newDataTypeInfo.singular,
+                                    "secureAccess": "edit",
+                                    "name": "XDATScreen_addia_xnat_imageAssessorData",
+                                    "grouping": "Assessments",
+                                    "parameterString":"/xsiType/"+window.newDataTypeInfo.complexType
+                                }];
+
+                                var url = XNAT.url.csrfUrl('/xapi/datatypes/' + encodeURIComponent(session.elementName) + '/actions');
+
+                                var promise = fetch(url, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(actionData)
+                                }).catch(function(error) {
+                                    console.error('Error adding action to ' + session.elementName + ':', error);
+                                });
+
+                                promises.push(promise);
+                            });
+
+                            Promise.all(promises).then(function() {
+                                XNAT.dialog.closeAll();
+                                showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
+                            }).catch(function(error) {
+                                XNAT.dialog.closeAll();
+                                alert('Error adding action box entries: ' + error.message);
+                                showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
+                            });
+                        } else {
+                            XNAT.dialog.closeAll();
+                            showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
+                        }
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: false,
+                    action: function() {
+                        XNAT.dialog.closeAll();
+                        showCustomFormPrompt(window.newDataTypeInfo.singular,window.newDataTypeInfo.complexType);
+                    }
+                }
+            ]
+        });
+    }
+
+    function showCustomFormPrompt(singular = false,complexType = false) {
+        XNAT.dialog.open({
+            title: 'Data Type Created Successfully',
+            content: '<div style="padding: 20px;">' +
+                     '<p>Your data type has been created successfully.</p>' +
+                     '<p>Would you like to create a Custom Form for this data type?</p>' +
+                     '</div>',
+            width: 450,
+            height: 200,
+            buttons: [
+                {
+                    label: 'Create Custom Form',
+                    isDefault: true,
+                    close: false,
+                    action: function() {
+                        var queryParams = (singular) ? '?label='+encodeURIComponent(singular) : '';
+                        queryParams += (complexType) ? '&xsiType='+encodeURIComponent(complexType) : '';
+                        window.location.href = XNAT.url.rootUrl('/app/template/FormManagerDashBoard.vm' + queryParams);
+                    }
+                },
+                {
+                    label: 'No, Reload Page',
+                    close: false,
+                    action: function() {
+                        window.location.reload();
+                    }
+                }
+            ]
+        });
+    }
+
     //ts_makeSortable(document.getElementById('data-type-table'));
 
     //jq('#data-type-table').tableSort();
 
+</script>
+
+<script type="text/javascript" src="$content.getURI('scripts/ConfigureSearchFields.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/ConfigureSearchViews.js')"></script>
+<script type="text/javascript">
+    // Wrapper to handle Fields tab IDs
+    function initFieldsTab() {
+        // Temporarily rename IDs to what the script expects
+        jq('#selectElementsFields').attr('id', 'selectElements');
+        jq('#listOfFieldsFields').attr('id', 'listOfFields');
+        jq('#tableOfElementsFields').attr('id', 'tableOfElements');
+
+        window.managerFields = new ConfigureSearchFields("#selectElements");
+        window.manager = window.managerFields; // Set manager to point to managerFields for compatibility
+
+        // Override init to sort elements alphabetically
+        var originalFieldsInit = window.managerFields.init;
+        window.managerFields.init = function() {
+            var that = this;
+            jq.get(this.url)
+                .done(function (data) {
+                    that.selectId.empty();
+                    that.selectId.append($("<option></option>")
+                        .attr("value", "")
+                        .text("SELECT"));
+
+                    // Sort results alphabetically by SINGULAR
+                    var sortedResults = data.ResultSet.Result.sort(function(a, b) {
+                        return a.SINGULAR.localeCompare(b.SINGULAR);
+                    });
+
+                    jq(sortedResults).each(function(index, obj){
+                        that.selectId.append($("<option></option>")
+                            .attr("value", obj.ELEMENT_NAME)
+                            .text(obj.SINGULAR));
+                    });
+                })
+                .fail(function (xhr, status, error) {
+                    showMessage("page_body", "Error", "Failed to load setting into control " + that.id + ": [" + xhr.status + "] " + error);
+                });
+        };
+
+        // Override handleValueSubmit for ConfigureSearchFields
+        window.handleValueSubmit = function(obj1, obj2, obj3, obj4) {
+            var enteredValue = manager.valueDefinitionInput.value;
+            try {
+                if(enteredValue == "") {
+                    displayError("Please specify a filter value.");
+                    return false;
+                }
+
+                if(!(new RegExp('^[A-Za-z0-9 _]+$')).test(enteredValue)) {
+                    displayError("Invalid characters specified.");
+                    return false;
+                }
+
+                manager.newField.value = enteredValue;
+                manager.newField.fieldId = manager.newField.fieldId + "=" + enteredValue;
+                manager.newField.HEADER = enteredValue;
+                manager.newField.header = enteredValue;
+                manager.newField.DESC = enteredValue;
+                manager.newField.desc = enteredValue;
+                manager.addField();
+                manager.valuePopup.destroy();
+                manager.newField = null;
+            } catch(e) {
+                displayError(e.message);
+            }
+        };
+
+        window.handleValueCancel = function() {
+            manager.newField = null;
+            manager.valuePopup.destroy();
+        };
+
+        // Override loadFields to validate element selection before loading
+        var originalLoadFields = window.managerFields.loadFields;
+        window.managerFields.loadFields = function() {
+            var elementName = jq("#selectElements").val();
+            if(!elementName) {
+                showMessage("page_body", "Error", "Please select an element.");
+                return;
+            }
+            originalLoadFields.call(this);
+        };
+
+        window.managerFields.init();
+    }
+
+    // Wrapper to handle Views tab IDs
+    function initViewsTab() {
+        // Temporarily rename IDs to what the script expects
+        jq('#selectElementsViews').attr('id', 'selectElements');
+        jq('#listOfFieldsViews').attr('id', 'listOfFields');
+        jq('#tableOfElementsViews').attr('id', 'tableOfElements');
+        jq('#newFieldContainerViews').attr('id', 'newFieldContainer');
+        jq('#addFieldElementViews').attr('id', 'addFieldElement');
+        jq('#addFieldIdViews').attr('id', 'addFieldId');
+        jq('#addFieldButtonViews').attr('id', 'addFieldButton');
+
+        window.managerViews = new ConfigureSearchViews("#selectElements");
+        window.manager = window.managerViews; // Set manager to point to managerViews for compatibility
+
+        // Override handleValueSubmit for ConfigureSearchViews
+        window.handleValueSubmit = function(obj1, obj2, obj3, obj4) {
+            var enteredValue = manager.valueDefinitionInput.value;
+            try {
+                if(enteredValue == "") {
+                    displayError("Please specify a filter value.");
+                    return false;
+                }
+
+                if(!(new RegExp('^[A-Za-z0-9 _]+$')).test(enteredValue)) {
+                    displayError("Invalid characters specified.");
+                    return false;
+                }
+
+                manager.newField.value = enteredValue;
+                manager.newField.fieldId = manager.newField.fieldId + "=" + enteredValue;
+                manager.newField.header = enteredValue;
+                manager.newField.HEADER = enteredValue;
+                manager.newField.desc = enteredValue;
+                manager.newField.DESC = enteredValue;
+                manager.addFieldAndUpdate(manager.newField);
+                manager.valuePopup.destroy();
+                manager.newField = null;
+            } catch(e) {
+                displayError(e.message);
+            }
+        };
+
+        window.handleValueCancel = function() {
+            manager.newField = null;
+            manager.valuePopup.destroy();
+        };
+
+        // Override addFieldAndUpdate to enable save button when a field is added
+        var originalAddFieldAndUpdate = window.managerViews.addFieldAndUpdate;
+        window.managerViews.addFieldAndUpdate = function(newField) {
+            originalAddFieldAndUpdate.call(this, newField);
+            enableSaveButton();
+        };
+
+        // Override init to use buttons instead of dropdown
+        var originalInit = window.managerViews.init;
+        window.managerViews.init = function() {
+            jq('#addFieldElement').on('change', function() {
+                manager.loadNewFields();
+            });
+
+            jq('#addFieldButton').on('click', function() {
+                manager.addField();
+            });
+
+            var that = this;
+            jq.get(this.url)
+                .done(function (data) {
+                    // Sort results alphabetically by SINGULAR
+                    var sortedResults = data.ResultSet.Result.sort(function(a, b) {
+                        return a.SINGULAR.localeCompare(b.SINGULAR);
+                    });
+
+                    that.selectId.empty();
+                    that.selectId.append($("<option></option>")
+                        .attr("value", "")
+                        .text("SELECT"));
+                    jq(sortedResults).each(function(index, obj){
+                        that.selectId.append($("<option></option>")
+                            .attr("value", obj.ELEMENT_NAME)
+                            .text(obj.SINGULAR));
+                    });
+
+                    var addFieldElement = $("#addFieldElement");
+                    addFieldElement.empty();
+                    addFieldElement.append($("<option></option>")
+                        .attr("value", "")
+                        .text("SELECT"));
+                    jq(sortedResults).each(function(index, obj){
+                        addFieldElement.append($("<option></option>")
+                            .attr("value", obj.ELEMENT_NAME)
+                            .text(obj.SINGULAR));
+                    });
+                    $("#newFieldContainer").show();
+                })
+                .fail(function (xhr, status, error) {
+                    showMessage("page_body", "Error", "Failed to load setting into control " + that.id + ": [" + xhr.status + "] " + error);
+                });
+        };
+
+        // Override resetForm to clear table
+        window.managerViews.resetForm = function(){
+            this.currentVersion=null;
+            this.newField=null;
+            jq("#listOfFields").html("");
+        };
+
+        // Add new method to load view buttons
+        window.managerViews.loadViewButtons = function() {
+            var elementName = jq("#selectElements").val();
+            if(!elementName) {
+                showMessage("page_body", "Error", "Please select an element.");
+                return;
+            }
+
+            // Clear any previous state
+            jq("#primaryViewButtons").empty();
+            jq("#otherViewButtons").empty();
+            jq("#listOfFields").html("");
+            jq(".view-button").removeClass("active");
+
+            jq.get(serverRoot + "/REST/search/elements/" + elementName + "/versions?format=json")
+                .done(function (data) {
+                    var primaryButtons = jq("#primaryViewButtons");
+                    var otherButtons = jq("#otherViewButtons");
+
+                    var hasPrimary = false;
+                    var hasOther = false;
+
+                    jq(data.DisplayVersions.versions).each(function(index, obj){
+                        if(obj.name === "all") {
+                            return;
+                        }
+
+                        var buttonText = obj.name;
+                        var isPrimary = (obj.name === "listing" || obj.name === "project_bundle");
+
+                        if(obj.name === "listing") {
+                            buttonText = "Site Wide (listing)";
+                        } else if(obj.name === "project_bundle") {
+                            buttonText = "Project (project_bundle)";
+                        }
+
+                        var button = $("<button></button>")
+                            .attr("data-view", obj.name)
+                            .text(buttonText)
+                            .addClass("btn btn-sm view-button")
+                            .on("click", function() {
+                                jq(".view-button").removeClass("active");
+                                jq(this).addClass("active");
+                                manager.selectedView = jq(this).attr("data-view");
+                                manager.loadFieldsForView(jq(this).attr("data-view"));
+                            });
+
+                        if(isPrimary) {
+                            primaryButtons.append(button);
+                            hasPrimary = true;
+                        } else {
+                            otherButtons.append(button);
+                            hasOther = true;
+                        }
+                    });
+
+                    jq("#viewButtonsContainer").show();
+                    jq("#otherViewsContainer").toggle(hasOther);
+                    jq("#noTableMessage").show();
+                    jq("#tableOfElements").hide();
+                    jq("#dragDropHint").hide();
+                })
+                .fail(function (xhr, status, error) {
+                    showMessage("page_body", "Error", "Failed to load versions: [" + xhr.status + "] " + error);
+                });
+        };
+
+        // Add method to load fields for a specific view
+        window.managerViews.loadFieldsForView = function(versionName) {
+            var elementName = jq("#selectElements").val();
+            if(!elementName || !versionName) {
+                return;
+            }
+
+            jq("#dragDropHint").show();
+            jq("#noTableMessage").hide();
+            jq("#tableOfElements").show();
+
+            var that = this;
+            jq.get(serverRoot + "/REST/search/elements/" + elementName + "/versions/" + versionName + "?format=json&v2=true")
+                .done(function (data) {
+                    that.currentVersion = data;
+                    that.renderFields();
+                    // Disable save button when loading fresh data
+                    disableSaveButton();
+                })
+                .fail(function (xhr, status, error) {
+                    showMessage("page_body", "Error", "Failed to load fields: [" + xhr.status + "] " + error);
+                });
+        };
+
+        window.managerViews.init();
+
+        // Override update method to disable save button after successful save
+        var originalUpdate = window.managerViews.update;
+        window.managerViews.update = function(row) {
+            var elementName = jq("#selectElements").val();
+
+            this.updateCurrentVersion();
+
+            openModalPanel("updatingElement","Updating");
+
+            var that = this;
+            var value = jq(this.id).val();
+            jq.ajax({
+                url: XNAT.url.csrfUrl("/REST/search/elements/" + elementName + "/versions/modify?version=" + this.currentVersion.versionName),
+                type: 'PUT',
+                data: JSON.stringify(this.currentVersion),
+                contentType: "application/json"
+            })
+            .done(function () {
+                closeModalPanel("updatingElement");
+                // Disable save button after successful save
+                disableSaveButton();
+            })
+            .fail(function (xhr, status, error) {
+                closeModalPanel("updatingElement");
+                showMessage("page_body", "Failure", "Failed to modify fields; [" + xhr.status + "] " + error);
+            });
+        };
+
+        // Override renderFields to add drag handles
+        var originalRenderFields = window.managerViews.renderFields;
+        window.managerViews.renderFields = function() {
+            var listOfFields = "";
+            jq(this.currentVersion.fields).each(function (fI, field){
+                listOfFields += "<TR draggable='true' data-index='" + fI + "'>";
+                listOfFields += "<TD class='drag-handle'></TD>";
+                listOfFields += "<TD NOWRAP>" + field.sortOrder + "</TD>";
+                listOfFields += "<TD NOWRAP>" + field.elementName + "</TD>";
+                listOfFields += "<TD>" + field.fieldId + "<input type='hidden' id='element" + fI +"' value='" + field.elementName + "'/><input type='hidden' id='field" + fI +"' value='" + field.fieldId + "'/></TD>";
+                listOfFields += "<TD><input type='text' id='header" + fI +"' value='" + field.header + "' style='width:120px' oninput='enableSaveButton();'/></TD>";
+                listOfFields += "<TD><input type='text' id='value" + fI +"' value='" + ((field.value==null)?"":field.value) + "' style='width:120px' DISABLED/></TD>";
+                listOfFields += "<TD NOWRAP><input type='button' value='Remove' onclick='manager.removeField(" + fI +"); enableSaveButton();'/></TD>";
+                listOfFields += "</TR>";
+            });
+            jq("#listOfFields").html(listOfFields);
+
+            // Enable drag and drop
+            enableDragAndDrop();
+        };
+    }
+
+    // Drag and drop functionality
+    function enableDragAndDrop() {
+        var draggedElement = null;
+        var draggedIndex = null;
+
+        jq('#listOfFields tr[draggable="true"]').on('dragstart', function(e) {
+            draggedElement = this;
+            draggedIndex = parseInt(jq(this).attr('data-index'));
+            jq(this).addClass('dragging');
+            e.originalEvent.dataTransfer.effectAllowed = 'move';
+            e.originalEvent.dataTransfer.setData('text/html', this.innerHTML);
+        });
+
+        jq('#listOfFields tr[draggable="true"]').on('dragend', function(e) {
+            jq(this).removeClass('dragging');
+            jq('#listOfFields tr').removeClass('drag-over');
+        });
+
+        jq('#listOfFields tr[draggable="true"]').on('dragover', function(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.originalEvent.dataTransfer.dropEffect = 'move';
+            return false;
+        });
+
+        jq('#listOfFields tr[draggable="true"]').on('dragenter', function(e) {
+            jq('#listOfFields tr').removeClass('drag-over');
+            if (this !== draggedElement) {
+                jq(this).addClass('drag-over');
+            }
+        });
+
+        jq('#listOfFields tr[draggable="true"]').on('dragleave', function(e) {
+            jq(this).removeClass('drag-over');
+        });
+
+        jq('#listOfFields tr[draggable="true"]').on('drop', function(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+
+            if (draggedElement !== this) {
+                var dropIndex = parseInt(jq(this).attr('data-index'));
+
+                // Reorder fields in the manager's data
+                var movedField = manager.currentVersion.fields[draggedIndex];
+                manager.currentVersion.fields.splice(draggedIndex, 1);
+                manager.currentVersion.fields.splice(dropIndex, 0, movedField);
+
+                // Update sortOrder for all fields
+                jq(manager.currentVersion.fields).each(function(index, field) {
+                    field.sortOrder = index;
+                });
+
+                // Re-render the table
+                manager.renderFields();
+
+                // Enable save button after reordering
+                enableSaveButton();
+            }
+
+            jq('#listOfFields tr').removeClass('drag-over');
+            return false;
+        });
+    }
+
+    // Enable/disable save button
+    function enableSaveButton() {
+        var saveBtn = jq('#saveFieldsButtonViews');
+        saveBtn.prop('disabled', false);
+        saveBtn.css({
+            'opacity': '1',
+            'cursor': 'pointer'
+        });
+    }
+
+    function disableSaveButton() {
+        var saveBtn = jq('#saveFieldsButtonViews');
+        saveBtn.prop('disabled', true);
+        saveBtn.css({
+            'opacity': '0.5',
+            'cursor': 'not-allowed'
+        });
+    }
+
+    // Restore original IDs for Fields tab
+    function restoreFieldsIds() {
+        if (jq('#selectElements').closest('#search-fields-tab').length > 0) {
+            jq('#selectElements').attr('id', 'selectElementsFields');
+            jq('#listOfFields').attr('id', 'listOfFieldsFields');
+            jq('#tableOfElements').attr('id', 'tableOfElementsFields');
+        }
+    }
+
+    // Restore original IDs for Views tab
+    function restoreViewsIds() {
+        if (jq('#selectElements').closest('#listing-config-tab').length > 0) {
+            jq('#selectElements').attr('id', 'selectElementsViews');
+            jq('#listOfFields').attr('id', 'listOfFieldsViews');
+            jq('#tableOfElements').attr('id', 'tableOfElementsViews');
+            jq('#newFieldContainer').attr('id', 'newFieldContainerViews');
+            jq('#addFieldElement').attr('id', 'addFieldElementViews');
+            jq('#addFieldId').attr('id', 'addFieldIdViews');
+            jq('#addFieldButton').attr('id', 'addFieldButtonViews');
+        }
+    }
+
+    // Reset Search Fields tab
+    function resetFieldsTab() {
+        jq('#selectElementsFields').val('');
+        jq('#listOfFieldsFields').html('');
+    }
+
+    // Reset Listing Configuration tab
+    function resetViewsTab() {
+        jq('#selectElementsViews').val('');
+        jq('#primaryViewButtons').html('');
+        jq('#otherViewButtons').html('');
+        jq('#viewButtonsContainer').hide();
+        jq('#listOfFieldsViews').html('');
+        jq('#noTableMessage').show();
+        jq('#tableOfElementsViews').hide();
+        jq('#dragDropHint').hide();
+        jq('.view-button').removeClass('active');
+    }
+
+    // Load XFT Elements
+    function loadXFTElements() {
+        var showMeta = jq("#showMetaElements").is(":checked");
+        var showHistory = jq("#showHistoryElements").is(":checked");
+        var url = serverRoot + "/xapi/xft/elements?format=json&showMeta=" + showMeta + "&showHistory=" + showHistory;
+
+        // Clear the details panel
+        jq("#element-details-panel").html('<div style="color: #999; text-align: center; padding: 40px;">Select an element to view its details</div>');
+
+        jq.get(url)
+            .done(function (data) {
+                var tbody = jq("#xftElementsTableBody");
+                tbody.empty();
+
+                if (data && data.length > 0) {
+                    jq(data).each(function(index, elementName) {
+                        var row = $("<tr></tr>");
+                        var cell = $("<td></td>");
+                        var link = $("<a class='element-link' href='#'></a>")
+                            .text(elementName)
+                            .on('click', function(e) {
+                                e.preventDefault();
+                                // Remove selection from all rows
+                                jq("#xft-elements-table tbody tr").removeClass("selected");
+                                // Add selection to clicked row
+                                row.addClass("selected");
+                                showElementDetails(elementName);
+                            });
+                        cell.append(link);
+                        row.append(cell);
+                        tbody.append(row);
+                    });
+                } else {
+                    tbody.append("<tr><td>No XFT elements found</td></tr>");
+                }
+            })
+            .fail(function (xhr, status, error) {
+                showMessage("page_body", "Error", "Failed to load XFT elements: [" + xhr.status + "] " + error);
+            });
+    }
+
+    // Handle tab changes
+    dataTypesTabView.subscribe("activeTabChange", function(e) {
+        var newTab = e.newValue;
+        var newIndex = dataTypesTabView.getTabIndex(newTab);
+
+        // Restore IDs before switching
+        restoreFieldsIds();
+        restoreViewsIds();
+
+        // Reset all tabs when switching
+        resetFieldsTab();
+        resetViewsTab();
+
+        // Initialize the new tab
+        if (newIndex === 1) { // Search Fields tab
+            setTimeout(function() {
+                initFieldsTab();
+            }, 100);
+        } else if (newIndex === 2) { // Listing Configuration tab
+            setTimeout(function() {
+                initViewsTab();
+            }, 100);
+        } else if (newIndex === 3) { // All XFT Elements tab
+            // No auto-initialization needed, user clicks Load button
+        } else if (newIndex === 4) { // Dynamic Data Types tab
+            // No auto-initialization needed, user clicks Load button
+        } else if (newIndex === 5) { // DB Backed Display Docs tab
+            // No auto-initialization needed, user clicks Load button
+        }
+    });
+
+    // Initialize the first tab (Search Fields) on page load
+    setTimeout(function() {
+        initFieldsTab();
+    }, 100);
+
+    // Cache for loaded element data
+    var loadedElements = {};
+
+    // Show element details in the side panel
+    function showElementDetails(fullElementName) {
+        var detailsPanel = jq("#element-details-panel");
+
+        // Show loading state
+        detailsPanel.html('<div style="color: #999; text-align: center; padding: 40px;">Loading element details...</div>');
+
+        // Parse the element name to get prefix and element name
+        var parts = fullElementName.split(':');
+        var prefix = parts.length > 1 ? parts[0] : 'xnat';
+        var elementName = parts.length > 1 ? parts[1] : parts[0];
+
+        // Fetch element details
+        jq.get(serverRoot + "/xapi/xft/schemas/" + prefix + "/elements/" + elementName + "?format=json")
+            .done(function (elementData) {
+                // Cache the element data
+                loadedElements[fullElementName] = elementData;
+
+                // Fetch element fields
+                jq.get(serverRoot + "/xapi/xft/schemas/" + prefix + "/elements/" + elementName + "/fields?format=json")
+                    .done(function (fieldsData) {
+                        // Build the content
+                        var html = '<h3>' + (elementData.fullXMLName || fullElementName) + '</h3>';
+                        html += '<div class="element-tree">';
+                        html += buildFieldTree(fieldsData, fullElementName, 0);
+                        html += '</div>';
+
+                        detailsPanel.html(html);
+                    })
+                    .fail(function (xhr, status, error) {
+                        detailsPanel.html('<div style="color: red; padding: 20px;">Failed to load element fields: ' + error + '</div>');
+                    });
+            })
+            .fail(function (xhr, status, error) {
+                detailsPanel.html('<div style="color: red; padding: 20px;">Failed to load element details: ' + error + '</div>');
+            });
+    }
+
+    // Build field tree HTML
+    function buildFieldTree(fields, parentPath, depth) {
+        var html = '<div class="tree-node' + (depth > 0 ? ' child' : '') + '">';
+
+        jq(fields).each(function(index, field) {
+            // Sanitize parentPath to remove special characters
+            var sanitizedParent = parentPath.replace(/\//g, '_').replace(/:/g, '_').replace(/'/g, '_');
+            // Create field ID without escaping (for use in HTML IDs)
+            var fieldId = sanitizedParent + '_' + (field.name || '').replace(/\//g, '_').replace(/:/g, '_').replace(/'/g, '_') + '_' + depth + '_' + index;
+            var isReference = field.fieldType === 'referenceField';
+            var hasReference = isReference && field.referenceElement && field.referenceElement.fullXMLName;
+
+            html += '<div class="tree-field">';
+
+            // Add expand icon for reference fields
+            if (hasReference) {
+                // Escape quotes only for the onclick attribute
+                var fieldIdEscaped = fieldId.replace(/'/g, "\\'");
+                var referenceType = (field.referenceElement.fullXMLName || '').replace(/'/g, "\\'");
+                html += '<span class="tree-expand-icon" id="icon_' + fieldId +
+                        '" onclick="toggleFieldReference(\'' + fieldIdEscaped + '\', \'' + referenceType + '\'); return false;"></span>';
+            } else {
+                html += '<span style="display:inline-block;width:20px;"></span>';
+            }
+
+            // Field name
+            html += '<span class="tree-field-name">' + (field.name || '') + '</span>';
+
+            // Field type
+            if (field.xmlType && field.xmlType.fullForeignType) {
+                if (hasReference) {
+                    var fieldIdEscaped = fieldId.replace(/'/g, "\\'");
+                    var referenceType = (field.referenceElement.fullXMLName || '').replace(/'/g, "\\'");
+                    html += '<span class="tree-reference-type" onclick="toggleFieldReference(\'' + fieldIdEscaped + '\', \'' + referenceType + '\'); return false;" style="cursor: pointer;">' +
+                            field.xmlType.fullForeignType + '</span>';
+                } else {
+                    html += '<span class="tree-field-type">' + field.xmlType.fullForeignType + '</span>';
+                }
+            }
+
+            // Additional field info
+            var info = [];
+            if (field.required) info.push('required');
+            if (field.fieldType) info.push(field.fieldType);
+            if (info.length > 0) {
+                html += '<span class="tree-field-info">(' + info.join(', ') + ')</span>';
+            }
+
+            // Container for child fields (reference expansion)
+            if (hasReference) {
+                html += '<div class="tree-children" id="children_' + fieldId + '"></div>';
+            }
+
+            html += '</div>';
+        });
+
+        html += '</div>';
+        return html;
+    }
+
+    // Toggle reference field expansion
+    function toggleFieldReference(fieldId, referenceType) {
+        console.log('toggleFieldReference called');
+        console.log('fieldId:', fieldId);
+        console.log('referenceType:', referenceType);
+
+        var childrenContainer = jq('#children_' + fieldId);
+        console.log('childrenContainer selector:', '#children_' + fieldId);
+        console.log('childrenContainer found:', childrenContainer.length);
+
+        var expandIcon = jq('#icon_' + fieldId);
+        console.log('expandIcon selector:', '#icon_' + fieldId);
+        console.log('expandIcon found:', expandIcon.length);
+
+        if (childrenContainer.length === 0) {
+            console.error('ERROR: childrenContainer not found!');
+            alert('ERROR: Could not find children container with ID: children_' + fieldId);
+            return;
+        }
+
+        if (childrenContainer.hasClass('expanded')) {
+            // Collapse
+            console.log('Collapsing...');
+            childrenContainer.removeClass('expanded');
+            expandIcon.removeClass('expanded');
+        } else {
+            // Expand
+            console.log('Expanding...');
+            console.log('Children count:', childrenContainer.children().length);
+
+            if (childrenContainer.children().length === 0) {
+                // Load the referenced element's fields
+                console.log('Loading fields from server...');
+                childrenContainer.html('<p style="margin-left:20px;color:#999;">Loading...</p>');
+
+                var parts = referenceType.split(':');
+                var prefix = parts.length > 1 ? parts[0] : 'xnat';
+                var elementName = parts.length > 1 ? parts[1] : parts[0];
+
+                console.log('Prefix:', prefix);
+                console.log('Element name:', elementName);
+
+                var url = serverRoot + "/xapi/xft/schemas/" + prefix + "/elements/" + elementName + "/fields?format=json";
+                console.log('Fetching URL:', url);
+
+                jq.get(url)
+                    .done(function (fieldsData) {
+                        console.log('Fields data received:', fieldsData);
+                        var depth = fieldId.split('_').length - 2;
+                        console.log('Depth:', depth);
+                        var treeHtml = buildFieldTree(fieldsData, fieldId, depth + 1);
+                        console.log('Tree HTML generated, length:', treeHtml.length);
+                        console.log('Setting HTML to childrenContainer...');
+                        childrenContainer.html(treeHtml);
+                        console.log('HTML set. Content:', childrenContainer.html().substring(0, 100));
+                        childrenContainer.addClass('expanded');
+                        expandIcon.addClass('expanded');
+                        console.log('Expansion complete');
+                    })
+                    .fail(function (xhr, status, error) {
+                        console.error('AJAX failed:', error);
+                        childrenContainer.html('<p style="margin-left:20px;color:red;">Error loading fields: ' + error + '</p>');
+                    });
+            } else {
+                console.log('Already loaded, just showing...');
+                childrenContainer.addClass('expanded');
+                expandIcon.addClass('expanded');
+            }
+        }
+    }
+
+    // Load Dynamic Data Types
+    function loadDynamicDataTypes() {
+        var tbody = jq("#dynamicDatatypesTableBody");
+        tbody.html("<tr><td colspan='4' style='text-align: center;'>Loading...</td></tr>");
+
+        jq.get(serverRoot + "/xapi/dbschemas?format=json")
+            .done(function (data) {
+                tbody.empty();
+
+                if (data && data.length > 0) {
+                    data = data.sort(function(a,b){ return (a.name < b.name) ? -1 : 1 });
+                    jq(data).each(function(index, schema) {
+                        var row = "<tr>";
+                        row += "<td>" + (schema.name || "") + "</td>";
+                        row += "<td>" + (schema.path || "") + "</td>";
+
+                        // Get element names for this schema from the API payload
+                        var elementNames = Array.isArray(schema.elements) ? schema.elements : [];
+                        if (!Array.isArray(schema.elements) && schema.elements) {
+                            console.warn("Unexpected schema.elements format:", schema.elements);
+                        }
+
+                        var elementList = elementNames.length > 0 ? elementNames.join(", ") : "None";
+                        row += "<td><small>" + elementList + "</small></td>";
+
+                        row += "<td>";
+                        row += "<button class='btn btn-sm' onclick='reloadDynamicDataType(" +
+                               schema.id + ", \"" + (schema.name || "").replace(/"/g, "&quot;") +
+                               "\"); return false;' style='margin-right: 5px;'>Reload</button>";
+                        row += "<button class='btn btn-sm' onclick='downloadSchema(" +
+                               schema.id + ", \"" + (schema.name || "").replace(/"/g, "&quot;") +
+                               "\"); return false;' style='margin-right: 5px;'>Download Schema</button>";
+                        row += "<button class='btn btn-sm' onclick='deleteDynamicDataType(" +
+                               schema.id + ", \"" + (schema.name || "").replace(/"/g, "&quot;") +
+                               "\"); return false;'><i class='fa fa-trash' style='padding-right: 3px'></i> Delete</button>";
+                        row += "</td>";
+                        row += "</tr>";
+                        tbody.append(row);
+                    });
+                } else {
+                    tbody.append("<tr><td colspan='4' style='text-align: center;'>No dynamic data types found</td></tr>");
+                }
+            })
+            .fail(function (xhr, status, error) {
+                tbody.empty();
+                tbody.append("<tr><td colspan='4' style='color: red; text-align: center;'>Failed to load dynamic data types: [" + xhr.status + "] " + error + "</td></tr>");
+            });
+    }
+
+    // Reload Dynamic Data Type
+    function reloadDynamicDataType(schemaId, schemaName) {
+        if (!confirm("Are you sure you want to reload the data type '" + schemaName + "' into the runtime configuration?")) {
+            return;
+        }
+
+        // Disable all buttons during reload
+        jq("#dynamicDatatypesTableBody button").prop("disabled", true);
+
+        jq.ajax({
+            url: XNAT.url.restUrl("/xapi/dbschemas/" + schemaId + "/load"),
+            type: "POST",
+            dataType: "json",
+            success: function(response) {
+                var message = response.message || "Data type loaded successfully";
+                if (response.status === "already_loaded") {
+                    showMessage("page_body", "Info", "Data type '" + schemaName + "' is already loaded in the system.");
+                } else if (response.status === "loaded") {
+                    showMessage("page_body", "Success", "Data type '" + schemaName + "' has been loaded successfully.");
+                } else {
+                    showMessage("page_body", "Success", message);
+                }
+                // Re-enable buttons
+                jq("#dynamicDatatypesTableBody button").prop("disabled", false);
+            },
+            error: function(xhr, status, error) {
+                var errorMsg = "Failed to load data type";
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.error) {
+                        errorMsg = response.error;
+                    }
+                } catch (e) {
+                    errorMsg = "Failed to load data type: [" + xhr.status + "] " + error;
+                }
+                showMessage("page_body", "Error", errorMsg);
+                // Re-enable buttons
+                jq("#dynamicDatatypesTableBody button").prop("disabled", false);
+            }
+        });
+    }
+
+    // Delete Dynamic Data Type
+    function deleteDynamicDataType(schemaId, schemaName) {
+        if (!confirm("Are you sure you want to delete the data type '" + schemaName + "'?\n\nThis will also delete all associated ElementDisplay entries for elements in this schema.")) {
+            return;
+        }
+
+        // Disable all delete buttons during deletion
+        jq("#dynamicDatatypesTableBody button").prop("disabled", true);
+
+        jq.ajax({
+            url: XNAT.url.csrfUrl("/xapi/dbschemas/" + schemaId),
+            type: "DELETE",
+            dataType: "json",
+            success: function(response) {
+                showMessage("page_body", "Success", "Data type '" + schemaName + "' has been deleted successfully.  Some references may remain until the next Tomcat restart.");
+                // Reload the data types table
+                loadDynamicDataTypes();
+            },
+            error: function(xhr, status, error) {
+                var errorMsg = "Failed to delete data type";
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.error) {
+                        errorMsg = response.error;
+                    }
+                } catch (e) {
+                    errorMsg = "Failed to delete data type: [" + xhr.status + "] " + error;
+                }
+                showMessage("page_body", "Error", errorMsg);
+                // Re-enable delete buttons
+                jq("#dynamicDatatypesTableBody button").prop("disabled", false);
+            }
+        });
+    }
+
+    // Download Schema XSD
+    function downloadSchema(schemaId, schemaName) {
+        window.location.href = serverRoot + "/xapi/dbschemas/" + schemaId + "/schema";
+    }
+
+    // ==========================================
+    // DB Backed Display Docs tab
+    // ==========================================
+
+    // Load all display docs
+    function loadDisplayDocs() {
+        var tbody = jq("#displayDocsTableBody");
+        tbody.html("<tr><td colspan='2' style='text-align: center;'>Loading...</td></tr>");
+
+        // Clear details panel
+        jq("#display-doc-details-panel").html('<div style="color: #999; text-align: center; padding: 40px;">Select an element display to view its details</div>');
+
+        jq.get(serverRoot + "/xapi/elementdisplays?format=json")
+            .done(function (data) {
+                tbody.empty();
+
+                if (data && data.length > 0) {
+                    // Sort alphabetically by elementName
+                    data.sort(function(a, b) {
+                        return (a.elementName || "").localeCompare(b.elementName || "");
+                    });
+
+                    jq(data).each(function(index, ed) {
+                        var row = jq("<tr></tr>");
+                        var nameCell = jq("<td></td>");
+                        var link = jq("<a class='element-link' href='#'></a>")
+                            .text(ed.elementName || "")
+                            .on('click', function(e) {
+                                e.preventDefault();
+                                jq("#display-docs-table tbody tr").removeClass("selected");
+                                row.addClass("selected");
+                                showDisplayDocDetails(ed.elementName);
+                            });
+                        nameCell.append(link);
+                        row.append(nameCell);
+                        row.append(jq("<td></td>").text(ed.displayLabel || ""));
+                        tbody.append(row);
+                    });
+                } else {
+                    tbody.append("<tr><td colspan='2' style='text-align: center;'>No display docs found</td></tr>");
+                }
+            })
+            .fail(function (xhr, status, error) {
+                tbody.empty();
+                tbody.append("<tr><td colspan='2' style='color: red; text-align: center;'>Failed to load display docs: [" + xhr.status + "] " + error + "</td></tr>");
+            });
+    }
+
+    // Show details for a specific display doc
+    function showDisplayDocDetails(elementName) {
+        var panel = jq("#display-doc-details-panel");
+        panel.html('<div style="color: #999; text-align: center; padding: 40px;">Loading details...</div>');
+
+        jq.get(serverRoot + "/xapi/elementdisplays/" + encodeURIComponent(elementName) + "?format=json")
+            .done(function (ed) {
+                var html = '';
+
+                // Header with element name and delete button
+                html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">';
+                html += '<h3 style="margin: 0;">' + (ed.elementName || '') + '</h3>';
+                html += '<button class="btn btn-sm" onclick="deleteDisplayDoc(\'' + (ed.elementName || '').replace(/'/g, "\\'") + '\')"><i class="fa fa-trash" style="padding-right: 3px"></i> Delete</button>';
+                html += '</div>';
+
+                // Properties section
+                html += '<div class="display-doc-section">';
+                html += '<div class="display-doc-section-header">Properties</div>';
+                html += '<div class="display-doc-section-body">';
+                html += buildPropRow('Element Name', ed.elementName);
+                html += buildPropRow('Display Label', ed.displayLabel);
+                html += buildPropRow('Display Field', ed.displayField);
+                html += buildPropRow('Value Field', ed.valueField);
+                html += buildPropRow('Brief Description', ed.briefDescription);
+                html += buildPropRow('Full Description', ed.fullDescription);
+                html += buildPropRow('Light Color', ed.lightColor);
+                html += buildPropRow('Dark Color', ed.darkColor);
+                html += buildPropRow('Sort Order', ed.sortOrder);
+                html += '</div></div>';
+
+                // Display Fields section
+                if (ed.displayFields && ed.displayFields.length > 0) {
+                    html += '<div class="display-doc-section">';
+                    html += '<div class="display-doc-section-header" onclick="jq(this).next().toggle()">Display Fields (' + ed.displayFields.length + ')</div>';
+                    html += '<div class="display-doc-section-body">';
+                    html += '<table class="display-doc-child-table">';
+                    html += '<thead><tr><th>Field ID</th><th>Header</th><th>Searchable</th><th>Visible</th><th>Data Type</th></tr></thead>';
+                    html += '<tbody>';
+                    jq(ed.displayFields).each(function(i, df) {
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(df.fieldId || '') + '</td>';
+                        html += '<td>' + escapeHtml(df.header || '') + '</td>';
+                        html += '<td>' + (df.searchable ? 'Yes' : 'No') + '</td>';
+                        html += '<td>' + (df.visible ? 'Yes' : 'No') + '</td>';
+                        html += '<td>' + escapeHtml(df.dataType || '') + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                    html += '</div></div>';
+                }
+
+                // Display Versions section
+                if (ed.displayVersions && ed.displayVersions.length > 0) {
+                    html += '<div class="display-doc-section">';
+                    html += '<div class="display-doc-section-header" onclick="jq(this).next().toggle()">Display Versions (' + ed.displayVersions.length + ')</div>';
+                    html += '<div class="display-doc-section-body">';
+                    html += '<table class="display-doc-child-table">';
+                    html += '<thead><tr><th>Version Name</th><th>Description</th><th>Default Order By</th><th>Sort Order</th><th>Allow Diffs</th></tr></thead>';
+                    html += '<tbody>';
+                    jq(ed.displayVersions).each(function(i, dv) {
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(dv.versionName || '') + '</td>';
+                        html += '<td>' + escapeHtml(dv.briefDescription || '') + '</td>';
+                        html += '<td>' + escapeHtml(dv.defaultOrderBy || '') + '</td>';
+                        html += '<td>' + escapeHtml(dv.defaultSortOrder || '') + '</td>';
+                        html += '<td>' + (dv.allowDiffs ? 'Yes' : 'No') + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                    html += '</div></div>';
+                }
+
+                // Arcs section
+                if (ed.arcs && ed.arcs.length > 0) {
+                    html += '<div class="display-doc-section">';
+                    html += '<div class="display-doc-section-header" onclick="jq(this).next().toggle()">Arcs (' + ed.arcs.length + ')</div>';
+                    html += '<div class="display-doc-section-body">';
+                    html += '<table class="display-doc-child-table">';
+                    html += '<thead><tr><th>Name</th><th>Common Fields</th></tr></thead>';
+                    html += '<tbody>';
+                    jq(ed.arcs).each(function(i, arc) {
+                        var fields = '';
+                        if (arc.commonFields) {
+                            var pairs = [];
+                            for (var key in arc.commonFields) {
+                                if (arc.commonFields.hasOwnProperty(key)) {
+                                    pairs.push(escapeHtml(key) + ' = ' + escapeHtml(arc.commonFields[key]));
+                                }
+                            }
+                            fields = pairs.join(', ');
+                        }
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(arc.name || '') + '</td>';
+                        html += '<td>' + fields + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                    html += '</div></div>';
+                }
+
+                // View Links section
+                if (ed.viewLinks && ed.viewLinks.length > 0) {
+                    html += '<div class="display-doc-section">';
+                    html += '<div class="display-doc-section-header" onclick="jq(this).next().toggle()">View Links (' + ed.viewLinks.length + ')</div>';
+                    html += '<div class="display-doc-section-body">';
+                    html += '<table class="display-doc-child-table">';
+                    html += '<thead><tr><th>Alias</th><th>View</th></tr></thead>';
+                    html += '<tbody>';
+                    jq(ed.viewLinks).each(function(i, vl) {
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(vl.alias || '') + '</td>';
+                        html += '<td>' + escapeHtml(vl.view || '') + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                    html += '</div></div>';
+                }
+
+                panel.html(html);
+            })
+            .fail(function (xhr, status, error) {
+                panel.html('<div style="color: red; padding: 20px;">Failed to load display doc details: ' + error + '</div>');
+            });
+    }
+
+    // Delete a display doc
+    function deleteDisplayDoc(elementName) {
+        if (!confirm("Are you sure you want to delete the element display for '" + elementName + "'?\n\nThis will remove all configured display configuration (fields, versions, arcs, view links) for this element.\n\nNote: You will need to restart Tomcat after this deletion for the changes to be fully in effect.")) {
+            return;
+        }
+
+        jq.ajax({
+            url: XNAT.url.csrfUrl("/xapi/elementdisplays/" + encodeURIComponent(elementName)),
+            type: "DELETE",
+            dataType: "json",
+            success: function(response) {
+                showMessage("page_body", "Success", "Element display for '" + elementName + "' has been deleted successfully.");
+                // Reload the list and clear details
+                loadDisplayDocs();
+            },
+            error: function(xhr, status, error) {
+                var errorMsg = "Failed to delete element display";
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.error) {
+                        errorMsg = response.error;
+                    }
+                } catch (e) {
+                    errorMsg = "Failed to delete element display: [" + xhr.status + "] " + error;
+                }
+                showMessage("page_body", "Error", errorMsg);
+            }
+        });
+    }
+
+    // Helper: build a property row
+    function buildPropRow(label, value) {
+        return '<div class="display-doc-prop"><span class="display-doc-prop-label">' + label + ':</span> ' + escapeHtml(value != null ? String(value) : '') + '</div>';
+    }
+
+    // Helper: escape HTML to prevent XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 </script>

@@ -23,7 +23,7 @@ public class RequestSubjectId {
        {
            if (num.intValue()>100)
            {
-               num = new Integer(100);
+               num = Integer.valueOf(100);
            }
            String[] _return = new String[num.intValue()];
            for(int i=0;i<num.intValue();i++)

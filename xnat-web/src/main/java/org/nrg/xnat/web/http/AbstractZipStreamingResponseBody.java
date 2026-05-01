@@ -9,7 +9,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.*;
 import java.net.SocketException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -43,7 +42,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      */
     @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody() {
-        this(Paths.get(""), DEFAULT_BUFFER_SIZE, null, true);
+        this(Path.of(""), DEFAULT_BUFFER_SIZE, null, true);
     }
 
     /**
@@ -55,7 +54,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      */
     @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody(final String rootPath) {
-        this(Paths.get(rootPath), DEFAULT_BUFFER_SIZE, null, true);
+        this(Path.of(rootPath), DEFAULT_BUFFER_SIZE, null, true);
     }
 
     /**
@@ -80,7 +79,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      */
     @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody(final String rootPath, final int bufferSize) {
-        this(Paths.get(rootPath), bufferSize, null, true);
+        this(Path.of(rootPath), bufferSize, null, true);
     }
 
     /**
@@ -113,7 +112,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      */
     @SuppressWarnings("unused")
     public AbstractZipStreamingResponseBody(final String rootPath, final int bufferSize, final File history) {
-        this(Paths.get(rootPath), bufferSize, history, true);
+        this(Path.of(rootPath), bufferSize, history, true);
     }
 
     /**
@@ -128,7 +127,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      * @param history  The file where the zip write history should recorded.
      */
     public AbstractZipStreamingResponseBody(final String rootPath, final File history) {
-        this(Paths.get(rootPath), DEFAULT_BUFFER_SIZE, history, true);
+        this(Path.of(rootPath), DEFAULT_BUFFER_SIZE, history, true);
     }
 
     /**

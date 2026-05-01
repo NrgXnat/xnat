@@ -192,8 +192,8 @@ public class CatalogApi extends AbstractXapiRestController {
                                  .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(catalogId, "xml"))
                                  .body(outputStream -> {
                                      try (final OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
-                                         if (catalog instanceof CatCatalogBean) {
-                                             ((CatCatalogBean) catalog).toXML(writer, true);
+                                         if (catalog instanceof CatCatalogBean bean) {
+                                             bean.toXML(writer, true);
                                          } else {
                                              try {
                                                  catalog.toXML(writer);

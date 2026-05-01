@@ -67,7 +67,7 @@ public class XDATScreen_manageGroups_xdat_user extends AdminScreen {
                               projects = new ArrayList<ArrayList<Object>>();
                               projectGroups.put(proj.getSecondaryId(), projects);
                           }
-                          String id = row.get(0);
+                          String id = row.getFirst();
                           String displayname = row.get(1);
                           if (displayname==null){
                               displayname=id;

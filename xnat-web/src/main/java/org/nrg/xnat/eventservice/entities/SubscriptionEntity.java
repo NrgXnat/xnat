@@ -13,6 +13,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+
+import java.io.Serial;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,6 +23,9 @@ import java.util.Set;
 @Table
 
 public class SubscriptionEntity extends AbstractHibernateEntity {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public SubscriptionEntity() {}
 

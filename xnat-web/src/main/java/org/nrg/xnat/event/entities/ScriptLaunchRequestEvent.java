@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.event.entities;
 
+import java.io.Serial;
 import java.util.Map;
 
 import javax.persistence.Entity;
@@ -29,9 +30,10 @@ import com.google.common.collect.Maps;
 @PrimaryKeyJoinColumn(name="ID", referencedColumnName="ID")
 @EventClass(name="ScriptLaunchRequestEvent", description="Script Launch Request Event")
 public class ScriptLaunchRequestEvent extends PersistentEvent implements AutomationEventImplementerI {
-	
-	/** The Constant serialVersionUID. */
-	private static final long serialVersionUID = 7465778737330635218L;
+
+    /** The Constant serialVersionUID. */
+    @Serial
+    private static final long serialVersionUID = 7465778737330635218L;
 	
 	/** The automation completion event. */
 	private AutomationCompletionEventI automationCompletionEvent;

@@ -35,15 +35,14 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class MergeUtils {
     @SuppressWarnings("unused")
     public static boolean compareResources(final XnatAbstractresourceI src, final XnatAbstractresourceI dest) {
-        if (src instanceof XnatResourceseriesI) {
-            return (((XnatResourceseriesI) src).getPath() + ((XnatResourceseriesI) src).getPattern()).equals(((XnatResourceseriesI) src).getPath() + ((XnatResourceseriesI) src).getPattern());
+        if (src instanceof XnatResourceseriesI resourceseriesI) {
+            return (resourceseriesI.getPath() + resourceseriesI.getPattern()).equals(resourceseriesI.getPath() + resourceseriesI.getPattern());
         } else {
             return ((XnatResourceI) src).getUri().equals(((XnatResourceI) dest).getUri());
         }
@@ -103,7 +102,7 @@ public class MergeUtils {
 
             for (final AnonymizationResult result : rejectedList) {
                 try {
-                    final Path path = Paths.get(result.getAbsolutePath());
+                    final Path path = Path.of(result.getAbsolutePath());
                     final Path parent = path.getParent();
                     if(Files.exists(path)){
                         Files.delete(path);

@@ -98,8 +98,8 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
                     final List<XnatAbstractresourceI> destinationScanResources = destinationScan.getFile();
                     for (final XnatAbstractresourceI sourceScanResource : sourceScan.getFile()) {
                         final XnatAbstractresourceI destinationScanResource = MergeUtils.getMatchingResource(sourceScanResource, destinationScanResources);
-                        if (destinationScanResource instanceof XnatResourcecatalogI) {
-                            final MergeSessionsA.Results<File> result = mergeCatalogs(sourceProject, sourcePath, (XnatResourcecatalogI) sourceScanResource, destinationProject, destinationPath, (XnatResourcecatalogI) destinationScanResource);
+                        if (destinationScanResource instanceof XnatResourcecatalogI resourcecatalogI) {
+                            final MergeSessionsA.Results<File> result = mergeCatalogs(sourceProject, sourcePath, (XnatResourcecatalogI) sourceScanResource, destinationProject, destinationPath, resourcecatalogI);
                             if (result != null) {
                                 toDelete.add(result.result);
                                 results.addAll(result);
@@ -193,7 +193,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
             if (value == null) {
                 continue;
             }
-            params.put(key, value instanceof String ? (String) value : value.toString());
+            params.put(key, value instanceof String s ? s : value.toString());
         }
 
         final Boolean sessionRebuildSuccess = new XNATSessionBuilder(srcDIR, sessionXml, true, params).call();

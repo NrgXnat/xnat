@@ -49,7 +49,7 @@ public abstract class EventFilter {
     public Filter  buildReactorFilter(){
         Criteria criteria = Criteria.where("event-type").exists(true).and("event-type").is(eventType());
         if(projectIds() != null && !projectIds().isEmpty() &&
-                !(projectIds().size() > 0 && (projectIds().get(0) == "" || projectIds().get(0) == null))) {
+                !(projectIds().size() > 0 && (projectIds().getFirst() == "" || projectIds().getFirst() == null))) {
             criteria = criteria.and("project-id").exists(true).and("project-id").in(projectIds());
         }
         if(status() != null){

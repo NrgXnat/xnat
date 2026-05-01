@@ -158,7 +158,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
             setIdentifier(identifier);
             setNamer(namer);
 
-            _sessionPath = Paths.get(request.getSessionPath()).toFile();
+            _sessionPath = Path.of(request.getSessionPath()).toFile();
 
             if (!_sessionPath.exists()) {
                 throw new FileNotFoundException(request.getSessionPath());

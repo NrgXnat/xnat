@@ -122,7 +122,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             final XnatImagesessiondataI session = getPostAnonSession();
 
             if (dest != null) {
-                if (dest instanceof XnatImagesessiondata) {
+                if (dest instanceof XnatImagesessiondata imagesessiondata) {
                     //ugly hack
                     //this is a work around for a bug in XFT's SAX XML writer
                     //it looks like the XML write is invalidating the cached list of scans stored within the Imagesessiondata object.
@@ -131,7 +131,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
                     //when we didn't access the scans prior to this line, then none of this was necessary
                     //as a temporary workaround, we'll generate the xml off of a copy of the session.
                     //a more permanent solution will probably be Hibernate related.
-                    @SuppressWarnings("unchecked") A full_copy = (A) BaseElement.GetGeneratedItem((((XnatImagesessiondata) dest).getCurrentDBVersion()));
+                    @SuppressWarnings("unchecked") A full_copy = (A) BaseElement.GetGeneratedItem((imagesessiondata.getCurrentDBVersion()));
                     backupXML(full_copy, rootBackup);
                 } else {
                     backupXML(dest, rootBackup);

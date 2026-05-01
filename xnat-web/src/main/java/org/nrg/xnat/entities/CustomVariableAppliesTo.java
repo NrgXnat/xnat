@@ -1,6 +1,7 @@
 package org.nrg.xnat.entities;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import javax.validation.constraints.NotNull;
 import org.nrg.framework.constants.Scope;
@@ -10,6 +11,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.persistence.*;
 
+import java.io.Serial;
 import java.util.*;
 import org.apache.commons.lang3.ObjectUtils;
 import org.nrg.xapi.model.users.User;
@@ -23,6 +25,7 @@ import org.nrg.xnat.customforms.pojo.UserOptionsPojo;
         @UniqueConstraint(columnNames = {"scope", "dataType","entityId","visit","protocol", "subtype"}))
 public class CustomVariableAppliesTo extends AbstractHibernateEntity {
 
+    @Serial
     private static final long serialVersionUID = -1264374836830855705L;
 
     @Nonnull

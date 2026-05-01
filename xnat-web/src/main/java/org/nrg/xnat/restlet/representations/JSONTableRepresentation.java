@@ -80,7 +80,7 @@ public class JSONTableRepresentation extends OutputRepresentation {
 				String key = keys.nextElement();
 				Object value = tableProperties.get(key);
 				if (value != null) {
-					if(value instanceof String && ((String)value).startsWith("{")){
+					if(value instanceof String string && string.startsWith("{")){
 						appendMeta += "\"" + key + "\": " ;
 						appendMeta += value;
 						appendMeta += ",";
@@ -109,7 +109,7 @@ public class JSONTableRepresentation extends OutputRepresentation {
 			@SuppressWarnings("unchecked")
 			ArrayList<String> values = (ArrayList<String>)v;
 			if (values.size() == 1) {
-				String rtn = "\"" + values.get(0) + "\"";
+				String rtn = "\"" + values.getFirst() + "\"";
 				return rtn;
 			}
 			int lastIndex = values.size() - 1 ; 

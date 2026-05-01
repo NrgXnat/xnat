@@ -300,7 +300,7 @@ public class ReconList extends QueryOrganizerResource {
 					table=XFTTable.Execute(query, user.getDBName(), userName);
 					
 				table = formatHeaders(table, qo, "xnat:reconstructedImageData/ID",
-						String.format("/data/experiments/%s/reconstructions/",session.getId()));
+                        "/data/experiments/%s/reconstructions/".formatted(session.getId()));
 				} catch (Exception e) {
 				logger.error("", e);
 				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);

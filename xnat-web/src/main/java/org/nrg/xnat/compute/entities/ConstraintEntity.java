@@ -8,6 +8,8 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
+
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,6 +20,9 @@ import java.util.Set;
 @ToString
 @EqualsAndHashCode(callSuper = true)
 public class ConstraintEntity extends AbstractHibernateEntity {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     private String key;
     private Set<String> constraintValues; // Different from model, values is a reserved word

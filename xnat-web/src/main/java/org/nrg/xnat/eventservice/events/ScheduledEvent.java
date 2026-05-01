@@ -8,6 +8,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.eventservice.model.ScheduledEventPayload;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,6 +16,9 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @XnatEventServiceEvent(name="ScheduledEvent")
 public class ScheduledEvent extends AbstractEventServiceEvent<Object> {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public enum Status {CRON}
     String schedule;

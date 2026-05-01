@@ -6,13 +6,17 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 
 import javax.persistence.*;
+
+import java.io.Serial;
 import java.util.Date;
 
 @Slf4j
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames={"project", "name", "tag"}))
 public class DirectArchiveSession extends AbstractHibernateEntity {
-    private String project, subject, name, folderName, tag, visit, protocol, timeZone, location, source, timestampUid, message;
+    @Serial
+    private static final long serialVersionUID = 1;
+    private String project, subject, name, folderName, tag, visit, protocol, timeZone, location, source, timestampUid, message, overwriteMode;
     private Date uploadDate;
     private Date lastBuiltDate;
     private PrearcUtils.PrearcStatus status;
@@ -188,6 +192,14 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
 
     public Boolean getPreventAnon() {
         return this.preventAnon;
+    }
+
+    public String getOverwriteMode() {
+        return overwriteMode;
+    }
+
+    public void setOverwriteMode(String overwriteMode) {
+        this.overwriteMode = overwriteMode;
     }
 
     public SessionData toSessionData() {

@@ -196,7 +196,7 @@ public class DefaultCustomFormFetcherImpl implements CustomFormFetcherI {
         }
         final List<XnatProjectdata> matches = AutoXnatProjectdata.getXnatProjectdatasByField("xnat:projectData/aliases/alias/alias", idOrAlias, user, false);
         if (!matches.isEmpty()) {
-            return matches.get(0);
+            return matches.getFirst();
         }
         return null;
     }

@@ -162,7 +162,7 @@ public abstract class AbstractPrearchiveOperationHandler implements PrearchiveOp
 
     boolean getBooleanParameter(final String parameterName) {
         final Object parameterValue = getParameters().get(parameterName);
-        return parameterValue instanceof Boolean && (Boolean) parameterValue;
+        return parameterValue instanceof Boolean b && b;
     }
 
     @Getter(PRIVATE)

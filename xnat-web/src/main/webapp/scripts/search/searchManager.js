@@ -682,9 +682,8 @@ function SearchXMLManager(_xml){
 
 		//set left images
 		si_td1.vAlign="middle";
-		var uImg=si_td1.appendChild(document.createElement("img"));
-		uImg.src=serverRoot +"/images/up18.gif";
-		uImg.border="0";
+		var uImg=si_td1.appendChild(document.createElement("i"));
+		uImg.className="fa fa-caret-up";
 		uImg.manager=this;
 		uImg.onclick=function(){
 			var selections=new Array();
@@ -710,14 +709,15 @@ function SearchXMLManager(_xml){
 			this.manager.renderCurrentFieldsDT(selections);
 		}
 		uImg.style.cursor="pointer";
+		uImg.style.fontSize="1.8rem";
 
 		si_td1.appendChild(document.createElement("br"));
 		si_td1.appendChild(document.createElement("br"));
 		si_td1.appendChild(document.createElement("br"));
 		si_td1.appendChild(document.createElement("br"));
 
-		var dImg=si_td1.appendChild(document.createElement("img"));
-		dImg.src=serverRoot +"/images/down18.gif";
+		var dImg=si_td1.appendChild(document.createElement("i"));
+		dImg.className="fa fa-caret-down";
 		dImg.border="0";
 		dImg.select=this.cfS;
 		dImg.manager=this;
@@ -743,11 +743,12 @@ function SearchXMLManager(_xml){
 			this.manager.renderCurrentFieldsDT(selections);
 		}
 		dImg.style.cursor="pointer";
+		dImg.style.fontSize="1.8rem";
 
 		//left-right buttons
 		si_td3.vAlign="middle";
-		var lImg=si_td3.appendChild(document.createElement("img"));
-		lImg.src=serverRoot +"/images/left18.gif";
+		var lImg=si_td3.appendChild(document.createElement("i"));
+		lImg.className="fa fa-caret-left";
 		lImg.border="0";
 		lImg.cfS=this.cfS;
 		lImg.afS=this.afS;
@@ -755,7 +756,7 @@ function SearchXMLManager(_xml){
 		lImg.onclick=function(){
 			for(var cfSc=0;cfSc<this.afS.options.length;cfSc++){
 				if(this.afS.options[cfSc].selected){
-					if(this.afS.options[cfSc].requires_value=="true"){
+					if(this.afS.options[cfSc].requires_value=="true" && this.afS.options[cfSc].field_id.indexOf("=")==-1){
 						this.manager.renderValueForm(this.afS.options[cfSc]);
 					}else{
 						this.manager.currentFields.push({
@@ -763,7 +764,8 @@ function SearchXMLManager(_xml){
 		  					"FieldId":this.afS.options[cfSc].field_id,
 		  					"Header":this.afS.options[cfSc].header,
 		  					"Type":this.afS.options[cfSc].type,
-							 "DESC":this.afS.options[cfSc].DESC});
+							 "DESC":this.afS.options[cfSc].DESC,
+							"Value":this.afS.options[cfSc].value});
 	                    for(var pfSc=0;pfSc<this.manager.pFs.length;pfSc++){
 	                        var pF = this.manager.pFs[pfSc];
 	                        if(pF.ELEMENT_NAME==this.afS.options[cfSc].element_name
@@ -779,14 +781,15 @@ function SearchXMLManager(_xml){
 			this.manager.renderPotentialFields();
 		}
 		lImg.style.cursor="pointer";
+		lImg.style.fontSize="1.8rem";
 
 		si_td3.appendChild(document.createElement("br"));
 		si_td3.appendChild(document.createElement("br"));
 		si_td3.appendChild(document.createElement("br"));
 		si_td3.appendChild(document.createElement("br"));
 
-		var rImg=si_td3.appendChild(document.createElement("img"));
-		rImg.src=serverRoot +"/images/right18.gif";
+		var rImg=si_td3.appendChild(document.createElement("i"));
+		rImg.className="fa fa-caret-right";
 		rImg.border="0";
 		rImg.cfS=this.cfS;
 		rImg.afS=this.afS;
@@ -819,6 +822,7 @@ function SearchXMLManager(_xml){
 			this.manager.renderPotentialFields();
 		}
 		rImg.style.cursor="pointer";
+		rImg.style.fontSize="1.8rem";
 
 
 		//add to page

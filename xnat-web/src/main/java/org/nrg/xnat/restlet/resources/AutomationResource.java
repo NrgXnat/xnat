@@ -219,7 +219,7 @@ public abstract class AutomationResource extends SecureResource {
                             throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Couldn't find a project with the ID or alias of " + entityId);
                         }
                         ids.put(KEY_PROJECT_DATA_INFO, entityId);
-                        ids.put(KEY_PROJECT_ID, (String) table.convertColumnToArrayList("id").get(0));
+                        ids.put(KEY_PROJECT_ID, (String) table.convertColumnToArrayList("id").getFirst());
                     } catch (Exception e) {
                         throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "An error occurred trying to access the database.", e);
                     }

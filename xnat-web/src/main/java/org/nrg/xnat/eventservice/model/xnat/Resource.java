@@ -21,8 +21,9 @@ import org.nrg.xnat.helpers.uri.archive.ResourceURII;
 import org.nrg.xnat.utils.CatalogUtils;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -30,6 +31,9 @@ import java.util.Objects;
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Resource extends XnatModelObject {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     @JsonIgnore private XnatResourcecatalog xnatResourcecatalog;
     @JsonProperty("integer-id") private Integer integerId;
@@ -43,8 +47,8 @@ public class Resource extends XnatModelObject {
 
     public Resource(final ResourceURII resourceURII) {
         final XnatAbstractresourceI xnatAbstractresourceI = resourceURII.getXnatResource();
-        if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-            this.xnatResourcecatalog = (XnatResourcecatalog) xnatAbstractresourceI;
+        if (xnatAbstractresourceI instanceof XnatResourcecatalog resourcecatalog) {
+            this.xnatResourcecatalog = resourcecatalog;
         }
         this.uri = resourceURII.getUri();
         populateProperties(null);
@@ -80,15 +84,15 @@ public class Resource extends XnatModelObject {
             throw new RuntimeException("Unable to load catalog for resource " + xnatResourcecatalog
                     + ", have your admin check xdat.log for the cause");
         }
-        final Path parentUri = Paths.get(this.uri + "/files/");
+        final Path parentUri = Path.of(this.uri + "/files/");
 
         final List<Object[]> entryDetails = CatalogUtils.getEntryDetails(cat, this.directory, parentUri.toString(),
                 xnatResourcecatalog, false, null, null, "URI");
 
         for (final Object[] entry : entryDetails) {
             String uri      = (String) entry[2]; // This is the parentUri + relative path to file
-            String relPath  = parentUri.relativize(Paths.get(uri)).toString(); // get that relative path
-            String filePath = Paths.get(this.directory).resolve(relPath).toString(); // append rel path to parent dir
+            String relPath  = parentUri.relativize(Path.of(uri)).toString(); // get that relative path
+            String filePath = Path.of(this.directory).resolve(relPath).toString(); // append rel path to parent dir
             String tagsCsv  = (String) entry[4];
             String format   = (String) entry[5];
             String content  = (String) entry[5];
@@ -146,8 +150,8 @@ public class Resource extends XnatModelObject {
                 }
                 final XnatAbstractresourceI xnatAbstractresourceI =
                         XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(s, userI, true);
-                if (xnatAbstractresourceI != null && xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                    return new Resource((XnatResourcecatalog) xnatAbstractresourceI);
+                if (xnatAbstractresourceI != null && xnatAbstractresourceI instanceof XnatResourcecatalog resourcecatalog) {
+                    return new Resource(resourcecatalog);
                 }
                 return null;
             }

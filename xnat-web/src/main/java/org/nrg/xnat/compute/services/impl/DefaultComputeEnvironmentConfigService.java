@@ -159,7 +159,7 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
     public boolean isAvailable(Long id, Map<Scope, String> executionScope) {
         final Optional<ComputeEnvironmentConfig> computeEnvironmentConfig = retrieve(id);
 
-        if (!computeEnvironmentConfig.isPresent()) {
+        if (computeEnvironmentConfig.isEmpty()) {
             return false;
         }
 

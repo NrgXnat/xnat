@@ -166,7 +166,7 @@ public class XnatProviderManager extends ProviderManager {
             try {
                 final List<XdatUserAuth> userAuthMethods = _userAuthService.getUsersByName(username);
                 if (userAuthMethods.size() == 1) {
-                    authMethod = userAuthMethods.get(0).getAuthMethod();
+                    authMethod = userAuthMethods.getFirst().getAuthMethod();
                     // The list may contain localdb auth method even when password is empty and some other authentication method is used (MRH)
                 } else if (userAuthMethods.size() > 1) {
                     String methodCandidate = null;
@@ -255,7 +255,7 @@ public class XnatProviderManager extends ProviderManager {
                 return 0;
             }
         });
-        final AuthenticationException cause = exceptions.get(0);
+        final AuthenticationException cause = exceptions.getFirst();
         for (final Map.Entry<AuthenticationProvider, AuthenticationException> entry : exceptionMap.entrySet()) {
             if (entry.getValue().equals(cause)) {
                 return new ImmutablePair<>(entry.getKey(), entry.getValue());
@@ -285,15 +285,14 @@ public class XnatProviderManager extends ProviderManager {
     }
 
     private void copyDetails(Authentication source, Authentication destination) {
-        if ((destination instanceof AbstractAuthenticationToken) && (destination.getDetails() == null)) {
-            final AbstractAuthenticationToken token = (AbstractAuthenticationToken) destination;
+        if ((destination instanceof AbstractAuthenticationToken token) && (destination.getDetails() == null)) {
             token.setDetails(source.getDetails());
         }
     }
 
     private static UsernamePasswordAuthenticationToken buildUPToken(final AuthenticationProvider provider, final String username, final String password) {
-        return provider instanceof XnatAuthenticationProvider
-               ? (UsernamePasswordAuthenticationToken) ((XnatAuthenticationProvider) provider).createToken(username, password)
+        return provider instanceof XnatAuthenticationProvider xap
+               ? (UsernamePasswordAuthenticationToken) xap.createToken(username, password)
                : new XnatDatabaseUsernamePasswordAuthenticationToken(username, password);
     }
 

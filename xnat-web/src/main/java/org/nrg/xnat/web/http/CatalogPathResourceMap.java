@@ -38,7 +38,6 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Stack;
@@ -172,10 +171,9 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
             final URIManager.DataURIA raw = UriParserUtils.parseURI(currentEntry.getUri());
             log.info("{}: Got a DataURIA of type {}", _catalogId, raw.getClass());
 
-            if (raw instanceof ResourceURII) {
+            if (raw instanceof ResourceURII uri) {
                 final String                resourceName = currentEntry.getName();
                 final String                resourceUri  = currentEntry.getUri();
-                final ResourceURII          uri          = (ResourceURII) raw;
                 final XnatAbstractresourceI resource     = uri.getXnatResource();
 
                 // There are different kinds of resources that we might encounter, so that has to be accounted for here. These three types--XnatResourceCatalogI, XnatImageresourceI, and
@@ -200,11 +198,11 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                 //  xnat:dicomSeries         |             85
                 //  xnat:publicationResource |              1
                 //  (6 rows)
-                if (resource instanceof XnatResourcecatalogI) {
+                if (resource instanceof XnatResourcecatalogI resourcecatalogI) {
                     final CatalogUtils.CatalogData catalogData;
                     try {
                         catalogData = CatalogUtils.CatalogData.getOrCreate(_archiveRoot,
-                                (XnatResourcecatalogI) resource, null);
+                                resourcecatalogI, null);
                     } catch (ServerException e) {
                         log.error("The catalog entry {} doesn't appear to be a valid catalog. " +
                                 "The associated resource file path was {}.", resourceName, resourceUri, e);
@@ -230,7 +228,7 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
                     final XnatResource xnatResource = (resource instanceof XnatImageresourceI) ? ((XnatImageresource) resource).getResource() : (XnatResource) resource;
                     if (xnatResource != null) {
                         final String resourcePath = xnatResource.getUri();
-                        final File   resourceFile = Paths.get(resourcePath).toFile();
+                        final File   resourceFile = Path.of(resourcePath).toFile();
                         if (resourceFile.exists()) {
                             _resources.add(new CatalogPathResourceMapping(resourceName, resourceFile));
                         }
@@ -250,18 +248,18 @@ public class CatalogPathResourceMap implements PathResourceMap<String, Resource>
 
     private class CatalogPathResourceMapping implements Mapping<String, Resource> {
         CatalogPathResourceMapping(final String resource, final String resourceRoot, final File file) {
-            final Path rootPath = Paths.get(resourceRoot);
+            final Path rootPath = Path.of(resourceRoot);
             final Path filePath = file.toPath();
             final String remnant = filePath.startsWith(rootPath)
                     ? rootPath.relativize(filePath).toString()
                     : file.getName();
-            _path = Paths.get(resource, remnant).toString();
+            _path = Path.of(resource, remnant).toString();
             _file = file;
             log.info("Created resource mapping to path {} for file {}", _path, _file);
         }
 
         CatalogPathResourceMapping(final String resource, final File file) {
-            _path = Paths.get(resource, file.getName()).toString();
+            _path = Path.of(resource, file.getName()).toString();
             _file = file;
             log.info("Created resource mapping to path {} for file {}", _path, _file);
         }

@@ -111,13 +111,13 @@ public class ConfigResource extends SecureResource {
             if (!StringUtils.isBlank(projectId)) {
                 final XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
                 if (project == null) {
-                    final String message = String.format("The requested project %s does not exist.", projectId);
+                    final String message = "The requested project %s does not exist.".formatted(projectId);
                     log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
                     throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);
                 }
                 if (!Permissions.canRead(user, "xnat:subjectData/project", projectId)) {
-                    final String message = String.format("User %s can not access project %s", user.getUsername(), projectId);
+                    final String message = "User %s can not access project %s".formatted(user.getUsername(), projectId);
                     log.warn(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                     throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, message);
@@ -195,9 +195,9 @@ public class ConfigResource extends SecureResource {
                     // if meta=true && contents==true, send teh configuration as-is.
                     // if meta=false && contents==false, this is the same as not specifying either in the querystring. So, just act as if they didn't.
                     if (contents && !meta) {
-                        Configuration c = configurations.size() > 0 ? configurations.get(0) : null;
+                        Configuration c = configurations.size() > 0 ? configurations.getFirst() : null;
                         if (c == null || "disabled".equals(c.getStatus())) {
-                            final String message = String.format("Config not found for user %s and project %s on tool [%s] path [%s]", user.getUsername(), projectId, toolName, path);
+                            final String message = "Config not found for user %s and project %s on tool [%s] path [%s]".formatted(user.getUsername(), projectId, toolName, path);
                             log.debug(message);
                             if (acceptNotFound) {
                                 getResponse().setStatus(Status.SUCCESS_NO_CONTENT);
@@ -209,7 +209,7 @@ public class ConfigResource extends SecureResource {
                             return new StringRepresentation(c.getContents());
                         }
                     } else if (meta && !contents) {
-                        Configuration c = configurations.size() > 0 ? configurations.get(0) : null;
+                        Configuration c = configurations.size() > 0 ? configurations.getFirst() : null;
                         if (c != null) {
                             c.setConfigData(null);
                         }
@@ -231,7 +231,7 @@ public class ConfigResource extends SecureResource {
                 }
                 return representTable(table, mt, new Hashtable<>());
 
-            } else if (configurations.size() > 0 && configurations.get(0) != null) {
+            } else if (configurations.size() > 0 && configurations.getFirst() != null) {
                 //we generated a list of configurations, so represent those.
                 table.initTable(configColumns);  //"tool","path","project","user","create_date","reason","contents", "unversioned", "version", "status"};
                 for (Configuration c : configurations) {
@@ -266,7 +266,7 @@ public class ConfigResource extends SecureResource {
                 return representTable(table, mt, new Hashtable<>());
             } else {
                 //if we fell through to here, nothing existed at the supplied URI
-                final String message = String.format("Couldn't find config for user %s and project %s on tool [%s] path [%s]", user.getUsername(), projectId, toolName, path);
+                final String message = "Couldn't find config for user %s and project %s on tool [%s] path [%s]".formatted(user.getUsername(), projectId, toolName, path);
                 log.debug(message);
                 if (acceptNotFound) {
                     getResponse().setStatus(Status.SUCCESS_NO_CONTENT, message);
@@ -277,10 +277,10 @@ public class ConfigResource extends SecureResource {
                 }
             }
         } catch (Exception e) {
-            if (e instanceof ResourceException) {
-                throw (ResourceException) e;
+            if (e instanceof ResourceException exception) {
+                throw exception;
             }
-            final String message = String.format("An error occurred retrieving the config for user %s and project %s on tool [%s] path [%s]", user.getUsername(), projectId, toolName, path);
+            final String message = "An error occurred retrieving the config for user %s and project %s on tool [%s] path [%s]".formatted(user.getUsername(), projectId, toolName, path);
             log.debug(message, e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, message);
             throw new ResourceException(Status.SERVER_ERROR_INTERNAL, message);
@@ -422,7 +422,7 @@ public class ConfigResource extends SecureResource {
         try {
             if (StringUtils.isBlank(projectId)) {
                 if (!Roles.isSiteAdmin(user)) {
-                    final String message = String.format("User %s is not an administrator and can't disable the configuration setting %s for the tool %s", user.getUsername(), path, toolName);
+                    final String message = "User %s is not an administrator and can't disable the configuration setting %s for the tool %s".formatted(user.getUsername(), path, toolName);
                     log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                     return;
@@ -430,7 +430,7 @@ public class ConfigResource extends SecureResource {
                 configService.disable(user.getLogin(), "Disabling this setting", toolName, path);
             } else {
                 if (!(Permissions.canDelete(user, "xnat:subjectData/project", projectId) || Roles.isSiteAdmin(user))) {  //Users should be able to delete project config if they have project edit permissions or are site admins but are otherwise forbidden.
-                    final String message = String.format("User %s can not access project %s to modify configuration setting %s for the tool %s", user.getUsername(), projectId, path, toolName);
+                    final String message = "User %s can not access project %s to modify configuration setting %s for the tool %s".formatted(user.getUsername(), projectId, path, toolName);
                     log.info(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                     return;
@@ -462,7 +462,7 @@ public class ConfigResource extends SecureResource {
                 return null;
             }
 
-            FileWriterWrapperI fw = fws.get(0);
+            FileWriterWrapperI fw = fws.getFirst();
 
             //read the input stream into a string buffer.
             return IOUtils.toString(fw.getInputStream(), StandardCharsets.UTF_8);//modified to use IOUtils because old code was adding a line break to single line files which wasn't in the uploaded content... true should be true, not true\n

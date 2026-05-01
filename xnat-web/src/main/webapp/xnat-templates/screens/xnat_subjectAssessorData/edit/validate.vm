@@ -1,0 +1,15 @@
+
+<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/omUtils.js')"></SCRIPT>
+<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/subjectAssessorData/validation.js')"></SCRIPT>
+<script type="text/javascript">
+function validateForm(){
+  if(confirmValues())
+  {
+     return true;
+  }else{
+     return false;
+  }
+} 
+
+var elementName = "$!item.getXSIType()"
+</script>

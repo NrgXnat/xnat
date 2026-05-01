@@ -27,7 +27,7 @@ import org.nrg.xnat.helpers.uri.archive.ResourceURII;
 import org.nrg.xnat.services.triage.TriageUtils;
 
 import java.io.File;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 @Slf4j
 public class FileMover {
@@ -45,8 +45,8 @@ public class FileMover {
 	
 	public Boolean call(final URIManager.UserCacheURI src, final ResourceURII dest, final EventMetaI ci) throws Exception {
 		final File srcF = src.getProps().containsKey(UriParserUtils._REMAINDER)
-						  ? cache.getUserDataCacheFile(user, Paths.get((String) src.getProps().get(URIManager.XNAME), (String) src.getProps().get(UriParserUtils._REMAINDER)))
-						  : cache.getUserDataCacheFile(user, Paths.get((String) src.getProps().get(URIManager.XNAME)));
+						  ? cache.getUserDataCacheFile(user, Path.of((String) src.getProps().get(URIManager.XNAME), (String) src.getProps().get(UriParserUtils._REMAINDER)))
+						  : cache.getUserDataCacheFile(user, Path.of((String) src.getProps().get(URIManager.XNAME)));
 
 		final String label    = dest.getResourceLabel();
 		final String filePath = org.apache.commons.lang3.StringUtils.equals(dest.getResourceFilePath(), "/") ? null : dest.getResourceFilePath();

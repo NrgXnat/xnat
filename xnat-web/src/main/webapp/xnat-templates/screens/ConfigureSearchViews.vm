@@ -1,0 +1,117 @@
+<style type="text/css">
+
+div.content-wrapper {
+    min-width: 300px;
+    max-width: 100%;
+    margin: 0 10px;
+    position: relative;
+    top: 0; bottom: 10px; left: 0; right: 0;
+    font-family: Helvetica, Arial, sans-serif
+}
+
+.mono {
+    font-family: Courier, monospace;
+    font-size: 13px;
+}
+
+.dump {
+    border-collapse: collapse;
+}
+
+.dump .info {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+.dump thead {
+    border-bottom: 1px solid #a0a0a0;
+}
+
+.dump th {
+    padding: 8px;
+    font-size: 14px;
+}
+
+.dump td {
+    padding: 3px 8px;
+    vertical-align: top;
+}
+
+.dump td.tag,
+.dump td.desc {
+    white-space: nowrap;
+}
+
+.dump tbody tr:hover {
+    background: #e5f2ff;
+}
+
+.dump .center {
+    text-align: center;
+}
+
+.dump .left {
+    text-align: left;
+}
+
+</style>
+<table>
+<tr>
+    <td>Element: </td>
+    <td><select id="selectElements">
+        <option value="">(SELECT)</option>
+    </select> </td>
+</tr>
+<tr>
+    <td>View: </td>
+    <td><select id="selectViews">
+        <option value="">(SELECT)</option>
+    </select></td>
+</tr>
+</table>
+<br/><br/>
+<div class="content-wrapper" id="tableOfElements">
+    <table>
+        <tr>
+            <td>
+                <table align="center" class="dump">
+                    <thead>
+                        <tr>
+                            <th>&nbsp;</th>
+                            <th class="left" NOWRAP>Element</th>
+                            <th class="left" NOWRAP>Field ID</th>
+                            <th class="left" NOWRAP>Header</th>
+                            <th class="left">Value</th>
+                            <th class="left">Order</th>
+                        </tr>
+                    </thead>
+                    <tbody class="mono" id="listOfFields">
+                    </tbody>
+                </table>
+            </td>
+            <td valign="top">
+                <input type="button" value="Up" name="upButton" onclick="manager.upButton()" DISABLED/><br/><br/>
+                <input type="button" value="Down" name="downButton"  onclick="manager.downButton()" DISABLED/><br/><br/>
+            </td>
+        </tr>
+    </table>
+</div><br/><br/>
+<div style="display: none" id="newFieldContainer">
+    <table>
+        <tr>
+            <td>Add field </td>
+            <td><select id="addFieldElement">
+                <option value="">(SELECT)</option>
+            </select></td>
+            <td><select id="addFieldId">
+                <option value="">(SELECT)</option>
+            </select></td>
+            <td><input id="addFieldButton" type="button" value="Add"/></td>
+        </tr>
+    </table>
+</div>
+<script type="text/javascript" src="$content.getURI('scripts/ConfigureSearchViews.js')"></script>
+<script type="text/javascript">
+    var manager = new ConfigureSearchViews("#selectElements");
+    manager.init();
+</script>

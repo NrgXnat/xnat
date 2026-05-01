@@ -67,6 +67,7 @@ a:active,
 .dialog.xnat-bootstrap .wizard-page {
     background-color: #fff;
     border: none;
+    min-height: 560px;
     padding: 2em 0 1em;
 }
 

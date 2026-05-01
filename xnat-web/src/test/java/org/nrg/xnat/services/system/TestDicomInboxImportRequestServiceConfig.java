@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import org.nrg.framework.configuration.FrameworkConfig;
 import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.datacache.SerializerRegistry;
-import org.nrg.framework.test.OrmTestConfiguration;
+import org.nrg.test.OrmTestConfiguration;
 import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.services.archive.impl.hibernate.DicomInboxImportRequestDAO;
 import org.nrg.xnat.services.archive.impl.hibernate.HibernateDicomInboxImportRequestService;

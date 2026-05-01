@@ -374,7 +374,7 @@ public final class DicomEdit extends SecureResource {
             return null;
         }
 
-        return DicomEdit.convertStreamToString(fws.get(0).getInputStream());
+        return DicomEdit.convertStreamToString(fws.getFirst().getInputStream());
     }
 
     private static String convertStreamToString(InputStream is) throws Exception {

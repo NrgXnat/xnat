@@ -128,7 +128,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
                ? _resourceSurveyService.getAllByProjectId(getSessionUser(), projectId)
                : _resourceSurveyService.getByProjectIdAndStatus(getSessionUser(), projectId,
                                                                 ResourceSurveyRequest.Status.parse(status)
-                                                                                            .orElseThrow(() -> new DataFormatException(String.format(INVALID_STATUS, status))));
+                                                                                            .orElseThrow(() -> new DataFormatException(INVALID_STATUS.formatted(status))));
     }
 
     @ApiOperation(value = "Get the latest resource survey request for the specified resource",
@@ -273,7 +273,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "survey/project/{projectId}/report/summary", method = GET, produces = APPLICATION_JSON_VALUE, restrictTo = AccessLevel.Delete)
     public SurveyReportSummary summarizeSurveyReport(final @PathVariable String projectId) throws InsufficientPrivilegesException, NotFoundException, InitializationException {
         final List<SurveyReportSummary> summaries = summarizeSurveyReports(projectId);
-        return summaries.isEmpty() ? null : summaries.get(0);
+        return summaries.isEmpty() ? null : summaries.getFirst();
     }
 
     @ApiOperation(value = "Returns the summarized survey reports for a project or the entire site", notes = "The response is limited to a single project if the projectId querystring parameter is specified, but reports for all projects on the site if not.", response = SurveyReportSummary.class, responseContainer = "List")
@@ -465,7 +465,7 @@ public class ResourceSurveyApi extends AbstractXapiRestController {
                                                ? _resourceSurveyService.getAllResourceSurveyRequests(getSessionUser())
                                                : _resourceSurveyService.getAllByProjectId(getSessionUser(), projectId);
         if (requests == null || requests.isEmpty()) {
-            throw new NotFoundException(String.format("There is no data %s on the server", (projectId == null) ? " " : "for project " + projectId));
+            throw new NotFoundException("There is no data %s on the server".formatted((projectId == null) ? " " : "for project " + projectId));
         }
         return requests;
     }

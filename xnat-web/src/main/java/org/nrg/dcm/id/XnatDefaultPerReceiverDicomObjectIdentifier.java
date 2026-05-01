@@ -36,8 +36,8 @@ public class XnatDefaultPerReceiverDicomObjectIdentifier extends XnatDefaultDico
         ExtractorFromInstanceProvider extractorFromInstanceProvider = new ExtractorFromInstanceProvider(
                 new RoutingExpressionFromInstanceProvider(dicomSCPInstance));
         DicomProjectIdentifier identifier = getProjectIdentifier();
-        if (identifier instanceof ReceiverAwareProjectIdentifier) {
-            identifier = ((ReceiverAwareProjectIdentifier<? extends DicomProjectIdentifier>) identifier)
+        if (identifier instanceof ReceiverAwareProjectIdentifier<?> projectIdentifier) {
+            identifier = projectIdentifier
                     .withExtractor(extractorFromInstanceProvider);
         }
         return new XnatDefaultPerReceiverDicomObjectIdentifier(getName(), _userProvider, identifier,

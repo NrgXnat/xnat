@@ -98,14 +98,14 @@ public class DefaultCustomFieldService implements CustomFieldService {
 
     private JsonNode getFieldsForItem(final ItemI item, final List<String> keys) {
         JsonNode fields;
-        if (item instanceof XnatExperimentdata) {
-            fields = ((XnatExperimentdata) item).getCustomFields();
-        } else if (item instanceof XnatSubjectdata) {
-            fields = ((XnatSubjectdata) item).getCustomFields();
-        } else if (item instanceof XnatProjectdata) {
-            fields = ((XnatProjectdata) item).getCustomFields();
-        } else if (item instanceof XnatImagescandata) {
-            fields = ((XnatImagescandata) item).getCustomFields();
+        if (item instanceof XnatExperimentdata experimentdata) {
+            fields = experimentdata.getCustomFields();
+        } else if (item instanceof XnatSubjectdata subjectdata) {
+            fields = subjectdata.getCustomFields();
+        } else if (item instanceof XnatProjectdata projectdata) {
+            fields = projectdata.getCustomFields();
+        } else if (item instanceof XnatImagescandata imagescandata) {
+            fields = imagescandata.getCustomFields();
         } else {
             throw new UnsupportedOperationException("Custom fields are not supported for "
                     + (null == item ? "null" : item.getXSIType()));
@@ -129,14 +129,14 @@ public class DefaultCustomFieldService implements CustomFieldService {
     }
 
     private ItemI setFieldsForItem(final ItemI item, final JsonNode fields) {
-        if (item instanceof XnatExperimentdata) {
-            ((XnatExperimentdata) item).setCustomFields(fields);
-        } else if (item instanceof XnatSubjectdata) {
-            ((XnatSubjectdata) item).setCustomFields(fields);
-        } else if (item instanceof XnatProjectdata) {
-            ((XnatProjectdata) item).setCustomFields(fields);
-        } else if (item instanceof XnatImagescandata) {
-            ((XnatImagescandata) item).setCustomFields(fields);
+        if (item instanceof XnatExperimentdata experimentdata) {
+            experimentdata.setCustomFields(fields);
+        } else if (item instanceof XnatSubjectdata subjectdata) {
+            subjectdata.setCustomFields(fields);
+        } else if (item instanceof XnatProjectdata projectdata) {
+            projectdata.setCustomFields(fields);
+        } else if (item instanceof XnatImagescandata imagescandata) {
+            imagescandata.setCustomFields(fields);
         } else {
             throw new UnsupportedOperationException("Custom fields are not supported for "
                     + (null == item ? "null" : item.getXSIType()));

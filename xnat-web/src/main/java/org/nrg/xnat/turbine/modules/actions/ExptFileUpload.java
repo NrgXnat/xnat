@@ -45,7 +45,7 @@ import org.xml.sax.SAXException;
 
 import javax.servlet.http.HttpSession;
 import java.io.*;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.zip.ZipOutputStream;
 
@@ -107,7 +107,7 @@ public class ExptFileUpload extends SecureAction {
                             logger.debug("Extracting file: " + filename);
                         }
                         try (final InputStream input = fi.getInputStream()){
-                            ZipUtils.extractFile(input, Paths.get(cache_path), compression);
+                            ZipUtils.extractFile(input, Path.of(cache_path), compression);
                         } catch (Throwable e1) {
                             error(e1,data);
                             session.setAttribute(uploadID + "Extract", -1);
@@ -176,8 +176,8 @@ public class ExptFileUpload extends SecureAction {
                                 BaseElement base = reader.parse(fis);
 
 
-                                if (base instanceof CatCatalogBean) {
-                                    cat = (CatCatalogBean) base;
+                                if (base instanceof CatCatalogBean bean) {
+                                    cat = bean;
 
                                     CatCatalogTagBean tagBean = new CatCatalogTagBean();
                                     tagBean.setTag(tag);
@@ -287,8 +287,7 @@ public class ExptFileUpload extends SecureAction {
                             try {
                                 BaseElement base = reader.parse(fis);
 
-                                if (base instanceof CatCatalogBean) {
-                                    CatCatalogBean cBean = (CatCatalogBean) base;
+                                if (base instanceof CatCatalogBean cBean) {
                                     XnatResourcecatalog cat = new XnatResourcecatalog((UserI) TurbineUtils.getUser(data));
 
                                     if (cBean.getId() != null) {
@@ -325,8 +324,7 @@ public class ExptFileUpload extends SecureAction {
                                     try {
                                         BaseElement base = reader.parse(fis);
 
-                                        if (base instanceof CatCatalogBean) {
-                                            CatCatalogBean cBean = (CatCatalogBean) base;
+                                        if (base instanceof CatCatalogBean cBean) {
                                             XnatResourcecatalog cat = new XnatResourcecatalog((UserI) TurbineUtils.getUser(data));
 
                                             if (cBean.getId() != null) {

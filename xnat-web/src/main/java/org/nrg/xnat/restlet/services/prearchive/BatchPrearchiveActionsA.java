@@ -146,9 +146,9 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
                     try {
                         sessions.add(new PrearcSession(_projectId, _timestamp, session, _additionalValues, getUser()));
                     } catch (InvalidPermissionException e) {
-                        throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, String.format("/prearchive/projects/%s/%s/%s not found.", _projectId, _timestamp, session));
+                        throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, "/prearchive/projects/%s/%s/%s not found.".formatted(_projectId, _timestamp, session));
                     } catch (Exception e) {
-                        throw new ResourceException(Status.SERVER_ERROR_INTERNAL, String.format("/prearchive/projects/%s/%s/%s invalid.", _projectId, _timestamp, session));
+                        throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "/prearchive/projects/%s/%s/%s invalid.".formatted(_projectId, _timestamp, session));
                     }
                 }
             }
@@ -165,7 +165,7 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
             }
 
             if (sessions.size() == 1) {
-                final PrearcSession session = sessions.get(0);
+                final PrearcSession session = sessions.getFirst();
 
                 if (!PrearcUtils.canModify(getUser(), session.getProject())) {
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for new project.");
@@ -180,9 +180,9 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
             log.error("", e);
             getResponse().setStatus(e.getStatus(), e.getMessage());
         } catch (PrearcDatabase.SyncFailedException e) {
-            if (e.cause instanceof ActionException) {
+            if (e.cause instanceof ActionException exception) {
                 log.error("", e.cause);
-                getResponse().setStatus(((ActionException) e.cause).getStatus(), e.cause.getMessage());
+                getResponse().setStatus(exception.getStatus(), e.cause.getMessage());
             } else {
                 log.error("", e);
                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e);

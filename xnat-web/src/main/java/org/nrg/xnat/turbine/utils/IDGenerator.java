@@ -106,7 +106,7 @@ public class IDGenerator implements IDGeneratorI {
     }
 
     private String format(final int id) {
-        return String.format(_format, getIdTemplate(), id);
+        return _format.formatted(getIdTemplate(), id);
     }
 
     private Set<String> getClaimedIds() {

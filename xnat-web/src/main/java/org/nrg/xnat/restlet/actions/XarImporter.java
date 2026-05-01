@@ -98,7 +98,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 		final Date d = Calendar.getInstance().getTime();
 		final java.text.SimpleDateFormat formatter = UPLOAD_ID_FORMATTER;
 		counter+=1;
-		final String uploadID = formatter.format(d) + "_" + String.format("%06d",counter);
+		final String uploadID = formatter.format(d) + "_" + "%06d".formatted(counter);
 		final String cachepath = ArcSpecManager.GetInstance().getGlobalCachePath()
 				+ "user_uploads/" +user.getID() + "/" + uploadID + "/";
 
@@ -217,7 +217,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
             if (itemsByType.containsKey("SESSION")){
 
                 if (items.size()==1){
-                    session =(XnatImagesessiondata)items.get(0);
+                    session =(XnatImagesessiondata)items.getFirst();
                     this.populateSession(session);
                    	urlList.add("/archive/experiments/" + session.getId());
 
@@ -387,7 +387,7 @@ public class XarImporter extends ImporterHandlerA implements Callable<List<Strin
 	                }
 					if (dirs.size()==1 && extraFiles.size()==0){
 	                    //CONTAINER FOLDER
-	                	File[] children = dirs.get(0).listFiles();
+	                	File[] children = dirs.getFirst().listFiles();
 	                	if (children!=null){
 	                    	for(File child : children){
 	                    		if (child.isDirectory())

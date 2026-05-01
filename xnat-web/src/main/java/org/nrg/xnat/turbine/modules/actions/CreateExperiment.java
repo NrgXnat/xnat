@@ -11,9 +11,11 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
+import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
+import org.nrg.xdat.turbine.modules.actions.XDATActionRouter;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 
 public class CreateExperiment extends SecureAction {
@@ -90,11 +92,10 @@ public class CreateExperiment extends SecureAction {
 
         String dataType = (String)TurbineUtils.GetPassedParameter("data_type", data);
         if (StringUtils.isBlank(dataType)) {
-            final String page = String.format("%s/app/template/XDATScreen_add_experiment.vm", data.getContextPath());
+            final String page = "%s/app/template/XDATScreen_add_experiment.vm".formatted(data.getContextPath());
             data.getResponse().sendRedirect(page);
         } else {
-            SchemaElement se = SchemaElement.GetElement(dataType);
-            data.setScreenTemplate("XDATScreen_edit_" + se.getFormattedName() + ".vm");
+            XDATActionRouter.passToScreen(data, context, "edit", dataType);
         }
     }
 

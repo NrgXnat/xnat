@@ -13,10 +13,12 @@ import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.restlet.data.Status;
 
+import java.io.Serial;
 import java.util.Arrays;
 
 public class ValidationException extends ArchivingException {
-	private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 	private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 	private static final Status status = Status.SERVER_ERROR_INTERNAL;
 	private final ValidationResultsI results;

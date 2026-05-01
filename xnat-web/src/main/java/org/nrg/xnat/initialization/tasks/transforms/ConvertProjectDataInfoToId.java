@@ -46,7 +46,7 @@ public class ConvertProjectDataInfoToId implements Callable<String> {
 
             // If typeName isn't some kind of int, we don't really know what to do with it.
             if (!INT_DATA_TYPES.contains(typeName)) {
-                final String message = String.format("Request to transform column %s.%s failed: column is type %s, should be one of %s.", _table, _column, typeName, Joiner.on(", ").join(INT_DATA_TYPES));
+                final String message = "Request to transform column %s.%s failed: column is type %s, should be one of %s.".formatted(_table, _column, typeName, Joiner.on(", ").join(INT_DATA_TYPES));
                 log.warn(message);
                 return message;
             }

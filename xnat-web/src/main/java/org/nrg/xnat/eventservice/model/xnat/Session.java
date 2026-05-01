@@ -27,6 +27,9 @@ import org.nrg.xnat.helpers.uri.archive.AssessedURII;
 import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -35,6 +38,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @JsonInclude(Include.NON_NULL)
 public class Session extends XnatModelObject {
+    @Serial
+    private static final long serialVersionUID = 1;
     @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
     private List<Scan> scans;
     private List<Assessor> assessors;
@@ -84,7 +89,8 @@ public class Session extends XnatModelObject {
         try { this.xsiType = xnatImagesessiondataI.getXSIType();} catch(NullPointerException e){log.error("Session failed to detect xsiType");}
         this.projectId = xnatImagesessiondataI.getProject();
         this.subjectId = xnatImagesessiondataI.getSubjectId();
-        this.modalities = xnatImagesessiondataI.getScans_scan().stream().map(XnatImagescandataI::getModality).distinct().collect(Collectors.toList());
+        // Copy list before streaming to avoid ConcurrentModificationException
+        this.modalities = new ArrayList<XnatImagescandataI>(xnatImagesessiondataI.getScans_scan()).stream().map(XnatImagescandataI::getModality).distinct().collect(Collectors.toList());
         // Use session modality if no scans or no scan modality info
         if ((this.modalities == null || modalities.isEmpty()) && !Strings.isNullOrEmpty(xnatImagesessiondataI.getModality())) {
             this.modalities = Arrays.asList(xnatImagesessiondataI.getModality());
@@ -97,20 +103,21 @@ public class Session extends XnatModelObject {
             // ignored, I guess?
         }
 
+        // Copy lists before iterating to avoid ConcurrentModificationException
         this.scans = Lists.newArrayList();
-        for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondataI.getScans_scan()) {
+        for (final XnatImagescandataI xnatImagescandataI : new ArrayList<XnatImagescandataI>(xnatImagesessiondataI.getScans_scan())) {
             this.scans.add(new Scan(xnatImagescandataI, this.uri, rootArchivePath));
         }
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagesessiondataI.getResources_resource()) {
-            if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, rootArchivePath));
+        for (final XnatAbstractresourceI xnatAbstractresourceI : new ArrayList<XnatAbstractresourceI>(xnatImagesessiondataI.getResources_resource())) {
+            if (xnatAbstractresourceI instanceof XnatResourcecatalog resourcecatalog) {
+                resources.add(new Resource(resourcecatalog, this.uri, rootArchivePath));
             }
         }
 
         this.assessors = Lists.newArrayList();
-        for (final XnatImageassessordataI xnatImageassessordataI : xnatImagesessiondataI.getAssessors_assessor()) {
+        for (final XnatImageassessordataI xnatImageassessordataI : new ArrayList<XnatImageassessordataI>(xnatImagesessiondataI.getAssessors_assessor())) {
             assessors.add(new Assessor(xnatImageassessordataI, this.uri, rootArchivePath));
         }
     }

@@ -7,12 +7,16 @@ import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.services.NrgPreferenceService;
 
+import java.io.Serial;
+
 @Slf4j
 @NrgPreferenceBean(toolId = CustomFormsFeatureFlags.CUSTOM_FORMS_FEATURE_FLAGS_TOOL_ID,
         toolName = "Custom Forms Feature Flags",
         description = "Non-user-facing flags to disable in-development features related to Custom Forms"
 )
 public class CustomFormsFeatureFlags extends AbstractPreferenceBean {
+    @Serial
+    private static final long serialVersionUID = 1;
     public static final String CUSTOM_FORMS_FEATURE_FLAGS_TOOL_ID = "custom-forms-features";
     public static final String PROJECT_OWNER_FORM_CREATION_PREFERENCE_NAME = "project-owner-form-creation";
     public static final String CUSTOM_VARIABLE_MIGRATION_PREFERENCE_NAME = "custom-variable-migration";

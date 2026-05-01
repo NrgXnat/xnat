@@ -98,7 +98,7 @@ public class SetArcSpecs extends AdminAction {
         final Category         category    = getOrCreateCategory(event);
         final List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
         if (!CollectionUtils.isEmpty(definitions)) {
-            return definitions.get(0);
+            return definitions.getFirst();
         }
         final Definition definition = getNotificationService().getDefinitionService().newEntity();
         definition.setCategory(category);
@@ -172,7 +172,7 @@ public class SetArcSpecs extends AdminAction {
                     // TODO: Need to add users that aren't located to a list of error messages.
                     continue;
                 }
-                username = users.get(0).getLogin();
+                username = users.getFirst().getLogin();
             } else if (Users.isValidUsernameAndEmail(address)) {
                 final Pair<String, String> usernameAndEmail = Users.extractUsernameAndEmail(address);
                 username = usernameAndEmail.getKey();

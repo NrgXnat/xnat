@@ -15,6 +15,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +26,9 @@ import java.util.Set;
 @Slf4j
 @Entity
 public class TimedEventStatusEntity implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     public TimedEventStatusEntity() {
     }

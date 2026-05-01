@@ -11,6 +11,7 @@ package org.nrg.xapi.rest.settings;
 
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.automation.services.AutomationService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -20,7 +21,6 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.preferences.AutomationPreferences;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,10 +37,14 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 @RequestMapping(value = "/automation")
 @Slf4j
 public class AutomationApi extends AbstractXapiRestController {
+    private final AutomationPreferences _preferences;
+    private final boolean               _automationEnabled;
+
     @Autowired
-    public AutomationApi(final AutomationPreferences preferences, final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
+    public AutomationApi(final AutomationPreferences preferences, final AutomationService automationService, final UserManagementServiceI userManagementService, final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
+        _automationEnabled = automationService.getAutomationEnabled();
     }
 
     @ApiOperation(value = "Returns the full map of automation settings for this XNAT application.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -100,7 +104,7 @@ public class AutomationApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Insufficient privileges to change the requested setting."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "enabled/{setting}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
-    public boolean setInternalScriptingEnabled(@PathVariable("setting") final boolean setting) throws InsufficientPrivilegesException {
+    public boolean setInternalScriptingEnabled(@PathVariable final boolean setting) throws InsufficientPrivilegesException {
         if (!_automationEnabled) {
             log.warn("User {} tried to set the internal scripting enabled preference, but automation on this system is disabled by application property, which cannot be overridden.", getSessionUser().getUsername());
             throw new InsufficientPrivilegesException("Automation on this system is disabled by application property and cannot be overridden.");
@@ -114,9 +118,4 @@ public class AutomationApi extends AbstractXapiRestController {
 
         return setting;
     }
-
-    private final AutomationPreferences _preferences;
-
-    @Value("${automation.enabled:true}")
-    private boolean _automationEnabled;
 }

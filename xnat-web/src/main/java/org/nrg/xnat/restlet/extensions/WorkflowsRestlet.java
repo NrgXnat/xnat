@@ -113,7 +113,7 @@ public class WorkflowsRestlet extends SecureResource {
 					   if (display.equalsIgnoreCase(DISPLAY_LATEST)) {
 						   query += " LIMIT 1 ";
 					   }
-				       System.out.println(query);
+					   _log.debug(query);
 				       
 				       
 					   mt = overrideVariant(variant);
@@ -122,7 +122,7 @@ public class WorkflowsRestlet extends SecureResource {
 					   if (table.size()==1 && table.hasMoreRows()) {
 						   ArrayList<Hashtable> tableToList = table.toArrayListOfHashtables();
                            @SuppressWarnings("unchecked")
-                           Hashtable<String, Object> rowHash = tableToList.get(0);
+                           Hashtable<String, Object> rowHash = tableToList.getFirst();
 						   PopulateItem populator = PopulateItem.Populate(rowHash, user, "wrk:workflowdata", true);
 						   return representItem(populator.getItem(), mt);
 					   }else {
@@ -139,7 +139,7 @@ public class WorkflowsRestlet extends SecureResource {
 				        if (display.equalsIgnoreCase(DISPLAY_LATEST)) {
 			            	org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems(cc, user, false);
 				            ArrayList workitems = items.getItems("wrk:workflowData.launch_time","DESC");
-			            	XFTItem latestWrkFlow = (XFTItem)workitems.get(0);
+			            	XFTItem latestWrkFlow = (XFTItem)workitems.getFirst();
 						    return representItem(latestWrkFlow.getItem(), mt);
 			            }else {
 					        org.nrg.xft.search.ItemSearch itemSearch = new org.nrg.xft.search.ItemSearch(user, "wrk:workflowdata", cc);
@@ -226,7 +226,7 @@ public class WorkflowsRestlet extends SecureResource {
 					   query += " where " +addPipelineFilter("w");
 					   query += " and launch_time = ( " ;
 					   query += "select max(launch_time) from wrk_workflowdata w1 ";
-					   query += " where w.id=w1.id " + addPipelineFilter("w1") +"  group by w1.id";
+					   query += " where w.id=w1.id and " + addPipelineFilter("w1") +"  group by w1.id";
 					   query += " ) ";
 	
 					   if (status != null)
@@ -236,8 +236,8 @@ public class WorkflowsRestlet extends SecureResource {
 					   query += " and externalid = '" + project_id + "'";
 				   }
 				   query += " ORDER BY w.id, launch_time DESC ";
-	
-				   System.out.println(query);
+
+				   _log.debug(query);
 			       
 			       
 				   mt = overrideVariant(variant);
@@ -285,14 +285,14 @@ public class WorkflowsRestlet extends SecureResource {
 
     private String formatParameter(final String name, final Object value) {
         final String formattedName = StringUtils.rightPad(name, 20);
-        if (value instanceof String && StringUtils.isNotBlank((String) value)) {
-            return String.format(" * %s: %s\r", formattedName, value);
+		if (value instanceof String string && StringUtils.isNotBlank(string)) {
+            return " * %s: %s\r".formatted(formattedName, value);
         } else if (value instanceof Map) {
             @SuppressWarnings("unchecked")
             final Map<String, Object> map = (Map<String, Object>) value;
             final StringBuilder buffer = new StringBuilder(" * ").append(formattedName).append(":\r");
             for (final String key : map.keySet()) {
-                buffer.append("    - ").append(String.format("%s: %s\r", StringUtils.rightPad(key, 20), map.get(key).toString())).append("\r");
+                buffer.append("    - ").append("%s: %s\r".formatted(StringUtils.rightPad(key, 20), map.get(key).toString())).append("\r");
             }
             return buffer.toString();
         }

@@ -68,7 +68,8 @@ public class XnatExpiredPasswordFilter extends OncePerRequestFilter {
         final HttpSession session = request.getSession();
 
         // Regardless of why you're here, we're going to do this.
-        final Cookie cookie = new Cookie(COOKIE_SESSION_EXPIRATION_TIME, new Date().getTime() + "," + session.getMaxInactiveInterval() * 1000);
+        final long expirationTime = new Date().getTime() + session.getMaxInactiveInterval() * 1000;
+        final Cookie cookie = new Cookie(COOKIE_SESSION_EXPIRATION_TIME, String.valueOf(expirationTime));
         cookie.setPath(request.getContextPath() + "/");
 
         // Check if this is a secure request.

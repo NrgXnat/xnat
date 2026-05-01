@@ -1,8 +1,5 @@
 package org.nrg.xnat.services.archive.impl.hibernate;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -18,24 +15,23 @@ import org.nrg.xnat.config.TestFileStoreConfig;
 import org.nrg.xnat.entities.FileStoreInfo;
 import org.nrg.xnat.preferences.FileStorePreferences;
 import org.nrg.xnat.services.archive.FileStore;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 @Slf4j
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
-@PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*", "org.xml.sax.*"})
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestFileStoreConfig.class, SerializerConfig.class})
 public class TestFileStore {
     private FileStorePreferences _preferences;
@@ -53,7 +49,7 @@ public class TestFileStore {
 
     @After
     public void cleanup() throws IOException {
-        FileUtils.deleteDirectory(Paths.get(_preferences.getFileStorePath()).toFile());
+        FileUtils.deleteDirectory(Path.of(_preferences.getFileStorePath()).toFile());
     }
 
     @Test
@@ -71,7 +67,7 @@ public class TestFileStore {
 
     @Test
     public void testFileStoreCreate() throws IOException, ResourceAlreadyExistsException {
-        final URI           fullPath = Paths.get(_preferences.getFileStorePath(), SPLIT_1234_SHA_256).toUri();
+        final URI           fullPath = Path.of(_preferences.getFileStorePath(), SPLIT_1234_SHA_256).toUri();
         final Resource      dicom    = BasicXnatResourceLocator.getResource(DICOM_4_1_URI);
         final FileStoreInfo info     = _fileStore.create(Files.newInputStream(dicom.getFile().toPath()), COORDS_1234);
         assertThat(info).isNotNull()
@@ -79,12 +75,12 @@ public class TestFileStore {
                         .hasFieldOrPropertyWithValue("size", DICOM_4_1_SIZE)
                         .hasFieldOrPropertyWithValue("storeUri", fullPath)
                         .hasFieldOrPropertyWithValue("coordinates", JOINED_1234);
-        assertThat(Paths.get(fullPath).toFile()).exists();
+        assertThat(Path.of(fullPath).toFile()).exists();
     }
 
     @Test
     public void testFileStoreUpdate() throws IOException, ResourceAlreadyExistsException, NotFoundException {
-        final URI      fullPath = Paths.get(_preferences.getFileStorePath(), SPLIT_ABCD_SHA_256).toUri();
+        final URI      fullPath = Path.of(_preferences.getFileStorePath(), SPLIT_ABCD_SHA_256).toUri();
         final Resource dicom41  = BasicXnatResourceLocator.getResource(DICOM_4_1_URI);
         final Resource dicom42  = BasicXnatResourceLocator.getResource(DICOM_4_2_URI);
 
@@ -96,7 +92,7 @@ public class TestFileStore {
                               .hasFieldOrPropertyWithValue("storeUri", fullPath)
                               .hasFieldOrPropertyWithValue("coordinates", JOINED_ABCD);
         }
-        assertThat(Paths.get(fullPath).toFile()).exists();
+        assertThat(Path.of(fullPath).toFile()).exists();
         try (final InputStream inputStream = Files.newInputStream(dicom42.getFile().toPath())) {
             final FileStoreInfo info42 = _fileStore.update(inputStream, COORDS_ABCD);
             assertThat(info42).isNotNull()
@@ -109,7 +105,7 @@ public class TestFileStore {
 
     @Test(expected = NotFoundException.class)
     public void testFileStoreDelete() throws IOException, ResourceAlreadyExistsException, NotFoundException {
-        final URI      fullPath = Paths.get(_preferences.getFileStorePath(), SPLIT_DCBA_SHA_256).toUri();
+        final URI      fullPath = Path.of(_preferences.getFileStorePath(), SPLIT_DCBA_SHA_256).toUri();
         final Resource dicom41  = BasicXnatResourceLocator.getResource(DICOM_4_1_URI);
         final Resource dicom42  = BasicXnatResourceLocator.getResource(DICOM_4_2_URI);
 
@@ -122,7 +118,7 @@ public class TestFileStore {
                               .hasFieldOrPropertyWithValue("storeUri", fullPath)
                               .hasFieldOrPropertyWithValue("coordinates", JOINED_DCBA);
         }
-        assertThat(Paths.get(fullPath).toFile()).exists();
+        assertThat(Path.of(fullPath).toFile()).exists();
 
         final long info41Id = info41.getId();
 
@@ -141,7 +137,7 @@ public class TestFileStore {
                           .hasFieldOrPropertyWithValue("size", DICOM_4_2_SIZE)
                           .hasFieldOrPropertyWithValue("storeUri", fullPath)
                           .hasFieldOrPropertyWithValue("coordinates", JOINED_DCBA);
-        final Path outputFile = Files.createTempFile(Paths.get(_preferences.getFileStorePath()), "testRetrieve-", ".dcm");
+        final Path outputFile = Files.createTempFile(Path.of(_preferences.getFileStorePath()), "testRetrieve-", ".dcm");
         try {
             try (final InputStream input = _fileStore.open(COORDS_DCBA);
                  final OutputStream output = Files.newOutputStream(outputFile.toFile().toPath())) {
@@ -165,7 +161,7 @@ public class TestFileStore {
     private static final String   JOINED_1234             = StringUtils.join(COORDS_1234, "/");
     private static final String   JOINED_1234_SHA_256     = "F484118D335B431419FE274323802A311080EE08A1B1405E83251F0CB19B2B9F";
     private static final String[] SPLIT_1234_SHA_256      = {"F484118D", "335B4314", "19FE2743", "23802A31", "1080EE08", "A1B1405E", "83251F0C", "B19B2B9F"};
-    private static final Path     SPLIT_1234_SHA_256_PATH = Paths.get("F484118D", "335B4314", "19FE2743", "23802A31", "1080EE08", "A1B1405E", "83251F0C", "B19B2B9F");
+    private static final Path     SPLIT_1234_SHA_256_PATH = Path.of("F484118D", "335B4314", "19FE2743", "23802A31", "1080EE08", "A1B1405E", "83251F0C", "B19B2B9F");
     private static final String[] COORDS_ABCD             = {"A", "B", "C", "D"};
     private static final String   JOINED_ABCD             = StringUtils.join(COORDS_ABCD, "/");
     private static final String[] SPLIT_ABCD_SHA_256      = {"137AE21D", "93E40B8C", "26F1A284", "61A9A6C6", "789420F7", "36991601", "F7935AE7", "646DC69B"};

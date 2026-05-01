@@ -26,7 +26,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 
 import java.io.File;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.List;
 
 public class UserCacheFileAssignment extends SecureReport {
@@ -36,7 +36,7 @@ public class UserCacheFileAssignment extends SecureReport {
 		final UserI        user = XDAT.getUserDetails();
 		assert user != null;
 
-		final File dir = XDAT.getContextService().getBean(UserDataCache.class).getUserDataCacheFile(user, Paths.get(expt.getId()));
+		final File dir = XDAT.getContextService().getBean(UserDataCache.class).getUserDataCacheFile(user, Path.of(expt.getId()));
 		
 		JSONObject parent= new JSONObject();
 		try {
@@ -61,7 +61,7 @@ public class UserCacheFileAssignment extends SecureReport {
 			logger.error("",e);
 		}
 		
-		context.put("user_path", String.format("/data/user/cache/resources/%s/files",expt.getId()));
+		context.put("user_path", "/data/user/cache/resources/%s/files".formatted(expt.getId()));
 		
 //		List<PathInfo> paths=Lists.newArrayList();
 //		
@@ -86,7 +86,7 @@ public class UserCacheFileAssignment extends SecureReport {
 			addNode(dest,r1);
 			for(final XnatAbstractresource abst:res){
 				final JSONObject r=createTextNode(abst.getLabel());
-				r.put("dest", String.format("/data/archive/experiments/%s/resources/%s/files",expt.getId(),abst.getXnatAbstractresourceId()));
+				r.put("dest", "/data/archive/experiments/%s/resources/%s/files".formatted(expt.getId(), abst.getXnatAbstractresourceId()));
 				r.put("labelStyle", "icon-of");
 				addNode(r1,r);
 				final List<File> files=abst.getCorrespondingFiles(proj.getRootArchivePath());
@@ -96,8 +96,7 @@ public class UserCacheFileAssignment extends SecureReport {
 			}
 		}
 		
-		if(expt instanceof XnatImagesessiondata){
-			final XnatImagesessiondata session=(XnatImagesessiondata)expt;
+		if(expt instanceof XnatImagesessiondata session){
 			
 			final List<XnatImagescandataI> scans=session.getScans_scan();
 			if(scans.size()>0){
@@ -114,7 +113,7 @@ public class UserCacheFileAssignment extends SecureReport {
 					final List<XnatAbstractresource> s_ress=scan.getFile();
 					for(final XnatAbstractresource abst:s_ress){
 						final JSONObject s_res=createTextNode(abst.getLabel());
-						s_res.put("dest", String.format("/data/archive/experiments/%s/scans/%s/resources/%s/files",expt.getId(),scan.getId(),abst.getXnatAbstractresourceId()));
+						s_res.put("dest", "/data/archive/experiments/%s/scans/%s/resources/%s/files".formatted(expt.getId(), scan.getId(), abst.getXnatAbstractresourceId()));
 						addNode(s,s_res);
 						
 						s_res.put("labelStyle", "icon-of");

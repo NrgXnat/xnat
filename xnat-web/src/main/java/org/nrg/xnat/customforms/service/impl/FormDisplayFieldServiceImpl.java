@@ -34,11 +34,12 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
     @Autowired
     public FormDisplayFieldServiceImpl(final FormIOJsonService formIOJsonService,
                                        final CustomVariableFormService formService) {
-        this.displayManager = DisplayManager.GetInstance();
         this.formIOJsonService = formIOJsonService;
         this.displayHelper = new CustomFormDisplayFieldHelper();
         this.formService = formService;
     }
+
+
 
     /**
      * Navigate over all schema-elements, look for all forms associated with the xsiType
@@ -142,7 +143,7 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
                final ElementDisplay elementDisplay  = schemaElement.getDisplay();
                elementDisplay.removeDisplayField(fieldId);
                elementDisplay.removeDisplayField(fieldId+ CSV);
-               displayManager.addElement(elementDisplay);
+               DisplayManager.GetInstance().addElement(elementDisplay);
            } catch (Exception e) {
               log.error("Could not remove display field " + fieldId, e);
            }
@@ -154,10 +155,10 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
         final String displayFieldId = displayHelper.getCleanFieldId(dataType, field);
         if (!schemaElement.hasDisplayField(displayFieldId)) {
 
-            displayManager.addElement(initDisplayField(schemaElement,field,dataType,displayFieldId, displayHelper.getCleanFieldHeader(field)));
+            DisplayManager.GetInstance().addElement(initDisplayField(schemaElement,field,dataType,displayFieldId, displayHelper.getCleanFieldHeader(field)));
 
             //add csv version for full header
-            displayManager.addElement(initDisplayField(schemaElement,field,dataType,displayFieldId+ CSV, displayHelper.getFullFieldHeader(field)));
+            DisplayManager.GetInstance().addElement(initDisplayField(schemaElement,field,dataType,displayFieldId+ CSV, displayHelper.getFullFieldHeader(field)));
         }
     }
 
@@ -184,12 +185,10 @@ public class FormDisplayFieldServiceImpl implements FormDisplayFieldService {
         elementDisplay.addDisplayField(displayField);
         elementDisplay.setAllowReplacement(false);
             schemaElement.setElementDisplay(elementDisplay);
-            displayManager.addElement(elementDisplay);
+        DisplayManager.GetInstance().addElement(elementDisplay);
             return elementDisplay;
     }
 
-
-    private final DisplayManager displayManager;
     private final CustomVariableFormService formService;
     private final FormIOJsonService formIOJsonService;
     private final CustomFormDisplayFieldHelper displayHelper;

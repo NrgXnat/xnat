@@ -9,8 +9,11 @@
 
 package org.nrg.xnat.utils;
 
+import java.io.Serial;
+
 public final class JSESSIONIDCookieNotFoundException extends RuntimeException {
 
-	private static final long serialVersionUID = -1647291274342602813L;
+    @Serial
+    private static final long serialVersionUID = -1647291274342602813L;
 
 }

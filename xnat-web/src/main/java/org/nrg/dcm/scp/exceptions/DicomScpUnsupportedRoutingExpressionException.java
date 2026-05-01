@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class DicomScpUnsupportedRoutingExpressionException extends NrgServiceException {
     public DicomScpUnsupportedRoutingExpressionException(DicomSCPInstance instance) {
         super(NrgServiceError.ConfigurationError,
-                String.format("Dicom SCP receiver '%s' does not support custom routing but custom routing is enabled.", instance.getLabel()));
+                "Dicom SCP receiver '%s' does not support custom routing but custom routing is enabled.".formatted(instance.getLabel()));
     }
 }

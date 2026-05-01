@@ -10,8 +10,8 @@ public class CustomFormHibernateUtils {
             throw new NullPointerException("Entity passed for initialization is null");
         }
         Hibernate.initialize(entity);
-        if (entity instanceof HibernateProxy) {
-            entity = (T) ((HibernateProxy) entity).getHibernateLazyInitializer().getImplementation();
+        if (entity instanceof HibernateProxy proxy) {
+            entity = (T) proxy.getHibernateLazyInitializer().getImplementation();
         }
         return entity;
     }

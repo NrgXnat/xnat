@@ -72,7 +72,7 @@ public class WorkflowEventResource extends AutomationResource {
     private XFTTable getEventsTable() throws SQLException, DBPoolException {
         final String workflowQuery = XDAT.getContextService().getBean("populateEventsQuery", String.class);
         final String eventSpecCriteria = XDAT.getContextService().getBean("eventSpecCriteria", String.class);
-        final String query = workflowQuery + (StringUtils.isBlank(_spec) ? "" : String.format(eventSpecCriteria, _spec));
+        final String query = workflowQuery + (StringUtils.isBlank(_spec) ? "" : eventSpecCriteria.formatted(_spec));
         final XFTTable table = XFTTable.Execute(query, getUser().getDBName(), userName);
         table.sort("event_label", "ASC");
         return table;

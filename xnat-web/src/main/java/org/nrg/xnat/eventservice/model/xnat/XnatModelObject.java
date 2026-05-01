@@ -9,6 +9,7 @@ import com.google.common.base.MoreObjects;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -26,6 +27,8 @@ import java.util.Objects;
 })
 @JsonInclude(Include.NON_NULL)
 public abstract class XnatModelObject implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1;
     protected String id;
     protected String label;
     protected String xsiType;

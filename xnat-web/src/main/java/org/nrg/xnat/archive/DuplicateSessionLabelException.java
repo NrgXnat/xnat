@@ -11,8 +11,11 @@ package org.nrg.xnat.archive;
 
 import org.restlet.data.Status;
 
+import java.io.Serial;
+
 public class DuplicateSessionLabelException extends ArchivingException {
-	private final static long serialVersionUID = 1L;
+    @Serial
+    private final static long serialVersionUID = 1L;
 	private final static Status status = Status.CLIENT_ERROR_FORBIDDEN;
 	private final static String format = "session label %s already used in project %s";
 	
@@ -21,6 +24,6 @@ public class DuplicateSessionLabelException extends ArchivingException {
 	}
 
 	public DuplicateSessionLabelException(String session, String project) {
-		super(status, String.format(format, session, project));
+		super(status, format.formatted(session, project));
 	}
 }

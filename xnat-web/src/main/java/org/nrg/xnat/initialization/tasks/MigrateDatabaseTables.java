@@ -91,16 +91,16 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
                             log.info("Preparing to migrate the column {}.{} from {} to {}", table, column, currentType, value);
                             parameters.addValue("currentType", currentType);
 
-                            final long dependencyCount = _db.getParameterizedTemplate().queryForObject(String.format(QUERY_DEPENDENCY_COUNT, table), EmptySqlParameterSource.INSTANCE, Long.class);
+                            final long dependencyCount = _db.getParameterizedTemplate().queryForObject(QUERY_DEPENDENCY_COUNT.formatted(table), EmptySqlParameterSource.INSTANCE, Long.class);
                             if (dependencyCount > 0) {
                                 log.debug("To migrate the column {}.{} from {} to {} I have to save and drop {} views that are dependent on the table", table, column, currentType, value, dependencyCount);
-                                final long count = _db.getParameterizedTemplate().queryForObject(String.format(QUERY_SAVE_AND_DROP_DEPENDENCIES, table), EmptySqlParameterSource.INSTANCE, Long.class);
+                                final long count = _db.getParameterizedTemplate().queryForObject(QUERY_SAVE_AND_DROP_DEPENDENCIES.formatted(table), EmptySqlParameterSource.INSTANCE, Long.class);
                                 log.debug("Saved and dropped {} dependencies on table {}", count, table);
                             }
                             _db.setColumnDatatype(table, column, value);
                             if (dependencyCount > 0) {
                                 log.debug("Now preparing to restore {} views to finish migrating the column {}.{} from {} to {}", dependencyCount, table, column, currentType, value);
-                                final long count = _db.getParameterizedTemplate().queryForObject(String.format(QUERY_RESTORE_DEPENDENCIES, table), EmptySqlParameterSource.INSTANCE, Long.class);
+                                final long count = _db.getParameterizedTemplate().queryForObject(QUERY_RESTORE_DEPENDENCIES.formatted(table), EmptySqlParameterSource.INSTANCE, Long.class);
                                 log.debug("Restored {} dependencies on table {}", count, table);
                             }
 
@@ -131,7 +131,7 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
                             log.debug("Searching for table {} constraint with columns {}", table, String.join(", ", existing));
                         }
                         try {
-                            constraint = _db.getJdbcTemplate().queryForObject(String.format(QUERY_CONSTRAINT_ID, table, String.join("', '", existing)), String.class);
+                            constraint = _db.getJdbcTemplate().queryForObject(QUERY_CONSTRAINT_ID.formatted(table, String.join("', '", existing)), String.class);
                         } catch (EmptyResultDataAccessException e) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Searched for table {} constraint with columns {}, but didn't find a match.", table, String.join(", ", existing));
@@ -151,13 +151,13 @@ public class MigrateDatabaseTables extends AbstractInitializingTask {
                             log.debug("I was asked to drop the constraint {} on table {}, but it doesn't exist.", table, constraint);
                             continue;
                         }
-                        final int affected = _db.getJdbcTemplate().update(String.format(QUERY_DROP_CONSTRAINT, table, constraint));
+                        final int affected = _db.getJdbcTemplate().update(QUERY_DROP_CONSTRAINT.formatted(table, constraint));
                         log.info("Dropped constraint {} from table {}, affected {} items", constraint, table, affected);
                     } else if (exists) {
-                        final int affected = _db.getJdbcTemplate().update(String.format(QUERY_MODIFY_CONSTRAINT, table, constraint, String.join(", ", columns)));
+                        final int affected = _db.getJdbcTemplate().update(QUERY_MODIFY_CONSTRAINT.formatted(table, constraint, String.join(", ", columns)));
                         log.info("Altered constraint {} on table {}, affected {} items, now includes columns {}", constraint, table, affected, String.join(", ", columns));
                     } else {
-                        final int affected = _db.getJdbcTemplate().update(String.format(QUERY_ADD_CONSTRAINT, table, constraint, String.join(", ", columns)));
+                        final int affected = _db.getJdbcTemplate().update(QUERY_ADD_CONSTRAINT.formatted(table, constraint, String.join(", ", columns)));
                         log.info("Added constraint {} on table {}, affected {} items, includes columns {}", constraint, table, affected, String.join(", ", columns));
                     }
                 }

@@ -61,7 +61,7 @@ public class XNATSessionPopulater {
 	        final List<String> scanQualityLabels = ScanQualityUtils.getQualityLabels(project, user);
 	        for(final XnatImagescandataI scan: imageSessionData.getScans_scan()){
 	        	if(!XNATUtils.hasValue(scan.getQuality())){
-	        		((XnatImagescandata)scan).setQuality(scanQualityLabels.get(0));
+	        		((XnatImagescandata)scan).setQuality(scanQualityLabels.getFirst());
 	        	}
 	        }
 	        

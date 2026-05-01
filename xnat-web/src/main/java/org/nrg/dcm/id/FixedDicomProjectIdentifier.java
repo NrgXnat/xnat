@@ -9,13 +9,12 @@
 
 package org.nrg.dcm.id;
 
-import java.util.SortedSet;
-
-import org.dcm4che2.data.DicomObject;
+import com.google.common.collect.ImmutableSortedSet;
+import org.dcm4che3.data.Attributes;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 
-import com.google.common.collect.ImmutableSortedSet;
+import java.util.SortedSet;
 
 public final class FixedDicomProjectIdentifier implements DicomProjectIdentifier {
     @SuppressWarnings("unused")
@@ -41,7 +40,7 @@ public final class FixedDicomProjectIdentifier implements DicomProjectIdentifier
      * {@inheritDoc}
      */
     @Override
-    public XnatProjectdata apply(final UserI user, final DicomObject o) {
+    public XnatProjectdata apply(final UserI user, final Attributes unused) {
         if (null == _project) {
             _project = XnatProjectdata.getProjectByIDorAlias(_name, user, false);
         }

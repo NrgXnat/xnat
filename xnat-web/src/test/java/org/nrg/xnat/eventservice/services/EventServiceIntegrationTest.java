@@ -11,7 +11,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
@@ -179,10 +179,20 @@ public class EventServiceIntegrationTest {
         if (asyncTaskExecutor instanceof ThreadPoolTaskExecutor) {
             ThreadPoolTaskExecutor tpe = (ThreadPoolTaskExecutor) asyncTaskExecutor;
             long deadline = System.currentTimeMillis() + timeoutMs;
-            while ((tpe.getThreadPoolExecutor().getActiveCount() > 0 ||
-                    !tpe.getThreadPoolExecutor().getQueue().isEmpty()) &&
-                   System.currentTimeMillis() < deadline) {
-                Thread.sleep(100);
+            int idleChecks = 0;
+            while (System.currentTimeMillis() < deadline) {
+                if (tpe.getThreadPoolExecutor().getActiveCount() == 0 &&
+                    tpe.getThreadPoolExecutor().getQueue().isEmpty()) {
+                    idleChecks++;
+                    // Require 3 consecutive idle checks to guard against
+                    // brief gaps between task submissions
+                    if (idleChecks >= 3) {
+                        break;
+                    }
+                } else {
+                    idleChecks = 0;
+                }
+                Thread.sleep(200);
             }
         }
     }
@@ -193,18 +203,16 @@ public class EventServiceIntegrationTest {
         // Uses a separate JDBC connection so deletes are outside the test transaction.
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
-            stmt.execute("SET REFERENTIAL_INTEGRITY FALSE");
             final List<String> tableNames = new ArrayList<>();
             try (ResultSet rs = stmt.executeQuery(
-                    "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC'")) {
+                    "SELECT tablename FROM pg_tables WHERE schemaname = 'public'")) {
                 while (rs.next()) {
                     tableNames.add(rs.getString(1));
                 }
             }
             for (final String tableName : tableNames) {
-                stmt.execute("TRUNCATE TABLE " + tableName);
+                stmt.execute("TRUNCATE TABLE " + tableName + " CASCADE");
             }
-            stmt.execute("SET REFERENTIAL_INTEGRITY TRUE");
         }
 
         project1EventFilterCreator  = EventFilterCreator.builder()
@@ -282,7 +290,7 @@ public class EventServiceIntegrationTest {
         when(mockEventServiceLoggingAction.getName()).thenReturn("org.nrg.xnat.eventservice.actions.EventServiceLoggingAction");
         when(mockEventServiceLoggingAction.getDisplayName()).thenReturn("MockEventServiceLoggingAction");
         when(mockEventServiceLoggingAction.getDescription()).thenReturn("MockEventServiceLoggingAction");
-        when(mockEventServiceLoggingAction.getActions(Matchers.any(String.class), Matchers.any(List.class), Matchers.any(UserI.class))).thenReturn(null);
+        when(mockEventServiceLoggingAction.getActions(ArgumentMatchers.any(String.class), ArgumentMatchers.any(List.class), ArgumentMatchers.any(UserI.class))).thenReturn(null);
 
         // Mock prefs bean
         when(mockEventServicePrefsBean.getEnabled()).thenReturn(true);
@@ -367,10 +375,10 @@ public class EventServiceIntegrationTest {
         assertThat("componentManager.getInstalledListeners() should not return a null list", listeners, notNullValue());
         assertThat("componentManager.getInstalledListeners() should not return an empty list", listeners, is(not(empty())));
 
-        String eventId      = events.get(0).id();
-        String actionId     = actions.get(0).id();
-        String actionKey    = actions.get(0).actionKey();
-        String listenerType = listeners.get(0).getClass().getCanonicalName();
+        String eventId      = events.getFirst().id();
+        String actionId     = actions.getFirst().id();
+        String actionKey    = actions.getFirst().actionKey();
+        String listenerType = listeners.getFirst().getClass().getCanonicalName();
 
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder().name("Test Subscription")
                                                                      .active(true)
@@ -647,7 +655,7 @@ public class EventServiceIntegrationTest {
     @Test
     public void catchSubscribedEvent() throws Exception {
         EventServiceEvent event         = new SampleEvent();
-        String            testActionKey = testAction.getAllActions().get(0).actionKey();
+        String            testActionKey = testAction.getAllActions().getFirst().actionKey();
 
         eventService.getAllActions();
         EventFilterCreator filterCreator = EventFilterCreator.builder().eventType(event.getType()).build();
@@ -680,9 +688,9 @@ public class EventServiceIntegrationTest {
         assertThat("subscriptionDeliveries table is null. Expected one entry.", subscriptionDeliveries, notNullValue());
         assertThat("subscriptionDeliveries table is empty. Expected one entry.", subscriptionDeliveries.size(), is(1));
 
-        List<TimedEventStatus> eventStatuses = subscriptionDeliveries.get(0).timedEventStatuses();
+        List<TimedEventStatus> eventStatuses = subscriptionDeliveries.getFirst().timedEventStatuses();
         assertThat("TimedEventStatus table is null. Expected entries.", eventStatuses, notNullValue());
-        assertThat("", eventStatuses.get(eventStatuses.size() - 1).status(), is("ACTION_COMPLETE"));
+        assertThat("", eventStatuses.getLast().status(), is("ACTION_COMPLETE"));
     }
 
     @Test
@@ -881,14 +889,14 @@ public class EventServiceIntegrationTest {
         List<Subscription> allSubscriptions1 = eventSubscriptionEntityService.getAllSubscriptions();
         assertThat("Expected one subscription to be created.", allSubscriptions1.size(), is(1));
 
-        final Subscription subscription1 = allSubscriptions1.get(0);
+        final Subscription subscription1 = allSubscriptions1.getFirst();
         String             regKey1       = eventSubscriptionEntityService.getListenerId(subscription1.id()).toString();
 
         eventService.reactivateAllSubscriptions();
 
         List<Subscription> allSubscriptions2 = eventSubscriptionEntityService.getAllSubscriptions();
         assertThat("Expected only a single subscription after reactivation", allSubscriptions2.size(), is(1));
-        final Subscription subscription2 = allSubscriptions2.get(0);
+        final Subscription subscription2 = allSubscriptions2.getFirst();
         String             regKey2       = eventSubscriptionEntityService.getListenerId(subscription2.id()).toString();
 
         assertThat("Expected reactivated subscription to have unique registration key.", regKey1, is(not(regKey2)));
@@ -932,7 +940,7 @@ public class EventServiceIntegrationTest {
         subject.setId(subjectID);
 
         // Subscribe to event
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         EventFilterCreator filterCreator = EventFilterCreator.builder().eventType(new SubjectEvent().getType()).projectIds(Arrays.asList(projectId1)).status(SubjectEvent.Status.CREATED.name()).build();
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
@@ -953,7 +961,7 @@ public class EventServiceIntegrationTest {
         TestAction action = (TestAction) testAction;
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
-        assertThat("Expected detected event to be of type SubjectEvent", action.getDetectedEvents().get(0).getType(), containsString("SubjectEvent"));
+        assertThat("Expected detected event to be of type SubjectEvent", action.getDetectedEvents().getFirst().getType(), containsString("SubjectEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
@@ -967,7 +975,7 @@ public class EventServiceIntegrationTest {
         subject.setId(subjectID);
 
         // Subscribe to event
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         EventFilterCreator filterCreator = EventFilterCreator.builder().eventType(new SubjectEvent().getType()).projectIds(Arrays.asList(projectId1)).status(SubjectEvent.Status.CREATED.name()).build();
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
@@ -988,7 +996,7 @@ public class EventServiceIntegrationTest {
         TestAction action = (TestAction) testAction;
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
-        assertThat("Expected detected event to be of type SubjectEvent", action.getDetectedEvents().get(0).getType(), containsString("SubjectEvent"));
+        assertThat("Expected detected event to be of type SubjectEvent", action.getDetectedEvents().getFirst().getType(), containsString("SubjectEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
 
     }
@@ -1004,7 +1012,7 @@ public class EventServiceIntegrationTest {
         subject.setId(subjectID);
 
         // Subscribe to event
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         EventFilterCreator filterCreator = EventFilterCreator.builder().eventType(new SubjectEvent().getType()).projectIds(Arrays.asList(projectId1)).status(SubjectEvent.Status.CREATED.name()).build();
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
@@ -1037,7 +1045,7 @@ public class EventServiceIntegrationTest {
         session.setSessionType("xnat:imageSessionData");
 
         // Subscribe to event
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         EventFilterCreator filterCreator = EventFilterCreator.builder().eventType(new SessionEvent().getType()).projectIds(Arrays.asList(projectId1)).status(SubjectEvent.Status.CREATED.name()).build();
 
@@ -1059,7 +1067,7 @@ public class EventServiceIntegrationTest {
         TestAction action = (TestAction) testAction;
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
-        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
+        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().getFirst().getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
@@ -1079,7 +1087,7 @@ public class EventServiceIntegrationTest {
         Mockito.when(scan.getImageSessionData()).thenReturn(session);
 
         // Subscribe to event
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         EventFilterCreator filterCreator = EventFilterCreator.builder().eventType(new ScanEvent().getType()).projectIds(Arrays.asList(projectId1)).status(SubjectEvent.Status.CREATED.name()).build();
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
@@ -1100,7 +1108,7 @@ public class EventServiceIntegrationTest {
         TestAction action = (TestAction) testAction;
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
-        assertThat("Expected detected event to be of type ScanEvent", action.getDetectedEvents().get(0).getType(), containsString("ScanEvent"));
+        assertThat("Expected detected event to be of type ScanEvent", action.getDetectedEvents().getFirst().getType(), containsString("ScanEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
@@ -1133,7 +1141,7 @@ public class EventServiceIntegrationTest {
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         sw2.stop();
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
-        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
+        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().getFirst().getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
         System.out.print("Event caught in : " + sw2.getTotalTimeSeconds() + "seconds\n");
 
@@ -1167,7 +1175,7 @@ public class EventServiceIntegrationTest {
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 2);
         sw2.stop();
         assertThat("Expected two detected events.", action.getDetectedEvents().size(), is(2));
-        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
+        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().getFirst().getType(), containsString("SessionEvent"));
         assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(1).getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
         System.out.print("Two event caught in : " + sw2.getTotalTimeSeconds() + "seconds\n");
@@ -1215,15 +1223,18 @@ public class EventServiceIntegrationTest {
         sw2.stop();
         System.out.print("Triggered 10000 ignored events in : " + sw2.getTotalTimeSeconds() + "seconds\n");
 
+        // Wait for ignored-event processing to drain before triggering catch events
+        waitForAsyncCompletion(120000);
+
         StopWatch sw3 = new StopWatch();
         sw3.start("eventTriggersToActions");
         commitForAsyncVisibility();
         for (Integer i = 0; i < 100; i++) {
             eventService.triggerEvent(new SessionEvent(sessionToCatch, mockUser.getLogin(), SessionEvent.Status.CREATED, projectIdToCatch));
         }
-        waitForAsyncCompletion(30000);
-        sw3.stop();
         TestAction action = (TestAction) testAction;
+        await().atMost(3, TimeUnit.MINUTES).until(() -> action.getDetectedEvents().size() >= 1000);
+        sw3.stop();
         System.out.print("Triggered/Caught " + Integer.toString(action.getDetectedEvents().size()) + " detected events in : " + sw3.getTotalTimeSeconds() + "seconds\n");
 
         List<EventServiceEvent> detectedEvents = action.getDetectedEvents();
@@ -1367,7 +1378,7 @@ public class EventServiceIntegrationTest {
         TestAction action = (TestAction) testAction;
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
-        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
+        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().getFirst().getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
@@ -1405,7 +1416,7 @@ public class EventServiceIntegrationTest {
         TestAction action = (TestAction) testAction;
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
-        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
+        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().getFirst().getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
@@ -1452,7 +1463,7 @@ public class EventServiceIntegrationTest {
 
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
-        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().get(0).getType(), containsString("SessionEvent"));
+        assertThat("Expected detected event to be of type SessionEvent", action.getDetectedEvents().getFirst().getType(), containsString("SessionEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
@@ -1471,7 +1482,7 @@ public class EventServiceIntegrationTest {
         Mockito.when(scan.getImageSessionData()).thenReturn(session);
 
         // Subscribe to event
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         EventFilterCreator filterCreator = EventFilterCreator.builder().eventType(new ScanEvent().getType()).build();
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
@@ -1493,7 +1504,7 @@ public class EventServiceIntegrationTest {
         TestAction action = (TestAction) testAction;
         await().atMost(5, TimeUnit.SECONDS).until(() -> action.getDetectedEvents().size() >= 1);
         assertThat("Expected one detected event.", action.getDetectedEvents().size(), is(1));
-        assertThat("Expected detected event to be of type ScanEvent", action.getDetectedEvents().get(0).getType(), containsString("ScanEvent"));
+        assertThat("Expected detected event to be of type ScanEvent", action.getDetectedEvents().getFirst().getType(), containsString("ScanEvent"));
         assertThat("Expected Action User to be subscription creator", action.getActionUser(), is(mockUser.getLogin()));
     }
 
@@ -1514,7 +1525,7 @@ public class EventServiceIntegrationTest {
         Mockito.when(scan.getImageSessionData()).thenReturn(session);
 
         // Subscribe to event
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         ProjectEventFilterCreator filter = ProjectEventFilterCreator.builder().projectIds(Arrays.asList(projectId1)).eventType(eventType).status(status.name()).build();
         ProjectSubscriptionCreator subscriptionCreator = ProjectSubscriptionCreator.builder()
@@ -1553,7 +1564,7 @@ public class EventServiceIntegrationTest {
             filter = EventFilterCreator.builder().projectIds(Arrays.asList(projectId)).eventType(eventType).status(status.name()).build();
         }
 
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
                                                                      .name(name)
@@ -1573,7 +1584,7 @@ public class EventServiceIntegrationTest {
         if (filter == null) {
             filter = EventFilterCreator.builder().projectIds(Arrays.asList(projectId)).eventType(eventType).status(status.name()).build();
         }
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
                                                                      .name(name)
@@ -1594,7 +1605,7 @@ public class EventServiceIntegrationTest {
         if (filter == null) {
             filter = EventFilterCreator.builder().projectIds(Arrays.asList(projectId)).eventType(eventType).status(status.name()).build();
         }
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
                                                                      .name(name)
@@ -1614,7 +1625,7 @@ public class EventServiceIntegrationTest {
         if (filter == null) {
             filter = EventFilterCreator.builder().projectIds(Arrays.asList(projectId)).eventType(eventType).status(status.name()).build();
         }
-        String testActionKey = testAction.getAllActions().get(0).actionKey();
+        String testActionKey = testAction.getAllActions().getFirst().actionKey();
         eventService.getAllActions();
         SubscriptionCreator subscriptionCreator = SubscriptionCreator.builder()
                                                                      .name(name)

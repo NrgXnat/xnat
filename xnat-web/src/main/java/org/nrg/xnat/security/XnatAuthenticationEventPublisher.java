@@ -86,8 +86,8 @@ public final class XnatAuthenticationEventPublisher implements AuthenticationEve
         final Object principal = authentication.getPrincipal();
         final String username = principal == null
                                 ? authentication.getName()
-                                : principal instanceof String
-                                  ? (String) principal
+                                : principal instanceof String s
+                                  ? s
                                   : ((UserI) principal).getUsername();
 
         if (StringUtils.isBlank(username)) {

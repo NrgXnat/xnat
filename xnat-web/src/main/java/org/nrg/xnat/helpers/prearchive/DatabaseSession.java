@@ -337,8 +337,8 @@ public enum DatabaseSession {
 			@Override
 			public void setInsertStatement(int columnIndex, PreparedStatement s, Object o) throws SQLException {
 				if (o != null) {
-					if (o instanceof java.util.Date) {
-						java.sql.Timestamp t = new java.sql.Timestamp(((java.util.Date)o).getTime());
+					if (o instanceof java.util.Date date) {
+						java.sql.Timestamp t = new java.sql.Timestamp(date.getTime());
 						s.setTimestamp(columnIndex, t);}
 					else {
 						s.setTimestamp(columnIndex, this.date2Timestamp(o));
@@ -372,8 +372,8 @@ public enum DatabaseSession {
 			public void setInsertStatement(int columnIndex,
 					PreparedStatement s, Object o) throws SQLException {
 				if (o != null) {
-					if (o instanceof Boolean) {
-						s.setBoolean(columnIndex, (Boolean)o);
+					if (o instanceof Boolean boolean1) {
+						s.setBoolean(columnIndex, boolean1);
 					}
 				}
 				else {
@@ -411,8 +411,8 @@ public enum DatabaseSession {
 			@Override
 			public void setInsertStatement(int columnIndex, PreparedStatement s, Object o) throws SQLException {
 				if (o != null) {
-					if (o instanceof Integer) {
-						s.setInt(columnIndex, (Integer) o);
+					if (o instanceof Integer integer) {
+						s.setInt(columnIndex, integer);
 					}
 				}
 				else {

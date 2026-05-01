@@ -31,11 +31,9 @@
 ##    #end
 
     <!-- Brand colors and app.css loaded first -->
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/brand.${css}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.${css}">
 
     <!-- Icon sets -->
-    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/font-awesome.css?x=${lastAccessed}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/icons.${css}">
     <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.${css}">
 

@@ -14,6 +14,7 @@ import org.nrg.xdat.om.XnatInvestigatordata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.services.investigators.impl.xft.DefaultInvestigatorService;
 
+import java.io.Serial;
 import java.io.Writer;
 import java.sql.Array;
 import java.sql.ResultSet;
@@ -26,6 +27,8 @@ import java.util.*;
 @Slf4j
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Investigator extends BaseModel<XnatInvestigatordata> implements XnatInvestigatordataI {
+    @Serial
+    private static final long serialVersionUID = 1;
     public Investigator(final Integer xnatInvestigatordataId, final String title, final String firstname, final String lastname, final String institution, final String department, final String email, final String phone, final Set<String> primaryProjects, final Set<String> projects, final String id, final Date insertDate, final String insertUser) {
         super(id, insertDate, insertUser);
         setXnatInvestigatordataId(xnatInvestigatordataId);
@@ -104,7 +107,7 @@ public class Investigator extends BaseModel<XnatInvestigatordata> implements Xna
                 investigator = new XnatInvestigatordata();
                 investigator.setId(getId());
             } else {
-                investigator = investigators.get(0);
+                investigator = investigators.getFirst();
             }
         } else {
             investigator = new XnatInvestigatordata();

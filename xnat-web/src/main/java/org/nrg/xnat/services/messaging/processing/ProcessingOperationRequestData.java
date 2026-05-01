@@ -11,11 +11,16 @@ package org.nrg.xnat.services.messaging.processing;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -26,6 +31,8 @@ import java.util.Map;
 @Accessors(prefix = "_")
 @Slf4j
 public abstract class ProcessingOperationRequestData implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1;
     @ApiModelProperty("Indicates the unique ID of this processing request.")
     @NonNull
     private String _processingId;

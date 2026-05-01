@@ -13,14 +13,19 @@ import com.google.common.collect.ArrayListMultimap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.util.TagUtils;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.event.listeners.methods.AbstractXnatPreferenceHandlerMethod;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -46,11 +51,11 @@ public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMeth
      * @return The generated file name from the variable values extracted from the DICOM object.
      */
     @Override
-    public String makeFileName(final DicomObject dicomObject) {
+    public String makeFileName(final Attributes dicomObject) {
         final Map<String, String> values  = new HashMap<>();
         for (final String variable : _variables) {
             if (!variable.startsWith(HASH_PREFIX)) {
-                final String value = StringUtils.defaultIfBlank(dicomObject.getString(Tag.forName(variable)), "no-value-for-" + variable);
+                final String value = StringUtils.defaultIfBlank(dicomObject.getString(TagUtils.forName(variable)), "no-value-for-" + variable);
                 values.put(variable, value);
             }
         }
@@ -156,7 +161,7 @@ public class TemplatizedDicomFileNamer extends AbstractXnatPreferenceHandlerMeth
             for (final String variable : _variables) {
                 if (!variable.startsWith(HASH_PREFIX)) {
                     lastVariable = variable;
-                    int header = Tag.forName(variable);
+                    int header = TagUtils.forName(variable);
                     if (header == -1) {
                         throw new RuntimeException("That's not, like, a thing.");
                     }

@@ -293,7 +293,7 @@ public class ScriptTriggerResource extends AutomationResource {
 		final boolean restrictToScope;
 		if (getScope() == Scope.Site) {
 			final List<String> segments = getRequest().getResourceRef().getSegments();
-			final String function = segments.get(segments.size() - 1);
+			final String function = segments.getLast();
 			if (!function.equals("triggers")) {
 				params.put("scope", Scope.Site);
 				restrictToScope = true;

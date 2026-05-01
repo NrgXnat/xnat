@@ -627,8 +627,8 @@ public class EventServiceImpl implements EventService {
                           .id(event.getType() == null ? "" : event.getType())
                           .statuses(event.getStatiStates())
                           .listenerService(
-                                  event instanceof EventServiceListener
-                                  ? ((EventServiceListener<?>) event).getClass().getName()
+                                  event instanceof EventServiceListener<?> esl
+                                  ? esl.getClass().getName()
                                   : "")
                           .displayName(event.getDisplayName() == null ? "" : event.getDisplayName())
                           .description(event.getDescription() == null ? "" : event.getDescription())

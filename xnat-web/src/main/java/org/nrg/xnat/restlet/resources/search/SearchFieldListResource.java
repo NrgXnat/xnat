@@ -9,14 +9,18 @@
 
 package org.nrg.xnat.restlet.resources.search;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.display.SQLQueryField;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.display.transport.services.ElementDisplayStorageService;
+import org.nrg.xdat.display.transport.services.impl.HibernateElementDisplayService;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -97,7 +101,7 @@ public class SearchFieldListResource extends SecureResource{
 		try {
 			found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".element_action_name",action_name);
 			found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".display_name",display_name);
-			found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".sequence",new Integer(count));
+			found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".sequence",Integer.valueOf(count));
 			if(img!=null)
 				found.setProperty("xdat:element_security.element_actions.element_action__"+count + ".image",img);
 			if(secureAccess!=null)
@@ -115,70 +119,112 @@ public class SearchFieldListResource extends SecureResource{
 		}
 	}
 
+	private ElementDisplayStorageService _elementDisplayService;
+
+	private ElementDisplayStorageService getElementDisplayService() {
+		if (_elementDisplayService == null) {
+			_elementDisplayService = XDAT.getContextService().getBean(ElementDisplayStorageService.class);
+		}
+		return _elementDisplayService;
+	}
+
+
 	@Override
 	public void handlePut() {
-		try {
-			if (XFTTool.ValidateElementName(elementName))
-			{
-				try {
-					XFTItem found=XFTItem.NewItem(elementName, getUser());
-					SchemaElement se = SchemaElement.GetElement(elementName);
+		if(Roles.isSiteAdmin(this.getUser())) {
+			try {
+				if (XFTTool.ValidateElementName(elementName)) {
+					try {
+						XFTItem found = XFTItem.NewItem(elementName, getUser());
+						SchemaElement se = SchemaElement.GetElement(elementName);
 
-					if ((!this.isQueryVariableFalse("secure")) && se.hasField(se.getFullXMLName() + "/project") && se.hasField(se.getFullXMLName() + "/sharing/share/project")){
-					    found.setProperty("secure", Boolean.TRUE);
-						found.setProperty("primary_security_fields.primary_security_field__0",se.getFullXMLName() + "/project");
-					    found.setProperty("primary_security_fields.primary_security_field__1",se.getFullXMLName() + "/sharing/share/project");
+						if (StringUtils.isNotBlank(filepath)) {
+							if (StringUtils.startsWith(filepath,"fields")) {
+								if (this.isQueryVariableTrue("addSqlQueryValue")) {
+									//creates a copy of a SqlQueryDisplayField with the specified configuration
+									String fieldId = this.getQueryVariable("fieldId");
+									String header = this.getQueryVariable("header");
+									String value = this.getQueryVariable("value");
+
+									this.getElementDisplayService().addSqlQueryValue(elementName, fieldId, header, value);
+									return;
+								} else {
+									//modifies an existing display field
+									String fieldId = this.getQueryVariable("fieldId");
+									String header = this.getQueryVariable("header");
+									Boolean searchable = (this.hasQueryVariable("searchable")) ? Boolean.parseBoolean(this.getQueryVariable("searchable")) : null;
+									String description = this.getQueryVariable("description");
+
+									this.getElementDisplayService().configureDisplayField(elementName, fieldId, header, searchable, description);
+									return;
+								}
+							}
+						}
+
+						//prior implementation of element_security modification... not sure why its here, but its probably used.
+						if ((!this.isQueryVariableFalse("secure")) && se.hasField(se.getFullXMLName() + "/project") && se.hasField(se.getFullXMLName() + "/sharing/share/project")) {
+							found.setProperty("secure", Boolean.TRUE);
+							found.setProperty("primary_security_fields.primary_security_field__0", se.getFullXMLName() + "/project");
+							found.setProperty("primary_security_fields.primary_security_field__1", se.getFullXMLName() + "/sharing/share/project");
+						}
+
+						this.setBooleanProperty(found, "browseable", true);
+						this.setBooleanProperty(found, "searchable", true);
+						this.setBooleanProperty(found, "secure_read", true);
+						this.setBooleanProperty(found, "secure_edit", true);
+						this.setBooleanProperty(found, "secure_create", true);
+						this.setBooleanProperty(found, "secure_delete", true);
+						this.setBooleanProperty(found, "accessible", true);
+
+						this.setBooleanProperty(found, "secondary_password", false);
+						this.setBooleanProperty(found, "secure_ip", false);
+						this.setBooleanProperty(found, "quarantine", false);
+						this.setBooleanProperty(found, "pre_load", false);
+
+						if (this.getQueryVariable("singular") != null) {
+							found.setProperty("singular", this.getQueryVariable("singular"));
+						}
+
+						if (this.getQueryVariable("plural") != null) {
+							found.setProperty("plural", this.getQueryVariable("plural"));
+						}
+
+						if (this.getQueryVariable("code") != null) {
+							found.setProperty("code", this.getQueryVariable("code"));
+						}
+
+						int count = 0;
+
+						this.setAction(found, count++, "edit", "Edit", "e.gif", "edit", null);
+
+						this.setAction(found, count++, "xml", "View XML", "r.gif", null, null);
+
+						this.setAction(found, count++, "xml_file", "Download XML", "save.gif", null, null);
+
+						this.setAction(found, count++, "email_report", "Email", "right2.gif", null, "always");
+
+					} catch (ElementNotFoundException e) {
+						logger.error("", e);
+					} catch (FieldNotFoundException e) {
+						logger.error("", e);
+					} catch (InvalidValueException e) {
+						logger.error("", e);
+					} catch (HibernateElementDisplayService.NoFieldFound e) {
+						logger.error("", e);
+					} catch (HibernateElementDisplayService.NoSuchElementException e) {
+						logger.error("", e);
 					}
-
-					this.setBooleanProperty(found, "browseable", true);
-					this.setBooleanProperty(found, "searchable", true);
-					this.setBooleanProperty(found, "secure_read", true);
-					this.setBooleanProperty(found, "secure_edit", true);
-					this.setBooleanProperty(found, "secure_create", true);
-					this.setBooleanProperty(found, "secure_delete", true);
-					this.setBooleanProperty(found, "accessible", true);
-
-					this.setBooleanProperty(found, "secondary_password", false);
-					this.setBooleanProperty(found, "secure_ip", false);
-					this.setBooleanProperty(found, "quarantine", false);
-					this.setBooleanProperty(found, "pre_load", false);
-
-					if(this.getQueryVariable("singular")!=null){
-						found.setProperty("singular", this.getQueryVariable("singular"));
-					}
-
-					if(this.getQueryVariable("plural")!=null){
-						found.setProperty("plural", this.getQueryVariable("plural"));
-					}
-
-					if(this.getQueryVariable("code")!=null){
-						found.setProperty("code", this.getQueryVariable("code"));
-			}
-
-					int count=0;
-
-					this.setAction(found, count++, "edit", "Edit", "e.gif", "edit",null);
-
-					this.setAction(found, count++, "xml", "View XML", "r.gif", null,null);
-
-					this.setAction(found, count++, "xml_file", "Download XML", "save.gif", null,null);
-
-					this.setAction(found, count++, "email_report", "Email", "right2.gif", null,"always");
-
-				} catch (ElementNotFoundException e) {
-					logger.error("",e);
-				} catch (FieldNotFoundException e) {
-					logger.error("",e);
-				} catch (InvalidValueException e) {
-					logger.error("",e);
-		}
-			}else{
+				} else {
+					this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+					return;
+				}
+			} catch (XFTInitException e) {
+				logger.error("", e);
 				this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 				return;
-	}
-		} catch (XFTInitException e) {
-			logger.error("",e);
-			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+			}
+		}else{
+			this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
 			return;
 		}
 	}
@@ -193,10 +239,23 @@ public class SearchFieldListResource extends SecureResource{
 		params.put("element_name", elementName);
 		CustomFormDisplayFieldHelper customFormDisplayFieldHelper = new CustomFormDisplayFieldHelper();
 
-
 		XFTTable fields = new XFTTable();
-		fields.initTable(new String[]{"FIELD_ID","HEADER","SUMMARY","TYPE","REQUIRES_VALUE","DESC","ELEMENT_NAME","SRC"});
+		fields.initTable(new String[]{"FIELD_ID","HEADER","SUMMARY","TYPE","REQUIRES_VALUE","DESC","ELEMENT_NAME","SRC","VISIBLE","SEARCHABLE","VALUE"});
 
+		Boolean showHidden  =false ;
+		if(isQueryVariableTrue("showAll")){
+			showHidden=true;
+		}
+
+		Boolean showGenerated  =true ;
+		if(isQueryVariableFalse("showGenerated")){
+			showGenerated=false;
+		}
+
+		Boolean showCustomForms  =true ;
+		if(isQueryVariableFalse("showCustomForms")){
+			showCustomForms=false;
+		}
 
 		ArrayList<String> elementNames=XftStringUtils.CommaDelimitedStringToArrayList(elementName);
 		for(String en : elementNames)
@@ -209,17 +268,26 @@ public class SearchFieldListResource extends SecureResource{
 				params.put("versions", ed.getVersionsJSON());
 
 				final List<DisplayField> displays = ed.getSortedFields();
-				for (final DisplayField df : displays) {
-				   if(df.isSearchable()){
+				for (DisplayField df : displays)
+				{
+				   if(showHidden || df.isSearchable()){
 					   String id = df.getId();
-					   if (customFormDisplayFieldHelper.isCustomFieldDisplayField(id, en)) {
+					   if (!showCustomForms && customFormDisplayFieldHelper.isCustomFieldDisplayField(id, en)) {
 						   continue;
 					   }
 					   String summary = df.getSummary();
 					   String header = df.getHeader();
 					   String type = df.getDataType();
-					   Boolean requiresValue=(df instanceof SQLQueryField)?true:false;
-					   Object[] sub = new Object[8];
+					   Boolean requiresValue= false;
+					   Object value = null;
+					   if(df instanceof SQLQueryField){
+						   if(StringUtils.contains(id,"=")){
+							   value =((SQLQueryField)df).getValue();
+						   }else{
+							   requiresValue=true;
+						   }
+					   }
+					   Object[] sub = new Object[11];
 					   sub[0]=id;
 					   sub[1]=header;
 					   sub[2]=summary;
@@ -228,57 +296,64 @@ public class SearchFieldListResource extends SecureResource{
 					   sub[5]=(df.getDescription()==null)?(df.getHeader()==null)?df.getId():df.getHeader():df.getDescription();
 					   sub[6]=se.getFullXMLName();
 					   sub[7]=0;
+					   sub[8]=df.isVisible();
+					   sub[9]=df.isSearchable();
+					   sub[10]=value;
 					   fields.rows().add(sub);
 				   }
 				}
-				try{
+
+				try {
 					final UserI user = getUser();
-				    List<List> legacy_custom_fields =UserHelper.getUserHelperService(user).getQueryResultsAsArrayList("SELECT DISTINCT ON (name) dtp.xnat_projectdata_id AS project, fdgf.name, fdgf.datatype AS type FROM xnat_abstractprotocol dtp LEFT JOIN xnat_datatypeprotocol_fieldgroups dtp_fg ON dtp.xnat_abstractprotocol_id=dtp_fg.xnat_datatypeprotocol_xnat_abstractprotocol_id LEFT JOIN xnat_fielddefinitiongroup fdg  ON dtp_fg.xnat_fielddefinitiongroup_xnat_fielddefinitiongroup_id=fdg.xnat_fielddefinitiongroup_id LEFT JOIN xnat_fielddefinitiongroup_field fdgf ON fdg.xnat_fielddefinitiongroup_id=fdgf.fields_field_xnat_fielddefiniti_xnat_fielddefinitiongroup_id WHERE dtp.data_type='" + en + "' AND fdgf.type='custom'");
+					ArrayList<Object[]> label_fields = new ArrayList<Object[]>();
 					List<String> addedJsonFields = new ArrayList<>();
+					if(showGenerated) {
 
-					ArrayList<Object[]> label_fields=new ArrayList<Object[]>();
-					try {
-						if(GenericWrapperElement.GetFieldForXMLPath(se.getFullXMLName() + "/project")!=null){
-							try {
-								List<Object> av=Permissions.getAllowedValues(user,se.getFullXMLName(), se.getFullXMLName() + "/project", "read");
-								for(Object o:av){
-									Object[] sub = new Object[8];
-								    sub[0]=pi.getId() + "=" + o;
-								    sub[1]=o;
-								    sub[2]="Label within the " + o + " project.";
-								    sub[3]="string";
-								    sub[4]=false;
-								    sub[5]="Label within the " + o + " project.";
-								    sub[6]=se.getFullXMLName();
-								    sub[7]=2;
-								    label_fields.add(sub);
-									for(List cf:legacy_custom_fields){
-										if(cf.get(0).equals(o)){
-											sub = new Object[8];
-											sub[0]=se.getSQLName().toUpperCase() + "_FIELD_MAP=" + cf.get(1).toString().toLowerCase();
-											sub[1]=cf.get(1);
-											sub[2]="Custom Variable: "  + cf.get(1);
-											sub[3]=cf.get(2);
-											sub[4]=false;
-											sub[5]="Custom Variable: "  + cf.get(1);
-											sub[6]=se.getFullXMLName();
-											sub[7]=1;
-											fields.rows().add(sub);
+						List<List> custom_fields = UserHelper.getUserHelperService(user).getQueryResultsAsArrayList("SELECT DISTINCT ON (name) dtp.xnat_projectdata_id AS project, fdgf.name, fdgf.datatype AS type FROM xnat_abstractprotocol dtp LEFT JOIN xnat_datatypeprotocol_fieldgroups dtp_fg ON dtp.xnat_abstractprotocol_id=dtp_fg.xnat_datatypeprotocol_xnat_abstractprotocol_id LEFT JOIN xnat_fielddefinitiongroup fdg  ON dtp_fg.xnat_fielddefinitiongroup_xnat_fielddefinitiongroup_id=fdg.xnat_fielddefinitiongroup_id LEFT JOIN xnat_fielddefinitiongroup_field fdgf ON fdg.xnat_fielddefinitiongroup_id=fdgf.fields_field_xnat_fielddefiniti_xnat_fielddefinitiongroup_id WHERE dtp.data_type='" + en + "' AND fdgf.type='custom'");
+
+						try {
+							if (GenericWrapperElement.GetFieldForXMLPath(se.getFullXMLName() + "/project") != null) {
+								try {
+									List<Object> av = Permissions.getAllowedValues(user, se.getFullXMLName(), se.getFullXMLName() + "/project", "read");
+									for (Object o : av) {
+										Object[] sub = new Object[11];
+										sub[0] = pi.getId() + "=" + o;
+										sub[1] = o;
+										sub[2] = "Label within the " + o + " project.";
+										sub[3] = "string";
+										sub[4] = false;
+										sub[5] = "Label within the " + o + " project.";
+										sub[6] = se.getFullXMLName();
+										sub[7] = 2;
+										sub[8] = true;
+										sub[9] = true;
+										sub[10] = o;
+										label_fields.add(sub);
+
+										for (List cf : custom_fields) {
+											if (cf.get(0).equals(o)) {
+												sub = new Object[11];
+												sub[0] = se.getSQLName().toUpperCase() + "_FIELD_MAP=" + cf.get(1).toString().toLowerCase();
+												sub[1] = cf.get(1);
+												sub[2] = "Custom Field: " + cf.get(1);
+												sub[3] = cf.get(2);
+												sub[4] = false;
+												sub[5] = "Custom Field: " + cf.get(1);
+												sub[6] = se.getFullXMLName();
+												sub[7] = 1;
+												sub[8] = true;
+												sub[9] = true;
+												sub[10] = cf.get(1).toString().toLowerCase();
+												fields.rows().add(sub);
+											}
 										}
 									}
-
-									if(!"*".equals(o)){
-										if (null != projectScope && !projectScope.equals(o)) {
-											continue;
-										}
-										addCustomFormFields(se, o, addedJsonFields, fields);
-									}
+								} catch (Exception e) {
+									logger.error("", e);
 								}
-							} catch (Exception e) {
-								logger.error("",e);
 							}
+						} catch (FieldNotFoundException e) {
 						}
-					} catch (FieldNotFoundException e) {
 					}
 
 					if (elementName.equals(XnatProjectdata.SCHEMA_ELEMENT_NAME)) {

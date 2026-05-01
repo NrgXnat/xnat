@@ -112,8 +112,7 @@ public class GetFile extends RawScreen {
                          o = catalogSet.hash.get(innerKey);
                      }
 
-                     if (o instanceof File){
-                         File f = (File)o;
+                     if (o instanceof File f){
                          if (f.exists()){
                              TurbineUtils.setContentDisposition(data.getResponse(), f.getName(), false);
                              java.io.FileInputStream in = new java.io.FileInputStream(f);

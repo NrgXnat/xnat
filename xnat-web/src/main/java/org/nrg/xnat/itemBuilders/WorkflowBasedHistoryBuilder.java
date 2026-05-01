@@ -91,8 +91,8 @@ public class WorkflowBasedHistoryBuilder implements Callable<Map<Number,Workflow
 	public static Integer convertToInt(Object o){
 		if(o==null){
 			return 0;
-		}else if(o instanceof Integer){
-			return (Integer)o;
+		}else if(o instanceof Integer integer){
+			return integer;
 		}else {
 			String s=o.toString();
 			if(s.equals("")){
@@ -262,23 +262,23 @@ public class WorkflowBasedHistoryBuilder implements Callable<Map<Number,Workflow
 				List<String> ids=Lists.newArrayList();
 				if(i.getItem().instanceOf("xnat:imageSessionData")){
 					try {
-						List<List> expts=XFTTable.Execute(String.format("SELECT DISTINCT id FROM (SELECT iad.id FROM xnat_imageassessordata iad WHERE iad.id IS NOT NULL AND iad.imagesession_id='%1$s' UNION SELECT iad.id FROM xnat_imageassessordata_history iad WHERE iad.id IS NOT NULL AND iad.imagesession_id='%1$s') SRCH;",id), i.getDBName(), user.getLogin()).toArrayListOfLists();
+						List<List> expts=XFTTable.Execute("SELECT DISTINCT id FROM (SELECT iad.id FROM xnat_imageassessordata iad WHERE iad.id IS NOT NULL AND iad.imagesession_id='%1$s' UNION SELECT iad.id FROM xnat_imageassessordata_history iad WHERE iad.id IS NOT NULL AND iad.imagesession_id='%1$s') SRCH;".formatted(id), i.getDBName(), user.getLogin()).toArrayListOfLists();
 						for(List expt:expts){
-							ids.add((String)expt.get(0));
+							ids.add((String)expt.getFirst());
 						}
 					} catch (Exception e) {
 						logger.error("",e);
 					}
 				}else if(i.getItem().instanceOf("xnat:subjectData")){
 					try {
-						List<List> expts=XFTTable.Execute(String.format("" +
-								"SELECT DISTINCT id FROM (SELECT sad.id FROM xnat_subjectassessordata sad WHERE subject_id='%1$s' UNION " +
-								"SELECT iad.id FROM xnat_subjectassessordata sad LEFT JOIN xnat_imageassessordata iad ON sad.id=iad.imagesession_id WHERE iad.id IS NOT NULL AND subject_id='%1$s' UNION " +
-								"SELECT sad.id FROM xnat_subjectassessordata_history sad WHERE subject_id='%1$s' UNION " +
-								"SELECT iad.id FROM xnat_subjectassessordata sad LEFT JOIN xnat_imageassessordata_history iad ON sad.id=iad.imagesession_id WHERE iad.id IS NOT NULL AND subject_id='%1$s' UNION " +
-								"SELECT iad.id FROM xnat_subjectassessordata_history sad LEFT JOIN xnat_imageassessordata_history iad ON sad.id=iad.imagesession_id WHERE iad.id IS NOT NULL AND subject_id='%1$s') SRCH;",id), i.getDBName(), user.getLogin()).toArrayListOfLists();
+						List<List> expts=XFTTable.Execute(("" +
+                                "SELECT DISTINCT id FROM (SELECT sad.id FROM xnat_subjectassessordata sad WHERE subject_id='%1$s' UNION " +
+                                "SELECT iad.id FROM xnat_subjectassessordata sad LEFT JOIN xnat_imageassessordata iad ON sad.id=iad.imagesession_id WHERE iad.id IS NOT NULL AND subject_id='%1$s' UNION " +
+                                "SELECT sad.id FROM xnat_subjectassessordata_history sad WHERE subject_id='%1$s' UNION " +
+                                "SELECT iad.id FROM xnat_subjectassessordata sad LEFT JOIN xnat_imageassessordata_history iad ON sad.id=iad.imagesession_id WHERE iad.id IS NOT NULL AND subject_id='%1$s' UNION " +
+                                "SELECT iad.id FROM xnat_subjectassessordata_history sad LEFT JOIN xnat_imageassessordata_history iad ON sad.id=iad.imagesession_id WHERE iad.id IS NOT NULL AND subject_id='%1$s') SRCH;").formatted(id), i.getDBName(), user.getLogin()).toArrayListOfLists();
 						for(List expt:expts){
-							ids.add((String)expt.get(0));
+							ids.add((String)expt.getFirst());
 						}
 					} catch (Exception e) {
 						logger.error("",e);
@@ -337,7 +337,7 @@ public class WorkflowBasedHistoryBuilder implements Callable<Map<Number,Workflow
 			if(workflow!=null){
 				return workflow.getLaunchTimeDate();
 			}else{
-				return getChangeSummaries().get(0).getDate();
+				return getChangeSummaries().getFirst().getDate();
 			}
 		}
 		
@@ -361,7 +361,7 @@ public class WorkflowBasedHistoryBuilder implements Callable<Map<Number,Workflow
 			if(workflow!=null){
 				return workflow.getUsername();
 			}else{
-				return getChangeSummaries().get(0).getEvents().get(0).getUsername();
+				return getChangeSummaries().getFirst().getEvents().getFirst().getUsername();
 			}
 		}
 		

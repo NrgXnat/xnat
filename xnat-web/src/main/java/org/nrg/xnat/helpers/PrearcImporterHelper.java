@@ -12,7 +12,7 @@ package org.nrg.xnat.helpers;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -189,7 +189,7 @@ public class PrearcImporterHelper extends PrearcImporterA{
 				public String apply(final Exception exception) {
 					return exception.getMessage();
 				}
-			}), "\n * "), errors.get(0));
+			}), "\n * "), errors.getFirst());
 		}
 
 		return sessions;
@@ -200,7 +200,7 @@ public class PrearcImporterHelper extends PrearcImporterA{
 		this.processing("Importing file (" + filename + ")");
 			
 		//BUILD CACHE PATH        
-		final File cacheDIR = XDAT.getContextService().getBean(UserDataCache.class).getUserDataCacheFile(user, Paths.get("uploads", timestamp), UserDataCache.Options.Folder);
+		final File cacheDIR = XDAT.getContextService().getBean(UserDataCache.class).getUserDataCacheFile(user, Path.of("uploads", timestamp), UserDataCache.Options.Folder);
 		final File uploaded = new File(cacheDIR,cleanFileName(filename)) ;
 			                
 		this.processing("Uploading to "+uploaded.getAbsolutePath() + " ... ");

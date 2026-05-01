@@ -21,7 +21,7 @@ public class CustomVariableFormRepository extends AbstractHibernateDAO<CustomVar
     @Nullable
     public CustomVariableForm findById(final long id) {
         List<CustomVariableForm> forms = findByProperty("id", id);
-        return forms.isEmpty() ? null : forms.get(0);
+        return forms.isEmpty() ? null : forms.getFirst();
     }
 
     /**
@@ -32,7 +32,7 @@ public class CustomVariableFormRepository extends AbstractHibernateDAO<CustomVar
     @Nullable
     public CustomVariableForm findByUuid(final UUID id) {
         List<CustomVariableForm>  forms =  findByProperty("formUuid", id);
-        return forms.isEmpty() ? null : forms.get(0);
+        return forms.isEmpty() ? null : forms.getFirst();
     }
 
     /**

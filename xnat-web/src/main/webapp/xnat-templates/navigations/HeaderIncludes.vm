@@ -35,6 +35,10 @@ $navigation.setTemplate("/BaseJS.vm")
     #escapeAll("$!projectId")
 #end
 
+<!-- initialize CSS variables and icon fonts to be available to all downstream stylesheets -->
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/brand.${css}">
+<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/font-awesome.css?x=${lastAccessed}">
+
 <!-- setup XNAT namespace -->
 <script>
 

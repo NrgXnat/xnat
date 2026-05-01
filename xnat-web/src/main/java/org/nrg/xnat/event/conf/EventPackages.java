@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.event.conf;
 
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,9 +17,10 @@ import java.util.Set;
  * The Class EventPackages.
  */
 public class EventPackages extends HashSet<String> {
-    
-	/** The Constant serialVersionUID. */
-	private static final long serialVersionUID = 9166262514950558701L;
+
+    /** The Constant serialVersionUID. */
+    @Serial
+    private static final long serialVersionUID = 9166262514950558701L;
 
 	/**
      * Instantiates a new event packages.

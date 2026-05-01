@@ -8,9 +8,15 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.net.*;
-import org.dcm4che2.net.service.DicomService;
-import org.dcm4che2.net.service.VerificationService;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Connection;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.WhitelistAssociationHandler;
+import org.dcm4che3.net.service.BasicCEchoSCP;
+import org.dcm4che3.net.service.BasicCStoreSCP;
+import org.dcm4che3.net.service.DicomServiceRegistry;
 import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -20,26 +26,34 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static lombok.AccessLevel.PROTECTED;
-import static org.dcm4che2.data.UID.*;
 
 @Getter(PROTECTED)
 @Accessors(prefix = "_")
 @Slf4j
 public class DicomSCP {
     private DicomSCP(final Device device, final int port, final DicomSCPManager manager) {
-        if (port != device.getNetworkConnection()[0].getPort()) {
-            throw new NrgServiceRuntimeException("The port configured for this DICOM SCP receiver on creation is " + port + ", but the port I found in the configured network connection is " + device.getNetworkConnection()[0].getPort() + ". That's not right, so things may get weird around here.");
+        if (port != device.listConnections().getFirst().getPort()) {
+            throw new NrgServiceRuntimeException("The port configured for this DICOM SCP receiver on creation is " + port + ", but the port I found in the configured network connection is " + device.listConnections().getFirst().getPort() + ". That's not right, so things may get weird around here.");
         }
 
         _executor = manager.getExecutor();
         _device = device;
-        _port = port;
+        _device.setExecutor(_executor);
+        _device.setScheduledExecutor(Executors.newSingleThreadScheduledExecutor());
         _manager = manager;
         setStarted(false);
     }
@@ -58,11 +72,15 @@ public class DicomSCP {
 
         for (final int port : ports) {
             if (!dicomSCPs.containsKey(port)) {
-                final NetworkConnection connection = new NetworkConnection();
+                final Connection connection = new Connection();
+                connection.setHostname("0.0.0.0");
                 connection.setPort(port);
 
                 final Device device = new Device(DEVICE_NAME);
-                device.setNetworkConnection(connection);
+                device.addConnection(connection);
+
+                WhitelistAssociationHandler handler = new WhitelistAssociationHandler();
+                device.setAssociationHandler(handler);
 
                 dicomSCPs.put(port, new DicomSCP(device, port, manager));
             }
@@ -72,6 +90,10 @@ public class DicomSCP {
 
     public List<String> getAeTitles() {
         return new ArrayList<>(getApplicationEntities().keySet());
+    }
+
+    public int getPort() {
+        return getDevice().listConnections().getFirst().getPort();
     }
 
     public boolean isStarted() {
@@ -87,7 +109,7 @@ public class DicomSCP {
         return started;
     }
 
-    public List<String> start() throws DicomNetworkException, UnknownDicomHelperInstanceException {
+    public List<String> start() throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         if (isStarted()) {
             log.warn("The DICOM SCP on port {} has already started its configured receivers.", getPort());
             return Collections.emptyList();
@@ -109,7 +131,7 @@ public class DicomSCP {
 
         try {
             final InetAddress localHost = InetAddress.getLocalHost();
-            log.info("Starting DICOM SCP on {}{}:{}, found {} enabled DICOM SCP instances for this port", StringUtils.defaultIfBlank(getDevice().getNetworkConnection()[0].getHostname(), localHost.getHostName()), InetAddress.getByAddress(localHost.getAddress()), getPort(), instances.size());
+            log.info("Starting DICOM SCP on {}{}:{}, found {} enabled DICOM SCP instances for this port", StringUtils.defaultIfBlank(getDevice().listConnections().getFirst().getHostname(), localHost.getHostName()), InetAddress.getByAddress(localHost.getAddress()), getPort(), instances.size());
         } catch (UnknownHostException e) {
             log.warn("Got an error retrieving localhost via InetAddress.getLocalhost()", e);
         }
@@ -120,32 +142,42 @@ public class DicomSCP {
         }
 
         log.debug("DICOM SCP receiver on port {} has the following {} application entities: {}", getPort(), getAeTitles().size(), StringUtils.join(getAeTitles(), ", "));
-        final VerificationService cEcho = new VerificationService();
+        final BasicCEchoSCP cEcho = new BasicCEchoSCP();
 
-        final Set<NetworkApplicationEntity> applicationEntities = getDicomServicesByApplicationEntity().keySet();
-        for (final NetworkApplicationEntity applicationEntity : applicationEntities) {
+        final Set<ApplicationEntity> applicationEntities = getDicomServicesByApplicationEntity().keySet();
+
+        for (final ApplicationEntity applicationEntity : applicationEntities) {
             log.trace("Setting up AE {}", applicationEntity.getAETitle());
-            applicationEntity.register(cEcho);
 
-            final List<TransferCapability> transferCapabilities = new ArrayList<>();
-            transferCapabilities.add(new TransferCapability(VerificationSOPClass, VERIFICATION_SOP_TS, TransferCapability.SCP));
+            applicationEntity.addTransferCapability(
+                    new TransferCapability(null,
+                            UID.Verification,
+                            TransferCapability.Role.SCP,
+                            UID.ImplicitVRLittleEndian,
+                            UID.ExplicitVRLittleEndian));
 
-            getDicomServicesByApplicationEntity().get(applicationEntity).stream().filter(Objects::nonNull).forEach(service -> {
+            DicomServiceRegistry serviceRegistry = new DicomServiceRegistry();
+            serviceRegistry.addDicomService(cEcho);
+            for (final BasicCStoreSCP service : getDicomServicesByApplicationEntity().get(applicationEntity)) {
                 log.trace("Adding service {}", service);
-                applicationEntity.register(service);
-                for (final String sopClass : service.getSopClasses()) {
-                    transferCapabilities.add(new TransferCapability(sopClass, TSUIDS, TransferCapability.SCP));
-                }
-            });
+                serviceRegistry.addDicomService(service);
 
-            applicationEntity.setTransferCapability(transferCapabilities.toArray(new TransferCapability[0]));
+                for (final String sopClass : service.getSOPClasses()) {
+                    applicationEntity.addTransferCapability(new TransferCapability(null, sopClass, TransferCapability.Role.SCP,TSUIDS));
+                }
+            }
+            // MERGE: This was commented out in develop. Is it necessary?
+            applicationEntity.setDimseRQHandler(serviceRegistry);
         }
 
-        getDevice().setNetworkApplicationEntity(applicationEntities.toArray(new NetworkApplicationEntity[0]));
+        for (final ApplicationEntity ae : applicationEntities) {
+            getDevice().addApplicationEntity(ae);
+        }
+
         log.info("Starting DICOM SCP on port {} with {} application entities", getPort(), applicationEntities.size());
 
         try {
-            getDevice().startListening(getExecutor());
+            getDevice().bindConnections();
         } catch (IOException e) {
             throw new DicomNetworkException(e);
         }
@@ -163,16 +195,15 @@ public class DicomSCP {
         }
 
         log.info("Stopping DICOM SCP on port {}", getPort());
-        getDevice().stopListening();
+        getDevice().unbindConnections();
 
         final List<String> aeTitles = getDicomServicesByApplicationEntity().keySet().stream().filter(Objects::nonNull).map(applicationEntity -> {
             final String aeTitle = applicationEntity.getAETitle();
             log.debug("Removing application entity {} on port {}", aeTitle, getPort());
-            for (final DicomService service : getDicomServicesByApplicationEntity().get(applicationEntity)) {
-                applicationEntity.unregister(service);
-            }
-            applicationEntity.setTransferCapability(new TransferCapability[0]);
+            applicationEntity.addTransferCapability(new TransferCapability());
+            applicationEntity.setDimseRQHandler(new DicomServiceRegistry());
             getApplicationEntities().remove(aeTitle);
+            getDevice().removeApplicationEntity(applicationEntity);
             return aeTitle;
         }).collect(Collectors.toList());
 
@@ -192,7 +223,7 @@ public class DicomSCP {
         final StringBuilder builder = new StringBuilder("DicomSCP{[").append("]: ");
         getDicomServicesByApplicationEntity().keySet().stream().filter(Objects::nonNull).forEach(applicationEntity -> {
             builder.append(applicationEntity.getAETitle());
-            final String hostname = applicationEntity.getNetworkConnection()[0].getHostname();
+            final String hostname = applicationEntity.getConnections().getFirst().getHostname();
             if (StringUtils.isNotBlank(hostname)) {
                 builder.append("@").append(hostname);
             }
@@ -210,7 +241,7 @@ public class DicomSCP {
     }
 
     private boolean isNetworkStarted() {
-        return _device.getNetworkConnection()[0].getServer() != null;
+        return _device.listConnections().getFirst().isListening();
     }
 
     private void addApplicationEntity(final DicomSCPInstance instance) {
@@ -231,7 +262,8 @@ public class DicomSCP {
         final String identifier = instance.getIdentifier();
         log.debug("Adding application entity \"{}\" with identifier \"{}\" and file namer \"{}\" to DICOM SCP on port {}", aeTitle, identifier, fileNamer, getPort());
 
-        final NetworkApplicationEntity applicationEntity = createApplicationEntity(aeTitle, instance);
+        final ApplicationEntity applicationEntity = createApplicationEntity(aeTitle);
+        ((WhitelistAssociationHandler)getDevice().getAssociationHandler()).addWhitelist(applicationEntity.getAETitle(), instance.isWhitelistEnabled(), instance.getWhitelist());
 
         getApplicationEntities().put(aeTitle, applicationEntity);
         getDicomServicesByApplicationEntity().put(applicationEntity,
@@ -244,13 +276,10 @@ public class DicomSCP {
     }
 
     @Nonnull
-    private NetworkApplicationEntity createApplicationEntity(final String aeTitle, final DicomSCPInstance instance) {
-        final XnatApplicationEntity applicationEntity = new XnatApplicationEntity();
-        applicationEntity.setNetworkConnection(getDevice().getNetworkConnection());
+    private ApplicationEntity createApplicationEntity(final String aeTitle) {
+        final ApplicationEntity applicationEntity = new ApplicationEntity(aeTitle);
+        applicationEntity.addConnection(getDevice().listConnections().getFirst());
         applicationEntity.setAssociationAcceptor(true);
-        applicationEntity.setAETitle(aeTitle);
-        applicationEntity.setWhitelist(instance.getWhitelist());
-        applicationEntity.setWhitelistEnabled(instance.isWhitelistEnabled());
         return applicationEntity;
     }
 
@@ -258,22 +287,33 @@ public class DicomSCP {
     // might not actually work correctly (e.g., XML encoding); some probably
     // can be received but will give the XNAT processing pipeline fits
     // (e.g., anything compressed).
-    private static final String[] TSUIDS              = {ExplicitVRLittleEndian,
-                                                         ExplicitVRBigEndian, ImplicitVRLittleEndian, JPEGBaseline1,
-                                                         JPEGExtended24, JPEGLosslessNonHierarchical14, JPEGLossless,
-                                                         JPEGLSLossless, JPEGLSLossyNearLossless, JPEG2000LosslessOnly,
-                                                         JPEG2000, JPEG2000Part2MultiComponentLosslessOnly,
-                                                         JPEG2000Part2MultiComponent, JPIPReferenced, JPIPReferencedDeflate,
-                                                         MPEG2, RLELossless, RFC2557MIMEEncapsulation, XMLEncoding};
-    private static final String[] VERIFICATION_SOP_TS = {ImplicitVRLittleEndian, ExplicitVRLittleEndian}; // Verification service can only use LE encoding
+    private static final String[] TSUIDS              = {
+            UID.ExplicitVRLittleEndian,
+            UID.ExplicitVRBigEndian,
+            UID.ImplicitVRLittleEndian,
+            UID.JPEGBaseline8Bit,
+            UID.JPEGExtended12Bit,
+            UID.JPEGLossless,
+            UID.JPEGLosslessSV1,
+            UID.JPEGLSLossless,
+            UID.JPEGLSNearLossless,
+            UID.JPEG2000Lossless,
+            UID.JPEG2000,
+            UID.JPEG2000MCLossless,
+            UID.JPEG2000MC,
+            UID.JPIPReferenced,
+            UID.JPIPReferencedDeflate,
+            UID.MPEG2MPML,
+            UID.RLELossless,
+            UID.RFC2557MIMEEncapsulation,
+            UID.XMLEncoding};
     private static final String   DEVICE_NAME         = "XNAT_DICOM";
 
     private final Executor        _executor;
     private final Device          _device;
-    private final int             _port;
     private final DicomSCPManager _manager;
 
-    private final Map<String, NetworkApplicationEntity>            _applicationEntities              = new HashMap<>();
-    private final Multimap<NetworkApplicationEntity, DicomService> _dicomServicesByApplicationEntity = Multimaps.synchronizedSetMultimap(LinkedHashMultimap.create());
+    private final Map<String, ApplicationEntity>            _applicationEntities              = new HashMap<>();
+    private final Multimap<ApplicationEntity, CStoreService> _dicomServicesByApplicationEntity = Multimaps.synchronizedSetMultimap(LinkedHashMultimap.create());
     private final AtomicBoolean                                    _started                          = new AtomicBoolean();
 }

@@ -64,7 +64,7 @@ public final class XDATScreen_uploaded_xnat_imageSessionData extends EditScreenA
         context.put("notes", session.getNote());
         final ItemI part = TurbineUtils.GetParticipantItem(data);
         if (part != null) {
-            final XnatSubjectdata xsd = (part instanceof XnatSubjectdata) ? (XnatSubjectdata)part : new XnatSubjectdata(part);
+            final XnatSubjectdata xsd = (part instanceof XnatSubjectdata xs) ? xs : new XnatSubjectdata(part);
             session.setSubjectId(xsd.getId());
             context.put("part", xsd);
         } else {

@@ -213,7 +213,7 @@ var XNAT = getObject(XNAT);
                         href: 'http://www.xnat.org',
                         target: '_blank',
                         title: version_title
-                    }, [['img', { src: serverRoot + '/images/xnat_power_small.png' }]])
+                    }, [['img', { src: serverRoot + '/images/xnat_power_small.png', width: '180' }]])
                     .spawn('small', 'version ' + version_string + build_string);
 
                 // $('#xnat_power').find('a')

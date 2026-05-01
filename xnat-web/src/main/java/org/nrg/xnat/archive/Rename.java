@@ -158,7 +158,7 @@ public class Rename implements Callable<File>{
 			}
 			newSessionDir.mkdir();
 
-			final String message = String.format("Renamed from %s to %s", currentLabel, newLabel);
+			final String message = "Renamed from %s to %s".formatted(currentLabel, newLabel);
 
 			//Add workflow entry
 			final PersistentWorkflowI workflow = PersistentWorkflowUtils.buildOpenWorkflow(user, item.getXSIType(), item.getStringProperty("ID"), projectId, EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, type, EventUtils.RENAME, reason, null));
@@ -190,11 +190,11 @@ public class Rename implements Callable<File>{
 				//where they'll be updated and later pushed to remote on cleanup.
 				if (DefaultAnonUtils.getService().isProjectScriptEnabled(projectId) && XDAT.getBoolSiteConfigurationProperty("rerunProjectAnonOnRename", false)) {
 					eventMeta = updateStep(workflow, setStep(STEP.ANONYMIZE));
-					if (item instanceof XnatImagesessiondata) {
+					if (item instanceof XnatImagesessiondata imagesessiondata) {
 						PersistentWorkflowI wrk = WorkflowUtils.buildOpenWorkflow(user, item.getItem(), EventUtils.newEventInstance(CATEGORY.DATA, TYPE.WEB_SERVICE, ANONYMIZATION_POST_MODIFICATION));
 
 						try {
-							new ProjectAnonymizer(newLabel, (XnatImagesessiondata) item, projectId, ((XnatImagesessiondata) item).getArchivePath(item.getArchiveRootPath()), true).call();
+							new ProjectAnonymizer(newLabel, imagesessiondata, projectId, imagesessiondata.getArchivePath(item.getArchiveRootPath()), true).call();
 							WorkflowUtils.complete(wrk, wrk.buildEvent());
 						} catch (Exception e){
 							WorkflowUtils.fail(wrk, wrk.buildEvent());
@@ -290,8 +290,8 @@ public class Rename implements Callable<File>{
 	public static void generateURISQL(final ItemI item, final URI expected, final String newArchive, final DBItemCache cache, final UserI user) throws UnsupportedResourceType, SQLException, Exception {
 		final SecurityManager sm = SecurityManager.GetInstance();
 		//set label and modify URI
-		if (item instanceof XnatSubjectdata) {
-			for (final XnatAbstractresourceI res : ((XnatSubjectdata) item).getResources_resource()) {
+		if (item instanceof XnatSubjectdata subjectdata) {
+			for (final XnatAbstractresourceI res : subjectdata.getResources_resource()) {
 				modifyResource((XnatAbstractresource) res, expected, newArchive, user, sm, cache);
 			}
 		} else {
@@ -299,14 +299,14 @@ public class Rename implements Callable<File>{
 				modifyResource((XnatAbstractresource) res, expected, newArchive, user, sm, cache);
 			}
 
-			if (item instanceof XnatImagesessiondata) {
-				for (final XnatImagescandataI scan : ((XnatImagesessiondataI) item).getScans_scan()) {
+			if (item instanceof XnatImagesessiondata imagesessiondata) {
+				for (final XnatImagescandataI scan : imagesessiondata.getScans_scan()) {
 					for (final XnatAbstractresourceI res : scan.getFile()) {
 						modifyResource((XnatAbstractresource) res, expected, newArchive, user, sm, cache);
 					}
 				}
 
-				for (final XnatReconstructedimagedataI recon : ((XnatImagesessiondataI) item).getReconstructions_reconstructedimage()) {
+				for (final XnatReconstructedimagedataI recon : imagesessiondata.getReconstructions_reconstructedimage()) {
 					for (final XnatAbstractresourceI res : recon.getIn_file()) {
 						modifyResource((XnatAbstractresource) res, expected, newArchive, user, sm, cache);
 					}
@@ -316,7 +316,7 @@ public class Rename implements Callable<File>{
 					}
 				}
 
-				for (final XnatImageassessordataI assessor : ((XnatImagesessiondataI) item).getAssessors_assessor()) {
+				for (final XnatImageassessordataI assessor : imagesessiondata.getAssessors_assessor()) {
 					final AtomicBoolean checkedPermissions = new AtomicBoolean();
 					for (final XnatAbstractresourceI resource : Stream.of(assessor.getResources_resource(), assessor.getIn_file(), assessor.getOut_file()).flatMap(Collection::stream).collect(Collectors.toList())) {
 						if (modifyResource((XnatAbstractresource) resource, expected, newArchive, user, sm, cache)) {
@@ -407,11 +407,11 @@ public class Rename implements Callable<File>{
 	 * @throws UnsupportedResourceType When the resource is not an {@link XnatResource} or {@link XnatResourceseries}.
 	 */
 	protected static String getPath(final XnatAbstractresource resource) throws UnsupportedResourceType{
-		if(resource instanceof XnatResource){
-			return ((XnatResource)resource).getUri();
+		if(resource instanceof XnatResource xnatResource){
+			return xnatResource.getUri();
 		}
-		if(resource instanceof XnatResourceseries){
-			return ((XnatResourceseries)resource).getPath();
+		if(resource instanceof XnatResourceseries resourceseries){
+			return resourceseries.getPath();
 		}
 		throw new UnsupportedResourceType();
 	}
@@ -423,10 +423,10 @@ public class Rename implements Callable<File>{
 	 * @throws UnsupportedResourceType When the resource is not an {@link XnatResource} or {@link XnatResourceseries}.
 	 */
 	protected static void setPath(final XnatAbstractresource resource, final String newPath) throws UnsupportedResourceType{
-		if(resource instanceof XnatResource){
-			((XnatResource)resource).setUri(newPath);
-		}else if(resource instanceof XnatResourceseries){
-			((XnatResourceseries)resource).setPath(newPath);
+		if(resource instanceof XnatResource xnatResource){
+			xnatResource.setUri(newPath);
+		}else if(resource instanceof XnatResourceseries resourceseries){
+			resourceseries.setPath(newPath);
 		}else{
 			throw new UnsupportedResourceType();
 		}

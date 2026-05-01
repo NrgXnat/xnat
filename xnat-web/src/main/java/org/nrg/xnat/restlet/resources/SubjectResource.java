@@ -456,9 +456,9 @@ public class SubjectResource extends ItemResource {
     public Representation representItem(XFTItem item, MediaType mt) {
         Representation representation = super.representItem(item, mt);
 
-        if (representation != null && proj != null && representation instanceof TurbineScreenRepresentation && StringUtils.isNotBlank(proj.getId())) {
+        if (representation != null && proj != null && representation instanceof TurbineScreenRepresentation screenRepresentation && StringUtils.isNotBlank(proj.getId())) {
             // provides appropriate rendering if the caller is querying this subject in the context of a shared project
-            ((TurbineScreenRepresentation) representation).setRunDataParameter("project", proj.getId());
+            screenRepresentation.setRunDataParameter("project", proj.getId());
         }
 
         return representation;

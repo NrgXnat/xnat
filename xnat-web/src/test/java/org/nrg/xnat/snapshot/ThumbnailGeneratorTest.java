@@ -9,7 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 import static org.junit.Assert.fail;
 
@@ -23,7 +23,7 @@ public class ThumbnailGeneratorTest {
 //            File f = new File("/Users/drm/Box/DataSets/Test/MR/Breast-MRI-NACT-Pilot/Breast-MRI-NACT-Pilot/UCSF-BR-09/01-27-1987-283948-MR\\ BODY\\ RESEARC-11580/2.000000-BREASTPASag2DSpin\\ EchoSA-39921/1-10.dcm");
             File f = new File("/tmp/tn/in.dcm");
 
-            Files.createDirectories(Paths.get("/tmp/tn"));
+            Files.createDirectories(Path.of("/tmp/tn"));
 
             ThumbnailGenerator generator = new ThumbnailGenerator();
             BufferedImage bufferedImage = generator.rescale(f, 0, 0.5f, 0.5f);

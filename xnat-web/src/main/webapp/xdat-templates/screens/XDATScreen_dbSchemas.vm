@@ -1,0 +1,62 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<div class="message">$data.message</div><br>
+#end
+#parse("/screens/admin_bar.vm")
+
+<div id="dbschema-list" class="admin-content">
+
+    <div class="header">
+        <b>Database-Backed Schemas</b>
+    </div>
+
+    <div class="data-table" style="margin-bottom:15px;">
+        <table id="dbschema-table" class="xnat-table clean sortable">
+            <thead>
+            <tr>
+                <th class="sort"><b>Name</b></th>
+                <th class="sort"><b>Path</b></th>
+                <th class="sort"><b>Content Preview</b></th>
+            </tr>
+            </thead>
+            <tbody>
+            #set($row=0)
+            #foreach($schema in $dbschemas)
+                #if($row==0)
+                <tr>
+                    #set($row=1)
+                #else
+                <tr>
+                    #set($row=0)
+                #end
+
+                <td>$!schema.getName()</td>
+                <td>$!schema.getPath()</td>
+                <td>
+                    #set($content = $!schema.getContent())
+                    #if($content.length() > 100)
+                        $content.substring(0, 100)...
+                    #else
+                        $content
+                    #end
+                </td>
+            </tr>
+            #end
+            </tbody>
+        </table>
+    </div>
+
+    <div class="clear"></div>
+
+</div>
+
+<script type="text/javascript">
+    // Optional: Add any custom JavaScript for the page here
+</script>

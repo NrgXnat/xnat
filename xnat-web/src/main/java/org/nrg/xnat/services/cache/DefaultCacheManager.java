@@ -117,7 +117,7 @@ public class DefaultCacheManager implements CacheManager, Initializing {
         }
 
         final Optional<GenericWrapperElement> optionalXdatMetaElementElement = getXdatMetaElementElement();
-        if (!optionalXdatMetaElementElement.isPresent()) {
+        if (optionalXdatMetaElementElement.isEmpty()) {
             log.warn("Couldn't find the schema element for xdat:meta_element, deferring initialization");
             return new AsyncResult<>(false);
         }
@@ -128,13 +128,13 @@ public class DefaultCacheManager implements CacheManager, Initializing {
         if (_appInfo.isPrimaryNode()) {
             // Only initialize the table if this is the primary node.
             optionalElements = initializeXdatMetaElements(user, metaElement);
-            if (!optionalElements.isPresent()) {
+            if (optionalElements.isEmpty()) {
                 log.warn("Tried to initialize the xdat:meta_element table but that didn't happen. Please check other logs for any errors, deferring initialization");
                 return new AsyncResult<>(false);
             }
         } else {
             optionalElements = retrieveXdatMetaElements(user, metaElement);
-            if (!optionalElements.isPresent()) {
+            if (optionalElements.isEmpty()) {
                 log.warn("Tried to retrieve the list of xdat:meta_element items but didn't find anything, deferring initialization");
                 return new AsyncResult<>(false);
             }
@@ -194,7 +194,7 @@ public class DefaultCacheManager implements CacheManager, Initializing {
     public void clearXsiType(final String xsiType) {
         final String  prefix = xsiType + CACHE_ID_SEPARATOR;
         final List<?> keys   = Arrays.asList("foo", "bar"); // CACHING: getNativeCache().getKeysNoDuplicateCheck();
-        keys.stream().filter(key -> key instanceof String && StringUtils.startsWith((String) key, prefix)).map(String.class::cast).forEach(_cache::remove);
+        keys.stream().filter(key -> key instanceof String s && StringUtils.startsWith(s, prefix)).map(String.class::cast).forEach(_cache::remove);
     }
 
     /**
@@ -283,7 +283,7 @@ public class DefaultCacheManager implements CacheManager, Initializing {
             return false;
         }
         final Optional<List<String>> optional = getAllXdatMetaElementNames();
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
             log.info("Couldn't load xdat:meta_element names from XFT");
             return false;
         }
@@ -310,7 +310,7 @@ public class DefaultCacheManager implements CacheManager, Initializing {
      */
     private Optional<List<ItemI>> initializeXdatMetaElements(final UserI user, final GenericWrapperElement metaElement) {
         final Optional<List<String>> optional = getAllXdatMetaElementNames();
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
             log.warn("Tried to get all xdat:meta_element names but nothing was found");
             return Optional.empty();
         }

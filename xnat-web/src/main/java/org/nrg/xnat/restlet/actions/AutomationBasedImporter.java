@@ -548,7 +548,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 							setters.add(setter);
 							if (filterList != null && filterList.size() > 0) {
 								try {
-									setter.invoke(automationEvent, filterList.get(0));
+									setter.invoke(automationEvent, filterList.getFirst());
 								} catch (IllegalAccessException | IllegalArgumentException
 										| InvocationTargetException e) {
 									returnList.add("ERROR: Could not set values for filters");

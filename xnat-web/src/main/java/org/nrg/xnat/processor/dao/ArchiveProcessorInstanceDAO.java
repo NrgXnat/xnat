@@ -82,6 +82,6 @@ public class ArchiveProcessorInstanceDAO extends AbstractHibernateDAO<ArchivePro
         criteria.add(Restrictions.eq("id", processorId));
         criteria.add(Restrictions.eq(SCOPE, Scope.Site.code()));
         final List<ArchiveProcessorInstance> processors = GenericUtils.convertToTypedList(criteria.list(), ArchiveProcessorInstance.class);
-        return CollectionUtils.isNotEmpty(processors) ? processors.get(0) : null;
+        return CollectionUtils.isNotEmpty(processors) ? processors.getFirst() : null;
     }
 }

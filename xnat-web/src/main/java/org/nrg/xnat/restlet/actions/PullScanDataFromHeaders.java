@@ -106,8 +106,8 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
 		final SAXReader reader = new SAXReader(user);
 		final XFTItem temp2 = reader.parse(xml.getAbsolutePath());
 		final XnatImagesessiondata newmr = (XnatImagesessiondata)BaseElement.GetGeneratedItem(temp2);
-		final XnatImagescandata newscan;
-        
+
+        final XnatImagescandata newscan;
     	if (newmr.getScans_scan().size() > 1) {
 			newscan = (XnatImagescandata) newmr.getScans_scan().stream()
 					.filter(s -> tempMR.getId().equals(s.getId()))
@@ -132,14 +132,14 @@ public class PullScanDataFromHeaders implements Callable<Boolean> {
 		List<String> filesToRemove = new ArrayList<>();
 	    if(allowDataDeletion) {
 			for (XnatAbstractresourceI cat : tempMR.getFile()) {
-				if (cat instanceof XnatResourcecatalog) {
-					filesToRemove.add(((XnatResourcecatalog) cat).getUri());
+				if (cat instanceof XnatResourcecatalog resourcecatalog) {
+					filesToRemove.add(resourcecatalog.getUri());
 				}
 			}
 		} else {
-			XnatAbstractresourceI res = newscan.getFile().get(0);
-			if (res instanceof XnatResourcecatalog) {
-				filesToRemove.add(((XnatResourcecatalog) res).getUri());
+			XnatAbstractresourceI res = newscan.getFile().getFirst();
+			if (res instanceof XnatResourcecatalog resourcecatalog) {
+				filesToRemove.add(resourcecatalog.getUri());
 			}
 			newscan.removeFile(0);
 		}

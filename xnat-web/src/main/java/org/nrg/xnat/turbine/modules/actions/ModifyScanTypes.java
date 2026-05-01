@@ -49,8 +49,7 @@ public class ModifyScanTypes extends ModifyItem{
 			final int numRows = Integer.parseInt((String)TurbineUtils.GetPassedParameter("numRows", data));
             
 			for(final XnatExperimentdata exp : p.getExperiments()){
-				if(exp instanceof XnatImagesessiondata){
-					XnatImagesessiondata imageSession = (XnatImagesessiondata)(exp);
+				if(exp instanceof XnatImagesessiondata imageSession){
 					if(Permissions.canEdit(user, imageSession)){					
 						final List<XnatImagescandata> scans = imageSession.getScans_scan();
 						if (scans != null) {

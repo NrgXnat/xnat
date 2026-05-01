@@ -132,7 +132,7 @@ public class MailRestlet extends SecureResource {
             returnString("OK with warnings, see log.", Status.SUCCESS_OK);
             StringBuilder issues = new StringBuilder("Found a number of issues sending email:\n\n");
             for (String issue : _issues) {
-                issues.append(String.format(FORMAT_ISSUE, issue));
+                issues.append(FORMAT_ISSUE.formatted(issue));
             }
             _log.warn(issues);
         } else {
@@ -171,13 +171,13 @@ public class MailRestlet extends SecureResource {
     public void handleParam(final String key, final Object value) throws ClientException {
         if (!_parameters.containsKey(key)) {
             if (_log.isDebugEnabled()) {
-                _log.debug(String.format("Creating new value list for parameter: %s", key));
+                _log.debug("Creating new value list for parameter: %s".formatted(key));
             }
             _parameters.put(key, new ArrayList<String>());
         }
 
         if (_log.isDebugEnabled()) {
-            _log.debug(String.format("Adding value for parameter %s: [%s]", key, value));
+            _log.debug("Adding value for parameter %s: [%s]".formatted(key, value));
         }
 
         // For now assume that value is a string until we can support other types.
@@ -193,7 +193,7 @@ public class MailRestlet extends SecureResource {
                     // Try to parse this as an integer. If it's a user ID, it'll parse and we'll use the get by ID function.
                     UserI requested = Users.getUser(Integer.parseInt(id));
                     if (requested == null) {
-                        addIssue(String.format("The user ID %s was not found in the system and was not included on the email.", id));
+                        addIssue("The user ID %s was not found in the system and was not included on the email.".formatted(id));
                     } else {
                         addresses.add(requested.getEmail());
                     }
@@ -201,7 +201,7 @@ public class MailRestlet extends SecureResource {
                     // If not an integer, we'll try it as an email address. It has to match an existing email address in the system!
                     List<? extends UserI> users = Users.getUsersByEmail(id);
                     if (users == null || users.size() == 0) {
-                        addIssue(String.format("The user email %s was not found in the system and was not included on the email.", id));
+                        addIssue("The user email %s was not found in the system and was not included on the email.".formatted(id));
                     } else {
                         addresses.add(id);
                     }
@@ -241,7 +241,7 @@ public class MailRestlet extends SecureResource {
     }
 
     private String getParameter(String parameter) {
-        return _parameters.containsKey(parameter) ? _parameters.get(parameter).get(0) : null;
+        return _parameters.containsKey(parameter) ? _parameters.get(parameter).getFirst() : null;
     }
 
     private boolean validateParameters() {
@@ -278,7 +278,7 @@ public class MailRestlet extends SecureResource {
     private String formatErrorMessage(List<String> errors) {
         StringBuilder message = new StringBuilder("The following problems were found with your submission:\n\n");
         for (String error : errors) {
-            message.append(String.format(FORMAT_ISSUE, error));
+            message.append(FORMAT_ISSUE.formatted(error));
         }
         return message.toString();
     }

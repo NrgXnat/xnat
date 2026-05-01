@@ -146,11 +146,11 @@ public class ScanIdValidator extends StatusProducer implements Callable<Boolean>
 
         //process previously matched scans
         for (final List<XnatImagescandataI> preexistingMatch : preexistingMatches) {
-            final XnatImagescandataI newScan = preexistingMatch.get(0);
+            final XnatImagescandataI newScan = preexistingMatch.getFirst();
             final XnatImagescandataI match   = preexistingMatch.get(1);
 
             //use same catalog path as existing resource
-            final XnatResourcecatalog cat          = (XnatResourcecatalog) match.getFile().get(0);
+            final XnatResourcecatalog cat          = (XnatResourcecatalog) match.getFile().getFirst();
             final String              archivedPath = cat.getUri();
             final String              partialPath  = archivedPath.substring(archivedPath.lastIndexOf(SCANS_DIR));
 

@@ -8,12 +8,15 @@ import org.nrg.xnat.tracking.model.TrackableEvent;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * @deprecated As of release 1.10. It will be removed in a future version.
  */
 @Deprecated
 public class BulkLaunchEvent implements TrackableEvent {
+    @Serial
+    private static final long serialVersionUID = 1;
     private final String id;
     private final Integer userId;
     private Integer n = null;

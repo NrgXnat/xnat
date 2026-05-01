@@ -22,11 +22,15 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 
+import java.io.Serial;
+
 /**
  * @author timo
  *
  */
 public class DirectReconResourceImpl extends ResourceModifierA {
+    @Serial
+    private static final long serialVersionUID = 1;
 	private final XnatReconstructedimagedata recon;
 	private final XnatImagesessiondata session;
 	private final String type;

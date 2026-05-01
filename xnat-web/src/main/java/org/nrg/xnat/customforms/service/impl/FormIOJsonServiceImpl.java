@@ -153,9 +153,9 @@ public class FormIOJsonServiceImpl implements FormIOJsonService {
         }
         if (subQuery != null) {
             if (filter) {
-                subQuery = String.format("%s where form_uuid not in (:%s)", subQuery, PARAM_PROJECT_UUIDS);
+                subQuery = "%s where form_uuid not in (:%s)".formatted(subQuery, PARAM_PROJECT_UUIDS);
             }
-            return String.format("select %s, %s from xhbm_custom_variable_form where form_uuid in ( %s )",FORM_UUID_COLUMN_NAME,FORM_JSON_COLUMN_NAME, subQuery);
+            return "select %s, %s from xhbm_custom_variable_form where form_uuid in ( %s )".formatted(FORM_UUID_COLUMN_NAME, FORM_JSON_COLUMN_NAME, subQuery);
         }
         return null;
     }

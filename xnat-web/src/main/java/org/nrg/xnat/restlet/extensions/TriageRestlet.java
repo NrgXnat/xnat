@@ -263,8 +263,8 @@ public class TriageRestlet extends SecureResource {
 		try {
 			URIManager.DataURIA uri=UriParserUtils.parseURI(key);
 			
-			if(uri instanceof ResourceURII){
-				return (ResourceURII)uri;
+			if(uri instanceof ResourceURII iI){
+				return iI;
 			}else{
 				throw new ClientException("Invalid Destination:"+ key);
 			}
@@ -1163,13 +1163,13 @@ private void deleteTriageResource(XnatProjectdata proj ,String projectPath,Strin
 		ZipRepresentation zRep;
 		if(getRequestedMediaType()!=null && getRequestedMediaType().equals(MediaType.APPLICATION_GNU_TAR)){
 			zRep = new ZipRepresentation(MediaType.APPLICATION_GNU_TAR,projectPath,ZipOutputStream.DEFLATED);
-			this.setContentDisposition(String.format("%s.tar.gz", fileName));
+			this.setContentDisposition("%s.tar.gz".formatted(fileName));
 		}else if(getRequestedMediaType()!=null && getRequestedMediaType().equals(MediaType.APPLICATION_TAR)){
 			zRep = new ZipRepresentation(MediaType.APPLICATION_TAR,projectPath,ZipOutputStream.STORED);
-			this.setContentDisposition(String.format("%s.tar.gz", fileName));
+			this.setContentDisposition("%s.tar.gz".formatted(fileName));
 		}else{
 			zRep = new ZipRepresentation(MediaType.APPLICATION_ZIP,projectPath,identifyCompression(null));
-			this.setContentDisposition(String.format("%s.zip", fileName));
+			this.setContentDisposition("%s.zip".formatted(fileName));
 		}
 		zRep.addAllAtRelativeDirectory(projectPath,fileList);
 		this.getResponse().setEntity(zRep);
@@ -1181,8 +1181,8 @@ private void deleteTriageResource(XnatProjectdata proj ,String projectPath,Strin
 			
 			URIManager.DataURIA uri=UriParserUtils.parseURI(key);
 			
-			if(uri instanceof URIManager.TriageURI){
-				return (URIManager.TriageURI)uri;
+			if(uri instanceof URIManager.TriageURI rI){
+				return rI;
 			}else{
 				throw new ClientException("Invalid Source:"+ key);
 			}

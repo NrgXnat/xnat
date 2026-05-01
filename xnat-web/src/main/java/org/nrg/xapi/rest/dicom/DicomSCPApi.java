@@ -9,8 +9,8 @@
 
 package org.nrg.xapi.rest.dicom;
 
-import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -18,16 +18,19 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
-import org.nrg.dcm.scp.DicomSCPManager;
 import org.nrg.dcm.scp.DicomSCPInstance;
-import org.nrg.dcm.scp.exceptions.*;
+import org.nrg.dcm.scp.DicomSCPManager;
+import org.nrg.dcm.scp.exceptions.DICOMReceiverWithDuplicatePropertiesException;
+import org.nrg.dcm.scp.exceptions.DicomNetworkException;
+import org.nrg.dcm.scp.exceptions.DicomScpInvalidAeTitleException;
+import org.nrg.dcm.scp.exceptions.DicomScpInvalidRoutingExpressionException;
+import org.nrg.dcm.scp.exceptions.DicomScpInvalidWhitelistedItemException;
+import org.nrg.dcm.scp.exceptions.DicomScpUnknownDOIException;
+import org.nrg.dcm.scp.exceptions.DicomScpUnsupportedRoutingExpressionException;
+import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -43,8 +46,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.List;
+import java.util.Map;
+
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 
 @Api("XNAT DICOM SCP management API")
 @XapiRestController
@@ -161,7 +169,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                         produces = MediaType.APPLICATION_JSON_VALUE,
                         restrictTo = Admin)
     @ResponseBody
-    public DicomSCPInstance createDicomSCPInstance(@RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException, DicomScpInvalidRoutingExpressionException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException {
+    public DicomSCPInstance createDicomSCPInstance(@RequestBody final DicomSCPInstance instance) throws DICOMReceiverWithDuplicatePropertiesException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidAeTitleException, DicomScpInvalidRoutingExpressionException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException, GeneralSecurityException {
         return _manager.saveDicomSCPInstance(instance);
     }
 
@@ -184,7 +192,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                                                            value = "{\"aeTitle\": \"TITLE\", \"port\": 8104, \"enabled\": true}"
                                                        )
                                                    }))
-                                                   @RequestBody final String instanceJson) throws NotFoundException, DICOMReceiverWithDuplicatePropertiesException, DicomScpInvalidAeTitleException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidRoutingExpressionException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException, JsonProcessingException{
+                                                   @RequestBody final String instanceJson) throws NotFoundException, DICOMReceiverWithDuplicatePropertiesException, DicomScpInvalidAeTitleException, DicomScpInvalidWhitelistedItemException, DicomScpInvalidRoutingExpressionException, DicomNetworkException, UnknownDicomHelperInstanceException, DicomScpUnsupportedRoutingExpressionException, DicomScpUnknownDOIException, JsonProcessingException, GeneralSecurityException {
         // Set the ID to the value specified in the REST call. If ID not specified on PUT, value will be zero, so we
         // need to make sure it's set to the proper value. If they submit it under the wrong ID well...
         try {
@@ -207,7 +215,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                         method = RequestMethod.DELETE,
                         produces = MediaType.APPLICATION_JSON_VALUE,
                         restrictTo = Admin)
-    public void deleteDicomSCPInstance(@ApiParam(value = "The ID of the DICOM SCP receiver definition to delete.", required = true) @PathVariable("id") final int id) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException {
+    public void deleteDicomSCPInstance(@ApiParam(value = "The ID of the DICOM SCP receiver definition to delete.", required = true) @PathVariable("id") final int id) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         _manager.deleteDicomSCPInstance(id);
     }
 
@@ -241,7 +249,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "DICOM SCP receiver definition not found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "start", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
-    public List<Triple<String, Integer, Boolean>> startAll() throws UnknownDicomHelperInstanceException, DicomNetworkException {
+    public List<Triple<String, Integer, Boolean>> startAll() throws UnknownDicomHelperInstanceException, DicomNetworkException, GeneralSecurityException {
         return _manager.start();
     }
 
@@ -252,7 +260,7 @@ public class DicomSCPApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "DICOM SCP receiver definition not found."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "stop", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
-    public List<Triple<String, Integer, Boolean>> stopDicomSCPInstances() throws DicomNetworkException, UnknownDicomHelperInstanceException {
+    public List<Triple<String, Integer, Boolean>> stopDicomSCPInstances() throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         return _manager.stop();
     }
 

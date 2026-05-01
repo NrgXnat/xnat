@@ -242,14 +242,14 @@ public abstract class AbstractXftItemAndCacheEventHandlerMethod extends Abstract
     }
 
     protected <T> void forceCacheObject(final String cacheId, final T itemId, final Object object) {
-        final Object candidate = object instanceof Provider ? ((Provider<?>) object).get() : object;
+        final Object candidate = object instanceof Provider<?> p ? p.get() : object;
         final Object target;
-        if (candidate instanceof Map) {
+        if (candidate instanceof Map<?,?> map) {
             //noinspection rawtypes,unchecked
-            target = checkMapForNullKey(cacheId, (Map) candidate);
-        } else if (candidate instanceof Multimap) {
+            target = checkMapForNullKey(cacheId, map);
+        } else if (candidate instanceof Multimap<?,?> multimap) {
             //noinspection rawtypes,unchecked
-            target = checkMultimapForNullKey(cacheId, (Multimap) candidate).asMap();
+            target = checkMultimapForNullKey(cacheId, multimap).asMap();
         } else {
             target = candidate;
         }

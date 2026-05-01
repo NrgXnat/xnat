@@ -10,6 +10,8 @@ import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+
+import java.io.Serial;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,6 +23,9 @@ import java.util.stream.Collectors;
 @ToString
 @EqualsAndHashCode(callSuper = true)
 public class ConstraintConfigEntity extends AbstractHibernateEntity {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     private ConstraintEntity constraint;
     private Map<Scope, ConstraintScopeEntity> scopes;

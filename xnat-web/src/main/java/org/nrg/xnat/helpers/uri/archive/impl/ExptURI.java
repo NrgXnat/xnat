@@ -47,8 +47,7 @@ public class ExptURI extends ArchiveURI implements ArchiveItemURI, ExperimentURI
         final XnatExperimentdata          experiment = getExperiment();
         final List<XnatAbstractresourceI> resources  = new ArrayList<>(experiment.getResources_resource());
 
-        if (experiment instanceof XnatImagesessiondata && includeAll) {
-            final XnatImagesessiondata session = (XnatImagesessiondata) experiment;
+        if (experiment instanceof XnatImagesessiondata session && includeAll) {
             for (final XnatImagescandataI scan : session.getScans_scan()) {
                 resources.addAll(scan.getFile());
             }

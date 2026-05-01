@@ -3,7 +3,7 @@
 package org.nrg.xnat.services.triage;
 
 import java.io.File;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Date;
 
 import com.google.common.collect.ListMultimap;
@@ -38,11 +38,11 @@ public class TriageUtils {
 	}
 
 	public static String getTriageProjectPath(final String project) {
-		return Paths.get(getTriageUploadsPath(), "projects", project).toString();
+		return Path.of(getTriageUploadsPath(), "projects", project).toString();
 	}
 
 	public static File getTriageFile(final String directory, final String file) {
-		return Paths.get(getTriageUploadsPath(), directory, file).toFile();
+		return Path.of(getTriageUploadsPath(), directory, file).toFile();
 	}
 
 	public static File getTriageFile(final String directory) {
@@ -52,13 +52,13 @@ public class TriageUtils {
 	public static XnatResourceInfo buildResourceInfo(final UserI user, final ListMultimap<String, Object> params, final EventMetaI ci) {
 		final XnatResourceInfo.XnatResourceInfoBuilder builder = XnatResourceInfo.builder();
 		if (!CollectionUtils.isEmpty(params.get("description"))) {
-			builder.description((String) params.get("description").get(0));
+			builder.description((String) params.get("description").getFirst());
 		}
 		if (!CollectionUtils.isEmpty(params.get("format"))) {
-			builder.format((String) params.get("format").get(0));
+			builder.format((String) params.get("format").getFirst());
 		}
 		if (!CollectionUtils.isEmpty(params.get("content"))) {
-			builder.content((String) params.get("content").get(0));
+			builder.content((String) params.get("content").getFirst());
 		}
 		if (!CollectionUtils.isEmpty(params.get("tags"))) {
 			builder.tags(GenericUtils.convertToTypedList(params.get("tags"), String.class));
@@ -79,24 +79,24 @@ public class TriageUtils {
 			throw new ClientException(Status.CLIENT_ERROR_FORBIDDEN, e);
 		}
 
-		final XnatImagesessiondata     assessed = arcURI instanceof AssessedURII ? ((AssessedURII) arcURI).getSession() : null;
+		final XnatImagesessiondata     assessed = arcURI instanceof AssessedURII aurii ? aurii.getSession() : null;
 		final ResourceModifierBuilderI builder  =new DirectResourceModifierBuilder();
-		if(arcURI instanceof ReconURII){
+		if(arcURI instanceof ReconURII iI){
 			//reconstruction
-			builder.setRecon(assessed,((ReconURII)arcURI).getRecon(), type);
-		}else if(arcURI instanceof ScanURII){
+			builder.setRecon(assessed,iI.getRecon(), type);
+		}else if(arcURI instanceof ScanURII iI){
 			//scan
-			builder.setScan(assessed, ((ScanURII)arcURI).getScan());
-		}else if(arcURI instanceof AssessorURII){//			experiment
-			builder.setAssess(assessed, ((AssessorURII)arcURI).getAssessor(), type);
-		}else if(arcURI instanceof ExperimentURII){
-			XnatExperimentdata expt =((ExperimentURII)arcURI).getExperiment();
+			builder.setScan(assessed, iI.getScan());
+		}else if(arcURI instanceof AssessorURII iI){//			experiment
+			builder.setAssess(assessed, iI.getAssessor(), type);
+		}else if(arcURI instanceof ExperimentURII iI){
+			XnatExperimentdata expt =iI.getExperiment();
 			builder.setExpt(expt.getPrimaryProject(false),expt);
-		}else if(arcURI instanceof SubjectURII){
-			XnatSubjectdata sub =((SubjectURII)arcURI).getSubject();
+		}else if(arcURI instanceof SubjectURII iI){
+			XnatSubjectdata sub =iI.getSubject();
 			builder.setSubject(sub.getPrimaryProject(false), sub);
-		}else if(arcURI instanceof ProjectURII){
-			builder.setProject(((ProjectURII)arcURI).getProject());
+		}else if(arcURI instanceof ProjectURII iI){
+			builder.setProject(iI.getProject());
 		}else{
 			throw new ClientException("Unsupported resource:"+arcURI.getUri());
 		}

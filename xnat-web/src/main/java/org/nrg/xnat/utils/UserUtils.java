@@ -31,17 +31,17 @@ public class UserUtils {
         UserUtils.CreatedArchivePathCache(dbName, username);
 
         final String cacheId = getUniqueCachePathToken(dbName, username);
-        PoolDBUtils.ExecuteNonSelectQuery(String.format(QUERY_INSERT_INTO_PATH_CACHE, username, DBAction.ValueParser(url, "string", true), cacheId, DBAction.ValueParser(absolutePath, "string", true)), dbName, username);
+        PoolDBUtils.ExecuteNonSelectQuery(QUERY_INSERT_INTO_PATH_CACHE.formatted(username, DBAction.ValueParser(url, "string", true), cacheId, DBAction.ValueParser(absolutePath, "string", true)), dbName, username);
         return cacheId;
     }
 
     public static String retrieveCacheFileLink(final String cacheId, final String dbName, final String login) throws Exception {
-        return (String) PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_GET_CACHE_PATH, StringUtils.remove(cacheId, '\'')), "absolute_path", dbName, login);
+        return (String) PoolDBUtils.ReturnStatisticQuery(QUERY_GET_CACHE_PATH.formatted(StringUtils.remove(cacheId, '\'')), "absolute_path", dbName, login);
     }
 
     private static String getUniqueCachePathToken(final String dbName, final String username) throws Exception {
         String cacheId = RandomStringUtils.randomAlphanumeric(64);
-        while (!((Boolean) PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_CHECK_TOKEN_EXISTS, cacheId), "exists", dbName, username))) {
+        while (!((Boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_CHECK_TOKEN_EXISTS.formatted(cacheId), "exists", dbName, username))) {
             cacheId = RandomStringUtils.randomAlphanumeric(64);
         }
         return cacheId;

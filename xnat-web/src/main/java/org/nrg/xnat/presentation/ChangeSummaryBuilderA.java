@@ -136,7 +136,7 @@ public abstract class ChangeSummaryBuilderA extends ItemHistoryBuilder{
 						summary.get(e.getObjectHeader()).put(e.getAction(), new ChangeSummaryGroup(e.getObjectHeader(),e.getAction()));
 					}
 					
-					summary.get(e.getObjectHeader()).get(e.getAction()).increment((e instanceof FileEvent)?((FileEvent)e).getDiff():1);
+					summary.get(e.getObjectHeader()).get(e.getAction()).increment((e instanceof FileEvent fe)?fe.getDiff():1);
 				}
 			}
 			return summary;
@@ -258,22 +258,22 @@ public abstract class ChangeSummaryBuilderA extends ItemHistoryBuilder{
 	public void handleRow(Map<Date,ChangeSummary> sb, List<FlattenedItemI> params, Integer parent, String label,Map<String,String> headers){
 		for(int i=0;i<params.size();i++){
 			FlattenedItemI fi=params.get(i);
-			if(fi instanceof FlattenedItem){
+			if(fi instanceof FlattenedItem item){
 				if(i==0){
 					//first
-					registerEvent(sb,fi.getItemObject(),((FlattenedItem)fi).getCreateEventId(),ADDED,(FieldEventI)null,((FlattenedItem)fi).getCreateUsername(),fi.getInsert_date(),fi.getParents(),fi);
+					registerEvent(sb,fi.getItemObject(),item.getCreateEventId(),ADDED,(FieldEventI)null,item.getCreateUsername(),fi.getInsert_date(),fi.getParents(),fi);
 				}else{
 					if(fi.isDeleted() && DateUtils.isEqualTo(fi.getChange_date(),fi.getLast_modified())){
 						//last
-						registerEvent(sb,fi.getItemObject(),((FlattenedItem)fi).getModifiedEventId(),REMOVED,null,((FlattenedItem)fi).getModifiedUsername(),fi.getEndDate(),fi.getParents(),fi);
+						registerEvent(sb,fi.getItemObject(),item.getModifiedEventId(),REMOVED,null,item.getModifiedUsername(),fi.getEndDate(),fi.getParents(),fi);
 						
 						if(!DateUtils.isEqualTo(fi.getInsert_date(),fi.getPrevious_change_date())){
 							FlattenedItemI previous = params.get(i-1);
-							markModifications(sb, headers, (FlattenedItem)fi, (FlattenedItem)previous);
+							markModifications(sb, headers, item, (FlattenedItem)previous);
 						}
 					}else{
 						FlattenedItemI previous = params.get(i-1);
-						markModifications(sb, headers, (FlattenedItem)fi, (FlattenedItem)previous);
+						markModifications(sb, headers, item, (FlattenedItem)previous);
 					}
 				}
 			}else{
@@ -319,11 +319,11 @@ public abstract class ChangeSummaryBuilderA extends ItemHistoryBuilder{
 				final List<FlattenedItemI> grouped=flatten(params);
 				handleRow(sb, grouped, parent, label,all_props.getHeaders());
 			}else{
-				if(params instanceof FlattenedItem){
-					registerEvent(sb,params.getItemObject(),((FlattenedItem) params).getCreateEventId(),ADDED,null,params.getCreateUsername(),params.getInsert_date(),params.getParents(),params);
+				if(params instanceof FlattenedItem item){
+					registerEvent(sb,params.getItemObject(),item.getCreateEventId(),ADDED,null,params.getCreateUsername(),params.getInsert_date(),params.getParents(),params);
 					if(params.isDeleted() && DateUtils.isEqualTo(params.getChange_date(),params.getLast_modified())){
 						//last
-						registerEvent(sb,params.getItemObject(),((FlattenedItem) params).getModifiedEventId(),REMOVED,null,params.getModifiedUsername(),params.getEndDate(),params.getParents(),params);
+						registerEvent(sb,params.getItemObject(),item.getModifiedEventId(),REMOVED,null,params.getModifiedUsername(),params.getEndDate(),params.getParents(),params);
 					}
 					
 					for(FileSummary o: params.getMisc()){
@@ -383,7 +383,7 @@ public abstract class ChangeSummaryBuilderA extends ItemHistoryBuilder{
 			this.action = action;
 			this.field=fe;
 			if(parents !=null && parents.size()>0){
-				parent=parents.get(parents.size()-1);
+				parent=parents.getLast();
 				this.parents=parents.subList(0, parents.size()-1);
 			}else{
 				this.parents=new ArrayList<FlattenedItemA.ItemObject>();

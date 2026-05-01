@@ -131,7 +131,7 @@ public class ManageEntryAccess extends ModifyItem {
                 
                 al.add(populater.getItem());
             }
-            first = (XFTItem)al.get(0);
+            first = (XFTItem)al.getFirst();
             try {
                 preProcess(first,data,context);
             } catch (RuntimeException e1) {

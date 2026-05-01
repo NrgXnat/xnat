@@ -1,0 +1,21 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api project(':framework')
+
+    api libs.spring.web
+    api libs.spring.context.support
+    api libs.httpcomponents.httpclient
+    api libs.commons.codec
+    api libs.commons.lang3
+    api libs.commons.email
+    api libs.mail.javax.mail.api
+    api libs.inject.javax.inject
+    api libs.mail.javax.mail
+
+    testImplementation libs.junit.junit
+    testImplementation libs.mockito.all
+    testImplementation libs.spring.test
+}

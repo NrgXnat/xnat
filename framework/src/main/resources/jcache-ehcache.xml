@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ web: src/main/resources/org/nrg/framework/test/jcache-ehcache.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2023, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<!--
+This "suppress XmlDeprecatedElement" is because there are deprecated notes in ehcache's schema, but the actual elements
+themselves aren't deprecated, just the usage of inline units, so e.g. <heap unit="MB">1</heap> is fine, but previously
+they supported <heap>1MB</heap> and *that* is what is deprecated. This causes an annoying warning, so deprecated is just
+turned off until that gets resolved in a better way.
+-->
+<!--suppress XmlDeprecatedElement -->
+<config xmlns="http://www.ehcache.org/v3" xmlns:jcache="http://www.ehcache.org/v3/jsr107">
+
+    <service>
+        <jcache:defaults>
+            <jcache:cache name="key-value" template="key-value-template"/>
+        </jcache:defaults>
+    </service>
+
+    <default-copiers>
+        <copier type="java.lang.Long">org.ehcache.impl.copy.IdentityCopier</copier>
+    </default-copiers>
+
+    <!--
+    To test with disk-based caching, uncomment the line below and the <disk> entries for template and cache
+    resource definitions.
+    -->
+    <!--
+    <persistence directory="target/test-cache"/>
+    -->
+
+    <cache-template name="key-value-template">
+        <key-type>java.lang.String</key-type>
+        <value-type>java.lang.String</value-type>
+        <expiry>
+            <ttl unit="minutes">60</ttl>
+        </expiry>
+        <listeners>
+            <listener>
+                <class>org.nrg.framework.jcache.DefaultGenericCacheEntryListener</class>
+                <event-firing-mode>SYNCHRONOUS</event-firing-mode>
+                <event-ordering-mode>ORDERED</event-ordering-mode>
+                <events-to-fire-on>CREATED</events-to-fire-on>
+                <events-to-fire-on>REMOVED</events-to-fire-on>
+                <events-to-fire-on>EXPIRED</events-to-fire-on>
+                <events-to-fire-on>EVICTED</events-to-fire-on>
+                <events-to-fire-on>UPDATED</events-to-fire-on>
+            </listener>
+        </listeners>
+        <resources>
+            <heap unit="MB">1</heap>
+            <offheap unit="MB">10</offheap>
+            <!-- disk unit="MB" persistent="true">100</disk -->
+        </resources>
+    </cache-template>
+
+    <cache-template name="xnat-entities-template">
+        <value-type copier="org.ehcache.impl.copy.SerializingCopier">
+            org.nrg.framework.orm.hibernate.BaseHibernateEntity
+        </value-type>
+        <listeners>
+            <listener>
+                <class>org.nrg.framework.jcache.DefaultGenericCacheEntryListener</class>
+                <event-firing-mode>ASYNCHRONOUS</event-firing-mode>
+                <event-ordering-mode>ORDERED</event-ordering-mode>
+                <events-to-fire-on>CREATED</events-to-fire-on>
+                <events-to-fire-on>REMOVED</events-to-fire-on>
+                <events-to-fire-on>EXPIRED</events-to-fire-on>
+                <events-to-fire-on>EVICTED</events-to-fire-on>
+                <events-to-fire-on>UPDATED</events-to-fire-on>
+            </listener>
+        </listeners>
+        <resources>
+            <heap unit="MB">10</heap>
+            <offheap unit="MB">100</offheap>
+            <!-- disk unit="GB" persistent="true">1</disk -->
+        </resources>
+    </cache-template>
+
+</config>

@@ -1,0 +1,87 @@
+plugins {
+    id 'buildlogic.java-common-conventions'
+    id 'groovy'
+    id 'java-gradle-plugin'
+}
+
+group = 'org.nrg.xnat.build'
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+
+    // Internal modules (transitive = false to avoid classpath conflicts)
+    // xnat-web is provided by the consumer plugin project's own classpath; compileOnly keeps it off the POM
+    compileOnly(project(':xnat-web')) { transitive = false }
+    implementation(project(':xdat'))     { transitive = false }
+    implementation(project(':framework')){ transitive = false }
+    implementation(project(':config'))   { transitive = false }
+    implementation(project(':prefs'))    { transitive = false }
+    implementation(project(':mail'))     { transitive = false }
+    implementation(project(':notify'))   { transitive = false }
+
+    // External
+    implementation libs.jgit.org.eclipse.jgit
+    implementation libs.reflections.reflections
+    implementation libs.commons.lang3
+    implementation libs.commons.io
+
+    // Runtime: Spring, Jackson, etc. needed by external plugins at build time
+    runtimeOnly libs.servlet.javax.servlet.api
+    runtimeOnly libs.spring.aop
+    runtimeOnly libs.spring.beans
+    runtimeOnly libs.spring.context.support
+    runtimeOnly libs.spring.context
+    runtimeOnly libs.spring.core
+    runtimeOnly libs.spring.jdbc
+    runtimeOnly libs.spring.jms
+    runtimeOnly libs.spring.messaging
+    runtimeOnly libs.spring.orm
+    runtimeOnly libs.spring.oxm
+    runtimeOnly libs.spring.tx
+    runtimeOnly libs.spring.web
+    runtimeOnly libs.spring.webmvc
+    runtimeOnly libs.springfox.swagger2
+    runtimeOnly libs.springfox.swagger.ui
+    runtimeOnly libs.spring.security.spring.security.acl
+    runtimeOnly libs.spring.security.spring.security.aspects
+    runtimeOnly libs.spring.security.spring.security.config
+    runtimeOnly libs.spring.security.spring.security.ldap
+    runtimeOnly libs.spring.security.spring.security.taglibs
+    runtimeOnly libs.spring.ldap.spring.ldap.core
+    runtimeOnly libs.jackson.annotations
+    runtimeOnly libs.jackson.core
+    runtimeOnly libs.jackson.databind
+    runtimeOnly libs.jackson.dataformat.yaml
+    runtimeOnly libs.jackson.datatype.guava
+    runtimeOnly libs.jackson.datatype.hibernate5
+    runtimeOnly libs.commons.configuration
+    runtimeOnly libs.commons.collections
+}
+
+// Plugin registration
+gradlePlugin {
+    plugins {
+        xnatDataBuilderPlugin {
+            id = 'org.nrg.xnat.build.xnat-data-builder'
+            implementationClass = 'org.nrg.xnat.build.XnatDataBuilderPlugin'
+        }
+    }
+}
+
+// Generate metadata properties for XnatDataBuilderExtension to read version
+def generatePluginMetadata = tasks.register('generatePluginMetadata') {
+    def metadataFile = layout.buildDirectory.file('generated/xnat-data-builder-metadata.properties')
+    def projectVersion = project.version   // capture at configuration time for CC
+    outputs.file metadataFile
+    doLast {
+        metadataFile.get().asFile.with {
+            parentFile.mkdirs()
+            text = "version=${projectVersion}"
+        }
+    }
+}
+tasks.named('processResources') { from files(generatePluginMetadata) }
+
+// javadoc fails on Lombok-generated classes
+tasks.named('javadoc') { failOnError = false }

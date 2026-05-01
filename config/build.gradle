@@ -1,0 +1,33 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api project(':prefs')
+
+    implementation libs.commons.beanutils
+    implementation libs.spring.orm
+    implementation libs.spring.context
+    implementation libs.hibernate.core
+    implementation libs.commons.lang3
+    implementation libs.cglib.cglib
+    implementation libs.javassist.javassist
+    implementation libs.google.guava
+    implementation libs.jackson.databind
+
+    compileOnly libs.servlet.javax.servlet.api
+
+    testImplementation libs.servlet.javax.servlet.api
+    testImplementation project(':test')
+    testImplementation libs.h2database.h2
+    testImplementation libs.postgresql.postgresql
+    testImplementation libs.slf4j.simple
+    testImplementation libs.junit.junit
+    testImplementation libs.commons.io
+    testImplementation libs.spring.test
+    testImplementation libs.assertj.core
+}
+
+test {
+    jvmArgs '-Xmx8g'
+}

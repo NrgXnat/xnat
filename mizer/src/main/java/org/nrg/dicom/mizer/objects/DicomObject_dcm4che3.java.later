@@ -1,0 +1,628 @@
+package org.nrg.dicom.mizer.objects;
+
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.ElementDictionary;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.io.DicomInputStream;
+import org.nrg.dicom.mizer.exceptions.MizerException;
+import org.nrg.dicom.mizer.tags.TagPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Attr;
+
+import java.io.*;
+
+/**
+ * Instantiate concrete implementations of DicomObjectI.
+ */
+public class DicomObject_dcm4che3 implements DicomObjectI {
+
+    private static final ElementDictionary dict = ElementDictionary.getStandardElementDictionary();
+    private final Attributes attributes;
+    private static final Logger logger = LoggerFactory.getLogger(DicomObject_dcm4che3.class);
+
+    public DicomObject_dcm4che3() {
+        this.attributes = new Attributes();
+    }
+
+    public DicomObject_dcm4che3( File f) throws MizerException, FileNotFoundException {
+        this(new FileInputStream( f));
+    }
+
+    public DicomObject_dcm4che3(final InputStream input) throws MizerException {
+        try (DicomInputStream din = new DicomInputStream( input)) {
+            String ts = din.getTransferSyntax();
+            this.attributes = din.readDataset(-1,-1);
+            attributes.setString( Tag.TransferSyntaxUID, dict.vrOf(Tag.TransferSyntaxUID), ts);
+        }
+        catch (IOException e) {
+            throw new MizerException(e);
+        }
+    }
+
+    public DicomObject_dcm4che3(final Attributes attributes) {
+        this.attributes = attributes;
+    }
+
+    /**
+     * Return the value(s) at the specified tagPath as a String.
+     *
+     * The values of tags with multiplicity &gt; 1 are concatenated and separated with the DICOM value-separation character \.
+     *
+     * @param tagPath The {@link TagPath tag path} to retrieve.
+     *
+     * @return String representation of value(s) at specified tagPath. null if the tag does not exist, empty string if tag exists but is empty.
+     *
+     * @throws NumberFormatException if tagPath contains wildcard chars and does not resolve to a unique tag.
+     */
+    @Override
+    public String getString(TagPath tagPath) {
+        int[] tagArray = this.resolve(tagPath, false);
+        return getString(tagArray);
+    }
+
+    /**
+     * Return the value(s) at the specified tag as a String.
+     *
+     * The values of tags with multiplicity &gt; 1 are concatenated and separated with the DICOM value-separation character \.
+     *
+     * @param tag The tag to retrieve.
+     *
+     * @return String representation of value(s) at specified tag. null if the tag does not exist, empty string if tag exists but is empty.
+     */
+    @Override
+    public String getString(int tag) {
+        int[] tagArray = new int[1];
+        tagArray[0] = tag;
+        final String value =  getString(tagArray);
+        logger.debug("Got: {} = {}", TagPath.toString(tagArray), value);
+        return value;
+    }
+
+    @Override
+    public byte[] getBytes( int tag) throws IOException {
+        return attributes.getBytes( tag);
+    }
+
+    @Override
+    public void putBytes( int tag, String vrString, byte[] b) {
+        VR vr = VR.valueOf( vrString);
+        attributes.setBytes( tag, vr, b);
+    }
+
+    /**
+     * Return the value(s) at the specified tag array as a String.
+     *
+     * The values of tags with multiplicity &gt; 1 are concatenated and separated with the DICOM value-separation character \.
+     *
+     * @param tagArray An array of tags to evaluate.
+     *
+     * @return String representation of value(s) at specified tag. null if the tag does not exist, empty string if tag exists but is empty.
+     */
+    @Override
+    public String getString(final int... tagArray) {
+        String s = null;
+        if( tagArray.length % 2 == 0) {
+            throw new IllegalArgumentException("Tag array length must be odd to address attribute");
+        }
+        Attributes a = attributes;
+        for( int i = 0; i < tagArray.length; i++) {
+            if( i == tagArray.length-1) {
+                s = a.getString( tagArray[i]);
+            }
+            else {
+                a = a.getNestedDataset( tagArray[i], tagArray[i+1]);
+                i++;
+            }
+        }
+        return s;
+    }
+
+    /**
+     * Return the resolved private tag in the context of this dicom object, optionally create the tag if it does not exist.
+     *
+     * Will create the associated private creator ID if the tag being created requires it.
+     *
+     * @param tag        tag to be resolved, in range of 0xggggnnee where nn is ignored.
+     * @param pvtCreator value of private creator ID of the owner of this tag.
+     * @param create     create the resolved tag with empty value if the tag does not exist and this flag is true.
+     *
+     * @return the resolved private tag with value 0xggggbbee where bb is the block value reserved by the private creator.
+     * or -1 if there is no reserved block.
+     */
+    @Override
+    public int resolvePrivateTag(int tag, String pvtCreator, boolean create) {
+        attributes.
+        return dobj.resolveTag(tag, pvtCreator, create);
+    }
+
+        @Override
+        public void assign(TagPath tagPath, String value) {
+            if (tagPath.isSingular()) {
+            	if (value == null) {
+                    logger.debug("Failed to assign null value to tag: {}", tagPath);
+            		return;
+            	}
+                VRMap vrmap = VRMap.getVRMap();
+                int tag = tagPath.getLastTag().asInt();
+                VR vr = vrmap.vrOf(tag);
+
+                if (VR.UN == vr) {
+                    logger.warn("Warning: VR for tag " + TagUtils.toString(tag) + " is unknown. Using VR = UN.");
+                    vr = VR.UN;
+                }
+//            dobj.putString( this.resolve(tagPath), vr, value);
+                int[] ia = this.resolve(tagPath, true);
+                logger.debug("Assign: " + TagPath.toString(ia) + " = " + value);
+                dobj.putBytes(ia, vr, value.getBytes());
+                attributes.setS
+
+            } else {
+                logger.warn("You can't assign to a tagpath that maps to multiple tags.");
+            }
+        }
+
+        @Override
+        public void assign(int tag, Value value) {
+            VRMap vrmap = VRMap.getVRMap();
+            VR vr = vrmap.vrOf(tag);
+        	if (value == null) {
+                logger.debug("Failed to assign null value to tag: {}", tag);
+        		return;
+        	}
+
+            if (vr == VR.UN) {
+                logger.debug("Uh Oh. Assigning value to Dicom element with unknown VR.");
+                logger.debug("Using VR = LO for now but fix this.");
+                logger.debug("Add an entry in the data dictionary: " + TagUtils.toString(tag));
+                vr = VR.LO;
+            }
+            dobj.putString(tag, vr, value.asString());
+        }
+
+        @Override
+        public void assign(int[] tagPath, Value value) {
+            VRMap vrmap = VRMap.getVRMap();
+            int tag = tagPath[tagPath.length - 1];
+            VR vr = vrmap.vrOf(tag);
+        	if (value == null) {
+                logger.debug("Failed to assign null value to tag: {}", tag);
+        		return;
+        	}
+
+            DicomObject tmpdobj = dobj;
+            for (int i = 0; i < tagPath.length - 1; i++) {
+                DicomElement element = tmpdobj.get(tagPath[i]);
+                if (element == null) {
+                    element = tmpdobj.putSequence(tagPath[i]);
+                }
+                DicomObject newdobj = element.getDicomObject();
+                if (newdobj == null) {
+                    newdobj = new BasicDicomObject();
+                    element.addDicomObject(newdobj);
+                }
+                tmpdobj = newdobj;
+            }
+            // TODO: Use the right VR.
+            if (VR.UN == vr) {
+                logger.debug("Warning: VR for tag " + TagUtils.toString(tag) + " is unknown.");
+            }
+            tmpdobj.putString(tagPath[tagPath.length - 1], vr, value.asString());
+        }
+
+        @Override
+        public void delete(int tag) {
+            dobj.remove(tag);
+        }
+
+        @Override
+        public void delete(int[] tags) {
+            dobj.remove(tags);
+        }
+
+        @Override
+        public void delete(final TagPath tagPathToDelete) {
+            DicomObjectVisitor deleteVisitor = new DicomObjectVisitor() {
+                @Override
+                public void visitTag(TagPath tagPath, DicomElementI dicomElement, DicomObjectI dicomObject) {
+                    logger.debug("Testing " + tagPath + " against " + tagPathToDelete + " with regex " + tagPathToDelete.getRegex());
+                    if (tagPathToDelete.isExtendedMatch(tagPath)) {
+                        logger.debug("Delete tagPath = " + tagPath);
+                        dicomObject.delete( dicomElement.tag());
+                    }
+                }
+
+                @Override
+                public void visitSequenceTag(TagPath tagPath, DicomElementI dicomElement, DicomObjectI dicomObject) {
+                }
+            };
+
+            deleteVisitor.visit(this);
+            // TODO: do we want to leave empty items?
+            deleteEmptyItems(dobj);
+            deleteEmptyPrivateBlocks(dobj);
+        }
+
+        @Override
+        public void deleteEmptyPrivateBlocks() {
+            deleteEmptyPrivateBlocks(dobj);
+        }
+
+        @Override
+        public DicomObject getDcm4che2Object() {
+            return dobj;
+        }
+
+        @Override
+        public void addMetaHeader() {
+            dobj.putString(0x00020010, VR.UI, "1.2.840.10008.1.2.1");
+        }
+
+        @Override
+        public Iterator<DicomElementI> iterator() {
+            return new MizerDicomObject.DOIterator();
+        }
+
+        public int[] resolve(TagPath tagPath, boolean create) {
+            List<Integer> tagArray = new ArrayList<>();
+            DicomObject tmpdobj = dobj;
+
+            for (Tag t : tagPath.getTags()) {
+                if (t instanceof TagSequence) {
+                    TagSequence ts = (TagSequence) t;
+                    Tag tag = ts.getTag();
+                    if (tag instanceof TagPrivate) {
+                        TagPrivate tagPrivate = (TagPrivate) tag;
+                        int resolvedTag = tmpdobj.resolveTag(tag.asInt(), tagPrivate.getPvtCreatorID(), create);
+                        if (resolvedTag == -1) {
+                            DicomElement de = tmpdobj.putSequence(tag.asInt());
+                            tmpdobj.putString(tagPrivate.getPvtCreatorIDTag(), VR.LO, tagPrivate.getPvtCreatorID());
+                            tmpdobj = de.getDicomObject();
+                            resolvedTag = tagPrivate.getPvtCreatorIDTag();
+                        }
+                        tagArray.add(resolvedTag);
+                        tagArray.add(ts.getItemNumberAsInt());
+                    } else if (tag instanceof TagPublic) {
+//                    TagPublic tagPublic = (TagPublic) tag;
+                        DicomElement de = tmpdobj.get(tag.asInt());
+                        if (de == null) {
+                            de = tmpdobj.putSequence(tag.asInt());
+                            de.addDicomObject(new BasicDicomObject());
+                        }
+                        tmpdobj = de.getDicomObject();
+                        tagArray.add(tag.asInt());
+                        tagArray.add(ts.getItemNumberAsInt());
+                    }
+                } else if (t instanceof TagPublic) {
+                    tagArray.add(t.asInt());
+                } else if (t instanceof TagPrivate) {
+                    TagPrivate tagPrivate = (TagPrivate) t;
+                    int resolvedTag = tmpdobj.resolveTag(t.asInt(), tagPrivate.getPvtCreatorID(), true);
+                    if (resolvedTag == -1) {
+                        tmpdobj.putString(tagPrivate.getPvtCreatorIDTag(), VR.LO, tagPrivate.getPvtCreatorID());
+                        resolvedTag = tagPrivate.getPvtCreatorIDTag();
+                    }
+                    tagArray.add(resolvedTag);
+                } else if (t instanceof TagPrivateCreator) {
+                    TagPrivateCreator tpc = (TagPrivateCreator) t;
+                    int resolvedTag = tmpdobj.resolveTag(t.asInt(), tpc.getPvtCreatorID(), false);
+                    tagArray.add(resolvedTag);
+                } else {
+                    // TODO: Need good logging here.  Or die?
+                    logger.debug("Error resolving tag of unimplemented type: " + t);
+                }
+            }
+
+//        int[] array = tagArray.stream().mapToInt(i->i).toArray();
+            return TagPath.copyListToArray(tagArray);
+        }
+
+        @Override
+        public DicomObjectI getDicomObject(Tag tag) {
+            return null;
+        }
+
+        @Override
+        public DicomElementI get(Tag tag) {
+            return null;
+        }
+
+        /**
+         * Add the provided string value to the private tag.
+         *
+         * For a tag of form 0xggggbbee, putString ignores bb and "does the right thing", creating the private creator
+         * ID element if needed and then puts the tag in the right block.
+         *
+         * Convenient for creating test DICOM objects.
+         *
+         * @param tag          The tag to write to.
+         * @param pvtCreatorID The ID of the private tag creator.
+         * @param value        The value to write to the tag.
+         *
+         * @return The ID of the resolved tag.
+         */
+        @Override
+        public int putString(int tag, String pvtCreatorID, String value) {
+            int t = dobj.resolveTag(tag, pvtCreatorID, true);
+            // TODO: use right VR.
+            dobj.putString(t, VR.LO, value);
+            return t;
+        }
+
+        public void putString(int[] tags, String s) {
+            dobj.putString(tags, VR.LO, s);
+        }
+
+        public void putString(int tag, String s) {
+            dobj.putString(tag, VR.LO, s);
+        }
+
+        public void removeTag(int tag) {
+            dobj.remove(tag);
+        }
+
+        public void removePrivateTag(int tag, String pvtCreatorID) {
+            dobj.remove(dobj.resolveTag(tag, pvtCreatorID));
+        }
+
+        @Override
+        public void write(OutputStream os) throws MizerException {
+            try (final DicomOutputStream out = new DicomOutputStream(os)) {
+                String tsString = dobj.getString( 0x00020010);
+                if( tsString == null) {
+                    dobj.putString( 0x00020010, VR.UI, "1.2.840.10008.1.2.1"); // ExplicitVRLittleEndian
+                }
+                out.writeDicomFile(dobj);
+                logger.debug(dobj.toString());
+            } catch (IOException e) {
+                throw new MizerException(e);
+            }
+        }
+
+        @Override
+        public boolean contains(Tag tag) {
+            if (tag instanceof TagPublic) {
+                return contains((TagPublic) tag);
+            } else if (tag instanceof TagPrivate) {
+                return contains((TagPrivate) tag);
+            } else if (tag instanceof TagSequence) {
+                return contains((TagSequence) tag);
+            }
+            return false;
+        }
+
+        @Override
+        public boolean contains(TagPath tagPath) {
+            for (final Tag t : tagPath.getTags()) {
+                if (!contains(t)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public boolean contains(int tag) {
+            return dobj.contains(tag);
+        }
+
+        /**
+         * return true if an element exists at the tagpath.
+         *
+         * Handy for unit tests.
+         *
+         * @param tagArray The tag path to evaluate.
+         *
+         * @return Whether the element exists at the submitted tag path.
+         */
+        @Override
+        public boolean contains(int[] tagArray) {
+            return dobj.get(tagArray) != null;
+        }
+
+        @Override
+        public String getPrivateCreator(int t) {
+            return dobj.getPrivateCreator(t);
+        }
+
+        @Override
+        public boolean isSequenceElement(int t) {
+            return dobj.get(t).hasItems();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return dobj.isEmpty();
+        }
+
+        @Override
+        public void deleteAllPrivateTags() {
+            deleteAllPrivateTags(dobj);
+        }
+
+        @Override
+        public String toString() {
+            return dobj.toString();
+        }
+
+        private InputStream getInputStream(final File f) throws IOException {
+            final InputStream fin = new BufferedInputStream( new FileInputStream(f));
+            return f.getName().endsWith("gz") ? new GZIPInputStream(fin) : fin;
+        }
+
+        private void deleteEmptyItems(DicomObject dicomObject) {
+            Iterator<DicomElement> it = dicomObject.iterator();
+            while (it.hasNext()) {
+                DicomElement de = it.next();
+                deleteEmptyItems(de, dicomObject);
+            }
+        }
+
+        private void deleteEmptyItems(DicomElement de, DicomObject parent) {
+            if (de.hasItems()) {
+                if( ! de.isEmpty()) {
+                    List<DicomObject> items = getItems( de);
+
+                    for(DicomObject item: items) {
+                        if( item.isEmpty()) {
+                            de.removeDicomObject( item);
+                        }
+                        else {
+                            deleteEmptyItems(item);
+                        }
+                    }
+                    if( ifItemsAreEmpty( items)) {
+                        parent.remove(de.tag());
+                    }
+                }
+                else {
+                    parent.remove( de.tag());
+                }
+            }
+        }
+
+        private boolean ifItemsAreEmpty( List<DicomObject> items) {
+            for( DicomObject item: items) {
+                if( ! item.isEmpty()) return false;
+            }
+            return true;
+        }
+
+        private List<DicomObject> getItems( DicomElement de) {
+            List<DicomObject> items = new ArrayList<>();
+            if( de.hasItems() && ( ! de.isEmpty())) {
+                for (int i = 0; i < de.countItems(); i++) {
+                    items.add(de.getDicomObject(i));
+                }
+            }
+            return items;
+        }
+
+        /**
+         * Return a map of all private blocks to all their tags.
+         *
+         * @param dicomObject The DICOM object to evaluate.
+         *
+         * @return Return a map of private blocks to all their tags.
+         */
+        private Map<PrivateBlock, List<Integer>> listPrivateBlocks(DicomObject dicomObject) {
+            Map<PrivateBlock, List<Integer>> privateBlockTagMap = new HashMap<>();
+            for (Iterator<DicomElement> it = dicomObject.iterator(); it.hasNext(); ) {
+                int tag = it.next().tag();
+                if (isPrivateDataElement(tag)) {
+                    String pvtCreatorID = isPrivateCreatorDataElement(tag) ? dicomObject.getString(tag) : dicomObject.getPrivateCreator(tag);
+                    PrivateBlock newPB = new PrivateBlock(tag, pvtCreatorID);
+                    if (privateBlockTagMap.containsKey(newPB)) {
+                        List<Integer> tagList = privateBlockTagMap.get(newPB);
+                        tagList.add(tag);
+                    } else {
+                        List<Integer> tagList = new ArrayList<>();
+                        tagList.add(tag);
+                        privateBlockTagMap.put(newPB, tagList);
+                    }
+                }
+            }
+            return privateBlockTagMap;
+        }
+
+        private void deleteEmptyPrivateBlocks(DicomObject dicomObject) {
+            Map<PrivateBlock, List<Integer>> privateBlockTagMap = listPrivateBlocks(dicomObject);
+            for (PrivateBlock pb : privateBlockTagMap.keySet()) {
+                if (privateBlockTagMap.get(pb).size() == 1) {
+                    int tag = privateBlockTagMap.get(pb).get(0);
+                    dicomObject.remove(tag);
+                }
+            }
+        }
+
+        private void deleteAllPrivateTags(DicomObject dicomObject) {
+
+            for (Iterator<DicomElement> it = dicomObject.datasetIterator(); it.hasNext(); ) {
+                DicomElement de = it.next();
+                if (isPrivateDataElement(de.tag())) {
+                    dicomObject.remove(de.tag());
+                } else if (de.hasItems()) {
+                    for (int i = 0; i < de.countItems(); i++) {
+                        deleteAllPrivateTags(de.getDicomObject(i));
+                    }
+                }
+
+            }
+        }
+
+        private boolean contains(TagPublic tagPublic) {
+            return dobj.contains(tagPublic.asInt());
+        }
+
+        private boolean contains(TagPrivate tagPrivate) {
+            int tagInt = dobj.resolveTag(tagPrivate.asInt(), tagPrivate.getPvtCreatorID(), false);
+            return dobj.contains(tagInt);
+        }
+
+        private boolean contains(TagSequence tagSequence) {
+            boolean b = false;
+            DicomElement dicomElement = dobj.get(tagSequence.getTag().asInt());
+            if (dicomElement != null) {
+                b = (dicomElement.getDicomObject(tagSequence.getItemNumberAsInt()) != null);
+            }
+            return b;
+        }
+
+        private class DOIterator implements Iterator<DicomElementI> {
+
+            Iterator<DicomElement> iterator = dobj.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public DicomElementI next() {
+                return new MizerDicomElement(iterator.next());
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        }
+    }
+
+    private static class MizerDicomElement implements DicomElementI {
+
+        private final DicomElement element;
+
+        public MizerDicomElement(final DicomElement element) {
+            this.element = element;
+        }
+
+        @Override
+        public int tag() {
+            return element.tag();
+        }
+
+        @Override
+        public boolean hasItems() {
+            return element.hasItems();
+        }
+
+        @Override
+        public int countItems() {
+            return element.countItems();
+        }
+
+        @Override
+        public DicomObjectI getDicomObject(int i) {
+            return new MizerDicomObject( element.getDicomObject( i));
+        }
+
+        @Override
+        public void removeItem( int i) {
+            element.removeDicomObject(i);
+        }
+    }
+
+    private static final Logger logger = LoggerFactory.getLogger(DicomObject_dcm4che3.class);
+}

@@ -1,0 +1,427 @@
+[versions]
+# Auto-extracted from parent/pom.xml
+# Source: parent releases/1.9.3.2-rc branch
+
+activemq = "5.16.7"
+activemq-protobuf = "1.1"
+ant = "1.9.8"
+antlr3 = "3.5.3"
+antlr4 = "4.9.3"
+aopalliance = "1.0"
+aspectj = "1.8.10"
+assertj = "3.24.2"
+auto-value = "1.7.4"
+avalon = "4.3"
+batch-launch = "0.4.0"
+bouncycastle = "1.78.1"
+cargo = "1.6.5"
+cglib = "2.2.2"
+checkstyle = "9.3"
+commons-beanutils = "1.9.4"
+commons-cli = "1.4"
+commons-codec = "1.10"
+commons-collections = "3.2.2"
+commons-collections4 = "4.4"
+commons-compress = "1.26.0"
+commons-configuration = "1.10"
+commons-configuration2 = "2.10.1"
+commons-csv = "1.10.0"
+commons-dbcp2 = "2.9.0"
+commons-digester = "1.8.1"
+commons-discovery = "0.5"
+commons-email = "1.5"
+commons-fileupload = "1.5"
+commons-io = "2.15.1"
+commons-lang = "2.6"
+commons-lang3 = "3.11"
+commons-logging = "1.1.1"
+commons-math = "2.2"
+commons-net = "3.10.0"
+commons-pool2 = "2.9.0"
+commons-text = "1.10.0"
+container-service = "3.0.0"
+datasets = "1.0.0"
+datasource-proxy = "1.6"
+dcm4che = "2.0.29"
+dcm4che5 = "5.31.0"
+dicom-edit6 = "6.8.0"
+dom4j = "1.6.1"
+dqr = "1.0.0"
+easymock = "1.2_Java1.3"
+eclipse-jgit = "5.13.3.202401111512-r"
+ecs = "1.4.2"
+ehcache3 = "3.10.8"
+fastmd5 = "2.7.1"
+fest-swing = "1.2.1"
+findbugs-jsr305 = "3.0.2"
+fop = "0.20.5"
+glassfish-jakarta-el = "4.0.2"
+glassfish-javax-el = "3.0.1-b12"
+groovy = "2.4.20"
+gson = "2.9.0"
+guava = "32.1.3-jre"
+h2 = "1.4.200"
+hamcrest = "1.3"
+hamcrest2 = "2.2"
+hibernate = "5.6.15.Final"
+hibernate-commons = "5.1.2.Final"
+hibernate-jpa-api = "1.0.2.Final"
+hibernate-validator = "5.4.3.Final"
+hikaricp = "4.0.3"
+hsqldb = "2.3.6"
+httpcomponents-client = "4.5.13"
+httpcomponents-core = "4.4.6"
+httpcomponents-mime = "4.5.14"
+imagej = "1.53c"
+io-projectreactor = "2.0.8.RELEASE"
+itext = "2.1.7"
+jackson = "2.13.5"
+jacoco = "0.8.10"
+jai-imageio = "1.1"
+jakarta-el = "4.0.2"
+jargon = "1.4.25"
+java-getopt = "1.0.13"
+java-uuid-generator = "3.1.4"
+javadoc-coverage = "1.1.1"
+javamelody = "1.91.0"
+javassist = "3.24.0-GA"
+javax-activation = "1.2.0"
+javax-annotation = "1.3.2"
+javax-cache-api = "1.1.1"
+javax-el = "2.2.5"
+javax-inject = "1"
+javax-interceptor = "1.2.2"
+javax-j2ee-api = "1.1.1"
+javax-jms-api = "2.0.1"
+javax-mail = "1.5.6"
+jayway = "2.8.0"
+jcalendar = "1.4"
+jcs = "1.3"
+jena = "2.11.1"
+jena-tdb = "1.0.1"
+jetty = "6.1.25"
+joda-time = "2.7"
+jruby = "1.7.19"
+json = "20231013"
+jstl = "1.2"
+junit = "4.13.2"
+junit-jupiter = "5.8.1"
+jython = "2.7.3"
+jzlib = "1.1.3"
+log4j = "1.2.17"
+log4j2 = "2.12.0"
+log4jdbc = "0.2.0"
+logback = "1.2.13"
+logstash = "5.3"
+lombok = "1.18.26"
+lorem = "2.1"
+metainf-services = "1.8"
+ml = "1.0.0"
+mockito = "2.28.2"
+mockito-all = "1.10.19"
+mockito-jupiter = "4.0.0"
+msv = "2013.6.1"
+nifti-io = "1.0"
+ohif-viewer = "3.0.0"
+org-apache-regexp = "1.5.0"
+org-postgresql = "42.7.3"
+pixelmed = "nrg-20200327"
+pixelmed-codec = "20200328"
+pixelmed-imageio = "20200328"
+powermock = "2.0.5"
+quartz = "2.3.2"
+redisson = "3.22.0"
+reflections = "0.10.2"
+restlet = "1.1.10"
+saxon = "9.1.0.8"
+servlet-api = "3.1.0"
+slf4j = "1.7.30"
+snakeyaml = "1.33"
+spotbugs = "4.7.3.4"
+spring-framework = "5.3.39"
+spring-jwt = "1.1.1.RELEASE"
+spring-ldap = "2.4.2"
+spring-oauth2 = "2.5.2.RELEASE"
+spring-security = "5.7.13"
+spring-test-junit5 = "1.5.0"
+springockito = "1.0.5"
+swagger = "2.9.2"
+tomcat-embed = "9.0.93"
+torque = "3.3"
+turbine = "2.3.3"
+user-agent-utils = "1.20"
+velocity = "1.7"
+velocity-tools = "2.0"
+vladmihalcea-hibernate-types = "2.14.0"
+wiremock = "2.21.0"
+wizard = "1.2.1"
+xalan = "2.7.2"
+xbean = "3.17"
+
+[libraries]
+# Auto-extracted from parent/pom.xml dependencyManagement
+
+activation-javax-activation-api = { group = "javax.activation", name = "javax.activation-api", version.ref = "javax-activation" }
+activemq-all = { group = "org.apache.activemq", name = "activemq-all", version.ref = "activemq" }
+activemq-broker = { group = "org.apache.activemq", name = "activemq-broker", version.ref = "activemq" }
+activemq-client = { group = "org.apache.activemq", name = "activemq-client", version.ref = "activemq" }
+activemq-jaas = { group = "org.apache.activemq", name = "activemq-jaas", version.ref = "activemq" }
+activemq-jdbc-store = { group = "org.apache.activemq", name = "activemq-jdbc-store", version.ref = "activemq" }
+activemq-kahadb-store = { group = "org.apache.activemq", name = "activemq-kahadb-store", version.ref = "activemq" }
+activemq-mqtt = { group = "org.apache.activemq", name = "activemq-mqtt", version.ref = "activemq" }
+activemq-openwire-legacy = { group = "org.apache.activemq", name = "activemq-openwire-legacy", version.ref = "activemq" }
+activemq-protobuf = { group = "org.apache.activemq.protobuf", name = "activemq-protobuf", version.ref = "activemq-protobuf" }
+activemq-spring = { group = "org.apache.activemq", name = "activemq-spring", version.ref = "activemq" }
+activemq-stomp = { group = "org.apache.activemq", name = "activemq-stomp", version.ref = "activemq" }
+annotation-javax-annotation-api = { group = "javax.annotation", name = "javax.annotation-api", version.ref = "javax-annotation" }
+antlr4 = { group = "org.antlr", name = "antlr4", version.ref = "antlr4" }
+antlr4-runtime = { group = "org.antlr", name = "antlr4-runtime", version.ref = "antlr4" }
+antlr-antlr = { group = "org.antlr", name = "antlr", version.ref = "antlr3" }
+antlr-runtime = { group = "org.antlr", name = "antlr-runtime", version.ref = "antlr3" }
+aopalliance-aopalliance = { group = "aopalliance", name = "aopalliance", version.ref = "aopalliance" }
+apache-ant = { group = "org.apache.ant", name = "ant", version.ref = "ant" }
+apache-com-springsource-org-apache-regexp = { group = "org.apache.regexp", name = "com.springsource.org.apache.regexp", version.ref = "org-apache-regexp" }
+apache-jena-core = { group = "org.apache.jena", name = "jena-core", version.ref = "jena" }
+apache-jena-tdb = { group = "org.apache.jena", name = "jena-tdb", version.ref = "jena-tdb" }
+apache-log4j-bom = { group = "org.apache.logging.log4j", name = "log4j-bom", version.ref = "log4j2" }
+apache-tomcat-embed-core = { group = "org.apache.tomcat.embed", name = "tomcat-embed-core", version.ref = "tomcat-embed" }
+apache-tomcat-embed-jasper = { group = "org.apache.tomcat.embed", name = "tomcat-embed-jasper", version.ref = "tomcat-embed" }
+apache-tomcat-embed-logging-juli = { group = "org.apache.tomcat.embed", name = "tomcat-embed-logging-juli", version.ref = "tomcat-embed" }
+apache-velocity = { group = "org.apache.velocity", name = "velocity", version.ref = "velocity" }
+apache-velocity-tools = { group = "org.apache.velocity", name = "velocity-tools", version.ref = "velocity-tools" }
+apache-xbean-spring = { group = "org.apache.xbean", name = "xbean-spring", version.ref = "xbean" }
+aspectj-rt = { group = "org.aspectj", name = "aspectjrt", version.ref = "aspectj" }
+aspectj-weaver = { group = "org.aspectj", name = "aspectjweaver", version.ref = "aspectj" }
+assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
+avalon-framework-avalon-framework-impl = { group = "avalon-framework", name = "avalon-framework-impl", version.ref = "avalon" }
+bitwalker-useragentutils = { group = "eu.bitwalker", name = "UserAgentUtils", version.ref = "user-agent-utils" }
+# SKIP: bmuschko-gradle-cargo-plugin = { group = "com.bmuschko", name = "gradle-cargo-plugin" } # unresolved version: ${gradle-cargo-plugin.version}
+# SKIP: bmuschko-gradle-tomcat-plugin = { group = "com.bmuschko", name = "gradle-tomcat-plugin" } # unresolved version: ${gradle-tomcat-plugin.version}
+bouncycastle-bcpkix-jdk18on = { group = "org.bouncycastle", name = "bcpkix-jdk18on", version.ref = "bouncycastle" }
+cache-api = { group = "javax.cache", name = "cache-api", version.ref = "javax-cache-api" }
+cargo-ant = { group = "org.codehaus.cargo", name = "cargo-ant", version.ref = "cargo" }
+cargo-core-api-module = { group = "org.codehaus.cargo", name = "cargo-core-api-module", version.ref = "cargo" }
+cargo-core-uberjar = { group = "org.codehaus.cargo", name = "cargo-core-uberjar", version.ref = "cargo" }
+cglib-cglib = { group = "cglib", name = "cglib", version.ref = "cglib" }
+commons-beanutils = { group = "commons-beanutils", name = "commons-beanutils", version.ref = "commons-beanutils" }
+commons-cli = { group = "commons-cli", name = "commons-cli", version.ref = "commons-cli" }
+commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commons-codec" }
+commons-collections = { group = "commons-collections", name = "commons-collections", version.ref = "commons-collections" }
+commons-collections4 = { group = "org.apache.commons", name = "commons-collections4", version.ref = "commons-collections4" }
+commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commons-compress" }
+commons-configuration = { group = "commons-configuration", name = "commons-configuration", version.ref = "commons-configuration" }
+commons-configuration2 = { group = "org.apache.commons", name = "commons-configuration2", version.ref = "commons-configuration2" }
+commons-csv = { group = "org.apache.commons", name = "commons-csv", version.ref = "commons-csv" }
+commons-dbcp2 = { group = "org.apache.commons", name = "commons-dbcp2", version.ref = "commons-dbcp2" }
+commons-digester = { group = "commons-digester", name = "commons-digester", version.ref = "commons-digester" }
+commons-discovery = { group = "commons-discovery", name = "commons-discovery", version.ref = "commons-discovery" }
+commons-email = { group = "org.apache.commons", name = "commons-email", version.ref = "commons-email" }
+commons-fileupload = { group = "commons-fileupload", name = "commons-fileupload", version.ref = "commons-fileupload" }
+commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
+commons-lang = { group = "commons-lang", name = "commons-lang", version.ref = "commons-lang" }
+commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commons-lang3" }
+commons-logging = { group = "commons-logging", name = "commons-logging", version.ref = "commons-logging" }
+commons-math = { group = "org.apache.commons", name = "commons-math", version.ref = "commons-math" }
+commons-net = { group = "commons-net", name = "commons-net", version.ref = "commons-net" }
+commons-pool2 = { group = "org.apache.commons", name = "commons-pool2", version.ref = "commons-pool2" }
+commons-text = { group = "org.apache.commons", name = "commons-text", version.ref = "commons-text" }
+dcm4che-core = { group = "dcm4che", name = "dcm4che-core", version.ref = "dcm4che" }
+dcm4che-image = { group = "dcm4che", name = "dcm4che-image", version.ref = "dcm4che" }
+dcm4che-imageio = { group = "dcm4che", name = "dcm4che-imageio", version.ref = "dcm4che" }
+dcm4che-imageio-rle = { group = "dcm4che", name = "dcm4che-imageio-rle", version.ref = "dcm4che" }
+dcm4che-iod = { group = "dcm4che", name = "dcm4che-iod", version.ref = "dcm4che" }
+dcm4che-net = { group = "dcm4che", name = "dcm4che-net", version.ref = "dcm4che" }
+dcm4che-tool-dcmecho = { group = "dcm4che.tool", name = "dcm4che-tool-dcmecho", version.ref = "dcm4che" }
+dcm4che-tool-dcmqr = { group = "dcm4che.tool", name = "dcm4che-tool-dcmqr", version.ref = "dcm4che" }
+dcm4che5-dcm4che-core = { group = "org.dcm4che", name = "dcm4che-core", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-dict = { group = "org.dcm4che", name = "dcm4che-dict", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-dict-arc = { group = "org.dcm4che", name = "dcm4che-dict-arc", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-dict-priv = { group = "org.dcm4che", name = "dcm4che-dict-priv", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-dict-private = { group = "org.dcm4che", name = "dcm4che-dict-private", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-image = { group = "org.dcm4che", name = "dcm4che-image", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-imageio = { group = "org.dcm4che", name = "dcm4che-imageio", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-imageio-rle = { group = "org.dcm4che", name = "dcm4che-imageio-rle", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-javascript = { group = "org.dcm4che", name = "dcm4che-javascript", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-js-dict = { group = "org.dcm4che", name = "dcm4che-js-dict", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-json = { group = "org.dcm4che", name = "dcm4che-json", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-mime = { group = "org.dcm4che", name = "dcm4che-mime", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-net = { group = "org.dcm4che", name = "dcm4che-net", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-tool-common = { group = "org.dcm4che.tool", name = "dcm4che-tool-common", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-tool-storescp = { group = "org.dcm4che.tool", name = "dcm4che-tool-storescp", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-tool-storescu = { group = "org.dcm4che.tool", name = "dcm4che-tool-storescu", version.ref = "dcm4che5" }
+dom4j-dom4j = { group = "dom4j", name = "dom4j", version.ref = "dom4j" }
+easymock-easymock = { group = "easymock", name = "easymock", version.ref = "easymock" }
+easytesting-fest-swing = { group = "org.easytesting", name = "fest-swing", version.ref = "fest-swing" }
+easytesting-fest-swing-junit = { group = "org.easytesting", name = "fest-swing-junit", version.ref = "fest-swing" }
+ecs-ecs = { group = "ecs", name = "ecs", version.ref = "ecs" }
+ehcache-clustered = { group = "org.ehcache", name = "ehcache-clustered", version.ref = "ehcache3" }
+ehcache-ehcache = { group = "org.ehcache", name = "ehcache", version.ref = "ehcache3" }
+el-javax-el-api = { group = "javax.el", name = "javax.el-api", version.ref = "javax-el" }
+fop-fop = { group = "fop", name = "fop", version.ref = "fop" }
+getopt-java-getopt = { group = "gnu.getopt", name = "java-getopt", version.ref = "java-getopt" }
+# SKIP: gitversion-gradle-git-version = { group = "com.palantir.gradle.gitversion", name = "gradle-git-version" } # unresolved version: ${gradle-git-version}
+glassfish-jakarta-el = { group = "org.glassfish", name = "jakarta.el", version.ref = "glassfish-jakarta-el" }
+glassfish-javax-el = { group = "org.glassfish", name = "javax.el", version.ref = "glassfish-javax-el" }
+google-auto-value = { group = "com.google.auto.value", name = "auto-value", version.ref = "auto-value" }
+google-auto-value-annotations = { group = "com.google.auto.value", name = "auto-value-annotations", version.ref = "auto-value" }
+google-collections = { group = "com.google.collections", name = "google-collections", version = "1.0" }
+google-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+google-guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+google-jsr305 = { group = "com.google.code.findbugs", name = "jsr305", version.ref = "findbugs-jsr305" }
+# SKIP: gradle-dependency-management-plugin = { group = "io.spring.gradle", name = "dependency-management-plugin" } # unresolved version: ${gradle-dependency-management.version}
+groovy-all = { group = "org.codehaus.groovy", name = "groovy-all", version.ref = "groovy" }
+h2database-h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
+hamcrest-core = { group = "org.hamcrest", name = "hamcrest-core", version.ref = "hamcrest" }
+hamcrest-hamcrest = { group = "org.hamcrest", name = "hamcrest", version.ref = "hamcrest2" }
+hamcrest-library = { group = "org.hamcrest", name = "hamcrest-library", version.ref = "hamcrest" }
+hibernate-commons-annotations = { group = "org.hibernate.common", name = "hibernate-commons-annotations", version.ref = "hibernate-commons" }
+hibernate-core = { group = "org.hibernate", name = "hibernate-core", version.ref = "hibernate" }
+hibernate-ehcache = { group = "org.hibernate", name = "hibernate-ehcache", version.ref = "hibernate" }
+hibernate-envers = { group = "org.hibernate", name = "hibernate-envers", version.ref = "hibernate" }
+hibernate-jcache = { group = "org.hibernate", name = "hibernate-jcache", version.ref = "hibernate" }
+hibernate-jpa-api = { group = "org.hibernate.javax.persistence", name = "hibernate-jpa-2.1-api", version.ref = "hibernate-jpa-api" }
+hibernate-validator = { group = "org.hibernate", name = "hibernate-validator", version.ref = "hibernate-validator" }
+hibernate-validator-cdi = { group = "org.hibernate", name = "hibernate-validator-cdi", version.ref = "hibernate-validator" }
+hsqldb-hsqldb = { group = "org.hsqldb", name = "hsqldb", version.ref = "hsqldb" }
+httpcomponents-httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "httpcomponents-client" }
+httpcomponents-httpcore = { group = "org.apache.httpcomponents", name = "httpcore", version.ref = "httpcomponents-core" }
+httpcomponents-httpcore-nio = { group = "org.apache.httpcomponents", name = "httpcore-nio", version.ref = "httpcomponents-core" }
+httpcomponents-httpmime = { group = "org.apache.httpcomponents", name = "httpmime", version.ref = "httpcomponents-mime" }
+imagej-ij = { group = "net.imagej", name = "ij", version.ref = "imagej" }
+inject-javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javax-inject" }
+interceptor-javax-interceptor-api = { group = "javax.interceptor", name = "javax.interceptor-api", version.ref = "javax-interceptor" }
+j2ee-javax-management-j2ee-api = { group = "javax.management.j2ee", name = "javax.management.j2ee-api", version.ref = "javax-j2ee-api" }
+jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
+jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jackson" }
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
+jackson-dataformat-csv = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-csv", version.ref = "jackson" }
+jackson-dataformat-xml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-xml", version.ref = "jackson" }
+jackson-dataformat-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-datatype-guava = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-guava", version.ref = "jackson" }
+jackson-datatype-hibernate4 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-hibernate4", version.ref = "jackson" }
+jackson-datatype-hibernate5 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-hibernate5", version.ref = "jackson" }
+jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jdk8", version.ref = "jackson" }
+jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
+jackson-module-jaxb-annotations = { group = "com.fasterxml.jackson.module", name = "jackson-module-jaxb-annotations", version.ref = "jackson" }
+jackson-module-parameter-names = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names", version.ref = "jackson" }
+javamelody-core = { group = "net.bull.javamelody", name = "javamelody-core", version.ref = "javamelody" }
+javassist-javassist = { group = "org.javassist", name = "javassist", version.ref = "javassist" }
+jcraft-jzlib = { group = "com.jcraft", name = "jzlib", version.ref = "jzlib" }
+jcs-jcs = { group = "jcs", name = "jcs", version.ref = "jcs" }
+jetty-jetty = { group = "org.mortbay.jetty", name = "jetty", version.ref = "jetty" }
+jgit-org-eclipse-jgit = { group = "org.eclipse.jgit", name = "org.eclipse.jgit", version.ref = "eclipse-jgit" }
+jms-javax-jms-api = { group = "javax.jms", name = "javax.jms-api", version.ref = "javax-jms-api" }
+joda-time-joda-time = { group = "joda-time", name = "joda-time", version.ref = "joda-time" }
+jruby-jruby = { group = "org.jruby", name = "jruby", version.ref = "jruby" }
+json-json = { group = "org.json", name = "json", version.ref = "json" }
+jsonpath-json-path = { group = "com.jayway.jsonpath", name = "json-path", version.ref = "jayway" }
+junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit-jupiter" }
+junit-junit = { group = "junit", name = "junit", version.ref = "junit" }
+junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit-jupiter" }
+junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
+junit-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "junit-jupiter" }
+kubek2k-springockito = { group = "org.kubek2k", name = "springockito", version.ref = "springockito" }
+log4j-log4j = { group = "log4j", name = "log4j", version.ref = "log4j" }
+log4jdbc-file = { group = "com.github.marcosemiao.log4jdbc", name = "log4jdbc-file", version.ref = "log4jdbc" }
+logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = "logback" }
+logback-logstash-logback-encoder = { group = "net.logstash.logback", name = "logstash-logback-encoder", version.ref = "logstash" }
+lowagie-itext = { group = "com.lowagie", name = "itext", version.ref = "itext" }
+mail-javax-mail = { group = "com.sun.mail", name = "javax.mail", version.ref = "javax-mail" }
+mail-javax-mail-api = { group = "javax.mail", name = "javax.mail-api", version.ref = "javax-mail" }
+manoelcampos-javadoc-coverage = { group = "com.manoelcampos", name = "javadoc-coverage", version.ref = "javadoc-coverage" }
+media-jai_imageio = { group = "com.sun.media", name = "jai_imageio", version.ref = "jai-imageio" }
+metainf-services-metainf-services = { group = "org.kohsuke.metainf-services", name = "metainf-services", version.ref = "metainf-services" }
+mockito-all = { group = "org.mockito", name = "mockito-all", version.ref = "mockito-all" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { group = "org.mockito", name = "mockito-junit-jupiter", version.ref = "mockito-jupiter" }
+msv-core = { group = "net.java.dev.msv", name = "msv-core", version.ref = "msv" }
+msv-xsdlib = { group = "net.java.dev.msv", name = "xsdlib", version.ref = "msv" }
+nifti_io-nifti_io = { group = "nifti_io", name = "nifti_io", version.ref = "nifti-io" }
+pixelmed-codec = { group = "com.dclunie", name = "pixelmed-codec", version.ref = "pixelmed-codec" }
+pixelmed-imageio = { group = "com.dclunie", name = "pixelmed-imageio", version.ref = "pixelmed-imageio" }
+pixelmed-pixelmed = { group = "com.dclunie", name = "pixelmed", version.ref = "pixelmed" }
+postgresql-postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "org-postgresql" }
+powermock-api-mockito2 = { group = "org.powermock", name = "powermock-api-mockito2", version.ref = "powermock" }
+powermock-module-junit4 = { group = "org.powermock", name = "powermock-module-junit4", version.ref = "powermock" }
+projectlombok-lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
+python-jython = { group = "org.python", name = "jython", version.ref = "jython" }
+python-jython-standalone = { group = "org.python", name = "jython-standalone", version.ref = "jython" }
+quartz-scheduler-quartz = { group = "org.quartz-scheduler", name = "quartz", version.ref = "quartz" }
+reactor-bus = { group = "io.projectreactor", name = "reactor-bus", version.ref = "io-projectreactor" }
+reactor-core = { group = "io.projectreactor", name = "reactor-core", version.ref = "io-projectreactor" }
+redisson-redisson = { group = "org.redisson", name = "redisson", version.ref = "redisson" }
+reflections-reflections = { group = "org.reflections", name = "reflections", version.ref = "reflections" }
+restlet-com-noelios-restlet = { group = "com.noelios.restlet", name = "com.noelios.restlet", version.ref = "restlet" }
+restlet-com-noelios-restlet-ext-servlet = { group = "com.noelios.restlet", name = "com.noelios.restlet.ext.servlet", version.ref = "restlet" }
+restlet-org-restlet = { group = "org.restlet", name = "org.restlet", version.ref = "restlet" }
+restlet-org-restlet-ext-fileupload = { group = "org.restlet", name = "org.restlet.ext.fileupload", version.ref = "restlet" }
+saxon-saxon = { group = "net.sourceforge.saxon", name = "saxon", version.ref = "saxon" }
+sbrannen-spring-test-junit5 = { group = "com.github.sbrannen", name = "spring-test-junit5", version.ref = "spring-test-junit5" }
+servlet-javax-servlet-api = { group = "javax.servlet", name = "javax.servlet-api", version.ref = "servlet-api" }
+servlet-jstl = { group = "javax.servlet", name = "jstl", version.ref = "jstl" }
+slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
+slf4j-jcl-over-slf4j = { group = "org.slf4j", name = "jcl-over-slf4j", version.ref = "slf4j" }
+slf4j-jul-to-slf4j = { group = "org.slf4j", name = "jul-to-slf4j", version.ref = "slf4j" }
+slf4j-log4j-over-slf4j = { group = "org.slf4j", name = "log4j-over-slf4j", version.ref = "slf4j" }
+slf4j-log4j12 = { group = "org.slf4j", name = "slf4j-log4j12", version.ref = "slf4j" }
+slf4j-nop = { group = "org.slf4j", name = "slf4j-nop", version.ref = "slf4j" }
+slf4j-simple = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
+spotbugs-spotbugs = { group = "com.github.spotbugs", name = "spotbugs", version.ref = "spotbugs" }
+spring-aop = { group = "org.springframework", name = "spring-aop", version.ref = "spring-framework" }
+spring-beans = { group = "org.springframework", name = "spring-beans", version.ref = "spring-framework" }
+spring-context = { group = "org.springframework", name = "spring-context", version.ref = "spring-framework" }
+spring-context-support = { group = "org.springframework", name = "spring-context-support", version.ref = "spring-framework" }
+spring-core = { group = "org.springframework", name = "spring-core", version.ref = "spring-framework" }
+spring-expression = { group = "org.springframework", name = "spring-expression", version.ref = "spring-framework" }
+spring-jdbc = { group = "org.springframework", name = "spring-jdbc", version.ref = "spring-framework" }
+spring-jms = { group = "org.springframework", name = "spring-jms", version.ref = "spring-framework" }
+spring-ldap-spring-ldap-core = { group = "org.springframework.ldap", name = "spring-ldap-core", version.ref = "spring-ldap" }
+spring-messaging = { group = "org.springframework", name = "spring-messaging", version.ref = "spring-framework" }
+spring-orm = { group = "org.springframework", name = "spring-orm", version.ref = "spring-framework" }
+spring-oxm = { group = "org.springframework", name = "spring-oxm", version.ref = "spring-framework" }
+spring-security-oauth2-spring-security-oauth2 = { group = "org.springframework.security.oauth", name = "spring-security-oauth2", version.ref = "spring-oauth2" }
+spring-security-spring-security-acl = { group = "org.springframework.security", name = "spring-security-acl", version.ref = "spring-security" }
+spring-security-spring-security-aspects = { group = "org.springframework.security", name = "spring-security-aspects", version.ref = "spring-security" }
+spring-security-spring-security-config = { group = "org.springframework.security", name = "spring-security-config", version.ref = "spring-security" }
+spring-security-spring-security-core = { group = "org.springframework.security", name = "spring-security-core", version.ref = "spring-security" }
+spring-security-spring-security-jwt = { group = "org.springframework.security", name = "spring-security-jwt", version.ref = "spring-jwt" }
+spring-security-spring-security-ldap = { group = "org.springframework.security", name = "spring-security-ldap", version.ref = "spring-security" }
+spring-security-spring-security-openid = { group = "org.springframework.security", name = "spring-security-openid", version.ref = "spring-security" }
+spring-security-spring-security-taglibs = { group = "org.springframework.security", name = "spring-security-taglibs", version.ref = "spring-security" }
+spring-security-spring-security-test = { group = "org.springframework.security", name = "spring-security-test", version.ref = "spring-security" }
+spring-security-spring-security-web = { group = "org.springframework.security", name = "spring-security-web", version.ref = "spring-security" }
+spring-test = { group = "org.springframework", name = "spring-test", version.ref = "spring-framework" }
+spring-tx = { group = "org.springframework", name = "spring-tx", version.ref = "spring-framework" }
+spring-web = { group = "org.springframework", name = "spring-web", version.ref = "spring-framework" }
+spring-webmvc = { group = "org.springframework", name = "spring-webmvc", version.ref = "spring-framework" }
+springfox-swagger-ui = { group = "io.springfox", name = "springfox-swagger-ui", version.ref = "swagger" }
+springfox-swagger2 = { group = "io.springfox", name = "springfox-swagger2", version.ref = "swagger" }
+swinglabs-wizard = { group = "org.swinglabs", name = "wizard", version.ref = "wizard" }
+thedeanda-lorem = { group = "com.thedeanda", name = "lorem", version.ref = "lorem" }
+toedter-jcalendar = { group = "com.toedter", name = "jcalendar", version.ref = "jcalendar" }
+tomakehurst-wiremock = { group = "com.github.tomakehurst", name = "wiremock", version.ref = "wiremock" }
+tools-checkstyle = { group = "com.puppycrawl.tools", name = "checkstyle", version.ref = "checkstyle" }
+torque-torque = { group = "torque", name = "torque", version.ref = "torque" }
+torque-village = { group = "torque", name = "village", version.ref = "torque" }
+ttddyy-datasource-proxy = { group = "net.ttddyy", name = "datasource-proxy", version.ref = "datasource-proxy" }
+turbine-turbine = { group = "turbine", name = "turbine", version.ref = "turbine" }
+twmacinta-fast-md5 = { group = "com.twmacinta", name = "fast-md5", version.ref = "fastmd5" }
+uuid-java-uuid-generator = { group = "com.fasterxml.uuid", name = "java-uuid-generator", version.ref = "java-uuid-generator" }
+vladmihalcea-hibernate-types43 = { group = "com.vladmihalcea", name = "hibernate-types-43", version.ref = "vladmihalcea-hibernate-types" }
+vladmihalcea-hibernate-types55 = { group = "com.vladmihalcea", name = "hibernate-types-55", version.ref = "vladmihalcea-hibernate-types" }
+xalan-serializer = { group = "xalan", name = "serializer", version.ref = "xalan" }
+xalan-xalan = { group = "xalan", name = "xalan", version.ref = "xalan" }
+xml-jaxrpc-api = { group = "javax.xml", name = "jaxrpc-api", version = "1.1" }
+xnatx-batch_launch_plugin = { group = "org.nrg.xnatx.plugins", name = "batch_launch_plugin", version.ref = "batch-launch" }
+xnatx-container-service = { group = "org.nrg.xnatx.plugins", name = "container-service", version.ref = "container-service" }
+xnatx-dicom-query-retrieve = { group = "org.nrg.xnatx.plugins", name = "dicom-query-retrieve", version.ref = "dqr" }
+xnatx-ml-plugin = { group = "org.nrg.xnatx.plugins", name = "ml-plugin", version.ref = "ml" }
+xnatx-ohif-viewer = { group = "org.nrg.xnatx", name = "ohif-viewer", version.ref = "ohif-viewer" }
+xnatx-ximgview-plugin = { group = "org.nrg.xnatx.plugins", name = "ximgview-plugin", version = "1.0.2" }
+xnatx-xnatx-collection = { group = "org.nrg.xnatx.plugins", name = "xnatx-collection", version.ref = "datasets" }
+yaml-snakeyaml = { group = "org.yaml", name = "snakeyaml", version.ref = "snakeyaml" }
+zaxxer-hikaricp = { group = "com.zaxxer", name = "HikariCP", version.ref = "hikaricp" }
+
+[plugins]
+# Plugins will be added as needed

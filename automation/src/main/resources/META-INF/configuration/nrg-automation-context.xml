@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ automation: src/main/resources/META-INF/configuration/nrg-automation-context.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2017, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		                http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+    <description>Default configuration for NRG Automation</description>
+
+    <context:annotation-config/>
+
+    <context:component-scan base-package="org.nrg.automation.services.impl.hibernate"/>
+    <context:component-scan base-package="org.nrg.automation.repositories"/>
+    <context:component-scan base-package="org.nrg.automation.daos"/>
+
+    <bean id="scriptRunnerService" class="org.nrg.automation.services.impl.DefaultScriptRunnerService">
+        <property name="runnerPackages">
+            <list>
+                <value>org.nrg.automation.runners</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="nrgAutomationEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
+        <property name="items">
+            <list>
+                <value>org.nrg.automation.entities</value>
+            </list>
+        </property>
+    </bean>
+
+</beans>

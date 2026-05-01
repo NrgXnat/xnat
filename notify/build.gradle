@@ -1,0 +1,24 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api project(':mail')
+
+    implementation libs.spring.orm
+    implementation libs.spring.context
+    implementation libs.hibernate.core
+    implementation libs.commons.lang3
+    implementation libs.cglib.cglib
+    implementation libs.javassist.javassist
+    implementation libs.jackson.databind
+
+
+    testImplementation libs.junit.jupiter.engine
+    testImplementation libs.sbrannen.spring.test.junit5
+    testImplementation libs.h2database.h2
+    testImplementation libs.assertj.core
+    testImplementation libs.ehcache.ehcache
+    testImplementation libs.spring.test
+    testImplementation libs.logback.classic
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema targetNamespace="http://icr.ac.uk/icr" xmlns:icr="http://icr.ac.uk/icr"
+	xmlns:xdat="http://nrg.wustl.edu/xdat" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:xnat="http://nrg.wustl.edu/xnat" elementFormDefault="qualified"
+	attributeFormDefault="unqualified">
+	<xs:import namespace="http://nrg.wustl.edu/xnat" schemaLocation="../xnat/xnat.xsd"/>
+	<xs:element name="RoiCollection" type="icr:roiCollectionData"/>
+
+	<xs:complexType name="roiCollectionData">
+		<xs:complexContent>
+			<xs:extension base="xnat:imageAssessorData">
+				<xs:sequence>
+					<xs:element name="UID" type="xs:string" minOccurs="1"/>
+					<xs:element name="collectionType" type="xs:string" minOccurs="1">
+						<xs:annotation>
+							<xs:documentation>ROI collection type e.g. AIM, RTSTRUCT,
+								SEGMENTATION
+							</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="subjectID" type="xs:string" minOccurs="1">
+						<xs:annotation>
+							<xs:appinfo>
+								<xdat:field baseElement="xnat:subjectData" baseCol="ID"/>
+							</xs:appinfo>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="references" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="seriesUID" type="xs:string" maxOccurs="unbounded">
+								</xs:element>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="name" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Name of the collection</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="description" type="xs:string" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

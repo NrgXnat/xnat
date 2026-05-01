@@ -59,7 +59,7 @@ import static org.mockito.ArgumentMatchers.eq;
 @Slf4j
 public class TestResourceSurveyAndMitigationHelper {
     private static final String            RESOURCE_CATALOG_FILE = "scan_5_catalog.xml";
-    private static final String            RESOURCE_CATALOG_URI  = "classpath:dicom/duplicates/" + RESOURCE_CATALOG_FILE;
+    private static final String            RESOURCE_CATALOG_URI  = "classpath:dicom-web/duplicates/" + RESOURCE_CATALOG_FILE;
     private static final String            SERIES_DESCRIPTION    = "3D SPGR VOLUME 1";
     private static final String            PROJECT_ID            = "Test";
     private static final String            SUBJECT_ID            = "XNAT_S00001";
@@ -69,7 +69,7 @@ public class TestResourceSurveyAndMitigationHelper {
     private static final String            RESOURCE_LABEL        = "DICOM";
     private static final int               RESOURCE_ID           = 54;
     private static final int               SCAN_ID               = 5;
-    private static final String            PROPER_FILENAME_LIST  = "classpath:dicom/duplicates/expectedNames.txt";
+    private static final String            PROPER_FILENAME_LIST  = "classpath:dicom-web/duplicates/expectedNames.txt";
     private static final String            SOP_CLASS_UID         = "1.2.840.10008.5.1.4.1.1.4";
     private static final Condition<String> MATCHES_SOP_CLASS_UID = new Condition<>(key -> StringUtils.equals(SOP_CLASS_UID, key), "UID list doesn't contain SOP class UID " + SOP_CLASS_UID);
 

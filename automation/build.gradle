@@ -1,0 +1,38 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api project(':framework')
+
+    implementation libs.groovy.all
+    api libs.python.jython.standalone
+    implementation libs.reflections.reflections
+    implementation libs.google.guava
+    implementation libs.spring.oxm
+    implementation libs.spring.context
+    implementation libs.spring.security.spring.security.core
+    implementation libs.jackson.core
+    implementation libs.jackson.databind
+    implementation libs.jackson.annotations
+    implementation libs.hibernate.core
+    implementation libs.hibernate.envers
+    implementation libs.javassist.javassist
+    implementation libs.reactor.bus
+    implementation libs.reactor.core
+    implementation libs.cglib.cglib
+    implementation libs.commons.lang3
+
+    runtimeOnly libs.hibernate.jcache
+    runtimeOnly libs.ehcache.ehcache
+    runtimeOnly libs.redisson.redisson
+
+    compileOnly libs.servlet.javax.servlet.api
+
+    testImplementation libs.junit.jupiter.api
+    testRuntimeOnly libs.junit.jupiter.engine
+    testImplementation libs.spring.test
+    testImplementation libs.sbrannen.spring.test.junit5
+    testImplementation libs.assertj.core
+    testImplementation libs.h2database.h2
+}

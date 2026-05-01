@@ -1,0 +1,87 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+group = 'org.nrg.xdat'
+
+// Original Maven coordinate: org.nrg.xdat:core
+publishing {
+    publications {
+        maven {
+            artifactId = 'core'
+        }
+    }
+}
+
+dependencies {
+    api project(':notify')
+    api project(':config')
+    api project(':mail')
+    api project(':framework')
+    api project(':automation')
+
+    implementation libs.spring.web
+    implementation libs.spring.jms
+    implementation libs.spring.context.support
+    implementation libs.spring.security.spring.security.web
+    implementation libs.activemq.client
+    implementation libs.aspectj.weaver
+    implementation libs.aspectj.rt
+    implementation libs.reflections.reflections
+    implementation libs.slf4j.api
+    implementation libs.slf4j.jul.to.slf4j
+    compileOnly libs.servlet.javax.servlet.api
+    implementation libs.jms.javax.jms.api
+    implementation libs.j2ee.javax.management.j2ee.api
+    implementation libs.reactor.bus
+    implementation libs.reactor.core
+    implementation libs.google.guava
+    implementation libs.restlet.org.restlet
+    implementation libs.commons.csv
+    implementation libs.commons.net
+    implementation libs.httpcomponents.httpclient
+    implementation libs.commons.lang3
+    implementation libs.commons.text
+    implementation libs.commons.fileupload
+    implementation(libs.turbine.turbine) { transitive = false }
+    implementation(libs.torque.torque) { transitive = false }
+    implementation libs.apache.velocity
+    implementation libs.apache.velocity.tools
+    implementation libs.restlet.com.noelios.restlet.ext.servlet
+    implementation libs.ecs.ecs
+    implementation libs.commons.configuration
+    implementation(libs.lowagie.itext) {
+        // itext 2.1.7 pulls ancient bouncycastle jdk14/jdk15on (~8.7MB) and junit 3.8.1
+        exclude group: 'bouncycastle'
+        exclude group: 'org.bouncycastle'
+        exclude group: 'junit'
+    }
+    implementation(libs.fop.fop) {
+        // Ancient XML libs conflict with JDK built-in parser
+        exclude group: 'xerces', module: 'xercesImpl'
+        exclude group: 'xalan', module: 'xalan'
+        exclude group: 'xml-apis', module: 'xml-apis'
+    }
+    implementation libs.json.json
+    implementation libs.commons.io
+    implementation libs.commons.codec
+    implementation libs.commons.dbcp2
+    implementation libs.bitwalker.useragentutils
+    implementation libs.apache.ant
+    implementation libs.ehcache.ehcache
+    implementation libs.postgresql.postgresql
+    implementation libs.slf4j.log4j.over.slf4j
+    implementation libs.commons.compress
+
+    compileOnly libs.google.jsr305
+
+    testImplementation libs.servlet.javax.servlet.api
+    testImplementation project(':test')
+    testImplementation libs.junit.junit
+    testImplementation libs.mockito.all
+    testImplementation libs.spring.test
+    testImplementation libs.assertj.core
+    testImplementation libs.h2database.h2
+    testImplementation libs.hibernate.jcache
+    testImplementation libs.logback.classic
+}

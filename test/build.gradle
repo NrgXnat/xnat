@@ -1,0 +1,15 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api libs.spring.jdbc
+    api libs.jackson.databind
+    api libs.commons.lang3
+    api libs.commons.io
+    api libs.h2database.h2
+    api libs.slf4j.api
+
+    testImplementation libs.slf4j.simple
+    testImplementation libs.slf4j.jul.to.slf4j
+}

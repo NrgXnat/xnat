@@ -1,0 +1,28 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+group = 'org.nrg.dicom'
+
+dependencies {
+    api(project(':dicomtools')) { transitive = false }
+    api project(':framework')
+    api project(':transaction')
+
+    implementation libs.dcm4che.core
+    implementation libs.dcm4che.iod
+    implementation libs.spring.orm
+    implementation libs.spring.context
+    implementation libs.commons.codec
+    implementation libs.google.guava
+    api libs.uuid.java.uuid.generator
+    implementation libs.slf4j.api
+    implementation libs.slf4j.log4j12
+
+    compileOnly libs.google.jsr305
+
+    testImplementation project(':test')
+    testImplementation libs.ehcache.ehcache
+    testImplementation libs.junit.junit
+    testImplementation libs.spring.test
+}

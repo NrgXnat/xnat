@@ -1,0 +1,14 @@
+public:
+  - publicOne
+  - publicTwo
+  - publicThree
+
+authenticated:
+  - authenticatedOne
+  - authenticatedTwo
+  - authenticatedThree
+
+admin:
+  - adminOne
+  - adminTwo
+  - adminThree

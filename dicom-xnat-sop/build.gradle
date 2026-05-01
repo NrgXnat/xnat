@@ -1,0 +1,16 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api libs.dcm4che.core
+    api libs.google.guava
+
+    implementation libs.commons.lang3
+    implementation libs.commons.io
+    implementation libs.slf4j.api
+
+
+    testImplementation libs.slf4j.simple
+    testImplementation libs.junit.junit
+}

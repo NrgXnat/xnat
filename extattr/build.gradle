@@ -1,0 +1,19 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+// Original Maven coordinate: org.nrg:ExtAttr
+publishing {
+    publications {
+        maven {
+            artifactId = 'ExtAttr'
+        }
+    }
+}
+
+dependencies {
+    api libs.commons.lang3
+    api libs.google.guava
+
+    testImplementation libs.junit.junit
+}

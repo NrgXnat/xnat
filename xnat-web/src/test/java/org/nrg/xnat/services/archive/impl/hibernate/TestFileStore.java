@@ -172,10 +172,10 @@ public class TestFileStore {
     private static final String[] COORDS_DCBA             = {"D", "C", "B", "A"};
     private static final String   JOINED_DCBA             = StringUtils.join(COORDS_DCBA, "/");
     private static final String[] SPLIT_DCBA_SHA_256      = {"4F3857DE", "478F00C3", "545AC6B5", "9E03A163", "34D3F2BB", "62CB09E1", "3A9DC70C", "D0C3677C"};
-    private static final String   DICOM_4_1_URI           = "classpath:dicom/1.MR.head_DHead.4.1.20061214.091206.156000.1632817982.dcm";
+    private static final String   DICOM_4_1_URI           = "classpath:dicom-web/1.MR.head_DHead.4.1.20061214.091206.156000.1632817982.dcm";
     private static final String   DICOM_4_1_SHA_256       = "31ACB2E88909B60309B0167AD0B44F00628A9240D05115ABEC6037035BA48F31";
     private static final long     DICOM_4_1_SIZE          = 191904;
-    private static final String   DICOM_4_2_URI           = "classpath:dicom/1.MR.head_DHead.4.2.20061214.091206.156000.0918517980.dcm";
+    private static final String   DICOM_4_2_URI           = "classpath:dicom-web/1.MR.head_DHead.4.2.20061214.091206.156000.0918517980.dcm";
     private static final String   DICOM_4_2_SHA_256       = "D853B36A608CC333C8667410FEF6B12F648FDB0467EF788E526206D9C82009B6";
     private static final long     DICOM_4_2_SIZE          = 191864;
 }

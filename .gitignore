@@ -1,0 +1,17 @@
+.java-version
+.gradle/
+build/
+buildSrc/build/
+buildSrc/.gradle/
+**/target/
+*.log
+
+# IDE
+.idea/
+*.iml
+out/
+.DS_Store
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+  ~ DicomEdit: /Users/rherrick/Development/XNAT/1.7/libraries/dicom-edit/src/test/resources/dicom/seq/000.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2017, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<file-format>
+<meta-header xfer="1.2.840.10008.1.2.1" name="Little Endian Explicit">
+<element tag="0002,0000" vr="UL" vm="1" len="4" name="FileMetaInformationGroupLength">192</element>
+<element tag="0002,0001" vr="OB" vm="1" len="2" name="FileMetaInformationVersion" binary="hidden"></element>
+<element tag="0002,0002" vr="UI" vm="1" len="26" name="MediaStorageSOPClassUID">1.2.840.10008.5.1.4.1.1.4</element>
+<element tag="0002,0003" vr="UI" vm="1" len="62" name="MediaStorageSOPInstanceUID">1.3.6.1.4.1.9328.50.50.97938941121090277510680075622054056832</element>
+<element tag="0002,0010" vr="UI" vm="1" len="20" name="TransferSyntaxUID">1.2.840.10008.1.2.1</element>
+<element tag="0002,0012" vr="UI" vm="1" len="16" name="ImplementationClassUID">1.2.40.0.13.1.1</element>
+<element tag="0002,0013" vr="SH" vm="1" len="14" name="ImplementationVersionName">dcm4che-1.4.27</element>
+</meta-header>
+<data-set xfer="1.2.840.10008.1.2.1" name="Little Endian Explicit">
+<element tag="0008,0090" vr="PN" vm="1" len="2" name="ReferringPhysicianName"></element>
+<sequence tag="0008,1032" vr="SQ" card="1" name="ProcedureCodeSequence">
+<item card="0">
+</item>
+</sequence>
+<element tag="0010,0010" vr="PN" vm="1" len="6" name="PatientName">997593</element>
+<element tag="0010,0020" vr="LO" vm="1" len="12" name="PatientID">900-00-5303</element>
+<sequence tag="0012,0064" vr="SQ" card="2" name="DeidentificationMethodCodeSequence">
+<item card="0">
+<element tag="0008,0100" vr="SH" vm="1" len="2" name="CodeValue">item0</element>
+<element tag="0008,0102" vr="SH" vm="1" len="4" name="CodingSchemeDesignator">XNAT</element>
+<element tag="0008,0103" vr="SH" vm="1" len="4" name="CodingSchemeVersion">0.1</element>
+<element tag="0008,0104" vr="LO" vm="1" len="16" name="CodeMeaning">XNAT Edit Script</element>
+</item>
+<item card="1">
+<element tag="0008,0100" vr="SH" vm="1" len="8" name="CodeValue">item1</element>
+<element tag="0008,0102" vr="SH" vm="1" len="4" name="CodingSchemeDesignator">XNAT</element>
+<element tag="0008,0103" vr="SH" vm="1" len="4" name="CodingSchemeVersion">0.1</element>
+<element tag="0008,0104" vr="LO" vm="1" len="16" name="CodeMeaning">XNAT Edit Script</element>
+</item>
+</sequence>
+
+<element tag="0013,0010" vr="LO" vm="1" len="4" name="PrivateCreator">CTP</element>
+<element tag="0013,1010" vr="SH" vm="1" len="8" name="ImplementationVersionName">test tag</element>
+<sequence tag="0013,1022" vr="SQ" card="2" name="CTP private seq tag">
+
+  <item card="1">
+    <element tag="0013,0010" vr="LO" vm="1" len="4" name="PrivateCreator">CTP</element>
+    <element tag="0013,1020" vr="LO" vm="1" len="4" name="PrivateTag">PrivateTag</element>
+    <sequence tag="0013,1022" vr="SQ" card="2" name="CTP private seq tag">
+      <item card="0">
+        <element tag="0013,0010" vr="LO" vm="1" len="4" name="PrivateCreator">CTP</element>
+        <sequence tag="0013,1032" vr="SQ" card="0" name="CTP private seq tag">
+          <item card="0">
+            <element tag="0010,0010" vr="PN" vm="1" len="16" name="PatientName">Patient Name</element>
+          </item>
+        </sequence>
+        <element tag="2222,0010" vr="LO" vm="1" len="4" name="SomeAttribute">Foo</element>
+      </item>
+      <item card="1">
+        <element tag="0013,0010" vr="LO" vm="1" len="4" name="PrivateCreator">CTP</element>
+        <sequence tag="0013,1032" vr="SQ" card="0" name="CTP private seq tag">
+          <item card="0">
+            <element tag="0010,0010" vr="PN" vm="1" len="16" name="PatientName">Patient Name</element>
+          </item>
+        </sequence>
+        <element tag="2222,0010" vr="LO" vm="1" len="4" name="SomeAttribute">Foo</element>
+      </item>
+    </sequence>
+    <element tag="1118,2222" vr="SH" vm="1" len="6" name="TestValue">12345</element>
+  </item>
+
+  <item card="1">
+    <element tag="0013,0010" vr="LO" vm="1" len="4" name="PrivateCreator">CTP</element>
+    <element tag="0013,1020" vr="LO" vm="1" len="4" name="PrivateTag">PrivateTag</element>
+    <sequence tag="0013,1022" vr="SQ" card="2" name="CTP private seq tag">
+      <item card="0">
+        <element tag="0013,0010" vr="LO" vm="1" len="4" name="PrivateCreator">CTP</element>
+        <sequence tag="0013,1032" vr="SQ" card="0" name="CTP private seq tag">
+          <item card="0">
+            <element tag="0010,0010" vr="PN" vm="1" len="16" name="PatientName">Patient Name</element>
+          </item>
+        </sequence>
+        <element tag="2222,0010" vr="LO" vm="1" len="4" name="SomeAttribute">Foo</element>
+      </item>
+      <item card="1">
+        <element tag="0013,0010" vr="LO" vm="1" len="4" name="PrivateCreator">CTP</element>
+        <sequence tag="0013,1032" vr="SQ" card="0" name="CTP private seq tag">
+          <item card="0">
+            <element tag="0010,0010" vr="PN" vm="1" len="16" name="PatientName">Patient Name</element>
+          </item>
+        </sequence>
+        <element tag="2222,0010" vr="LO" vm="1" len="4" name="SomeAttribute">Foo</element>
+      </item>
+    </sequence>
+    <element tag="1118,2222" vr="SH" vm="1" len="6" name="TestValue">12345</element>
+  </item>
+
+</sequence>
+<element tag="1111,1010" vr="SH" vm="1" len="8" name="ImplementationVersionName">test tag</element>
+<element tag="1118,2222" vr="SH" vm="1" len="6" name="TestValue">12345</element>
+
+</data-set>
+</file-format>

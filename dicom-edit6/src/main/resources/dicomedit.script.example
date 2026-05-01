@@ -1,0 +1,61 @@
+// comment
+
+// variables
+// foo := "bar"
+// pn := (0010, 0010)
+
+// update existing tag
+// (0010, 0010) := foo
+
+// fee := " fee fee fee fum"
+// fie := "fie fie fie fum"
+// foe := "foe foe foe fum"
+
+// create new pvt tag
+// (0073, [STENTOR]11) := "new pvt tag"
+
+// new sequence
+// ((0020,1000)/(0020,2002)) := "new sequence"
+
+// new sequence containing pvt tag
+// ((0020,1000)/(0019,[GEPVTData]02)) := "pvt data in seq"
+
+// create attribute
+// (0020,1001) := "snafu"
+
+// fun with sequences. create new
+// ((0030,1000)/(0030,2000)/(0030,3000)) := "3 layers deep"
+// ((0030,1000)/(0030,2000)/(0030,3001)) := "item 2"
+// ((0030,1000)/(0030,2001)/(0030,3000)) := "3 layers deep 2"
+// ((0030,1000)/(0030,2001)/(0030,3001)) := "item 2 2"
+// ((0030,1000)/(0030,3001)) := fee
+// ((0030,1000)/(0030,3002)) := fie
+// ((0030,1000)/(0030,3003)) := foe
+
+// replace existing sequence
+// ((0054,0410)/(0054,0412)/(0008,0100)) := "hello world."
+
+// deletions
+
+// - (0010, 0020)
+// - ((0054,0410) / (0008,0100))
+// - ((0054,0410) / (0054,0412) / (0008,0100))
+// - ((0054,0410) / (0054,0411) / (0008,0100))
+// - ((0054,0410) / (0054,0412))
+
+
+// fun with functions.
+
+foo := "bar"
+//(0010, 0010) := fun[foo, (0010,0020)]
+//(0010, 0010) := concatenate[foo, (0010,0020)]
+//(0010, 0010) := concatenate[foo, concatenate[foo]]
+(0010, 0010) := format["foo {0} {1}", "fizzle", "drizzle"]
+
+
+// fun with conditionals
+
+//foo := "bar"
+//(0010, 0010) := foo
+//(0010,0010) = "bar" : (0010,0010) := "foofoo"
+

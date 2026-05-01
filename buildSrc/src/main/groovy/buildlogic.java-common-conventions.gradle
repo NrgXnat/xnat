@@ -1,0 +1,124 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'jacoco'
+    id 'idea'
+    id 'eclipse'
+}
+
+// group and version are set by root build.gradle allprojects block
+// Modules that need different group (e.g. org.nrg.xnat) override in their own build.gradle
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+repositories {
+    maven { url 'https://nrgxnat.jfrog.io/nrgxnat/libs-release' }
+    maven { url 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot' }
+    mavenCentral()
+    maven { url 'https://maven.dcm4che.org' }
+    maven { url 'https://raw.githubusercontent.com/nroduit/mvn-repo/master/' }
+    maven { url 'https://jitpack.io' }
+}
+
+// --- Jacoco ---
+
+jacoco {
+    toolVersion = '0.8.10'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.required = true
+    }
+}
+
+// --- IDEA ---
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir = compileJava.destinationDirectory.get().asFile
+        testOutputDir = compileTestJava.destinationDirectory.get().asFile
+    }
+}
+
+// --- Test ---
+
+test {
+    useJUnitPlatform()
+    systemProperties['xnat.home'] = layout.buildDirectory.dir('tmp/test').get().asFile.absolutePath
+}
+
+// --- Lombok (all modules use it) ---
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:' + libs.versions.lombok.get()
+    annotationProcessor 'org.projectlombok:lombok:' + libs.versions.lombok.get()
+    testCompileOnly 'org.projectlombok:lombok:' + libs.versions.lombok.get()
+    testAnnotationProcessor 'org.projectlombok:lombok:' + libs.versions.lombok.get()
+    // JUnit Platform launcher (required by Gradle 9)
+    // Platform version 1.x.y maps to Jupiter 5.x.y (e.g. Jupiter 5.8.1 → Platform 1.8.1)
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.8.1'
+    // JUnit 4 tests run on JUnit Platform via vintage engine
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:' + libs.versions.junit.jupiter.get()
+}
+
+// --- Reactor 2.x: redisson 3.22.0 pulls reactor-core 3.x, framework needs 2.x ---
+// Multiple modules declare redisson; force in convention plugin is cleanest
+
+configurations.configureEach {
+    resolutionStrategy {
+        force 'io.projectreactor:reactor-core:2.0.8.RELEASE'
+        force 'io.projectreactor:reactor-bus:2.0.8.RELEASE'
+    }
+}
+
+// --- Compiler & Javadoc ---
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+// --- Manifest (build info for all JARs) ---
+
+def buildDate = new Date()
+def buildNumber = System.getenv().BUILD_NUMBER?.toInteger() ?: 'Manual'
+
+tasks.withType(Jar).configureEach {
+    manifest {
+        attributes 'Build-Date': buildDate,
+                   'Build-Number': buildNumber,
+                   'Implementation-Version': project.version
+    }
+}
+
+// --- Publishing ---
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = 'XNAT_Artifactory'
+            url = project.version.toString().endsWith('-SNAPSHOT')
+                ? 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local'
+                : 'https://nrgxnat.jfrog.io/nrgxnat/libs-release-local'
+        }
+    }
+}

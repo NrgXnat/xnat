@@ -1,0 +1,27 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api project(':framework')
+
+    implementation libs.ehcache.ehcache
+    implementation libs.redisson.redisson
+    implementation libs.commons.beanutils
+    implementation libs.commons.configuration2
+    implementation libs.javassist.javassist
+
+    compileOnly libs.google.jsr305
+
+    testImplementation project(':test')
+    testImplementation libs.spring.test
+    testImplementation libs.spring.context.support
+    testImplementation libs.junit.jupiter.api
+    testRuntimeOnly libs.junit.jupiter.engine
+    testImplementation libs.sbrannen.spring.test.junit5
+    testImplementation libs.assertj.core
+    testImplementation libs.h2database.h2
+    testImplementation libs.logback.classic
+    testImplementation libs.postgresql.postgresql
+    testImplementation libs.cglib.cglib
+}

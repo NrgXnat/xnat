@@ -1,0 +1,32 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api(project(':config')) { transitive = false }
+    api project(':framework')
+    api project(':extattr')
+
+    api libs.dcm4che.core
+    api libs.dcm4che.net
+    api libs.dcm4che.iod
+    implementation libs.hsqldb.hsqldb
+    implementation libs.commons.io
+
+    compileOnly libs.google.jsr305
+
+    testImplementation(project(':automation')) {
+        exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+        exclude group: 'org.python', module: 'jython-standalone'
+    }
+    testImplementation libs.inject.javax.inject
+    testImplementation libs.assertj.core
+    testImplementation libs.apache.ant
+    testImplementation libs.junit.junit
+    testImplementation libs.spring.test
+    testImplementation libs.commons.beanutils
+    testImplementation libs.hibernate.envers
+    testImplementation libs.h2database.h2
+    testImplementation libs.hibernate.ehcache
+    testImplementation libs.slf4j.simple
+}

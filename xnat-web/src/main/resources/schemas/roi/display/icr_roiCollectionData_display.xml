@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="icr:roiCollectionData" full-description="RoiCollection" brief-description="RoiCollection">
+    <Arc name="ASSESSOR">
+        <CommonField id="EXPT_ID" local-field="EXPT_ID"/>
+        <CommonField id="ASSESSED_EXPT_ID" local-field="SESSION_ID"/>
+    </Arc>
+    <Arc name="PARTICIPANT_EXPERIMENT">
+        <CommonField id="PART_ID" local-field="SUBJECT_ID"/>
+        <CommonField id="DATE" local-field="DATE"/>
+        <CommonField id="EXPT_ID" local-field="EXPT_ID"/>
+    </Arc>
+    <DisplayField id="EXPT_ID" header="ID" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData.ID"/>
+        <HTML-Link>
+            <Property name="HREF" value="none"/>
+            <Property name="ONCLICK" value="return rpt('@Field1','icr:roiCollectionData','icr:roiCollectionData.ID');">
+                <InsertValue id="Field1" field="EXPT_ID"/>
+            </Property>
+        </HTML-Link>
+    </DisplayField>
+    <DisplayField id="SUBJECT_ID" header="Subject" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="xnat:imageSessionData.subject_ID"/>
+        <HTML-Link>
+            <Property name="HREF" value="none"/>
+            <Property name="ONCLICK" value="return rpt('@Field1','xnat:subjectData','xnat:subjectData.ID');">
+                <InsertValue id="Field1" field="SUBJECT_ID"/>
+            </Property>
+        </HTML-Link>
+    </DisplayField>
+    <DisplayField id="SESSION_ID" header="Session" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData.imageSession_ID"/>
+        <HTML-Link>
+            <Property name="HREF" value="none"/>
+            <Property name="ONCLICK" value="return rpt('@Field1','xnat:imageSessionData','xnat:imageSessionData.ID');">
+                <InsertValue id="Field1" field="SESSION_ID"/>
+            </Property>
+        </HTML-Link>
+    </DisplayField>
+    <DisplayField id="RPT" header="ID" visible="true" image="true">
+        <Content type="sql">'/@WEBAPP/images/r.gif'::text</Content>
+        <HTML-Link>
+            <Property name="HREF" value="none"/>
+            <Property name="ONCLICK" value="return rpt('@Field1','icr:roiCollectionData','icr:roiCollectionData.ID');">
+                <InsertValue id="Field1" field="EXPT_ID"/>
+            </Property>
+        </HTML-Link>
+    </DisplayField>
+    <DisplayField id="DATE" header="Date" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData.date"/>
+    </DisplayField>
+    <DisplayField header="Projects" id="PROJECTS" data-type="string">
+        <DisplayFieldElement name="Field1" viewName="ICR_ROICOLLECTIONDATA_PROJECTS" viewColumn="PROJECTS"/>
+    </DisplayField>
+    <DisplayField header="Label" id="LABEL" data-type="string">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData.ID"/>
+        <DisplayFieldElement name="Field2" schema-element="icr:roiCollectionData.label"/>
+        <Content type="sql">COALESCE(@Field2, @Field1)</Content>
+        <HTML-Link>
+            <SecureLink elementName="icr:roiCollectionData">
+                <securityMappingValue displayFieldId="PROJECTS" schemaElementMap="icr:roiCollectionData/sharing/share/project"/>
+                <securityMappingValue displayFieldId="PROJECT" schemaElementMap="icr:roiCollectionData/project"/>
+            </SecureLink>
+            <Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/icr:roiCollectionData/search_field/icr:roiCollectionData.ID">
+                <InsertValue id="Field1" field="EXPT_ID"/>
+            </Property>
+            <Property name="ONCLICK" value="return rpt('@Field1','icr:roiCollectionData','icr:roiCollectionData.ID');">
+                <InsertValue id="Field1" field="EXPT_ID"/>
+            </Property>
+            <Property name="TITLE" value="Inserted: @Field1 (@Field2)">
+                <InsertValue id="Field1" field="INSERT_DATE"/>
+                <InsertValue id="Field2" field="INSERT_USER"/>
+            </Property>
+        </HTML-Link>
+    </DisplayField>
+    <DisplayField id="PROJECT" header="Project" visible="true" searchable="true" data-type="string">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData.project"/>
+    </DisplayField>
+    <DisplayField id="ICR_ROICOLLECTIONDATA_PROJECT_IDENTIFIER" header="ICR_ROICOLLECTIONDATA ID" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+        <Content type="sql">icr_roicollectiondata_project_id</Content>
+        <HTML-Link>
+            <SecureLink elementName="icr:roiCollectionData">
+                <securityMappingValue displayFieldId="PROJECTS" schemaElementMap="icr:roiCollectionData/sharing/share/project"/>
+                <securityMappingValue displayFieldId="PROJECT" schemaElementMap="icr:roiCollectionData/project"/>
+            </SecureLink>
+            <Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/icr:roiCollectionData/search_field/icr:roiCollectionData.ID/project/@Field2">
+                <InsertValue id="Field1" field="EXPT_ID"/>
+                <InsertValue id="Field2" field="@WHERE"/>
+            </Property>
+        </HTML-Link>
+        <SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS icr_roicollectiondata_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>
+        <MappingColumns>
+            <MappingColumn schemaField="icr:roiCollectionData.ID" queryField="sharing_share_xnat_experimentda_id"/>
+        </MappingColumns>
+    </DisplayField>
+    <DisplayField id="INSERT_DATE" header="Inserted" visible="true" searchable="true" data-type="string">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData.meta.insert_date"/>
+    </DisplayField>
+    <DisplayField id="INSERT_USER" header="Creator" visible="true" searchable="true" data-type="string">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData.meta.insert_user.login"/>
+    </DisplayField>
+    <DisplayField id="ICR_ROICOLLECTIONDATA_FIELD_MAP" header="Field" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+        <Content type="sql">field</Content>
+        <SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='icr:roiCollectionData') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>
+        <MappingColumns>
+            <MappingColumn schemaField="icr:roiCollectionData.ID" queryField="expt_id"/>
+        </MappingColumns>
+    </DisplayField>
+    <DisplayField id="UID" header="UID" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData/UID"/>
+    </DisplayField>
+    <DisplayField id="COLLECTIONTYPE" header="collectionType" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData/collectionType"/>
+    </DisplayField>
+    <DisplayField id="SUBJECTID" header="subjectID" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData/subjectID"/>
+    </DisplayField>
+    <DisplayField id="NAME" header="name" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData/name"/>
+    </DisplayField>
+    <DisplayField id="DESCRIPTION" header="description" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="icr:roiCollectionData/description"/>
+    </DisplayField>
+    <DisplayVersion versionName="listing" default-order-by="DATE" default-sort-order="DESC" brief-description="RoiCollection" dark-color="9999CC" light-color="CCCCFF">
+        <DisplayFieldRef id="RPT"/>
+        <DisplayFieldRef id="LABEL"/>
+        <DisplayFieldRef id="DATE"/>
+        <DisplayFieldRef id="UID"/>
+        <DisplayFieldRef id="COLLECTIONTYPE"/>
+        <DisplayFieldRef id="SUBJECTID"/>
+        <DisplayFieldRef id="NAME"/>
+        <DisplayFieldRef id="DESCRIPTION"/>
+    </DisplayVersion>
+    <DisplayVersion versionName="listing_csv" default-order-by="DATE" default-sort-order="DESC" brief-description="RoiCollection" dark-color="9999CC" light-color="CCCCFF">
+        <DisplayFieldRef id="LABEL"/>
+        <DisplayFieldRef id="DATE"/>
+        <DisplayFieldRef id="UID"/>
+        <DisplayFieldRef id="COLLECTIONTYPE"/>
+        <DisplayFieldRef id="SUBJECTID"/>
+        <DisplayFieldRef id="NAME"/>
+        <DisplayFieldRef id="DESCRIPTION"/>
+    </DisplayVersion>
+    <DisplayVersion versionName="full" default-order-by="DATE" default-sort-order="DESC" brief-description="RoiCollection" dark-color="9999CC" light-color="CCCCFF">
+        <DisplayFieldRef id="EXPT_ID"/>
+        <DisplayFieldRef id="DATE"/>
+        <DisplayFieldRef id="UID"/>
+        <DisplayFieldRef id="COLLECTIONTYPE"/>
+        <DisplayFieldRef id="SUBJECTID"/>
+        <DisplayFieldRef id="NAME"/>
+        <DisplayFieldRef id="DESCRIPTION"/>
+    </DisplayVersion>
+    <DisplayVersion versionName="detailed" default-order-by="DATE" default-sort-order="DESC" brief-description="RoiCollection" dark-color="9999CC" light-color="CCCCFF">
+        <DisplayFieldRef id="EXPT_ID"/>
+        <DisplayFieldRef id="DATE"/>
+        <DisplayFieldRef id="UID"/>
+        <DisplayFieldRef id="COLLECTIONTYPE"/>
+        <DisplayFieldRef id="SUBJECTID"/>
+        <DisplayFieldRef id="NAME"/>
+        <DisplayFieldRef id="DESCRIPTION"/>
+    </DisplayVersion>
+    <DisplayVersion versionName="project_bundle" default-order-by="DATE" default-sort-order="DESC" brief-description="RoiCollection" dark-color="9999CC" light-color="CCCCFF">
+        <DisplayFieldRef id="ICR_ROICOLLECTIONDATA_PROJECT_IDENTIFIER"/>
+        <DisplayFieldRef id="DATE"/>
+        <DisplayFieldRef id="UID"/>
+        <DisplayFieldRef id="COLLECTIONTYPE"/>
+        <DisplayFieldRef id="SUBJECTID"/>
+        <DisplayFieldRef id="NAME"/>
+        <DisplayFieldRef id="DESCRIPTION"/>
+    </DisplayVersion>
+    <ViewLink alias="ICR_ROICOLLECTIONDATA_PROJECTS">
+        <Mapping TableName="ICR_ROICOLLECTIONDATA_PROJECTS">
+            <MappingColumn rootElement="icr:roiCollectionData" fieldElement="icr:roiCollectionData.ID" mapsTo="id"/>
+        </Mapping>
+    </ViewLink>
+    <SQLView name="ICR_ROICOLLECTIONDATA_PROJECTS" sql="SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='icr:roiCollectionData' GROUP BY expt.id,expt.project"/>
+</Displays>

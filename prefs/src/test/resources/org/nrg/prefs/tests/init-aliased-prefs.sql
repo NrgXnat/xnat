@@ -1,0 +1,4 @@
+INSERT INTO xhbm_tool (id, created, disabled, timestamp, strict, tool_description, tool_id, tool_name) VALUES (1000, now(), TIMESTAMP '1969-12-31 18:00:00', now(), true, 'Some tool description', 'aliasMigration', 'Alias Migration Test');
+INSERT INTO xhbm_preference (id, created, disabled, timestamp, name, scope, entity_id, value, tool) VALUES (1000, now(), TIMESTAMP '1969-12-31 18:00:00', now(), 'prefAAlias', 0, '', 'importValueA', 1000);
+INSERT INTO xhbm_preference (id, created, disabled, timestamp, name, scope, entity_id, value, tool) VALUES (1001, now(), TIMESTAMP '1969-12-31 18:00:00', now(), 'prefB', 0, '', 'importValueB', 1000);
+INSERT INTO xhbm_preference (id, created, disabled, timestamp, name, scope, entity_id, value, tool) VALUES (1002, now(), TIMESTAMP '1969-12-31 18:00:00', now(), 'prefCAlias', 0, '', 'importValueC', 1000);

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ notify: src/test/resources/logback.xml
+  ~ XNAT https://www.xnat.org
+  ~ Copyright (c) 2023, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+<configuration>
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d %5p %40.40c:%4L - %m%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="notify" class="ch.qos.logback.core.FileAppender">
+        <file>target/nrg-notify-test.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d [%t] %-5p %class.%method:%line - %m%n</pattern>
+        </encoder>
+    </appender>
+    <root level="WARN">
+        <appender-ref ref="console"/>
+        <appender-ref ref="notify"/>
+    </root>
+    <logger name="org.nrg.notify" additivity="false" level="INFO">
+        <appender-ref ref="console"/>
+        <appender-ref ref="notify"/>
+    </logger>
+</configuration>

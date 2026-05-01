@@ -1,0 +1,18 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api project(':framework')
+
+    implementation libs.google.guava
+    implementation libs.dcm4che.core
+    implementation libs.slf4j.api
+
+    testImplementation libs.junit.junit
+    testImplementation libs.mockito.all
+    testImplementation libs.assertj.core
+    testImplementation libs.h2database.h2
+    testImplementation libs.hibernate.jcache
+    testImplementation libs.slf4j.simple
+}

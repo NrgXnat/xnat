@@ -1,0 +1,8 @@
+plugins {
+    id 'base'
+}
+
+allprojects {
+    group = 'org.nrg'
+    version = project.property('version')
+}

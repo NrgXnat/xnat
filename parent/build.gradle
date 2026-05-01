@@ -1,0 +1,322 @@
+plugins {
+    id 'java-platform'
+    id 'maven-publish'
+}
+
+group = 'org.nrg'
+
+javaPlatform {
+    allowDependencies()
+}
+
+dependencies {
+    constraints {
+        // ============================================================
+        // Internal NRG modules
+        // ============================================================
+
+        api project(':test')
+        api project(':framework')
+        api project(':transaction')
+        api project(':extattr')
+        api project(':mail')
+        api project(':prefs')
+        api project(':automation')
+        api project(':mizer')
+        api project(':config')
+        api project(':notify')
+        api project(':dicomtools')
+        api project(':dicom-image-utils')
+        api project(':dicom-edit4')
+        api project(':dicom-edit6')
+        api project(':dicom-xnat-sop')
+        api project(':dicom-xnat-util')
+        api project(':xdat')
+        api project(':spawner')
+        // xnat-web has two publications (JAR + WAR); reference JAR coordinates explicitly
+        api "org.nrg.xnat:web:${project.version}"
+        api project(':xnat-data-builder')
+
+        // ============================================================
+        // External third-party libraries — from Version Catalog
+        // ============================================================
+
+        // Spring Framework
+        api libs.spring.core
+        api libs.spring.beans
+        api libs.spring.context
+        api libs.spring.context.support
+        api libs.spring.aop
+        api libs.spring.expression
+        api libs.spring.jdbc
+        api libs.spring.jms
+        api libs.spring.messaging
+        api libs.spring.orm
+        api libs.spring.oxm
+        api libs.spring.tx
+        api libs.spring.web
+        api libs.spring.webmvc
+        api libs.spring.test
+
+        // Spring Security
+        api libs.spring.security.spring.security.acl
+        api libs.spring.security.spring.security.aspects
+        api libs.spring.security.spring.security.config
+        api libs.spring.security.spring.security.core
+        api libs.spring.security.spring.security.ldap
+        api libs.spring.security.spring.security.openid
+        api libs.spring.security.spring.security.taglibs
+        api libs.spring.security.spring.security.web
+        api libs.spring.security.spring.security.test
+        api libs.spring.security.spring.security.jwt
+        api libs.spring.security.oauth2.spring.security.oauth2
+        api libs.spring.ldap.spring.ldap.core
+
+        // Hibernate
+        api libs.hibernate.core
+        api libs.hibernate.envers
+        api libs.hibernate.ehcache
+        api libs.hibernate.jcache
+        api libs.hibernate.validator
+        api libs.hibernate.validator.cdi
+        api libs.hibernate.jpa.api
+        api libs.hibernate.commons.annotations
+        api libs.vladmihalcea.hibernate.types43
+        api libs.vladmihalcea.hibernate.types55
+
+        // Jackson
+        api libs.jackson.core
+        api libs.jackson.annotations
+        api libs.jackson.databind
+        api libs.jackson.dataformat.xml
+        api libs.jackson.dataformat.yaml
+        api libs.jackson.dataformat.csv
+        api libs.jackson.datatype.hibernate4
+        api libs.jackson.datatype.hibernate5
+        api libs.jackson.datatype.guava
+        api libs.jackson.datatype.jdk8
+        api libs.jackson.datatype.jsr310
+        api libs.jackson.module.jaxb.annotations
+        api libs.jackson.module.parameter.names
+
+        // DCM4CHE (v2)
+        api libs.dcm4che.core
+        api libs.dcm4che.iod
+        api libs.dcm4che.image
+        api libs.dcm4che.imageio
+        api libs.dcm4che.imageio.rle
+        api libs.dcm4che.net
+        api libs.dcm4che.tool.dcmecho
+        api libs.dcm4che.tool.dcmqr
+
+        // DCM4CHE5
+        api libs.dcm4che5.dcm4che.core
+        api libs.dcm4che5.dcm4che.dict
+        api libs.dcm4che5.dcm4che.dict.arc
+        api libs.dcm4che5.dcm4che.dict.priv
+        api libs.dcm4che5.dcm4che.dict.private
+        api libs.dcm4che5.dcm4che.image
+        api libs.dcm4che5.dcm4che.imageio
+        api libs.dcm4che5.dcm4che.imageio.rle
+        api libs.dcm4che5.dcm4che.javascript
+        api libs.dcm4che5.dcm4che.js.dict
+        api libs.dcm4che5.dcm4che.json
+        api libs.dcm4che5.dcm4che.mime
+        api libs.dcm4che5.dcm4che.net
+        api libs.dcm4che5.dcm4che.tool.common
+        api libs.dcm4che5.dcm4che.tool.storescp
+        api libs.dcm4che5.dcm4che.tool.storescu
+
+        // PixelMed
+        api libs.pixelmed.pixelmed
+        api libs.pixelmed.codec
+        api libs.pixelmed.imageio
+
+        // ActiveMQ
+        api libs.activemq.all
+        api libs.activemq.broker
+        api libs.activemq.client
+        api libs.activemq.jaas
+        api libs.activemq.jdbc.store
+        api libs.activemq.kahadb.store
+        api libs.activemq.mqtt
+        api libs.activemq.openwire.legacy
+        api libs.activemq.spring
+        api libs.activemq.stomp
+        api libs.activemq.protobuf
+
+        // SLF4J / Logback
+        api libs.slf4j.api
+        api libs.slf4j.simple
+        api libs.slf4j.log4j12
+        api libs.slf4j.jul.to.slf4j
+        api libs.slf4j.nop
+        api libs.slf4j.jcl.over.slf4j
+        api libs.slf4j.log4j.over.slf4j
+        api libs.logback.classic
+        api libs.logback.core
+        api libs.logback.logstash.logback.encoder
+
+        // Apache Commons
+        api libs.commons.beanutils
+        api libs.commons.cli
+        api libs.commons.codec
+        api libs.commons.collections
+        api libs.commons.collections4
+        api libs.commons.compress
+        api libs.commons.configuration
+        api libs.commons.configuration2
+        api libs.commons.csv
+        api libs.commons.dbcp2
+        api libs.commons.digester
+        api libs.commons.discovery
+        api libs.commons.email
+        api libs.commons.fileupload
+        api libs.commons.io
+        api libs.commons.lang
+        api libs.commons.lang3
+        api libs.commons.logging
+        api libs.commons.math
+        api libs.commons.net
+        api libs.commons.pool2
+        api libs.commons.text
+
+        // Caching
+        api libs.ehcache.ehcache
+        api libs.ehcache.clustered
+        api libs.cache.api
+        api libs.redisson.redisson
+
+        // Database
+        api libs.postgresql.postgresql
+        api libs.h2database.h2
+        api libs.hsqldb.hsqldb
+        api libs.zaxxer.hikaricp
+
+        // Google
+        api libs.google.guava
+        api libs.google.gson
+        api libs.google.auto.value
+        api libs.google.auto.value.annotations
+        api libs.google.collections
+        api libs.google.jsr305
+
+        // Swagger
+        api libs.springfox.swagger2
+        api libs.springfox.swagger.ui
+
+        // Bouncy Castle
+        api libs.bouncycastle.bcpkix.jdk18on
+
+        // Java/Jakarta EE
+        api libs.activation.javax.activation.api
+        api libs.annotation.javax.annotation.api
+        api libs.el.javax.el.api
+        api libs.inject.javax.inject
+        api libs.interceptor.javax.interceptor.api
+        api libs.jms.javax.jms.api
+        api libs.mail.javax.mail
+        api libs.mail.javax.mail.api
+        api libs.j2ee.javax.management.j2ee.api
+        api libs.servlet.javax.servlet.api
+        api libs.servlet.jstl
+        api libs.glassfish.javax.el
+        api libs.glassfish.jakarta.el
+
+        // HTTP
+        api libs.httpcomponents.httpclient
+        api libs.httpcomponents.httpcore
+        api libs.httpcomponents.httpcore.nio
+        api libs.httpcomponents.httpmime
+
+        // Bytecode / AOP
+        api libs.aopalliance.aopalliance
+        api libs.aspectj.weaver
+        api libs.aspectj.rt
+        api libs.cglib.cglib
+        api libs.javassist.javassist
+
+        // XML / XSLT
+        api libs.dom4j.dom4j
+        api libs.msv.core
+        api libs.msv.xsdlib
+
+        // ANTLR
+        api libs.antlr.antlr
+        api libs.antlr.runtime
+        api libs.antlr4
+        api libs.antlr4.runtime
+
+        // Reactor (force 2.x — redisson transitively pulls 3.x)
+        api libs.reactor.bus
+        api libs.reactor.core
+
+        // Misc
+        api libs.projectlombok.lombok
+        api libs.yaml.snakeyaml
+        api libs.json.json
+        api libs.jsonpath.json.path
+        api libs.reflections.reflections
+        api libs.quartz.scheduler.quartz
+        api libs.joda.time.joda.time
+        api libs.uuid.java.uuid.generator
+        api libs.bitwalker.useragentutils
+        api libs.javamelody.core
+        api libs.imagej.ij
+        api libs.media.jai.imageio
+        api libs.twmacinta.fast.md5
+        api libs.apache.ant
+        api libs.apache.xbean.spring
+        api libs.metainf.services.metainf.services
+
+        // Legacy
+        api libs.turbine.turbine
+        api libs.torque.torque
+        api libs.torque.village
+        api libs.apache.velocity
+        api libs.apache.velocity.tools
+        api libs.ecs.ecs
+        api libs.fop.fop
+        api libs.avalon.framework.avalon.framework.impl
+        api libs.lowagie.itext
+
+        // Restlet
+        api libs.restlet.org.restlet
+        api libs.restlet.com.noelios.restlet
+        api libs.restlet.com.noelios.restlet.ext.servlet
+        api libs.restlet.org.restlet.ext.fileupload
+
+        // Scripting
+        api libs.groovy.all
+        api libs.python.jython
+        api libs.python.jython.standalone
+
+        // Testing
+        api libs.junit.junit
+        api libs.junit.bom
+        api libs.junit.jupiter.api
+        api libs.junit.jupiter.engine
+        api libs.junit.vintage.engine
+        api libs.mockito.all
+        api libs.mockito.core
+        api libs.mockito.junit.jupiter
+        api libs.easymock.easymock
+        api libs.hamcrest.core
+        api libs.hamcrest.library
+        api libs.hamcrest.hamcrest
+        api libs.assertj.core
+        api libs.sbrannen.spring.test.junit5
+        api libs.powermock.api.mockito2
+        api libs.powermock.module.junit4
+        api libs.ttddyy.datasource.proxy
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.javaPlatform
+            artifactId = 'parent'
+        }
+    }
+}

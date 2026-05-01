@@ -1,0 +1,25 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+// Original Maven coordinate: org.nrg:DicomImageUtils
+publishing {
+    publications {
+        maven {
+            artifactId = 'DicomImageUtils'
+        }
+    }
+}
+
+dependencies {
+    api libs.dcm4che.core
+    api libs.dcm4che.image
+    api libs.dcm4che.net
+    api libs.dcm4che.imageio
+    api libs.dcm4che.imageio.rle
+
+    implementation libs.commons.lang3
+    implementation libs.slf4j.api
+
+    testImplementation libs.junit.junit
+}

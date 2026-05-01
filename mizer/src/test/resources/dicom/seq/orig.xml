@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+  ~ DicomEdit: /Users/rherrick/Development/XNAT/1.7/libraries/dicom-edit/src/test/resources/dicom/seq/orig.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2017, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  -->
+
+<file-format>
+<meta-header xfer="1.2.840.10008.1.2.1" name="Little Endian Explicit">
+<element tag="0002,0000" vr="UL" vm="1" len="4" name="FileMetaInformationGroupLength">192</element>
+<element tag="0002,0001" vr="OB" vm="1" len="2" name="FileMetaInformationVersion" binary="hidden"></element>
+<element tag="0002,0002" vr="UI" vm="1" len="26" name="MediaStorageSOPClassUID">1.2.840.10008.5.1.4.1.1.4</element>
+<element tag="0002,0003" vr="UI" vm="1" len="62" name="MediaStorageSOPInstanceUID">1.3.6.1.4.1.9328.50.50.97938941121090277510680075622054056832</element>
+<element tag="0002,0010" vr="UI" vm="1" len="20" name="TransferSyntaxUID">1.2.840.10008.1.2.1</element>
+<element tag="0002,0012" vr="UI" vm="1" len="16" name="ImplementationClassUID">1.2.40.0.13.1.1</element>
+<element tag="0002,0013" vr="SH" vm="1" len="14" name="ImplementationVersionName">dcm4che-1.4.27</element>
+</meta-header>
+<data-set xfer="1.2.840.10008.1.2.1" name="Little Endian Explicit">
+<element tag="0008,0005" vr="CS" vm="1" len="10" name="SpecificCharacterSet">ISO_IR 100</element>
+<element tag="0008,0008" vr="CS" vm="3" len="22" name="ImageType">ORIGINAL\PRIMARY\OTHER</element>
+<element tag="0008,0016" vr="UI" vm="1" len="26" name="SOPClassUID">1.2.840.10008.5.1.4.1.1.4</element>
+<element tag="0008,0018" vr="UI" vm="1" len="62" name="SOPInstanceUID">1.3.6.1.4.1.9328.50.50.97938941121090277510680075622054056832</element>
+<element tag="0008,0020" vr="DA" vm="1" len="8" name="StudyDate">20050404</element>
+<element tag="0008,0023" vr="DA" vm="1" len="8" name="ContentDate">20050404</element>
+<element tag="0008,0030" vr="TM" vm="0" len="0" name="StudyTime"></element>
+<element tag="0008,0033" vr="TM" vm="0" len="0" name="ContentTime"></element>
+<element tag="0008,0050" vr="SH" vm="1" len="16" name="AccessionNumber">2356642993167522</element>
+<element tag="0008,0060" vr="CS" vm="1" len="2" name="Modality">MR</element>
+<element tag="0008,0070" vr="LO" vm="0" len="0" name="Manufacturer"></element>
+<element tag="0008,0090" vr="PN" vm="1" len="2" name="ReferringPhysicianName"></element>
+<sequence tag="0008,1032" vr="SQ" card="1" name="ProcedureCodeSequence">
+<item card="0">
+</item>
+</sequence>
+<element tag="0010,0010" vr="PN" vm="1" len="6" name="PatientName">997593</element>
+<element tag="0010,0020" vr="LO" vm="1" len="12" name="PatientID">900-00-5303</element>
+<element tag="0010,0030" vr="DA" vm="1" len="8" name="PatientBirthDate">19520315</element>
+<element tag="0010,0040" vr="CS" vm="0" len="0" name="PatientSex"></element>
+<element tag="0012,0062" vr="CS" vm="1" len="4" name="PatientIdentityRemoved">YES</element>
+<element tag="0012,0063" vr="LO" vm="1" len="42" name="DeidentificationMethod">CTP: DICOM-S142-Baseline: 20090915:165153</element>
+<element tag="0013,0010" vr="LO" vm="1" len="4" name="PrivateCreator">CTP</element>
+<element tag="0013,1010" vr="UN" vm="1" len="10" name="Unknown Tag &amp; Data" binary="hidden"></element>
+<element tag="0013,1013" vr="UN" vm="1" len="8" name="Unknown Tag &amp; Data" binary="hidden"></element>
+<element tag="0018,0010" vr="LO" vm="0" len="0" name="ContrastBolusAgent"></element>
+<element tag="0018,0015" vr="CS" vm="1" len="6" name="BodyPartExamined">BRAIN</element>
+<element tag="0018,0020" vr="CS" vm="1" len="2" name="ScanningSequence">RM</element>
+<element tag="0018,0021" vr="CS" vm="1" len="4" name="SequenceVariant">OSP</element>
+<element tag="0018,0022" vr="CS" vm="0" len="0" name="ScanOptions"></element>
+<element tag="0018,0023" vr="CS" vm="1" len="2" name="MRAcquisitionType">2D</element>
+<element tag="0018,0024" vr="SH" vm="1" len="6" name="SequenceName">tse1-3</element>
+<element tag="0018,0025" vr="CS" vm="1" len="2" name="AngioFlag">N</element>
+<element tag="0018,0050" vr="DS" vm="1" len="14" name="SliceThickness">005.000000E+00</element>
+<element tag="0018,0080" vr="DS" vm="1" len="14" name="RepetitionTime">007.400000E+02</element>
+<element tag="0018,0081" vr="DS" vm="1" len="14" name="EchoTime">001.200000E+01</element>
+<element tag="0018,0083" vr="DS" vm="1" len="2" name="NumberOfAverages">1</element>
+<element tag="0018,0084" vr="DS" vm="1" len="14" name="ImagingFrequency">006.361539E+01</element>
+<element tag="0018,0085" vr="SH" vm="1" len="2" name="ImagedNucleus">1H</element>
+<element tag="0018,0086" vr="IS" vm="1" len="2" name="EchoNumbers">1</element>
+<element tag="0018,0087" vr="DS" vm="1" len="8" name="MagneticFieldStrength">1.493806</element>
+<element tag="0018,0088" vr="DS" vm="1" len="2" name="SpacingBetweenSlices">2</element>
+<element tag="0018,0091" vr="IS" vm="1" len="2" name="EchoTrainLength">1</element>
+<element tag="0018,0093" vr="DS" vm="1" len="4" name="PercentSampling">100</element>
+<element tag="0018,0094" vr="DS" vm="1" len="4" name="PercentPhaseFieldOfView">100</element>
+<element tag="0018,1200" vr="DA" vm="1" len="8" name="DateOfLastCalibration">20041121</element>
+<element tag="0018,1201" vr="TM" vm="1" len="14" name="TimeOfLastCalibration">195152.000000</element>
+<element tag="0018,1250" vr="SH" vm="1" len="8" name="ReceiveCoilName">CP Head</element>
+<element tag="0018,1310" vr="US" vm="4" len="8" name="AcquisitionMatrix">0\512\192\0</element>
+<element tag="0018,1312" vr="CS" vm="1" len="4" name="InPlanePhaseEncodingDirection">ROW</element>
+<element tag="0018,1314" vr="DS" vm="1" len="4" name="FlipAngle">180</element>
+<element tag="0018,1316" vr="DS" vm="1" len="2" name="SAR">0</element>
+<element tag="0018,5100" vr="CS" vm="1" len="4" name="PatientPosition">HFS</element>
+<element tag="0020,000d" vr="UI" vm="1" len="62" name="StudyInstanceUID">1.3.6.1.4.1.9328.50.50.79351486839433374781491143025473054718</element>
+<element tag="0020,000e" vr="UI" vm="1" len="62" name="SeriesInstanceUID">1.3.6.1.4.1.9328.50.50.117749088526208981082599401099872271232</element>
+<element tag="0020,0010" vr="SH" vm="0" len="0" name="StudyID"></element>
+<element tag="0020,0011" vr="IS" vm="1" len="2" name="SeriesNumber">2</element>
+<element tag="0020,0012" vr="IS" vm="1" len="2" name="AcquisitionNumber">1</element>
+<element tag="0020,0013" vr="IS" vm="1" len="2" name="InstanceNumber">12</element>
+<element tag="0020,0030" vr="DS" vm="3" len="42" name="ACR_NEMA_ImagePosition">007.837100E+00\-1.013316E+02\01.306859E+02</element>
+<element tag="0020,0032" vr="DS" vm="3" len="28" name="ImagePositionPatient">7.8371\-101.80039\131.15461</element>
+<element tag="0020,0035" vr="DS" vm="6" len="84" name="ACR_NEMA_ImageOrientation">000.000000E+00\01.000000E+00\-0.000000E+00\00.000000E+00\-0.000000E+00\-1.000000E+00</element>
+<element tag="0020,0037" vr="DS" vm="6" len="14" name="ImageOrientationPatient">0\1\-0\0\-0\-1</element>
+<element tag="0020,0050" vr="DS" vm="1" len="14" name="ACR_NEMA_Location">007.837100E+00</element>
+<element tag="0020,0052" vr="UI" vm="1" len="62" name="FrameOfReferenceUID">1.3.6.1.4.1.9328.50.50.97817236561948722029720665774384845465</element>
+<element tag="0020,0070" vr="LO" vm="1" len="6" name="ACR_NEMA_ImageGeometryType">PLANAR</element>
+<element tag="0020,0080" vr="LO" vm="0" len="0" name="ACR_NEMA_MaskingImage"></element>
+<element tag="0020,1001" vr="DS" vm="1" len="2" name="ACR_NEMA_AcquisitionsInSeries">1</element>
+<element tag="0020,1040" vr="LO" vm="0" len="0" name="PositionReferenceIndicator"></element>
+<element tag="0020,1041" vr="DS" vm="1" len="14" name="SliceLocation">007.837100E+00</element>
+<element tag="0028,0002" vr="US" vm="1" len="2" name="SamplesPerPixel">1</element>
+<element tag="0028,0004" vr="CS" vm="1" len="12" name="PhotometricInterpretation">MONOCHROME2</element>
+<element tag="0028,0005" vr="SS" vm="1" len="2" name="ACR_NEMA_ImageDimensions">2</element>
+<element tag="0028,0010" vr="US" vm="1" len="2" name="Rows">256</element>
+<element tag="0028,0011" vr="US" vm="1" len="2" name="Columns">256</element>
+<element tag="0028,0030" vr="DS" vm="2" len="28" name="PixelSpacing">009.375000E-01\09.375000E-01</element>
+<element tag="0028,0040" vr="SH" vm="1" len="4" name="ACR_NEMA_ImageFormat">RECT</element>
+<element tag="0028,0100" vr="US" vm="1" len="2" name="BitsAllocated">16</element>
+<element tag="0028,0101" vr="US" vm="1" len="2" name="BitsStored">12</element>
+<element tag="0028,0102" vr="US" vm="1" len="2" name="HighBit">11</element>
+<element tag="0028,0103" vr="US" vm="1" len="2" name="PixelRepresentation">0</element>
+<element tag="0028,0200" vr="SS" vm="1" len="2" name="ACR_NEMA_ImageLocation">32736</element>
+<element tag="0028,0303" vr="SH" vm="1" len="8" name="Unknown Tag &amp; Data">MODIFIED</element>
+<element tag="0028,1050" vr="DS" vm="2" len="8" name="WindowCenter">673\673</element>
+<element tag="0028,1051" vr="DS" vm="2" len="10" name="WindowWidth">1381\1381</element>
+<element tag="7fe0,0010" vr="OW" vm="1" len="131072" name="PixelData" loaded="no" binary="hidden"></element>
+</data-set>
+</file-format>

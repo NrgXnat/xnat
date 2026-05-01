@@ -1,0 +1,58 @@
+{
+    "README": {
+        "_": "This structure is mostly object-based with unique named properties instead of arrays for items.",
+        "__": "The 'meta' property (or maybe some other name like 'self') contains the info for that item.",
+        "___": "All other properties are that item's child items."
+    },
+    "XNAT": {
+        "siteAdmin": {
+            "type": "page",
+            "contains": "tabs",
+            "name": "siteAdmin",
+            "title": "XNAT Site Administration",
+            "url": "/data/admin",
+            "children": {
+                "dashboard": {},
+                "xnatSetup": {
+                    "id": "xnatSetup",
+                    "label": "XNAT Setup",
+                    "type": "group",
+                    "children": {
+                        "siteSetup": {
+                            "label": "Site Setup",
+                            "panels": {
+                                "siteInfo": {
+                                    "label": "Site Information",
+                                    "description": "This is the information about the site",
+                                    "children": {
+                                        "siteId": {
+                                            "kind": "input-alphanum-id",
+                                            "name": "siteId",
+                                            "label": "Site ID",
+                                            "id": "site-id",
+                                            "description": "Site ID accepts letters, numbers, and underscores",
+                                            "placeholder": "ID for your XNAT site",
+                                            "value": "XNAT",
+                                            "validation": {
+                                                "required": true,
+                                                "type": "id-strict"
+                                            }
+                                        },
+                                        "siteUrl": {
+                                            "kind": "url",
+                                            "name": "siteUrl",
+                                            "label": "Site URL",
+                                            "id": "site-url",
+                                            "value": "http://localhost:8080",
+                                            "required": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,62 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+dependencies {
+    api libs.spring.orm
+    api libs.spring.oxm
+    api libs.spring.web
+    api libs.spring.context.support
+    api libs.spring.jms
+    api libs.spring.security.spring.security.web
+    api libs.reactor.bus
+    api libs.reactor.core
+    api libs.hibernate.core
+    api libs.hibernate.validator
+    api libs.glassfish.javax.el
+    api libs.hibernate.envers
+    api libs.hibernate.jcache
+    api libs.cache.api
+    api libs.ehcache.ehcache
+    api libs.redisson.redisson
+    api libs.vladmihalcea.hibernate.types55
+    api libs.httpcomponents.httpclient
+    api libs.apache.ant
+    api libs.commons.beanutils
+    api libs.commons.io
+    api libs.commons.configuration2
+    api libs.commons.lang3
+    api libs.commons.text
+    api libs.slf4j.api
+    api libs.google.guava
+    api libs.reflections.reflections
+    api libs.jackson.annotations
+    api libs.jackson.core
+    api libs.jackson.databind
+    api libs.jackson.dataformat.yaml
+    api libs.jackson.datatype.hibernate5
+    api libs.yaml.snakeyaml
+    api libs.postgresql.postgresql
+    compileOnly libs.metainf.services.metainf.services
+    annotationProcessor libs.metainf.services.metainf.services
+    compileOnly libs.google.jsr305
+    compileOnly libs.servlet.javax.servlet.api
+    compileOnly libs.h2database.h2
+
+    testImplementation libs.h2database.h2
+    testImplementation libs.servlet.javax.servlet.api
+    testImplementation libs.junit.jupiter.api
+    testRuntimeOnly libs.junit.jupiter.engine
+    testImplementation libs.sbrannen.spring.test.junit5
+    testImplementation libs.spring.test
+    testImplementation libs.logback.classic
+    testImplementation libs.cglib.cglib
+    testImplementation libs.javassist.javassist
+    testImplementation libs.assertj.core
+    testImplementation libs.hamcrest.library
+
+    testAnnotationProcessor files(sourceSets.main.output)
+    testAnnotationProcessor libs.metainf.services.metainf.services
+    testAnnotationProcessor libs.slf4j.api
+    testAnnotationProcessor libs.commons.lang3
+}

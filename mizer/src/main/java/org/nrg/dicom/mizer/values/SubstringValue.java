@@ -57,7 +57,7 @@ public class SubstringValue extends AbstractMizerValue {
         try {
             return evaluated.substring(_start, _end);
         } catch (StringIndexOutOfBoundsException e) {
-            throw new ScriptEvaluationException(String.format("Index out of bounds, requested substring from %d to %d, string length was %d.", _start, _end, evaluated.length()));
+            throw new ScriptEvaluationException(String.format("Index out of bounds, requested substring from %d to %d, string length was %d.", _start, _end, evaluated.length()), e);
         }
     }
 

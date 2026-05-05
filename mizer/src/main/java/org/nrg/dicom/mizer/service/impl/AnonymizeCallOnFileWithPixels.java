@@ -62,7 +62,7 @@ public class AnonymizeCallOnFileWithPixels extends CallOnFile<AnonymizationResul
             result.releaseObjectFromMemory();
             return result;
         } catch (DicomStreamException e) {
-            throw new IOException(e);
+            throw new IOException("Failed to read DICOM stream from '" + _dicomFile.getAbsolutePath() + "': " + e.getMessage(), e);
         }
     }
 

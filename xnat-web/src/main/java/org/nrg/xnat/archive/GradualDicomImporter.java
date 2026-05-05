@@ -411,15 +411,19 @@ public class GradualDicomImporter extends ImporterHandlerA {
                             }
                             else if (anonResult instanceof AnonymizationResultError) {
                                 // Errors of this type are script evaluation problems.
-                                handleAnonymizationError(isNew, session, outputFile, new ServerException(String.join("\n",anonResult.getMessages())));
+                                cleanupAndFailAnonStep(isNew, session, outputFile, new ServerException(Status.SERVER_ERROR_INTERNAL, String.join("\n", anonResult.getMessages())));
                             }
                         } else {
                             log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without " +
                                     "anonymization.", session.getProject(), session.getSubject(), session.getName());
                         }
-                    } catch(Throwable e){
+                    } catch (ServerException e) {
+                        // anything reaching here as a ServerException came from cleanupAndFailAnonStep itself
+                        //  (which already cleaned up), so just rethrow to avoid calling cleanupAndFailAnonStep twice.
+                        throw e;
+                    } catch (Throwable e) {
                         // Errors of this type are deeper system errors.
-                        handleAnonymizationError(isNew, session, outputFile, e);
+                        cleanupAndFailAnonStep(isNew, session, outputFile, e);
                     }
                 } else if (session.getPreventAnon()) {
                     log.debug("The session {} {} {} has already been anonymized by the uploader, proceeding without " +
@@ -443,7 +447,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
         } catch (ClientException e) {
             throw e;
         } catch (Throwable t) {
-            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);
+            String msg = String.join(": ","unable to read DICOM object " + name, t.getMessage());
+            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, msg, t);
         }
     }
 
@@ -456,7 +461,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         return Collections.emptyList();
     }
 
-    private void handleAnonymizationError(AtomicBoolean isNew, SessionData session,File outputFile, Throwable e) throws ServerException {
+    private void cleanupAndFailAnonStep(AtomicBoolean isNew, SessionData session,File outputFile, Throwable e) throws ServerException {
         log.debug("Dicom anonymization failed: {}", outputFile, e);
         try {
             // if we created a row in the database table for this session
@@ -470,7 +475,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             log.debug("Unable to delete relevant file: " + outputFile, e);
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, t);
         }
-        throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
+        throw new ServerException(Status.SERVER_ERROR_INTERNAL, e.getMessage(), e);
     }
 
     private void deleteSessionFromDb(SessionData session) throws Exception {

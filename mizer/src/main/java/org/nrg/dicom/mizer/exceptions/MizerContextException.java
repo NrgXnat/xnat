@@ -30,6 +30,11 @@ public class MizerContextException extends MizerException {
         _context = context;
     }
 
+    public MizerContextException(final MizerContext context, final String message, final Throwable cause) {
+        super(message, cause);
+        _context = context;
+    }
+
     public MizerContext getContext() {
         return _context;
     }

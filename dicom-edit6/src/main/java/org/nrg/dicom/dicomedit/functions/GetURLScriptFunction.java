@@ -44,7 +44,7 @@ public class GetURLScriptFunction extends AbstractScriptFunction {
             }
             return new ConstantValue(sb.toString());
         } catch (MalformedURLException e) {
-            throw new ScriptEvaluationException("Improper URL: " + url);
+            throw new ScriptEvaluationException("Improper URL '" + url + "': " + e.getMessage(), e);
         } catch (IOException e) {
             throw new ScriptEvaluationException("Error connecting to external webservice: " + url, e);
         }

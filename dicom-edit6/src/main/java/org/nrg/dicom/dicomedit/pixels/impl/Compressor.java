@@ -88,8 +88,7 @@ public class Compressor {
             }
         }
         catch (Exception e) {
-            e.printStackTrace(System.err);
-            logger.error("While processing {}", outputPath, e);
+            logger.error("While processing {}: {}", outputPath, e.getMessage(), e);
         }
     }
 

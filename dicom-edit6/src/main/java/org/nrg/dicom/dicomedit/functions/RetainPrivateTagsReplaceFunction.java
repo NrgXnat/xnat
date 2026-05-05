@@ -64,7 +64,7 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
             restoreTags(tagPathValueMap, dicomObject);
 
         } catch (Exception e) {
-            throw new ScriptEvaluationException("Error in retainPrivateTags: " + e.getMessage());
+            throw new ScriptEvaluationException("Error in retainPrivateTags: " + e.getMessage(), e);
         }
         return AbstractMizerValue.VOID;
     }

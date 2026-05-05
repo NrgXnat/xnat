@@ -1,5 +1,8 @@
 package org.nrg.dicom.dicomedit.pixels.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -9,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class MyLogger implements Closeable {
+    private static final Logger logger = LoggerFactory.getLogger(MyLogger.class);
     private FileOutputStream fos = null;
 
     public MyLogger( String name) {
@@ -19,7 +23,7 @@ public class MyLogger implements Closeable {
             fos = new FileOutputStream(logFile);
         }
         catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Failed to create pixel-edit log file for '{}': {}", name, e.getMessage(), e);
         }
     }
 

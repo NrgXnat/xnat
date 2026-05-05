@@ -9,7 +9,9 @@
 
 package org.nrg.dicom.dicomedit;
 
+import org.nrg.dicom.mizer.exceptions.MizerContextException;
 import org.nrg.dicom.mizer.exceptions.RejectedInstanceException;
+import org.nrg.dicom.mizer.exceptions.ScriptErrorContext;
 import org.nrg.dicom.mizer.objects.*;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
@@ -152,9 +154,13 @@ public class BaseScriptApplicator implements ScriptApplicatorI {
         } catch (RejectedInstanceException re) {
             return new AnonymizationResultReject(dicomObject, re.getMessage());
         } catch (Exception e) {
-            logger.error("Failed to apply script", e);
-            return new AnonymizationResultError(visitor.getDicomObject(),
-                    e.getMessage() == null ? e.getClass().getName() : e.getMessage());
+            final ScriptErrorContext ctx = ScriptErrorContext.empty()
+                    .withScriptLine(visitor.getCurrentStatementLine())
+                    .withStatementText(visitor.getCurrentStatementText());
+            final MizerContextException decorated = MizerException.rewrap(e, ctx);
+            String msg = "Failed to apply script: " + decorated.getMessage();
+            logger.error(msg, e);
+            return new AnonymizationResultError(visitor.getDicomObject(), msg, e);
         }
     }
 

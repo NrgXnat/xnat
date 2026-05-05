@@ -6,7 +6,7 @@ under a unified Gradle 9 build. The full git history of `xnat-web` is preserved 
 ## Directory Structure
 
 ```
-xnat-full/
+xnat/
 ├── settings.gradle           # Subproject registration (21 includes)
 ├── build.gradle              # Root build: sets group and version for all modules
 ├── gradle.properties         # Global build properties (version, parallel, cache, JVM args)
@@ -89,18 +89,18 @@ xnat-full/
 ## Quick Start
 
 ```bash
-# Build the deployable WAR
-./gradlew :xnat-web:war
-ls -lh xnat-web/build/libs/xnat-web-1.10.0.war
-
 # Full build (all modules, includes tests)
 ./gradlew build
+
+# Skip tests
+./gradlew build -x test
 
 # Build a single module
 ./gradlew :framework:build
 
-# Skip tests
-./gradlew build -x test
+# Build the deployable WAR
+./gradlew :xnat-web:war
+ls -lh xnat-web/build/libs/xnat-web-1.10.0.war
 ```
 
 ## Branches
@@ -109,9 +109,10 @@ ls -lh xnat-web/build/libs/xnat-web-1.10.0.war
 |--------|---------|---------|
 | `master` | Latest release (advances via fast-forward on each release) | 1.10.0 |
 | `releases/1.9.3.4` | 1.9.3.4 release reference | 1.9.3.4 |
+| `releases/1.9.3.5` | 1.9.3.5 release reference | 1.9.3.5 |
 | `develop` | Active development | 1.10.1-SNAPSHOT |
 
-Release tags (`1.9.3.4`, `1.10.0`) are annotated and reachable from `master`.
+Release tags `1.9.3.4` and `1.10.0` are reachable from `master`; tag `1.9.3.5` is reachable from `releases/1.9.3.5`.
 
 ## Documentation
 

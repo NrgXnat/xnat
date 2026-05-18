@@ -307,7 +307,7 @@ dependencies {
         api libs.testcontainers.postgresql
         api libs.tomakehurst.wiremock
         api libs.graaljs.polyglot
-        api libs.graaljs.js.community
+        api libs.graaljs.js
         api libs.graaljs.js.scriptengine
         api libs.ttddyy.datasource.proxy
     }

@@ -54,7 +54,7 @@ ehcache3 = "3.10.8"
 fastmd5 = "2.7.1"
 fest-swing = "1.2.1"
 findbugs-jsr305 = "3.0.2"
-graaljs = "23.1.0"
+graaljs = "25.0.3"
 fop = "0.20.5"
 glassfish-jakarta-el = "4.0.2"
 glassfish-javax-el = "3.0.1-b12"
@@ -258,7 +258,7 @@ ehcache-ehcache = { group = "org.ehcache", name = "ehcache", version.ref = "ehca
 el-javax-el-api = { group = "javax.el", name = "javax.el-api", version.ref = "javax-el" }
 fop-fop = { group = "fop", name = "fop", version.ref = "fop" }
 getopt-java-getopt = { group = "gnu.getopt", name = "java-getopt", version.ref = "java-getopt" }
-graaljs-js-community = { group = "org.graalvm.polyglot", name = "js-community", version.ref = "graaljs" }
+graaljs-js = { group = "org.graalvm.polyglot", name = "js", version.ref = "graaljs" }
 graaljs-js-scriptengine = { group = "org.graalvm.js", name = "js-scriptengine", version.ref = "graaljs" }
 graaljs-polyglot = { group = "org.graalvm.polyglot", name = "polyglot", version.ref = "graaljs" }
 # SKIP: gitversion-gradle-git-version = { group = "com.palantir.gradle.gitversion", name = "gradle-git-version" } # unresolved version: ${gradle-git-version}

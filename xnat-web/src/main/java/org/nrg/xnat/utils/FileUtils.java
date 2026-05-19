@@ -62,6 +62,15 @@ import java.util.stream.StreamSupport;
 
 @Slf4j
 public class FileUtils {
+    public static boolean isChild(final Path parent, final Path child) {
+        // Remove and flatten relative references (i.e., "..") in paths
+        final Path parentPath = parent.toAbsolutePath().normalize();
+        final Path childPath = child.toAbsolutePath().normalize();
+
+        // Check if child starts with parent and is not the same directory
+        return childPath.startsWith(parentPath) && !childPath.equals(parentPath);
+    }
+
     public static List<String> nodeToList(final JsonNode node) {
         return node.isArray()
                ? StreamSupport.stream(node.spliterator(), false).map(JsonNode::asText).collect(Collectors.toList())

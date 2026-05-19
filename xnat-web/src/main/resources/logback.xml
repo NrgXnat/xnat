@@ -443,6 +443,9 @@
     <logger name="org.nrg.xft" additivity="false" level="ERROR">
         <appender-ref ref="xdat"/>
     </logger>
+    <logger name="org.nrg.xft.utils" additivity="false" level="WARN">
+        <appender-ref ref="xdat"/>
+    </logger>
     <logger name="org.springframework.mail" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>

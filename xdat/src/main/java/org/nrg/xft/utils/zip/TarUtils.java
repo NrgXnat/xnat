@@ -11,6 +11,7 @@ package org.nrg.xft.utils.zip;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 import org.apache.tools.tar.TarOutputStream;
@@ -53,11 +54,18 @@ public class TarUtils implements ZipI {
         out.setLongFileMode(TarOutputStream.LONGFILE_POSIX);
     }
 
+    @Override
     public List<File> extract(InputStream is, String dir) throws IOException {
         return extract(is, dir, true, null);
     }
 
+    @Override
     public List<File> extract(final InputStream is, final String dir, final boolean overwrite, final EventMetaI ci) throws IOException {
+        return extract(is, dir, overwrite, ci, null);
+    }
+
+    @Override
+    public List<File> extract(final InputStream is, final String dir, final boolean overwrite, final EventMetaI ci, final IOFileFilter filter) throws IOException {
         final File dest = new File(dir);
         dest.mkdirs();
 
@@ -65,24 +73,29 @@ public class TarUtils implements ZipI {
         try (final TarInputStream tis = _compressionMethod == ZipOutputStream.DEFLATED ? new TarInputStream(new GZIPInputStream(is)) : new TarInputStream(is)) {
             TarEntry te = tis.getNextEntry();
             while (te != null) {
-                File destPath = new File(dest, te.getName());
+                final String name     = te.getName();
+                final File   destPath = new File(dest, name);
                 if (te.isDirectory()) {
                     destPath.mkdirs();
                 } else {
                     if (destPath.exists() && !overwrite) {
-                        _duplicates.add(te.getName());
+                        _duplicates.add(name);
                     } else {
-                        if (destPath.exists()) {
-                            FileUtils.MoveToHistory(destPath, EventUtils.getTimestamp(ci));
+                        if (filter == null || filter.accept(destPath)) {
+                            if (destPath.exists()) {
+                                FileUtils.MoveToHistory(destPath, EventUtils.getTimestamp(ci));
+                            }
+                            destPath.getParentFile().mkdirs();
+                            log.debug("Writing: {}", name);
+                            FileOutputStream output = new FileOutputStream(destPath);
+
+                            tis.copyEntryContents(output);
+
+                            output.close();
+                            extractedFiles.add(destPath);
+                        } else {
+                            log.warn("File {} was rejected by the provided filter and will not be extracted.", name);
                         }
-                        destPath.getParentFile().mkdirs();
-                        log.debug("Writing: {}", te.getName());
-                        FileOutputStream output = new FileOutputStream(destPath);
-
-                        tis.copyEntryContents(output);
-
-                        output.close();
-                        extractedFiles.add(destPath);
                     }
                 }
                 te = tis.getNextEntry();

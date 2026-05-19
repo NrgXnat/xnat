@@ -10,6 +10,7 @@
 
 package org.nrg.xft.utils.zip;
 
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.nrg.xft.event.EventMetaI;
 
 import java.io.*;
@@ -51,6 +52,8 @@ public interface ZipI extends Closeable {
       * @throws IOException When an error occurs reading the archive or writing to the destination folder.
       */
     void extract(File archive, String destination, boolean deleteOnExtract) throws IOException;
+
+    List<File> extract(InputStream is, String dir, boolean overwrite, EventMetaI ci, IOFileFilter filter) throws IOException;
 
     List<File> extract(InputStream is, String dir, boolean overwrite, EventMetaI ci) throws IOException;
 

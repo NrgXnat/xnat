@@ -1729,7 +1729,7 @@ public class CatalogUtils {
             if (extract && ZipUtils.isCompressedFile(filename)) {
                 log.debug("Found archive file {}", filename);
                 final FileExtractor extractor = new FileExtractor();
-                final List<File>    files     =  extractor.extract(filename, fileWriter.getInputStream(), destinationDir, overwrite, ci);
+                final List<File>    files     = extractor.extract(filename, fileWriter.getInputStream(), destinationDir, overwrite, ci, XNAT_CATALOGABLE_FILE_FILTER);
                 for (final File file : files) {
                     if (!file.isDirectory() && XNAT_CATALOGABLE_FILE_FILTER.accept(file)) {
                         // relative path is used to compare to existing catalog entries, and add if missing.

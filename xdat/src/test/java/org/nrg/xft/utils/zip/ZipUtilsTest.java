@@ -1,14 +1,21 @@
 package org.nrg.xft.utils.zip;
 
 import com.google.common.io.Files;
+import org.apache.commons.io.filefilter.AndFileFilter;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.NameFileFilter;
+import org.apache.commons.io.filefilter.NotFileFilter;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.net.URISyntaxException;
 
 import static org.junit.Assert.*;
 
 public class ZipUtilsTest {
+    private static final IOFileFilter NOT_FILE1_FILTER = new NotFileFilter(new NameFileFilter("file1.txt"));
 
     @Test
     public void extractZip() {
@@ -27,6 +34,27 @@ public class ZipUtilsTest {
         }
         catch( Exception e) {
             fail( "Unexpected execption: " + e);
+        }
+    }
+
+    @Test
+    public void extractZipWithFilter() {
+        try {
+            File f  = getFileResource("zip/files.zip");
+            File f1 = getFileResource("zip/file1.txt");
+            File f2 = getFileResource("zip/file2.txt");
+            File f3 = getFileResource("zip/file3.txt");
+
+            File dstDir = Files.createTempDir();
+            try (final FileInputStream inputStream = new FileInputStream(f)) {
+                final ZipUtils zip = new ZipUtils();
+                zip.extract(inputStream, dstDir.getCanonicalPath(), true, null, NOT_FILE1_FILTER);
+                assertFalse(dstDir.toPath().resolve("file1.txt").toFile().exists());
+                assertEquals(f2.length(), dstDir.toPath().resolve("file2.txt").toFile().length());
+                assertEquals(f3.length(), dstDir.toPath().resolve("file3.txt").toFile().length());
+            }
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e);
         }
     }
 

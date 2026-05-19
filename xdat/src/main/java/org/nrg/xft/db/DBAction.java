@@ -3282,7 +3282,7 @@ public class DBAction {
 
     private static final Map<String, String> SEQUENCES = new HashMap<>();
 
-    private static final String QUERY_FIND_SEQLESS_TABLES = "SELECT table_name FROM information_schema.columns WHERE table_name LIKE 'xhbm_%' AND column_name = 'id' AND (column_default NOT LIKE 'nextval%' OR column_default IS NULL)";
+    private static final String QUERY_FIND_SEQLESS_TABLES = "SELECT table_name FROM information_schema.columns WHERE table_name LIKE 'xhbm_%' AND column_name = 'id' AND is_identity = 'YES' AND pg_get_serial_sequence(table_name, column_name) IS NULL";
     private static final String QUERY_CREATE_SEQUENCE     = "CREATE SEQUENCE %s_id_seq";
     private static final String QUERY_SET_ID_DEFAULT      = "ALTER TABLE %s ALTER COLUMN id SET DEFAULT nextval('%s_id_seq')";
     private static final String QUERY_SET_ID_NOT_NULL     = "ALTER TABLE %s ALTER COLUMN id SET NOT NULL";

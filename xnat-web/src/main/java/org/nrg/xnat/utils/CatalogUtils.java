@@ -86,8 +86,10 @@ public class CatalogUtils {
     public static final String ABSOLUTE_PATH = "absolutePath";
     public static final String LOCATOR       = "locator";
     public static final String URI           = "URI";
+    public static final String XNAT_TMP_UPLOAD_PREFIX = ".xnat-tmp-upload-";
     public static final IOFileFilter XNAT_CATALOGABLE_FILE_FILTER = new AndFileFilter(new NotFileFilter(new SuffixFileFilter("_catalog.xml")),
-            new NotFileFilter(new PrefixFileFilter(ThreadAndProcessFileLock.LOCKFILE_PREFIX)));
+            new NotFileFilter(new PrefixFileFilter(ThreadAndProcessFileLock.LOCKFILE_PREFIX)),
+            new NotFileFilter(new PrefixFileFilter(XNAT_TMP_UPLOAD_PREFIX)));
 
     public static class CatalogEntryAttributes {
         public String relativePath;

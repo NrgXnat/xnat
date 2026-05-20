@@ -128,6 +128,50 @@ public class FileExtractor {
         return files;
     }
 
+    /**
+     * Extract file(s) into a fresh temporary destination, skipping all overwrite/history bookkeeping.
+     * <p>
+     * Used by {@code CatalogUtils.storeCatalogEntry} phase 1: archive contents are unpacked into a
+     * caller-owned tmp directory where no prior files exist, so {@code overwrite} and event metadata
+     * are irrelevant. Duplicate detection and moveToHistory are deferred to phase 2 against the
+     * real destination. The {@link #_duplicates} instance state is intentionally not touched.
+     *
+     * @param filename    The name of the input file (used to detect archive format).
+     * @param inputStream An input stream for accessing the file contents.
+     * @param destination The destination tmp directory. Caller guarantees it is empty.
+     * @param filter      A filter to apply to the files being extracted. Only files that pass the filter will be extracted.
+     *
+     * @return A list of the files extracted from the input file.
+     *
+     * @throws IOException When an error occurs reading the input file or writing its contents to the specified destination.
+     */
+    public List<File> extract(final String filename, final InputStream inputStream, final Path destination, final IOFileFilter filter) throws IOException {
+        final List<File> files;
+        final Format     format = Format.getFormat(filename);
+        switch (format) {
+            case TAR:
+                files = new TarUtils().extract(inputStream, destination.toString(), true, null, filter);
+                break;
+            case TGZ:
+                final ZipI tgz = new TarUtils();
+                tgz.setCompressionMethod(ZipOutputStream.DEFLATED);
+                files = tgz.extract(inputStream, destination.toString(), true, null, filter);
+                break;
+            case ZIP:
+                files = new ZipUtils().extract(inputStream, destination.toString(), true, null, filter);
+                break;
+            case GZ:
+                files = new ArrayList<>();
+                final File destinationFile = destination.resolve(format.getFileName(filename)).toFile();
+                files.add(destinationFile);
+                new GZipDecompressor().process(inputStream, destinationFile);
+                break;
+            default:
+                files = new ArrayList<>();
+        }
+        return files;
+    }
+
     public List<String> getDuplicates() {
         return _duplicates;
     }

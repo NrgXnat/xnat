@@ -12,6 +12,12 @@ buildSrc/.gradle/
 out/
 .DS_Store
 
+# Eclipse / jdtls / Buildship (Claude Code starts jdtls in background)
+.project
+.classpath
+.settings/
+bin/
+
 # OS
 .DS_Store
 Thumbs.db

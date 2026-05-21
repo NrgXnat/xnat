@@ -1784,14 +1784,28 @@ public class CatalogUtils {
      */
     private record StagedEntry(Path tmpFile, String instance, CatalogEntryAttributes attrs) {}
 
-    /** Non-blocking lock probe. Acquires and releases immediately just to check liveness. */
+    /**
+     * Near-non-blocking lock probe (waits up to ~250ms inside {@link ThreadAndProcessFileLock#tryLock}).
+     * Acquires and releases immediately just to check liveness; if it can be acquired now, phase 1
+     * uploads are unlikely to discover a busy catalog later.
+     *
+     * <p>Must use {@code tryLock(...)} (not {@code tryFileLock()} directly) so the inter-thread
+     * write lock is paired with the matching {@link ThreadAndProcessFileLock#unlock} call -
+     * otherwise unlock raises {@link IllegalMonitorStateException}.
+     */
     private static void failFastIfLocked(final File catFile) throws ResourceBusyException, IOException {
         final ThreadAndProcessFileLock probe = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, false);
         try {
-            if (!probe.tryFileLock()) {
-                throw new ResourceBusyException(catFile);
+            try {
+                probe.tryLock(0L, TimeUnit.SECONDS);
+            } catch (IOException e) {
+                throw new ResourceBusyException(catFile, e);
             }
-            probe.unlock();
+            try {
+                // got it - just release immediately, this is a probe only.
+            } finally {
+                probe.unlock();
+            }
         } finally {
             ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
         }

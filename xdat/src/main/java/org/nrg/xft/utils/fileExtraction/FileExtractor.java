@@ -129,21 +129,14 @@ public class FileExtractor {
     }
 
     /**
-     * Extract file(s) into a fresh temporary destination, skipping all overwrite/history bookkeeping.
-     * <p>
-     * Used by {@code CatalogUtils.storeCatalogEntry} phase 1: archive contents are unpacked into a
-     * caller-owned tmp directory where no prior files exist, so {@code overwrite} and event metadata
-     * are irrelevant. Duplicate detection and moveToHistory are deferred to phase 2 against the
-     * real destination. The {@link #_duplicates} instance state is intentionally not touched.
+     * Extract into an empty caller-owned destination. No overwrite handling, no duplicate tracking,
+     * no moveToHistory: those are the caller's responsibility.
      *
-     * @param filename    The name of the input file (used to detect archive format).
-     * @param inputStream An input stream for accessing the file contents.
-     * @param destination The destination tmp directory. Caller guarantees it is empty.
-     * @param filter      A filter to apply to the files being extracted. Only files that pass the filter will be extracted.
-     *
-     * @return A list of the files extracted from the input file.
-     *
-     * @throws IOException When an error occurs reading the input file or writing its contents to the specified destination.
+     * @param filename    Name of the input file (used to detect archive format).
+     * @param inputStream Stream over the file contents.
+     * @param destination Empty destination directory.
+     * @param filter      Only files passing this filter are extracted.
+     * @return The files extracted.
      */
     public List<File> extract(final String filename, final InputStream inputStream, final Path destination, final IOFileFilter filter) throws IOException {
         final List<File> files;

@@ -1891,10 +1891,40 @@ public class CatalogUtils {
     }
 
     /**
-     * Phase 2: acquire the catalog lock, then re-read the catalog and merge every staged
-     * entry into it. Each commit step is: skip-if-duplicate, moveToHistory if overwriting,
-     * {@link Files#move(Path, Path, java.nio.file.CopyOption...) ATOMIC_MOVE} tmp into place,
-     * populate / update the catalog entry. Finally write the catalog and release the lock.
+     * Phase 2 lock-acquisition parameters.
+     *
+     * <p>The catalog commit work itself (read + N ATOMIC_MOVE + write) is light - even a
+     * 3000-file overwrite on NFS finishes in a few minutes. The acquisition budget is sized
+     * to cover that worst case: a 60s single-attempt timeout retried up to 3 times yields
+     * roughly 3 minutes of total waiting. Beyond that we give up and surface
+     * {@link ResourceBusyException} so the client can decide whether to retry the whole
+     * upload (the {@code tmp} dir has already been cleaned up by {@code storeCatalogEntry}'s
+     * finally block, leaving the resource state untouched).
+     *
+     * <p>The retry loop adds value over a single longer timeout in three ways:
+     * <ul>
+     *   <li>Per-attempt log lines surface lock contention to ops without waiting for the full
+     *       timeout to elapse.</li>
+     *   <li>A small inter-attempt backoff (2s) prevents two competing threads from
+     *       continuously re-racing on the same dummy file lock.</li>
+     *   <li>Each attempt allocates a fresh {@link ThreadAndProcessFileLock} instance with a
+     *       new dummy RAF channel; a stuck channel from a prior attempt cannot poison the
+     *       next.</li>
+     * </ul>
+     */
+    private static final int  PHASE2_LOCK_ATTEMPTS         = 3;
+    private static final long PHASE2_LOCK_TIMEOUT_SEC      = 60L;
+    private static final long PHASE2_LOCK_BACKOFF_MS       = 2_000L;
+
+    /**
+     * Phase 2: acquire the catalog lock (with bounded retry), then re-read the catalog and merge
+     * every staged entry into it. Each commit step is: skip-if-duplicate, moveToHistory if
+     * overwriting, {@link Files#move(Path, Path, java.nio.file.CopyOption...) ATOMIC_MOVE} tmp
+     * into place, populate / update the catalog entry. Finally write the catalog and release.
+     *
+     * @throws ResourceBusyException if the lock cannot be acquired within
+     *         {@value #PHASE2_LOCK_ATTEMPTS} attempts of
+     *         {@value #PHASE2_LOCK_TIMEOUT_SEC}s each (plus 2s backoff between).
      */
     private static List<String> commitStagedEntries(final List<StagedEntry> staged,
                                                     final XnatResourcecatalog catResource,
@@ -1903,64 +1933,87 @@ public class CatalogUtils {
                                                     final XnatResourceInfo info,
                                                     final EventMetaI ci) throws Exception {
         final File catFile = getOrCreateCatalogFile(proj.getRootArchivePath(), catResource, proj.getId());
-        // dynamic timeout: 30s base + 80ms per staged file, capped at 10 minutes.
-        final long timeoutSec = Math.min(600L, 30L + (80L * staged.size()) / 1000L);
 
-        final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, false);
-        try {
+        ResourceBusyException lastBusy = null;
+        for (int attempt = 1; attempt <= PHASE2_LOCK_ATTEMPTS; attempt++) {
+            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, false);
             try {
-                fl.tryLock(timeoutSec, TimeUnit.SECONDS);
-            } catch (IOException e) {
-                throw new ResourceBusyException(catFile, e);
-            }
-            try {
-                final CatalogData catalogData = CatalogData.getOrCreate(proj.getRootArchivePath(), catResource, proj.getId());
-                final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
-                final Path destinationDir = catalogData.catFile.getParentFile().toPath();
-                final List<String> duplicates = new ArrayList<>();
-
-                for (final StagedEntry s : staged) {
-                    final File saveTo = destinationDir.resolve(s.instance()).toFile();
-
-                    if (saveTo.exists() && !overwrite) {
-                        duplicates.add(s.instance());
-                        Files.deleteIfExists(s.tmpFile());
-                        continue;
+                try {
+                    fl.tryLock(PHASE2_LOCK_TIMEOUT_SEC, TimeUnit.SECONDS);
+                } catch (IOException e) {
+                    lastBusy = new ResourceBusyException(catFile, e);
+                    log.warn("Catalog lock acquire attempt {}/{} timed out after {}s for {}; retrying",
+                            attempt, PHASE2_LOCK_ATTEMPTS, PHASE2_LOCK_TIMEOUT_SEC, catFile);
+                    if (attempt < PHASE2_LOCK_ATTEMPTS) {
+                        try {
+                            Thread.sleep(PHASE2_LOCK_BACKOFF_MS);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            throw lastBusy;
+                        }
                     }
-                    if (saveTo.isFile() && !XNAT_CATALOGABLE_FILE_FILTER.accept(saveTo)) {
-                        throw new Exception("XNAT cannot catalog " + saveTo.getName());
-                    }
-
-                    final CatalogMapEntry mapEntry = catalogMap.get(s.instance());
-                    if (saveTo.exists() && mapEntry != null && mapEntry.entry instanceof CatEntryBean bean) {
-                        CatalogUtils.moveToHistory(catalogData.catFile, catalogData.project, saveTo, bean, ci);
-                    }
-
-                    final File saveToParent = saveTo.getParentFile();
-                    if (saveToParent != null && !saveToParent.exists() && !saveToParent.mkdirs()) {
-                        throw new Exception("Failed to create required directory: " + saveToParent.getAbsolutePath());
-                    }
-
-                    Files.move(s.tmpFile(), saveTo.toPath(), StandardCopyOption.ATOMIC_MOVE);
-
-                    if (mapEntry == null) {
-                        populateAndAddCatEntry(catalogData.catBean, s.instance(), s.attrs(), info);
-                    } else {
-                        updateExistingCatEntry(mapEntry.entry, s.instance(), s.attrs(), ci);
-                    }
+                    continue;
                 }
-
-                log.debug("Writing catalog file {} with {} total entries",
-                        catalogData.catFile.getAbsolutePath(),
-                        catalogData.catBean.getEntries_entry().size());
-                writeCatalogToFile(catalogData);
-                return duplicates;
+                try {
+                    return doCommit(staged, catResource, proj, overwrite, info, ci);
+                } finally {
+                    fl.unlock();
+                }
             } finally {
-                fl.unlock();
+                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
             }
-        } finally {
-            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
         }
+        throw lastBusy;   // exhausted attempts; the loop assigns lastBusy on every failure.
+    }
+
+    /** Core phase-2 work, called once the catalog lock is held. */
+    private static List<String> doCommit(final List<StagedEntry> staged,
+                                         final XnatResourcecatalog catResource,
+                                         final XnatProjectdata proj,
+                                         final boolean overwrite,
+                                         final XnatResourceInfo info,
+                                         final EventMetaI ci) throws Exception {
+        final CatalogData catalogData = CatalogData.getOrCreate(proj.getRootArchivePath(), catResource, proj.getId());
+        final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
+        final Path destinationDir = catalogData.catFile.getParentFile().toPath();
+        final List<String> duplicates = new ArrayList<>();
+
+        for (final StagedEntry s : staged) {
+            final File saveTo = destinationDir.resolve(s.instance()).toFile();
+
+            if (saveTo.exists() && !overwrite) {
+                duplicates.add(s.instance());
+                Files.deleteIfExists(s.tmpFile());
+                continue;
+            }
+            if (saveTo.isFile() && !XNAT_CATALOGABLE_FILE_FILTER.accept(saveTo)) {
+                throw new Exception("XNAT cannot catalog " + saveTo.getName());
+            }
+
+            final CatalogMapEntry mapEntry = catalogMap.get(s.instance());
+            if (saveTo.exists() && mapEntry != null && mapEntry.entry instanceof CatEntryBean bean) {
+                CatalogUtils.moveToHistory(catalogData.catFile, catalogData.project, saveTo, bean, ci);
+            }
+
+            final File saveToParent = saveTo.getParentFile();
+            if (saveToParent != null && !saveToParent.exists() && !saveToParent.mkdirs()) {
+                throw new Exception("Failed to create required directory: " + saveToParent.getAbsolutePath());
+            }
+
+            Files.move(s.tmpFile(), saveTo.toPath(), StandardCopyOption.ATOMIC_MOVE);
+
+            if (mapEntry == null) {
+                populateAndAddCatEntry(catalogData.catBean, s.instance(), s.attrs(), info);
+            } else {
+                updateExistingCatEntry(mapEntry.entry, s.instance(), s.attrs(), ci);
+            }
+        }
+
+        log.debug("Writing catalog file {} with {} total entries",
+                catalogData.catFile.getAbsolutePath(),
+                catalogData.catBean.getEntries_entry().size());
+        writeCatalogToFile(catalogData);
+        return duplicates;
     }
 
     private static String makePath(String nestedPath, String name) {

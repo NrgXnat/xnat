@@ -1853,7 +1853,22 @@ public class CatalogUtils {
                 }
                 log.debug("Staging filename {} to tmp file {}", filename, tmpFile);
                 fileWriter.write(tmpFile.toFile());
-                staged.add(stageOne(tmpFile, instance));
+
+                final File tmpAsFile = tmpFile.toFile();
+                if (tmpAsFile.isDirectory()) {
+                    // Some FileWriterWrapperI implementations (notably StoredFile when its
+                    // source is a directory, used by FileMover) write out a directory tree
+                    // rather than a single file. Stage each catalogable file under it as
+                    // an independent entry, mirroring the legacy isDirectory branch.
+                    log.debug("Staged directory at {}; expanding into per-file entries", tmpFile);
+                    for (final File file : listFiles(tmpAsFile, XNAT_CATALOGABLE_FILE_FILTER, DirectoryFileFilter.DIRECTORY)) {
+                        final String childRel = FileUtils.RelativizePath(tmpAsFile, file).replace('\\', '/');
+                        final String childInstance = instance + "/" + childRel;
+                        staged.add(stageOne(file.toPath(), childInstance));
+                    }
+                } else {
+                    staged.add(stageOne(tmpFile, instance));
+                }
             }
         }
         return staged;

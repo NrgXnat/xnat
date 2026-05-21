@@ -129,40 +129,14 @@ public class FileExtractor {
     }
 
     /**
-     * Extract into an empty caller-owned destination. No overwrite handling, no duplicate tracking,
-     * no moveToHistory: those are the caller's responsibility.
+     * Extract into an empty caller-owned destination. Duplicate tracking and {@code moveToHistory}
+     * are the caller's responsibility (the {@code overwrite=true}, {@code ci=null} call below is
+     * a no-op against an empty destination).
      *
-     * @param filename    Name of the input file (used to detect archive format).
-     * @param inputStream Stream over the file contents.
      * @param destination Empty destination directory.
-     * @param filter      Only files passing this filter are extracted.
-     * @return The files extracted.
      */
     public List<File> extract(final String filename, final InputStream inputStream, final Path destination, final IOFileFilter filter) throws IOException {
-        final List<File> files;
-        final Format     format = Format.getFormat(filename);
-        switch (format) {
-            case TAR:
-                files = new TarUtils().extract(inputStream, destination.toString(), true, null, filter);
-                break;
-            case TGZ:
-                final ZipI tgz = new TarUtils();
-                tgz.setCompressionMethod(ZipOutputStream.DEFLATED);
-                files = tgz.extract(inputStream, destination.toString(), true, null, filter);
-                break;
-            case ZIP:
-                files = new ZipUtils().extract(inputStream, destination.toString(), true, null, filter);
-                break;
-            case GZ:
-                files = new ArrayList<>();
-                final File destinationFile = destination.resolve(format.getFileName(filename)).toFile();
-                files.add(destinationFile);
-                new GZipDecompressor().process(inputStream, destinationFile);
-                break;
-            default:
-                files = new ArrayList<>();
-        }
-        return files;
+        return extract(filename, inputStream, destination, true, null, filter);
     }
 
     public List<String> getDuplicates() {

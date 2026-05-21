@@ -1784,13 +1784,11 @@ public class CatalogUtils {
                                                   final boolean extract,
                                                   final Path tmpRoot) throws Exception {
         final List<StagedEntry> staged = new ArrayList<>();
-        for (int idx = 0; idx < fileWriters.size(); idx++) {
-            final FileWriterWrapperI fileWriter = fileWriters.get(idx);
+        for (final FileWriterWrapperI fileWriter : fileWriters) {
             final String filename = FilenameUtils.getName(StringUtils.replace(fileWriter.getName(), "\\", "/"));
 
             if (extract && ZipUtils.isCompressedFile(filename)) {
-                final Path archiveSub = tmpRoot.resolve("archive-" + idx);
-                Files.createDirectories(archiveSub);
+                final Path archiveSub = Files.createTempDirectory(tmpRoot, "archive-");
                 final List<File> extractedFiles = new FileExtractor().extract(
                         filename, fileWriter.getInputStream(), archiveSub, XNAT_CATALOGABLE_FILE_FILTER);
                 for (final File file : extractedFiles) {
@@ -1801,25 +1799,14 @@ public class CatalogUtils {
                     staged.add(stageOne(file.toPath(), instance));
                 }
             } else {
-                final String instance;
-                if (!StringUtils.isBlank(fileWriter.getNestedPath())) {
-                    instance = makePath(fileWriter.getNestedPath(), filename);
-                } else if (StringUtils.isBlank(destination)) {
-                    instance = filename;
-                } else if (destination.startsWith("/")) {
-                    instance = destination.substring(1);
-                } else {
-                    instance = destination;
-                }
-
-                final Path tmpFile = tmpRoot.resolve(instance);
-                final Path tmpParent = tmpFile.getParent();
+                final String instance = resolveInstance(fileWriter.getNestedPath(), destination, filename);
+                final File tmpAsFile = tmpRoot.resolve(instance).toFile();
+                final File tmpParent = tmpAsFile.getParentFile();
                 if (tmpParent != null) {
-                    Files.createDirectories(tmpParent);
+                    Files.createDirectories(tmpParent.toPath());
                 }
-                fileWriter.write(tmpFile.toFile());
+                fileWriter.write(tmpAsFile);
 
-                final File tmpAsFile = tmpFile.toFile();
                 if (tmpAsFile.isDirectory()) {
                     // StoredFile (used by FileMover) may write a directory tree, not a single file.
                     for (final File file : listFiles(tmpAsFile, XNAT_CATALOGABLE_FILE_FILTER, DirectoryFileFilter.DIRECTORY)) {
@@ -1827,11 +1814,21 @@ public class CatalogUtils {
                         staged.add(stageOne(file.toPath(), childInstance));
                     }
                 } else {
-                    staged.add(stageOne(tmpFile, instance));
+                    staged.add(stageOne(tmpAsFile.toPath(), instance));
                 }
             }
         }
         return staged;
+    }
+
+    private static String resolveInstance(final String nestedPath, final String destination, final String filename) {
+        if (!StringUtils.isBlank(nestedPath)) {
+            return makePath(nestedPath, filename);
+        }
+        if (StringUtils.isBlank(destination)) {
+            return filename;
+        }
+        return destination.startsWith("/") ? destination.substring(1) : destination;
     }
 
     private static StagedEntry stageOne(final Path tmpFile, final String instance) throws IOException {
@@ -1842,8 +1839,8 @@ public class CatalogUtils {
             if (getChecksumConfiguration()) {
                 md5 = getHash(f, false);
             }
-        } catch (ConfigServiceException e) {
-            throw new IOException("Failed to read checksum configuration", e);
+        } catch (ConfigServiceException ignored) {
+            // checksum config unavailable; store entry without MD5 (matches addOrUpdateEntry precedent)
         }
         final CatalogEntryAttributes attrs = new CatalogEntryAttributes(
                 instance, f.getName(), f.length(), new Date(f.lastModified()), md5, null, null);
@@ -1892,7 +1889,7 @@ public class CatalogUtils {
                     continue;
                 }
                 try {
-                    return doCommit(staged, catResource, proj, overwrite, info, ci);
+                    return doCommit(staged, catFile, catResource, proj, overwrite, info, ci);
                 } finally {
                     fl.unlock();
                 }
@@ -1900,36 +1897,37 @@ public class CatalogUtils {
                 ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
             }
         }
-        throw new IllegalStateException("unreachable - loop must return or throw");
+        throw new AssertionError("unreachable - loop must return or throw");
     }
 
     /** Phase-2 body. Caller must hold the catalog lock. */
     private static List<String> doCommit(final List<StagedEntry> staged,
+                                         final File catFile,
                                          final XnatResourcecatalog catResource,
                                          final XnatProjectdata proj,
                                          final boolean overwrite,
                                          final XnatResourceInfo info,
                                          final EventMetaI ci) throws Exception {
-        final CatalogData catalogData = CatalogData.getOrCreate(proj.getRootArchivePath(), catResource, proj.getId());
+        final CatalogData catalogData = new CatalogData(catFile, catResource, proj.getId());
         final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
-        final Path destinationDir = catalogData.catFile.getParentFile().toPath();
+        final Path destinationDir = catFile.getParentFile().toPath();
         final List<String> duplicates = new ArrayList<>();
 
         for (final StagedEntry s : staged) {
             final File saveTo = destinationDir.resolve(s.instance()).toFile();
+            final boolean saveToExists = saveTo.exists();
 
-            if (saveTo.exists() && !overwrite) {
+            if (saveToExists && !overwrite) {
                 duplicates.add(s.instance());
-                Files.deleteIfExists(s.tmpFile());
                 continue;
             }
-            if (saveTo.isFile() && !XNAT_CATALOGABLE_FILE_FILTER.accept(saveTo)) {
+            if (saveToExists && saveTo.isFile() && !XNAT_CATALOGABLE_FILE_FILTER.accept(saveTo)) {
                 throw new Exception("XNAT cannot catalog " + saveTo.getName());
             }
 
             final CatalogMapEntry mapEntry = catalogMap.get(s.instance());
-            if (saveTo.exists() && mapEntry != null && mapEntry.entry instanceof CatEntryBean bean) {
-                CatalogUtils.moveToHistory(catalogData.catFile, catalogData.project, saveTo, bean, ci);
+            if (saveToExists && mapEntry != null && mapEntry.entry instanceof CatEntryBean bean) {
+                CatalogUtils.moveToHistory(catFile, catalogData.project, saveTo, bean, ci);
             }
 
             final File saveToParent = saveTo.getParentFile();
@@ -1939,13 +1937,10 @@ public class CatalogUtils {
 
             Files.move(s.tmpFile(), saveTo.toPath(), StandardCopyOption.ATOMIC_MOVE);
 
-            final CatalogEntryAttributes a = s.attrs();
             if (mapEntry == null) {
-                populateAndAddCatEntry(catalogData.catBean, null, a, info);
+                populateAndAddCatEntry(catalogData.catBean, null, s.attrs(), info);
             } else {
-                // call the 9-arg overload directly so `info` is propagated (the attrs overload drops it).
-                updateExistingCatEntry(mapEntry.entry, a.relativePath, a.relativePath,
-                        a.name, a.size, a.md5, a.format, a.content, info, ci);
+                updateExistingCatEntry(mapEntry.entry, null, s.attrs(), info, ci);
             }
         }
 
@@ -2646,8 +2641,16 @@ public class CatalogUtils {
                                                  @Nullable String uri,
                                                  final CatalogEntryAttributes attr,
                                                  final EventMetaI eventMeta) {
+        return updateExistingCatEntry(entry, uri, attr, null, eventMeta);
+    }
+
+    public static boolean updateExistingCatEntry(final CatEntryI entry,
+                                                 @Nullable String uri,
+                                                 final CatalogEntryAttributes attr,
+                                                 @Nullable final XnatResourceInfo info,
+                                                 final EventMetaI eventMeta) {
         return updateExistingCatEntry(entry, StringUtils.defaultIfBlank(uri, attr.relativePath),
-                attr.relativePath, attr.name, attr.size, attr.md5, attr.format, attr.content, null, eventMeta);
+                attr.relativePath, attr.name, attr.size, attr.md5, attr.format, attr.content, info, eventMeta);
     }
 
     public static boolean updateExistingCatEntry(CatEntryI entry, File f, String relativePath,

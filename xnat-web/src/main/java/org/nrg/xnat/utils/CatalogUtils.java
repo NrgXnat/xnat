@@ -1738,7 +1738,23 @@ public class CatalogUtils {
         }
 
         final File catFile = getOrCreateCatalogFile(proj.getRootArchivePath(), catResource, proj.getId());
-        failFastIfLocked(catFile);
+
+        // Phase 0 (fail-fast lock probe) intentionally disabled.
+        //
+        // Direct-to-Tomcat:  body is streamed lazily. When we reach this point only HTTP headers
+        //                    and a few KB of socket buffer have been read; phase 0 here would
+        //                    spare the client from minutes of upload on a busy catalog.
+        // Behind nginx (or any reverse proxy with `proxy_request_buffering on`, the default):
+        //                    nginx receives the ENTIRE request body to its own disk before
+        //                    forwarding to Tomcat, so by the time storeCatalogEntry is invoked
+        //                    the client has already paid the upload cost. Phase 0 would still
+        //                    return early on the server side, but it cannot save the client's
+        //                    time or bandwidth.
+        //
+        // Because production deployments usually run behind such a proxy and we don't currently
+        // know the deployment topology, the probe is disabled. Re-enable once the topology is
+        // confirmed direct (or when nginx is configured with `proxy_request_buffering off`).
+        // failFastIfLocked(catFile);
 
         // tmp root MUST live under the catalog folder so ATOMIC_MOVE stays on the same mount.
         final Path tmpRoot = createTmpRoot(catFile.getParentFile().toPath());

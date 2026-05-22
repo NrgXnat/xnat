@@ -1833,10 +1833,7 @@ public class CatalogUtils {
                                   final List<StagedEntry> staged) throws Exception {
         final String instance = resolveInstance(fileWriter.getNestedPath(), destination, filename);
         final File tmpAsFile = tmpRoot.resolve(instance).toFile();
-        final File tmpParent = tmpAsFile.getParentFile();
-        if (tmpParent != null) {
-            Files.createDirectories(tmpParent.toPath());
-        }
+        Files.createDirectories(tmpAsFile.getParentFile().toPath());
         fileWriter.write(tmpAsFile);
 
         if (tmpAsFile.isDirectory()) {

@@ -1801,40 +1801,52 @@ public class CatalogUtils {
                                                   final Path tmpRoot) throws Exception {
         final List<StagedEntry> staged = new ArrayList<>();
         for (final FileWriterWrapperI fileWriter : fileWriters) {
-            final String filename = FilenameUtils.getName(StringUtils.replace(fileWriter.getName(), "\\", "/"));
-
+            final String filename = FilenameUtils.getName(fileWriter.getName());
             if (extract && ZipUtils.isCompressedFile(filename)) {
-                final Path archiveSub = Files.createTempDirectory(tmpRoot, "archive-");
-                final List<File> extractedFiles = new FileExtractor().extract(
-                        filename, fileWriter.getInputStream(), archiveSub, XNAT_CATALOGABLE_FILE_FILTER);
-                for (final File file : extractedFiles) {
-                    if (file.isDirectory() || !XNAT_CATALOGABLE_FILE_FILTER.accept(file)) {
-                        continue;
-                    }
-                    final String instance = FileUtils.RelativizePath(archiveSub.toFile(), file).replace('\\', '/');
-                    staged.add(stageOne(file.toPath(), instance));
-                }
+                stageArchive(fileWriter, filename, tmpRoot, staged);
             } else {
-                final String instance = resolveInstance(fileWriter.getNestedPath(), destination, filename);
-                final File tmpAsFile = tmpRoot.resolve(instance).toFile();
-                final File tmpParent = tmpAsFile.getParentFile();
-                if (tmpParent != null) {
-                    Files.createDirectories(tmpParent.toPath());
-                }
-                fileWriter.write(tmpAsFile);
-
-                if (tmpAsFile.isDirectory()) {
-                    // StoredFile (used by FileMover) may write a directory tree, not a single file.
-                    for (final File file : listFiles(tmpAsFile, XNAT_CATALOGABLE_FILE_FILTER, DirectoryFileFilter.DIRECTORY)) {
-                        final String childInstance = instance + "/" + FileUtils.RelativizePath(tmpAsFile, file).replace('\\', '/');
-                        staged.add(stageOne(file.toPath(), childInstance));
-                    }
-                } else {
-                    staged.add(stageOne(tmpAsFile.toPath(), instance));
-                }
+                stageFile(fileWriter, filename, destination, tmpRoot, staged);
             }
         }
         return staged;
+    }
+
+    private static void stageArchive(final FileWriterWrapperI fileWriter,
+                                     final String filename,
+                                     final Path tmpRoot,
+                                     final List<StagedEntry> staged) throws IOException {
+        final Path archiveSub = Files.createTempDirectory(tmpRoot, "archive-");
+        final List<File> extracted = new FileExtractor().extract(
+                filename, fileWriter.getInputStream(), archiveSub, XNAT_CATALOGABLE_FILE_FILTER);
+        for (final File file : extracted) {
+            if (file.isDirectory() || !XNAT_CATALOGABLE_FILE_FILTER.accept(file)) {
+                continue;
+            }
+            staged.add(stageOne(file.toPath(), relativeAsInstance(archiveSub.toFile(), file)));
+        }
+    }
+
+    private static void stageFile(final FileWriterWrapperI fileWriter,
+                                  final String filename,
+                                  final String destination,
+                                  final Path tmpRoot,
+                                  final List<StagedEntry> staged) throws Exception {
+        final String instance = resolveInstance(fileWriter.getNestedPath(), destination, filename);
+        final File tmpAsFile = tmpRoot.resolve(instance).toFile();
+        final File tmpParent = tmpAsFile.getParentFile();
+        if (tmpParent != null) {
+            Files.createDirectories(tmpParent.toPath());
+        }
+        fileWriter.write(tmpAsFile);
+
+        if (tmpAsFile.isDirectory()) {
+            // StoredFile (used by FileMover) may write a directory tree, not a single file.
+            for (final File file : listFiles(tmpAsFile, XNAT_CATALOGABLE_FILE_FILTER, DirectoryFileFilter.DIRECTORY)) {
+                staged.add(stageOne(file.toPath(), instance + "/" + relativeAsInstance(tmpAsFile, file)));
+            }
+        } else {
+            staged.add(stageOne(tmpAsFile.toPath(), instance));
+        }
     }
 
     private static String resolveInstance(final String nestedPath, final String destination, final String filename) {
@@ -1845,6 +1857,10 @@ public class CatalogUtils {
             return filename;
         }
         return destination.startsWith("/") ? destination.substring(1) : destination;
+    }
+
+    private static String relativeAsInstance(final File parent, final File child) {
+        return FileUtils.RelativizePath(parent, child).replace('\\', '/');
     }
 
     private static StagedEntry stageOne(final Path tmpFile, final String instance) throws IOException {

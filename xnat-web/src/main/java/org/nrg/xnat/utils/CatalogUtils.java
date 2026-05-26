@@ -1734,7 +1734,7 @@ public class CatalogUtils {
                                                  final boolean overwrite,
                                                  final EventMetaI ci) throws Exception {
         if (fileWriters == null || fileWriters.isEmpty()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         final File catFile = getOrCreateCatalogFile(proj.getRootArchivePath(), catResource, proj.getId());

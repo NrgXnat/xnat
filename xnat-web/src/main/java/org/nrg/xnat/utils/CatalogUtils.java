@@ -9,12 +9,14 @@
 
 package org.nrg.xnat.utils;
 
+import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.listFiles;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.*;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +39,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.fileExtraction.FileExtractor;
 import org.nrg.xft.utils.zip.ZipUtils;
+import org.nrg.xnat.exceptions.ResourceBusyException;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.helpers.resource.XnatResourceInfoMap;
 import org.nrg.xnat.presentation.ChangeSummaryBuilderA;
@@ -60,6 +63,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -86,8 +90,10 @@ public class CatalogUtils {
     public static final String ABSOLUTE_PATH = "absolutePath";
     public static final String LOCATOR       = "locator";
     public static final String URI           = "URI";
+    public static final String XNAT_TMP_UPLOAD_PREFIX = ".xnat-tmp-upload-";
     public static final IOFileFilter XNAT_CATALOGABLE_FILE_FILTER = new AndFileFilter(new NotFileFilter(new SuffixFileFilter("_catalog.xml")),
-            new NotFileFilter(new PrefixFileFilter(ThreadAndProcessFileLock.LOCKFILE_PREFIX)));
+            new NotFileFilter(new PrefixFileFilter(ThreadAndProcessFileLock.LOCKFILE_PREFIX)),
+            new NotFileFilter(new PrefixFileFilter(XNAT_TMP_UPLOAD_PREFIX)));
 
     public static class CatalogEntryAttributes {
         public String relativePath;
@@ -1709,6 +1715,16 @@ public class CatalogUtils {
         return modified;
     }
 
+    /**
+     * Upload {@code fileWriters} into the resource's catalog folder and register them in the catalog.
+     * Implemented as: phase 0 fail-fast lock probe, phase 1 stage into a tmp sub-directory + pre-compute
+     * {@link CatalogEntryAttributes}, phase 2 acquire the catalog lock (bounded retry) and atomically
+     * rename + write catalog.
+     *
+     * @return file names skipped because they already existed and {@code overwrite} was false.
+     * @throws ResourceBusyException if the catalog lock cannot be acquired after {@value #PHASE2_LOCK_ATTEMPTS}
+     *         attempts of {@value #PHASE2_LOCK_TIMEOUT_SEC}s.
+     */
     public static List<String> storeCatalogEntry(final List<? extends FileWriterWrapperI> fileWriters,
                                                  final String destination,
                                                  final XnatResourcecatalog catResource,
@@ -1717,90 +1733,247 @@ public class CatalogUtils {
                                                  final XnatResourceInfo info,
                                                  final boolean overwrite,
                                                  final EventMetaI ci) throws Exception {
+        if (fileWriters == null || fileWriters.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-        final CatalogData catalogData = CatalogData.getOrCreate(proj.getRootArchivePath(), catResource, proj.getId());
-        final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
-        final Path destinationDir = catalogData.catFile.getParentFile().toPath();
+        final File catFile = getOrCreateCatalogFile(proj.getRootArchivePath(), catResource, proj.getId());
 
-        List<String> duplicates = new ArrayList<>();
+        // Phase 0 (fail-fast lock probe) intentionally disabled.
+        //
+        // Direct-to-Tomcat:  body is streamed lazily. When we reach this point only HTTP headers
+        //                    and a few KB of socket buffer have been read; phase 0 here would
+        //                    spare the client from minutes of upload on a busy catalog.
+        // Behind nginx (or any reverse proxy with `proxy_request_buffering on`, the default):
+        //                    nginx receives the ENTIRE request body to its own disk before
+        //                    forwarding to Tomcat, so by the time storeCatalogEntry is invoked
+        //                    the client has already paid the upload cost. Phase 0 would still
+        //                    return early on the server side, but it cannot save the client's
+        //                    time or bandwidth.
+        //
+        // Because production deployments usually run behind such a proxy and we don't currently
+        // know the deployment topology, the probe is disabled. Re-enable once the topology is
+        // confirmed direct (or when nginx is configured with `proxy_request_buffering off`).
+        // failFastIfLocked(catFile);
 
+        // tmp root MUST live under the catalog folder so ATOMIC_MOVE stays on the same mount.
+        final Path tmpRoot = createTmpRoot(catFile.getParentFile().toPath());
+        try {
+            final List<StagedEntry> staged = stageUploads(fileWriters, destination, extract, tmpRoot);
+            return commitStagedEntries(staged, catFile, catResource, proj, overwrite, info, ci);
+        } finally {
+            deleteQuietly(tmpRoot.toFile());
+        }
+    }
+
+    /** A tmp-staged file paired with its pre-computed catalog metadata. */
+    private record StagedEntry(Path tmpFile, String instance, CatalogEntryAttributes attrs) {}
+
+    /**
+     * Non-blocking lock probe to fail fast before any upload bytes are consumed.
+     * Uses {@code tryLock(0, SECONDS)} rather than {@code tryFileLock()} directly so that the
+     * inter-thread write lock is paired with the matching {@link ThreadAndProcessFileLock#unlock};
+     * a bare {@code tryFileLock()} would leave {@code unlock()} throwing {@link IllegalMonitorStateException}.
+     */
+    private static void failFastIfLocked(final File catFile) throws ResourceBusyException, IOException {
+        final ThreadAndProcessFileLock probe = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, false);
+        try {
+            try {
+                probe.tryLock(0L, TimeUnit.SECONDS);
+            } catch (IOException e) {
+                throw new ResourceBusyException(catFile, e);
+            }
+            probe.unlock();
+        } finally {
+            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+        }
+    }
+
+    private static Path createTmpRoot(final Path destinationDir) throws IOException {
+        Files.createDirectories(destinationDir);
+        return Files.createTempDirectory(destinationDir, XNAT_TMP_UPLOAD_PREFIX);
+    }
+
+    /** Phase 1: write uploads to tmpRoot and pre-compute catalog metadata. No catalog read, no locks. */
+    private static List<StagedEntry> stageUploads(final List<? extends FileWriterWrapperI> fileWriters,
+                                                  final String destination,
+                                                  final boolean extract,
+                                                  final Path tmpRoot) throws Exception {
+        final List<StagedEntry> staged = new ArrayList<>();
         for (final FileWriterWrapperI fileWriter : fileWriters) {
-            final String filename = Path.of(StringUtils.replace(fileWriter.getName(), "\\", "/")).getFileName().toString();
+            final String filename = FilenameUtils.getName(fileWriter.getName());
             if (extract && ZipUtils.isCompressedFile(filename)) {
-                log.debug("Found archive file {}", filename);
-                final FileExtractor extractor = new FileExtractor();
-                final List<File>    files     = extractor.extract(filename, fileWriter.getInputStream(), destinationDir, overwrite, ci, XNAT_CATALOGABLE_FILE_FILTER);
-                for (final File file : files) {
-                    if (!file.isDirectory() && XNAT_CATALOGABLE_FILE_FILTER.accept(file)) {
-                        // relative path is used to compare to existing catalog entries, and add if missing.
-                        // entry paths are relative to the location of the catalog file.
-                        final String relativePath = destinationDir.toUri().relativize(file.toURI()).getPath();
-                        if (overwrite || !catalogMap.containsKey(relativePath)) {
-                            addOrUpdateEntry(catalogData, catalogMap.get(relativePath) == null ? null : catalogMap.get(relativePath).entry, relativePath, relativePath, file, info, ci);
-                        }
-                    }
-                }
-
-                if (!overwrite) {
-                    duplicates.addAll(extractor.getDuplicates());
-                }
+                stageArchive(fileWriter, filename, tmpRoot, staged);
             } else {
-                final String instance;
-                if (!StringUtils.isBlank(fileWriter.getNestedPath())) {
-                    instance = makePath(fileWriter.getNestedPath(), filename);
-                } else if (StringUtils.isBlank(destination)) {
-                    instance = filename;
-                } else if (destination.startsWith("/")) {
-                    instance = destination.substring(1);
-                } else {
-                    instance = destination;
-                }
+                stageFile(fileWriter, filename, destination, tmpRoot, staged);
+            }
+        }
+        return staged;
+    }
 
-                final File saveTo = destinationDir.resolve(instance).toFile();
-                if (saveTo.isFile() && !XNAT_CATALOGABLE_FILE_FILTER.accept(saveTo)) {
-                    throw new Exception("XNAT cannot catalog " + saveTo.getName());
-                }
+    private static void stageArchive(final FileWriterWrapperI fileWriter,
+                                     final String filename,
+                                     final Path tmpRoot,
+                                     final List<StagedEntry> staged) throws IOException {
+        final Path archiveSub = Files.createTempDirectory(tmpRoot, "archive-");
+        final List<File> extracted = new FileExtractor().extract(
+                filename, fileWriter.getInputStream(), archiveSub, XNAT_CATALOGABLE_FILE_FILTER);
+        for (final File file : extracted) {
+            if (file.isDirectory() || !XNAT_CATALOGABLE_FILE_FILTER.accept(file)) {
+                continue;
+            }
+            staged.add(stageOne(file.toPath(), relativeAsInstance(archiveSub.toFile(), file)));
+        }
+    }
 
-                if (saveTo.exists() && !overwrite) {
-                    duplicates.add(instance);
-                } else {
-                    final CatalogMapEntry mapEntry;
-                    if (saveTo.exists() && (mapEntry = catalogMap.get(instance)) != null) {
-                        if (mapEntry.entry instanceof CatEntryBean bean) {
-                            CatalogUtils.moveToHistory(catalogData.catFile, catalogData.project, saveTo,
-                                    bean, ci);
-                        }
+    private static void stageFile(final FileWriterWrapperI fileWriter,
+                                  final String filename,
+                                  final String destination,
+                                  final Path tmpRoot,
+                                  final List<StagedEntry> staged) throws Exception {
+        final String instance = resolveInstance(fileWriter.getNestedPath(), destination, filename);
+        final File tmpAsFile = tmpRoot.resolve(instance).toFile();
+        Files.createDirectories(tmpAsFile.getParentFile().toPath());
+        fileWriter.write(tmpAsFile);
+
+        if (tmpAsFile.isDirectory()) {
+            // StoredFile (used by FileMover) may write a directory tree, not a single file.
+            for (final File file : listFiles(tmpAsFile, XNAT_CATALOGABLE_FILE_FILTER, DirectoryFileFilter.DIRECTORY)) {
+                staged.add(stageOne(file.toPath(), instance + "/" + relativeAsInstance(tmpAsFile, file)));
+            }
+        } else {
+            staged.add(stageOne(tmpAsFile.toPath(), instance));
+        }
+    }
+
+    private static String resolveInstance(final String nestedPath, final String destination, final String filename) {
+        if (!StringUtils.isBlank(nestedPath)) {
+            return makePath(nestedPath, filename);
+        }
+        if (StringUtils.isBlank(destination)) {
+            return filename;
+        }
+        return destination.startsWith("/") ? destination.substring(1) : destination;
+    }
+
+    private static String relativeAsInstance(final File parent, final File child) {
+        return FileUtils.RelativizePath(parent, child).replace('\\', '/');
+    }
+
+    private static StagedEntry stageOne(final Path tmpFile, final String instance) throws IOException {
+        final File f = tmpFile.toFile();
+        String md5 = null;
+        try {
+            // tmp file is exclusively owned by this thread - no lock needed when hashing.
+            if (getChecksumConfiguration()) {
+                md5 = getHash(f, false);
+            }
+        } catch (ConfigServiceException ignored) {
+            // checksum config unavailable; store entry without MD5 (matches addOrUpdateEntry precedent)
+        }
+        final CatalogEntryAttributes attrs = new CatalogEntryAttributes(
+                instance, f.getName(), f.length(), new Date(f.lastModified()), md5, null, null);
+        return new StagedEntry(tmpFile, instance, attrs);
+    }
+
+    /**
+     * Phase-2 lock acquire is bounded retry rather than a single long timeout: per-attempt log lines
+     * surface contention to ops earlier, inter-attempt backoff avoids hot-racing on the dummy file
+     * lock, and each attempt allocates a fresh dummy RAF channel that survives a stuck prior attempt.
+     */
+    private static final int  PHASE2_LOCK_ATTEMPTS    = 3;
+    private static final long PHASE2_LOCK_TIMEOUT_SEC = 60L;
+    private static final long PHASE2_LOCK_BACKOFF_MS  = 2_000L;
+
+    /**
+     * Phase 2: acquire the catalog lock (bounded retry), re-read the catalog, then for each staged
+     * file skip-if-duplicate / moveToHistory / ATOMIC_MOVE / update catalog. Write catalog and release.
+     *
+     * @throws ResourceBusyException if the lock cannot be acquired after the configured retries.
+     */
+    private static List<String> commitStagedEntries(final List<StagedEntry> staged,
+                                                    final File catFile,
+                                                    final XnatResourcecatalog catResource,
+                                                    final XnatProjectdata proj,
+                                                    final boolean overwrite,
+                                                    final XnatResourceInfo info,
+                                                    final EventMetaI ci) throws Exception {
+        for (int attempt = 1; attempt <= PHASE2_LOCK_ATTEMPTS; attempt++) {
+            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, false);
+            try {
+                try {
+                    fl.tryLock(PHASE2_LOCK_TIMEOUT_SEC, TimeUnit.SECONDS);
+                } catch (IOException e) {
+                    log.warn("Catalog lock acquire attempt {}/{} timed out after {}s for {}",
+                            attempt, PHASE2_LOCK_ATTEMPTS, PHASE2_LOCK_TIMEOUT_SEC, catFile);
+                    if (attempt == PHASE2_LOCK_ATTEMPTS) {
+                        throw new ResourceBusyException(catFile, e);
                     }
-
-                    if (!saveTo.getParentFile().exists() && !saveTo.getParentFile().mkdirs()) {
-                        throw new Exception("Failed to create required directory: " + saveTo.getParentFile().getAbsolutePath());
+                    try {
+                        Thread.sleep(PHASE2_LOCK_BACKOFF_MS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new ResourceBusyException(catFile, e);
                     }
-
-                    log.debug("Saving filename {} to file {}", filename, saveTo.getAbsolutePath());
-
-                    fileWriter.write(saveTo);
-
-                    if (saveTo.isDirectory()) {
-                        log.debug("Found a directory: {}", saveTo.getAbsolutePath());
-                        for (final File file : listFiles(saveTo, XNAT_CATALOGABLE_FILE_FILTER, DirectoryFileFilter.DIRECTORY)) {
-                            final String relativePath = instance + "/" +
-                                    FileUtils.RelativizePath(saveTo, file).replace('\\', '/');
-                            log.debug("Adding or updating catalog entry for file {}", file);
-                            CatEntryI entry = catalogMap.get(relativePath) == null ? null : catalogMap.get(relativePath).entry;
-                            addOrUpdateEntry(catalogData, entry, relativePath, relativePath, file, info, ci);
-                        }
-                    } else {
-                        log.debug("Adding or updating catalog entry for file {}", saveTo.getAbsolutePath());
-                        CatEntryI entry = catalogMap.get(instance) == null ? null : catalogMap.get(instance).entry;
-                        addOrUpdateEntry(catalogData, entry, instance, instance, saveTo, info, ci);
-                    }
+                    continue;
                 }
+                try {
+                    return doCommit(staged, catFile, catResource, proj, overwrite, info, ci);
+                } finally {
+                    fl.unlock();
+                }
+            } finally {
+                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+            }
+        }
+        throw new AssertionError("unreachable - loop must return or throw");
+    }
+
+    /** Phase-2 body. Caller must hold the catalog lock. */
+    private static List<String> doCommit(final List<StagedEntry> staged,
+                                         final File catFile,
+                                         final XnatResourcecatalog catResource,
+                                         final XnatProjectdata proj,
+                                         final boolean overwrite,
+                                         final XnatResourceInfo info,
+                                         final EventMetaI ci) throws Exception {
+        final CatalogData catalogData = new CatalogData(catFile, catResource, proj.getId());
+        final Map<String, CatalogMapEntry> catalogMap = buildCatalogMap(catalogData);
+        final Path destinationDir = catFile.getParentFile().toPath();
+        final List<String> duplicates = new ArrayList<>();
+
+        for (final StagedEntry s : staged) {
+            final File saveTo = destinationDir.resolve(s.instance()).toFile();
+            final boolean saveToExists = saveTo.exists();
+
+            if (saveToExists && !overwrite) {
+                duplicates.add(s.instance());
+                continue;
+            }
+            if (saveToExists && saveTo.isFile() && !XNAT_CATALOGABLE_FILE_FILTER.accept(saveTo)) {
+                throw new Exception("XNAT cannot catalog " + saveTo.getName());
+            }
+
+            final CatalogMapEntry mapEntry = catalogMap.get(s.instance());
+            if (saveToExists && mapEntry != null && mapEntry.entry instanceof CatEntryBean bean) {
+                CatalogUtils.moveToHistory(catFile, catalogData.project, saveTo, bean, ci);
+            }
+
+            final File saveToParent = saveTo.getParentFile();
+            if (saveToParent != null && !saveToParent.exists() && !saveToParent.mkdirs()) {
+                throw new Exception("Failed to create required directory: " + saveToParent.getAbsolutePath());
+            }
+
+            Files.move(s.tmpFile(), saveTo.toPath(), StandardCopyOption.ATOMIC_MOVE);
+
+            if (mapEntry == null) {
+                populateAndAddCatEntry(catalogData.catBean, null, s.attrs(), info);
+            } else {
+                updateExistingCatEntry(mapEntry.entry, null, s.attrs(), info, ci);
             }
         }
 
-        log.debug("Writing catalog file {} with {} total entries", catalogData.catFile.getAbsolutePath(), catalogData.catBean.getEntries_entry().size());
         writeCatalogToFile(catalogData);
-
         return duplicates;
     }
 
@@ -2497,8 +2670,16 @@ public class CatalogUtils {
                                                  @Nullable String uri,
                                                  final CatalogEntryAttributes attr,
                                                  final EventMetaI eventMeta) {
+        return updateExistingCatEntry(entry, uri, attr, null, eventMeta);
+    }
+
+    public static boolean updateExistingCatEntry(final CatEntryI entry,
+                                                 @Nullable String uri,
+                                                 final CatalogEntryAttributes attr,
+                                                 @Nullable final XnatResourceInfo info,
+                                                 final EventMetaI eventMeta) {
         return updateExistingCatEntry(entry, StringUtils.defaultIfBlank(uri, attr.relativePath),
-                attr.relativePath, attr.name, attr.size, attr.md5, attr.format, attr.content, null, eventMeta);
+                attr.relativePath, attr.name, attr.size, attr.md5, attr.format, attr.content, info, eventMeta);
     }
 
     public static boolean updateExistingCatEntry(CatEntryI entry, File f, String relativePath,

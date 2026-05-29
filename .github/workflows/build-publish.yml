@@ -49,10 +49,14 @@ jobs:
         run: ./gradlew clean build
 
       # Stage 2: publish every module to JFrog Artifactory. Reuses Stage 1
-      # outputs; only generatePomFile + HTTP upload runs here. Skipped on
-      # the github-build test branch to avoid polluting the repo.
+      # outputs; only generatePomFile + HTTP upload runs here.
+      #
+      # ⚠️  TEMPORARILY DISABLED (if: false) for pipeline debug.
+      # We're validating Stage 1 first on github-build. Restore to:
+      #   if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
+      # once Stage 1 is green.
       - name: Stage 2 — Publish all modules to JFrog Artifactory
-        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
+        if: false
         env:
           ORG_GRADLE_PROJECT_artifactoryUser:  ${{ secrets.ARTIFACTORY_USER }}
           ORG_GRADLE_PROJECT_artifactoryToken: ${{ secrets.ARTIFACTORY_TOKEN }}
@@ -74,9 +78,12 @@ jobs:
           if-no-files-found: error
 
   # ─────────────────────────── 2. Publish WAR to S3 ───────────────────────
+  # ⚠️  TEMPORARILY DISABLED (if: false) for pipeline debug. Remove the
+  # `if: false` line once Stage 1 in the build job is green.
   publish-s3:
     name: Publish WAR to S3
     needs: build
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Download WAR artifact
@@ -109,12 +116,15 @@ jobs:
           echo "Uploaded to s3://${BUCKET}/xnat/${BRANCH}/latest.war"
 
   # ───────────────── 3. Build Docker image and push to Docker Hub ─────────
+  # ⚠️  TEMPORARILY DISABLED (if: false) for pipeline debug. Remove the
+  # `if: false` line once Stage 1 in the build job is green.
   publish-docker:
     name: Build & Push Docker Image
     needs: build
+    if: false
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (for Dockerfile)
+      - name: Checkout (for Dockerfile + edit-log.py)
         uses: actions/checkout@v4
 
       - name: Download WAR artifact
@@ -128,6 +138,25 @@ jobs:
           set -euo pipefail
           mv ./docker-context/*.war ./docker-context/xnat.war
           ls -lh ./docker-context
+
+      # XNAT's default logback.xml uses RollingFileAppender, so logs go to
+      # files inside the container and `docker logs` shows nothing useful.
+      # Rewrite all <appender> classes to ConsoleAppender and prefix the
+      # encoder pattern with [<appenderName>] so streams are distinguishable.
+      # Mirrors what the old Jenkins docker-build.sh did with edit-log.py.
+      - name: Rewrite logback.xml inside WAR (ConsoleAppender for container logs)
+        working-directory: ./docker-context
+        run: |
+          set -euo pipefail
+          LOGBACK=WEB-INF/classes/logback.xml
+          echo "=== logback.xml BEFORE ==="
+          unzip -p xnat.war "$LOGBACK" | head -40
+          jar xf xnat.war "$LOGBACK"
+          python3 ../scripts/edit-log.py --logfile "$LOGBACK"
+          jar uf xnat.war "$LOGBACK"
+          echo "=== logback.xml AFTER ==="
+          cat "$LOGBACK"
+          rm -rf WEB-INF META-INF
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

@@ -1,0 +1,147 @@
+name: Build and Publish
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - github-build   # for pipeline testing; remove once verified
+  workflow_dispatch:    # allow manual trigger
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  # ─────────────────────────── 1. Build the WAR ───────────────────────────
+  build:
+    name: Build WAR
+    runs-on: ubuntu-latest
+    outputs:
+      war-name: ${{ steps.find-war.outputs.name }}
+      version:  ${{ steps.gradle-props.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Read project version
+        id: gradle-props
+        run: |
+          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Gradle build (xnat-web WAR)
+        run: ./gradlew :xnat-web:war -x test --no-daemon
+
+      - name: Locate produced WAR
+        id: find-war
+        run: |
+          WAR=$(ls xnat-web/build/libs/*.war | head -n 1)
+          echo "Found WAR: $WAR"
+          echo "name=$(basename "$WAR")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload WAR as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xnat-war
+          path: xnat-web/build/libs/*.war
+          retention-days: 7
+          if-no-files-found: error
+
+  # ─────────────────────────── 2. Publish WAR to S3 ───────────────────────
+  publish-s3:
+    name: Publish WAR to S3
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download WAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: xnat-war
+          path: ./artifacts
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Upload WAR to S3 (versioned + latest)
+        env:
+          BUCKET:  ${{ secrets.AWS_S3_BUCKET }}
+          BRANCH:  ${{ github.ref_name }}
+          SHA:     ${{ github.sha }}
+          WAR:     ${{ needs.build.outputs.war-name }}
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${SHA::7}"
+          aws s3 cp "./artifacts/${WAR}" \
+            "s3://${BUCKET}/xnat/${BRANCH}/${SHORT_SHA}/${WAR}"
+          aws s3 cp "./artifacts/${WAR}" \
+            "s3://${BUCKET}/xnat/${BRANCH}/latest.war"
+          echo "Uploaded to s3://${BUCKET}/xnat/${BRANCH}/${SHORT_SHA}/${WAR}"
+          echo "Uploaded to s3://${BUCKET}/xnat/${BRANCH}/latest.war"
+
+  # ───────────────── 3. Build Docker image and push to Docker Hub ─────────
+  publish-docker:
+    name: Build & Push Docker Image
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (for Dockerfile)
+        uses: actions/checkout@v4
+
+      - name: Download WAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: xnat-war
+          path: ./docker-context
+
+      - name: Normalise WAR file name
+        run: |
+          set -euo pipefail
+          mv ./docker-context/*.war ./docker-context/xnat.war
+          ls -lh ./docker-context
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        env:
+          USER:    ${{ secrets.DOCKERHUB_USERNAME }}
+          BRANCH:  ${{ github.ref_name }}
+          SHA:     ${{ github.sha }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          SHORT_SHA="${SHA::7}"
+          REPO="${USER}/xnat"
+          TAGS="${REPO}:${BRANCH},${REPO}:${BRANCH}-${SHORT_SHA},${REPO}:${VERSION}-${BRANCH}"
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "Image tags: ${TAGS}"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max

@@ -1,0 +1,6 @@
+# Send only the prepared WAR (and the Dockerfile itself) into the build context.
+# Everything else in the monorepo is excluded.
+*
+!Dockerfile
+!docker-context
+!docker-context/**

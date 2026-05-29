@@ -14,9 +14,12 @@ env:
 
 jobs:
   # ─────────────────────────── 1. Build the WAR ───────────────────────────
+  # Runs on a larger 8-core / 32 GB runner because the monorepo's parallel
+  # build with :config:test (-Xmx8g) needs ~32 GB peak. See
+  # ~/bindocs/work/xnat/xnat-monorepo-gradle-build-memory-budget.md
   build:
     name: Build WAR
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-8-cores
     outputs:
       war-name: ${{ steps.find-war.outputs.name }}
       version:  ${{ steps.gradle-props.outputs.version }}
@@ -39,8 +42,21 @@ jobs:
           VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Gradle build (xnat-web WAR)
-        run: ./gradlew :xnat-web:war -x test --no-daemon
+      # Stage 1: clean + build (parallel, with tests). Produces all module
+      # JARs and xnat-web/build/libs/*.war. Outputs are kept on disk so
+      # Stage 2 can reuse them via Gradle incremental build.
+      - name: Stage 1 — Clean build (parallel, with tests)
+        run: ./gradlew clean build
+
+      # Stage 2: publish every module to JFrog Artifactory. Reuses Stage 1
+      # outputs; only generatePomFile + HTTP upload runs here. Skipped on
+      # the github-build test branch to avoid polluting the repo.
+      - name: Stage 2 — Publish all modules to JFrog Artifactory
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
+        env:
+          ORG_GRADLE_PROJECT_artifactoryUser:  ${{ secrets.ARTIFACTORY_USER }}
+          ORG_GRADLE_PROJECT_artifactoryToken: ${{ secrets.ARTIFACTORY_TOKEN }}
+        run: ./gradlew publish -x test
 
       - name: Locate produced WAR
         id: find-war

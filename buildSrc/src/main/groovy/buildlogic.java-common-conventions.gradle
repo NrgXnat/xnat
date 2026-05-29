@@ -119,6 +119,12 @@ publishing {
             url = project.version.toString().endsWith('-SNAPSHOT')
                 ? 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local'
                 : 'https://nrgxnat.jfrog.io/nrgxnat/libs-release-local'
+            // CI injects ORG_GRADLE_PROJECT_artifactoryUser/Token env vars.
+            // Local devs can set artifactoryUser/Token in ~/.gradle/gradle.properties.
+            credentials {
+                username = (project.findProperty('artifactoryUser')  ?: System.getenv('ARTIFACTORY_USER'))  ?: ''
+                password = (project.findProperty('artifactoryToken') ?: System.getenv('ARTIFACTORY_TOKEN')) ?: ''
+            }
         }
     }
 }

@@ -1,3 +1,7 @@
+import java.net.HttpURLConnection
+import java.util.Base64
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+
 plugins {
     id 'java'
     id 'maven-publish'
@@ -125,6 +129,57 @@ publishing {
                 username = (project.findProperty('artifactoryUser')  ?: System.getenv('ARTIFACTORY_USER'))  ?: ''
                 password = (project.findProperty('artifactoryToken') ?: System.getenv('ARTIFACTORY_TOKEN')) ?: ''
             }
+        }
+    }
+}
+
+// --- Skip publish if the release artifact already exists in Artifactory ---
+//
+// JFrog libs-release-local rejects redeploys with HTTP 409. Modules with
+// independent, non-SNAPSHOT versions (e.g. dicom-edit6 6.9.0) hit this on
+// every CI run after the first one, breaking the whole `./gradlew publish`.
+// HEAD-probe the main jar before publishing; if it already exists, skip
+// that module's publish task so the rest of the build keeps moving.
+//
+// SNAPSHOT versions are never probed (their repo allows redeploys).
+tasks.withType(PublishToMavenRepository).configureEach { publishTask ->
+    onlyIf("artifact not already present in Artifactory") {
+        if (project.version.toString().endsWith('-SNAPSHOT')) {
+            return true
+        }
+        def repo = publishTask.repository
+        def repoUrl = repo.url.toString().replaceAll('/$', '')
+        def groupPath = project.group.toString().replace('.', '/')
+        def jarUrl = "${repoUrl}/${groupPath}/${project.name}/${project.version}/${project.name}-${project.version}.jar"
+
+        def conn = new URL(jarUrl).openConnection() as HttpURLConnection
+        conn.requestMethod = 'HEAD'
+        conn.connectTimeout = 10_000
+        conn.readTimeout = 10_000
+        def user = repo.credentials.username
+        def pwd  = repo.credentials.password
+        if (user && pwd) {
+            def auth = Base64.encoder.encodeToString("${user}:${pwd}".bytes)
+            conn.setRequestProperty('Authorization', "Basic ${auth}")
+        }
+        try {
+            def code = conn.responseCode
+            if (code == 200) {
+                logger.warn("[publish] SKIP {}:{} — already exists at {}",
+                            project.name, project.version, jarUrl)
+                return false
+            }
+            if (code != 404) {
+                logger.warn("[publish] HEAD {} returned {} — proceeding anyway",
+                            jarUrl, code)
+            }
+            return true
+        } catch (Exception e) {
+            logger.warn("[publish] HEAD probe failed for {} ({}) — proceeding anyway",
+                        jarUrl, e.message)
+            return true   // network glitch shouldn't block publish; let PUT decide
+        } finally {
+            conn.disconnect()
         }
     }
 }

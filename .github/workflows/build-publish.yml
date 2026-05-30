@@ -6,7 +6,24 @@ on:
       - master
       - develop
       - github-build   # for pipeline testing; remove once verified
-  workflow_dispatch:    # allow manual trigger
+  workflow_dispatch:
+    # Manual runs let you cherry-pick which publish paths execute.
+    # All boolean inputs default to false — clicking "Run workflow"
+    # with nothing checked produces a build-only run, which is the
+    # safe default for pipeline debugging.
+    inputs:
+      publish_s3:
+        description: 'Upload WAR to AWS S3'
+        type: boolean
+        default: false
+      publish_docker:
+        description: 'Build and push Docker image to Docker Hub'
+        type: boolean
+        default: false
+      publish_jfrog:
+        description: 'Publish all modules to JFrog Artifactory'
+        type: boolean
+        default: false
 
 env:
   JAVA_VERSION: '21'
@@ -51,12 +68,14 @@ jobs:
       # Stage 2: publish every module to JFrog Artifactory. Reuses Stage 1
       # outputs; only generatePomFile + HTTP upload runs here.
       #
-      # ⚠️  TEMPORARILY DISABLED (if: false) for pipeline debug.
-      # We're validating Stage 1 first on github-build. Restore to:
-      #   if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
-      # once Stage 1 is green.
+      # Runs when:
+      #   - push to master / develop (auto-publish on merge)
+      #   - manual workflow_dispatch with publish_jfrog checked
+      # github-build pushes never publish to JFrog.
       - name: Stage 2 — Publish all modules to JFrog Artifactory
-        if: false
+        if: |
+          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'))
+          || (github.event_name == 'workflow_dispatch' && inputs.publish_jfrog)
         env:
           ORG_GRADLE_PROJECT_artifactoryUser:  ${{ secrets.ARTIFACTORY_USER }}
           ORG_GRADLE_PROJECT_artifactoryToken: ${{ secrets.ARTIFACTORY_TOKEN }}
@@ -78,12 +97,15 @@ jobs:
           if-no-files-found: error
 
   # ─────────────────────────── 2. Publish WAR to S3 ───────────────────────
-  # ⚠️  TEMPORARILY DISABLED (if: false) for pipeline debug. Remove the
-  # `if: false` line once Stage 1 in the build job is green.
+  # Runs when:
+  #   - push to any non-github-build branch (master/develop)
+  #   - manual workflow_dispatch with publish_s3 checked
   publish-s3:
     name: Publish WAR to S3
     needs: build
-    if: false
+    if: |
+      (github.event_name == 'push' && github.ref_name != 'github-build')
+      || (github.event_name == 'workflow_dispatch' && inputs.publish_s3)
     runs-on: ubuntu-latest
     steps:
       - name: Download WAR artifact
@@ -116,12 +138,15 @@ jobs:
           echo "Uploaded to s3://${BUCKET}/xnat/${BRANCH}/latest.war"
 
   # ───────────────── 3. Build Docker image and push to Docker Hub ─────────
-  # ⚠️  TEMPORARILY DISABLED (if: false) for pipeline debug. Remove the
-  # `if: false` line once Stage 1 in the build job is green.
+  # Runs when:
+  #   - push to any non-github-build branch (master/develop)
+  #   - manual workflow_dispatch with publish_docker checked
   publish-docker:
     name: Build & Push Docker Image
     needs: build
-    if: false
+    if: |
+      (github.event_name == 'push' && github.ref_name != 'github-build')
+      || (github.event_name == 'workflow_dispatch' && inputs.publish_docker)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (for Dockerfile + edit-log.py)

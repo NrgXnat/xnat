@@ -1,6 +1,9 @@
-# Send only the prepared WAR (and the Dockerfile itself) into the build context.
-# Everything else in the monorepo is excluded.
+# Send only the prepared WAR + Dockerfile + docker/ helper scripts into the
+# build context. Everything else in the monorepo is excluded so we don't
+# ship ~5 GB of source / build/ outputs / .git into Docker daemon.
 *
 !Dockerfile
+!docker
+!docker/**
 !docker-context
 !docker-context/**

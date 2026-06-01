@@ -31,12 +31,15 @@ env:
 
 jobs:
   # ─────────────────────────── 1. Build the WAR ───────────────────────────
-  # Runs on a larger 8-core / 32 GB runner because the monorepo's parallel
-  # build with :config:test (-Xmx8g) needs ~32 GB peak. See
-  # ~/bindocs/work/xnat/xnat-monorepo-gradle-build-memory-budget.md
+  # NOTE (debug): runs-on temporarily set to standard ubuntu-latest (16 GB)
+  # to validate the pipeline without provisioning a larger runner. The
+  # full parallel build with :config:test (-Xmx8g) needs ~32 GB peak, so
+  # Stage 1 below skips tests (-x test) to fit. Restore to
+  #   runs-on: ubuntu-latest-8-cores
+  # and drop the -x test once larger runner is available.
   build:
     name: Build WAR
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ubuntu-latest
     outputs:
       war-name: ${{ steps.find-war.outputs.name }}
       version:  ${{ steps.gradle-props.outputs.version }}
@@ -59,11 +62,14 @@ jobs:
           VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # Stage 1: clean + build (parallel, with tests). Produces all module
-      # JARs and xnat-web/build/libs/*.war. Outputs are kept on disk so
-      # Stage 2 can reuse them via Gradle incremental build.
-      - name: Stage 1 — Clean build (parallel, with tests)
-        run: ./gradlew clean build
+      # Stage 1: clean + build. Produces all module JARs and
+      # xnat-web/build/libs/*.war. Outputs are kept on disk so Stage 2 can
+      # reuse them via Gradle incremental build.
+      #
+      # NOTE (debug): -x test is here temporarily to fit on the standard
+      # 16 GB runner. Once we move to ubuntu-latest-8-cores, drop -x test.
+      - name: Stage 1 — Clean build (parallel, tests skipped for debug)
+        run: ./gradlew clean build -x test
 
       # Stage 2: publish every module to JFrog Artifactory. Reuses Stage 1
       # outputs; only generatePomFile + HTTP upload runs here.

@@ -120,9 +120,6 @@ publishing {
     repositories {
         maven {
             name = 'XNAT_Artifactory'
-            url = project.version.toString().endsWith('-SNAPSHOT')
-                ? 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local'
-                : 'https://nrgxnat.jfrog.io/nrgxnat/libs-release-local'
             // CI injects ORG_GRADLE_PROJECT_artifactoryUser/Token env vars.
             // Local devs can set artifactoryUser/Token in ~/.gradle/gradle.properties.
             credentials {
@@ -130,6 +127,20 @@ publishing {
                 password = (project.findProperty('artifactoryToken') ?: System.getenv('ARTIFACTORY_TOKEN')) ?: ''
             }
         }
+    }
+}
+
+// Decide snapshot-vs-release URL lazily, after each subproject's
+// build.gradle has run — needed because modules like dicom-edit6
+// override `project.version` to a non-SNAPSHOT release (6.9.0).
+// If we evaluate `project.version` at the time this convention is
+// applied, we'd see the root-level 1.10.1-SNAPSHOT and lock the URL
+// to the snapshot repo, which then rejects release artifacts with 409.
+afterEvaluate {
+    publishing.repositories.named('XNAT_Artifactory').configure {
+        url = project.version.toString().endsWith('-SNAPSHOT')
+            ? 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local'
+            : 'https://nrgxnat.jfrog.io/nrgxnat/libs-release-local'
     }
 }
 

@@ -82,7 +82,7 @@ jobs:
           echo "Disk free: $(df -h / | awk 'NR==2 {print $4}')"
           echo "Kernel:    $(uname -srm)"
 
-      # Stage 1: build all modules. Produces module JARs and
+      # Stage 1: build all modules incl. tests. Produces module JARs and
       # xnat-web/build/libs/*.war. Outputs are kept on disk so Stage 2 can
       # reuse them via Gradle incremental build.
       #
@@ -92,10 +92,11 @@ jobs:
       # persisted across runs by setup-gradle@v4, so task outputs are
       # restored quickly on subsequent runs when the source is unchanged.
       #
-      # NOTE (debug): -x test is here temporarily to fit on the standard
-      # 16 GB runner. Once we move to ubuntu-latest-8-cores, drop -x test.
-      - name: Stage 1 — Build (parallel, tests skipped for debug)
-        run: ./gradlew build -x test
+      # Tests fit on the standard 16 GB runner because :config:test was
+      # lowered from -Xmx8g to -Xmx5g (config/build.gradle) — its actual
+      # measured peak heap is ~4.5 GB. Other test forks are ~1-2 GB.
+      - name: Stage 1 — Build (parallel, with tests)
+        run: ./gradlew build
 
       # Stage 2: publish every module to JFrog Artifactory. Reuses Stage 1
       # outputs; only generatePomFile + HTTP upload runs here.

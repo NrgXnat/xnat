@@ -55,12 +55,32 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # Persist the full ~/.gradle/caches directory between runs,
+          # including caches/build-cache-1 so task outputs (compileJava
+          # JARs, war contents, ANTLR-generated sources, etc.) can be
+          # restored across runs as FROM-CACHE. The default action
+          # config only caches modules-2 (Maven deps), which is why
+          # the first b67d50ea3 run still re-ran every compile task.
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            jdks
 
       - name: Read project version
         id: gradle-props
         run: |
           VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Temporary debug aid — confirm the actual runner specs we're given.
+      # Remove once we're done validating the standard runner.
+      - name: Show runner specs (debug)
+        run: |
+          echo "vCPUs:     $(nproc)"
+          echo "Memory:    $(free -h | awk '/Mem:/ {print $2}')"
+          echo "Disk free: $(df -h / | awk 'NR==2 {print $4}')"
+          echo "Kernel:    $(uname -srm)"
 
       # Stage 1: build all modules. Produces module JARs and
       # xnat-web/build/libs/*.war. Outputs are kept on disk so Stage 2 can

@@ -107,12 +107,14 @@ jobs:
       # outputs; only generatePomFile + HTTP upload runs here.
       #
       # Runs when:
-      #   - push to master / develop (auto-publish on merge)
+      #   - any push (master / develop / github-build during validation)
       #   - manual workflow_dispatch with publish_jfrog checked
-      # github-build pushes never publish to JFrog.
+      # SNAPSHOT versions go to libs-snapshot-local (re-uploadable); release
+      # versions (e.g. dicom-edit6 6.9.0) are guarded by the buildSrc
+      # onlyIf HEAD-probe — already-present jars are SKIPPED, no 409.
       - name: Stage 2 — Publish all modules to JFrog Artifactory
         if: |
-          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'))
+          github.event_name == 'push'
           || (github.event_name == 'workflow_dispatch' && inputs.publish_jfrog)
         env:
           ORG_GRADLE_PROJECT_artifactoryUser:  ${{ secrets.XNAT_ARTIFACTORY_USER }}
@@ -136,7 +138,7 @@ jobs:
 
   # ────────────── 2. Build Docker image and push to GHCR ─────────────────
   # Runs when:
-  #   - push to any non-github-build branch (master/develop)
+  #   - any push (master / develop / github-build during validation)
   #   - manual workflow_dispatch with publish_ghcr checked
   #
   # Authentication uses the workflow-injected GITHUB_TOKEN (no extra secrets
@@ -146,7 +148,7 @@ jobs:
     name: Build & Push Docker Image (GHCR)
     needs: build
     if: |
-      (github.event_name == 'push' && github.ref_name != 'github-build')
+      github.event_name == 'push'
       || (github.event_name == 'workflow_dispatch' && inputs.publish_ghcr)
     runs-on: ubuntu-latest
     steps:

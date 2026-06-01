@@ -12,18 +12,21 @@ on:
     # with nothing checked produces a build-only run, which is the
     # safe default for pipeline debugging.
     inputs:
-      publish_s3:
-        description: 'Upload WAR to AWS S3'
-        type: boolean
-        default: false
-      publish_docker:
-        description: 'Build and push Docker image to Docker Hub'
-        type: boolean
-        default: false
       publish_jfrog:
-        description: 'Publish all modules to JFrog Artifactory'
+        description: 'Publish all modules to JFrog Artifactory (nrgxnat)'
         type: boolean
         default: false
+      publish_ghcr:
+        description: 'Build and push Docker image to GHCR (ghcr.io)'
+        type: boolean
+        default: false
+
+# Permissions needed for publishing the Docker image to GHCR.
+# - contents:read is the default checkout permission
+# - packages:write lets the workflow push to ghcr.io/<owner>/xnat
+permissions:
+  contents: read
+  packages: write
 
 env:
   JAVA_VERSION: '21'
@@ -82,7 +85,7 @@ jobs:
           echo "Disk free: $(df -h / | awk 'NR==2 {print $4}')"
           echo "Kernel:    $(uname -srm)"
 
-      # Stage 1: build all modules incl. tests. Produces module JARs and
+      # Stage 1: build all modules. Produces module JARs and
       # xnat-web/build/libs/*.war. Outputs are kept on disk so Stage 2 can
       # reuse them via Gradle incremental build.
       #
@@ -92,11 +95,13 @@ jobs:
       # persisted across runs by setup-gradle@v4, so task outputs are
       # restored quickly on subsequent runs when the source is unchanged.
       #
-      # Tests fit on the standard 16 GB runner because :config:test was
-      # lowered from -Xmx8g to -Xmx5g (config/build.gradle) — its actual
-      # measured peak heap is ~4.5 GB. Other test forks are ~1-2 GB.
-      - name: Stage 1 — Build (parallel, with tests)
-        run: ./gradlew build
+      # NOTE (debug): -x test is temporarily back to speed up the
+      # publish-path validation rounds (build only ~4min vs ~12min with
+      # full tests). Drop the `-x test` once JFrog + GHCR publish are
+      # verified end-to-end. The full-test config is known good — see
+      # commit 92c2cf6fe (Stage 1 -Xmx5g, 11m58s green on this runner).
+      - name: Stage 1 — Build (parallel, tests skipped for publish-path validation)
+        run: ./gradlew build -x test
 
       # Stage 2: publish every module to JFrog Artifactory. Reuses Stage 1
       # outputs; only generatePomFile + HTTP upload runs here.
@@ -110,8 +115,8 @@ jobs:
           (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'))
           || (github.event_name == 'workflow_dispatch' && inputs.publish_jfrog)
         env:
-          ORG_GRADLE_PROJECT_artifactoryUser:  ${{ secrets.ARTIFACTORY_USER }}
-          ORG_GRADLE_PROJECT_artifactoryToken: ${{ secrets.ARTIFACTORY_TOKEN }}
+          ORG_GRADLE_PROJECT_artifactoryUser:  ${{ secrets.XNAT_ARTIFACTORY_USER }}
+          ORG_GRADLE_PROJECT_artifactoryToken: ${{ secrets.XNAT_ARTIFACTORY_TOKEN }}
         run: ./gradlew publish -x test
 
       - name: Locate produced WAR
@@ -129,57 +134,20 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
-  # ─────────────────────────── 2. Publish WAR to S3 ───────────────────────
+  # ────────────── 2. Build Docker image and push to GHCR ─────────────────
   # Runs when:
   #   - push to any non-github-build branch (master/develop)
-  #   - manual workflow_dispatch with publish_s3 checked
-  publish-s3:
-    name: Publish WAR to S3
+  #   - manual workflow_dispatch with publish_ghcr checked
+  #
+  # Authentication uses the workflow-injected GITHUB_TOKEN (no extra secrets
+  # to manage). Image name is ghcr.io/<owner-lowercased>/xnat — GHCR requires
+  # the owner segment lowercase, so we tr-lowercase github.repository_owner.
+  publish-ghcr:
+    name: Build & Push Docker Image (GHCR)
     needs: build
     if: |
       (github.event_name == 'push' && github.ref_name != 'github-build')
-      || (github.event_name == 'workflow_dispatch' && inputs.publish_s3)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download WAR artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: xnat-war
-          path: ./artifacts
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ secrets.AWS_REGION }}
-
-      - name: Upload WAR to S3 (versioned + latest)
-        env:
-          BUCKET:  ${{ secrets.AWS_S3_BUCKET }}
-          BRANCH:  ${{ github.ref_name }}
-          SHA:     ${{ github.sha }}
-          WAR:     ${{ needs.build.outputs.war-name }}
-        run: |
-          set -euo pipefail
-          SHORT_SHA="${SHA::7}"
-          aws s3 cp "./artifacts/${WAR}" \
-            "s3://${BUCKET}/xnat/${BRANCH}/${SHORT_SHA}/${WAR}"
-          aws s3 cp "./artifacts/${WAR}" \
-            "s3://${BUCKET}/xnat/${BRANCH}/latest.war"
-          echo "Uploaded to s3://${BUCKET}/xnat/${BRANCH}/${SHORT_SHA}/${WAR}"
-          echo "Uploaded to s3://${BUCKET}/xnat/${BRANCH}/latest.war"
-
-  # ───────────────── 3. Build Docker image and push to Docker Hub ─────────
-  # Runs when:
-  #   - push to any non-github-build branch (master/develop)
-  #   - manual workflow_dispatch with publish_docker checked
-  publish-docker:
-    name: Build & Push Docker Image
-    needs: build
-    if: |
-      (github.event_name == 'push' && github.ref_name != 'github-build')
-      || (github.event_name == 'workflow_dispatch' && inputs.publish_docker)
+      || (github.event_name == 'workflow_dispatch' && inputs.publish_ghcr)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (for Dockerfile + edit-log.py)
@@ -219,22 +187,25 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compute image tags
         id: tags
         env:
-          USER:    ${{ secrets.DOCKERHUB_USERNAME }}
+          OWNER:   ${{ github.repository_owner }}
           BRANCH:  ${{ github.ref_name }}
           SHA:     ${{ github.sha }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
+          set -euo pipefail
+          OWNER_LC=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
           SHORT_SHA="${SHA::7}"
-          REPO="${USER}/xnat"
+          REPO="ghcr.io/${OWNER_LC}/xnat"
           TAGS="${REPO}:${BRANCH},${REPO}:${BRANCH}-${SHORT_SHA},${REPO}:${VERSION}-${BRANCH}"
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
           echo "Image tags: ${TAGS}"

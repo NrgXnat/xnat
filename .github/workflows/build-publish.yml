@@ -62,14 +62,20 @@ jobs:
           VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # Stage 1: clean + build. Produces all module JARs and
+      # Stage 1: build all modules. Produces module JARs and
       # xnat-web/build/libs/*.war. Outputs are kept on disk so Stage 2 can
       # reuse them via Gradle incremental build.
       #
+      # No `clean`: each GitHub Actions runner starts with an empty
+      # workspace, so there's nothing stale to clean. Gradle's build
+      # cache (org.gradle.caching=true in gradle.properties) is
+      # persisted across runs by setup-gradle@v4, so task outputs are
+      # restored quickly on subsequent runs when the source is unchanged.
+      #
       # NOTE (debug): -x test is here temporarily to fit on the standard
       # 16 GB runner. Once we move to ubuntu-latest-8-cores, drop -x test.
-      - name: Stage 1 — Clean build (parallel, tests skipped for debug)
-        run: ./gradlew clean build -x test
+      - name: Stage 1 — Build (parallel, tests skipped for debug)
+        run: ./gradlew build -x test
 
       # Stage 2: publish every module to JFrog Artifactory. Reuses Stage 1
       # outputs; only generatePomFile + HTTP upload runs here.

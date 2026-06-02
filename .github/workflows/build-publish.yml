@@ -32,11 +32,6 @@ jobs:
   build-publish:
     uses: NrgXnat/xnat-ci-workflows/.github/workflows/gradle-build-publish.yml@v1
     with:
-      # ──── Build ────
-      # -x test is here temporarily during pipeline validation; drop once
-      # all stages 1–4 of the rollout are verified (see project docs).
-      gradle-build-args: '-x test'
-
       # ──── Artifact ────
       artifact-glob: 'xnat-web/build/libs/*.war'
       artifact-name: 'xnat-war'

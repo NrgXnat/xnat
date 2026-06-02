@@ -1,5 +1,10 @@
 name: Build and Publish
 
+# Thin caller around the shared reusable workflow in
+# NrgXnat/xnat-ci-workflows. All build/publish orchestration lives there;
+# this file only defines our triggers and the project-specific inputs
+# (gradle layout, image name, Dockerfile expectations, etc.).
+
 on:
   push:
     branches:
@@ -8,10 +13,6 @@ on:
       - 'releases/*'   # RC / release branches, e.g. releases/1.10.1-rc
       - github-build   # for pipeline testing; remove once verified
   workflow_dispatch:
-    # Manual runs let you cherry-pick which publish paths execute.
-    # All boolean inputs default to false — clicking "Run workflow"
-    # with nothing checked produces a build-only run, which is the
-    # safe default for pipeline debugging.
     inputs:
       publish_jfrog:
         description: 'Publish all modules to JFrog Artifactory (nrgxnat)'
@@ -22,206 +23,35 @@ on:
         type: boolean
         default: false
 
-# Permissions needed for publishing the Docker image to GHCR.
-# - contents:read is the default checkout permission
-# - packages:write lets the workflow push to ghcr.io/<owner>/xnat
+# packages: write is required for the called workflow's GHCR push step.
 permissions:
   contents: read
   packages: write
 
-env:
-  JAVA_VERSION: '21'
-  JAVA_DISTRIBUTION: 'temurin'
-
 jobs:
-  # ─────────────────────────── 1. Build the WAR ───────────────────────────
-  # NOTE (debug): runs-on temporarily set to standard ubuntu-latest (16 GB)
-  # to validate the pipeline without provisioning a larger runner. The
-  # full parallel build with :config:test (-Xmx8g) needs ~32 GB peak, so
-  # Stage 1 below skips tests (-x test) to fit. Restore to
-  #   runs-on: ubuntu-latest-8-cores
-  # and drop the -x test once larger runner is available.
-  build:
-    name: Build WAR
-    runs-on: ubuntu-latest
-    outputs:
-      war-name: ${{ steps.find-war.outputs.name }}
-      version:  ${{ steps.gradle-props.outputs.version }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  build-publish:
+    uses: NrgXnat/xnat-ci-workflows/.github/workflows/gradle-build-publish.yml@v1
+    with:
+      # ──── Build ────
+      # -x test is here temporarily during pipeline validation; drop once
+      # all stages 1–4 of the rollout are verified (see project docs).
+      gradle-build-args: '-x test'
 
-      - name: Set up Java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          java-version: ${{ env.JAVA_VERSION }}
+      # ──── Artifact ────
+      artifact-glob: 'xnat-web/build/libs/*.war'
+      artifact-name: 'xnat-war'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          # Persist the full ~/.gradle/caches directory between runs,
-          # including caches/build-cache-1 so task outputs (compileJava
-          # JARs, war contents, ANTLR-generated sources, etc.) can be
-          # restored across runs as FROM-CACHE. The default action
-          # config only caches modules-2 (Maven deps), which is why
-          # the first b67d50ea3 run still re-ran every compile task.
-          gradle-home-cache-includes: |
-            caches
-            notifications
-            jdks
+      # ──── JFrog ────
+      # On any push: publish. On dispatch: only when publish_jfrog ticked.
+      publish-jfrog: ${{ github.event_name == 'push' || inputs.publish_jfrog }}
 
-      - name: Read project version
-        id: gradle-props
-        run: |
-          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      # ──── GHCR ────
+      publish-ghcr: ${{ github.event_name == 'push' || inputs.publish_ghcr }}
+      image-name: 'xnat-web'
+      dockerfile-path: './Dockerfile'
+      docker-context-filename: 'xnat.war'
+      logback-path-in-war: 'WEB-INF/classes/logback.xml'
 
-      # Temporary debug aid — confirm the actual runner specs we're given.
-      # Remove once we're done validating the standard runner.
-      - name: Show runner specs (debug)
-        run: |
-          echo "vCPUs:     $(nproc)"
-          echo "Memory:    $(free -h | awk '/Mem:/ {print $2}')"
-          echo "Disk free: $(df -h / | awk 'NR==2 {print $4}')"
-          echo "Kernel:    $(uname -srm)"
-
-      # Stage 1: build all modules. Produces module JARs and
-      # xnat-web/build/libs/*.war. Outputs are kept on disk so Stage 2 can
-      # reuse them via Gradle incremental build.
-      #
-      # No `clean`: each GitHub Actions runner starts with an empty
-      # workspace, so there's nothing stale to clean. Gradle's build
-      # cache (org.gradle.caching=true in gradle.properties) is
-      # persisted across runs by setup-gradle@v4, so task outputs are
-      # restored quickly on subsequent runs when the source is unchanged.
-      #
-      # NOTE (debug): -x test is temporarily back to speed up the
-      # publish-path validation rounds (build only ~4min vs ~12min with
-      # full tests). Drop the `-x test` once JFrog + GHCR publish are
-      # verified end-to-end. The full-test config is known good — see
-      # commit 92c2cf6fe (Stage 1 -Xmx5g, 11m58s green on this runner).
-      - name: Stage 1 — Build (parallel, tests skipped for publish-path validation)
-        run: ./gradlew build -x test
-
-      # Stage 2: publish every module to JFrog Artifactory. Reuses Stage 1
-      # outputs; only generatePomFile + HTTP upload runs here.
-      #
-      # Runs when:
-      #   - any push (master / develop / github-build during validation)
-      #   - manual workflow_dispatch with publish_jfrog checked
-      # SNAPSHOT versions go to libs-snapshot-local (re-uploadable); release
-      # versions (e.g. dicom-edit6 6.9.0) are guarded by the buildSrc
-      # onlyIf HEAD-probe — already-present jars are SKIPPED, no 409.
-      - name: Stage 2 — Publish all modules to JFrog Artifactory
-        if: |
-          github.event_name == 'push'
-          || (github.event_name == 'workflow_dispatch' && inputs.publish_jfrog)
-        env:
-          ORG_GRADLE_PROJECT_artifactoryUser:  ${{ secrets.XNAT_ARTIFACTORY_USER }}
-          ORG_GRADLE_PROJECT_artifactoryToken: ${{ secrets.XNAT_ARTIFACTORY_TOKEN }}
-        run: ./gradlew publish -x test
-
-      - name: Locate produced WAR
-        id: find-war
-        run: |
-          WAR=$(ls xnat-web/build/libs/*.war | head -n 1)
-          echo "Found WAR: $WAR"
-          echo "name=$(basename "$WAR")" >> "$GITHUB_OUTPUT"
-
-      - name: Upload WAR as workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: xnat-war
-          path: xnat-web/build/libs/*.war
-          retention-days: 7
-          if-no-files-found: error
-
-  # ────────────── 2. Build Docker image and push to GHCR ─────────────────
-  # Runs when:
-  #   - any push (master / develop / github-build during validation)
-  #   - manual workflow_dispatch with publish_ghcr checked
-  #
-  # Authentication uses the workflow-injected GITHUB_TOKEN (no extra secrets
-  # to manage). Image name is ghcr.io/<owner-lowercased>/xnat — GHCR requires
-  # the owner segment lowercase, so we tr-lowercase github.repository_owner.
-  publish-ghcr:
-    name: Build & Push Docker Image (GHCR)
-    needs: build
-    if: |
-      github.event_name == 'push'
-      || (github.event_name == 'workflow_dispatch' && inputs.publish_ghcr)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout (for Dockerfile + edit-log.py)
-        uses: actions/checkout@v4
-
-      - name: Download WAR artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: xnat-war
-          path: ./docker-context
-
-      - name: Normalise WAR file name
-        run: |
-          set -euo pipefail
-          mv ./docker-context/*.war ./docker-context/xnat.war
-          ls -lh ./docker-context
-
-      # XNAT's default logback.xml uses RollingFileAppender, so logs go to
-      # files inside the container and `docker logs` shows nothing useful.
-      # Rewrite all <appender> classes to ConsoleAppender and prefix the
-      # encoder pattern with [<appenderName>] so streams are distinguishable.
-      # Mirrors what the old Jenkins docker-build.sh did with edit-log.py.
-      - name: Rewrite logback.xml inside WAR (ConsoleAppender for container logs)
-        working-directory: ./docker-context
-        run: |
-          set -euo pipefail
-          LOGBACK=WEB-INF/classes/logback.xml
-          echo "=== logback.xml BEFORE ==="
-          unzip -p xnat.war "$LOGBACK" | head -40
-          jar xf xnat.war "$LOGBACK"
-          python3 ../scripts/edit-log.py --logfile "$LOGBACK"
-          jar uf xnat.war "$LOGBACK"
-          echo "=== logback.xml AFTER ==="
-          cat "$LOGBACK"
-          rm -rf WEB-INF META-INF
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Image naming mirrors the old Jenkins xnat-web-develop job:
-      #   docker push xnatworks/xnat-web:${version}
-      # Image name 'xnat-web' (matching the gradle module / old git repo
-      # naming), single tag = ${version} (whatever's in gradle.properties).
-      # On the same branch (e.g. develop) successive pushes overwrite the
-      # tag — same semantics as Docker Hub had under Jenkins; the previous
-      # image is still pullable by its content digest if needed.
-      - name: Compute image tag
-        id: tags
-        env:
-          OWNER:   ${{ github.repository_owner }}
-          VERSION: ${{ needs.build.outputs.version }}
-        run: |
-          set -euo pipefail
-          OWNER_LC=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
-          TAG="ghcr.io/${OWNER_LC}/xnat-web:${VERSION}"
-          echo "tags=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "Image tag: ${TAG}"
-
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
-          cache-from: type=gha
-          cache-to:   type=gha,mode=max
+    # secrets: inherit passes XNAT_ARTIFACTORY_USER/TOKEN (org-level) and
+    # the auto-injected GITHUB_TOKEN through to the reusable workflow.
+    secrets: inherit

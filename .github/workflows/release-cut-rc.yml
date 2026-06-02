@@ -1,0 +1,194 @@
+name: Release - Cut RC Branch
+
+# Cuts an RC branch from `source_branch` (default: develop) and bumps
+# source_branch to the next dev version. Manual trigger only.
+#
+# Inputs:
+#   next_dev_version - version source_branch should become after cutting
+#                       (e.g. 1.10.2-SNAPSHOT, MUST end with -SNAPSHOT)
+#   source_branch    - branch to cut from (default: develop; use a temp
+#                       branch like fake-develop for dry-run)
+#
+# Produces:
+#   - new branch releases/<release>-rc with version=<release>-RC-SNAPSHOT
+#     and (if SNAPSHOT) dicom-edit6 bumped to its RC-SNAPSHOT counterpart
+#   - source_branch with version=<next_dev_version>; dicom-edit6 untouched
+#
+# Design doc: ~/bindocs/work/xnat/xnat-8763-release-cut-rc-plan.md
+
+on:
+  workflow_dispatch:
+    inputs:
+      next_dev_version:
+        description: 'Next develop SNAPSHOT version (e.g. 1.10.2-SNAPSHOT)'
+        type: string
+        required: true
+      source_branch:
+        description: 'Branch to cut from (use fake-develop for dry-run)'
+        type: string
+        required: false
+        default: develop
+
+permissions:
+  contents: write
+
+jobs:
+  cut-rc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout ${{ inputs.source_branch }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read current state and derive versions
+        id: vars
+        run: |
+          set -euo pipefail
+
+          CURRENT_VERSION="$(grep -E '^version=' gradle.properties | head -n1 | cut -d= -f2-)"
+          if [[ -z "${CURRENT_VERSION}" ]]; then
+            echo "::error::Could not read version= from gradle.properties"
+            exit 1
+          fi
+
+          RELEASE_VERSION="${CURRENT_VERSION%-SNAPSHOT}"
+          RC_VERSION="${RELEASE_VERSION}-RC-SNAPSHOT"
+          RC_BRANCH="releases/${RELEASE_VERSION}-rc"
+
+          DCMEDIT_CURRENT="$(grep -E '^dicom-edit6 = ' gradle/libs.versions.toml | head -n1 | sed -E 's/^dicom-edit6 = "(.+)"$/\1/')"
+          if [[ -z "${DCMEDIT_CURRENT}" ]]; then
+            echo "::error::Could not read dicom-edit6 from gradle/libs.versions.toml"
+            exit 1
+          fi
+
+          DCMEDIT_IS_SNAPSHOT=false
+          DCMEDIT_RC_VERSION=""
+          if [[ "${DCMEDIT_CURRENT}" == *-SNAPSHOT ]]; then
+            DCMEDIT_IS_SNAPSHOT=true
+            DCMEDIT_RC_VERSION="${DCMEDIT_CURRENT%-SNAPSHOT}-RC-SNAPSHOT"
+          fi
+
+          {
+            echo "current_version=${CURRENT_VERSION}"
+            echo "release_version=${RELEASE_VERSION}"
+            echo "rc_version=${RC_VERSION}"
+            echo "rc_branch=${RC_BRANCH}"
+            echo "dcmedit_current=${DCMEDIT_CURRENT}"
+            echo "dcmedit_is_snapshot=${DCMEDIT_IS_SNAPSHOT}"
+            echo "dcmedit_rc_version=${DCMEDIT_RC_VERSION}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "::notice::source=${{ inputs.source_branch }} current=${CURRENT_VERSION} → rc=${RC_VERSION} branch=${RC_BRANCH} dicom-edit6=${DCMEDIT_CURRENT} (snapshot=${DCMEDIT_IS_SNAPSHOT})"
+
+      - name: Validate
+        env:
+          NEXT_DEV_VERSION: ${{ inputs.next_dev_version }}
+          CURRENT_VERSION:  ${{ steps.vars.outputs.current_version }}
+          RC_BRANCH:        ${{ steps.vars.outputs.rc_branch }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${CURRENT_VERSION}" != *-SNAPSHOT ]]; then
+            echo "::error::source_branch is on ${CURRENT_VERSION}; expected -SNAPSHOT. Refusing to cut RC from a release/RC branch."
+            exit 1
+          fi
+          if [[ "${NEXT_DEV_VERSION}" != *-SNAPSHOT ]]; then
+            echo "::error::next_dev_version=${NEXT_DEV_VERSION} must end with -SNAPSHOT"
+            exit 1
+          fi
+          if [[ "${NEXT_DEV_VERSION}" == "${CURRENT_VERSION}" ]]; then
+            echo "::error::next_dev_version equals current version (${CURRENT_VERSION}); nothing to bump"
+            exit 1
+          fi
+          if git ls-remote --exit-code origin "refs/heads/${RC_BRANCH}" >/dev/null 2>&1; then
+            echo "::error::RC branch ${RC_BRANCH} already exists on origin"
+            exit 1
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Cut RC branch
+        env:
+          CURRENT_VERSION:     ${{ steps.vars.outputs.current_version }}
+          RELEASE_VERSION:     ${{ steps.vars.outputs.release_version }}
+          RC_VERSION:          ${{ steps.vars.outputs.rc_version }}
+          RC_BRANCH:           ${{ steps.vars.outputs.rc_branch }}
+          DCMEDIT_CURRENT:     ${{ steps.vars.outputs.dcmedit_current }}
+          DCMEDIT_IS_SNAPSHOT: ${{ steps.vars.outputs.dcmedit_is_snapshot }}
+          DCMEDIT_RC_VERSION:  ${{ steps.vars.outputs.dcmedit_rc_version }}
+        run: |
+          set -euo pipefail
+
+          git switch -c "${RC_BRANCH}"
+
+          sed -i "s|^version=${CURRENT_VERSION}\$|version=${RC_VERSION}|" gradle.properties
+          grep -E '^version=' gradle.properties
+          git add gradle.properties
+
+          if [[ "${DCMEDIT_IS_SNAPSHOT}" == "true" ]]; then
+            sed -i "s|^dicom-edit6 = \"${DCMEDIT_CURRENT}\"\$|dicom-edit6 = \"${DCMEDIT_RC_VERSION}\"|" gradle/libs.versions.toml
+            grep -E '^dicom-edit6 = ' gradle/libs.versions.toml
+            git add gradle/libs.versions.toml
+          fi
+
+          git commit -m "chore(release): cut RC for ${RELEASE_VERSION}"
+          git push -u origin "${RC_BRANCH}"
+
+      - name: Bump source_branch to next dev version
+        env:
+          SOURCE_BRANCH:    ${{ inputs.source_branch }}
+          CURRENT_VERSION:  ${{ steps.vars.outputs.current_version }}
+          NEXT_DEV_VERSION: ${{ inputs.next_dev_version }}
+          RELEASE_VERSION:  ${{ steps.vars.outputs.release_version }}
+        run: |
+          set -euo pipefail
+
+          git switch "${SOURCE_BRANCH}"
+
+          # dicom-edit6 intentionally NOT touched on source_branch (per design)
+          sed -i "s|^version=${CURRENT_VERSION}\$|version=${NEXT_DEV_VERSION}|" gradle.properties
+          grep -E '^version=' gradle.properties
+
+          git add gradle.properties
+          git commit -m "chore(release): bump ${SOURCE_BRANCH} to ${NEXT_DEV_VERSION} after cutting ${RELEASE_VERSION}-rc"
+          git push origin "${SOURCE_BRANCH}"
+
+      - name: Job summary
+        env:
+          SOURCE_BRANCH:       ${{ inputs.source_branch }}
+          NEXT_DEV_VERSION:    ${{ inputs.next_dev_version }}
+          RC_BRANCH:           ${{ steps.vars.outputs.rc_branch }}
+          RC_VERSION:          ${{ steps.vars.outputs.rc_version }}
+          RELEASE_VERSION:     ${{ steps.vars.outputs.release_version }}
+          DCMEDIT_CURRENT:     ${{ steps.vars.outputs.dcmedit_current }}
+          DCMEDIT_IS_SNAPSHOT: ${{ steps.vars.outputs.dcmedit_is_snapshot }}
+          DCMEDIT_RC_VERSION:  ${{ steps.vars.outputs.dcmedit_rc_version }}
+          SERVER_URL:          ${{ github.server_url }}
+          REPOSITORY:          ${{ github.repository }}
+        run: |
+          {
+            echo "## Release RC cut: ${RELEASE_VERSION}"
+            echo ""
+            echo "**RC branch**: [\`${RC_BRANCH}\`](${SERVER_URL}/${REPOSITORY}/tree/${RC_BRANCH})"
+            echo ""
+            echo "| file | value |"
+            echo "|------|-------|"
+            echo "| \`gradle.properties\` version | \`${RC_VERSION}\` |"
+            if [[ "${DCMEDIT_IS_SNAPSHOT}" == "true" ]]; then
+              echo "| \`gradle/libs.versions.toml\` dicom-edit6 | \`${DCMEDIT_CURRENT}\` → \`${DCMEDIT_RC_VERSION}\` |"
+            else
+              echo "| \`gradle/libs.versions.toml\` dicom-edit6 | \`${DCMEDIT_CURRENT}\` (unchanged) |"
+            fi
+            echo ""
+            echo "**${SOURCE_BRANCH}** bumped to: \`${NEXT_DEV_VERSION}\`"
+            echo ""
+            echo "### Next step"
+            echo "Stabilize on \`${RC_BRANCH}\`; when ready, dispatch the release-promote workflow."
+          } >> "$GITHUB_STEP_SUMMARY"

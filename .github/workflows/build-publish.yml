@@ -11,7 +11,6 @@ on:
       - master
       - develop
       - 'releases/*'   # RC / release branches, e.g. releases/1.10.1-rc
-      - github-build   # for pipeline testing; remove once verified
   workflow_dispatch:
     inputs:
       publish_jfrog:

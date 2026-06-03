@@ -13,8 +13,6 @@ name: Release - Cut RC Branch
 #   - new branch releases/<release>-rc with version=<release>-RC-SNAPSHOT
 #     and (if SNAPSHOT) dicom-edit6 bumped to its RC-SNAPSHOT counterpart
 #   - source_branch with version=<next_dev_version>; dicom-edit6 untouched
-#
-# Design doc: ~/bindocs/work/xnat/xnat-8763-release-cut-rc-plan.md
 
 on:
   workflow_dispatch:

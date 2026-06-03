@@ -14,8 +14,6 @@ name: Release - Promote RC to Master
 #   - RC branch with -RC-SNAPSHOT suffixes stripped (release version strings)
 #   - target_master fast-merged (--no-ff) with RC + tag <RELEASE_VERSION> (no v prefix)
 #   - target_develop dicom-edit6 conditionally bumped to the new release value
-#
-# Design doc: ~/bindocs/work/xnat/xnat-8763-release-promote-plan.md
 
 on:
   workflow_dispatch:

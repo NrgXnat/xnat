@@ -1,0 +1,67 @@
+name: Build and Publish
+
+# Thin caller around the shared reusable workflow in
+# NrgXnat/xnat-ci-workflows. All build/publish orchestration lives there;
+# this file only defines our triggers and the project-specific inputs
+# (gradle layout, image name, Dockerfile expectations, etc.).
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - 'releases/*'   # RC / release branches, e.g. releases/1.10.1-rc
+  workflow_dispatch:
+    inputs:
+      publish_jfrog:
+        description: 'Publish all modules to JFrog Artifactory (nrgxnat)'
+        type: boolean
+        default: false
+      publish_ghcr:
+        description: 'Build and push Docker image to GHCR (ghcr.io)'
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Dry-run: confirm dispatch chain wired up; skip actual build/publish'
+        type: boolean
+        default: false
+
+# packages: write is required for the called workflow's GHCR push step.
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # Dry-run noop: exists so release-cut-rc can verify its dispatch chain
+  # without burning a full build/publish run. Triggered only when the
+  # workflow_dispatch caller sets dry_run=true.
+  dry-run:
+    if: ${{ inputs.dry_run }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: DRY-RUN noop
+        run: |
+          echo "::notice::DRY-RUN dispatch received for ref=${{ github.ref_name }}; skipping build/publish."
+
+  build-publish:
+    if: ${{ !inputs.dry_run }}
+    uses: NrgXnat/xnat-ci-workflows/.github/workflows/gradle-build-publish.yml@v1
+    with:
+      # ──── Artifact ────
+      artifact-glob: 'xnat-web/build/libs/*.war'
+      artifact-name: 'xnat-war'
+
+      # ──── JFrog ────
+      # On any push: publish. On dispatch: only when publish_jfrog ticked.
+      publish-jfrog: ${{ github.event_name == 'push' || inputs.publish_jfrog }}
+
+      # ──── GHCR ────
+      publish-ghcr: ${{ github.event_name == 'push' || inputs.publish_ghcr }}
+      image-name: 'xnat-web'
+      dockerfile-path: './Dockerfile'
+      docker-context-filename: 'xnat.war'
+      logback-path-in-war: 'WEB-INF/classes/logback.xml'
+
+    # secrets: inherit passes XNAT_ARTIFACTORY_USER/TOKEN (org-level) and
+    # the auto-injected GITHUB_TOKEN through to the reusable workflow.
+    secrets: inherit

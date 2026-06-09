@@ -29,5 +29,11 @@ dependencies {
 }
 
 test {
-    jvmArgs '-Xmx8g'
+    // ConfigPlatformTests.testLargeConfigFile allocates a String backed
+    // by char[MAX_FILE_LENGTH+1] (1 GB chars = 2 GB on-heap) to verify
+    // the >1GB rejection path. Real measured peak heap: ~4.5 GB across
+    // the whole test class. 5g leaves ~10% headroom; the historical
+    // 8g was overprovisioned. See:
+    //   ~/bindocs/work/xnat/xnat-monorepo-gradle-build-memory-budget.md
+    jvmArgs '-Xmx5g'
 }

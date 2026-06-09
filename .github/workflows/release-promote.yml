@@ -1,0 +1,272 @@
+name: Release - Promote RC to Master
+
+# Promotes a stabilized RC branch to a tagged release on master,
+# and conditionally syncs target_develop's dicom-edit6 forward.
+#
+# Inputs:
+#   rc_branch        - RC branch to promote (e.g. releases/1.10.1-rc); REQUIRED
+#   target_master    - branch to merge into (default master; use fake-master for dry-run)
+#   target_develop   - branch to sync dicom-edit6 on (default develop; use fake-develop for dry-run)
+#   trigger_build    - dispatch build/publish on target_master (and target_develop if synced)
+#   build_dry_run    - if triggering, pass dry_run=true so build-publish noops
+#
+# Produces:
+#   - RC branch with -RC-SNAPSHOT suffixes stripped (release version strings)
+#   - target_master fast-merged (--no-ff) with RC + tag <RELEASE_VERSION> (no v prefix)
+#   - target_develop dicom-edit6 conditionally bumped to the new release value
+
+on:
+  workflow_dispatch:
+    inputs:
+      rc_branch:
+        description: 'RC branch to promote (e.g. releases/1.10.1-rc)'
+        type: string
+        required: true
+      target_master:
+        description: 'Branch to merge into (default master; use fake-master for dry-run)'
+        type: string
+        required: false
+        default: master
+      target_develop:
+        description: 'Branch to sync dicom-edit6 on (default develop)'
+        type: string
+        required: false
+        default: develop
+      trigger_build:
+        description: 'After promote, dispatch build/publish on target_master (and target_develop if synced)'
+        type: boolean
+        required: false
+        default: true
+      build_dry_run:
+        description: 'When triggering build/publish, pass dry_run=true (verifies chain without actual build)'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write   # push RC/master/develop + create tag
+  actions:  write   # dispatch build-publish workflow
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout ${{ inputs.rc_branch }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.rc_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read RC state and derive release versions
+        id: vars
+        env:
+          RC_BRANCH: ${{ inputs.rc_branch }}
+        run: |
+          set -euo pipefail
+
+          RC_VERSION="$(grep -E '^version=' gradle.properties | head -n1 | cut -d= -f2-)"
+          if [[ -z "${RC_VERSION}" ]]; then
+            echo "::error::Could not read version= from gradle.properties"
+            exit 1
+          fi
+          RELEASE_VERSION="${RC_VERSION%-RC-SNAPSHOT}"
+
+          RC_DCMEDIT="$(grep -E '^dicom-edit6 = ' gradle/libs.versions.toml | head -n1 | sed -E 's/^dicom-edit6 = "(.+)"$/\1/')"
+          if [[ -z "${RC_DCMEDIT}" ]]; then
+            echo "::error::Could not read dicom-edit6 from gradle/libs.versions.toml"
+            exit 1
+          fi
+
+          DCMEDIT_WAS_RC=false
+          RELEASE_DCMEDIT="${RC_DCMEDIT}"
+          if [[ "${RC_DCMEDIT}" == *-RC-SNAPSHOT ]]; then
+            DCMEDIT_WAS_RC=true
+            RELEASE_DCMEDIT="${RC_DCMEDIT%-RC-SNAPSHOT}"
+          fi
+
+          {
+            echo "rc_version=${RC_VERSION}"
+            echo "release_version=${RELEASE_VERSION}"
+            echo "rc_dcmedit=${RC_DCMEDIT}"
+            echo "dcmedit_was_rc=${DCMEDIT_WAS_RC}"
+            echo "release_dcmedit=${RELEASE_DCMEDIT}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "::notice::rc=${RC_BRANCH} rc_version=${RC_VERSION} → release=${RELEASE_VERSION}; dicom-edit6 rc=${RC_DCMEDIT} (was_rc=${DCMEDIT_WAS_RC}) → release=${RELEASE_DCMEDIT}"
+
+      - name: Validate
+        env:
+          RC_BRANCH:        ${{ inputs.rc_branch }}
+          RC_VERSION:       ${{ steps.vars.outputs.rc_version }}
+          RELEASE_VERSION:  ${{ steps.vars.outputs.release_version }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "${RC_BRANCH}" =~ ^releases/.+-rc$ ]]; then
+            echo "::error::rc_branch=${RC_BRANCH} must match 'releases/*-rc'"
+            exit 1
+          fi
+          if [[ "${RC_VERSION}" != *-RC-SNAPSHOT ]]; then
+            echo "::error::RC branch version=${RC_VERSION} must end with -RC-SNAPSHOT"
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_VERSION}" >/dev/null 2>&1; then
+            echo "::error::Tag ${RELEASE_VERSION} already exists on origin"
+            exit 1
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Finalize RC branch (strip -RC-SNAPSHOT)
+        env:
+          RC_BRANCH:           ${{ inputs.rc_branch }}
+          RC_VERSION:          ${{ steps.vars.outputs.rc_version }}
+          RELEASE_VERSION:     ${{ steps.vars.outputs.release_version }}
+          RC_DCMEDIT:          ${{ steps.vars.outputs.rc_dcmedit }}
+          DCMEDIT_WAS_RC:      ${{ steps.vars.outputs.dcmedit_was_rc }}
+          RELEASE_DCMEDIT:     ${{ steps.vars.outputs.release_dcmedit }}
+        run: |
+          set -euo pipefail
+
+          sed -i "s|^version=${RC_VERSION}\$|version=${RELEASE_VERSION}|" gradle.properties
+          grep -E '^version=' gradle.properties
+          git add gradle.properties
+
+          if [[ "${DCMEDIT_WAS_RC}" == "true" ]]; then
+            sed -i "s|^dicom-edit6 = \"${RC_DCMEDIT}\"\$|dicom-edit6 = \"${RELEASE_DCMEDIT}\"|" gradle/libs.versions.toml
+            grep -E '^dicom-edit6 = ' gradle/libs.versions.toml
+            git add gradle/libs.versions.toml
+          fi
+
+          git commit -m "chore(release): finalize ${RELEASE_VERSION}"
+          git push origin "HEAD:${RC_BRANCH}"
+
+      - name: Merge RC into target_master and tag
+        env:
+          RC_BRANCH:        ${{ inputs.rc_branch }}
+          TARGET_MASTER:    ${{ inputs.target_master }}
+          RELEASE_VERSION:  ${{ steps.vars.outputs.release_version }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin "${TARGET_MASTER}"
+          git switch "${TARGET_MASTER}"
+          git pull --ff-only origin "${TARGET_MASTER}"
+
+          # --no-ff to create an explicit merge commit on release boundary;
+          # set -e + no -X strategy → fail fast on conflict (release manager intervenes)
+          git merge --no-ff "origin/${RC_BRANCH}" -m "release: ${RELEASE_VERSION}"
+
+          git tag "${RELEASE_VERSION}"   # no 'v' prefix (matches legacy tagSourceCode.py)
+          git push origin "${TARGET_MASTER}"
+          git push origin "refs/tags/${RELEASE_VERSION}"
+
+      - name: Sync target_develop dicom-edit6 (conditional)
+        id: sync
+        env:
+          TARGET_DEVELOP:    ${{ inputs.target_develop }}
+          DCMEDIT_WAS_RC:    ${{ steps.vars.outputs.dcmedit_was_rc }}
+          RELEASE_DCMEDIT:   ${{ steps.vars.outputs.release_dcmedit }}
+          RELEASE_VERSION:   ${{ steps.vars.outputs.release_version }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${DCMEDIT_WAS_RC}" != "true" ]]; then
+            echo "::notice::dicom-edit6 was a release on RC (not -RC-SNAPSHOT); skipping ${TARGET_DEVELOP} sync"
+            echo "develop_changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git fetch origin "${TARGET_DEVELOP}"
+          git switch "${TARGET_DEVELOP}"
+          git pull --ff-only origin "${TARGET_DEVELOP}"
+
+          DEV_DCMEDIT="$(grep -E '^dicom-edit6 = ' gradle/libs.versions.toml | head -n1 | sed -E 's/^dicom-edit6 = "(.+)"$/\1/')"
+          DEV_DCMEDIT_NUM="${DEV_DCMEDIT%-RC-SNAPSHOT}"
+          DEV_DCMEDIT_NUM="${DEV_DCMEDIT_NUM%-SNAPSHOT}"
+
+          if [[ "${DEV_DCMEDIT_NUM}" != "${RELEASE_DCMEDIT}" ]]; then
+            echo "::notice::${TARGET_DEVELOP} dicom-edit6=${DEV_DCMEDIT} (num=${DEV_DCMEDIT_NUM}) != release ${RELEASE_DCMEDIT}; skip sync"
+            echo "develop_changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          sed -i "s|^dicom-edit6 = \"${DEV_DCMEDIT}\"\$|dicom-edit6 = \"${RELEASE_DCMEDIT}\"|" gradle/libs.versions.toml
+          grep -E '^dicom-edit6 = ' gradle/libs.versions.toml
+          git add gradle/libs.versions.toml
+          git commit -m "chore(release): sync ${TARGET_DEVELOP} dicom-edit6 to ${RELEASE_DCMEDIT}"
+          git push origin "${TARGET_DEVELOP}"
+          echo "develop_changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger build/publish on target_master (and target_develop if synced)
+        if: ${{ inputs.trigger_build }}
+        env:
+          GH_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
+          REPO:            ${{ github.repository }}
+          TARGET_MASTER:   ${{ inputs.target_master }}
+          TARGET_DEVELOP:  ${{ inputs.target_develop }}
+          DRY_RUN:         ${{ inputs.build_dry_run }}
+          DEVELOP_CHANGED: ${{ steps.sync.outputs.develop_changed }}
+        run: |
+          set -euo pipefail
+
+          echo "::group::Dispatch build-publish on target_master (${TARGET_MASTER})"
+          gh workflow run build-publish.yml --repo "${REPO}" \
+            --ref "${TARGET_MASTER}" \
+            -f publish_jfrog=true \
+            -f publish_ghcr=true \
+            -f dry_run="${DRY_RUN}"
+          echo "::endgroup::"
+
+          if [[ "${DEVELOP_CHANGED}" == "true" ]]; then
+            echo "::group::Dispatch build-publish on target_develop (${TARGET_DEVELOP})"
+            gh workflow run build-publish.yml --repo "${REPO}" \
+              --ref "${TARGET_DEVELOP}" \
+              -f publish_jfrog=true \
+              -f publish_ghcr=true \
+              -f dry_run="${DRY_RUN}"
+            echo "::endgroup::"
+          else
+            echo "::notice::${TARGET_DEVELOP} not modified by this promote; skipping build/publish dispatch on it."
+          fi
+
+      - name: Job summary
+        env:
+          RC_BRANCH:           ${{ inputs.rc_branch }}
+          TARGET_MASTER:       ${{ inputs.target_master }}
+          TARGET_DEVELOP:      ${{ inputs.target_develop }}
+          RELEASE_VERSION:     ${{ steps.vars.outputs.release_version }}
+          RC_DCMEDIT:          ${{ steps.vars.outputs.rc_dcmedit }}
+          DCMEDIT_WAS_RC:      ${{ steps.vars.outputs.dcmedit_was_rc }}
+          RELEASE_DCMEDIT:     ${{ steps.vars.outputs.release_dcmedit }}
+          DEVELOP_CHANGED:     ${{ steps.sync.outputs.develop_changed }}
+          SERVER_URL:          ${{ github.server_url }}
+          REPOSITORY:          ${{ github.repository }}
+        run: |
+          {
+            echo "## Release promoted: ${RELEASE_VERSION}"
+            echo ""
+            echo "**Tag**: [\`${RELEASE_VERSION}\`](${SERVER_URL}/${REPOSITORY}/releases/tag/${RELEASE_VERSION})"
+            echo "**${TARGET_MASTER}**: [HEAD](${SERVER_URL}/${REPOSITORY}/tree/${TARGET_MASTER})"
+            echo "**${RC_BRANCH}**: kept (finalized to release strings; available for future patches)"
+            echo ""
+            echo "| file | value |"
+            echo "|------|-------|"
+            echo "| \`gradle.properties\` version | \`${RELEASE_VERSION}\` |"
+            if [[ "${DCMEDIT_WAS_RC}" == "true" ]]; then
+              echo "| \`gradle/libs.versions.toml\` dicom-edit6 | \`${RC_DCMEDIT}\` → \`${RELEASE_DCMEDIT}\` |"
+            else
+              echo "| \`gradle/libs.versions.toml\` dicom-edit6 | \`${RC_DCMEDIT}\` (was already release; unchanged) |"
+            fi
+            echo ""
+            if [[ "${DEVELOP_CHANGED}" == "true" ]]; then
+              echo "**${TARGET_DEVELOP}**: synced dicom-edit6 → \`${RELEASE_DCMEDIT}\`"
+            else
+              echo "**${TARGET_DEVELOP}**: not modified (dicom-edit6 was release, or develop already past)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

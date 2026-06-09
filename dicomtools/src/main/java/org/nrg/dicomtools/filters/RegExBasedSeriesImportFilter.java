@@ -85,7 +85,22 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
     @Override
     public boolean shouldIncludeDicomObject(final Attributes attributes) {
-        throw new UnsupportedOperationException("TODO");
+        if (!isEnabled()) {
+            return true;
+        }
+        final Map<Integer, String> values = new LinkedHashMap<>();
+        for (final int tag : getFilters().keySet()) {
+            if (attributes.contains(tag)) {
+                final String[] parts = attributes.getStrings(tag);
+                final String   value = (parts == null || parts.length == 0)
+                                       ? ""
+                                       : String.join("\\", parts);
+                values.put(tag, StringUtils.isNotBlank(value) ? value : "");
+            } else {
+                values.put(tag, null);
+            }
+        }
+        return shouldIncludeDicomObjectImpl(values);
     }
 
 

@@ -116,6 +116,82 @@ public class SeriesImportFilterTests {
     }
 
     @Test
+    public void testRegexFilterAttributesOverload() throws IOException {
+        final SeriesImportFilter whitelistRegexFilter             = new RegExBasedSeriesImportFilter(_whitelistRegexFilter);
+        final SeriesImportFilter whitelistWithTagNamesRegexFilter = new RegExBasedSeriesImportFilter(_whitelistWithTagNamesRegexFilter);
+        final SeriesImportFilter blacklistRegexFilter             = new RegExBasedSeriesImportFilter(_blacklistRegexFilter);
+        final SeriesImportFilter blacklistWithTagNamesRegexFilter = new RegExBasedSeriesImportFilter(_blacklistWithTagNamesRegexFilter);
+
+        final Attributes t1SpinEcho                     = buildAttributes(seriesDescription("T1 Spin Echo"));
+        final Attributes localizer1                     = buildAttributes(seriesDescription("LOCALIZER"));
+        final Attributes localizer2                     = buildAttributes(seriesDescription("SAG LOCALIZER And Then Some"));
+        final Attributes petData                        = buildAttributes(seriesDescription("PET Data"));
+        final Attributes massivePhi                     = buildAttributes(seriesDescription("This is PHI as all get out"));
+        final Attributes burnedInAnnotation             = buildAttributes(seriesDescription("T1 Spin Echo"), modality("MR"), burnedInAnnotation("YES"));
+        final Attributes mrScan                         = buildAttributes(seriesDescription("T1 Spin Echo"), modality("MR"));
+        final Attributes mrWithImageTypeDerived         = buildAttributes(seriesDescription("T1 Spin Echo"), modality("MR"), imageType("DERIVED"));
+        final Attributes mrWithImageTypePatientData     = buildAttributes(seriesDescription("T1 Spin Echo"), modality("MR"), imageType("Captured Patient Data"));
+        // Multi-valued ImageType where the "Patient Data" component is not the first value.
+        final Attributes mrWithMultiValuedImageTypePatient = buildAttributes(seriesDescription("T1 Spin Echo"), modality("MR"), imageType("ORIGINAL", "PRIMARY", "Patient Data"));
+        // Multi-valued ImageType with no offending component.
+        final Attributes mrWithMultiValuedImageTypeBenign  = buildAttributes(seriesDescription("T1 Spin Echo"), modality("MR"), imageType("ORIGINAL", "PRIMARY", "AXIAL"));
+        // BurnedInAnnotation present but blank — EXISTS should still match (header is present).
+        final Attributes burnedInAnnotationBlank        = buildAttributes(seriesDescription("T1 Spin Echo"), modality("MR"), burnedInAnnotation(""));
+
+        assertTrue(whitelistRegexFilter.shouldIncludeDicomObject(t1SpinEcho));
+        assertTrue(whitelistRegexFilter.shouldIncludeDicomObject(localizer1));
+        assertTrue(whitelistRegexFilter.shouldIncludeDicomObject(localizer2));
+        assertFalse(whitelistRegexFilter.shouldIncludeDicomObject(petData));
+        assertFalse(whitelistRegexFilter.shouldIncludeDicomObject(massivePhi));
+
+        // !EXISTS pattern: include only when BurnedInAnnotation is absent.
+        assertTrue(whitelistWithTagNamesRegexFilter.shouldIncludeDicomObject(mrScan));
+        assertFalse(whitelistWithTagNamesRegexFilter.shouldIncludeDicomObject(burnedInAnnotation));
+
+        assertTrue(blacklistRegexFilter.shouldIncludeDicomObject(t1SpinEcho));
+        assertTrue(blacklistRegexFilter.shouldIncludeDicomObject(localizer1));
+        assertFalse(blacklistRegexFilter.shouldIncludeDicomObject(petData));
+        assertFalse(blacklistRegexFilter.shouldIncludeDicomObject(massivePhi));
+
+        // BurnedInAnnotation EXISTS or ImageType matches "Patient Data" -> reject.
+        assertTrue(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(mrScan));
+        assertTrue(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(mrWithImageTypeDerived));
+        assertFalse(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(mrWithImageTypePatientData));
+        assertFalse(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(burnedInAnnotation));
+        // EXISTS must match when the header is present even with a blank value.
+        assertFalse(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(burnedInAnnotationBlank));
+        // Multi-valued ImageType: "Patient Data" appears as the 3rd component;
+        // joining values with "\" lets the regex find it.
+        assertFalse(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(mrWithMultiValuedImageTypePatient));
+        assertTrue(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(mrWithMultiValuedImageTypeBenign));
+    }
+
+    private static Attributes buildAttributes(final TagValue... tagValues) {
+        final Attributes attributes = new Attributes();
+        for (final TagValue tagValue : tagValues) {
+            attributes.setString(tagValue.tag, tagValue.vr, tagValue.values);
+        }
+        return attributes;
+    }
+
+    private static TagValue seriesDescription(final String value)        { return new TagValue(Tag.SeriesDescription, VR.LO, value); }
+    private static TagValue modality(final String value)                  { return new TagValue(Tag.Modality, VR.CS, value); }
+    private static TagValue burnedInAnnotation(final String value)        { return new TagValue(Tag.BurnedInAnnotation, VR.CS, value); }
+    private static TagValue imageType(final String... values)             { return new TagValue(Tag.ImageType, VR.CS, values); }
+
+    private static final class TagValue {
+        private final int      tag;
+        private final VR       vr;
+        private final String[] values;
+
+        private TagValue(final int tag, final VR vr, final String... values) {
+            this.tag    = tag;
+            this.vr     = vr;
+            this.values = values;
+        }
+    }
+
+    @Test
     public void testDicomFilterService() throws IOException {
         final SeriesImportFilter whitelistRegexFilter = DicomFilterService.buildSeriesImportFilter(_whitelistRegexFilter);
         assertTrue(whitelistRegexFilter.isEnabled());

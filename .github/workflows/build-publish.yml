@@ -8,7 +8,8 @@ name: Build and Publish
 on:
   push:
     branches:
-      - master
+      - main
+      - master         # transitional; remove after master is fully retired
       - develop
       - 'releases/*'   # RC / release branches, e.g. releases/1.10.1-rc
   workflow_dispatch:

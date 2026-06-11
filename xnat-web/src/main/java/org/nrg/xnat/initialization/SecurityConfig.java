@@ -68,6 +68,7 @@ import org.springframework.security.web.authentication.session.ConcurrentSession
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -306,6 +307,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)));
 
         http.headers().frameOptions().sameOrigin().cacheControl().disable().contentSecurityPolicy("frame-ancestors 'self'")
+            .and().referrerPolicy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
             .and().httpStrictTransportSecurity().disable()
             .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
             .and().csrf().disable()

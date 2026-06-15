@@ -306,7 +306,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionRegistry(sessionRegistry())
             .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)));
 
-        http.headers().frameOptions().sameOrigin().cacheControl().disable().contentSecurityPolicy("frame-ancestors 'self'")
+        http.headers().frameOptions().sameOrigin().cacheControl().disable().contentSecurityPolicy(CONTENT_SECURITY_POLICY)
             .and().referrerPolicy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
             .and().httpStrictTransportSecurity().disable()
             .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
@@ -352,6 +352,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     private static final String QUERY_SITE_URL = "SELECT coalesce(value, '') FROM xhbm_preference p LEFT JOIN xhbm_tool t ON p.tool = t.id WHERE t.tool_id = 'siteConfig' AND p.name = 'siteUrl'";
+
+    private static final String CONTENT_SECURITY_POLICY = String.join("; ",
+            "frame-ancestors 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
+                    + "https://www.google.com https://www.gstatic.com",
+            "style-src 'self' 'unsafe-inline'",
+            "form-action 'self'");
 
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;

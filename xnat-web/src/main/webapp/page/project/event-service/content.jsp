@@ -27,8 +27,8 @@
 
 <c:if test="${userCanEdit == true}">
 
-    <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="https://code.jquery.com/ui/1.9.2/jquery-ui.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="${SITE_ROOT}/scripts/lib/datatables/jquery.dataTables-1.10.19.min.js"></script>
+    <script type="text/javascript" src="${SITE_ROOT}/scripts/lib/jquery-ui/jquery-ui.min.js"></script>
     <script src="${SITE_ROOT}/scripts/project/projEventService.js"></script>
     <script src="${SITE_ROOT}/scripts/project/projEventHistory.js"></script>
     <link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/xnat/admin/eventServiceAdmin.css?v=event-service-1.0" />

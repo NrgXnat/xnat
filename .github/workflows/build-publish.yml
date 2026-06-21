@@ -22,10 +22,6 @@ on:
         description: 'Build and push Docker image to GHCR (ghcr.io)'
         type: boolean
         default: false
-      dry_run:
-        description: 'Dry-run: confirm dispatch chain wired up; skip actual build/publish'
-        type: boolean
-        default: false
 
 # packages: write is required for the called workflow's GHCR push step.
 permissions:
@@ -33,19 +29,7 @@ permissions:
   packages: write
 
 jobs:
-  # Dry-run noop: exists so release-cut-rc can verify its dispatch chain
-  # without burning a full build/publish run. Triggered only when the
-  # workflow_dispatch caller sets dry_run=true.
-  dry-run:
-    if: ${{ inputs.dry_run }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: DRY-RUN noop
-        run: |
-          echo "::notice::DRY-RUN dispatch received for ref=${{ github.ref_name }}; skipping build/publish."
-
   build-publish:
-    if: ${{ !inputs.dry_run }}
     uses: NrgXnat/xnat-ci-workflows/.github/workflows/gradle-build-publish.yml@v1
     with:
       # ──── Artifact ────

@@ -6,8 +6,7 @@ name: Release - Cut RC Branch
 # Inputs:
 #   next_dev_version - version source_branch should become after cutting
 #                       (e.g. 1.10.2-SNAPSHOT, MUST end with -SNAPSHOT)
-#   source_branch    - branch to cut from (default: develop; use a temp
-#                       branch like fake-develop for dry-run)
+#   source_branch    - branch to cut from (default: develop)
 #
 # Produces:
 #   - new branch releases/<release>-rc with version=<release>-RC-SNAPSHOT
@@ -22,7 +21,7 @@ on:
         type: string
         required: true
       source_branch:
-        description: 'Branch to cut from (use fake-develop for dry-run)'
+        description: 'Branch to cut from'
         type: string
         required: false
         default: develop
@@ -31,11 +30,6 @@ on:
         type: boolean
         required: false
         default: true
-      build_dry_run:
-        description: 'When triggering build/publish, pass dry_run=true (verifies dispatch chain without actual build)'
-        type: boolean
-        required: false
-        default: false
 
 permissions:
   contents: write
@@ -176,7 +170,6 @@ jobs:
           REPO:          ${{ github.repository }}
           RC_BRANCH:     ${{ steps.vars.outputs.rc_branch }}
           SOURCE_BRANCH: ${{ inputs.source_branch }}
-          DRY_RUN:       ${{ inputs.build_dry_run }}
         run: |
           set -euo pipefail
 
@@ -184,16 +177,14 @@ jobs:
           gh workflow run build-publish.yml --repo "${REPO}" \
             --ref "${RC_BRANCH}" \
             -f publish_jfrog=true \
-            -f publish_ghcr=true \
-            -f dry_run="${DRY_RUN}"
+            -f publish_ghcr=true
           echo "::endgroup::"
 
           echo "::group::Dispatch build-publish on source_branch (${SOURCE_BRANCH})"
           gh workflow run build-publish.yml --repo "${REPO}" \
             --ref "${SOURCE_BRANCH}" \
             -f publish_jfrog=true \
-            -f publish_ghcr=true \
-            -f dry_run="${DRY_RUN}"
+            -f publish_ghcr=true
           echo "::endgroup::"
 
       - name: Job summary

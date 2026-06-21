@@ -5,10 +5,9 @@ name: Release - Promote RC to Main
 #
 # Inputs:
 #   rc_branch        - RC branch to promote (e.g. releases/1.10.1-rc); REQUIRED
-#   target_main      - branch to merge into (default main; use fake-main for dry-run)
-#   target_develop   - branch to sync dicom-edit6 on (default develop; use fake-develop for dry-run)
+#   target_main      - branch to merge into (default main)
+#   target_develop   - branch to sync dicom-edit6 on (default develop)
 #   trigger_build    - dispatch build/publish on target_main (and target_develop if synced)
-#   build_dry_run    - if triggering, pass dry_run=true so build-publish noops
 #
 # Produces:
 #   - RC branch with -RC-SNAPSHOT suffixes stripped (release version strings)
@@ -23,7 +22,7 @@ on:
         type: string
         required: true
       target_main:
-        description: 'Branch to merge into (default main; use fake-main for dry-run)'
+        description: 'Branch to merge into (default main)'
         type: string
         required: false
         default: main
@@ -37,11 +36,6 @@ on:
         type: boolean
         required: false
         default: true
-      build_dry_run:
-        description: 'When triggering build/publish, pass dry_run=true (verifies chain without actual build)'
-        type: boolean
-        required: false
-        default: false
 
 permissions:
   contents: write   # push RC/main/develop + create tag
@@ -210,7 +204,6 @@ jobs:
           REPO:            ${{ github.repository }}
           TARGET_MAIN:   ${{ inputs.target_main }}
           TARGET_DEVELOP:  ${{ inputs.target_develop }}
-          DRY_RUN:         ${{ inputs.build_dry_run }}
           DEVELOP_CHANGED: ${{ steps.sync.outputs.develop_changed }}
         run: |
           set -euo pipefail
@@ -219,8 +212,7 @@ jobs:
           gh workflow run build-publish.yml --repo "${REPO}" \
             --ref "${TARGET_MAIN}" \
             -f publish_jfrog=true \
-            -f publish_ghcr=true \
-            -f dry_run="${DRY_RUN}"
+            -f publish_ghcr=true
           echo "::endgroup::"
 
           if [[ "${DEVELOP_CHANGED}" == "true" ]]; then
@@ -228,8 +220,7 @@ jobs:
             gh workflow run build-publish.yml --repo "${REPO}" \
               --ref "${TARGET_DEVELOP}" \
               -f publish_jfrog=true \
-              -f publish_ghcr=true \
-              -f dry_run="${DRY_RUN}"
+              -f publish_ghcr=true
             echo "::endgroup::"
           else
             echo "::notice::${TARGET_DEVELOP} not modified by this promote; skipping build/publish dispatch on it."

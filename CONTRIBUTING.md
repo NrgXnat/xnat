@@ -186,15 +186,15 @@ See [README — Key Files](./README.md#key-files) for the role of each root-leve
 
 | Branch | Purpose | Base |
 |--------|---------|------|
-| `master` | Latest release — do not commit directly | — |
+| `main` | Latest release — do not commit directly | — |
 | `releases/<version>` | Release snapshot — do not commit directly | — |
-| `develop` | 1.10.x development | `master` (at release tip) |
+| `develop` | 1.10.x development | `main` (at release tip) |
 | `develop-1.9.x` | 1.9.x maintenance | `releases/1.9.3.4` |
 | `feature/<ticket>` | Feature work | `develop` or `develop-1.9.x` |
 | `fix/<ticket>` | Bug fix | `develop` or `develop-1.9.x` |
 
 Feature and fix branches are merged to `develop` (or `develop-1.9.x`) via pull request.
-Direct commits to `master` and `releases/*` are not allowed.
+Direct commits to `main` and `releases/*` are not allowed.
 
 ## Submitting Changes
 

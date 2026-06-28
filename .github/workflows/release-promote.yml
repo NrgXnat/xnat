@@ -1,18 +1,17 @@
-name: Release - Promote RC to Master
+name: Release - Promote RC to Main
 
-# Promotes a stabilized RC branch to a tagged release on master,
+# Promotes a stabilized RC branch to a tagged release on main,
 # and conditionally syncs target_develop's dicom-edit6 forward.
 #
 # Inputs:
 #   rc_branch        - RC branch to promote (e.g. releases/1.10.1-rc); REQUIRED
-#   target_master    - branch to merge into (default master; use fake-master for dry-run)
-#   target_develop   - branch to sync dicom-edit6 on (default develop; use fake-develop for dry-run)
-#   trigger_build    - dispatch build/publish on target_master (and target_develop if synced)
-#   build_dry_run    - if triggering, pass dry_run=true so build-publish noops
+#   target_main      - branch to merge into (default main)
+#   target_develop   - branch to sync dicom-edit6 on (default develop)
+#   trigger_build    - dispatch build/publish on target_main (and target_develop if synced)
 #
 # Produces:
 #   - RC branch with -RC-SNAPSHOT suffixes stripped (release version strings)
-#   - target_master fast-merged (--no-ff) with RC + tag <RELEASE_VERSION> (no v prefix)
+#   - target_main fast-merged (--no-ff) with RC + tag <RELEASE_VERSION> (no v prefix)
 #   - target_develop dicom-edit6 conditionally bumped to the new release value
 
 on:
@@ -22,29 +21,24 @@ on:
         description: 'RC branch to promote (e.g. releases/1.10.1-rc)'
         type: string
         required: true
-      target_master:
-        description: 'Branch to merge into (default master; use fake-master for dry-run)'
+      target_main:
+        description: 'Branch to merge into (default main)'
         type: string
         required: false
-        default: master
+        default: main
       target_develop:
         description: 'Branch to sync dicom-edit6 on (default develop)'
         type: string
         required: false
         default: develop
       trigger_build:
-        description: 'After promote, dispatch build/publish on target_master (and target_develop if synced)'
+        description: 'After promote, dispatch build/publish on target_main (and target_develop if synced)'
         type: boolean
         required: false
         default: true
-      build_dry_run:
-        description: 'When triggering build/publish, pass dry_run=true (verifies chain without actual build)'
-        type: boolean
-        required: false
-        default: false
 
 permissions:
-  contents: write   # push RC/master/develop + create tag
+  contents: write   # push RC/main/develop + create tag
   actions:  write   # dispatch build-publish workflow
 
 jobs:
@@ -146,24 +140,24 @@ jobs:
           git commit -m "chore(release): finalize ${RELEASE_VERSION}"
           git push origin "HEAD:${RC_BRANCH}"
 
-      - name: Merge RC into target_master and tag
+      - name: Merge RC into target_main and tag
         env:
           RC_BRANCH:        ${{ inputs.rc_branch }}
-          TARGET_MASTER:    ${{ inputs.target_master }}
+          TARGET_MAIN:    ${{ inputs.target_main }}
           RELEASE_VERSION:  ${{ steps.vars.outputs.release_version }}
         run: |
           set -euo pipefail
 
-          git fetch origin "${TARGET_MASTER}"
-          git switch "${TARGET_MASTER}"
-          git pull --ff-only origin "${TARGET_MASTER}"
+          git fetch origin "${TARGET_MAIN}"
+          git switch "${TARGET_MAIN}"
+          git pull --ff-only origin "${TARGET_MAIN}"
 
           # --no-ff to create an explicit merge commit on release boundary;
           # set -e + no -X strategy → fail fast on conflict (release manager intervenes)
           git merge --no-ff "origin/${RC_BRANCH}" -m "release: ${RELEASE_VERSION}"
 
           git tag "${RELEASE_VERSION}"   # no 'v' prefix (matches legacy tagSourceCode.py)
-          git push origin "${TARGET_MASTER}"
+          git push origin "${TARGET_MAIN}"
           git push origin "refs/tags/${RELEASE_VERSION}"
 
       - name: Sync target_develop dicom-edit6 (conditional)
@@ -203,24 +197,22 @@ jobs:
           git push origin "${TARGET_DEVELOP}"
           echo "develop_changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Trigger build/publish on target_master (and target_develop if synced)
+      - name: Trigger build/publish on target_main (and target_develop if synced)
         if: ${{ inputs.trigger_build }}
         env:
           GH_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
           REPO:            ${{ github.repository }}
-          TARGET_MASTER:   ${{ inputs.target_master }}
+          TARGET_MAIN:   ${{ inputs.target_main }}
           TARGET_DEVELOP:  ${{ inputs.target_develop }}
-          DRY_RUN:         ${{ inputs.build_dry_run }}
           DEVELOP_CHANGED: ${{ steps.sync.outputs.develop_changed }}
         run: |
           set -euo pipefail
 
-          echo "::group::Dispatch build-publish on target_master (${TARGET_MASTER})"
+          echo "::group::Dispatch build-publish on target_main (${TARGET_MAIN})"
           gh workflow run build-publish.yml --repo "${REPO}" \
-            --ref "${TARGET_MASTER}" \
+            --ref "${TARGET_MAIN}" \
             -f publish_jfrog=true \
-            -f publish_ghcr=true \
-            -f dry_run="${DRY_RUN}"
+            -f publish_ghcr=true
           echo "::endgroup::"
 
           if [[ "${DEVELOP_CHANGED}" == "true" ]]; then
@@ -228,8 +220,7 @@ jobs:
             gh workflow run build-publish.yml --repo "${REPO}" \
               --ref "${TARGET_DEVELOP}" \
               -f publish_jfrog=true \
-              -f publish_ghcr=true \
-              -f dry_run="${DRY_RUN}"
+              -f publish_ghcr=true
             echo "::endgroup::"
           else
             echo "::notice::${TARGET_DEVELOP} not modified by this promote; skipping build/publish dispatch on it."
@@ -238,7 +229,7 @@ jobs:
       - name: Job summary
         env:
           RC_BRANCH:           ${{ inputs.rc_branch }}
-          TARGET_MASTER:       ${{ inputs.target_master }}
+          TARGET_MAIN:       ${{ inputs.target_main }}
           TARGET_DEVELOP:      ${{ inputs.target_develop }}
           RELEASE_VERSION:     ${{ steps.vars.outputs.release_version }}
           RC_DCMEDIT:          ${{ steps.vars.outputs.rc_dcmedit }}
@@ -252,7 +243,7 @@ jobs:
             echo "## Release promoted: ${RELEASE_VERSION}"
             echo ""
             echo "**Tag**: [\`${RELEASE_VERSION}\`](${SERVER_URL}/${REPOSITORY}/releases/tag/${RELEASE_VERSION})"
-            echo "**${TARGET_MASTER}**: [HEAD](${SERVER_URL}/${REPOSITORY}/tree/${TARGET_MASTER})"
+            echo "**${TARGET_MAIN}**: [HEAD](${SERVER_URL}/${REPOSITORY}/tree/${TARGET_MAIN})"
             echo "**${RC_BRANCH}**: kept (finalized to release strings; available for future patches)"
             echo ""
             echo "| file | value |"

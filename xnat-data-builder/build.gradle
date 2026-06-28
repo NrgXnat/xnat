@@ -11,8 +11,15 @@ dependencies {
     implementation localGroovy()
 
     // Internal modules (transitive = false to avoid classpath conflicts)
-    // xnat-web is provided by the consumer plugin project's own classpath; compileOnly keeps it off the POM
-    compileOnly(project(':xnat-web')) { transitive = false }
+    // xnat-web bundles the core XNAT schemas (xnat.xsd, assessments.xsd, etc.). External
+    // plugins' xnatDataBuilder task needs them on its RUNTIME classpath so XFTManager's
+    // PathMatchingResourcePatternResolver can resolve `<xs:import schemaLocation="../xnat/xnat.xsd"/>`
+    // in plugin-local .xsd files. compileOnly would not put xnat-web on the plugin's runtime
+    // classpath, so the schemas would be invisible at task execution time.
+    // Use explicit coordinates (not project(':xnat-web')) because xnat-web has both JAR
+    // (org.nrg.xnat:web) and WAR (org.nrg.xnat.web:xnat-web) publications, which makes POM
+    // generation ambiguous when referenced as a project dep.
+    implementation("org.nrg.xnat:web:${project(':xnat-web').version}") { transitive = false }
     implementation(project(':xdat'))     { transitive = false }
     implementation(project(':framework')){ transitive = false }
     implementation(project(':config'))   { transitive = false }

@@ -1,6 +1,9 @@
 .java-version
 .gradle/
-build/
+# Use anchored patterns so 'build/' doesn't match package-name dirs like
+# xnat-data-builder/src/main/groovy/org/nrg/xnat/build/ (which is source code).
+/build/
+*/build/
 buildSrc/build/
 buildSrc/.gradle/
 **/target/

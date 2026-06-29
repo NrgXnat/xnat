@@ -194,8 +194,8 @@ public class PixelmedPixelEditHandlerTest {
     @Test
     @Ignore("Requires us-evle-rgb-8bit.dcm (453 MB). See method body for download URL.")
     public void multiframe_evle_rgb_8bit() {
-        // To run this test, download us-evle-rgb-8bit.dcm (453 MB) from
-        // https://bitbucket.org/xnatdcm/dicom-edit6/src/master/src/test/resources/dicom/multi-frame/us-evle-rgb-8bit.dcm
+        // To run this test, download the zip from s3://xnatworks-sample-data/multi-frame-dicom.zip
+        // extract us-evle-rgb-8bit.dcm from the zip
         // and place it at dicom-edit6/src/test/resources/dicom/multi-frame/
         try {
             String src = "dicom/multi-frame/us-evle-rgb-8bit.dcm";

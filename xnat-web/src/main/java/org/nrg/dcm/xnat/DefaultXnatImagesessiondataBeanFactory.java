@@ -41,7 +41,14 @@ public class DefaultXnatImagesessiondataBeanFactory extends AttributeMapXnatImag
             log.info("Did not find a DICOM session type but did find scan type \"{}\" for SOP class UIDs, returning generic session bean: {}", scanBean, sopClassUids);
             return new XnatOtherdicomsessiondataBean();
         }
-        log.info("Did not find a DICOM session or scan type for SOP class UIDs, returning null: {}", sopClassUids);
-        return null;
+        // The study has readable SOP class(es) but none map to a known DICOM session type or
+        // scan type (e.g. a series consisting only of Key Object Selection documents, Structured
+        // Reports, Presentation States, Segmentation, RT objects, etc.). Rather than failing to
+        // build a session at all — which leaves an empty session that can't be archived ("Empty
+        // sessions cannot be archived") — fall back to a generic OtherDicom session so the data is
+        // preserved. Note this only fires when SOP classes WERE read; the nullPair guard above
+        // still returns null when the DICOM can't be parsed at all.
+        log.info("Did not find a DICOM session or scan type for SOP class UIDs, using generic OtherDicom session: {}", sopClassUids);
+        return new XnatOtherdicomsessiondataBean();
     }
 }

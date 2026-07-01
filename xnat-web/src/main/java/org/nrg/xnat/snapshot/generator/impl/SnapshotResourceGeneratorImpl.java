@@ -170,7 +170,7 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
                 log.debug("Retrieved DICOM catalog for session {} scan {} for catalog file {}", sessionId, scanId, catalog.getUri());
                 return catalog;
             }
-            log.warn("The scan {} in session {} does not contain a DICOM resource catalog. Creating snapshots here is above my pay grade. Get a smarter SnapshotResourceGenerator", scanId, sessionId);
+            log.info("The scan {} in session {} does not contain a DICOM resource catalog. Creating snapshots here is above my pay grade. Get a smarter SnapshotResourceGenerator", scanId, sessionId);
         } catch (ClientException e) {
             log.error("An error occurred trying to retrieve the catalog for session {} scan {}, can't initialize generator for this scan", sessionId, scanId, e);
         }

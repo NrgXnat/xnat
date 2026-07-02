@@ -1,15 +1,5 @@
 package org.nrg.xnat.customforms.daos;
 
-import org.hibernate.Criteria;
-import org.hibernate.FetchMode;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.engine.spi.LoadQueryInfluencers;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.internal.CriteriaImpl;
-import org.hibernate.internal.SessionImpl;
-import org.hibernate.loader.OuterJoinLoader;
-import org.hibernate.loader.criteria.CriteriaLoader;
-import org.hibernate.persister.entity.OuterJoinLoadable;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.framework.orm.hibernate.QueryBuilder;
@@ -25,7 +15,6 @@ import org.springframework.stereotype.Repository;
 import javax.annotation.Nullable;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,22 +45,6 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         }
     }
 
-    public static String toSql(Criteria criteria) {
-        String sql = "";
-        try {
-            CriteriaImpl c = (CriteriaImpl) criteria;
-            SessionImpl s = (SessionImpl) c.getSession();
-            SessionFactoryImplementor factory = s.getSessionFactory();
-            String[] implementors = factory.getImplementors(c.getEntityOrClassName());
-            CriteriaLoader loader = new CriteriaLoader((OuterJoinLoadable) factory.getEntityPersister(implementors[0]), factory, c, implementors[0], new LoadQueryInfluencers());
-            Field f = OuterJoinLoader.class.getDeclaredField("sql");
-            f.setAccessible(true);
-            sql = (String) f.get(loader);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return sql;
-    }
     /**
      * Finds a row from the join table, by FormID and AppliesToID
      * @param rowId - the Row Identifier @see org.nrg.xnat.customforms.pojo.formio.RowIdentifier;
@@ -182,28 +155,6 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
-    private Criteria getCriteria(final UserOptionsPojo userOptionsPojo, final Scope scope, boolean restrictOnlyDataType) {
-        Criteria criteria = getCriteriaWithAlias();
-        criteria.add(Restrictions.ne("cfa.status", CustomFormsConstants.OPTED_OUT_STATUS_STRING));
-        if (scope != null) {
-            criteria.add(Restrictions.eq("cvat.scope", scope));
-        }
-        criteria.add(Restrictions.eq("cvat.dataType", userOptionsPojo.getDataType()));
-        if (!restrictOnlyDataType && userOptionsPojo.getProtocol() != null) {
-            criteria.add(Restrictions.eq("cvat.protocol", userOptionsPojo.getProtocol()));
-        }
-        if (!restrictOnlyDataType && userOptionsPojo.getVisit() != null) {
-            criteria.add(Restrictions.eq("cvat.visit", userOptionsPojo.getVisit()));
-        }
-        if (!restrictOnlyDataType && userOptionsPojo.getSubType() != null) {
-            criteria.add(Restrictions.eq("cvat.subType", userOptionsPojo.getSubType()));
-        }
-        if (!restrictOnlyDataType && userOptionsPojo.getScanType() != null) {
-            criteria.add(Restrictions.eq("cvat.scanType", userOptionsPojo.getScanType()));
-        }
-        return criteria;
-    }
-
     private void addPrediates(final UserOptionsPojo userOptionsPojo, final Scope scope, boolean restrictOnlyDataType, final List<Predicate> predicates, final QueryBuilder<CustomVariableFormAppliesTo> builder) {
         predicates.add(builder.ne("status", CustomFormsConstants.OPTED_OUT_STATUS_STRING));
         if (scope != null) {
@@ -294,15 +245,6 @@ public class CustomVariableFormAppliesToRepository extends AbstractHibernateDAO<
                 initializeChild(a);
             }
         }
-    }
-
-    private Criteria getCriteriaWithAlias() {
-        Criteria criteria = getSession().createCriteria(CustomVariableFormAppliesTo.class, "cfa");
-        criteria.setFetchMode("cfa.customVariableAppliesTo", FetchMode.JOIN);
-        criteria.setFetchMode("cfa.customVariableForm", FetchMode.JOIN);
-        criteria.createAlias("cfa.customVariableAppliesTo", "cvat");
-        criteria.createAlias("cfa.customVariableForm", "cvf");
-        return criteria;
     }
 
     private QueryBuilder<CustomVariableFormAppliesTo> getQueryBuilder() {

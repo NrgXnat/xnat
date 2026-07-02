@@ -9,12 +9,7 @@
 
 package org.nrg.xnat.processor.dao;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.constants.Scope;
-import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
@@ -59,29 +54,16 @@ public class ArchiveProcessorInstanceDAO extends AbstractHibernateDAO<ArchivePro
 
     @Transactional
     public List<ArchiveProcessorInstance> getEnabledSiteArchiveProcessorsInOrder() {
-        final Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.eq(SCOPE, Scope.Site.code()));
-        criteria.add(Restrictions.eq("enabled", true));
-        criteria.addOrder(Order.asc(PRIORITY));
-        return GenericUtils.convertToTypedList(criteria.list(), ArchiveProcessorInstance.class);
+        return findByProperties(parameters(SCOPE, Scope.Site.code(), ENABLED_PROPERTY, true), asc(PRIORITY));
     }
 
     @Transactional
     public List<ArchiveProcessorInstance> getEnabledSiteArchiveProcessorsInOrderForLocation(final String location) {
-        final Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.eq(SCOPE, Scope.Site.code()));
-        criteria.add(Restrictions.eq("location", location));
-        criteria.add(Restrictions.eq("enabled", true));
-        criteria.addOrder(Order.asc(PRIORITY));
-        return GenericUtils.convertToTypedList(criteria.list(), ArchiveProcessorInstance.class);
+        return findByProperties(parameters(SCOPE, Scope.Site.code(), "location", location, ENABLED_PROPERTY, true), asc(PRIORITY));
     }
 
     @Transactional
     public ArchiveProcessorInstance getSiteArchiveProcessorInstanceByProcessorId(final long processorId) {
-        final Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.eq("id", processorId));
-        criteria.add(Restrictions.eq(SCOPE, Scope.Site.code()));
-        final List<ArchiveProcessorInstance> processors = GenericUtils.convertToTypedList(criteria.list(), ArchiveProcessorInstance.class);
-        return CollectionUtils.isNotEmpty(processors) ? processors.getFirst() : null;
+        return instance(findByProperties(parameters("id", processorId, SCOPE, Scope.Site.code())));
     }
 }

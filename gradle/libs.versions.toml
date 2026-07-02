@@ -278,7 +278,6 @@ hamcrest-hamcrest = { group = "org.hamcrest", name = "hamcrest", version.ref = "
 hamcrest-library = { group = "org.hamcrest", name = "hamcrest-library", version.ref = "hamcrest" }
 hibernate-commons-annotations = { group = "org.hibernate.common", name = "hibernate-commons-annotations", version.ref = "hibernate-commons" }
 hibernate-core = { group = "org.hibernate", name = "hibernate-core", version.ref = "hibernate" }
-hibernate-ehcache = { group = "org.hibernate", name = "hibernate-ehcache", version.ref = "hibernate" }
 hibernate-envers = { group = "org.hibernate", name = "hibernate-envers", version.ref = "hibernate" }
 hibernate-jcache = { group = "org.hibernate", name = "hibernate-jcache", version.ref = "hibernate" }
 hibernate-jpa-api = { group = "org.hibernate.javax.persistence", name = "hibernate-jpa-2.1-api", version.ref = "hibernate-jpa-api" }

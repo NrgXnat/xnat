@@ -1,22 +1,17 @@
 package org.nrg.dcm.xnat.daos;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.DetachedCriteria;
-import org.hibernate.criterion.LogicalExpression;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.SimpleExpression;
-import org.hibernate.criterion.Subqueries;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.dcm.xnat.entities.DicomMappingEntity;
-import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nullable;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
-import java.util.ArrayList;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 import java.util.List;
 
 @Repository
@@ -32,35 +27,39 @@ public class DicomMappingEntityDao extends AbstractHibernateDAO<DicomMappingEnti
      */
     @Nullable
     public List<DicomMappingEntity> findInScopeByProperty(@Nullable String project, String property, String value) {
-        Criteria criteria = this.getCriteriaForType();
-        SimpleExpression propertyCriteria = Restrictions.eq(property, value);
-        SimpleExpression siteScopeCriteria = Restrictions.eq("scope", Scope.Site);
-        criteria.add(propertyCriteria); // Add property criteria
+        final CriteriaBuilder                    builder = getCriteriaBuilder();
+        final CriteriaQuery<DicomMappingEntity>  query   = builder.createQuery(DicomMappingEntity.class);
+        final Root<DicomMappingEntity>           root    = query.from(DicomMappingEntity.class);
+
+        final Predicate propertyPredicate  = builder.equal(root.get(property), value);
+        final Predicate siteScopePredicate = builder.equal(root.get("scope"), Scope.Site);
 
         if (StringUtils.isBlank(project)) {
-            criteria.add(siteScopeCriteria);
+            query.where(propertyPredicate, siteScopePredicate);
         } else {
-            String dicomTagProperty = "dicomTag";
+            final String dicomTagProperty = "dicomTag";
 
             // project scope and id matches
-            LogicalExpression projectScopeCriteria = Restrictions.and(Restrictions.eq("scope", Scope.Project),
-                    Restrictions.eq("scopeObjectId", project));
+            final Predicate projectScopePredicate = builder.and(builder.equal(root.get("scope"), Scope.Project),
+                                                                builder.equal(root.get("scopeObjectId"), project));
 
             // only retrieve site scope matches if they're for different DICOM tags, so first get dicom tags covered
             // by project scope mappings
-            DetachedCriteria subquery = DetachedCriteria.forClass(DicomMappingEntity.class);
-            subquery.add(propertyCriteria)
-                    .add(projectScopeCriteria)
-                    .setProjection(Projections.property(dicomTagProperty));
+            final Subquery<String>         subquery     = query.subquery(String.class);
+            final Root<DicomMappingEntity> subqueryRoot = subquery.from(DicomMappingEntity.class);
+            subquery.select(subqueryRoot.get(dicomTagProperty))
+                    .where(builder.equal(subqueryRoot.get(property), value),
+                           builder.and(builder.equal(subqueryRoot.get("scope"), Scope.Project),
+                                       builder.equal(subqueryRoot.get("scopeObjectId"), project)));
 
             // and then exclude them from the site scope results
-            LogicalExpression restrictedSiteScope = Restrictions.and(siteScopeCriteria,
-                                                                     Subqueries.propertiesNotIn(new String[]{dicomTagProperty}, subquery));
+            final Predicate restrictedSiteScope = builder.and(siteScopePredicate,
+                                                              builder.not(root.get(dicomTagProperty).in(subquery)));
 
-            criteria.add(Restrictions.or(projectScopeCriteria, restrictedSiteScope));
+            query.where(propertyPredicate, builder.or(projectScopePredicate, restrictedSiteScope));
         }
 
-        List<DicomMappingEntity> list = criteria.list();
+        final List<DicomMappingEntity> list = createQuery(query).getResultList();
         return list != null && !list.isEmpty() ? list : null;
     }
 }

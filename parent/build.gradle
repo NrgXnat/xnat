@@ -70,7 +70,6 @@ dependencies {
         // Hibernate
         api libs.hibernate.core
         api libs.hibernate.envers
-        api libs.hibernate.ehcache
         api libs.hibernate.jcache
         api libs.hibernate.validator
         api libs.hibernate.validator.cdi

@@ -28,6 +28,5 @@ dependencies {
     testImplementation libs.commons.beanutils
     testImplementation libs.hibernate.envers
     testImplementation libs.h2database.h2
-    testImplementation libs.hibernate.ehcache
     testImplementation libs.slf4j.simple
 }

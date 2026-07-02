@@ -14,8 +14,6 @@ configurations.matching { it.name != 'xdatGenerator' }.configureEach {
         // bundled by Tomcat — pin to versions that work in production.
         force 'org.apache.commons:commons-lang3:3.11'
         force 'org.apache.commons:commons-text:1.10.0'
-        // dcm4che 5.x pulls slf4j-api 2.x, but logback 1.2.x only supports 1.7.x.
-        force 'org.slf4j:slf4j-api:1.7.36'
     }
     exclude group: 'ant',                      module: 'ant'
     exclude group: 'avalon-logkit'

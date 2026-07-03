@@ -11,24 +11,20 @@ package org.nrg.framework.orm.hibernate;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
-import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
-import com.vladmihalcea.hibernate.type.json.JsonStringType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.nrg.framework.orm.NrgEntity;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
@@ -51,11 +47,11 @@ import java.util.Objects;
  * Configure your JSON property in an entity class with the following annotations:
  *
  * <pre>
- *     {@literal @}Type(type = "json")
+ *     {@literal @}Type(JsonStringType.class)
  *     {@literal @}Column(columnDefinition = "json")
  *     private SomeClass item1;
  *
- *     {@literal @}Type(type = "jsonb")
+ *     {@literal @}Type(JsonBinaryType.class)
  *     {@literal @}Column(columnDefinition = "jsonb")
  *     private AnotherClass item2;
  * </pre>
@@ -67,7 +63,6 @@ import java.util.Objects;
  * workarounds are described <a href="https://vladmihalcea.com/how-to-map-json-objects-using-generic-hibernate-types">in
  * this issue</a>.
  */
-@TypeDefs({@TypeDef(name = "json", typeClass = JsonStringType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
 @MappedSuperclass
 abstract public class AbstractHibernateEntity implements BaseHibernateEntity, Serializable {
     private static final long serialVersionUID = 6457474423275935323L;

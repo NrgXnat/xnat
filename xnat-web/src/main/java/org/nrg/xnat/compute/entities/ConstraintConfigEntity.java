@@ -6,10 +6,12 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.compute.models.ConstraintConfig;
 import org.nrg.xnat.compute.models.ConstraintScope;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
+import org.hibernate.annotations.MapKeyJdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 
 import java.io.Serial;
 import java.util.Map;
@@ -40,6 +42,9 @@ public class ConstraintConfigEntity extends AbstractHibernateEntity {
         this.constraint = constraint;
     }
 
+    // Hibernate 6 defaults ordinal enum map keys to TINYINT, which the H2 PostgreSQL compatibility mode used in
+    // tests rejects; INTEGER also matches the int4 column type Hibernate 5 created in production PostgreSQL.
+    @MapKeyJdbcTypeCode(SqlTypes.INTEGER)
     @OneToMany(mappedBy = "constraintConfig", cascade = CascadeType.ALL, orphanRemoval = true)
     public Map<Scope, ConstraintScopeEntity> getScopes() {
         return scopes;

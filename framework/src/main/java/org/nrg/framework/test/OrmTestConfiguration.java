@@ -73,7 +73,7 @@ public class OrmTestConfiguration extends JCacheConfigurerSupport {
     @Value("${jdbc.password:}")
     private String  _jdbcPassword;
     // Note: if MODE=PostgreSQL is in the URL, the dialect must be a PostgreSQL dialect or some operations will fail.
-    @Value("${hibernate.dialect:org.hibernate.dialect.PostgreSQL10Dialect}")
+    @Value("${hibernate.dialect:org.hibernate.dialect.PostgreSQLDialect}")
     private String  _dialect;
     @Value("${hibernate.hbm2ddl.auto:create-drop}")
     private String  _hbm2ddlAuto;
@@ -129,6 +129,10 @@ public class OrmTestConfiguration extends JCacheConfigurerSupport {
         properties.setProperty("hibernate.hbm2ddl.auto", _hbm2ddlAuto);
         properties.setProperty("hibernate.show_sql", Boolean.toString(_showSql));
         properties.setProperty("hibernate.cache.use_second_level_cache", Boolean.toString(_useSecondLevelCache));
+        // Distinct region prefix per Spring test context: contexts get fresh in-memory databases but share the
+        // JCache CacheManager, so without this a context can read stale second-level-cache entries written by a
+        // previous context whose (re-used) entity IDs pointed at different rows.
+        properties.setProperty("hibernate.cache.region_prefix", "test-" + java.util.UUID.randomUUID());
         properties.setProperty("hibernate.cache.use_query_cache", Boolean.toString(_useQueryCache));
         properties.setProperty("hibernate.cache.region.factory_class", _regionFactoryClass);
         properties.setProperty("hibernate.javax.cache.provider", _cacheProvider);
@@ -150,12 +154,15 @@ public class OrmTestConfiguration extends JCacheConfigurerSupport {
         } catch (IOException e) {
             throw new NrgServiceRuntimeException("An error occurred trying to get the Hibernate properties", e);
         }
+        // Naming strategies are configured as Hibernate properties instead of LocalSessionFactoryBean setters:
+        // Spring's orm.hibernate5 support was compiled against Hibernate 5's void setter signatures, which became
+        // fluent in Hibernate 6 and would fail with NoSuchMethodError at build time (see XnatPhysicalNamingStrategy).
+        properties.setProperty("hibernate.implicit_naming_strategy", "org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl");
+        properties.setProperty("hibernate.physical_naming_strategy", "org.nrg.framework.orm.hibernate.XnatPhysicalNamingStrategy");
         final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean();
         bean.setDataSource(dataSource());
         bean.setHibernateProperties(properties);
         bean.setEntityPackageLists(packageLists);
-        bean.setImplicitNamingStrategy(new ImplicitNamingStrategyLegacyHbmImpl());
-        bean.setPhysicalNamingStrategy(physicalNamingStrategy());
         return bean;
     }
 

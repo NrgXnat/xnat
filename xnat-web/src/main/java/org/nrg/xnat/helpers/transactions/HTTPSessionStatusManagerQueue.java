@@ -12,7 +12,7 @@ package org.nrg.xnat.helpers.transactions;
 import org.nrg.framework.status.StatusMessage;
 import org.nrg.xnat.status.StatusList;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
 

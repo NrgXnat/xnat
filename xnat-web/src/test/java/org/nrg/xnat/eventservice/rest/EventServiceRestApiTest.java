@@ -133,7 +133,7 @@ public class EventServiceRestApiTest {
         when(admin.getPassword()).thenReturn(adminPassword);
         when(mockRoleService.isSiteAdmin(admin)).thenReturn(true);
         when(mockUserManagementServiceI.getUser(ADMIN_USERNAME)).thenReturn(admin);
-        ADMIN_AUTH = new TestingAuthenticationToken(admin, adminPassword);
+        ADMIN_AUTH = new TestingAuthenticationToken(admin, adminPassword, "ROLE_ADMIN");
 
         final String nonAdminPassword = "non-admin-pass";
         final UserI nonAdmin = mock(UserI.class);
@@ -141,7 +141,7 @@ public class EventServiceRestApiTest {
         when(nonAdmin.getPassword()).thenReturn(nonAdminPassword);
         when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
         when(mockUserManagementServiceI.getUser(NON_ADMIN_USERNAME)).thenReturn(nonAdmin);
-        NONADMIN_AUTH = new TestingAuthenticationToken(nonAdmin, nonAdminPassword);
+        NONADMIN_AUTH = new TestingAuthenticationToken(nonAdmin, nonAdminPassword, "ROLE_USER");
     }
 
     @Test

@@ -29,7 +29,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -10,7 +10,7 @@
 package org.nrg.xapi.rest;
 
 import lombok.extern.slf4j.Slf4j;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -46,7 +46,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;

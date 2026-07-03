@@ -13,14 +13,15 @@ dependencies {
     api libs.reactor.core
     api libs.hibernate.core
     api libs.hibernate.validator
-    api libs.glassfish.javax.el
+    api libs.glassfish.jakarta.el
     api libs.annotation.javax.annotation.api
     api libs.hibernate.envers
     api libs.hibernate.jcache
     api libs.cache.api
-    api libs.ehcache.ehcache
+    // version catalog cannot express classifiers — jakarta variant needed for Hibernate 6
+    api 'org.ehcache:ehcache:3.10.8:jakarta'
     api libs.redisson.redisson
-    api libs.vladmihalcea.hibernate.types55
+    api libs.hypersistence.utils.hibernate63
     api libs.httpcomponents.httpclient
     api libs.apache.ant
     api libs.commons.beanutils
@@ -28,6 +29,8 @@ dependencies {
     api libs.commons.configuration2
     api libs.commons.lang3
     api libs.commons.text
+    api libs.jakarta.annotation.api
+    api libs.httpclient5
     api libs.slf4j.api
     api libs.google.guava
     api libs.reflections.reflections
@@ -35,17 +38,17 @@ dependencies {
     api libs.jackson.core
     api libs.jackson.databind
     api libs.jackson.dataformat.yaml
-    api libs.jackson.datatype.hibernate5
+    api libs.jackson.datatype.hibernate6
     api libs.yaml.snakeyaml
     api libs.postgresql.postgresql
     compileOnly libs.metainf.services.metainf.services
     annotationProcessor libs.metainf.services.metainf.services
     compileOnly libs.google.jsr305
-    compileOnly libs.servlet.javax.servlet.api
+    compileOnly libs.jakarta.servlet.api
     compileOnly libs.h2database.h2
 
     testImplementation libs.h2database.h2
-    testImplementation libs.servlet.javax.servlet.api
+    testImplementation libs.jakarta.servlet.api
     testImplementation libs.junit.jupiter.api
     testRuntimeOnly libs.junit.jupiter.engine
     testImplementation libs.sbrannen.spring.test.junit5

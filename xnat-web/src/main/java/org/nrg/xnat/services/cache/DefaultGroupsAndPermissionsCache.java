@@ -66,7 +66,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.cache.Cache;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.text.DateFormat;

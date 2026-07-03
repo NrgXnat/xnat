@@ -47,12 +47,12 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.bind.Marshaller;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.xml.bind.Marshaller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +62,7 @@ import java.util.Map;
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @Slf4j
 @ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization", "org.nrg.xapi.pages"})
-public class WebConfig extends WebMvcConfigurerAdapter {
+public class WebConfig implements WebMvcConfigurer {
     @Autowired
     public WebConfig(final Jackson2ObjectMapperBuilder objectMapperBuilder,
                      @Qualifier("threadPoolExecutorFactoryBean") final ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean,

@@ -22,6 +22,6 @@ public class EventTrackingDataDao extends AbstractHibernateDAO<EventTrackingData
      * @param expiration the expiration date
      */
     public void deleteEntriesLastUpdatedBefore(Date expiration) {
-        getSession().createQuery("DELETE from EventTrackingData where timestamp < :expiration").setDate("expiration", expiration).executeUpdate();
+        getSession().createQuery("DELETE from EventTrackingData where timestamp < :expiration").setParameter("expiration", expiration).executeUpdate();
     }
 }

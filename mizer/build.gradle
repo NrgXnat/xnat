@@ -23,7 +23,7 @@ dependencies {
     compileOnly libs.google.jsr305
 
     testImplementation project(':test')
-    testImplementation libs.ehcache.ehcache
+    testImplementation 'org.ehcache:ehcache:3.10.8:jakarta'
     testImplementation libs.junit.junit
     testImplementation libs.spring.test
 }

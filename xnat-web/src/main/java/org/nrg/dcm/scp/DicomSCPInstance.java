@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.util.*;

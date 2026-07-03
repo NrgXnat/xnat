@@ -59,7 +59,7 @@ dependencies {
         api libs.spring.security.spring.security.config
         api libs.spring.security.spring.security.core
         api libs.spring.security.spring.security.ldap
-        api libs.spring.security.spring.security.openid
+        // spring-security-openid removed: artifact does not exist in Spring Security 6.x
         api libs.spring.security.spring.security.taglibs
         api libs.spring.security.spring.security.web
         api libs.spring.security.spring.security.test
@@ -71,10 +71,9 @@ dependencies {
         api libs.hibernate.jcache
         api libs.hibernate.validator
         api libs.hibernate.validator.cdi
-        api libs.hibernate.jpa.api
+        api libs.jakarta.persistence.api
         api libs.hibernate.commons.annotations
-        api libs.vladmihalcea.hibernate.types43
-        api libs.vladmihalcea.hibernate.types55
+        api libs.hypersistence.utils.hibernate63
 
         // Jackson
         api libs.jackson.core
@@ -83,8 +82,7 @@ dependencies {
         api libs.jackson.dataformat.xml
         api libs.jackson.dataformat.yaml
         api libs.jackson.dataformat.csv
-        api libs.jackson.datatype.hibernate4
-        api libs.jackson.datatype.hibernate5
+        api libs.jackson.datatype.hibernate6
         api libs.jackson.datatype.guava
         api libs.jackson.datatype.jdk8
         api libs.jackson.datatype.jsr310
@@ -162,7 +160,6 @@ dependencies {
         api libs.commons.dbcp2
         api libs.commons.digester
         api libs.commons.discovery
-        api libs.commons.email
         api libs.commons.fileupload
         api libs.commons.io
         api libs.commons.lang
@@ -194,27 +191,26 @@ dependencies {
         api libs.google.jsr305
 
         // Swagger
-        api libs.springdoc.openapi.ui
+        api libs.springdoc.openapi.starter.webmvc.ui
         api libs.spring.boot.autoconfigure
 
         // Bouncy Castle
         api libs.bouncycastle.bcpkix.jdk18on
 
         // Java/Jakarta EE
-        api libs.activation.javax.activation.api
-        api libs.activation.com.sun.javax.activation
+        api libs.jakarta.activation.api
         api libs.jakarta.inject.api
         api libs.annotation.javax.annotation.api
-        api libs.el.javax.el.api
         api libs.inject.javax.inject
         api libs.interceptor.javax.interceptor.api
-        api libs.jms.javax.jms.api
-        api libs.mail.javax.mail
-        api libs.mail.javax.mail.api
+        api libs.jakarta.jms.api
+        api libs.jakarta.mail.api
+        api libs.angus.mail
         api libs.j2ee.javax.management.j2ee.api
-        api libs.servlet.javax.servlet.api
+        api libs.jakarta.servlet.api
+        api libs.jaxb.api
+        api libs.jaxb.runtime
         api libs.servlet.jstl
-        api libs.glassfish.javax.el
         api libs.glassfish.jakarta.el
 
         // HTTP

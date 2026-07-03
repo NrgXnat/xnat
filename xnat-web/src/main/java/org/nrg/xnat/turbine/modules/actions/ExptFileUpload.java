@@ -43,7 +43,7 @@ import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.xml.sax.SAXException;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.Calendar;

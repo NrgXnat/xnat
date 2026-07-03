@@ -12,7 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 import java.io.File;
 import java.io.OutputStream;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;

@@ -31,10 +31,10 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.text.ParseException;
 
@@ -129,7 +129,8 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
         super.onSuccessfulAuthentication(request, response, authentication);
     }
 
-    private boolean authenticationIsRequired(final String username) {
+    @Override
+    protected boolean authenticationIsRequired(final String username) {
         // Only re-authenticate if username doesn't match SecurityContextHolder and user isn't authenticated
         // (see SEC-53)
         final Authentication existingAuth = SecurityContextHolder.getContext().getAuthentication();

@@ -9,24 +9,28 @@
 
 package org.nrg.framework.net;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.AuthCache;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicAuthCache;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
+import org.apache.hc.client5.http.auth.AuthCache;
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.Credentials;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.impl.auth.BasicAuthCache;
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.client5.http.impl.auth.BasicScheme;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.protocol.BasicHttpContext;
+import org.apache.hc.core5.http.protocol.HttpContext;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
 import java.net.URI;
 
+/**
+ * Migrated to Apache HttpClient 5 along with Spring 6's {@link HttpComponentsClientHttpRequestFactory}.
+ */
 public class AuthenticatedClientHttpRequestFactory extends HttpComponentsClientHttpRequestFactory {
 
     public AuthenticatedClientHttpRequestFactory(String user, String password) {
@@ -38,29 +42,31 @@ public class AuthenticatedClientHttpRequestFactory extends HttpComponentsClientH
         _proxy = proxy;
     }
 
+    @Override
     public HttpClient getHttpClient() {
-        Credentials credentials = new UsernamePasswordCredentials(_user, _password);
+        Credentials credentials = new UsernamePasswordCredentials(_user, _password.toCharArray());
         BasicCredentialsProvider provider = new BasicCredentialsProvider();
-        provider.setCredentials(AuthScope.ANY, credentials);
+        provider.setCredentials(new AuthScope(null, -1), credentials);
 
         HttpClientBuilder builder = HttpClients.custom();
         builder.setDefaultCredentialsProvider(provider);
 
         if (_proxy != null) {
-            builder.setProxy(new HttpHost(_proxy.getHost(), _proxy.getPort(), _proxy.getScheme()));
+            builder.setProxy(new HttpHost(_proxy.getScheme(), _proxy.getHost(), _proxy.getPort()));
         }
 
         return builder.build();
     }
 
+    @Override
     protected HttpContext createHttpContext(HttpMethod httpMethod, URI uri) {
         AuthCache authCache = new BasicAuthCache();
 
         BasicScheme basicAuth = new BasicScheme();
-        authCache.put(new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme()), basicAuth);
+        authCache.put(new HttpHost(uri.getScheme(), uri.getHost(), uri.getPort()), basicAuth);
 
         BasicHttpContext context = new BasicHttpContext();
-        context.setAttribute("http.auth.auth-cache", authCache);
+        context.setAttribute(HttpClientContext.AUTH_CACHE, authCache);
         return context;
     }
 

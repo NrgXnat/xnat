@@ -15,9 +15,9 @@ dependencies {
     implementation libs.google.guava
     implementation libs.jackson.databind
 
-    compileOnly libs.servlet.javax.servlet.api
+    compileOnly libs.jakarta.servlet.api
 
-    testImplementation libs.servlet.javax.servlet.api
+    testImplementation libs.jakarta.servlet.api
     testImplementation project(':test')
     testImplementation libs.h2database.h2
     testImplementation libs.postgresql.postgresql

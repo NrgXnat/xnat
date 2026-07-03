@@ -17,7 +17,7 @@ import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 @SuppressWarnings("unused")
 public class XnatErrorScreen extends VelocityErrorScreen {
@@ -27,10 +27,10 @@ public class XnatErrorScreen extends VelocityErrorScreen {
         super.doBuildTemplate(data, context);
 
         final HttpServletRequest request = data.getRequest();
-        final Throwable throwable = (Throwable) request.getAttribute("javax.servlet.error.exception");
+        final Throwable throwable = (Throwable) request.getAttribute("jakarta.servlet.error.exception");
 
-        final Integer status = (Integer) request.getAttribute("javax.servlet.error.status_code");
-        final String uri = (String) request.getAttribute("javax.servlet.error.request_uri");
+        final Integer status = (Integer) request.getAttribute("jakarta.servlet.error.status_code");
+        final String uri = (String) request.getAttribute("jakarta.servlet.error.request_uri");
         final String message = throwable == null ? "Unknown error occurred" : throwable.getMessage();
 
         if (_log.isDebugEnabled()) {

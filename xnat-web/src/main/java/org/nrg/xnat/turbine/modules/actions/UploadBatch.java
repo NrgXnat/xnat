@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.log4j.Logger;

@@ -1,6 +1,6 @@
 package org.nrg.dicom.dicomedit.pixeledit.validation;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 public class PixelData {
     private PixelValue[][][] pixel;

@@ -10,8 +10,8 @@ import org.nrg.xnat.eventservice.exceptions.SubscriptionValidationException;
 import org.nrg.xnat.eventservice.model.Subscription;
 
 import javax.annotation.Nonnull;
-import javax.persistence.EntityNotFoundException;
-import javax.persistence.Transient;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.Transient;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;

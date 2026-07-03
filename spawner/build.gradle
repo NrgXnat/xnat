@@ -14,16 +14,16 @@ dependencies {
 
     implementation libs.spring.webmvc
     implementation libs.spring.security.spring.security.core
-    implementation libs.springdoc.openapi.ui
+    implementation libs.springdoc.openapi.starter.webmvc.ui
     implementation libs.jackson.databind
     implementation libs.jackson.dataformat.yaml
     implementation libs.jackson.dataformat.xml
     implementation libs.postgresql.postgresql
     implementation libs.groovy.all
-    compileOnly libs.servlet.javax.servlet.api
+    compileOnly libs.jakarta.servlet.api
 
 
-    testImplementation libs.servlet.javax.servlet.api
+    testImplementation libs.jakarta.servlet.api
     testImplementation project(':test')
     testImplementation libs.junit.junit
     testImplementation libs.spring.test

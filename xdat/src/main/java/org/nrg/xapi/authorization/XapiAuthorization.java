@@ -7,7 +7,7 @@ import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xft.security.UserI;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Provides a means to extend how users can be tested for authorization when accessing an XAPI REST method.

@@ -6,7 +6,9 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.compute.models.ComputeEnvironmentConfig;
 import org.nrg.xnat.compute.models.ComputeEnvironmentScope;
 
-import javax.persistence.*;
+import org.hibernate.annotations.MapKeyJdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.util.HashSet;
@@ -54,6 +56,9 @@ public class ComputeEnvironmentConfigEntity extends AbstractHibernateEntity {
         this.computeEnvironment = computeEnvironment;
     }
 
+    // Hibernate 6 defaults ordinal enum map keys to TINYINT, which the H2 PostgreSQL compatibility mode used in
+    // tests rejects; INTEGER also matches the int4 column type Hibernate 5 created in production PostgreSQL.
+    @MapKeyJdbcTypeCode(SqlTypes.INTEGER)
     @OneToMany(mappedBy = "computeEnvironmentConfig", cascade = CascadeType.ALL, orphanRemoval = true)
     public Map<Scope, ComputeEnvironmentScopeEntity> getScopes() {
         return scopes;

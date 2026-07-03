@@ -78,7 +78,7 @@ public class UpdateConfigurationService extends AbstractInitializingTask {
                      processed.size(), missing.size(), StringUtils.join(processed, ", "), StringUtils.join(missing, ", "));
         }
 
-        _sessionFactory.getCache().evictEntityRegion(Configuration.class);
+        _sessionFactory.getCache().evictEntityData(Configuration.class);
     }
 
     private static final String QUERY_CONFIGS_WITH_METADATA_IDS = "SELECT DISTINCT project FROM xhbm_configuration WHERE entity_id IS null AND project IS NOT NULL AND enabled = TRUE";

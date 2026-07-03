@@ -34,7 +34,7 @@ dependencies {
     implementation libs.commons.io
 
     // Runtime: Spring, Jackson, etc. needed by external plugins at build time
-    runtimeOnly libs.servlet.javax.servlet.api
+    runtimeOnly libs.jakarta.servlet.api
     runtimeOnly libs.spring.aop
     runtimeOnly libs.spring.beans
     runtimeOnly libs.spring.context.support
@@ -48,7 +48,7 @@ dependencies {
     runtimeOnly libs.spring.tx
     runtimeOnly libs.spring.web
     runtimeOnly libs.spring.webmvc
-    runtimeOnly libs.springdoc.openapi.ui
+    runtimeOnly libs.springdoc.openapi.starter.webmvc.ui
     runtimeOnly libs.spring.security.spring.security.acl
     runtimeOnly libs.spring.security.spring.security.aspects
     runtimeOnly libs.spring.security.spring.security.config
@@ -60,7 +60,7 @@ dependencies {
     runtimeOnly libs.jackson.databind
     runtimeOnly libs.jackson.dataformat.yaml
     runtimeOnly libs.jackson.datatype.guava
-    runtimeOnly libs.jackson.datatype.hibernate5
+    runtimeOnly libs.jackson.datatype.hibernate6
     runtimeOnly libs.commons.configuration
     runtimeOnly libs.commons.collections
 }

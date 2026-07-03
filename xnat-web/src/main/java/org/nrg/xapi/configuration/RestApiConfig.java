@@ -33,9 +33,9 @@ import java.util.Locale;
 @Configuration
 @ComponentScan(value = {"org.nrg.xapi.model.users", "org.nrg.xapi.rest", "org.nrg.xnat.eventservice.rest", "org.nrg.xnat.snapshot.rest"}, includeFilters = @Filter(ControllerAdvice.class))
 @Import({SpawnerConfig.class,
-         org.springdoc.core.SpringDocConfiguration.class,
-         org.springdoc.core.SpringDocConfigProperties.class,
-         org.springdoc.webmvc.core.SpringDocWebMvcConfiguration.class,
+         org.springdoc.core.configuration.SpringDocConfiguration.class,
+         org.springdoc.core.properties.SpringDocConfigProperties.class,
+         org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration.class,
          org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class})
 @Slf4j
 public class RestApiConfig {

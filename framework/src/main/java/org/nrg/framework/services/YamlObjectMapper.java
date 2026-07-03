@@ -15,7 +15,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 
 public class YamlObjectMapper extends ObjectMapper {
     public YamlObjectMapper() {
@@ -29,6 +29,6 @@ public class YamlObjectMapper extends ObjectMapper {
         configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
         configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
-        registerModule(new Hibernate5Module());
+        registerModule(new Hibernate6Module());
     }
 }

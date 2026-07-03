@@ -4,11 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.util.*;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import org.hibernate.annotations.Type;
 import org.nrg.xnat.customforms.utils.CustomFormsConstants;
 
@@ -25,7 +26,6 @@ public class CustomVariableForm extends AbstractHibernateEntity{
     private int zIndex = -1;
     private String formCreator;
 
-    @Type(type="pg-uuid")
     @Column(nullable=false)
     private java.util.UUID formUuid;
 
@@ -33,11 +33,10 @@ public class CustomVariableForm extends AbstractHibernateEntity{
     private List<CustomVariableFormAppliesTo> customVariableFormAppliesTos = new ArrayList<CustomVariableFormAppliesTo>(0);
 
 
-    @Type(type="pg-uuid")
     public UUID getFormUuid() {return formUuid;}
     public void setFormUuid(UUID fId) { formUuid = fId;}
 
-    @Type(type = "jsonb")
+    @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     public JsonNode getFormIOJsonDefinition() {
         return formIOJsonDefinition;

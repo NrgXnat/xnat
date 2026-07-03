@@ -47,8 +47,8 @@ import reactor.fn.Consumer;
 import reactor.fn.Predicate;
 
 import javax.annotation.Nonnull;
-import javax.persistence.EntityNotFoundException;
-import javax.persistence.Transient;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.Transient;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;

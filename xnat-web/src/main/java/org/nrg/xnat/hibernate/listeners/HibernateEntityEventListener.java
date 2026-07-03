@@ -114,7 +114,7 @@ public class HibernateEntityEventListener implements PostInsertEventListener, Po
     }
 
     @Override
-    public boolean requiresPostCommitHanding(final EntityPersister persister) {
+    public boolean requiresPostCommitHandling(final EntityPersister persister) {
         return false;
     }
 }

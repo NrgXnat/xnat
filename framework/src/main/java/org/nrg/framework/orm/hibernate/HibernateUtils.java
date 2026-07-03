@@ -13,10 +13,10 @@ import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import javax.sql.DataSource;
 import java.lang.reflect.Method;
 import java.sql.Connection;

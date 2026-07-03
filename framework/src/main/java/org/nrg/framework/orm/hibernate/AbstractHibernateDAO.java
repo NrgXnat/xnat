@@ -17,14 +17,12 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
-import org.hibernate.Criteria;
 import org.hibernate.Hibernate;
 import org.hibernate.HibernateException;
 import org.hibernate.LockOptions;
 import org.hibernate.NonUniqueObjectException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.criterion.Criterion;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.query.Query;
@@ -37,13 +35,13 @@ import org.nrg.framework.utilities.Reflection;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;
-import javax.persistence.Transient;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import javax.persistence.metamodel.EntityType;
+import jakarta.persistence.Transient;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.metamodel.EntityType;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -135,7 +133,7 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
      */
     @Override
     public Serializable create(final E entity) {
-        return getSession().save(entity);
+        return (Serializable) getSession().save(entity);
     }
 
     /**
@@ -662,39 +660,6 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
             log.error("Trying to get session for parameterized type: {}", getParameterizedType(), exception);
             throw exception;
         }
-    }
-
-    /**
-     * Use this inside subclasses as a convenience method.
-     *
-     * @param criterion The criteria on which you want to search.
-     * @return All entities matching the submitted criteria.
-     * @deprecated Use JPA query to replace Hibernate query.
-     */
-    @Deprecated
-    protected List<E> findByCriteria(final Criterion... criterion) {
-        final Criteria criteria = getCriteriaForType();
-        for (final Criterion c : criterion) {
-            criteria.add(c);
-        }
-        return GenericUtils.convertToTypedList(criteria.list(), getParameterizedType());
-    }
-    /**
-     * Gets a {@link Criteria Criteria object} for the parameterized type of the concrete definition. Default standard
-     * values are set for the criteria object, including {@link Criteria#setCacheable(boolean)} set to <b>true</b>.
-     *
-     * @return An initialized {@link Criteria Criteria object}.
-     * @deprecated Use JPA query to replace Hibernate query.
-     */
-    @Deprecated
-    protected Criteria getCriteriaForType() {
-        final Criteria criteria = getSession().createCriteria(getParameterizedType(), StringUtils.uncapitalize(getParameterizedType().getSimpleName()));
-//        criteria.setCacheable(true);
-        criteria.setCacheRegion(getCacheRegion());
-        if (_addDistinctRootEntity) {
-            criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-        }
-        return criteria;
     }
 
     /**

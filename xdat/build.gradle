@@ -28,10 +28,11 @@ dependencies {
     implementation libs.aspectj.weaver
     implementation libs.aspectj.rt
     implementation libs.reflections.reflections
+    implementation libs.jakarta.inject.api
     implementation libs.slf4j.api
     implementation libs.slf4j.jul.to.slf4j
-    compileOnly libs.servlet.javax.servlet.api
-    implementation libs.jms.javax.jms.api
+    compileOnly libs.jakarta.servlet.api
+    implementation libs.jakarta.jms.api
     implementation libs.j2ee.javax.management.j2ee.api
     implementation libs.reactor.bus
     implementation libs.reactor.core
@@ -47,6 +48,7 @@ dependencies {
     implementation(libs.torque.torque) { transitive = false }
     implementation libs.apache.velocity
     implementation libs.apache.velocity.tools
+    implementation libs.restlet.com.noelios.restlet
     implementation libs.restlet.com.noelios.restlet.ext.servlet
     implementation libs.ecs.ecs
     implementation libs.commons.configuration
@@ -68,14 +70,14 @@ dependencies {
     implementation libs.commons.dbcp2
     implementation libs.bitwalker.useragentutils
     implementation libs.apache.ant
-    implementation libs.ehcache.ehcache
+    implementation 'org.ehcache:ehcache:3.10.8:jakarta'
     implementation libs.postgresql.postgresql
     implementation libs.slf4j.log4j.over.slf4j
     implementation libs.commons.compress
 
     compileOnly libs.google.jsr305
 
-    testImplementation libs.servlet.javax.servlet.api
+    testImplementation libs.jakarta.servlet.api
     testImplementation project(':test')
     testImplementation libs.junit.junit
     testImplementation libs.mockito.core

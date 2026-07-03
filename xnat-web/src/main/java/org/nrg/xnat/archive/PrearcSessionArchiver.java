@@ -73,7 +73,7 @@ import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.data.Status;
 import org.xml.sax.SAXException;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serial;

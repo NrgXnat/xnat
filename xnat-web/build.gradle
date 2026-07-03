@@ -43,7 +43,7 @@ configurations.matching { it.name != 'xdatGenerator' }.configureEach {
     exclude group: 'jamon'
     exclude group: 'javax.jms',                 module: 'jms'
     exclude group: 'javax.mail',                module: 'mail'
-    exclude group: 'javax.servlet',             module: 'servlet-api'
+    exclude group: 'javax.servlet'
     exclude group: 'javax.sql',                 module: 'jdbc-stdext'
     exclude group: 'javax.transaction',         module: 'jta'
     exclude group: 'javax.xml',                 module: 'jsr173'
@@ -156,8 +156,9 @@ dependencies {
     implementation libs.hibernate.jcache
     implementation libs.hibernate.validator
     implementation libs.hibernate.envers
-    implementation libs.ehcache.ehcache
-    implementation libs.vladmihalcea.hibernate.types55
+    // version catalog cannot express classifiers — jakarta variant needed for Hibernate 6
+    implementation 'org.ehcache:ehcache:3.10.8:jakarta'
+    implementation libs.hypersistence.utils.hibernate63
     implementation(libs.redisson.redisson) {
         // redisson 3.22 pulls reactor-core 3.x; framework needs 2.x (forced in convention plugin).
         exclude group: 'io.projectreactor', module: 'reactor-core'
@@ -188,7 +189,7 @@ dependencies {
     implementation libs.jackson.datatype.jsr310
 
     // --- Springfox / Swagger ---
-    implementation libs.springdoc.openapi.ui
+    implementation libs.springdoc.openapi.starter.webmvc.ui
     implementation libs.spring.boot.autoconfigure
 
     // --- Jakarta ORO (transitive from restlet in Maven) ---
@@ -201,7 +202,7 @@ dependencies {
     implementation libs.restlet.org.restlet.ext.fileupload
 
     // --- JMS ---
-    implementation libs.jms.javax.jms.api
+    implementation libs.jakarta.jms.api
 
     // --- Reactor (from satellite merge) ---
     implementation libs.reactor.bus
@@ -274,6 +275,8 @@ dependencies {
     implementation libs.activemq.spring
     implementation libs.activemq.kahadb.store
     implementation libs.activemq.jdbc.store
+    implementation libs.jakarta.inject.api
+    implementation libs.dom4j.dom4j
     implementation libs.slf4j.api
     implementation libs.slf4j.jul.to.slf4j
     implementation libs.slf4j.jcl.over.slf4j
@@ -289,7 +292,7 @@ dependencies {
 
     // --- Provided (container) ---
     compileOnly libs.google.jsr305
-    compileOnly libs.servlet.javax.servlet.api
+    compileOnly libs.jakarta.servlet.api
     compileOnly libs.metainf.services.metainf.services
 
     // --- Runtime only ---
@@ -307,7 +310,7 @@ dependencies {
 
     // --- Test ---
     testImplementation project(':test')
-    testImplementation libs.servlet.javax.servlet.api
+    testImplementation libs.jakarta.servlet.api
     testImplementation libs.junit.junit
     testImplementation libs.spring.test
     testImplementation libs.assertj.core

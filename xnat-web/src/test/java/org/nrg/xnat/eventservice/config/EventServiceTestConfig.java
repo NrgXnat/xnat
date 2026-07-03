@@ -191,11 +191,6 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public List<EventServiceActionProvider> actionProviders() {
-        return null;
-    }
-
-    @Bean
     public EventBus eventBus() {
         return EventBus.create();
     }

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.nrg.framework.constants.Scope;
 
@@ -13,8 +14,8 @@ import org.nrg.framework.orm.hibernate.BaseHibernateEntity;
 import org.nrg.framework.orm.hibernate.HibernateUtils;
 import org.nrg.xnat.customforms.pojo.formio.RowIdentifier;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -49,8 +50,11 @@ public class CustomVariableFormAppliesTo implements BaseHibernateEntity, Seriali
      *
      * @return The ID of the data entity.
      */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // The database primary key is the composite (customVariableAppliesTo, customVariableForm) — matching the
+    // @IdClass — while this id is a plain sequence-defaulted column. Hibernate 6 validates that @Id properties
+    // match the @IdClass exactly, so unlike Hibernate 5 this may no longer carry a third @Id.
+    @Generated
+    @Column(insertable = false, updatable = false, columnDefinition = "bigserial")
     @Override
     public long getId() {
         return _id;

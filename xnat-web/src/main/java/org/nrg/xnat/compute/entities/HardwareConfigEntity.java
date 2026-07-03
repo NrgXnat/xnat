@@ -6,7 +6,9 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.compute.models.HardwareConfig;
 import org.nrg.xnat.compute.models.HardwareScope;
 
-import javax.persistence.*;
+import org.hibernate.annotations.MapKeyJdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.util.List;
@@ -40,6 +42,9 @@ public class HardwareConfigEntity extends AbstractHibernateEntity {
         this.hardware = hardware;
     }
 
+    // Hibernate 6 defaults ordinal enum map keys to TINYINT, which the H2 PostgreSQL compatibility mode used in
+    // tests rejects; INTEGER also matches the int4 column type Hibernate 5 created in production PostgreSQL.
+    @MapKeyJdbcTypeCode(SqlTypes.INTEGER)
     @OneToMany(mappedBy = "hardwareConfig", cascade = CascadeType.ALL, orphanRemoval = true)
     public Map<Scope, HardwareScopeEntity> getScopes() {
         return scopes;

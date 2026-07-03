@@ -101,7 +101,15 @@ public class CatalogBuilder implements Callable<Map<File, AbstractMap.SimpleEntr
             this.constraints.putAll(constraints);
         }
         this.shouldLoadFiles = shouldLoadFiles;
-        final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
+        // The null check below documents that this class is expected to work without an initialized application
+        // context (e.g. unit tests); make the lookup itself equally tolerant instead of relying on whichever test
+        // happened to populate XDAT's static caches first.
+        SiteConfigPreferences preferences;
+        try {
+            preferences = XDAT.getSiteConfigPreferences();
+        } catch (RuntimeException e) {
+            preferences = null;
+        }
         this.separateSecondaryDicomOnArchive = preferences == null || preferences.getSeparateSecondaryDicomOnArchive();
     }
 

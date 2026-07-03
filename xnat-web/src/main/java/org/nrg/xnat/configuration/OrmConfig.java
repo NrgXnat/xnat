@@ -37,7 +37,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.util.List;
@@ -55,7 +55,7 @@ import static org.nrg.framework.jcache.JCacheHelper.REDISSON_URI_DEFAULT;
 @ComponentScan("org.nrg.framework.jcache")
 @Slf4j
 public class OrmConfig {
-    @Value("${hibernate.dialect:org.hibernate.dialect.PostgreSQL10Dialect}")
+    @Value("${hibernate.dialect:org.hibernate.dialect.PostgreSQLDialect}")
     private String  _dialect;
     @Value("${hibernate.hbm2ddl.auto:create-drop}")
     private String  _hbm2ddlAuto;
@@ -108,11 +108,14 @@ public class OrmConfig {
         } catch (IOException e) {
             throw new NrgServiceRuntimeException("An error occurred trying to get the Hibernate properties", e);
         }
+        // Naming strategies are configured as Hibernate properties instead of LocalSessionFactoryBean setters:
+        // Spring's orm.hibernate5 support was compiled against Hibernate 5's void setter signatures, which became
+        // fluent in Hibernate 6 and would fail with NoSuchMethodError at build time (see XnatPhysicalNamingStrategy).
+        properties.setProperty("hibernate.implicit_naming_strategy", "org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl");
+        properties.setProperty("hibernate.physical_naming_strategy", "org.nrg.framework.orm.hibernate.XnatPhysicalNamingStrategy");
         final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean(manager, XNAT_ENTITIES_PACKAGES);
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
-        bean.setPhysicalNamingStrategy(physicalNamingStrategy());
-        bean.setImplicitNamingStrategy(new ImplicitNamingStrategyLegacyHbmImpl());
         bean.setEntityPackageLists(packageLists);
         return bean;
     }

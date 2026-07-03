@@ -3,13 +3,13 @@ package org.nrg.xnat.entities;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.util.*;
@@ -22,7 +22,7 @@ import org.nrg.xnat.customforms.pojo.UserOptionsPojo;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(uniqueConstraints =
-        @UniqueConstraint(columnNames = {"scope", "dataType","entityId","visit","protocol", "subtype"}))
+        @UniqueConstraint(columnNames = {"scope", "dataType","entityId","visit","protocol", "subType"}))
 public class CustomVariableAppliesTo extends AbstractHibernateEntity {
 
     @Serial

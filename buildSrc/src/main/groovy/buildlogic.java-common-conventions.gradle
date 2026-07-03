@@ -28,6 +28,9 @@ repositories {
     maven { url 'https://maven.dcm4che.org' }
     maven { url 'https://raw.githubusercontent.com/nroduit/mvn-repo/master/' }
     maven { url 'https://jitpack.io' }
+    // Jakarta-shimmed legacy JARs (restlet/turbine/velocity) — see tools/jakarta-shim
+    // flatDir resolves [artifact]-[version].jar and ignores group
+    flatDir { dirs "${rootProject.projectDir}/tools/jakarta-shim/libs" }
 }
 
 // --- Jacoco ---
@@ -90,6 +93,9 @@ configurations.configureEach {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // Spring 6.1 removed LocalVariableTableParameterNameDiscoverer: constructor-arg and @RequestParam/@PathVariable
+    // name-based resolution now requires javac's -parameters flag.
+    options.compilerArgs << '-parameters'
 }
 
 tasks.withType(Javadoc).configureEach {

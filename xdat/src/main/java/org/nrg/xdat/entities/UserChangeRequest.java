@@ -13,7 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Auditable
 @Entity

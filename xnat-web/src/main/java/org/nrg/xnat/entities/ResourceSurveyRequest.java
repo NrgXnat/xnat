@@ -12,15 +12,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.hibernate.annotations.NamedQueries;
 import org.hibernate.annotations.NamedQuery;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import org.hibernate.annotations.Type;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.services.archive.ResourceMitigationReport;
 import org.nrg.xnat.services.archive.ResourceSurveyReport;
 import org.springframework.jdbc.core.RowMapper;
 
-import javax.persistence.*;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 import java.io.Serial;
 import java.util.Arrays;
@@ -202,11 +203,11 @@ public class ResourceSurveyRequest extends AbstractHibernateEntity {
 
     private Date closingDate;
 
-    @Type(type = "com.vladmihalcea.hibernate.type.json.JsonType")
+    @Type(JsonType.class)
     @Column(columnDefinition = "json")
     private ResourceSurveyReport surveyReport;
 
-    @Type(type = "com.vladmihalcea.hibernate.type.json.JsonType")
+    @Type(JsonType.class)
     @Column(columnDefinition = "json")
     private ResourceMitigationReport mitigationReport;
 }

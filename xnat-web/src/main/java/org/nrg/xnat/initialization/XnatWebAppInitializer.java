@@ -27,7 +27,7 @@ import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatche
 
 import org.nrg.xnat.web.filter.ApiIncludeContentTypeIsolationFilter;
 
-import javax.servlet.*;
+import jakarta.servlet.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

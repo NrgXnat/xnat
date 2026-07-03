@@ -12,7 +12,7 @@ package org.nrg.xnat.restlet.util;
 import java.util.Hashtable;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;

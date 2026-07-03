@@ -11,8 +11,6 @@ package org.nrg.mail.api;
 
 import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.mail.EmailException;
-import org.apache.commons.mail.HtmlEmail;
 import org.nrg.mail.exceptions.InvalidMailAttachmentException;
 import org.nrg.mail.services.MailService;
 import org.slf4j.Logger;
@@ -21,10 +19,10 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -294,75 +292,6 @@ public class MailMessage {
         }
 
         return helper.getMimeMessage();
-    }
-
-    /**
-     * Converts the mail message into an <a href="http://commons.apache.org/email">Apache
-     * Commons Mail package</a> {@link HtmlEmail} object. This can be used to work with legacy
-	 * code as well as with direct access to SMTP servers (as in fail-over mail messages
-	 * for internal use). 
-     * @return An Apache Commons Mail {@link HtmlEmail} object.
-     * @throws EmailException Indicates an error when configuring the HtmlEmail object.
-     */
-    public HtmlEmail asHtmlEmail() throws EmailException {
-    	HtmlEmail email = new HtmlEmail();
-
-        if (!StringUtils.isBlank(_from)) {
-            email.setFrom(_from);
-        }
-        if (_headers.size() > 0) {
-            final Map<String, String> converted = new HashMap<>();
-            for (final String key : _headers.keySet()) {
-                converted.put(key, Joiner.on(", ").join(_headers.get(key)));
-            }
-            email.setHeaders(converted);
-        }
-        if (!StringUtils.isBlank(_onBehalfOf)) {
-            email.addHeader("Sender", _onBehalfOf);
-        }
-        if (_tos.size() > 0) {
-            email.setTo(convertToInternetAddresses(_tos));
-        }
-        if (_ccs.size() > 0) {
-            email.setCc(convertToInternetAddresses(_ccs));
-        }
-        if (_bccs.size() > 0) {
-            email.setBcc(convertToInternetAddresses(_bccs));
-        }
-        if (!StringUtils.isBlank(_subject)) {
-            email.setSubject(_subject);
-        }
-        if (!StringUtils.isBlank(_html)) {
-            email.setHtmlMsg(_html);
-        }
-        if (!StringUtils.isBlank(_text)) {
-            email.setTextMsg(_text);
-        }
-        if (_attachments.size() > 0) {
-    		for (Map.Entry<String, File> entry : _attachments.entrySet()) {
-    			String key = entry.getKey();
-    			FileSystemResource resource = new FileSystemResource(entry.getValue());
-    			try {
-					email.attach(resource.getURL(), key, "");
-				} catch (IOException exception) {
-					_log.error("Got an error retrieving the attachment: " + key, exception);
-				}
-    		}
-    	}
-    	
-    	return email;
-    }
-
-    private Collection<InternetAddress> convertToInternetAddresses(final List<String> strings) {
-        List<InternetAddress> addresses = new ArrayList<>();
-        for (final String string : strings) {
-            try {
-                addresses.add(new InternetAddress(string));
-            } catch (AddressException e) {
-                _log.info("Address " + string + " is an");
-            }
-        }
-        return addresses;
     }
 
     /**

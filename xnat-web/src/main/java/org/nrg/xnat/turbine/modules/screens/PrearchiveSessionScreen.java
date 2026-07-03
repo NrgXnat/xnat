@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
@@ -31,7 +32,8 @@ public abstract class PrearchiveSessionScreen extends SecureScreen {
 	}
 
 	@Override
-	protected void doBuildTemplate(RunData data, Context context) throws Exception {
+	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 		final String folder = (String)TurbineUtils.GetPassedParameter("folder",data);
 	    final String timestamp = (String)TurbineUtils.GetPassedParameter("timestamp",data);
 	    final String project = (String)TurbineUtils.GetPassedParameter("project",data);	

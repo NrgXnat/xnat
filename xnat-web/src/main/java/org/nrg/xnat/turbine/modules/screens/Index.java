@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -34,7 +35,8 @@ import java.util.stream.Collectors;
 
 public class Index extends SecureScreen {
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         // TODO: put all this in a method in the theme service with an optional requested page parameter
         final String themedRedirect = themeService.getThemePage("Landing");
         if (StringUtils.isNotBlank(themedRedirect)) {

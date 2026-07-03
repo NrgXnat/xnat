@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import java.util.Hashtable;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.search.DisplaySearch;
@@ -29,8 +30,9 @@ public class XDATScreen_bundles extends AdminScreen {
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    protected void doBuildTemplate(RunData data, Context context)
+    protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
+        final RunData data = pipelineData.getRunData();
 //      TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		UserI user = TurbineUtils.getUser(data);	
 		try {

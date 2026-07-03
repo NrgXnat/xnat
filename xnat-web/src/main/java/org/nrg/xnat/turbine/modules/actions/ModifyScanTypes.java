@@ -13,6 +13,7 @@ import static org.nrg.xnat.helpers.scanType.AbstractScanTypeMapping.standardizeF
 
 import java.util.List;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XnatExperimentdata;
@@ -40,7 +41,8 @@ public class ModifyScanTypes extends ModifyItem{
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         try {
 			final String project = (String)TurbineUtils.GetPassedParameter("project", data);
 			final UserI user = TurbineUtils.getUser(data);

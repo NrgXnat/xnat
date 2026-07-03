@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.automation.entities.Script;
@@ -24,7 +25,8 @@ public class EditScript extends AdminScreen {
     }
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         log.debug("Found some stuff.");
         final String scriptId = data.getParameters().get("scriptId");
         if (!StringUtils.isEmpty(scriptId)) {

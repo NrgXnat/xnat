@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.actions;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.mail.services.EmailRequestLogService;
@@ -50,7 +51,8 @@ public class XDATForgotLogin extends VelocitySecureAction {
     }
 
     @Override
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         //noinspection Duplicates
         try {
             SecureAction.isCsrfTokenOk(data);
@@ -187,7 +189,8 @@ public class XDATForgotLogin extends VelocitySecureAction {
     }
 
     @Override
-    protected boolean isAuthorized(final RunData data) throws Exception {
+    protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
         return true;
     }
 

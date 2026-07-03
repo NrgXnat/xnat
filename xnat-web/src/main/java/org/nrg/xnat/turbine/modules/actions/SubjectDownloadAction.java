@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -31,7 +32,8 @@ public class SubjectDownloadAction extends SecureAction {
     }
 
     @Override
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         // Do a first smell test to see if the user is even logged in, legit, etc.
         final boolean isAuthorized = isAuthorized(data);
         if (!isAuthorized) {

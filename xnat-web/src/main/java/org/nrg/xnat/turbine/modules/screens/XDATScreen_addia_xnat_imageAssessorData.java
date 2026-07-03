@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.screens;
 import java.util.Calendar;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.base.BaseElement;
@@ -104,7 +105,8 @@ public class XDATScreen_addia_xnat_imageAssessorData
 		}
 	}
 
-	public void doBuildTemplate(RunData data, Context context) {
+	public void doBuildTemplate(PipelineData pipelineData, Context context) {
+        final RunData data = pipelineData.getRunData();
 		try {
 			if (TurbineUtils.HasPassedParameter("destination", data)) {
 				context.put("destination", TurbineUtils.GetPassedParameter("destination", data));

@@ -11,6 +11,7 @@ package org.nrg.xdat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -31,7 +32,8 @@ import java.util.List;
 @Slf4j
 public class ManageDataTypes extends AdminAction {
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final PopulateItem populater  = PopulateItem.Populate(data, "xdat:security", true);
         final XFTItem      found      = populater.getItem();
         final List<String> updatedIds = new ArrayList<>();

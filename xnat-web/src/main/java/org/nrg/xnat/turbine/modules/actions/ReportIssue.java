@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItem;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
@@ -46,7 +47,8 @@ public class ReportIssue extends SecureAction {
     private static final String SUBJECT_FORMAT  = "%s Issue Report from %s";
 
     @Override
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final UserI           user       = XDAT.getUserDetails();
         final ParameterParser parameters = data.getParameters();
 

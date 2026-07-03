@@ -15,6 +15,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.security.TurbineSecurityException;
 import org.apache.velocity.context.Context;
@@ -51,11 +52,12 @@ public class XDATLoginUser extends VelocityAction{
 	 * @exception TurbineSecurityException could not get instance of the
 	 *            anonymous user
 	 */
-	public void doPerform(RunData data, Context context)
+	public void doPerform(PipelineData pipelineData, Context context)
 			throws TurbineSecurityException
 	{
+        final RunData data = pipelineData.getRunData();
 		//ScreenUtils.OutputDataParameters(data);
-		//ScreenUtils.OutputContextParameters(TurbineVelocity.getContext(data));
+		//ScreenUtils.OutputContextParameters(TurbineUtils.getVelocityContext(data));
 		String username = (String)TurbineUtils.GetPassedParameter(CGI_USERNAME, data);
 		String password = (String)TurbineUtils.GetPassedParameter(CGI_PASSWORD, data);
 		if (StringUtils.isEmpty(username))

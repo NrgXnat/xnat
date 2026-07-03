@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -21,7 +22,8 @@ public abstract class DataManagementScreen extends SecureScreen {
      * @see org.nrg.xdat.turbine.modules.screens.SecureScreen#isAuthorized(org.apache.turbine.util.RunData)
      */
     @Override
-    protected boolean isAuthorized(RunData data) throws Exception {
+    protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
         boolean authorized= super.isAuthorized(data);
         if (authorized)
         {

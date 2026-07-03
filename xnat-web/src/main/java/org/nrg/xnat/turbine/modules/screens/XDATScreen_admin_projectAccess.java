@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.modules.screens.AdminScreen;
@@ -19,7 +20,8 @@ import org.nrg.xft.security.UserI;
 public class XDATScreen_admin_projectAccess extends AdminScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         UserI user = TurbineUtils.getUser(data);
         String query = "SELECT proj.id, CASE WHEN PUB_PROJS.read_element=1 THEN 'public' WHEN PRIV_PROJS.read_element=1 THEN 'protected'  WHEN PRIV_PROJS.read_element=0 THEN 'private' ELSE 'NULL' END AS accessibility" +
                 " FROM xnat_projectData proj "+

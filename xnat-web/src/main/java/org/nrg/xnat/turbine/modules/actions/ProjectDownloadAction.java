@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -32,7 +33,8 @@ public class ProjectDownloadAction extends SecureAction {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final String projectId = (String) TurbineUtils.GetPassedParameter("project", data);
 
         if (projectId.contains("\\") || projectId.contains("'")) {

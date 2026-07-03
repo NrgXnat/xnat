@@ -14,7 +14,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
-import org.apache.turbine.services.velocity.TurbineVelocity;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -29,15 +29,17 @@ import static org.nrg.framework.utilities.Patterns.INVALID_USERNAME_CHAR_PATTERN
 public class RegisterExternalLogin extends VelocitySecureScreen {
 
     @Override
-    protected void doBuildTemplate(final RunData data) throws Exception {
-        final Context context = TurbineVelocity.getContext(data);
+    protected void doBuildTemplate(final PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
+        final Context context = TurbineUtils.getVelocityContext(data);
         SecureScreen.loadAdditionalVariables(data, context);
 
         doBuildTemplate(data, context);
     }
 
     @Override
-    protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
+    protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final UsernameAuthMappingNotFoundException exception
                 = (UsernameAuthMappingNotFoundException) data.getRequest().getSession().getAttribute(UsernameAuthMappingNotFoundException.class.getSimpleName());
         if (exception == null) {
@@ -58,7 +60,8 @@ public class RegisterExternalLogin extends VelocitySecureScreen {
     }
 
     @Override
-    protected boolean isAuthorized(final RunData data) {
+    protected boolean isAuthorized(final PipelineData pipelineData) {
+        final RunData data = pipelineData.getRunData();
         return false;
     }
 

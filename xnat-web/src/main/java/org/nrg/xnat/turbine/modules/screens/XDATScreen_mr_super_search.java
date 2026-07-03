@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
@@ -27,7 +28,8 @@ public class XDATScreen_mr_super_search extends SecureScreen {
     /* (non-Javadoc)
      * @see org.cnl.xdat.turbine.modules.screens.SecureReport#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doBuildTemplate(RunData data, Context context) {
+    public void doBuildTemplate(PipelineData pipelineData, Context context) {
+        final RunData data = pipelineData.getRunData();
         try {
             Hashtable hash = ElementSecurity.GetDistinctIdValuesFor("xnat:investigatorData","default",TurbineUtils.getUser(data).getLogin());
             context.put("investigators",hash);

@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
@@ -54,7 +55,8 @@ public class ExptFileUpload extends SecureAction {
     private static final Logger logger = Logger.getLogger(ExptFileUpload.class);
 
     @Override
-    public void doPerform(RunData data, Context context) throws Exception{        
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception{
+        final RunData data = pipelineData.getRunData();        
         ParameterParser params = data.getParameters();
         HttpSession session = data.getSession();
         String uploadID= null;

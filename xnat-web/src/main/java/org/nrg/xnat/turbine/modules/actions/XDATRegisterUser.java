@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.utilities.Reflection;
@@ -61,7 +62,8 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
     }
 
     @Override
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
         boolean isProjectAccessRequest = hasPAR(data);
 

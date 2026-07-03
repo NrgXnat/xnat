@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocityErrorScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
@@ -23,7 +24,8 @@ import javax.servlet.http.HttpServletRequest;
 public class XnatErrorScreen extends VelocityErrorScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         super.doBuildTemplate(data, context);
 
         final HttpServletRequest request = data.getRequest();

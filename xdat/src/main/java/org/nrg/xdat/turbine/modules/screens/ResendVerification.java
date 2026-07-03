@@ -9,8 +9,9 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.apache.log4j.Logger;
-import org.apache.turbine.services.velocity.TurbineVelocity;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.mail.services.EmailRequestLogService;
@@ -27,14 +28,16 @@ public class ResendVerification extends SecureScreen {
 	static Logger logger = Logger.getLogger(ResendVerification.class);
 	
     @Override
-    protected void doBuildTemplate(RunData data) throws Exception {
-        Context c = TurbineVelocity.getContext(data);
+    protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
+        Context c = TurbineUtils.getVelocityContext(data);
         SecureScreen.loadAdditionalVariables(data, c);
         doBuildTemplate(data, c);
     }
 
     @Override
-    protected void doBuildTemplate(final RunData data, final Context context) {
+    protected void doBuildTemplate(final PipelineData pipelineData, final Context context) {
+        final RunData data = pipelineData.getRunData();
     	try {
             context.put("siteLogoPath", XDAT.getSiteLogoPath());
     		EmailRequestLogService requestLog = XDAT.getContextService().getBean(EmailRequestLogService.class);
@@ -68,7 +71,8 @@ public class ResendVerification extends SecureScreen {
     }
 
     @Override
-    protected boolean isAuthorized(RunData arg0) throws Exception {
+    protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
+        final RunData arg0 = pipelineData.getRunData();
         return false;
     }
   

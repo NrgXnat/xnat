@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -41,7 +42,8 @@ public class EmailCustomSearchAction extends SecureAction{
      * @see org.apache.turbine.modules.actions.VelocitySecureAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data))!=null){
             data.getSession().setAttribute("search_xml",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data)));
         }

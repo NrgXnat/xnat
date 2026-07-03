@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.display.DisplayManager;
@@ -25,8 +26,9 @@ import java.util.Set;
 public class ConfigureSearchFields extends AdminScreen {
 	UserI u;
 	@Override
-	protected void doBuildTemplate(RunData data, Context context)
+	protected void doBuildTemplate(PipelineData pipelineData, Context context)
 			throws Exception {
+        final RunData data = pipelineData.getRunData();
 
 	}
 }

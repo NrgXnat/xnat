@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -75,8 +76,9 @@ public abstract class SearchA extends SecureAction {
         return 40;
     }
 
-	public void doPerform(RunData data, Context context)
+	public void doPerform(PipelineData pipelineData, Context context)
 	{
+        final RunData data = pipelineData.getRunData();
 		try {
 		    doPreliminaryProcessing(data,context);
 

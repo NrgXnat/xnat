@@ -11,7 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.turbine.services.velocity.TurbineVelocity;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -38,8 +38,9 @@ import java.util.Objects;
 public class XDATScreen_UpdateUser extends SecureScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data) throws Exception {
-        final Context context = TurbineVelocity.getContext(data);
+    protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
+        final Context context = TurbineUtils.getVelocityContext(data);
 
         SecureScreen.loadAdditionalVariables(data, context);
 
@@ -53,7 +54,8 @@ public class XDATScreen_UpdateUser extends SecureScreen {
         doBuildTemplate(data, context);
     }
 
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final Boolean forgot  = (data.getSession().getAttribute("forgot")!=null && (Boolean)data.getSession().getAttribute("forgot")); 
         final Boolean expired = (data.getSession().getAttribute("expired")!=null && (Boolean)data.getSession().getAttribute("expired"));
         
@@ -223,7 +225,8 @@ public class XDATScreen_UpdateUser extends SecureScreen {
     }
 
     @Override
-    protected boolean isAuthorized(RunData data) {
+    protected boolean isAuthorized(PipelineData pipelineData) {
+        final RunData data = pipelineData.getRunData();
         return false;
     }
 

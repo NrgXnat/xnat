@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
@@ -26,8 +27,9 @@ import org.nrg.xft.exception.ElementNotFoundException;
  */
 public class XDATScreen_activate extends SecureScreen {
 	static Logger logger = Logger.getLogger(XDATScreen_activate.class);
-	public void doBuildTemplate(RunData data, Context context)
+	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
+        final RunData data = pipelineData.getRunData();
 	    try {
             ItemI item = null;
             try {

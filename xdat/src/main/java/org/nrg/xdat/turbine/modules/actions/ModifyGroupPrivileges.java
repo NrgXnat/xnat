@@ -10,12 +10,14 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 public class ModifyGroupPrivileges extends AdminAction {
 	static Logger logger = Logger.getLogger(ModifyGroupPrivileges.class);
-	public void doPerform(RunData data, Context context) throws Exception
+	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
+        final RunData data = pipelineData.getRunData();
 		data.setMessage("Not currently supported");
 	}
 }

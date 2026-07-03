@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -23,7 +24,8 @@ import java.util.List;
 public class XDATScreen_dbSchemas extends AdminScreen {
 
     @Override
-    public void doBuildTemplate(RunData data, Context context) {
+    public void doBuildTemplate(PipelineData pipelineData, Context context) {
+        final RunData data = pipelineData.getRunData();
         try {
             DBBackedSchemaService dbBackedSchemaService = XDAT.getContextService().getBean(DBBackedSchemaService.class);
             List<DBBackedSchema> schemas = dbBackedSchemaService.findAllSchema();

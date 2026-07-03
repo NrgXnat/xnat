@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.screens;
 import org.nrg.xdat.security.helpers.Features;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -22,7 +23,8 @@ import org.nrg.xnat.security.XnatProviderManager;
 @Slf4j
 public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
     @Override
-    protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
+    protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final boolean forceLocalLogin = data.getParameters().getBoolean("forceLocalLogin");
         if (!forceLocalLogin) {
             context.put("login_methods", getProviderManager().getVisibleEnabledProviders().values());

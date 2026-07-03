@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -48,7 +49,8 @@ import static org.nrg.xft.event.XftItemEventI.DELETE;
 @Slf4j
 public class DeleteProjectData extends SecureAction {
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final UserI           user      = XDAT.getUserDetails();
         final String          projectId = (String) TurbineUtils.GetPassedParameter("project", data);
         final XnatProjectdata project   = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);

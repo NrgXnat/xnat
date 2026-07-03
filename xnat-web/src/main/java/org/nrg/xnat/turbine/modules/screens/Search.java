@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
@@ -19,7 +20,8 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 @Slf4j
 public class Search extends SecureScreen {
     @Override
-    protected void doBuildTemplate(RunData data, Context context) {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) {
+        final RunData data = pipelineData.getRunData();
         final String node   = (String) TurbineUtils.GetPassedParameter("node", data);
         final String search = (String) TurbineUtils.GetPassedParameter("new_search", data);
         log.debug("Now in Search.doBuildTemplate(), got values node=\"{}\", new_search=\"{}\"",

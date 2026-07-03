@@ -14,7 +14,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
-import org.apache.turbine.services.velocity.TurbineVelocity;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -38,14 +38,16 @@ import static org.nrg.xdat.turbine.utils.TurbineUtils.redirectToLogin;
 @Slf4j
 public class VerifyEmail extends VelocitySecureScreen {
     @Override
-    protected void doBuildTemplate(RunData data) throws Exception {
-        final Context context = TurbineVelocity.getContext(data);
+    protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
+        final Context context = TurbineUtils.getVelocityContext(data);
         SecureScreen.loadAdditionalVariables(data, context);
         doBuildTemplate(data, context);
     }
 
     @Override
-    protected void doBuildTemplate(final RunData data, final Context context) {
+    protected void doBuildTemplate(final PipelineData pipelineData, final Context context) {
+        final RunData data = pipelineData.getRunData();
         final String alias = (String) TurbineUtils.GetPassedParameter("a", data);
         final String secret = (String) TurbineUtils.GetPassedParameter("s", data);
         final String userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias, secret);
@@ -139,7 +141,8 @@ public class VerifyEmail extends VelocitySecureScreen {
     }
 
     @Override
-    protected boolean isAuthorized(final RunData data) {
+    protected boolean isAuthorized(final PipelineData pipelineData) {
+        final RunData data = pipelineData.getRunData();
         return false;
     }
 

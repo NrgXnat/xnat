@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.screens;
 import java.sql.SQLException;
 import java.util.Hashtable;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.modules.screens.AdminScreen;
@@ -24,8 +25,9 @@ public class AdminSummary extends AdminScreen {
 	UserI u;
 	Hashtable tableProps ;
 	@Override
-	protected void doBuildTemplate(RunData data, Context context)
+	protected void doBuildTemplate(PipelineData pipelineData, Context context)
 			throws Exception {
+        final RunData data = pipelineData.getRunData();
 		
 		if(TurbineUtils.HasPassedParameter("duration1", data)){
 			context.put("duration1", TurbineUtils.GetPassedParameter("duration1", data));

@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -35,7 +36,8 @@ public class UserCacheAction extends SecureAction {
 
      */
 
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
     	String folder = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("folder",data));
     	Boolean delete = Boolean.valueOf(((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("delete", data)));
     	if (folder != null) {

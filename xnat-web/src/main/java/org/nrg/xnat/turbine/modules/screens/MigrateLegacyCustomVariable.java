@@ -1,5 +1,6 @@
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -12,7 +13,8 @@ import org.nrg.xnat.features.CustomFormsFeatureFlags;
 public class MigrateLegacyCustomVariable extends SecureScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 
         if (!XDAT.getBooleanPreferenceValue(CustomFormsFeatureFlags.CUSTOM_FORMS_FEATURE_FLAGS_TOOL_ID, CustomFormsFeatureFlags.CUSTOM_VARIABLE_MIGRATION_PREFERENCE_NAME, false)) {
             data.setMessage("Unauthorized: You do not have sufficient permission to access this page");

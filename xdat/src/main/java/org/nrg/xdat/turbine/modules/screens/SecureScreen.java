@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
-import org.apache.turbine.services.velocity.TurbineVelocity;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.generic.EscapeTool;
@@ -143,10 +143,11 @@ public abstract class SecureScreen extends VelocitySecureScreen {
      *
      * @throws Exception When something goes wrong.
      */
-    protected void doBuildTemplate(final RunData data) throws Exception {
+    protected void doBuildTemplate(final PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
         try {
             attemptToPreventBrowserCachingOfHTML(data.getResponse());
-            final Context context = TurbineVelocity.getContext(data);
+            final Context context = TurbineUtils.getVelocityContext(data);
             loadAdditionalVariables(data, context);
             if (UserHelper.getUserHelper(data) == null && !XDAT.getSiteConfigPreferences().getRequireLogin()) {
                 UserHelper.setGuestUserHelper(data);
@@ -282,7 +283,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
      *
      * @throws Exception When something goes wrong.
      */
-    protected boolean isAuthorized(final RunData data) throws Exception {
+    protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
         return isAuthorizedInternal(data);
     }
 
@@ -307,7 +309,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     private boolean isAuthorizedInternal(final RunData data) throws Exception {
         if (XDAT.getSiteConfigPreferences().getRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
             logger.debug("isAuthorized() Login Required:true");
-            TurbineVelocity.getContext(data).put("logout", "true");
+            TurbineUtils.getVelocityContext(data).put("logout", "true");
             data.getParameters().setString("logout", "true");
             boolean isAuthorized = false;
 

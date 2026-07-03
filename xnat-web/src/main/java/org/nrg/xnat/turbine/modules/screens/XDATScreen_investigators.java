@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import java.util.Hashtable;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.search.DisplaySearch;
@@ -29,8 +30,9 @@ public class XDATScreen_investigators extends SecureScreen {
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    protected void doBuildTemplate(RunData data, Context context)
+    protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
+        final RunData data = pipelineData.getRunData();
         UserI user = TurbineUtils.getUser(data);	
 		try {
 		    DisplaySearch search = UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data),"xnat:investigatorData","listing");

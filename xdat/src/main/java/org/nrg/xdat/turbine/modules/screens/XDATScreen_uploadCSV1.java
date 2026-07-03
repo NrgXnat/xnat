@@ -16,6 +16,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.helpers.Users;
@@ -29,8 +30,9 @@ import org.nrg.xft.utils.FieldMapping;
 public class XDATScreen_uploadCSV1 extends SecureScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context)
+    protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
+        final RunData data = pipelineData.getRunData();
         FieldMapping fm = (FieldMapping)context.get("fm");
         String fm_id = (String)TurbineUtils.GetPassedParameter("fm_id", data);
         if (fm==null && fm_id!=null){

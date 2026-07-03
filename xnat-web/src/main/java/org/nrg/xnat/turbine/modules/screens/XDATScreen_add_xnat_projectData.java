@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -41,7 +42,8 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
 	}
     
     @Override
-    protected boolean isAuthorized(final RunData data) throws Exception {
+    protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
         if(!XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation()) {
             return super.isAuthorizedAdmin(data);
         }else {

@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -30,8 +31,9 @@ public class XDATScreen_email extends AdminScreen {
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    protected void doBuildTemplate(RunData data, Context context)
+    protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
+        final RunData data = pipelineData.getRunData();
         ArrayList al = ItemSearch.GetAllItems("xdat:user",null,false).items();
         Collections.sort(al, new nameComparator());
         context.put("users",al);

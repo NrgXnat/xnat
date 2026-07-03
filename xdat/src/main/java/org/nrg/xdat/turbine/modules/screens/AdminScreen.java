@@ -9,11 +9,13 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 
 public abstract class AdminScreen extends SecureScreen {
     @Override
-    protected boolean isAuthorized(final RunData data) throws Exception {
+    protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
         return isAuthorizedAdmin(data);
     }
 }

@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.base.BaseElement;
@@ -57,8 +58,9 @@ public abstract class SecureReport extends SecureScreen {
         return null;
     }
 
-	public void doBuildTemplate(RunData data, Context context)
+	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
+        final RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
 
 	    logger.debug("BEGIN SECURE REPORT :" + this.getClass().getName());

@@ -10,6 +10,7 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.search.DisplaySearch;
@@ -18,7 +19,8 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 public abstract class ListingAction extends SecureAction {
 
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
         String destination = getDestinationScreenName(data);
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("querytype",data)) !=null)

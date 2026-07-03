@@ -9,6 +9,7 @@
 
 
 package org.nrg.xdat.turbine.modules.screens;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 /**
@@ -16,8 +17,9 @@ import org.apache.velocity.context.Context;
  *
  */
 public class Index extends SecureScreen {
-	public void doBuildTemplate(RunData data, Context context)
+	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
+        final RunData data = pipelineData.getRunData();
         
 	}
 }

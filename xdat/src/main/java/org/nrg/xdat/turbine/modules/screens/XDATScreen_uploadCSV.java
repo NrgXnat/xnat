@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -27,7 +28,8 @@ import java.util.Arrays;
 
 public class XDATScreen_uploadCSV extends SecureScreen {
     @Override
-    protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
+    protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         context.put("elements", ElementSecurity.GetNonXDATElementNames());
         context.put("all_elements", GenericWrapperElement.GetAllElements(false));
         //If an upload was attempted earlier in the session, then those rows must be cleared off.

@@ -9,13 +9,15 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 
 public class XDATScreen_uploadCSV4 extends SecureScreen{
 
 	@Override
-	protected void doBuildTemplate(RunData data, Context context) throws Exception {
+	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 		// TODO Auto-generated method stub
 		
 	}

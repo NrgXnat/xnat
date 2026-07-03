@@ -19,6 +19,7 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
@@ -31,7 +32,8 @@ public class UploadBatch extends SecureAction {
     static org.apache.log4j.Logger logger = Logger.getLogger(UploadBatch.class);
 
     @Override
-    public void doPerform(RunData data,Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData,Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         System.out.println("Starting Upload");
         long startTime = Calendar.getInstance().getTimeInMillis();
         ParameterParser params = data.getParameters();

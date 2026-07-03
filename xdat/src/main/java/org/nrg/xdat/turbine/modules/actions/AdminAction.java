@@ -10,6 +10,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
@@ -23,7 +24,8 @@ public abstract class AdminAction extends SecureAction {
      * @see org.nrg.xdat.turbine.modules.screens.SecureScreen#isAuthorized(org.apache.turbine.util.RunData)
      */
     @Override
-    protected boolean isAuthorized(RunData data) throws Exception {
+    protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
         if (!super.isAuthorized(data)) {
             return false;
         }

@@ -10,6 +10,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -36,7 +37,8 @@ public class ModifyEmail extends ModifyAction {
 
     public static final String EMAIL_ADDRESS_CHANGED = "Email address changed.";
 
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final String method = data.getRequest().getMethod();
         UserChangeRequestService userChangeRequestService = XDAT.getContextService().getBean(UserChangeRequestService.class);
 

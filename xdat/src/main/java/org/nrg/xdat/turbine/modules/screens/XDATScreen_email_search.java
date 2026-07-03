@@ -10,6 +10,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.search.DisplaySearch;
@@ -24,8 +25,9 @@ public class XDATScreen_email_search extends SecureScreen {
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doBuildTemplate(RunData data, Context context)
+    public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
+        final RunData data = pipelineData.getRunData();
 		DisplaySearch search = TurbineUtils.getSearch(data);
 		
 		context.put("search",search);

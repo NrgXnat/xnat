@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XnatMrsessiondata;
@@ -39,7 +40,8 @@ public class PrearchiveMatch extends SecureScreen {
     final String[] pet_identifiers={"xnat:petSessionData.ID","xnat:petSessionData.label","xnat:petSessionData.sharing.share.label"};
     final String[] ct_identifiers={"xnat:ctSessionData.ID","xnat:ctSessionData.label","xnat:ctSessionData.sharing.share.label"};
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         ArrayList allMatchers=new ArrayList();
 
         String project = (String)TurbineUtils.GetPassedParameter("project", data);

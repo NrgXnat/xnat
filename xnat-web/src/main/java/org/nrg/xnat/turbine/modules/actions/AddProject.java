@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.ScreenLoader;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.utilities.Reflection;
@@ -48,7 +49,8 @@ import static org.nrg.xft.event.XftItemLifecyclePhase.Save;
 @Slf4j
 public class AddProject extends AbstractProjectSecureAction {
     @Override
-    public void doPerform(final RunData data, final Context context) {
+    public void doPerform(final PipelineData pipelineData, final Context context) {
+        final RunData data = pipelineData.getRunData();
         if (TurbineUtils.HasPassedParameter("tag", data)) {
             context.put("tag", TurbineUtils.GetPassedParameter("tag", data));
         }

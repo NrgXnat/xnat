@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.hibernate.exception.ConstraintViolationException;
@@ -44,7 +45,8 @@ public class RegisterExternalLogin extends XDATRegisterUser {
     }
 
     @Override
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final String operation    = (String) TurbineUtils.GetPassedParameter("operation", data);
         final String username     = (String) TurbineUtils.GetPassedParameter("username", data);
         final String password     = (String) TurbineUtils.GetPassedParameter("password", data);

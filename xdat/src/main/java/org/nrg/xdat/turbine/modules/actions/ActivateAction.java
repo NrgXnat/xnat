@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -28,8 +29,9 @@ import org.nrg.xft.utils.SaveItemHelper;
  */
 public class ActivateAction extends SecureAction{
     static Logger logger = Logger.getLogger(ActivateAction.class);
-	public void doPerform(RunData data, Context context) throws Exception
+	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
+        final RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
 	    ItemI item = activate(data,context);
 	    if (item ==null)

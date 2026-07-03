@@ -10,6 +10,7 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
@@ -24,7 +25,8 @@ import org.nrg.xft.schema.design.SchemaElementI;
 public class XDATActionRouter extends SecureAction
 {
 	static Logger logger = Logger.getLogger(XDATActionRouter.class);
-   public void doPerform(RunData data, Context context){
+   public void doPerform(PipelineData pipelineData, Context context){
+        final RunData data = pipelineData.getRunData();
        preserveVariables(data,context);
    		String action = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("xdataction",data));
    		if (action != null)

@@ -12,13 +12,15 @@
 package org.nrg.xdat.turbine.modules.actions;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 public class InitXDAT extends VelocitySecureAction
 {
 	static Logger logger = Logger.getLogger(InitXDAT.class);
 
-   public void doPerform(RunData data, Context context){
+   public void doPerform(PipelineData pipelineData, Context context){
+        final RunData data = pipelineData.getRunData();
    	logger.debug("InitXDAT BEGIN");
    	try{
    		//XDAT.init("C:\\jakarta-tomcat-5.5.4\\webapps\\cnda4\\WEB-INF\\conf\\XDAT\\");
@@ -35,8 +37,9 @@ public class InitXDAT extends VelocitySecureAction
 	   }
    	logger.debug("InitXDAT END");
    }
-    protected boolean isAuthorized( RunData data ) throws Exception
+    protected boolean isAuthorized(PipelineData pipelineData) throws Exception
     {
+        final RunData data = pipelineData.getRunData();
         return true;
     }
 }

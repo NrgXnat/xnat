@@ -16,6 +16,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
@@ -56,7 +57,8 @@ public class XDATScreen_download_sessions extends SecureScreen {
     }
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         // Do a first smell test to see if the user is even logged in, legit, etc.
         final boolean isAuthorized = isAuthorized(data);
         if (!isAuthorized) {

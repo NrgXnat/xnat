@@ -13,6 +13,7 @@ package org.nrg.xdat.turbine.modules.actions;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -29,8 +30,9 @@ import org.nrg.xft.db.PoolDBUtils;
  */
 public class RefreshAction extends AdminAction {
 	static Logger logger = Logger.getLogger(RefreshAction.class);
-	public void doPerform(RunData data, Context context) throws Exception
+	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
+        final RunData data = pipelineData.getRunData();
 		if (TurbineUtils.GetPassedParameter("refresh",data) !=null)
 		{
 			String refresh = ((String)TurbineUtils.GetPassedParameter("refresh",data));
@@ -69,7 +71,8 @@ public class RefreshAction extends AdminAction {
 
     @Override
 
-    protected boolean isAuthorized(RunData data) throws Exception {
+    protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
 
         boolean authorized= super.isAuthorized(data);
 

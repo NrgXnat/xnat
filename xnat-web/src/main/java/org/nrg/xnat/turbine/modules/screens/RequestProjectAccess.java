@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.screens;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -22,7 +23,8 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 @Slf4j
 public class RequestProjectAccess extends SecureScreen {
     @Override
-    protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
+    protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final String projectId = (String) TurbineUtils.GetPassedParameter("project", data);
         log.debug("User {} is requesting access to project {}", XDAT.getUserDetails().getUsername(), projectId);
         context.put("project", XnatProjectdata.getXnatProjectdatasById(projectId, null, false));

@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import java.util.Hashtable;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.helpers.Users;
@@ -23,8 +24,9 @@ import org.nrg.xft.security.UserI;
 public class XDATScreen_manageGroups_xdat_user extends AdminScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context)
+    protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
+        final RunData data = pipelineData.getRunData();
         try {
             ItemI item = TurbineUtils.GetItemBySearch(data);
             if (item == null)

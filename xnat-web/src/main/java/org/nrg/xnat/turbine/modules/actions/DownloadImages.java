@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.lang3.NotImplementedException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -53,7 +54,8 @@ public class DownloadImages extends SecureAction {
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     @SuppressWarnings("deprecation")
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         log.info("BEGIN DownloadImages.java");
         UserI user = TurbineUtils.getUser(data);
         long startTime = Calendar.getInstance().getTimeInMillis();

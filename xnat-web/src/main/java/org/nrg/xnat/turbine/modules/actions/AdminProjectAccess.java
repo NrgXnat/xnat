@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -34,7 +35,8 @@ public class AdminProjectAccess extends SecureAction {
 	 * .apache.turbine.util.RunData, org.apache.velocity.context.Context)
 	 */
 	@Override
-	public void doPerform(RunData data, Context context) throws Exception {
+	public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 		UserI user = TurbineUtils.getUser(data);
 		int counter = 0;
 		List<String> successfulArray = new ArrayList<String>();

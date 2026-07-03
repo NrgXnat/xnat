@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -30,8 +31,9 @@ import org.nrg.xft.security.UserI;
  */
 public class XDATScreen_enable_xdat_user extends AdminScreen {
 	static Logger logger = Logger.getLogger(XDATScreen_enable_xdat_user.class);
-	public void doBuildTemplate(RunData data, Context context)
+	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
+        final RunData data = pipelineData.getRunData();
 		try {
 			String login=(String)TurbineUtils.GetPassedParameter("search_value", data);
 			if (login != null)

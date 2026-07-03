@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
@@ -16,7 +17,8 @@ import org.nrg.xdat.turbine.modules.actions.SecureAction;
 public class ManageProjectPermissions extends SecureAction {
 
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
     }
 
 }

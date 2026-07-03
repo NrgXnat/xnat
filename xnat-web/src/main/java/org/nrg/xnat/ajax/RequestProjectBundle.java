@@ -22,7 +22,6 @@ import javax.servlet.http.HttpSession;
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.rundata.RunDataService;
 import org.apache.turbine.services.rundata.TurbineRunDataFacade;
-import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.TurbineException;
 import org.apache.velocity.context.Context;
@@ -64,7 +63,7 @@ public class RequestProjectBundle {
                         "No RunData Service configured!");
             }
             RunData data = rundataService.getRunData(req, response, sc);
-            Context context = TurbineVelocity.getContext(data);
+            Context context = TurbineUtils.getVelocityContext(data);
 
             StringBuffer sb = new StringBuffer();
             

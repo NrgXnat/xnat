@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -26,8 +27,9 @@ import org.nrg.xft.security.UserI;
 public class XDATScreen_manageGroups_xdat_user extends AdminScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context)
+    protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
+        final RunData data = pipelineData.getRunData();
         try {
         	UserI tempUser=null;
 			try {

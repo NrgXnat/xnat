@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -24,7 +25,8 @@ import java.util.List;
 public class ConfirmRegister extends SecureAction {
 
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         try {
             UserI newUser=Users.createUser(TurbineUtils.GetDataParameterHash(data));
             
@@ -75,8 +77,9 @@ public class ConfirmRegister extends SecureAction {
         }
     }
 
-    protected boolean isAuthorized( RunData data )  throws Exception
+    protected boolean isAuthorized(PipelineData pipelineData)  throws Exception
     {
+        final RunData data = pipelineData.getRunData();
         return true;
     }
 }

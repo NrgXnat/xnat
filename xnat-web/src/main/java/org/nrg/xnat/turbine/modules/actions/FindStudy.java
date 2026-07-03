@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.display.DisplayManager;
@@ -33,7 +34,8 @@ public class FindStudy extends SecureAction {
      * org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache
      * .turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 
         String patientName = data.getParameters().getString("patientName");
         String patientID = data.getParameters().getString("patientID");

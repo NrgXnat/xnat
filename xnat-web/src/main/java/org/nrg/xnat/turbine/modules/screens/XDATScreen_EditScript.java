@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -21,7 +22,8 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 public class XDATScreen_EditScript extends SecureScreen {
 
 	@Override
-	protected void doBuildTemplate(RunData arg0, Context arg1) throws Exception {
+	protected void doBuildTemplate(PipelineData pipelineData, Context arg1) throws Exception {
+        final RunData arg0 = pipelineData.getRunData();
 		final UserI user = XDAT.getUserDetails();
 		arg1.put("user", user.getUsername());
 		if (Roles.isSiteAdmin(user)) {

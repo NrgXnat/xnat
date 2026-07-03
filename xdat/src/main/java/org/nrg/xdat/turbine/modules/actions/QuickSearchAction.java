@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -29,7 +30,8 @@ public class QuickSearchAction extends SecureAction {
     /* (non-Javadoc)
      * @see org.nrg.xdat.turbine.modules.actions.SearchA#setupSearch(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doPerform(RunData data, Context context) {
+    public void doPerform(PipelineData pipelineData, Context context) {
+        final RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
         String s = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("searchValue",data));
         if (s==null || s.equalsIgnoreCase(""))

@@ -16,6 +16,7 @@ import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
@@ -58,7 +59,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
     }
 
     @Override
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         //noinspection Duplicates
         try {
             SecureAction.isCsrfTokenOk(data);
@@ -235,7 +237,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
     }
 
     @Override
-    protected boolean isAuthorized(final RunData data) {
+    protected boolean isAuthorized(final PipelineData pipelineData) {
+        final RunData data = pipelineData.getRunData();
         return true;
     }
 

@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
@@ -22,7 +23,8 @@ public class CreateExperiment extends SecureAction {
     static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(CreateExperiment.class);
 
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         if (TurbineUtils.HasPassedParameter("destination", data)){
             context.put("destination", TurbineUtils.GetPassedParameter("destination", data));
         }

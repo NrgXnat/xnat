@@ -9,11 +9,13 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 
 public abstract class AdminReport extends SecureReport {
     @Override
-    protected boolean isAuthorized(RunData data) throws Exception {
+    protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
         return isAuthorizedAdmin(data);
     }
 }

@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XnatSubjectdata;
@@ -25,7 +26,8 @@ public class XDATScreen_add_experiment extends SecureScreen {
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 
 //        ArrayList elements = new ArrayList();
 //        Iterator editable_Displays = TurbineUtils.getUser(data).getEditableElementDisplays().iterator();

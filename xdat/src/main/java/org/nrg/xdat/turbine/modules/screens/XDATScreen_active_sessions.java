@@ -14,13 +14,15 @@ import java.util.Collection;
 import java.util.Date;
 
 import org.apache.turbine.services.session.TurbineSession;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 
 public class XDATScreen_active_sessions extends AdminScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         try {
             Collection col = TurbineSession.getActiveSessions();
             context.put("sessions", col);

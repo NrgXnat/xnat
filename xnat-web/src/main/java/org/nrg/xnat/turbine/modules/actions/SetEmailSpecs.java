@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.ArcArchivespecification;
@@ -25,7 +26,8 @@ public class SetEmailSpecs extends AdminAction {
      * @see org.apache.turbine.modules.actions.VelocitySecureAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         XFTItem item = PopulateItem.Populate(data,"arc:ArchiveSpecification",true).getItem();
         item.setUser(TurbineUtils.getUser(data));
         ArcSpecManager.save(new ArcArchivespecification(item), newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, "Modified email specifications."));

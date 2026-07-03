@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -32,8 +33,9 @@ import java.util.Hashtable;
  */
 public class ModifyUser extends SecureAction {
 	static Logger logger = Logger.getLogger(ModifyUser.class);
-	public void doPerform(RunData data, Context context) throws Exception
+	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
+        final RunData data = pipelineData.getRunData();
 		// TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		// parameter specifying elementAliass and elementNames
 		String header = "ELEMENT_";

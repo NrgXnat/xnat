@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.ArcArchivespecification;
@@ -30,8 +31,9 @@ public class ImageUpload extends SecureScreen {
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    protected void doBuildTemplate(final RunData data, final Context context)
+    protected void doBuildTemplate(final PipelineData pipelineData, final Context context)
     throws MalformedURLException {
+        final RunData data = pipelineData.getRunData();
         final Date d = Calendar.getInstance().getTime();
 
         final SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_hhmmss");

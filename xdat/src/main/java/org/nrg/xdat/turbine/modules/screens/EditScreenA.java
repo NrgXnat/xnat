@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -49,7 +50,8 @@ public abstract class EditScreenA extends SecureScreen {
         }
     }
 
-    public void doBuildTemplate(RunData data, Context context) {
+    public void doBuildTemplate(PipelineData pipelineData, Context context) {
+        final RunData data = pipelineData.getRunData();
         try {
             if (TurbineUtils.HasPassedParameter("destination", data)) {
                 context.put("destination", TurbineUtils.GetPassedParameter("destination", data));

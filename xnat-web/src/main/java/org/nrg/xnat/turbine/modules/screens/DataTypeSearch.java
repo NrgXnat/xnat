@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
@@ -18,8 +19,9 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 public class DataTypeSearch extends SecureScreen {
 
 	@Override
-	protected void doBuildTemplate(RunData data, Context context)
+	protected void doBuildTemplate(PipelineData pipelineData, Context context)
 			throws Exception {
+        final RunData data = pipelineData.getRunData();
 
 		if(TurbineUtils.HasPassedParameter("dataType",data)){
 			SchemaElement gwe = SchemaElement.GetElement((String)TurbineUtils.GetPassedParameter("dataType", data));

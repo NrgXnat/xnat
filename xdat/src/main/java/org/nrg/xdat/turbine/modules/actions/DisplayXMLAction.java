@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -21,8 +22,9 @@ import org.nrg.xft.ItemI;
  */
 public class DisplayXMLAction extends SecureAction {
 	static Logger logger = Logger.getLogger(DisplayXMLAction.class);
-	public void doPerform(RunData data, Context context) throws Exception
+	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
+        final RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
 		try {
 			ItemI item = TurbineUtils.GetItemBySearch(data);

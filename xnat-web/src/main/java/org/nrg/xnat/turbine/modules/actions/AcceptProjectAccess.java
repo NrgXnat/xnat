@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -26,7 +27,8 @@ import java.util.List;
 public class AcceptProjectAccess extends SecureAction {
 
 	@Override
-	public void doPerform(RunData data, Context context) throws Exception {
+	public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 		UserI user = (UserI) context.get("user"); //Check the user in the context before XDAT.getUserDetails() because XDAT.getUserDetails() may still be the guest user at this point.
 
 		if (user == null) {

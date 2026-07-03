@@ -10,6 +10,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
@@ -27,7 +28,8 @@ import org.nrg.xft.schema.design.SchemaElementI;
  */
 @Slf4j
 public class DisplayItemAction extends SecureAction {
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         preserveVariables(data, context);
         final String defaultReportIdentifierClass = XDAT.getSiteConfigurationProperty("UI.defaultReportIdentifier", "org.nrg.xdat.navigation.DefaultReportIdentifier");
 

@@ -14,7 +14,8 @@ public class TriageResources extends CustomTableScreen {
 	 * Override of standard build method used to prep context for the vm file.
 	 */
 	/*@Override
-	protected void doBuildTemplate(RunData data, Context context) throws Exception {
+	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 		if(data.getParameters().getObject("hideTopBar")!=null){
 			context.put("hideTopBar", Boolean.valueOf((String)TurbineUtils.GetPassedParameter(("hideTopBar"), data)));
 		}

@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import java.util.Hashtable;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.search.DisplaySearch;
@@ -25,8 +26,9 @@ import org.nrg.xft.security.UserI;
  *
  */
 public class XDATScreen_roles extends AdminScreen {
-	public void doBuildTemplate(RunData data, Context context)
+	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
+        final RunData data = pipelineData.getRunData();
 		//TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		UserI user = TurbineUtils.getUser(data);	
 		try {

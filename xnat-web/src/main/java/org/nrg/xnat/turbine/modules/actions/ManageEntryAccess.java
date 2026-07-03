@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ScreenLoader;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
@@ -64,8 +65,9 @@ public class ManageEntryAccess extends ModifyItem {
 		}
     }
     
-    public void doPerform(RunData data, Context context) throws Exception
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception
     {
+        final RunData data = pipelineData.getRunData();
         XFTItem first =null;
         preserveVariables(data,context);
         //TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());

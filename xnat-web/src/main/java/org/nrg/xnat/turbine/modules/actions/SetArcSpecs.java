@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import javax.validation.constraints.NotNull;
@@ -48,7 +49,8 @@ public class SetArcSpecs extends AdminAction {
      * @param context The context for the request.
      */
     @Override
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final PopulateItem populater = PopulateItem.Populate(data, "arc:ArchiveSpecification", true);
         final XFTItem      item      = populater.getItem();
         item.setUser(XDAT.getUserDetails());

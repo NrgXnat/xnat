@@ -28,6 +28,7 @@ import org.apache.avalon.framework.logger.Logger;
 import org.apache.fop.apps.Driver;
 import org.apache.fop.messaging.MessageHandler;
 import org.apache.turbine.Turbine;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.base.BaseElement;
@@ -139,7 +140,8 @@ public class XDATScreen_pdf extends SecureScreen {
         return out;
     }
 
-    public void doBuildTemplate(RunData data, Context context) {
+    public void doBuildTemplate(PipelineData pipelineData, Context context) {
+        final RunData data = pipelineData.getRunData();
         try {
             item = TurbineUtils.GetItemBySearch(data);
         } catch (Exception ignored) {

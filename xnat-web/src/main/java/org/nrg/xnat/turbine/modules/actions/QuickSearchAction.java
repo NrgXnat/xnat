@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -55,7 +56,8 @@ public class QuickSearchAction extends SecureAction {
     /* (non-Javadoc)
      * @see org.nrg.xdat.turbine.modules.actions.SearchA#setupSearch(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doPerform(RunData data, Context context) {
+    public void doPerform(PipelineData pipelineData, Context context) {
+        final RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
         String searchValue = ((String) TurbineUtils.GetPassedParameter("searchValue",data));
         UserI user = XDAT.getUserDetails();

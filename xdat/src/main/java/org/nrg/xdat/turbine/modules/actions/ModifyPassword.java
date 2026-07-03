@@ -10,6 +10,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -39,7 +40,8 @@ import java.util.Date;
  */
 @SuppressWarnings("unused")
 public class ModifyPassword extends ModifyAction {
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         setDataAndContext(data, context);
 
         if (data.getSession().getAttribute("forgot") != null && ((Boolean) data.getSession().getAttribute("forgot"))) {

@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import java.util.Hashtable;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.search.DisplaySearch;
@@ -23,8 +24,9 @@ import org.nrg.xft.security.UserI;
 public class XDATScreen_manage_info extends AdminScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context)
+    protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
+        final RunData data = pipelineData.getRunData();
         UserI user = TurbineUtils.getUser(data); 
         try {
             DisplaySearch search = UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data),"xdat:infoEntry","listing");

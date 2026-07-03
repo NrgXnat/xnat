@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -22,7 +23,8 @@ import org.nrg.xft.security.UserI;
 public class RequestProjectAccessForm extends SecureScreen {
     private XnatProjectdata project = null;
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         String p = ((String) TurbineUtils.GetPassedParameter("project",data));
         UserI user = XDAT.getUserDetails();
         if (project==null){

@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import java.io.File;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.ElementSecurity;
@@ -22,8 +23,9 @@ import org.nrg.xft.utils.FieldMapping;
 public class XDATScreen_uploadCSV2_Save extends SecureScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context)
+    protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
+        final RunData data = pipelineData.getRunData();
         context.put("elements",ElementSecurity.GetNonXDATElementNames());
 
         FieldMapping fm = (FieldMapping)context.get("fm");

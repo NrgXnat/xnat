@@ -10,6 +10,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.Velocity;
@@ -35,7 +36,8 @@ public class RequestAccess extends SecureAction {
     static Logger logger = Logger.getLogger(RequestAccess.class);
 
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         String p = ((String) TurbineUtils.GetPassedParameter("project",data));
         XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(p, null, false);
 

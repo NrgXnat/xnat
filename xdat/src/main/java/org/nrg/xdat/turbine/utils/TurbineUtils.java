@@ -17,7 +17,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
+import org.apache.turbine.pipeline.PipelineData;
+import org.apache.turbine.services.TurbineServices;
 import org.apache.turbine.services.intake.model.Group;
+import org.apache.turbine.services.velocity.VelocityService;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.app.Velocity;
@@ -118,6 +121,15 @@ public class TurbineUtils {
         }
 
         return INSTANCE;
+    }
+
+    /**
+     * Obtains a Velocity {@link Context} from Turbine's VelocityService. Replaces the
+     * {@code org.apache.turbine.services.velocity.TurbineVelocity} static facade, which was
+     * removed in Turbine 5.x. Accepts a {@link RunData} directly (RunData is-a PipelineData).
+     */
+    public static Context getVelocityContext(final PipelineData pipelineData) {
+        return ((VelocityService) TurbineServices.getInstance().getService(VelocityService.SERVICE_NAME)).getContext(pipelineData);
     }
 
     private XdatSecurity getSecurityObject() {

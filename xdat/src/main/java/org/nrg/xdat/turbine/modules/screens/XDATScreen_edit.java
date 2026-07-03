@@ -10,6 +10,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.base.BaseElement;
@@ -26,8 +27,9 @@ import org.nrg.xft.schema.design.SchemaElementI;
  *
  */
 public class XDATScreen_edit extends SecureScreen {
-	public void doBuildTemplate(RunData data, Context context)
+	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
+        final RunData data = pipelineData.getRunData();
 		try {
 			ItemI item = TurbineUtils.GetItemBySearch(data);
 			if (item == null)

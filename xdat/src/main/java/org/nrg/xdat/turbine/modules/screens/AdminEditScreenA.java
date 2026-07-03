@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
@@ -32,7 +33,8 @@ public abstract class AdminEditScreenA extends EditScreenA {
      * {@inheritDoc}
      */
     @Override
-    protected boolean isAuthorized(final RunData data) throws Exception {
+    protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
+        final RunData data = pipelineData.getRunData();
         boolean authorized = super.isAuthorized(data);
         if (authorized) {
             final UserI user = XDAT.getUserDetails();

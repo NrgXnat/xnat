@@ -9,13 +9,15 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 
 @SuppressWarnings("unused")
 public class UploadOptions extends DICOMSCPPage {
 	@Override
-	protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
+	protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 		super.doBuildTemplate(data, context);
 	}
 }

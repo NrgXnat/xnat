@@ -13,6 +13,7 @@ import java.io.File;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
@@ -26,7 +27,8 @@ public class BatchUploadSummary extends SecureScreen {
      * @see org.apache.turbine.modules.screens.VelocitySecureScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         UserI user = TurbineUtils.getUser(data);
         String cachepath= ArcSpecManager.GetInstance().getGlobalCachePath();
         

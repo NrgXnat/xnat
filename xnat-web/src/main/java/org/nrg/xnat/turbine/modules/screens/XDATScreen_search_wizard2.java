@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.display.ElementDisplay;
@@ -24,7 +25,8 @@ import java.util.Map;
 public class XDATScreen_search_wizard2 extends SecureScreen {
 
 	@Override
-	protected void doBuildTemplate(RunData data, Context context) throws Exception {
+	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
 		UserI user = TurbineUtils.getUser(data);
 		Map<String,Object> additional=new Hashtable<String,Object>();
 		Map<String,Object> additionalDescriptions=new Hashtable<String,Object>();

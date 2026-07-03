@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xft.security.UserI;
@@ -18,7 +19,8 @@ public class XMLUpload extends SecureScreen {
     public static final String MESSAGE_NO_GUEST_PERMISSIONS = "Guest users are not permitted to perform any write operations";
 
     @Override
-    protected void doBuildTemplate(final RunData data, final Context context) throws Exception {
+    protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final UserI user = getUser();
         if (user.isGuest()) {
             data.setScreenTemplate("Error.vm");

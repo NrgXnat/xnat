@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.turbine.services.pull.tools.TemplateLink;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
@@ -47,7 +48,8 @@ public class XMLUpload extends SecureAction {
      * org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache
      * .turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         final UserI user = getUser();
         if (user.isGuest()) {
             handleInvalidPermissions(data, null, MESSAGE_NO_GUEST_PERMISSIONS);

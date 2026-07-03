@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import java.util.Hashtable;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
@@ -27,7 +28,8 @@ import org.nrg.xft.security.UserI;
 public class ExampleListingActionScreen extends SecureScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        final RunData data = pipelineData.getRunData();
         
         //retrieve passed search object
         DisplaySearch search = TurbineUtils.getSearch(data);

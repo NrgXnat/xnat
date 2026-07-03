@@ -11,8 +11,8 @@ package org.nrg.xdat.velocity.loaders;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.apache.commons.collections.ExtendedProperties;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.velocity.util.ExtProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
 import org.nrg.xdat.XDAT;
@@ -56,7 +56,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
      * {@inheritDoc}
      */
     @Override
-    public void init(final ExtendedProperties properties) {
+    public void init(final ExtProperties properties) {
         if (logger.isInfoEnabled()) {
             logger.info("Creating customer classpath resource loader with extended properties: " + (properties == null ? "null" : properties.toString()));
         }
@@ -64,9 +64,23 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 
     /**
      * {@inheritDoc}
+     * <p>Velocity 2.x SPI: returns a {@link Reader} (was {@code getResourceStream}/InputStream in 1.x).
+     * Delegates to the internal InputStream lookup and wraps it via {@link #buildReader(InputStream, String)}.
      */
     @Override
-    public InputStream getResourceStream(String name) throws ResourceNotFoundException {
+    public Reader getResourceReader(final String name, final String encoding) throws ResourceNotFoundException {
+        try {
+            return buildReader(getResourceInputStream(name), encoding);
+        } catch (IOException e) {
+            throw new ResourceNotFoundException("CustomClasspathResourceLoader: error building reader for " + name, e);
+        }
+    }
+
+    /**
+     * Finds a resource's InputStream via the TEMPLATE_PATHS override hierarchy. Retained from the
+     * Velocity 1.x {@code getResourceStream} SPI method; now internal + used by {@link #getInputStream(String)}.
+     */
+    private InputStream getResourceInputStream(String name) throws ResourceNotFoundException {
         if (StringUtils.isEmpty(name)) {
             throw new ResourceNotFoundException("No template name provided");
         }
@@ -277,7 +291,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             // But just in case, we'll call the constructor and initialize the static instance.
             new CustomClasspathResourceLoader();
         }
-        return INSTANCE.getResourceStream(resource);
+        return INSTANCE.getResourceInputStream(resource);
     }
 
     @Override

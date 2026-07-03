@@ -137,12 +137,9 @@ slf4j = "2.0.17"
 snakeyaml = "2.3"
 spotbugs = "4.7.3.4"
 spring-framework = "5.3.39"
-spring-jwt = "1.1.1.RELEASE"
 spring-ldap = "2.4.2"
-spring-oauth2 = "2.5.2.RELEASE"
 spring-security = "5.7.13"
 spring-test-junit5 = "1.5.0"
-springockito = "1.0.5"
 springdoc = "1.8.0"
 spring-boot-autoconfigure = "2.7.18"
 testcontainers = "1.21.4"
@@ -324,7 +321,6 @@ junit-junit = { group = "junit", name = "junit", version.ref = "junit" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit-jupiter" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
 junit-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "junit-jupiter" }
-kubek2k-springockito = { group = "org.kubek2k", name = "springockito", version.ref = "springockito" }
 log4jdbc-file = { group = "com.github.marcosemiao.log4jdbc", name = "log4jdbc-file", version.ref = "log4jdbc" }
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = "logback" }
@@ -379,12 +375,10 @@ spring-ldap-spring-ldap-core = { group = "org.springframework.ldap", name = "spr
 spring-messaging = { group = "org.springframework", name = "spring-messaging", version.ref = "spring-framework" }
 spring-orm = { group = "org.springframework", name = "spring-orm", version.ref = "spring-framework" }
 spring-oxm = { group = "org.springframework", name = "spring-oxm", version.ref = "spring-framework" }
-spring-security-oauth2-spring-security-oauth2 = { group = "org.springframework.security.oauth", name = "spring-security-oauth2", version.ref = "spring-oauth2" }
 spring-security-spring-security-acl = { group = "org.springframework.security", name = "spring-security-acl", version.ref = "spring-security" }
 spring-security-spring-security-aspects = { group = "org.springframework.security", name = "spring-security-aspects", version.ref = "spring-security" }
 spring-security-spring-security-config = { group = "org.springframework.security", name = "spring-security-config", version.ref = "spring-security" }
 spring-security-spring-security-core = { group = "org.springframework.security", name = "spring-security-core", version.ref = "spring-security" }
-spring-security-spring-security-jwt = { group = "org.springframework.security", name = "spring-security-jwt", version.ref = "spring-jwt" }
 spring-security-spring-security-ldap = { group = "org.springframework.security", name = "spring-security-ldap", version.ref = "spring-security" }
 spring-security-spring-security-openid = { group = "org.springframework.security", name = "spring-security-openid", version.ref = "spring-security" }
 spring-security-spring-security-taglibs = { group = "org.springframework.security", name = "spring-security-taglibs", version.ref = "spring-security" }

@@ -145,8 +145,6 @@ dependencies {
 
     // --- Spring Security ---
     api libs.spring.security.spring.security.ldap
-    api libs.spring.security.oauth2.spring.security.oauth2
-    api libs.spring.security.spring.security.jwt
     implementation libs.spring.security.spring.security.acl
     implementation libs.spring.security.spring.security.aspects
     implementation libs.spring.security.spring.security.config

@@ -63,8 +63,6 @@ dependencies {
         api libs.spring.security.spring.security.taglibs
         api libs.spring.security.spring.security.web
         api libs.spring.security.spring.security.test
-        api libs.spring.security.spring.security.jwt
-        api libs.spring.security.oauth2.spring.security.oauth2
         api libs.spring.ldap.spring.ldap.core
 
         // Hibernate

@@ -1,0 +1,110 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "name": "xnat-jakarta-shim-libs",
+      "description": "Byte-code namespace-migrated (javax->jakarta) copies of legacy libraries with no upstream Jakarta releases. See COMPLIANCE.md."
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "group": "org.restlet",
+      "name": "org.restlet",
+      "version": "1.1.10-jakarta",
+      "purl": "pkg:maven/org.restlet/org.restlet@1.1.10-jakarta",
+      "hashes": [{"alg": "SHA-256", "content": "62ea62d79ca5d7b58f20860d25d52e701e73852e1a1541babf2a753ce293e051"}],
+      "pedigree": {
+        "ancestors": [{"type": "library", "group": "org.restlet", "name": "org.restlet", "version": "1.1.10", "purl": "pkg:maven/org.restlet/org.restlet@1.1.10"}],
+        "notes": "Transformed with org.apache.tomcat:jakartaee-migration:1.0.8 (-profile=EE); javax->jakarta namespace rewrite only, no functional changes. Vulnerability matching should use the ancestor purl."
+      }
+    },
+    {
+      "type": "library",
+      "group": "com.noelios.restlet",
+      "name": "com.noelios.restlet",
+      "version": "1.1.10-jakarta",
+      "purl": "pkg:maven/com.noelios.restlet/com.noelios.restlet@1.1.10-jakarta",
+      "hashes": [{"alg": "SHA-256", "content": "3a9448423c4d031b6bbb3dde2ff532e20cd8409494c889a7b1e9083d596528ac"}],
+      "pedigree": {
+        "ancestors": [{"type": "library", "group": "com.noelios.restlet", "name": "com.noelios.restlet", "version": "1.1.10", "purl": "pkg:maven/com.noelios.restlet/com.noelios.restlet@1.1.10"}],
+        "notes": "Transformed with org.apache.tomcat:jakartaee-migration:1.0.8 (-profile=EE); javax->jakarta namespace rewrite only, no functional changes. Vulnerability matching should use the ancestor purl."
+      }
+    },
+    {
+      "type": "library",
+      "group": "com.noelios.restlet",
+      "name": "com.noelios.restlet.ext.servlet",
+      "version": "1.1.10-jakarta",
+      "purl": "pkg:maven/com.noelios.restlet/com.noelios.restlet.ext.servlet@1.1.10-jakarta",
+      "hashes": [{"alg": "SHA-256", "content": "53dec7023a47fac38a6c9a37984bacf0f97483e7f477f8d420c00361b2725f63"}],
+      "pedigree": {
+        "ancestors": [{"type": "library", "group": "com.noelios.restlet", "name": "com.noelios.restlet.ext.servlet", "version": "1.1.10", "purl": "pkg:maven/com.noelios.restlet/com.noelios.restlet.ext.servlet@1.1.10"}],
+        "notes": "Transformed with org.apache.tomcat:jakartaee-migration:1.0.8 (-profile=EE); javax->jakarta namespace rewrite only, no functional changes. Vulnerability matching should use the ancestor purl."
+      }
+    },
+    {
+      "type": "library",
+      "group": "org.restlet",
+      "name": "org.restlet.ext.fileupload",
+      "version": "1.1.10-jakarta",
+      "purl": "pkg:maven/org.restlet/org.restlet.ext.fileupload@1.1.10-jakarta",
+      "hashes": [{"alg": "SHA-256", "content": "30fe6231b3a00b65d970e5a9528dd04eceb09697cae9b92b543ffe1e2ac6e5cf"}],
+      "pedigree": {
+        "ancestors": [{"type": "library", "group": "org.restlet", "name": "org.restlet.ext.fileupload", "version": "1.1.10", "purl": "pkg:maven/org.restlet/org.restlet.ext.fileupload@1.1.10"}],
+        "notes": "Transformed with org.apache.tomcat:jakartaee-migration:1.0.8 (-profile=EE); javax->jakarta namespace rewrite only, no functional changes. Vulnerability matching should use the ancestor purl."
+      }
+    },
+    {
+      "type": "library",
+      "group": "turbine",
+      "name": "turbine",
+      "version": "2.3.3-jakarta",
+      "purl": "pkg:maven/turbine/turbine@2.3.3-jakarta",
+      "hashes": [{"alg": "SHA-256", "content": "7c1eac7446286408a77cba33e85199c952e9e635b29b234a47c74689d03352b0"}],
+      "pedigree": {
+        "ancestors": [{"type": "library", "group": "turbine", "name": "turbine", "version": "2.3.3", "purl": "pkg:maven/turbine/turbine@2.3.3"}],
+        "notes": "Transformed with org.apache.tomcat:jakartaee-migration:1.0.8 (-profile=EE); javax->jakarta namespace rewrite only, no functional changes. Vulnerability matching should use the ancestor purl."
+      }
+    },
+    {
+      "type": "library",
+      "group": "org.apache.velocity",
+      "name": "velocity",
+      "version": "1.7-jakarta",
+      "purl": "pkg:maven/org.apache.velocity/velocity@1.7-jakarta",
+      "hashes": [{"alg": "SHA-256", "content": "05b894907fb3eef24bd5ef6a8763f06dd886d7b1e09c7dac24e399a46d4cf269"}],
+      "pedigree": {
+        "ancestors": [{"type": "library", "group": "org.apache.velocity", "name": "velocity", "version": "1.7", "purl": "pkg:maven/org.apache.velocity/velocity@1.7"}],
+        "notes": "Transformed with org.apache.tomcat:jakartaee-migration:1.0.8 (-profile=EE); javax->jakarta namespace rewrite only, no functional changes. Vulnerability matching should use the ancestor purl. Known advisory CVE-2020-13936 applies as to upstream; see COMPLIANCE.md reachability notes."
+      }
+    },
+    {
+      "type": "library",
+      "group": "org.apache.velocity",
+      "name": "velocity-tools",
+      "version": "2.0-jakarta",
+      "purl": "pkg:maven/org.apache.velocity/velocity-tools@2.0-jakarta",
+      "hashes": [{"alg": "SHA-256", "content": "5c2dbdbbac58a05624d8952620a25342e77117d7d8dc98b1323c42f1a3409cad"}],
+      "pedigree": {
+        "ancestors": [{"type": "library", "group": "org.apache.velocity", "name": "velocity-tools", "version": "2.0", "purl": "pkg:maven/org.apache.velocity/velocity-tools@2.0"}],
+        "notes": "Transformed with org.apache.tomcat:jakartaee-migration:1.0.8 (-profile=EE); javax->jakarta namespace rewrite only, no functional changes. Vulnerability matching should use the ancestor purl. Known advisory CVE-2020-13959 applies as to upstream (view module unused by XNAT); see COMPLIANCE.md."
+      }
+    },
+    {
+      "type": "library",
+      "group": "commons-fileupload",
+      "name": "commons-fileupload",
+      "version": "1.5-jakarta",
+      "purl": "pkg:maven/commons-fileupload/commons-fileupload@1.5-jakarta",
+      "hashes": [{"alg": "SHA-256", "content": "67d69ec0c826fd2164d96743eae714e8a066b133d1ec301859cc1947f4987a9f"}],
+      "pedigree": {
+        "ancestors": [{"type": "library", "group": "commons-fileupload", "name": "commons-fileupload", "version": "1.5", "purl": "pkg:maven/commons-fileupload/commons-fileupload@1.5"}],
+        "notes": "Transformed with org.apache.tomcat:jakartaee-migration:1.0.8 (-profile=EE); javax->jakarta namespace rewrite only, no functional changes. Vulnerability matching should use the ancestor purl."
+      }
+    }
+  ]
+}

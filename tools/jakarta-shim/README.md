@@ -28,6 +28,13 @@ Full byte-code analysis, risk assessment and the original PoC are documented in 
 - `TurbineConfig` (standalone-mode helper) is missing 29 `ServletContext` methods added since Servlet 2.x —
   irrelevant to XNAT, which uses its own `XnatTurbineConfig` (`XnatWebAppInitializer`).
 
+## Security & compliance
+
+See [COMPLIANCE.md](COMPLIANCE.md) for reviewer-facing provenance, reproducibility verification, SCA
+scanner behavior, known-advisory review status, and the remediation roadmap. A machine-readable CycloneDX
+pedigree mapping each shimmed JAR to its upstream coordinates is in `sbom-pedigree.cdx.json` — merge it
+into the deployment SBOM so vulnerability matching resolves against the upstream components.
+
 ## Scripts
 
 - `./rewrite.sh` — regenerates `libs/` from the original javax artifacts (Gradle cache / Maven Central) with

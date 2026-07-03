@@ -58,6 +58,10 @@ fest-swing = "1.2.1"
 findbugs-jsr305 = "3.0.2"
 graaljs = "25.0.3"
 fop = "0.20.5"
+# Turbine 5.1 does NOT pull these Fulcrum components transitively (confirmed by the boot sandbox);
+# XNAT's YAAFI config references GlobalCacheService + UploadService, so declare them explicitly.
+fulcrum-cache = "2.0.1"
+fulcrum-upload = "2.0.0"
 glassfish-jakarta-el = "4.0.2"
 glassfish-javax-el = "3.0.1-b12"
 groovy = "2.4.20"
@@ -132,7 +136,7 @@ pixelmed-imageio = "20200328"
 quartz = "2.3.2"
 redisson = "3.22.0"
 reflections = "0.10.2"
-restlet = "1.1.10"
+restlet = "2.5.2"
 saxon = "9.1.0.8"
 servlet-api = "3.1.0"
 slf4j = "1.7.30"
@@ -149,10 +153,10 @@ swagger = "2.9.2"
 testcontainers = "1.21.4"
 tomcat-embed = "9.0.93"
 torque = "3.3"
-turbine = "2.3.3"
+turbine = "5.1"
 user-agent-utils = "1.20"
-velocity = "1.7"
-velocity-tools = "2.0"
+velocity = "2.4.1"
+velocity-tools = "3.1"
 vladmihalcea-hibernate-types = "2.14.0"
 wiremock = "3.0.1"
 wizard = "1.2.1"
@@ -188,8 +192,8 @@ apache-jena-tdb = { group = "org.apache.jena", name = "jena-tdb", version.ref = 
 apache-tomcat-embed-core = { group = "org.apache.tomcat.embed", name = "tomcat-embed-core", version.ref = "tomcat-embed" }
 apache-tomcat-embed-jasper = { group = "org.apache.tomcat.embed", name = "tomcat-embed-jasper", version.ref = "tomcat-embed" }
 apache-tomcat-embed-logging-juli = { group = "org.apache.tomcat.embed", name = "tomcat-embed-logging-juli", version.ref = "tomcat-embed" }
-apache-velocity = { group = "org.apache.velocity", name = "velocity", version.ref = "velocity" }
-apache-velocity-tools = { group = "org.apache.velocity", name = "velocity-tools", version.ref = "velocity-tools" }
+apache-velocity = { group = "org.apache.velocity", name = "velocity-engine-core", version.ref = "velocity" }
+apache-velocity-tools = { group = "org.apache.velocity.tools", name = "velocity-tools-generic", version.ref = "velocity-tools" }
 apache-xbean-spring = { group = "org.apache.xbean", name = "xbean-spring", version.ref = "xbean" }
 aspectj-rt = { group = "org.aspectj", name = "aspectjrt", version.ref = "aspectj" }
 aspectj-weaver = { group = "org.aspectj", name = "aspectjweaver", version.ref = "aspectj" }
@@ -269,6 +273,8 @@ graaljs-js = { group = "org.graalvm.polyglot", name = "js", version.ref = "graal
 graaljs-js-scriptengine = { group = "org.graalvm.js", name = "js-scriptengine", version.ref = "graaljs" }
 graaljs-polyglot = { group = "org.graalvm.polyglot", name = "polyglot", version.ref = "graaljs" }
 # SKIP: gitversion-gradle-git-version = { group = "com.palantir.gradle.gitversion", name = "gradle-git-version" } # unresolved version: ${gradle-git-version}
+fulcrum-cache = { group = "org.apache.fulcrum", name = "fulcrum-cache", version.ref = "fulcrum-cache" }
+fulcrum-upload = { group = "org.apache.fulcrum", name = "fulcrum-upload", version.ref = "fulcrum-upload" }
 glassfish-jakarta-el = { group = "org.glassfish", name = "jakarta.el", version.ref = "glassfish-jakarta-el" }
 glassfish-javax-el = { group = "org.glassfish", name = "javax.el", version.ref = "glassfish-javax-el" }
 google-auto-value = { group = "com.google.auto.value", name = "auto-value", version.ref = "auto-value" }
@@ -358,8 +364,8 @@ reactor-bus = { group = "io.projectreactor", name = "reactor-bus", version.ref =
 reactor-core = { group = "io.projectreactor", name = "reactor-core", version.ref = "io-projectreactor" }
 redisson-redisson = { group = "org.redisson", name = "redisson", version.ref = "redisson" }
 reflections-reflections = { group = "org.reflections", name = "reflections", version.ref = "reflections" }
-restlet-com-noelios-restlet = { group = "com.noelios.restlet", name = "com.noelios.restlet", version.ref = "restlet" }
-restlet-com-noelios-restlet-ext-servlet = { group = "com.noelios.restlet", name = "com.noelios.restlet.ext.servlet", version.ref = "restlet" }
+restlet-com-noelios-restlet = { group = "org.restlet", name = "org.restlet", version.ref = "restlet" }
+restlet-com-noelios-restlet-ext-servlet = { group = "org.restlet", name = "org.restlet.ext.servlet", version.ref = "restlet" }
 restlet-org-restlet = { group = "org.restlet", name = "org.restlet", version.ref = "restlet" }
 restlet-org-restlet-ext-fileupload = { group = "org.restlet", name = "org.restlet.ext.fileupload", version.ref = "restlet" }
 saxon-saxon = { group = "net.sourceforge.saxon", name = "saxon", version.ref = "saxon" }
@@ -414,7 +420,7 @@ tools-checkstyle = { group = "com.puppycrawl.tools", name = "checkstyle", versio
 torque-torque = { group = "torque", name = "torque", version.ref = "torque" }
 torque-village = { group = "torque", name = "village", version.ref = "torque" }
 ttddyy-datasource-proxy = { group = "net.ttddyy", name = "datasource-proxy", version.ref = "datasource-proxy" }
-turbine-turbine = { group = "turbine", name = "turbine", version.ref = "turbine" }
+turbine-turbine = { group = "org.apache.turbine", name = "turbine", version.ref = "turbine" }
 twmacinta-fast-md5 = { group = "com.twmacinta", name = "fast-md5", version.ref = "fastmd5" }
 uuid-java-uuid-generator = { group = "com.fasterxml.uuid", name = "java-uuid-generator", version.ref = "java-uuid-generator" }
 vladmihalcea-hibernate-types43 = { group = "com.vladmihalcea", name = "hibernate-types-43", version.ref = "vladmihalcea-hibernate-types" }

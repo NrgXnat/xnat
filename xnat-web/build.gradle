@@ -16,8 +16,20 @@ configurations.matching { it.name != 'xdatGenerator' }.configureEach {
         force 'org.apache.commons:commons-text:1.10.0'
         // dcm4che 5.x pulls slf4j-api 2.x, but logback 1.2.x only supports 1.7.x.
         force 'org.slf4j:slf4j-api:1.7.36'
+        // Phase-0b (Turbine 5.1): Turbine REQUIRES log4j-core (it casts to core LoggerContext at
+        // init) — do NOT exclude it. Its graph mixes log4j-api 2.23.1 with core 2.14.1, causing
+        // NoSuchMethodError: LoaderUtil.getClassLoaders(); align all log4j2 modules to one version.
+        // (The log4j2<->Logback runtime reconciliation is a separate Phase-0b task, not a dep tweak.)
+        eachDependency { details ->
+            if (details.requested.group == 'org.apache.logging.log4j') {
+                details.useVersion '2.23.1'
+            }
+        }
     }
     exclude group: 'ant',                      module: 'ant'
+    // Phase-0b (Turbine 5.1): drop legacy Avalon + old Torque coords (see docs/dep-dryrun-phase0-findings.md)
+    exclude group: 'avalon-framework'
+    exclude group: 'torque'
     exclude group: 'avalon-logkit'
     exclude group: 'berkeleydb'
     exclude group: 'com.github.jai-imageio'
@@ -234,6 +246,9 @@ dependencies {
         exclude group: 'xerces'
     }
     implementation libs.torque.village
+    // Turbine 5.1 omits these Fulcrum components transitively — required by XNAT's YAAFI config.
+    implementation libs.fulcrum.cache
+    implementation libs.fulcrum.upload
     implementation(libs.apache.velocity) { transitive = false }
     implementation libs.ecs.ecs
 

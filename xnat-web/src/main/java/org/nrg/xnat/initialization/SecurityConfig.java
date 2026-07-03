@@ -42,7 +42,7 @@ import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.config.annotation.ObjectPostProcessor;
+import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -54,6 +54,9 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.RedirectStrategy;
+import org.springframework.security.web.context.DelegatingSecurityContextRepository;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.channel.ChannelDecisionManagerImpl;
 import org.springframework.security.web.access.channel.ChannelProcessingFilter;
@@ -190,7 +193,14 @@ public class SecurityConfig {
 
     @Bean
     public XnatAuthenticationFilter customAuthenticationFilter() {
-        return new XnatAuthenticationFilter();
+        final XnatAuthenticationFilter filter = new XnatAuthenticationFilter();
+        // Spring Security 6 no longer saves the SecurityContext to the session automatically
+        // (SecurityContextHolderFilter replaced SecurityContextPersistenceFilter), and manually registered
+        // authentication filters default to the request-attribute repository only - without this, form login
+        // succeeds but the very next request is unauthenticated. Mirrors what the formLogin DSL wires up.
+        filter.setSecurityContextRepository(new DelegatingSecurityContextRepository(
+                new RequestAttributeSecurityContextRepository(), new HttpSessionSecurityContextRepository()));
+        return filter;
     }
 
     @Bean

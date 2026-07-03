@@ -83,7 +83,7 @@ public class WebConfig implements WebMvcConfigurer {
         // XNAT's swagger-initializer.js override (which points the UI at XNAT's /v3/api-docs) shadows the webjar's
         // petstore default.
         registry.addResourceHandler("/swagger-ui/**")
-                .addResourceLocations("/swagger-ui-overrides/", "classpath:/META-INF/resources/webjars/swagger-ui/5.11.8/");
+                .addResourceLocations("/swagger-ui-overrides/", "classpath:/META-INF/resources/webjars/swagger-ui/5.32.2/");
         registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
 
         // TODO: This is supposed to work to cache images, CSS, JS, etc., overriding the http.headers() settings in SecurityConfig (http://bit.ly/2E1i8SO),

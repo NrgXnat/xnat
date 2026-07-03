@@ -17,7 +17,7 @@ public interface XnatSecurityExtension {
     String getAuthMethod();
 
     /**
-     * Called by the {@link SecurityConfig#configure(HttpSecurity)} method. This allows the implementing class to add
+     * Called by the {@link SecurityConfig#securityFilterChain(HttpSecurity, org.springframework.security.authentication.AuthenticationManager)} method. This allows the implementing class to add
      * further configurations to the HTTP security configuration.
      *
      * @param http The HTTP security configuration.
@@ -25,7 +25,7 @@ public interface XnatSecurityExtension {
     void configure(final HttpSecurity http) throws Exception;
 
     /**
-     * Called by the {@link SecurityConfig#configure(AuthenticationManagerBuilder)} method. This allows the implementing
+     * Called by the {@link SecurityConfig#authenticationManager(org.springframework.security.config.annotation.ObjectPostProcessor)} method. This allows the implementing
      * class to add further configurations to the authentication manager configuration.
      *
      * @param builder The authentication manager configuration.
